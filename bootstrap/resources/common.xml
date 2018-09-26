@@ -41,5 +41,4 @@
       <backend model='random'>/dev/random</backend>
     </rng>
   </devices>
-  <seclabel type='dynamic' model='apparmor' relabel='yes'/>
 </domain>
