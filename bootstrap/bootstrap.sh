@@ -80,7 +80,7 @@ curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-X -i pxe/g" > /kvm/vms/pxe/data/user-data
 
 genisoimage -o /kvm/vms/salt/config.iso -V cidata -r -J /kvm/vms/salt/data/meta-data /kvm/vms/salt/data/user-data
-genisoimage -o /kvm/vms/pxe/config.iso -V cidata -r -J /kvm/vms/salt/pxe/meta-data /kvm/vms/salt/pxe/user-data
+genisoimage -o /kvm/vms/pxe/config.iso -V cidata -r -J /kvm/vms/pxe/data/meta-data /kvm/vms/pxe/data/user-data
 
 virsh create /kvm/vms/salt/config.xml
 virsh create /kvm/vms/pxe/config.xml
