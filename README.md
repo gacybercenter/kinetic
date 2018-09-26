@@ -27,8 +27,10 @@ Additionally, you need to ensure that:
   * compute - management, storage frontend, private, public
   * storage - management, storage frontend, storage backend
   * zun-compute - management, storage frontend, private, public
-3. You have a running, unconfigured salt-master.  The normal master bootstrap install is fine:
- ```curl -L https://bootstrap.saltstack.com | sudo sh -s --- -M```
+3. You have a fresh, unconfigured installation of Debian Stretch on a machine that has at least 8G of RAM.
+This host will run your salt master as well as an instance of dnsmasq.
+This is the host on which you will run ```bootstrap.sh```.
+Both the salt master and dnsmasq will run in separate kvm virtual machines.
 4. All hosts can reach your salt master on TCP 4505/4506.  There is no need for the master to be able to reach the hosts.  Salt has a pubsub architecture.
 
 ## Recommendations
