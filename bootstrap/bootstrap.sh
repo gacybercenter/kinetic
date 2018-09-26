@@ -31,7 +31,7 @@ DEBIAN_FRONTEND=noninteractive
 ## Packages
 apt-get update
 apt-get -y dist-upgrade
-apt-get -y install qemu-kvm qemu-utils genisoimage curl
+apt-get -y install qemu-kvm qemu-utils genisoimage curl libvirt-clients libvirt-daemon-system
 
 ## Directories
 
@@ -56,6 +56,16 @@ then
 else
   echo Image hash mismatch.  Re-downloading.
   wget https://cdimage.debian.org/cdimage/openstack/current-9/debian-9-openstack-amd64.raw -O /kvm/images/debian9.raw
+fi
+
+if [ ! -f /kvm/vms/salt/disk0.raw ]
+then
+  cp /kvm/images/debian9.raw /kvm/vms/salt/disk0.raw
+fi
+
+if [ ! -f /kvm/vms/pxe/disk0.raw ]
+then
+  cp /kvm/images/debian9.raw /kvm/vms/pxe/disk0.raw
 fi
 
 ## Configuration
