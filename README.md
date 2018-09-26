@@ -30,10 +30,13 @@ Additionally, you need to ensure that:
 3. You have a fresh installation of Debian Stretch on a machine that has at least 8G of RAM.
 This machine needs to have [bridging](https://www.cyberciti.biz/faq/how-to-configuring-bridging-in-debian-linux/) configured already.
 You will have to pass the bridge interface name to ```bootstrap.sh.```
-This host will run your salt master as well as an instance of dnsmasq.
+This host will run your salt master as well as your pxe server.
 This is the host on which you will run ```bootstrap.sh```.
-Both the salt master and dnsmasq will run in separate kvm virtual machines.
+Both the salt master and tftp will run in separate kvm virtual machines.
 4. All hosts can reach your salt master on TCP 4505/4506.  There is no need for the master to be able to reach the hosts.  Salt has a pubsub architecture.
+5. Your dhcp server is issuing ipxe.efi as the efi 64 bit boot filename.
+6. DHCP clients can successfully register their leases in your local DNS resolver.
+7. All hosts can reach your pxe server on UDP 69 and TCP 80.  Your tftp server must be able to reach your hosts on ANY UDP port as well.
 
 ## Recommendations
 
