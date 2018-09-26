@@ -30,6 +30,16 @@ mkdir -p /kvm/images
 mkdir -p /kvm/vms/salt
 mkdir /kvm/vms/dnsmasq
 
-wget https://cdimage.debian.org/cdimage/openstack/current-9/debian-9-openstack-amd64.raw -O /kvm/images/debian9.raw
+local_image_hash=$(sha512sum /kvm/images/debian9.raw | awk '{ print $1 }')
+remote_image_hash=$(curl https://cdimage.debian.org/cdimage/openstack/current-9/SHA512SUMS | grep $local_image_hash | awk '{ print $1 }')
+
+if [ "$local_image_hash" == "$remote_image_hash" ]
+then
+  echo No new image needed.  Skipping download.
+else
+  echo Image hash mismatch.  Re-downloading.
+  wget https://cdimage.debian.org/cdimage/openstack/current-9/debian-9-openstack-amd64.raw -O /kvm/images/debian9.raw
+fi
+
 curl https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/salt/g; s/{{ interface }}/$interface/g" > /kvm/vms/salt/config.xml
 curl https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/dnsmasq/g; s/{{ interface }}/$interface/g" > /kvm/vms/dnsmasq/config.xml
