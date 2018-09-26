@@ -36,8 +36,8 @@ apt-get -y install qemu-kvm qemu-utils genisoimage curl
 ## Directories
 
 mkdir -p /kvm/images
-mkdir -p /kvm/vms/salt
-mkdir /kvm/vms/pxe
+mkdir -p /kvm/vms/salt/data
+mkdir -p /kvm/vms/pxe/data
 
 ## Images
 
@@ -64,7 +64,7 @@ curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/pxe/g; s/{{ interface }}/$interface/g" > /kvm/vms/pxe/config.xml
 
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/salt/g" > /kvm/vms/salt/data/meta-data
-curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/pxe/g" > /kvm/vms/pxe/meta-data
+curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/pxe/g" > /kvm/vms/pxe/data/meta-data
 
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-M -X -i salt/g" > /kvm/vms/salt/data/user-data
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-X -i pxe/g" > /kvm/vms/pxe/data/user-data
