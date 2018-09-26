@@ -41,7 +41,13 @@ mkdir /kvm/vms/pxe
 
 ## Images
 
-local_image_hash=$(sha512sum /kvm/images/debian9.raw | awk '{ print $1 }')
+if [ ! -f /kvm/images/debian9.raw ]
+then
+  local_image_hash=bad
+else
+  local_image_hash=$(sha512sum /kvm/images/debian9.raw | awk '{ print $1 }')
+fi
+
 remote_image_hash=$(curl https://cdimage.debian.org/cdimage/openstack/current-9/SHA512SUMS | grep $local_image_hash | awk '{ print $1 }')
 
 if [ "$local_image_hash" == "$remote_image_hash" ]
