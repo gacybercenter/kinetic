@@ -20,7 +20,7 @@ There are two critical repositories that are required for a successful kinetic d
 
 Additionally, you need to ensure that:
 
-1. All hosts (cache, compute, controller, storage, zun-compute) have their firmare in UEFI-only mode.
+1. All hosts (cache, compute, controller, storage, zun-compute) have their firmare AND option ROMs in UEFI-only mode.
 2. You have designed your subnetting scheme to support all required networks (public, private, management, storage frontend, storage backend, out-of-band)
   * cache - management, public
   * controller - management, storage frontend, private, public
