@@ -25,7 +25,7 @@
     </disk>
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
-      <source file='/kvmfs/vms/{{ name }}/config.iso'/>
+      <source file='/kvm/vms/{{ name }}/config.iso'/>
       <target dev='vdb' bus='virtio'/>
       <readonly/>
     </disk>

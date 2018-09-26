@@ -27,7 +27,9 @@ Additionally, you need to ensure that:
   * compute - management, storage frontend, private, public
   * storage - management, storage frontend, storage backend
   * zun-compute - management, storage frontend, private, public
-3. You have a fresh, unconfigured installation of Debian Stretch on a machine that has at least 8G of RAM.
+3. You have a fresh installation of Debian Stretch on a machine that has at least 8G of RAM.
+This machine needs to have [bridging](https://www.cyberciti.biz/faq/how-to-configuring-bridging-in-debian-linux/) configured already.
+You will have to pass the bridge interface name to ```bootstrap.sh.```
 This host will run your salt master as well as an instance of dnsmasq.
 This is the host on which you will run ```bootstrap.sh```.
 Both the salt master and dnsmasq will run in separate kvm virtual machines.
