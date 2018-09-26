@@ -22,16 +22,17 @@ Additionally, you need to ensure that:
 
 1. All hosts (cache, compute, controller, storage, zun-compute) have their firmare AND option ROMs in UEFI-only mode.
 2. You have designed your subnetting scheme to support all required networks (public, private, management, storage frontend, storage backend, out-of-band)
-  * salt master - management
   * cache - management, public
   * controller - management, storage frontend, private, public
   * compute - management, storage frontend, private, public
   * storage - management, storage frontend, storage backend
   * zun-compute - management, storage frontend, private, public
-3. You have a fresh installation of Debian Stretch.
-You will have to ensure that this machine has an interface on the management network.
+3. You have a fresh installation of Debian Stretch on a machine that has at least 8G of RAM.
+This machine needs to have [bridging](https://www.cyberciti.biz/faq/how-to-configuring-bridging-in-debian-linux/) configured already.
+You will have to pass the bridge interface name to ```bootstrap.sh.```
+This host will run your salt master as well as an instance of dnsmasq.
 This is the host on which you will run ```bootstrap.sh```.
-This machine will be your salt master.
+Both the salt master and dnsmasq will run in separate kvm virtual machines.
 4. All hosts can reach your salt master on TCP 4505/4506.  There is no need for the master to be able to reach the hosts.  Salt has a pubsub architecture.
 
 ## Recommendations
