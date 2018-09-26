@@ -30,7 +30,7 @@
       <readonly/>
     </disk>
     <interface type='bridge'>
-      <source bridge='mgmt'/>
+      <source bridge='{{ interface }}'/>
       <target dev='vnet0'/>
       <model type='virtio'/>
     </interface>
