@@ -1,3 +1,3 @@
 base:
   salt:
-    formulas/salt/configure-salt
+    - formulas/salt/configure-salt
