@@ -6,4 +6,5 @@
 
 /etc/salt/master:
   file.managed:
-    - source: ~
+    - contents: ''
+    - contents_netline: False
