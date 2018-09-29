@@ -3,3 +3,7 @@
   file.managed:
     - contents_pillar: master-config:{{ directive }}
 {% endfor %}
+
+/etc/salt/master:
+  file.managed:
+    - source: none
