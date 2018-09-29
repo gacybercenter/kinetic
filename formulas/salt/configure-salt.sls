@@ -8,3 +8,9 @@
   file.managed:
     - contents: ''
     - contents_netline: False
+
+salt-master:
+  service.running:
+    - watch:
+      - file: /etc/salt/master
+      - file: /etc/salt/master.d/*
