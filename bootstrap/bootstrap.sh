@@ -5,18 +5,24 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-if [ $# -lt 1 ]; then
+if [ $# -lt 6 ]; then
   echo 1>&2 "$0: not enough arguments"
   exit 2
 fi
 
-while getopts ":i:" opt; do
+while getopts ":i:f:p:" opt; do
   case ${opt} in
     i )
       interface=$OPTARG
       ;;
+    f )
+      fileroot=$OPTARG
+      ;;
+    p )
+      pillar=$OPTARG
+      ;;
     \? )
-      echo "Invalid option: $OPTARG.  The only valid option is -i, which specifies the bridged management interface on this device" 1>&2
+      echo "Invalid option: $OPTARG." 1>&2
       exit
       ;;
     : )
@@ -58,29 +64,25 @@ else
   wget https://cdimage.debian.org/cdimage/openstack/current-9/debian-9-openstack-amd64.raw -O /kvm/images/debian9.raw
 fi
 
+
+## salt
 if [ ! -f /kvm/vms/salt/disk0.raw ]
 then
   cp /kvm/images/debian9.raw /kvm/vms/salt/disk0.raw
 fi
+curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/salt/g; s/{{ interface }}/$interface/g" > /kvm/vms/salt/config.xml
+curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/salt/g" > /kvm/vms/salt/data/meta-data
+curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-M -X -i salt -J '{ \"default_top\": \"base\", \"fileserver_backend\": [ \"git\" ], \"ext_pillar\": [ { \"git\": [ { \"master $pillar\": [ { \"env\": \"base\" }, { \"root\": \"pillar\" } ] } ] } ], \"ext_pillar_first\": true, \"gitfs_remotes\": [ { \"$fileroot\": [ { \"saltenv\": [ { \"base\": [ { \"ref\": \"master\" } ] } ] } ] } ], \"gitfs_saltenv_whitelist\": [ \"base\" ] }'/g" > /kvm/vms/salt/data/user-data
+genisoimage -o /kvm/vms/salt/config.iso -V cidata -r -J /kvm/vms/salt/data/meta-data /kvm/vms/salt/data/user-data
+virsh create /kvm/vms/salt/config.xml
 
+##pxe
 if [ ! -f /kvm/vms/pxe/disk0.raw ]
 then
   cp /kvm/images/debian9.raw /kvm/vms/pxe/disk0.raw
 fi
-
-## Configuration
-
-curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/salt/g; s/{{ interface }}/$interface/g" > /kvm/vms/salt/config.xml
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/pxe/g; s/{{ interface }}/$interface/g" > /kvm/vms/pxe/config.xml
-
-curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/salt/g" > /kvm/vms/salt/data/meta-data
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/pxe/g" > /kvm/vms/pxe/data/meta-data
-
-curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-M -X -i salt -J { \"default_top\": \"base\", \"fileserver_backend\": [\"git\"] }/g" > /kvm/vms/salt/data/user-data
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-X -i pxe/g" > /kvm/vms/pxe/data/user-data
-
-genisoimage -o /kvm/vms/salt/config.iso -V cidata -r -J /kvm/vms/salt/data/meta-data /kvm/vms/salt/data/user-data
 genisoimage -o /kvm/vms/pxe/config.iso -V cidata -r -J /kvm/vms/pxe/data/meta-data /kvm/vms/pxe/data/user-data
-
-virsh create /kvm/vms/salt/config.xml
 virsh create /kvm/vms/pxe/config.xml
