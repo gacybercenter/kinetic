@@ -10,7 +10,7 @@ include:
 /etc/salt/master:
   file.managed:
     - contents: ''
-    - contents_netline: False
+    - contents_newline: False
 
 salt-master:
   service.running:
