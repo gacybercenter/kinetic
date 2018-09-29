@@ -6,4 +6,4 @@
 
 /etc/salt/master:
   file.managed:
-    - source: none
+    - source: ~
