@@ -5,12 +5,12 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-if [ $# -lt 8 ]; then
+if [ $# -lt 6 ]; then
   echo 1>&2 "$0: not enough arguments"
   exit 2
 fi
 
-while getopts ":i:f:p:k:" opt; do
+while getopts ":i:f:p:" opt; do
   case ${opt} in
     i )
       interface=$OPTARG
@@ -20,9 +20,6 @@ while getopts ":i:f:p:k:" opt; do
       ;;
     p )
       pillar=$OPTARG
-      ;;
-    k )
-      key=$OPTARG
       ;;
     \? )
       echo "Invalid option: $OPTARG." 1>&2
