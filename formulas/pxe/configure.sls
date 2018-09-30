@@ -25,6 +25,10 @@ php7.0_module:
 /var/www/html/index.html:
   file.absent
 
+/var/www/html/hosts:
+  file.managed:
+    contents_pillar: hosts
+
 /var/www/html/index.php:
   file.managed:
     - source: salt://formulas/pxe/files/index.php
