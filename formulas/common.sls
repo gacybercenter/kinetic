@@ -8,3 +8,9 @@
     - user: root
     - enc: {{ pillar['authorized_keys'][ key ]['encoding'] }}
 {% endfor %}
+
+{{ grains['ipv4'][0] }}:
+  host.only:
+    - hostnames:
+      - {{ grains['id'] }}
+      - {{ grains['host'] }}
