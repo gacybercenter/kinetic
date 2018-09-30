@@ -42,17 +42,17 @@ php7.0_module:
   file.managed:
     - source: salt://formulas/pxe/files/cache.pxe
 
-{% for type, args in pillar.get('hosts', {}).items() %}
+{% for type in pillar['hosts'] %}
 /var/www/html/preseed/{{ type }}.preseed:
   file.managed:
     - source: salt://formulas/pxe/files/common.preseed
     - template: jinja
     - defaults:
         proxy: {{ pillar['hosts'][type]['proxy'] }}
-        root_password_crypted: {{ pillar['hosts'][type] }}
-        zone: {{ pillar['hosts'][type] }}
-        ntp_server: {{ pillar['hosts'][type] }}
-        disk: {{ pillar['hosts'][type] }}
+        root_password_crypted: {{ pillar['hosts'][type]['root-password-crypted'] }}
+        zone: {{ pillar['hosts'][type]['zone'] }}
+        ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
+        disk: {{ pillar['hosts'][type]['disk'] }}
 {% endfor %}
 
 /var/www/html/preseed/cache2.preseed:
