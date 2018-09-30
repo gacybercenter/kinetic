@@ -56,7 +56,7 @@ While the cache is optional, it is *highly* recommended that you use it.  Trying
 ## Quick Start
 
 On your configured Debian host, run:
-```curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh | 
+```curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |  
 bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }}```
 
 where
