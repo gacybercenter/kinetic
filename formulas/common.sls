@@ -3,7 +3,7 @@
     - utc: True
 
 {% for key in pillar['authorized_keys'] %}
-test:
+key:
   ssh_auth.present:
     - user: root
     - enc: foo
