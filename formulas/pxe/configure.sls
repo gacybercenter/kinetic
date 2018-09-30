@@ -32,6 +32,7 @@ php7.0_module:
         {% for mac in macs.iteritems() %}
           {{ mac }}
           {{ macs }}[0]={{ type }}
+        {% endfor %}
       {% endfor %}
 /var/www/html/index.php:
   file.managed:
