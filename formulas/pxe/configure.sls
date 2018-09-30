@@ -50,7 +50,7 @@ php7.0_module:
     - defaults:
         proxy: {{ pillar['hosts'][type] }}
         root_password_crypted: {{ pillar['hosts'][type] }}
-        zone: {{ pillar['hosts'][type] }}
+        zone: {{ pillar['hosts'][type]['zone'] }}
         ntp_server: {{ pillar['hosts'][type] }}
         disk: {{ pillar['hosts'][type] }}
 {% endfor %}
