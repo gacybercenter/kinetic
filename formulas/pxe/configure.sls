@@ -43,10 +43,10 @@ php7.0_module:
     - source: salt://formulas/pxe/files/cache.pxe
 
 {% for type in pillar['hosts'] %}
-  /var/www/html/preseed/{{ type }}.preseed:
-    file.managed:
-      - contents: |
-          foo
+/var/www/html/preseed/{{ type }}.preseed:
+  file.managed:
+    - contents: |
+        foo
 {% endfor %}
 
 /var/www/html/preseed/cache2.preseed:
