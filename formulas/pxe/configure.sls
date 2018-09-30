@@ -44,7 +44,7 @@ php7.0_module:
 
 {% for type in pillar['hosts'] %}
   /var/www/html/preseed/{{ type }}.preseed:
-    file.managed
+    file.managed:
       - contents: |
           foo
 {% endfor %}
