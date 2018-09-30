@@ -4,7 +4,6 @@ include:
 https://git.ipxe.org/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
-    - reload_modules: true
     - require:
       - sls: /formulas/pxe/install
 
