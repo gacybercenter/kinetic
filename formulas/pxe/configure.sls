@@ -33,6 +33,13 @@ php7.0_module:
           {{ mac }} = {{ type }}
         {%- endfor %}
       {% endfor %}
+
 /var/www/html/index.php:
   file.managed:
     - source: salt://formulas/pxe/files/index.php
+
+/var/www/html/cache.pxe:
+  file.managed:
+    - source: salt://formulas/pxe/files/cache.pxe
+
+
