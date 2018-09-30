@@ -44,6 +44,6 @@ php7.0_module:
 
 /var/www/html/preseed/cache.preseed:
   file.managed:
-    - source: salt://formulas/class/pxe/files/cache.preseed
+    - source: salt://formulas/pxe/files/cache.preseed
     - makedirs: True
     - template: jinja
