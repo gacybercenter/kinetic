@@ -32,7 +32,7 @@ php7.0_module:
         {% for mac in pillar['hosts'][type]['macs'] %}
           {{ pillar['hosts'][type]['macs'][loop.index0] }} = {{ type }}
         {%- endfor %}
-      {% endfor %}
+      {%- endfor %}
 /var/www/html/index.php:
   file.managed:
     - source: salt://formulas/pxe/files/index.php
