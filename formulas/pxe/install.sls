@@ -6,3 +6,6 @@ apache2:
 
 php7.0:
   pkg.installed
+
+git:
+  pkg.installed

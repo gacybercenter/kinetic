@@ -34,7 +34,11 @@ This host will run your salt master as well as your pxe server.
 This is the host on which you will run ```bootstrap.sh```.
 Both the salt master and tftp will run in separate kvm virtual machines.
 4. All hosts can reach your salt master on TCP 4505/4506.  There is no need for the master to be able to reach the hosts.  Salt has a pubsub architecture.
-5. Your dhcp server is issuing ipxe.efi as the efi 64 bit boot filename.
+5. Your dhcp server is issuing ipxe.efi as the efi 64 bit boot filename and next-server is set to pxe
+*NOTE* If your dhcp server does not support issuing hostname as next-server,
+you will need to create your own tftp server and have it issue [this](fixme) file.
+your system will automatically compile a fresh copy of this for you from source if you do not wish to use the pre-compiled version.
+The freshly compiled version will be located at /var/www/html/ipxe.efi on your pxe server once it is fully highstated.
 6. DHCP clients can successfully register their leases in your local DNS resolver.
 7. All hosts can reach your pxe server on UDP 69 and TCP 80.  Your tftp server must be able to reach your hosts on ANY UDP port as well.
 
