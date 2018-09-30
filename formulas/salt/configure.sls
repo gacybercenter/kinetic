@@ -11,6 +11,17 @@ include:
         ext_pillar_first: true
         pillar_gitfs_ssl_verify: True
 
+/etc/salt/master.d/gitfs_remotes.conf:
+  file.managed:
+    - contents: |
+        gitfs_remotes:
+          - {{ pillar['gitfs_remote_configuration']['url'] }}:
+            - saltenv:
+              - base:
+                - ref: {{ pillar['gitfs_remote_configuration']['branch'] }}
+        gitfs_saltenv_whitelist:
+          - base
+
 {% for directive, contents in pillar.get('master-config', {}).items() %}
 /etc/salt/master.d/{{ directive}}.conf:
   file.managed:
