@@ -6,5 +6,5 @@
 {{ key }}:
   ssh_auth.present:
     - user: root
-    - enc: {{ pillar['authorized_keys'][ key ]['encoding'] }}
+    - enc: {{ pillar['authorized_keys'][ key ] }}
 {% endfor %}
