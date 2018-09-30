@@ -38,9 +38,9 @@ php7.0_module:
   file.managed:
     - source: salt://formulas/pxe/files/index.php
 
-/var/www/html/cache.pxe:
+/var/www/html/common.pxe:
   file.managed:
-    - source: salt://formulas/pxe/files/cache.pxe
+    - source: salt://formulas/pxe/files/common.pxe
 
 {% for type in pillar['hosts'] %}
 /var/www/html/preseed/{{ type }}.preseed:
