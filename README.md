@@ -58,7 +58,7 @@ While the cache is optional, it is *highly* recommended that you use it.  Trying
 On your configured Debian host, run:
 ```
 curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |  
-bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }}
+bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }} -k {{ key }}
 ```
 
 where
@@ -69,13 +69,15 @@ where
 
 ```{{ pillar }}``` = the repository from which you wish to source your site-specific configuration.
 
+```{{ key }}``` = the key that you will use to log in to your salt master and pxe server after they boot.
 Example:
 
 ```
 curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
 bash -s -- -i mgmt \
 -f https://github.com/GeorgiaCyber/kinetic.git \
--p https://github.com/GeorgiaCyber/kinetic-pillar-sample.git
+-p https://github.com/GeorgiaCyber/kinetic-pillar-sample.git \
+-k "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKw+cBx9BBKcoXKLxMLVoGCD7znZqBjnMkaIipAikQJ"
 ```
 
 
