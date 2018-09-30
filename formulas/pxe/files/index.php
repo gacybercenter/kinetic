@@ -5,5 +5,5 @@ exec("grep $mac hosts", $output);
 $type_array = explode(" = ", $output[0]);
 $type = $type_array[1];
 $bootfile = file_get_contents("$type.pxe");
-echo $bootfile;
+echo str_replace("http://pxe", "http://".$_SERVER['SERVER_ADDR'], $bootfile);
 ?>
