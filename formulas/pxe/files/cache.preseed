@@ -107,4 +107,4 @@ d-i preseed/late_command                          string                        
     in-target curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;                                                           \
     in-target /bin/sh /tmp/bootstrap_salt.sh -X;                                                                                           \
     in-target echo cache-$(uuidgen) | tee -a /etc/salt/minion_id /etc/hostname;                                                            \
-    in-target sed -i "s/debian/$(cat \/etc\/hostname/g" /etc/hosts -i
+    in-target sed -i "s/debian/$(cat \/etc\/hostname)/g" /etc/hosts -i
