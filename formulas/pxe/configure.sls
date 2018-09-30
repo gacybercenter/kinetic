@@ -48,7 +48,7 @@ php7.0_module:
     - source: salt://formulas/pxe/files/common.preseed
     - template: jinja
     - defaults:
-        proxy: {{ args['proxy'] }}
+        proxy: {{ args[proxy] }}
         root_password_crypted: {{ pillar['hosts'][type] }}
         zone: {{ pillar['hosts'][type] }}
         ntp_server: {{ pillar['hosts'][type] }}
