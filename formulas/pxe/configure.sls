@@ -2,10 +2,11 @@ include:
   - /formulas/pxe/install
 
 php7.0_module:
-  apache_module.enabled
+  apache_module.enabled:
+    - name: php7.0
 
 /var/www/html/index.html:
-  file.missing
+  file.absent
 
 /var/www/html/index.php:
   file.managed:
