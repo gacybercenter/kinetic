@@ -7,6 +7,17 @@ https://git.ipxe.org/ipxe.git:
     - require:
       - sls: /formulas/pxe/install
 
+/var/www/html/ipxe/src/kinetic.ipxe:
+  file.managed:
+    - source: salt://formulas/pxe/files/kinetic.ipxe
+
+create_efi_module:
+  cmd.run:
+    - name: |
+        make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
+    - cwd: /var/www/html/ipxe/src/
+    - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+
 php7.0_module:
   apache_module.enabled:
     - name: php7.0
