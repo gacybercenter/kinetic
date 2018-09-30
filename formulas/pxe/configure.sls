@@ -42,7 +42,7 @@ php7.0_module:
   file.managed:
     - source: salt://formulas/pxe/files/cache.pxe
 
-{% for type in pillar.get('hosts', {}).items() %}
+{% for type in pillar['hosts'] %}
 /var/www/html/preseed/{{ type }}.preseed:
   file.managed:
     - source: salt://formulas/pxe/files/common.preseed
