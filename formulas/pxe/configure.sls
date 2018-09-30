@@ -14,9 +14,9 @@ https://git.ipxe.org/ipxe.git:
 create_efi_module:
   cmd.run:
     - name: |
-        make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
+        make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe && cp bin-x86_64-efi/ipxe.efi /srv/tftp/
     - cwd: /var/www/html/ipxe/src/
-    - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+    - creates: /srv/tftp/ipxe.efi
 
 php7.0_module:
   apache_module.enabled:
