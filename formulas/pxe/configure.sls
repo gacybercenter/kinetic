@@ -46,9 +46,9 @@ php7.0_module:
 /var/www/html/preseed/{{ type }}.preseed:
   file.managed:
     - source: salt://formulas/pxe/files/common.preseed
-    - template: jina
+    - template: jinja
     - defaults:
-        proxy: {{ pillar['hosts'] }}
+        proxy: {{ pillar['hosts'][type]['proxy'] }}
 {% endfor %}
 
 /var/www/html/preseed/cache2.preseed:
