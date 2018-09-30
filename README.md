@@ -119,6 +119,6 @@ The next thing you will want to do is highstate your salt master so it can be fu
 salt salt state.highstate
 ```
 
-This command will likely end with an error stating ```Authentication error occurred.```.  That's OK - we made changes to the master configuration
+This command will likely end with an error stating ```Authentication error occurred```.  That's OK - we made changes to the master configuration
 that caused the master daemon to restart, so it couldn't return the results properly.  If you run an additional highstate, you will see that
 the configurations were successfully applied.
