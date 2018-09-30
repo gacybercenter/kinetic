@@ -1,0 +1,3 @@
+kernel /ubuntu-installer/amd64/linux gfxpayload=800x600x16,800x600 live-installer/enable=false --- auto=true url=http://pxe/preseed/cache locale=en_US interface=ens5f0 keymap=us netcfg/get_hostname=undefined-cache debian-installer/allow_unauthenticated_ssl=true
+initrd /ubuntu-installer/amd64/initrd.gz
+boot
