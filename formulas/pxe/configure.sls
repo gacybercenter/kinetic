@@ -42,7 +42,14 @@ php7.0_module:
   file.managed:
     - source: salt://formulas/pxe/files/cache.pxe
 
-/var/www/html/preseed/cache.preseed:
+{% for type in pillar['hosts'] %}
+  /var/www/html/preseed/{{ type }}.preseed:
+    file.managed
+      - contents: |
+          foo
+{% endfor %}
+
+/var/www/html/preseed/cache2.preseed:
   file.managed:
     - source: salt://formulas/pxe/files/cache.preseed
     - makedirs: True
