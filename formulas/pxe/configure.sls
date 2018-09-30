@@ -28,9 +28,9 @@ php7.0_module:
 /var/www/html/hosts:
   file.managed:
     - contents: |
-      {% for type in salt['pillar.get']('hosts', {}).items() %}
-        {% for mac in pillar['hosts'][type]['macs']  %}
-        {{ mac }}
+      {% for type, macs in salt['pillar.get']('hosts', {}).items() %}
+        {% for macs in pillar['hosts'][type] %}
+          {{ macs }}
         {% endfor %}
       {% endfor %}
 /var/www/html/index.php:
