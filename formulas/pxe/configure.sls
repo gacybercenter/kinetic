@@ -27,8 +27,12 @@ php7.0_module:
 
 /var/www/html/hosts:
   file.managed:
-    - contents_pillar: hosts
-
+    - contents: |
+      {% for type, macs in salt['pillar.get']('hosts', {}).items() %}
+        {% for mac in macs %}
+         {{ mac }}={{ type }}
+        {% endfor %}
+      {% endfor %}
 /var/www/html/index.php:
   file.managed:
     - source: salt://formulas/pxe/files/index.php
