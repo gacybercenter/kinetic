@@ -8,5 +8,5 @@ php7.0:
   pkg.installed
 
 git:
-  pkg.installed
+  pkg.installed:
     - reload_modules: True
