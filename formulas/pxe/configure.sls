@@ -29,9 +29,7 @@ php7.0_module:
   file.managed:
     - contents: |
       {% for type, macs in salt['pillar.get']('hosts', {}).iteritems() %}
-        {% for mac in macs.iteritems() %}
-          {{ mac }}
-          {{ macs }}={{ type }}
+          {{ macs }}[loop.index0]={{ type }}
         {% endfor %}
       {% endfor %}
 /var/www/html/index.php:
