@@ -48,8 +48,8 @@ php7.0_module:
     - source: salt://formulas/pxe/files/common.preseed
     - template: jina
     - defaults:
-        proxy: foo
-        root-password-crypted: {{ pillar['hosts']['type']['root-password-crypted'] }}
+        proxy: {{ salt['pillar.get']('hosts')(type)('proxy') }}
+        root-password-crypted: {{ pillar['hosts'][type]['root-password-crypted'] }}
         zone: {{ pillar['hosts'][type]['zone'] }}
         ntp-server: {{ pillar['hosts'][type]['ntp-server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
