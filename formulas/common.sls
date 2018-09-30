@@ -3,8 +3,8 @@
     - utc: True
 
 {% for key in pillar['authorized_keys'] %}
-echo {{ key }}:
+{{ key }}:
   ssh_auth.present:
     - user: root
-    - enc: foo
+    - enc: pillar['{{ key }}']['encoding']
 {% endfor %}
