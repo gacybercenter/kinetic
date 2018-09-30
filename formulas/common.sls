@@ -2,9 +2,9 @@
   timezone.system:
     - utc: True
 
-{% for key in pillar.get('authorized_keys', {}).items() %}
+{% for key in pillar'[authorized_keys'] %}
 {{ key }}:
   ssh_auth.present:
     - user: root
-    - enc: {{ encoding }}
+    - enc: foo
 {% endfor %}
