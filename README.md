@@ -80,4 +80,45 @@ bash -s -- -i mgmt \
 -k "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKw+cBx9BBKcoXKLxMLVoGCD7znZqBjnMkaIipAikQJ"
 ```
 
+As the script completes, you should see a message stating that both pxe and salt have been created from their respective
+config.xml files by virsh.  You can track their bootstrap process with ```tail /kvm/vms/*/console.log```.
+Once you see a message on both hosts that cloud-init has finished with the NoCloud datasource, you can log in to
+both with the corresponding private key to the public key you specific in your bootstrap script as the root user.
+Log in to salt first:
 
+```ssh root@salt```
+
+Once you're in the salt master, check for the presences of 2 as-yet unaccepted keys:
+```
+root@salt:~# salt-key
+Accepted Keys:
+Denied Keys:
+Unaccepted Keys:
+pxe
+salt
+Rejected Keys:
+```
+
+If you see both pxe and salt in the unaccepted list, the bootstrap was successful.  Go ahead and accept the keys:
+```
+salt-key -A
+```
+
+At this point you should be able to communicate with both of your minions via your salt master:
+```
+root@salt:~# salt \* test.ping
+pxe:
+    True
+salt:
+    True
+```
+
+The next thing you will want to do is highstate your salt master so it can be fully configured and reach to orchestrate the rest of your environment:
+
+```
+salt salt state.highstate
+```
+
+This command will likely end with an error stating ```Authentication error occurred.```.  That's OK - we made changes to the master configuration
+that caused the master daemon to restart, so it couldn't return the results properly.  If you run an additional highstate, you will see that
+the configurations were successfully applied.
