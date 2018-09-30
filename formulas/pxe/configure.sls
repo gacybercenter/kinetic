@@ -27,7 +27,7 @@ php7.0_module:
 
 /var/www/html/hosts:
   file.managed:
-    contents_pillar: hosts
+    - contents_pillar: hosts
 
 /var/www/html/index.php:
   file.managed:
