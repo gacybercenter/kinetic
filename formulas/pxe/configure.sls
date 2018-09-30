@@ -27,7 +27,4 @@ php7.0_module:
 
 /var/www/html/index.php:
   file.managed:
-    - contents: |
-        <?php
-        phpinfo();
-        ?>
+    - source: salt://formulas/pxe/files/index.php
