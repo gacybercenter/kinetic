@@ -28,8 +28,8 @@ php7.0_module:
 /var/www/html/hosts:
   file.managed:
     - contents: |
-      {% for type, macs in salt['pillar.get']('hosts', {}).items() %}
-          {{ macs[0] }}={{ type }}
+      {% for type, macs in salt['pillar.get']('hosts', {}).iteritems() %}
+          {{ macs }}={{ type }}
       {% endfor %}
 /var/www/html/index.php:
   file.managed:
