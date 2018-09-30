@@ -71,6 +71,11 @@ where
 
 Example:
 
-```curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh | bash -s -- -i mgmt -f https://github.com/GeorgiaCyber/kinetic.git -p https://github.com/GeorgiaCyber/kinetic-pillar-sample.git```
+```
+curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
+bash -s -- -i mgmt \
+-f https://github.com/GeorgiaCyber/kinetic.git \
+-p https://github.com/GeorgiaCyber/kinetic-pillar-sample.git
+```
 
 
