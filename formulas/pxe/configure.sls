@@ -54,9 +54,3 @@ php7.0_module:
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
 {% endfor %}
-
-/var/www/html/preseed/cache2.preseed:
-  file.managed:
-    - source: salt://formulas/pxe/files/cache.preseed
-    - makedirs: True
-    - template: jinja
