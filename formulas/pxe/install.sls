@@ -13,3 +13,6 @@ php7.0:
 git:
   pkg.installed:
     - reload_modules: True
+
+uuid-runtime:
+  pkg.installed
