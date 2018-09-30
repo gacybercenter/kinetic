@@ -113,7 +113,7 @@ salt:
     True
 ```
 
-The next thing you will want to do is highstate your salt master so it can be fully configured and reach to orchestrate the rest of your environment:
+The next thing you will want to do is highstate your salt master so it can be fully configured and ready to orchestrate the rest of your environment:
 
 ```
 salt salt state.highstate
