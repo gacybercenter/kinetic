@@ -49,7 +49,7 @@ php7.0_module:
     - template: jina
     - defaults:
         proxy: foo
-        root-password-crypted: {{ pillar['hosts'][type]['root-password-crypted'] }}
+        root-password-crypted: {{ pillar['hosts']['type']['root-password-crypted'] }}
         zone: {{ pillar['hosts'][type]['zone'] }}
         ntp-server: {{ pillar['hosts'][type]['ntp-server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
