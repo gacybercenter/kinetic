@@ -45,8 +45,14 @@ php7.0_module:
 {% for type in pillar['hosts'] %}
 /var/www/html/preseed/{{ type }}.preseed:
   file.managed:
-    - contents: |
-        foo
+    - source: salt://formulas/pxe/files/common.preseed
+    - template: jina
+    - defaults:
+        proxy: {{ pillar['hosts'][type]['proxy'] }}
+        root-password-crypted: {{ pillar['hosts'][type]['root-password-crypted'] }}
+        zone: {{ pillar['hosts'][type]['zone'] }}
+        ntp-server: {{ pillar['hosts'][type]['ntp-server'] }}
+        disk: {{ pillar['hosts'][type]['disk'] }}
 {% endfor %}
 
 /var/www/html/preseed/cache2.preseed:
