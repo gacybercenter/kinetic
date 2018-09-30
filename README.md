@@ -56,12 +56,15 @@ While the cache is optional, it is *highly* recommended that you use it.  Trying
 ## Quick Start
 
 On your configured Debian host, run:
-```curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh | bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }}```
+```curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh | 
+bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }}```
 
 where
 
 ```{{ interface }}``` = the name of the bridged management interface that you have configured on your debian host, e.g. mgmt.
+
 ```{{ gitfs file root}}``` = the repository from which you wish to source the kinetic static files.
+
 ```{{ pillar }}``` = the repository from which you wish to source your site-specific configuration.
 
 Example:
