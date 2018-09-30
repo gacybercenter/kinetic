@@ -1,5 +1,5 @@
 include:
   - /formulas/pxe/install
 
-fake-state:
-  test.nop
+php7.0_module:
+  apache_module.enabled
