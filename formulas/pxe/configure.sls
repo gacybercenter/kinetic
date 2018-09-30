@@ -49,7 +49,7 @@ php7.0_module:
     - template: jinja
     - defaults:
         proxy: {{ pillar['hosts'][type]['proxy'] }}
-        root_password_crypted: {{ pillar['hosts'][type]['root-password-crypted'] }}
+        root_password_crypted: {{ pillar['hosts'][type]['root_password_crypted'] }}
         zone: {{ pillar['hosts'][type]['zone'] }}
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
