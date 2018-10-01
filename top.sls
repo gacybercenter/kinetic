@@ -5,5 +5,5 @@ base:
     - formulas/salt/configure
   pxe:
     - formulas/pxe/configure
-  cache:
+  cache*:
     - formulas/cache/configure
