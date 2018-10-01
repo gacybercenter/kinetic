@@ -14,9 +14,9 @@ apt-cacher-ng_service:
 {% for os, args in pillar.get('images', {}).items() %}
 /var/www/html/images/{{ args['name'] }}:
   file.managed:
-    - source: {{ args['url'] }}
-    - source_hash: {{ args['hash'] }}
-    - source_hash_name: {{ args['source_hash_name'] }}
+    - source: {{ args['remote_url'] }}
+    - source_hash: {{ args['remote_hash'] }}
+    - source_hash_name: {{ args['remote_source_hash_name'] }}
     - makedirs: True
 
 
