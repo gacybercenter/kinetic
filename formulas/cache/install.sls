@@ -3,3 +3,6 @@ apache2:
 
 apt-cacher-ng:
   pkg.installed
+
+qemu-utils:
+  pkg.installed
