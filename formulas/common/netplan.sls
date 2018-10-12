@@ -5,7 +5,7 @@
           version: 2
           renderer: networkd
           ethernets:
-{%- for network in pillar['hosts']['controller']['networks'] %}
+{%- for network in pillar['hosts'][grains.item[type]]['networks'] %}
             {{ pillar['hosts']['controller']['networks'][network] }}:
               dhcp4: no
 {%- endfor %}
