@@ -69,6 +69,6 @@ fs:
 
 /kvm/images/{{ os }}-latest:
   file.symlink:
-    - target: /kvm/images/{{ args['name'] }}
+    - target: /kvm/images/{{ args['local_name'] }}
     - force: True
 {% endfor %}
