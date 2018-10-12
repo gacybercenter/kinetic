@@ -78,7 +78,7 @@ fs:
 {% endfor %}
 
 {% for network, interface in pillar['hosts']['controller']['networks'] %}
-  echo {{ network }} {{ interface }}:
-    cmd.run
+echo {{ network }} {{ interface }}:
+  cmd.run
 {% endfor %}
 
