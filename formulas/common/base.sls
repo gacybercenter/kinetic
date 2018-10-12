@@ -1,5 +1,12 @@
-{% if grains['upgraded'] != True %}
-{% if grains['os_family'] == 'Debian' %}
+{% set type = opts.id.split('-') %}
+type:
+  grains.present:
+    - value: {{ type[0] }}
+
+upgraded:
+  grains.present
+
+{% if grains['upgraded'] != True %} {% if grains['os_family'] == 'Debian' %}
 
 update_all:
   pkg.uptodate:
@@ -43,8 +50,3 @@ upgraded:
     - hostnames:
       - {{ grains['id'] }}
       - {{ grains['host'] }}
-
-{% set type = opts.id.split('-') %}
-type:
-  grains.present:
-    - value: {{ type[0] }}
