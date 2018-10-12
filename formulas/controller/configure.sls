@@ -2,7 +2,8 @@ include:
   - formulas/controller/install
 
 {% if 'raid' in pillar['hosts']['controller']['kvm_disk_config']['type'] %}
-raid_level = pillar['hosts']['controller']['kvm_disk_config']['type'].split('raid')
+
+{% set raid_level = pillar['hosts']['controller']['kvm_disk_config']['type'].split('raid') %}
 
 kvm_array:
   raid.present:
@@ -12,5 +13,6 @@ kvm_array:
     {% for device in pillar['hosts']['controller']['kvm_disk_config']['members'] %}
       - {{ device }}
     {% endfor %}
+
 {% endif %}
 
