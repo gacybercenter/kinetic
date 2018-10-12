@@ -63,6 +63,7 @@ fs:
     - source:
       - {{ args['local_url'] }}
     - source_hash: {{ args['local_hash'] }}
+    - source_hash_name: {{ args['local_source_hash_name'] }}
     - require:
       - /kvm/images
 
