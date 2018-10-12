@@ -1,5 +1,6 @@
 include:
   - formulas/controller/install
+  - formulas/common/netplan
 
 {% if 'raid' in pillar['hosts']['controller']['kvm_disk_config']['type'] %}
 {% set raid_level = pillar['hosts']['controller']['kvm_disk_config']['type'].split('raid') %}
@@ -76,13 +77,3 @@ fs:
     - require:
       - /kvm/images/{{ args['local_name'] }}
 {% endfor %}
-
-{% for network in pillar['hosts']['controller']['networks'] %}
-{{ pillar['hosts']['controller']['networks'][network] }}:
-  network.managed:
-    - enabled: True
-    - type: eth
-    - bridge: {{ network }}
-    - proto: manual
-{% endfor %}
-
