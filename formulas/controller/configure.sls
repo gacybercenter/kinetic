@@ -77,8 +77,8 @@ fs:
       - /kvm/images/{{ args['local_name'] }}
 {% endfor %}
 
-{% for network, interface in pillar['hosts']['controller']['networks'] %}
-echo {{ network }} {{ interface }}:
+{% for network in pillar['hosts']['controller']['networks'] %}
+echo {{ network }}:
   cmd.run
 {% endfor %}
 
