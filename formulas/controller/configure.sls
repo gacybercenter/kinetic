@@ -78,7 +78,11 @@ fs:
 {% endfor %}
 
 {% for network in pillar['hosts']['controller']['networks'] %}
-echo {{ network }}:
-  cmd.run
+pillar['hosts']['controller']['networks'][network]:
+  network.managed:
+    - enabled: True
+    - type: eth
+    - bridge: {{ network }}
+    - proto: manual
 {% endfor %}
 
