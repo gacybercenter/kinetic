@@ -7,9 +7,9 @@
           ethernets:
 {%- for network in pillar['hosts']['controller']['networks'] %}
 {% if pillar['hosts']['controller']['networks'][network] == 'management' %}
-{% set useDhcp = 'yes' %}
+{%- set useDhcp = 'yes' %}
 {% else %}
-{% set useDhcp = 'no' %}
+{%- set useDhcp = 'no' %}
 {% endif %}
             {{ pillar['hosts']['controller']['networks'][network] }}:
               dhcp4: no
