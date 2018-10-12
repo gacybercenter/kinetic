@@ -1,6 +1,6 @@
 base:
   '*':
-    - formulas/common
+    - formulas/common/base
   salt:
     - formulas/salt/configure
   pxe:
