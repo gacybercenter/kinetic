@@ -76,3 +76,9 @@ fs:
     - require:
       - /kvm/images/{{ args['local_name'] }}
 {% endfor %}
+
+{% for network, interface in pillar['hosts']['controller']['networks'] %}
+  echo {{ network }} {{ interface }}:
+    cmd.run
+{% endfor %}
+

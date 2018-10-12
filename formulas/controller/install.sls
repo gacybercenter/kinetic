@@ -19,3 +19,6 @@ mdadm:
 
 xfsprogs:
   pkg.installed
+
+bridge-utils:
+  pkg.installed
