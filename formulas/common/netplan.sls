@@ -10,7 +10,7 @@
               dhcp4: no
           bridges:
             {{ network }}:
-            dhcp4: yes
-              interfaces:
-                - {{ pillar['hosts']['controller']['networks'][network] }}
+              dhcp4: yes
+                interfaces:
+                  - {{ pillar['hosts']['controller']['networks'][network] }}
 {% endfor %}
