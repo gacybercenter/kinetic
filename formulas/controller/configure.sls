@@ -41,11 +41,14 @@ fs:
   blockdev.formatted:
     - name: /dev/mapper/kvm_vg-kvm_lv
     - fs_type: xfs
+    - require:
+      - lv_config
 
 /kvm:
   mount.mounted:
     - device: /dev/mapper/kvm_vg-kvm_lv
     - fstype: xfs
     - mkmnt: true
-
+    - require:
+      - fs
 {% endif %}
