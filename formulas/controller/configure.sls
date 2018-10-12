@@ -1,2 +1,2 @@
 include:
-  sls: formulas/controller/install
+  - formulas/controller/install
