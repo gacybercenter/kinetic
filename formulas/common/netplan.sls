@@ -6,13 +6,15 @@
           renderer: networkd
           ethernets:
 {%- for network in pillar['hosts']['controller']['networks'] %}
+            {{ pillar['hosts']['controller']['networks'][network] }}:
+              dhcp4: no
+{%- endfor %}
+{%- for network in pillar['hosts']['controller']['networks'] %}
 {%- if network == 'management' %}
 {%- set useDhcp = 'yes' %}
 {%- else %}
 {%- set useDhcp = 'no' %}
 {%- endif %}
-            {{ pillar['hosts']['controller']['networks'][network] }}:
-              dhcp4: no
           bridges:
             {{ network }}:
               dhcp4: {{ useDhcp }}
