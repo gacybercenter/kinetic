@@ -6,11 +6,11 @@
           renderer: networkd
           ethernets:
 {%- for network in pillar['hosts'][grains['type']]['networks'] %}
-            {{ pillar['hosts']['controller']['networks'][network] }}:
+            {{ pillar['hosts'][grains'[type]']['networks'][network] }}:
               dhcp4: no
 {%- endfor %}
           bridges: 
-{%- for network in pillar['hosts']['controller']['networks'] %}
+{%- for network in pillar['hosts'][grains['type']]['networks'] %}
 {%- if network == 'management' %}
 {%- set useDhcp = 'yes' %}
 {%- else %}
@@ -19,5 +19,5 @@
             {{ network }}:
               dhcp4: {{ useDhcp }}
               interfaces:
-                - {{ pillar['hosts']['controller']['networks'][network] }}
+                - {{ pillar['hosts'][grains['type']]['networks'][network] }}
 {%- endfor %}
