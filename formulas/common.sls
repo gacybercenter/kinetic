@@ -14,3 +14,7 @@
     - hostnames:
       - {{ grains['id'] }}
       - {{ grains['host'] }}
+
+type:
+  grains.present:
+    - value: foo
