@@ -26,3 +26,9 @@ qemu-img convert -f qcow2 {{ args['name'] }} {{ os }}.raw:
     - creates: /var/www/html/images/{{ os }}.raw
 {% endif %}
 {% endfor %}
+
+sha512sum * > images:
+  cmd.run:
+    - cwd: /var/www/html/images
+    - watch: 
+      - file: /var/www/html/images/*
