@@ -3,10 +3,8 @@ type:
   grains.present:
     - value: {{ type[0] }}
 
-upgraded:
-  grains.present
-
-{% if grains['upgraded'] != True %} {% if grains['os_family'] == 'Debian' %}
+{% if grains['upgraded'].absent %}
+{% if grains['os_family'] == 'Debian' %}
 
 update_all:
   pkg.uptodate:
