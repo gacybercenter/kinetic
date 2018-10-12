@@ -6,7 +6,7 @@ include:
 
 kvm_array:
   raid.present:
-    - name: /dev/kvm_array
+    - name: /dev/md/kvm_array
     - level: {{ raid_level[1] }}
     - devices:
     {% for device in pillar['hosts']['controller']['kvm_disk_config']['members'] %}
