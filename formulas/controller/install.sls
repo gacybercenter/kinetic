@@ -15,6 +15,7 @@ libvirt-daemon-system:
 
 mdadm:
   pkg.installed
+    - reload_modules: True
 
 xfsprogs:
   pkg.installed
