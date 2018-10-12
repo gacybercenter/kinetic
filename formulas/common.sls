@@ -15,6 +15,8 @@
       - {{ grains['id'] }}
       - {{ grains['host'] }}
 
+{% set type = opts.id.split('-') %}
+
 type:
   grains.present:
-    - value: foo
+    - value: {{ type[0] }}
