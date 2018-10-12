@@ -33,7 +33,7 @@ You will have to pass the bridge interface name to ```bootstrap.sh.```
 This host will run your salt master as well as your pxe server.
 This is the host on which you will run ```bootstrap.sh```.
 Both the salt master and tftp will run in separate kvm virtual machines.
-4. All hosts can reach your salt master on TCP 4505/4506.  There is no need for the master to be able to reach the hosts.  Salt has a pubsub architecture.
+4. All hosts can reach your salt master on TCP 4505/4506.  There is no need for the master to be able to reach the hosts on their management interface.  Salt has a pubsub architecture.
 5. Your dhcp server is issuing ipxe.efi as the efi 64 bit boot filename and next-server is set to pxe
 *NOTE* If your dhcp server does not support issuing hostname as next-server,
 you will need to create your own tftp server and have it issue [this](fixme) file.
