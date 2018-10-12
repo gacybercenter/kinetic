@@ -11,6 +11,6 @@
           bridges:
             {{ network }}:
               dhcp4: yes
-                interfaces:
-                  - {{ pillar['hosts']['controller']['networks'][network] }}
+              interfaces:
+                - {{ pillar['hosts']['controller']['networks'][network] }}
 {%- endfor %}
