@@ -12,3 +12,9 @@ libvirt-clients:
 
 libvirt-daemon-system:
   pkg.installed
+
+mdadm:
+  pkg.installed
+
+xfsprogs:
+  pkg.installed
