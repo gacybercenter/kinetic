@@ -9,13 +9,13 @@
             {{ pillar['hosts']['controller']['networks'][network] }}:
               dhcp4: no
 {%- endfor %}
+          bridges: 
 {%- for network in pillar['hosts']['controller']['networks'] %}
 {%- if network == 'management' %}
 {%- set useDhcp = 'yes' %}
 {%- else %}
 {%- set useDhcp = 'no' %}
 {%- endif %}
-          bridges:
             {{ network }}:
               dhcp4: {{ useDhcp }}
               interfaces:
