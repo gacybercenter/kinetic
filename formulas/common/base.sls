@@ -3,7 +3,7 @@ type:
   grains.present:
     - value: {{ type[0] }}
 
-{% if grains['upgraded'].absent %}
+{% if salt['grains.get']('os') != True %}
 {% if grains['os_family'] == 'Debian' %}
 
 update_all:
