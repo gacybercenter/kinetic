@@ -21,3 +21,8 @@
               interfaces:
                 - {{ pillar['hosts'][grains['type']]['networks'][network] }}
 {%- endfor %}
+
+netplan apply:
+  cmd.run:
+    - onchanges:
+      - /etc/netplan/01-netcfg.yaml
