@@ -56,6 +56,8 @@ fs:
 /kvm/images:
   file.directory:
     - makedirs: True
+    - require:
+      - /kvm
 
 {% for os, args in pillar.get('images', {}).items() %}
 /kvm/images/{{ args['local_name'] }}:
