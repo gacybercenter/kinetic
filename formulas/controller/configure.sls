@@ -78,7 +78,7 @@ fs:
 {% endfor %}
 
 {% for network in pillar['hosts']['controller']['networks'] %}
-pillar['hosts']['controller']['networks'][network]:
+{{ pillar['hosts']['controller']['networks'][network] }}:
   network.managed:
     - enabled: True
     - type: eth
