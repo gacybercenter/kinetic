@@ -2,7 +2,7 @@ include:
   - formulas/controller/install
 
 {% if 'raid' in pillar['hosts']['controller']['kvm_disk_config']['type'] %}
-{% raid_level = pillar['hosts']['controller']['kvm_disk_config']['type'].split('raid')
+{% raid_level = pillar['hosts']['controller']['kvm_disk_config']['type'].split('raid') %}
 
 kvm_array:
   raid.present:
