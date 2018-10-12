@@ -14,6 +14,3 @@ kvm_array:
     {% endfor %}
 
 {% endif %}
-
-echo {{ raid_level }}:
-  cmd.run
