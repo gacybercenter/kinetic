@@ -28,7 +28,7 @@ qemu-img convert -f qcow2 {{ args['name'] }} {{ os }}.raw:
 {% endfor %}
 
 sha512sum * > checksums:
-  cmd.run:
+  cmd.mod_watch:
     - cwd: /var/www/html/images
     - watch: 
       - file: /var/www/html/images/*
