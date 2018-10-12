@@ -58,7 +58,7 @@ fs:
     - makedirs: True
 
 {% for os, args in pillar.get('images', {}).items() %}
-/kvm/images/{{ args['name'] }}:
+/kvm/images/{{ args['local_source_hash_name'] }}:
   file.managed:
     - source:
       - {{ args['local_url'] }}
