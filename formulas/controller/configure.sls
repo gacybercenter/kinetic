@@ -73,4 +73,6 @@ fs:
   file.symlink:
     - target: /kvm/images/{{ args['local_name'] }}
     - force: True
+    - require:
+      - /kvm/images/{{ args['local_name'] }}
 {% endfor %}
