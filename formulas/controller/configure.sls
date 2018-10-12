@@ -52,3 +52,22 @@ fs:
     - require:
       - fs
 {% endif %}
+
+/kvm/images:
+  file.directory:
+    - makedirs: True
+
+{% for os, args in pillar.get('images', {}).items() %}
+/kvm/images/{{ args['name'] }}:
+  file.managed:
+    - source:
+      - {{ args['local_url'] }}
+    - source_hash: {{ args['local_hash'] }}
+    - require:
+      - /kvm/images
+
+/kvm/images/{{ os }}-latest:
+  file.symlink:
+    - target: /kvm/images/{{ args['name'] }}
+    - force: True
+{% endfor %}
