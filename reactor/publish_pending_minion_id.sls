@@ -1,6 +1,6 @@
 {% set hostname = data['path'].split('/') %}
 
-testing reactor:
+publish pending id:
   local.mine.send:
     - tgt: 'pxe'
     - arg:

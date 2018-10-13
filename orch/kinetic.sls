@@ -11,10 +11,10 @@ pxe_setup:
       - master_setup
 
 {% set cache_id = salt.saltutil.runner('mine.get',
-    tgt='pxe',
-    fun='pending_hosts') %}
+    tgt='*',
+    fun='file.read') %}
 
-echo {{ cache_id['pxe'][0] }}:
+echo {{ cache_id }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
