@@ -44,4 +44,4 @@ cache_setup:
     - tgt: 'cache*'
     - highstate: true
     - require:
-      - provision_cache
+      - wait_for_cache_provisioning
