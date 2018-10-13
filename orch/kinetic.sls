@@ -15,6 +15,7 @@ wait_for_cache_provisioning:
     - name: salt/auth
     - id_list:
       - 'cache*'
+    - timeout: 10
 
 echo foo:
   salt.function:
