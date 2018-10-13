@@ -7,6 +7,9 @@ wait_for_cache_identity_assignment:
 
 {% set cache_id = salt['cmd.run']('ls /tmp/cache') %}
 
+rm /tmp/cache/{{ cache_id }}:
+  cmd.run
+
 wait_for_{{ cache_id }}_provisioning:
   salt.wait_for_event:
     - name: salt/auth
