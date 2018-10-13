@@ -14,7 +14,7 @@ wait_for_cache_provisioning:
   salt.wait_for_event:
     - name: salt/auth
     - id_list:
-      - cache-fcbc711f-40f9-4c5c-8ace-43c8080cb566
+      - cache*
     - timeout: 10
 
 auth flag:
