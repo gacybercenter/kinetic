@@ -28,9 +28,24 @@ wait_for_cache_hostname_assignment:
     - require:
       - rotate_cache
 
+echo host:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - args:
+      - echo {{ cache_id['pxe'] }}
+
 {% set cache_id = salt.saltutil.runner('mine.get',
     tgt='*',
     fun='file.read')%}
+
+echo host2:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - args:
+      - echo {{ cache_id['pxe'] }}
+
 
 wait_for_cache_provisioning:
   salt.wait_for_event:
