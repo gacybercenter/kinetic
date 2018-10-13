@@ -1,3 +1,5 @@
+{% if salt['file.exists']['/etc/salt/pki/master/minions_pre/pxe'] == True %}
+
 accept_pxe_key:
   salt.function:
     - name: file.move
@@ -6,3 +8,4 @@ accept_pxe_key:
       - /etc/salt/pki/master/minions_pre/pxe
       - /etc/salt/pki/master/minions/pxe
 
+{% endif %}
