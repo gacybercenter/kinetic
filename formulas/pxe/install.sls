@@ -16,3 +16,6 @@ git:
 
 uuid-runtime:
   pkg.installed
+
+python-pyinotify:
+  pkg.installed
