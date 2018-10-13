@@ -3,3 +3,6 @@ haveged:
 
 curl:
   pkg.installed
+
+ipmitool:
+  pkg.installed
