@@ -13,7 +13,8 @@ pxe_setup:
 wait_for_cache_provisioning:
   salt.wait_for_event:
     - name: salt/auth
-    - event_id: cache
+    - id_list:
+      - "cache*"
     - timeout: 10
 
 auth flag:
