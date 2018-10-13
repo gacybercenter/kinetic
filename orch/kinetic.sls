@@ -10,7 +10,11 @@ pxe_setup:
     - require:
       - master_setup
 
-echo {{ salt['mine.get']('pxe', 'pending_hosts') }}:
+{% set cache_id = salt.saltutil.runner('mine.get',
+    tgt='pxe',
+    fun='pending_hosts' %}
+
+echo {{ cache_id }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
@@ -22,6 +26,7 @@ echo {{ salt['mine.get']('pxe', 'pending_hosts') }}:
 #      - formulas/salt/rotate_cache    
 #    - require:
 #      - pxe_setup
+
 
 wait_for_cache_provisioning:
   salt.wait_for_event:
