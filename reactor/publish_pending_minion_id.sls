@@ -4,4 +4,4 @@ testing reactor:
   local.cmd.run:
     - tgt: 'salt'
     - arg:
-      - touch /root/{{ type[0] }}/{{ data['raw'] }}
+      - mkdir -p /tmp/{{ type[0] }} && touch /tmp/{{ type[0] }}/{{ data['raw'] }}
