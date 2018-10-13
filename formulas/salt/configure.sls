@@ -1,6 +1,11 @@
 include:
   - /formulas/salt/install
 
+mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
+  cmd.run:
+    - creates:
+      - /etc/salt/pki/master/minions/pxe
+
 /etc/salt/master.d/gitfs_pillar.conf:
   file.managed:
     - contents: |
