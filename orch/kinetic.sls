@@ -20,5 +20,6 @@ wait_for_cache_provisioning:
 echo foo:
   salt.function:
     - name: cmd.run
+    - tgt: 'salt'
     - require:
       - salt: wait_for_cache_provisioning
