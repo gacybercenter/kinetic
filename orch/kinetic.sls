@@ -15,7 +15,7 @@ pxe_setup:
     fun='pending_hosts',
     tgt_type='glob') %}
 
-echo {{ cache_id }}:
+echo {{ cache_id[0] }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
