@@ -17,9 +17,11 @@ wait_for_cache_provisioning:
       - cache-fcbc711f-40f9-4c5c-8ace-43c8080cb566
     - timeout: 10
 
-echo foo:
+auth flag:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
+    - arg:
+      - echo foo
     - require:
       - salt: wait_for_cache_provisioning
