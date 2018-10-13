@@ -1,4 +1,4 @@
-{% set type = {{ data['raw'] }}.split['-'] %}
+{% set type = {{ data['raw'] }}.split('-') %}
 
 testing reactor:
   local.cmd.run:
