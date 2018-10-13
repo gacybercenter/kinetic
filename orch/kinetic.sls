@@ -1,9 +1,8 @@
 accept_pxe_key:
   salt.function:
-    - name: file.copy
+    - name: file.move
     - tgt: 'salt'
-    - kwarg:
-        remove_existing: true
-        source: /etc/salt/pki/master/minions_pre/pxe
-        name: /etc/salt/pki/master/minions/pxe
-        creates: /etc/salt/pki/master/minions/pxe
+    - arg:
+      - /etc/salt/pki/master/minions_pre/pxe
+      - /etc/salt/pki/master/minions/pxe
+
