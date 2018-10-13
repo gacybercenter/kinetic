@@ -14,10 +14,12 @@ pxe_setup:
     tgt='pxe',
     fun='pending_hosts') | dictsort() %}
 
-echo {{ cache_id }}:
+{% for item in cache_id %}
+echo {{ item }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
+{% endfor %}
 
 #rotate_cache:
 #  salt.state:
