@@ -18,6 +18,6 @@ uuid-runtime:
   pkg.installed
 
 python-pyinotify:
-  pkg.installed
+  pkg.installed:
     - reload_modules: True
 
