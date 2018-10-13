@@ -30,7 +30,7 @@ php7.0_module:
   file.absent
 
 /var/www/html/pending_hosts:
-  directory.present
+  file.directory
 
 /var/www/html/hosts:
   file.managed:
