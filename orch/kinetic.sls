@@ -15,7 +15,7 @@ wait_for_cache_provisioning:
     - name: salt/auth
     - id_list:
       - pend
-    - id: act
+    - event_id: act
     - timeout: 10
 
 validate_cache_key:
