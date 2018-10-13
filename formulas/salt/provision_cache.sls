@@ -3,8 +3,6 @@ wait_for_cache_identity_assignment:
     - name: salt/beacon/pxe/log/bootstrap/request/event
     - id_list:
       - pxe
-    - require:
-      - rotate_cache
     - timeout: 300
 
 {% set cache_id = salt['cmd.run']('ls /tmp/cache') %}
