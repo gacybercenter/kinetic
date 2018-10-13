@@ -1,7 +1,9 @@
-{% set type = data['raw'].split('-') %}
+{% set hostname = data['path'].split('/') %}
 
 testing reactor:
-  local.cmd.run:
-    - tgt: 'salt'
+  local.mind.send:
+    - tgt: 'pxe'
     - arg:
-      - mkdir -p /tmp/{{ type[0] }} && touch /tmp/{{ type[0] }}/{{ data['raw'] }}
+      - pending_host_foo
+      - mine_function: file.read
+      - /var/www/html/pending_hosts/cache-5ec45ab3-25f9-494a-bd1c-d07978c83fbd
