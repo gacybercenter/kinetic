@@ -5,4 +5,5 @@ accept_pxe_key:
     - arg:
       - /etc/salt/pki/master/minions_pre/pxe
       - /etc/salt/pki/master/minions/pxe
-    - remove_existing: true
+    - kwarg:
+        remove_existing: true
