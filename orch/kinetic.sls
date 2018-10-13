@@ -10,6 +10,10 @@ pxe_setup:
     - require:
       - master_setup
 
+echo {{ salt['mine.get']('pxe', 'pending_hosts') }}:
+  salt.function:
+    - tgt: salt
+
 #rotate_cache:
 #  salt.state:
 #    - tgt: 'salt'
