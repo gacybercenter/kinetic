@@ -57,10 +57,12 @@ accept_cache:
   salt.wheel:
     - name: key-accept
     - match: {{ cache_id['pxe'] }}
+    - require:
+      - wait_for_cache_provisioning
 
 cache_setup:
   salt.state:
     - tgt: 'cache*'
     - highstate: true
     - require:
-      - wait_for_cache_provisioning
+      - accept_cache
