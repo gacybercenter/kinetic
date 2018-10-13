@@ -12,6 +12,7 @@ pxe_setup:
 
 echo {{ salt['mine.get']('pxe', 'pending_hosts') }}:
   salt.function:
+    - name: cmd.run
     - tgt: salt
 
 #rotate_cache:
