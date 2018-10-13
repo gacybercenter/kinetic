@@ -12,7 +12,7 @@ pxe_setup:
 
 {% set cache_id = salt.saltutil.runner('mine.get',
     tgt='pxe',
-    fun='pending_hosts') | dictsort() %}
+    fun='pending_hosts') %}
 
 {% for item in cache_id %}
 echo {{ item }}:
