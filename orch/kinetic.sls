@@ -10,13 +10,19 @@ pxe_setup:
     - require:
       - master_setup
 
+rotate_cache:
+  salt.state:
+    - tgt: 'salt'
+    - sls:
+      - formulas/salt/rotate_cache    
+
 wait_for_cache_provisioning:
   salt.wait_for_event:
     - name: salt/auth
     - id_list:
       - pend
     - event_id: act
-    - timeout: 10
+    - timeout: 600
 
 validate_cache_key:
   salt.wheel:
@@ -24,3 +30,10 @@ validate_cache_key:
     - match: cache*
     - require:
       - wait_for_cache_provisioning
+
+cache_setup:
+  salt.state:
+    - tgt: 'cache*'
+    - highstate: true
+    - require:
+      - validate_cache_key
