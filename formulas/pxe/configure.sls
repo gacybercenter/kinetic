@@ -5,6 +5,11 @@ include:
   file.managed:
     - source: salt://formulas/pxe/files/apache2.conf
 
+apache2:
+  service.running:
+    - watch:
+      - file: /etc/apache2/apache2.conf
+
 https://git.ipxe.org/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
