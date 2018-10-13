@@ -9,3 +9,15 @@ pxe_setup:
     - highstate: true
     - require:
       - master_setup
+
+wait_for_cache_provisioning:
+  salt.wait_for_event:
+    - name: salt/auth
+    - id_list:
+      - 'cache*'
+
+echo foo:
+  salt.function:
+    - name: cmd.run
+    - require:
+      - salt: wait_for_cache_provisioning
