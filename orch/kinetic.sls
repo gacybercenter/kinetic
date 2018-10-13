@@ -10,18 +10,6 @@ pxe_setup:
     - require:
       - master_setup
 
-wait_for_cache_hostname_assignment:
-  salt.wait_for_event:
-    - name: salt/job/*/ret/pxe
-    - event_id: fun
-    - id_list:
-      - mine.send
-    - timeout: 300
-
-{% set cache_id = salt.saltutil.runner('mine.get',
-    tgt='*',
-    fun='file.read')%}
-
 rotate_cache:
   salt.state:
     - tgt: 'salt'
@@ -29,6 +17,20 @@ rotate_cache:
       - formulas/salt/rotate_cache    
     - require:
       - pxe_setup
+
+wait_for_cache_hostname_assignment:
+  salt.wait_for_event:
+    - name: salt/job/*/ret/pxe
+    - event_id: fun
+    - id_list:
+      - mine.send
+    - timeout: 300
+    - require:
+      - rotate_cache
+
+{% set cache_id = salt.saltutil.runner('mine.get',
+    tgt='*',
+    fun='file.read')%}
 
 wait_for_cache_provisioning:
   salt.wait_for_event:
