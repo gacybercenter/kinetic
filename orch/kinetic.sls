@@ -12,9 +12,9 @@ pxe_setup:
 
 {% set cache_id = salt.saltutil.runner('mine.get',
     tgt='*',
-    fun='file.read') | dictsort()%}
+    fun='file.read')%}
 
-echo {{ cache_id[0] }}:
+echo {{ cache_id['pxe'] }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
