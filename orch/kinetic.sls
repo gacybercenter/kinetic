@@ -13,15 +13,12 @@ pxe_setup:
 wait_for_cache_provisioning:
   salt.wait_for_event:
     - name: salt/auth
+    - event_id: act
     - id_list:
-      - "cache*"
+      - pend
     - timeout: 10
 
-auth flag:
-  salt.function:
-    - name: cmd.run
-    - tgt: 'salt'
-    - arg:
-      - echo foo
-    - require:
-      - salt: wait_for_cache_provisioning
+validate_cache_key:
+  salt.wheel:
+    - name: key.accept
+    - match: cache*
