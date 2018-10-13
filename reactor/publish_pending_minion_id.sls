@@ -4,4 +4,4 @@ testing reactor:
   local.cmd.run:
     - tgt: 'salt'
     - arg:
-      - echo {{ data['raw'] }} > /root/{{ type[0] }}
+      - echo {{ data['raw'] }} > /root/{{ type }}
