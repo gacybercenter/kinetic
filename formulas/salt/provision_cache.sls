@@ -21,7 +21,7 @@ validate_cache_key:
     - name: key.accept
     - match: cache*
     - require:
-      - wait_for_cache_provisioning
+      - wait_for_{{ cache_id }}_provisioning
 
 cache_setup:
   salt.state:
