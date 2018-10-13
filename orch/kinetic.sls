@@ -37,14 +37,14 @@ echo host:
   salt.function:
     - name: cmd.run
     - tgt: salt
-    - args:
+    - arg:
       - echo {{ cache_id['pxe'] }}
 
 echo host2:
   salt.function:
     - name: cmd.run
     - tgt: salt
-    - args:
+    - arg:
       - echo {{ cache_id['pxe'] }}
 
 
