@@ -15,7 +15,7 @@ wait_for_cache_provisioning:
     - name: salt/auth
     - id_list:
       - {{ cache_id['pxe'] }}
-    - timeout: 1200
+    - timeout: 10
 
 echo host2:
   salt.function:
