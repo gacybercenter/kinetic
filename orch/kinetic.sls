@@ -28,6 +28,13 @@ wait_for_cache_hostname_assignment:
     - require:
       - rotate_cache
 
+wait_for_mine_update:
+  salt.function:
+    - name: test.sleep
+    - tgt: salt
+    -  arg:
+      - 10
+
 {% set cache_id = salt.saltutil.runner('mine.get',
     tgt='*',
     fun='file.read')%}
