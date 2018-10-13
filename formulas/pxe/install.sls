@@ -19,3 +19,5 @@ uuid-runtime:
 
 python-pyinotify:
   pkg.installed
+    - reload_modules: True
+
