@@ -14,7 +14,7 @@ pxe_setup:
     tgt='*',
     fun='file.read') | dictsort()%}
 
-echo {{ cache_id['pxe'] }}:
+echo {{ cache_id[0] }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
