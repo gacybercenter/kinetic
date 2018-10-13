@@ -22,3 +22,5 @@ validate_cache_key:
   salt.wheel:
     - name: key.accept
     - match: cache*
+    - require:
+      - wait_for_cache_provisioning
