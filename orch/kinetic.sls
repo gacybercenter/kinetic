@@ -32,7 +32,6 @@ wait_for_cache_hostname_assignment:
     tgt='*',
     fun='file.read')%}
 
-
 echo host:
   salt.function:
     - name: cmd.run
@@ -53,6 +52,11 @@ echo host2:
     - tgt: salt
     - arg:
       - echo {{ cache_id['pxe'] }}
+
+accept_cache:
+  salt.wheel:
+    - name: key-accept
+    - match: {{ cache_id['pxe'] }}
 
 cache_setup:
   salt.state:
