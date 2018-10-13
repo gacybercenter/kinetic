@@ -35,6 +35,9 @@ php7.0_module:
 /var/www/html/index.html:
   file.absent
 
+/var/www/html/pending_hosts:
+  directory.present
+
 /var/www/html/hosts:
   file.managed:
     - contents: |
