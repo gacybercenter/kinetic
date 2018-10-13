@@ -10,21 +10,20 @@ pxe_setup:
     - require:
       - master_setup
 
-rotate_cache:
-  salt.state:
-    - tgt: 'salt'
-    - sls:
-      - formulas/salt/rotate_cache    
-    - require:
-      - pxe_setup
+#rotate_cache:
+#  salt.state:
+#    - tgt: 'salt'
+#    - sls:
+#      - formulas/salt/rotate_cache    
+#    - require:
+#      - pxe_setup
 
-provision_cache:
-  salt.state:
-    - tgt: 'salt'
-    - sls:
-      - formulas/salt/provision_cache
-    - require:
-      - rotate_cache
+wait_for_cache_provisioning:
+  salt.wait_for_event:
+    - name: salt/auth
+    - id_list:
+      - {{ salt mine['mine.get']('pxe', 'pending_hosts')]
+    - timeout: 600
 
 cache_setup:
   salt.state:
