@@ -18,6 +18,10 @@ rotate_cache:
     - require:
       - pxe_setup
 
+wait_for_cache_identity_assignment:
+  salt.wait_for_event:
+    - name: salt/beacon/pxe/log/bootstrap/request/event
+
 wait_for_cache_provisioning:
   salt.wait_for_event:
     - name: salt/auth
