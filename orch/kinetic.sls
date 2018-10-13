@@ -22,7 +22,7 @@ wait_for_cache_provisioning:
   salt.wait_for_event:
     - name: salt/auth
     - id_list:
-      - {{ salt['mine.get']('pxe', 'pending_hosts')] }}
+      - {{ salt['mine.get']('pxe', 'pending_hosts') }}
     - timeout: 600
 
 cache_setup:
