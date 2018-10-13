@@ -5,4 +5,4 @@ testing reactor:
     - tgt: 'pxe'
     - arg:
       - file.read
-      - /var/www/html/pending_hosts/{{ hostname[5] }}
+      - {{ data['path'] }}
