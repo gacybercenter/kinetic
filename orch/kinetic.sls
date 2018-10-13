@@ -25,9 +25,9 @@ wait_for_cache_provisioning:
       - {{ salt['mine.get']('pxe', 'pending_hosts') }}
     - timeout: 600
 
-cache_setup:
-  salt.state:
-    - tgt: 'cache*'
-    - highstate: true
-    - require:
-      - provision_cache
+##cache_setup:
+##  salt.state:
+##    - tgt: 'cache*'
+##    - highstate: true
+##    - require:
+##      - provision_cache
