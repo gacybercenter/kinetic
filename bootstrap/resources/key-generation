@@ -1,7 +1,9 @@
-Key-Type: ecdsa
+Key-Type: eddsa
 Key-Curve: Ed25519
+Key-Usage: sign
 Subkey-Type: ecdh
 Subkey-Curve: Curve25519
+Subkey-Usage: encrypt
 Name-Real: kinetic
 Name-Email: kinetic@georgiacyber
 Expire-Date: 0
