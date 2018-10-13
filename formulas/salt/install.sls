@@ -6,3 +6,6 @@ curl:
 
 ipmitool:
   pkg.installed
+
+freeipmi-tools:
+  pkg.installed
