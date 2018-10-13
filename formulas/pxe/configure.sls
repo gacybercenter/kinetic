@@ -1,15 +1,9 @@
 include:
   - /formulas/pxe/install
 
-/etc/apache2/apache2.conf:
-  file.managed:
-    - source: salt://formulas/pxe/files/apache2.conf
-
 apache2_service:
   service.running:
     - name: apache2
-    - watch:
-      - file: /etc/apache2/apache2.conf
 
 https://git.ipxe.org/ipxe.git:
   git.latest:
