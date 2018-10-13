@@ -15,6 +15,8 @@ rotate_cache:
     - tgt: 'salt'
     - sls:
       - formulas/salt/rotate_cache    
+    - require:
+      - pxe_setup
 
 wait_for_cache_provisioning:
   salt.wait_for_event:
@@ -23,6 +25,8 @@ wait_for_cache_provisioning:
       - pend
     - event_id: act
     - timeout: 600
+    - require:
+      - rotate_cache
 
 validate_cache_key:
   salt.wheel:
