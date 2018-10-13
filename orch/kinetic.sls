@@ -18,9 +18,29 @@ rotate_cache:
     - require:
       - pxe_setup
 
+provision_cache:
+  salt.state:
+    - tgt: 'salt'
+    - sls:
+      - formulas/salt/provision_cache
+    - require:
+      - rotate_cache
+
 wait_for_cache_identity_assignment:
   salt.wait_for_event:
     - name: salt/beacon/pxe/log/bootstrap/request/event
+    - id_list:
+      - pxe
+    - require:
+      - rotate_cache
+    - timeout: 300
+
+populate_cache_id:
+  salt.function:
+    - name: file.read
+    - tgt: 'salt'
+    - arg:
+      - /
 
 wait_for_cache_provisioning:
   salt.wait_for_event:
