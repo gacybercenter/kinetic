@@ -5,8 +5,9 @@ include:
   file.managed:
     - source: salt://formulas/pxe/files/apache2.conf
 
-apache2:
+apache2_service:
   service.running:
+    - name: apache2
     - watch:
       - file: /etc/apache2/apache2.conf
 
