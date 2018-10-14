@@ -69,9 +69,9 @@ php7.0_module:
 {% if cache_dict == {} %}
         proxy: ""
 {% else %}
-{% for host,value in cache_dict.iteritems() %}
+{% for host, addresses in cache_dict.iteritems() %}
 {% set mod = salt.cmd.shell("shuf -i 1-"+loop.length|string+" -n 1") %}
-        proxy: http://{{ cache_dict[host][0] }}:3142 {{ loop.length }} {{ value }} {{ host }} {{ loop.index }}
+        proxy: http://{{ [addresses][0] }}:3142 {{ loop.length }} {{ addresses }} {{ host }} {{ loop.index }}
 {% endfor %}
 {% endif %}
 {% endif %}
