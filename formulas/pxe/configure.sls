@@ -70,8 +70,7 @@ php7.0_module:
         proxy: ""
 {% else %}
 {% for host in cache_addresses_dict %}
-{% set random = salt.cmd.shell("shuf -i 1-"+loop.length|string+" -n 1") %}
-        proxy: http://{{ cache_addresses_dict[host][0] }}:3142 {{ loop.length }} {{ host }} {{ random }} {{ loop.index }}
+        proxy: http://{{ cache_addresses_dict[host][0] }}:3142
 {% endfor %}
 {% endif %}
 {% endif %}
