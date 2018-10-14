@@ -12,4 +12,4 @@ wait_for_cache_provisioning:
     - name: salt/auth
     - id_list:
       - cache-0a90ddc7-4b84-44ae-99f5-51017d0d7034
-    - timeout: 1200
+    - timeout: 10
