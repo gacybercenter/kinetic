@@ -1,4 +1,4 @@
-{% set host = salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] }}
+{% set host = salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] %}
 
 test:
   salt.function:
