@@ -69,7 +69,7 @@ php7.0_module:
 {% if cache_addresses_dict == {} %}
         proxy: ""
 {% else %}
-{% for host,value in cache_addresses_dict.iteritems() %}
+{% for host in cache_addresses_dict %}
         proxy: http://{{ cache_addresses_dict[host][0] }}:3142 {{ loop.length }} {{ value }} {{ host }}
 {% endfor %}
 {% endif %}
