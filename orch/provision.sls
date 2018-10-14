@@ -9,7 +9,7 @@ wait_for_cache_provisioning:
 
 accept_cache:
   salt.wheel:
-    - name: key-accept
+    - name: key.accept
     - match: {{ host }}
     - require:
       - wait_for_cache_provisioning
