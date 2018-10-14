@@ -33,7 +33,7 @@ wait_for_mine_update:
     - name: test.sleep
     - tgt: salt
     - arg:
-      - 10
+      - 60
 
 {% set cache_id = salt.saltutil.runner('mine.get',
     tgt='*',
