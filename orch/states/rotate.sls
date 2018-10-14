@@ -2,7 +2,7 @@
 {% set ipmi_password = pillar['ipmi_password'] %}
 {% for address in pillar['hosts'][type]['ipmi_addresses'] %}
 
-ipmitool -I lanplus chassis bootdev pxe options=efiboot -U ADMIN -P {{ ipmi_password }} -H {{ address }}:
+ipmitool -I lanplus chassis bootdev pxe options=efiboot -U ADMIN -P ipmi_password -H {{ address }}:
   cmd.run
 
 echo {{ ipmi_password }}:
