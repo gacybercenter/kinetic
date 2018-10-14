@@ -1,5 +1,6 @@
 include:
   - orch/test
+    - order: last
 
 master_setup:
   salt.state:
