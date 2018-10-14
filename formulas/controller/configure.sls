@@ -111,8 +111,22 @@ fs:
 /kvm/images/{{ args['local_name'] }}:
   file.managed:
     - source:
+{% if args['local_url'] == "pull_from_mine" %}
+{% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+{% for host in cache_addresses_dict %}
+      - http://{{ cache_addresses_dict[host][0] }}/images/{{ args['local_name'] }}
+{% endfor %}
+{% else %}
       - {{ args['local_url'] }}
-    - source_hash: {{ args['local_hash'] }}
+{% endif %}
+{% if args['local_hash'] == "pull_from_mine" %}
+{% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+{% for host in cache_addresses_dict %}
+      - http://{{ cache_addresses_dict[host][0] }}/images/checksum
+{% endfor %}
+{% else %}
+      - {{ args['local_hash'] }}
+{% endif %}
     - source_hash_name: {{ args['local_source_hash_name'] }}
     - require:
       - /kvm/images
