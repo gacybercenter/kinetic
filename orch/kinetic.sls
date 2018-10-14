@@ -31,8 +31,7 @@ pxe_setup:
 wait_for_cache_provisioning:
   salt.runner:
     - name: state.orchestrate
-    - opts:
-      - orch/wait_for_provision
+    - mods: orch/wait_for_provision
 
 accept_cache:
   salt.wheel:
