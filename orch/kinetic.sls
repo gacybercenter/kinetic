@@ -32,7 +32,7 @@ wait_for_cache_provisioning:
   salt.state:
     - tgt: salt
     - sls:
-      - wait_for_provision
+      - orch/wait_for_provision
 
 accept_cache:
   salt.wheel:
