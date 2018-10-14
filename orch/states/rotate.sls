@@ -12,10 +12,7 @@ echo powerstate:
 ipmitool -I lanplus chassis power on -U ADMIN -P {{ pillar['ipmi_password'] }} -H {{ address }}:
   cmd.run
 
-{% else %}
-
 ipmitool -I lanplus chassis power reset -U ADMIN -P {{ pillar['ipmi_password'] }} -H {{ address }}:
   cmd.run
 
-{% endif %}
 {% endfor %}
