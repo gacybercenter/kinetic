@@ -18,13 +18,13 @@ pxe_setup:
 #    - require:
 #      - pxe_setup
 
-wait_for_cache_hostname_assignment:
-  salt.wait_for_event:
-    - name: salt/job/*/ret/pxe
-    - event_id: fun
-    - id_list:
-      - mine.send
-    - timeout: 300
+#wait_for_cache_hostname_assignment:
+#  salt.wait_for_event:
+#    - name: salt/job/*/ret/pxe
+#    - event_id: fun
+#    - id_list:
+#      - mine.send
+#    - timeout: 300
 #    - require:
 #      - rotate_cache
 
