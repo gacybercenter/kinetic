@@ -65,6 +65,7 @@ php7.0_module:
         disk: {{ pillar['hosts'][type]['disk'] }}
 {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
-        proxy: http://{{ salt['mine.get']('cache*','network.ip_addrs') }}:3128
+{% for host, address in salt['mine.get']('cache*','network.ip_addrs') %}
+        proxy: http://{{ address }}:3128
 {% endif %}
 {% endfor %}
