@@ -67,7 +67,7 @@ php7.0_module:
 
     - context:
 {% for host in salt['mine.get']('cache*','network.ip_addrs', {}).items() %}
-        proxy: http://{{ host[0] }}:3128
+        proxy: http://{{ host }}:3128
 {% endfor %}
 {% endif %}
 {% endfor %}
