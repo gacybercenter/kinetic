@@ -4,11 +4,10 @@
 
 ipmitool -I lanplus chassis bootdev pxe options=efiboot -U ADMIN -P {{ ipmi_password }} -H {{ address }}:
   cmd.run
-asdf
-#{% if salt.cmd.shell("ipmitool -I lanplus chassis power status -U ADMIN -P " + ipmi_password + " -H + address") == "Chassis Power is off" %}
-{% set foo = salt.cmd.shell("ipmitool -I lanplus chassis power status -U ADMIN -P " + ipmi_password + " -H + address") %}
 
-echo foo:
+{% set powerstate salt.cmd.shell("ipmitool -I lanplus chassis power status -U ADMIN -P " + ipmi_password + " -H + address") %}
+
+echo powerstate:
   cmd.run
 
 ipmitool -I lanplus chassis power on -U ADMIN -P {{ pillar['ipmi_password'] }} -H {{ address }}:
