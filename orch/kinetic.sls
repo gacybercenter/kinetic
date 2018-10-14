@@ -20,7 +20,7 @@ wait_for_cache_provisioning:
       - {{ salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] }}
     - timeout: 1200
     - require:
-      - sls: prep
+      - sls: orch/prep
 
 accept_cache:
   salt.wheel:
