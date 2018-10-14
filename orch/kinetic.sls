@@ -29,9 +29,9 @@ pxe_setup:
 #      - rotate_cache
 
 wait_for_cache_provisioning:
-  salt.state:
-    - tgt: salt
-    - sls:
+  salt.runner:
+    - name: state.orchestrate
+    - opts:
       - orch/wait_for_provision
 
 accept_cache:
