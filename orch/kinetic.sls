@@ -28,6 +28,13 @@ wait_for_cache_hostname_assignment:
     - require:
       - rotate_cache
 
+test2:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - arg:
+      - echo {{ salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] }}
+
 wait_for_cache_provisioning:
   salt.state:
     - tgt: salt
