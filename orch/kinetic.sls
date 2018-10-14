@@ -32,10 +32,3 @@ provision:
   salt.runner:
     - name: state.orchestrate
     - mods: orch/provision
-
-cache_setup:
-  salt.state:
-    - tgt: 'cache*'
-    - highstate: true
-    - require:
-      - provision
