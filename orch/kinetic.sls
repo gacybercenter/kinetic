@@ -1,6 +1,5 @@
 include:
-  - orch/test:
-    - order: last
+  - orch/prep
 
 master_setup:
   salt.state:
@@ -14,41 +13,19 @@ pxe_setup:
     - require:
       - master_setup
 
-rotate_cache:
-  salt.state:
-    - tgt: 'salt'
-    - sls:
-      - formulas/salt/rotate_cache    
-    - require:
-      - pxe_setup
-
-wait_for_cache_hostname_assignment:
-  salt.wait_for_event:
-    - name: salt/job/*/ret/pxe
-    - event_id: fun
-    - id_list:
-      - mine.send
-    - timeout: 300
-    - require:
-      - rotate_cache
-
-{% set cache_id = salt.saltutil.runner('mine.get',
-    tgt='pxe',
-    fun='file.read')%}
-
 wait_for_cache_provisioning:
   salt.wait_for_event:
     - name: salt/auth
     - id_list:
-      - {{ cache_id['pxe'] }}
+      - {{ salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] }}
     - timeout: 1200
     - require:
-      - wait_for_mine_update
+      - sls: prep
 
 accept_cache:
   salt.wheel:
     - name: key-accept
-    - match: {{ cache_id['pxe'] }}
+    - match: {{ salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] }}
     - require:
       - wait_for_cache_provisioning
 
