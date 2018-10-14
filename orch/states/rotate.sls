@@ -13,9 +13,9 @@ echo foo:
 
 ipmitool -I lanplus chassis power on -U ADMIN -P {{ pillar['ipmi_password'] }} -H {{ address }}:
   cmd.run
-{% else %}
+#{% else %}
 
 ipmitool -I lanplus chassis power reset -U ADMIN -P {{ pillar['ipmi_password'] }} -H {{ address }}:
   cmd.run
-{% endif %}
+#{% endif %}
 {% endfor %}
