@@ -18,6 +18,13 @@ rotate_cache:
     - require:
       - pxe_setup
 
+delete_cache_key:
+  salt.wheel:
+    - name: key.delete
+    - match: 'cache*'
+    - require:
+      - rotate_cache
+
 wait_for_cache_hostname_assignment:
   salt.wait_for_event:
     - name: salt/job/*/ret/pxe
