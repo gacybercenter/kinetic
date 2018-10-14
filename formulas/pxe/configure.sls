@@ -70,7 +70,7 @@ php7.0_module:
         proxy: ""
 {% else %}
 {% for host in cache_dict %}
-        proxy: http://{{ cache_dict[host][0] }}:3142
+        proxy: http://{{ cache_dict[host][0] }}:3142 {{ loop.length }}
 {% endfor %}
 {% endif %}
 {% endif %}
