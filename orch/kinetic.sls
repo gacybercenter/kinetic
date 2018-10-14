@@ -1,5 +1,5 @@
 include:
-  - test
+  - orch/test
 
 master_setup:
   salt.state:
