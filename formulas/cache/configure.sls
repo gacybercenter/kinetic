@@ -32,3 +32,7 @@ sha512sum * > checksums:
     - cwd: /var/www/html/images
     - onchanges: 
       - file: /var/www/html/images/*
+
+mine.update:
+  module.run:
+    - network.interfaces
