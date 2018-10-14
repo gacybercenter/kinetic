@@ -34,6 +34,8 @@ wait_for_mine_update:
     - tgt: salt
     - arg:
       - 60
+    - require:
+      - wait_for_cache_hostname_assignment
 
 {% set cache_id = salt.saltutil.runner('mine.get',
     tgt='*',
@@ -52,6 +54,8 @@ wait_for_cache_provisioning:
     - id_list:
       - {{ cache_id['pxe'] }}
     - timeout: 1200
+    - require:
+      - wait_for_mine_update
 
 echo host2:
   salt.function:
