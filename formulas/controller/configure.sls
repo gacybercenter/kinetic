@@ -53,6 +53,52 @@ fs:
     - mkmnt: true
     - require:
       - fs
+
+{% elif 'standard' in pillar['hosts']['controller']['kvm_disk_config']['type'] %}
+{% set target_device = pillar['hosts']['controller']['kvm_disk_config']['members'] %}
+{% if target_device = "rootfs" %}
+
+/kvm:
+  file.directory
+
+{% else %}
+
+pv_config:
+  lvm.pv_present:
+    - name: {{ target_device }}
+
+vg_config:
+  lvm.vg_present:
+    - name: kvm_vg
+    - devices:
+      - {{ target_device }}
+    - require:
+      - pv_config
+
+lv_config:
+  lvm.lv_present:
+    - name: kvm_lv
+    - vgname: kvm_vg
+    - extents: 100%FREE
+    - require:
+      - vg_config
+
+fs:
+  blockdev.formatted:
+    - name: /dev/mapper/kvm_vg-kvm_lv
+    - fs_type: xfs
+    - require:
+      - lv_config
+
+/kvm:
+  mount.mounted:
+    - device: /dev/mapper/kvm_vg-kvm_lv
+    - fstype: xfs
+    - mkmnt: true
+    - require:
+      - fs
+
+{% endif %}
 {% endif %}
 
 /kvm/images:
