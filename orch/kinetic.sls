@@ -1,5 +1,5 @@
 include:
-  - orch/test
+  - orch/test:
     - order: last
 
 master_setup:
