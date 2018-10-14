@@ -75,4 +75,4 @@ php7.0_module:
 {% endif %}
 {% endif %}
 {% endfor %}
-#{% set mod = salt.cmd.shell("shuf -i 1-"+loop.length|string+" -n 1") %}
+{#{% set mod = salt.cmd.shell("shuf -i 1-"+loop.length|string+" -n 1") %}#}
