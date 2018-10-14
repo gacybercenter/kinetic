@@ -17,7 +17,7 @@ rotate_{{ type }}:
     - sls:
       - orch/states/rotate
     - pillar:
-      - '{"type":"{{ type }}"}'
+      - '{"type":"foo"}'
     - require:
       - pxe_setup
 
