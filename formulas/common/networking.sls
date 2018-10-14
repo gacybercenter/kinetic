@@ -31,7 +31,7 @@ netplan apply:
 
 restart_minion:
   service.running:
-    - name: salt-minion:
+    - name: salt-minion
     - watch:
       - cmd: netplan apply
 
