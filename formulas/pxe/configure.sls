@@ -71,7 +71,9 @@ php7.0_module:
 {% else %}
 {% for host in cache_addresses_dict %}
 {% set random = salt.cmd.shell("shuf -i 1-"+loop.length|string+" -n 1") %}
-{#{% if loop.index != random %}{% continue %}{% endif %}#}
+{% if loop.index != random %}
+        proxy: foo
+{% endif %}
         proxy: http://{{ cache_addresses_dict[host][0] }}:3142 {{ loop.length }} {{ host }} {{ random }} {{ loop.index }}
 {% endfor %}
 {% endif %}
