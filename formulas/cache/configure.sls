@@ -35,4 +35,4 @@ sha512sum * > checksums:
 
 mine.update:
   module.run:
-    - network.interfaces
+    - network.interfaces: []
