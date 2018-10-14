@@ -64,7 +64,6 @@ php7.0_module:
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
 {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
-
     - context:
 {% set cache_dict = salt['mine.get']('cache*','network.ip_addrs') %}
 {% for host in cache_dict %}
