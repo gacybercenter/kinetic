@@ -6,7 +6,7 @@ ipmitool -I lanplus chassis bootdev pxe options=efiboot -U ADMIN -P {{ pillar['i
     - require_in:
       - ipmitool chassis power reset -U ADMIN -P {{ pillar['ipmi_password'] }} -H {{ address }}
 
-{% if salt['cmd.shell']('ipmitool -I lanplus chassis power status -U ADMIN -P {{ pillar['ipmi_password'] }} -H {{ address }} == "Chassis Power is off"') %}
+{% if salt['cmd.shell']('ipmitool -I lanplus chassis power status -U ADMIN -P {{ pillar["ipmi_password"] }} -H {{ address }} == "Chassis Power is off"') %}
 
 ipmitool -I lanplus chassis power on -U ADMIN -P {{ pillar['ipmi_password'] }} -H {{ address }}:
   cmd.run
