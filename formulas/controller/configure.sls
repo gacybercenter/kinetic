@@ -123,10 +123,10 @@ fs:
 {% if args['local_hash'] == "pull_from_mine" %}
 {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
 {% for host in cache_addresses_dict %}
-      - source_hash: http://{{ cache_addresses_dict[host][0] }}/images/checksums
+    - source_hash: http://{{ cache_addresses_dict[host][0] }}/images/checksums
 {% endfor %}
 {% else %}
-      - source_hash: {{ args['local_hash'] }}
+    - source_hash: {{ args['local_hash'] }}
 {% endif %}
     - source_hash_name: {{ args['local_source_hash_name'] }}
     - require:
