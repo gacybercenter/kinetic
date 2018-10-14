@@ -1,3 +1,6 @@
+include:
+  - test.sls
+
 master_setup:
   salt.state:
     - tgt: 'salt'
