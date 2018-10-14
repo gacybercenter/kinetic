@@ -38,7 +38,7 @@ wait_for_mine_update:
       - wait_for_cache_hostname_assignment
 
 {% set cache_id = salt.saltutil.runner('mine.get',
-    tgt='*',
+    tgt='pxe',
     fun='file.read')%}
 
 echo host:
