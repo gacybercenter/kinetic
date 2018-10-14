@@ -122,7 +122,7 @@ fs:
 {% if args['local_hash'] == "pull_from_mine" %}
 {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
 {% for host in cache_addresses_dict %}
-      - http://{{ cache_addresses_dict[host][0] }}/images/checksum
+      - http://{{ cache_addresses_dict[host][0] }}/images/checksums
 {% endfor %}
 {% else %}
       - {{ args['local_hash'] }}
