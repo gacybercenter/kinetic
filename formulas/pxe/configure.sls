@@ -70,7 +70,7 @@ php7.0_module:
         proxy: ""
 {% else %}
 {% for host,value in cache_dict.iteritems() %}
-{% set mod = salt.cmd.shell("shuf -i 1-"+loop.length|string+" -n 1") %}
+{% set mod = salt.cmd.shell("shuf -i 1-"+loop.length|string) %}
         proxy: http://{{ cache_dict[host][0] }}:3142 {{ loop.length }} {{ value }} {{ host }} {{ mod }}
 {% endfor %}
 {% endif %}
