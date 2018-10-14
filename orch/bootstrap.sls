@@ -10,11 +10,14 @@ pxe_setup:
     - require:
       - master_setup
 
-rotate_cache:
+{% for type in pillar['hosts'] %}
+rotate_{{ type }}:
   salt.state:
     - tgt: 'salt'
     - sls:
-      - formulas/salt/rotate_cache
+      - orch/states/rotate
+    - pillar:
+      - '{"type": "{{ type }}"}'
     - require:
       - pxe_setup
 
