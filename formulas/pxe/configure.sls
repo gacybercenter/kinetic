@@ -67,7 +67,7 @@ php7.0_module:
     - context:
 {% set cache_dict = salt['mine.get']('cache*','network.ip_addrs') %}
 {% if cache_dict == {} %}
-        proxy: "''"
+        proxy: ""
 {% else %}
 {% for host in cache_dict %}
         proxy: http://{{ cache_dict[host][0] }}:3142
