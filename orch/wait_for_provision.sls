@@ -1,9 +1,11 @@
+{% set host = salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] }}
+
 test:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] }}
+      - echo {{ host }} working 
 
 wait_for_cache_provisioning:
   salt.wait_for_event:
