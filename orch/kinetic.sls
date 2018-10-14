@@ -1,5 +1,5 @@
 include:
-  - test.sls
+  - test
 
 master_setup:
   salt.state:
