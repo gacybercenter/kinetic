@@ -65,13 +65,12 @@ php7.0_module:
         disk: {{ pillar['hosts'][type]['disk'] }}
 {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
-{% set cache_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-{% if cache_dict == {} %}
+{% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+{% if cache_addresses_dict == {} %}
         proxy: ""
 {% else %}
-{% for host, addresses in cache_dict.iteritems() %}
-{% set mod = salt.cmd.shell("shuf -i 1-"+loop.length|string+" -n 1") %}
-        proxy: http://{{ [addresses][0] }}:3142 {{ loop.length }} {{ addresses }} {{ host }} {{ loop.index }}
+{% for host, addresses in cache_addresses_dict.iteritems() %}
+        proxy: http://{{ [addresses][0] }}:3142
 {% endfor %}
 {% endif %}
 {% endif %}
