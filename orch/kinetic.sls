@@ -28,6 +28,13 @@ wait_for_cache_hostname_assignment:
     - require:
       - rotate_cache
 
+sync_all:
+  salt.function:
+    - name saltutil.sync_all:
+    - tgt: salt
+    - arg:
+      - refresh: true
+
 wait_for_mine_update:
   salt.function:
     - name: test.sleep
