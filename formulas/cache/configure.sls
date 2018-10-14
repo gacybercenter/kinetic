@@ -36,3 +36,6 @@ sha512sum * > checksums:
 mine.update:
   module.run:
     - network.interfaces: []
+  event.send:
+    - name: cache/mine/address/update:
+    - data: "Cache mine has been updated."

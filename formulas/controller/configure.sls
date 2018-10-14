@@ -1,5 +1,6 @@
 include:
   - formulas/controller/install
+  - formulas/common/base
   - formulas/common/networking
 
 {% if 'raid' in pillar['hosts']['controller']['kvm_disk_config']['type'] %}
