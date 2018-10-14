@@ -21,14 +21,14 @@ rotate_{{ type }}:
     - require:
       - pxe_setup
 
-delete_cache_key:
+delete_{{ type }}_key:
   salt.wheel:
     - name: key.delete
-    - match: 'cache*'
+    - match: '{{ type }}*'
     - require:
-      - rotate_cache
+      - rotate_{{ type }}
 
-wait_for_cache_hostname_assignment:
+wait_for_{{ type }}_hostname_assignment:
   salt.wait_for_event:
     - name: salt/job/*/ret/pxe
     - event_id: fun
@@ -36,9 +36,11 @@ wait_for_cache_hostname_assignment:
       - mine.send
     - timeout: 300
     - require:
-      - rotate_cache
+      - rotate_{{ type }}
 
 provision:
   salt.runner:
     - name: state.orchestrate
     - mods: orch/provision
+
+{% endfor %}
