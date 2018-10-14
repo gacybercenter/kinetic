@@ -10,13 +10,13 @@ pxe_setup:
     - require:
       - master_setup
 
-rotate_cache:
-  salt.state:
-    - tgt: 'salt'
-    - sls:
-      - formulas/salt/rotate_cache
-    - require:
-      - pxe_setup
+#rotate_cache:
+#  salt.state:
+#    - tgt: 'salt'
+#    - sls:
+#      - formulas/salt/rotate_cache
+#    - require:
+#      - pxe_setup
 
 wait_for_cache_hostname_assignment:
   salt.wait_for_event:
@@ -25,8 +25,8 @@ wait_for_cache_hostname_assignment:
     - id_list:
       - mine.send
     - timeout: 300
-    - require:
-      - rotate_cache
+#    - require:
+#      - rotate_cache
 
 test2:
   salt.function:
