@@ -65,6 +65,6 @@ php7.0_module:
         disk: {{ pillar['hosts'][type]['disk'] }}
 {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
-        proxy: http://{{ salt['mine.get']('cache*','network.ip_addrs')['cache-ce6c8652-73af-4bcd-9441-3aaff122458d'][0] }}:3128
+        proxy: http://{{ random(salt['mine.get']('cache*','network.ip_addrs')) }}:3128
 {% endif %}
 {% endfor %}
