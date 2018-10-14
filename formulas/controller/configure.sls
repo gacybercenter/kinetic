@@ -56,7 +56,7 @@ fs:
 
 {% elif 'standard' in pillar['hosts']['controller']['kvm_disk_config']['type'] %}
 {% set target_device = pillar['hosts']['controller']['kvm_disk_config']['members'][0] %}
-{% if target_device = "rootfs" %}
+{% if target_device == "rootfs" %}
 
 /kvm:
   file.directory
