@@ -38,7 +38,7 @@ wait_for_{{ type }}_hostname_assignment:
     - require:
       - rotate_{{ type }}
 
-provision:
+provision_{{ type }}:
   salt.runner:
     - name: state.orchestrate
     - mods: orch/provision
