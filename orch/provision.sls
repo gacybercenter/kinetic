@@ -23,9 +23,17 @@ wait_for_minion_first_start:
     - require:
       - accept_minion
 
+apply_base:
+  salt.state:
+    - tgt: '{{ host }}'
+    - sls:
+      - formulas/common/base
+    - require:
+      - wait_for_minion_first_start
+
 minion_setup:
   salt.state:
     - tgt: '{{ host }}'
     - highstate: true
     - require:
-      - wait_for_minion_first_start
+      - apply_base
