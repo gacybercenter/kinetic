@@ -28,6 +28,13 @@ netplan apply:
   cmd.run:
     - onchanges:
       - /etc/netplan/01-netcfg.yaml
+
+restart_minion:
+  service.running:
+    - name: salt-minion:
+    - watch:
+      - cmd: netplan apply
+
 {% else %}
 placeholder for ifupdown:
   test.nop
