@@ -28,16 +28,18 @@
       {%- endfor %}
     {%- endfor %}
           bridges: 
-    {%- for network in pillar['hosts'][grains['type']]['networks'] %}
-      {%- if network == 'management' %}
-        {%- set useDhcp = 'yes' %}
-      {%- else %}
-        {%- set useDhcp = 'no' %}
-      {%- endif %}
+    {%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+      {%- for network in binding %}
+        {%- if network == 'management' %}
+          {%- set useDhcp = 'yes' %}
+        {%- else %}
+          {%- set useDhcp = 'no' %}
+        {%- endif %}
             {{ network }}:
               dhcp4: {{ useDhcp }}
               interfaces:
-                - {{ pillar['hosts'][grains['type']]['networks'][network] }}
+                - {{ binding[network] }}
+      {%- endfor %}
     {%- endfor %}
   {%- endif %}
 
