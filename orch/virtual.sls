@@ -12,5 +12,8 @@ func_create_{{ type}}_{{ host }}:
     - tgt: salt
     - arg:
       - echo {{ type }} {{ count }}
+
+
+
   {% endfor %}
 {% endfor %}
