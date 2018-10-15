@@ -31,6 +31,14 @@ apply_base:
     - require:
       - wait_for_minion_first_start
 
+apply_networking:
+  salt.state:
+    - tgt: '{{ host }}'
+    - sls:
+      - formulas/common/networking
+    - require:
+      - apply_base
+
 minion_setup:
   salt.state:
     - tgt: '{{ host }}'
