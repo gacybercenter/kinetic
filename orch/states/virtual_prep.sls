@@ -1,3 +1,6 @@
+{% set type = pillar['type'] %}
+{% set hostname = type-pillar['identifier'] %}
+
 /kvm/vms/{{ hostname }}/config.xml:
   file.managed:
     - source: salt://formulas/controller/files/common.xml
