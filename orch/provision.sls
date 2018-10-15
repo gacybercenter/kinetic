@@ -36,9 +36,15 @@ apply_networking:
     - tgt: '{{ host }}'
     - sls:
       - formulas/common/networking
-      - formulas/common/reboot
     - require:
       - apply_base
+
+reboot_{{ host }}:
+  salt.function:
+    - tgt: '{{ host }}'
+    - name: system.reboot
+    - require:
+      - apply_networking
 
 wait_for_reboot:
   salt.wait_for_event:
@@ -46,7 +52,7 @@ wait_for_reboot:
     - id_list:
       - {{ host }}
     - require:
-      - salt: apply_networking
+      - reboot_{{ host }}
     - timeout: 300
 
 minion_setup:
