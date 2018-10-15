@@ -36,6 +36,5 @@ parallel_deploy_{{ type }}:
               pillar:
                 identifier: {{ identifier }}
                 type: {{ type }}
-              concurrent: true
   {% endfor %}
 {% endfor %}

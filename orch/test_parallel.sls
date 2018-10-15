@@ -9,6 +9,7 @@ prepare_vm_{{ type }}-{{ identifier }}:
     - pillar:
         identifier: {{ identifier }}
         type: {{ type }}
+    - concurrent: true
 
 wait_for_provisioning_{{ type }}-{{ identifier }}:
   salt.wait_for_event:
