@@ -32,8 +32,7 @@ parallel_deploy_{{ type }}:
         {{ host }}_runner:
           - name: state.orchestrate
           - kwarg:
-              mods: 
-                - orch/test_parallel
+              mods: orch/test_parallel
               pillar:
                 identifier: {{ identifier }}
                 type: {{ type }}
