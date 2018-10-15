@@ -1,5 +1,4 @@
 {% if grains['osfinger'] == 'Ubuntu-18.04' %}
-
 /etc/netplan/01-netcfg.yaml:
   file.managed:
     - contents: |
@@ -7,6 +6,16 @@
           version: 2
           renderer: networkd
           ethernets:
+{% if pillar['hosts'][grains['type']]['networks']['bridge'] = false %}
+{%- for network in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+{%- if network == 'management' %}
+{%- set useDhcp = 'yes' %}
+{%- else %}
+{%- set useDhcp = 'no' %}
+{%- endif %}
+            {{ network }}:
+              dhcp4: {{ useDhcp }}
+{%- else %}
 {%- for network in pillar['hosts'][grains['type']]['networks'] %}
             {{ pillar['hosts'][grains['type']]['networks'][network] }}:
               dhcp4: no
@@ -23,6 +32,7 @@
               interfaces:
                 - {{ pillar['hosts'][grains['type']]['networks'][network] }}
 {%- endfor %}
+{%- endif %}
 
 netplan apply:
   cmd.run:
