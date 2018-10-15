@@ -22,7 +22,7 @@
   {%- else %}
 
     {%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
-      {%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+      {%- for network in binding %}
             {{ binding[network] }}:
               dhcp4: no
       {%- endfor %}
