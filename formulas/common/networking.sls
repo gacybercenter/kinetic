@@ -14,7 +14,7 @@
 {%- else %}
 {%- set useDhcp = 'no' %}
 {%- endif %}
-            {{ network }}{{ interface }}:
+            {{ network[interface] }}:
               dhcp4: {{ useDhcp }}
 {%- endfor %}
 {%- endfor %}
