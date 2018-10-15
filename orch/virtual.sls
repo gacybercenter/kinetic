@@ -4,12 +4,10 @@ master_setup:
     - highstate: true
 
 {% for type in pillar['virtual'] %}
-  {% for count in range(1, pillar['virtual'][type]['config']['count']) %}
-    echo {{ count }}:
-      salt.function:
-        - name: cmd.ruin
-        - tgt: salt
-        - args
-          - echo {{ count }}
-  {% endfor %}
+  func:
+    salt.function:
+      - name: cmd.run
+      - tgt: salt
+      - args:
+        - echo {{ type }}
 {% endfor %}
