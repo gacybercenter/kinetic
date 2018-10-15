@@ -8,8 +8,8 @@
     - template: jinja
     - defaults:
         name: {{ hostname }}
-        ram: pillar['virtual'][type]['ram'] %}
-        cpu: pillar['virtual'][type]['cpu'] %}
+        ram: pillar['virtual'][type]['config']['ram'] %}
+        cpu: pillar['virtual'][type]['config']['cpu'] %}
         network: |
         {% for network in pillar['virtual'][type]['config']['networks'] %}
           <interface type='bridge'>
@@ -23,9 +23,9 @@
 
 /kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:
-    - source: /kvm/images/{{ pillar['virtual'][type]['os'] }}-latest
+    - source: /kvm/images/{{ pillar['virtual'][type]['config']['os'] }}-latest
 
-qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['virtual'][type]['disk'] }}:
+qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['virtual'][type]['config']['disk'] }}:
   cmd.run:
     - onchanges:
       - /kvm/vms/{{ hostname }}/disk0.raw
