@@ -4,6 +4,14 @@ master_setup:
     - highstate: true
 
 {% for type in pillar['virtual'] %}
+
+delete_{{ type }}_key:
+  salt.wheel:
+    - name: key.delete
+    - match: '{{ type }}*'
+
+
+
   {% set count = pillar['virtual'][type]['count'] %}
   {% for host in range(count) %}
   {% set identifier = salt.cmd.shell("uuidgen") %}
