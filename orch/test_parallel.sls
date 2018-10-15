@@ -1,3 +1,6 @@
+{% set type = pillar['type'] %}
+{% set identifier = pillar['identifier'] %}
+
 prepare_vm_{{ type }}-{{ identifier }}:
   salt.state:
     - tgt: controller*
