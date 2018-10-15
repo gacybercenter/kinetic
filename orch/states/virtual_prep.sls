@@ -12,12 +12,14 @@
         cpu: {{ pillar['virtual'][type]['cpu'] }}
         networks: |
         {% for network in pillar['virtual'][type]['networks']['bindings'] %}
+          {% for interface in network %}
           <interface type='bridge'>
-            <source bridge='{{ network }}'/>
+            <source bridge='{{ interface }}'/>
             <target dev='vnet{{ loop.index0 }}'/>
             <model type='virtio'/>
             <alias name='net{{ loop.index0 }}'/>
           </interface>
+          {% endfor %}
         {% endfor %}
 
 
