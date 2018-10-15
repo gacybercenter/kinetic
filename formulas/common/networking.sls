@@ -6,7 +6,7 @@
           version: 2
           renderer: networkd
           ethernets:
-{% if pillar['hosts'][grains['type']]['networks']['bridge'] == false %}
+{%- if pillar['hosts'][grains['type']]['networks']['bridge'] == false %}
 {%- for network in pillar['hosts'][grains['type']]['networks']['bindings'] %}
 {%- for interface in network %}
 {%- if interface == 'management' %}
