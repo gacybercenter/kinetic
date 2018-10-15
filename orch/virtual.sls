@@ -14,8 +14,8 @@ prepare_vm_{{ type }}-{{ identifier }}:
     - sls:
       - orch/states/virtual_prep
     - pillar:
-      identifier: {{ identifier }}
-      type: {{ type }}
+        identifier: {{ identifier }}
+        type: {{ type }}
 
 wait_for_provisioning:
   salt.wait_for_event:
