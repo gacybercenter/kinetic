@@ -8,8 +8,8 @@
     - template: jinja
     - defaults:
         name: {{ hostname }}
-        ram: pillar['virtual'][type]['config']['ram']
-        cpu: pillar['virtual'][type]['config']['cpu']
+        ram: {{ pillar['virtual'][type]['config']['ram'] }}
+        cpu: {{ pillar['virtual'][type]['config']['cpu'] }}
         networks: |
         {% for network in pillar['virtual'][type]['config']['networks'] %}
           <interface type='bridge'>
