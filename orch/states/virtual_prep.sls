@@ -11,7 +11,7 @@
         ram: {{ pillar['virtual'][type]['ram'] }}
         cpu: {{ pillar['virtual'][type]['cpu'] }}
         networks: |
-        {%- for network in pillar['virtual'][type]['networks']['bindings'] %}
+        {% for network in pillar['virtual'][type]['networks']['bindings'] %}
           {%- for interface in network %}
           <interface type='bridge'>
             <source bridge='{{ network[interface] }}'/>
@@ -20,8 +20,7 @@
             <alias name='net{{ loop.index0 }}'/>
           </interface>
           {%- endfor %}
-        {%- endfor %}
-
+        {% endfor %}
 
 /kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:
