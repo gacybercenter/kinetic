@@ -2,6 +2,8 @@
   {% set srv = 'host' %}
 {% else %}
   {% set srv = 'virtual' %}
+/etc/netplan/50-cloud-init.yaml:
+  file.absent
 {% endif %}
 {% if grains['osfinger'] == 'Ubuntu-18.04' %}
 /etc/netplan/01-netcfg.yaml:
