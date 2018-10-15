@@ -36,6 +36,7 @@ apply_networking:
     - tgt: '{{ host }}'
     - sls:
       - formulas/common/networking
+      - formulas/common/reboot
     - require:
       - apply_base
 
