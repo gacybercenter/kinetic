@@ -4,13 +4,17 @@ master_setup:
     - highstate: true
 
 {% for type in pillar['virtual'] %}
-
+wipe_{{ type }}_vms:
+  salt.function:
+    - name: cmd.run
+    - tgt: '{{ type }}*'
+    - arg:
+      - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
+  
 delete_{{ type }}_key:
   salt.wheel:
     - name: key.delete
     - match: '{{ type }}*'
-
-
 
   {% set count = pillar['virtual'][type]['count'] %}
   {% for host in range(count) %}
