@@ -1,3 +1,8 @@
+{% if grains['virtual'] == 'physical' %}
+  {% set srv = 'host' %}
+{% else %}
+  {% set srv = 'virtual' %}
+{% endif %}
 {% if grains['osfinger'] == 'Ubuntu-18.04' %}
 /etc/netplan/01-netcfg.yaml:
   file.managed:
@@ -6,8 +11,8 @@
           version: 2
           renderer: networkd
           ethernets:
-  {%- if pillar['hosts'][grains['type']]['networks']['bridge'] == false %}
-    {%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+  {%- if pillar[srv][grains['type']]['networks']['bridge'] == false %}
+    {%- for binding in pillar[srv][grains['type']]['networks']['bindings'] %}
       {%- for network in binding %}
         {%- if network == 'management' %}
           {%- set useDhcp = 'yes' %}
@@ -19,14 +24,14 @@
       {%- endfor %}
     {%- endfor %}
   {%- else %}
-    {%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+    {%- for binding in pillar[srv][grains['type']]['networks']['bindings'] %}
       {%- for network in binding %}
             {{ binding[network] }}:
               dhcp4: no
       {%- endfor %}
     {%- endfor %}
           bridges: 
-    {%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+    {%- for binding in pillar[srv][grains['type']]['networks']['bindings'] %}
       {%- for network in binding %}
         {%- if network == 'management' %}
           {%- set useDhcp = 'yes' %}
