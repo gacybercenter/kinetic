@@ -10,5 +10,5 @@ func:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ type }} {{ count {{
+      - echo {{ type }} {{ count }}
 {% endfor %}
