@@ -5,7 +5,7 @@ master_setup:
 
 {% for type in pillar['virtual'] %}
   {% set count = pillar['virtual'][type]['config']['count'] %}
-  {% for host in range(1,count) %}
+  {% for host in range(1,10) %}
 func:
   salt.function:
     - name: cmd.run
