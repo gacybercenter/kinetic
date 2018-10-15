@@ -4,10 +4,10 @@ master_setup:
     - highstate: true
 
 {% for type in pillar['virtual'] %}
-  func:
-    salt.function:
-      - name: cmd.run
-      - tgt: salt
-      - args:
-        - echo {{ type }}
+func:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - args:
+      - echo {{ type }}
 {% endfor %}
