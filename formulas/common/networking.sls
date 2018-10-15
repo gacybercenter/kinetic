@@ -11,7 +11,7 @@
       {%- for network in binding %}
         {%- if network == 'management' %}
           {%- set useDhcp = 'yes' %}
-          {%- else %}
+        {%- else %}
           {%- set useDhcp = 'no' %}
         {%- endif %}
             {{ binding[network] }}:
