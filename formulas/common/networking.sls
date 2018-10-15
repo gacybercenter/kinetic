@@ -21,9 +21,11 @@
 
   {%- else %}
 
-    {%- for network in pillar['hosts'][grains['type']]['networks'] %}
-            {{ pillar['hosts'][grains['type']]['networks'][network] }}:
+    {%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+      {%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+            {{ binding[network] }}:
               dhcp4: no
+      {%- endfor %}
     {%- endfor %}
           bridges: 
     {%- for network in pillar['hosts'][grains['type']]['networks'] %}
