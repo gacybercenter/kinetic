@@ -18,7 +18,7 @@
         {% endfor %}
 
 
-/kvm/vms/{{ hostname() }}/disk0.raw:
+/kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:
     - source: /kvm/images/{{ pillar['virtual'][type]['os'] }}-latest
 
