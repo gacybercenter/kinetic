@@ -12,7 +12,7 @@ accept_minion_{{ host }}:
     - name: key.accept
     - match: {{ host }}
     - require:
-      - wait_for_provisioning
+      - wait_for_provisioning_{{ host }}
 
 wait_for_minion_first_start_{{ host }}:
   salt.wait_for_event:
@@ -21,7 +21,7 @@ wait_for_minion_first_start_{{ host }}:
       - {{ host }}
     - timeout: 60
     - require:
-      - accept_minion
+      - accept_minion_{{ host }}
 
 apply_base_{{ host }}:
   salt.state:
@@ -29,7 +29,7 @@ apply_base_{{ host }}:
     - sls:
       - formulas/common/base
     - require:
-      - wait_for_minion_first_start
+      - wait_for_minion_first_start_{{ host }}
 
 apply_networking_{{ host }}:
   salt.state:
@@ -37,16 +37,16 @@ apply_networking_{{ host }}:
     - sls:
       - formulas/common/networking
     - require:
-      - apply_base
+      - apply_base_{{ host }}
 
 reboot_{{ host }}:
   salt.function:
     - tgt: '{{ host }}'
     - name: system.reboot
     - require:
-      - apply_networking
+      - apply_networking_{{ host }}
 
-wait_for_reboot:
+wait_for_reboot_{{ host }}:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
@@ -55,9 +55,9 @@ wait_for_reboot:
       - reboot_{{ host }}
     - timeout: 300
 
-minion_setup:
+minion_setup_{{ host }}:
   salt.state:
     - tgt: '{{ host }}'
     - highstate: true
     - require:
-      - wait_for_reboot
+      - wait_for_reboot_{{ host }}

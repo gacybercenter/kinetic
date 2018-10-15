@@ -17,53 +17,53 @@ prepare_vm_{{ type }}-{{ identifier }}:
         identifier: {{ identifier }}
         type: {{ type }}
 
-wait_for_provisioning:
+wait_for_provisioning_{{ type }}-{{ identifier }}:
   salt.wait_for_event:
     - name: salt/auth
     - id_list:
       - {{ type }}-{{ identifier }}
     - timeout: 300
 
-accept_minion:
+accept_minion_{{ type }}-{{ identifier }}:
   salt.wheel:
     - name: key.accept
     - match: {{ type }}-{{ identifier }}
     - require:
-      - wait_for_provisioning
+      - wait_for_provisioning_{{ type }}-{{ identifier }}
 
-wait_for_minion_first_start:
+wait_for_minion_first_start_{{ type }}-{{ identifier }}:
   salt.wait_for_event:
     - name: salt/minion/{{ type }}-{{ identifier }}/start
     - id_list:
       - {{ host }}
     - timeout: 60
     - require:
-      - accept_minion
+      - accept_minion_{{ type }}-{{ identifier }}
 
-apply_base:
+apply_base_{{ type }}-{{ identifier }}:
   salt.state:
     - tgt: '{{ type }}-{{ identifier }}'
     - sls:
       - formulas/common/base
     - require:
-      - wait_for_minion_first_start
+      - wait_for_minion_first_start_{{ type }}-{{ identifier }}
 
-apply_networking:
+apply_networking_{{ type }}-{{ identifier }}:
   salt.state:
     - tgt: '{{ type }}-{{ identifier }}'
     - sls:
       - formulas/common/networking
     - require:
-      - apply_base
+      - apply_base_{{ type }}-{{ identifier }}
 
 reboot_{{ type }}-{{ identifier }}:
   salt.function:
     - tgt: '{{ host }}'
     - name: system.reboot
     - require:
-      - apply_networking
+      - apply_networking_{{ type }}-{{ identifier }}
 
-wait_for_reboot:
+wait_for_reboot_{{ type }}-{{ identifier }}:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
@@ -72,12 +72,12 @@ wait_for_reboot:
       - reboot_{{ type }}-{{ identifier }}
     - timeout: 300
 
-minion_setup:
+minion_setup_{{ type }}-{{ identifier }}:
   salt.state:
     - tgt: '{{ type }}-{{ identifier }}'
     - highstate: true
     - require:
-      - wait_for_reboot
+      - wait_for_reboot_{{ type }}-{{ identifier }}
 
   {% endfor %}
 {% endfor %}
