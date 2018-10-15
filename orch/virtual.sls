@@ -8,6 +8,6 @@ func:
   salt.function:
     - name: cmd.run
     - tgt: salt
-    - args:
+    - arg:
       - echo {{ type }}
 {% endfor %}
