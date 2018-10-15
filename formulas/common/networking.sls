@@ -14,7 +14,7 @@
 {%- else %}
 {%- set useDhcp = 'no' %}
 {%- endif %}
-            {{ network[binding] }}:
+            {{ binding[network] }}:
               dhcp4: {{ useDhcp }}
 {%- endfor %}
 {%- endfor %}
