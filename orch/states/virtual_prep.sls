@@ -12,14 +12,14 @@
         cpu: {{ pillar['virtual'][type]['cpu'] }}
         networks: |
         {% for network in pillar['virtual'][type]['networks']['bindings'] %}
-          {%- for interface in network %}
           <interface type='bridge'>
+          {%- for interface in network %}
             <source bridge='{{ network[interface] }}'/>
+          {%- endfor %}
             <target dev='vnet{{ loop.index0 }}'/>
             <model type='virtio'/>
             <alias name='net{{ loop.index0 }}'/>
           </interface>
-          {%- endfor %}
         {% endfor %}
 
 /kvm/vms/{{ hostname }}/disk0.raw:
