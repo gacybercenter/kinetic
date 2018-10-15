@@ -7,14 +7,14 @@
           renderer: networkd
           ethernets:
 {%- if pillar['hosts'][grains['type']]['networks']['bridge'] == false %}
-{%- for network in pillar['hosts'][grains['type']]['networks']['bindings'] %}
-{%- for interface in network %}
-{%- if interface == 'management' %}
+{%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+{%- for network in binding %}
+{%- if network == 'management' %}
 {%- set useDhcp = 'yes' %}
 {%- else %}
 {%- set useDhcp = 'no' %}
 {%- endif %}
-            {{ network[interface] }}:
+            {{ network[binding] }}:
               dhcp4: {{ useDhcp }}
 {%- endfor %}
 {%- endfor %}
