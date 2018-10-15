@@ -40,9 +40,18 @@ apply_networking:
     - require:
       - apply_base
 
+wait_for_reboot:
+  salt.wait_for_event:
+    - name: salt/minion/*/start
+    - id_list:
+      - {{ host }}
+    - require:
+      - salt: apply_networking
+    - timeout: 300
+
 minion_setup:
   salt.state:
     - tgt: '{{ host }}'
     - highstate: true
     - require:
-      - apply_base
+      - wait_for_reboot
