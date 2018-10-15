@@ -10,7 +10,7 @@
         name: {{ hostname }}
         ram: pillar['virtual'][type]['config']['ram'] %}
         cpu: pillar['virtual'][type]['config']['cpu'] %}
-        network: |
+        networks: |
         {% for network in pillar['virtual'][type]['config']['networks'] %}
           <interface type='bridge'>
             <source bridge='{{ network }}'/>
@@ -44,7 +44,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['virtual'][ty
     - makedirs: True
     - template: jinja
     - defaults:
-        minion_id: {{ hostname }}
+        hostname: {{ hostname }}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:
