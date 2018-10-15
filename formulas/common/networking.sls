@@ -15,8 +15,9 @@
 {%- endif %}
             {{ network }}:
               dhcp4: {{ useDhcp }}
+{%- endfor %}
 {%- else %}
-{%- for network in pillar['hosts'][grains['type']]['networks'] %}
+    {%- for network in pillar['hosts'][grains['type']]['networks'] %}
             {{ pillar['hosts'][grains['type']]['networks'][network] }}:
               dhcp4: no
 {%- endfor %}
