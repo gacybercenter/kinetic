@@ -41,11 +41,6 @@
     {%- endfor %}
   {%- endif %}
 
-netplan apply:
-  cmd.run:
-    - onchanges:
-      - /etc/netplan/01-netcfg.yaml
-
 {% else %}
 placeholder for ifupdown:
   test.nop
