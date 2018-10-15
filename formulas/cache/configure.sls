@@ -1,5 +1,7 @@
 include:
   - /formulas/cache/install
+  - formulas/common/base
+  - formulas/common/networking
 
 /etc/apt-cacher-ng/acng.conf:
   file.managed:
