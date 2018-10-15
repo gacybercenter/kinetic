@@ -4,7 +4,7 @@ master_setup:
     - highstate: true
 
 {% for type in pillar['virtual'] %}
-  {% set count == pillar['virtual'][type]['config']['count'] %}
+  {% set count = pillar['virtual'][type]['config']['count'] %}
 func:
   salt.function:
     - name: cmd.run
