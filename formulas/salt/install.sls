@@ -9,3 +9,6 @@ ipmitool:
 
 freeipmi-tools:
   pkg.installed
+
+uuid-runtime:
+  pkg.installed
