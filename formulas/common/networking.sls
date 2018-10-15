@@ -17,6 +17,7 @@
             {{ network }}{{ interface }}:
               dhcp4: {{ useDhcp }}
 {%- endfor %}
+{%- endfor %}
 {%- else %}
     {%- for network in pillar['hosts'][grains['type']]['networks'] %}
             {{ pillar['hosts'][grains['type']]['networks'][network] }}:
