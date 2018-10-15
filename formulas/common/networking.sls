@@ -6,36 +6,38 @@
           version: 2
           renderer: networkd
           ethernets:
-{%- if pillar['hosts'][grains['type']]['networks']['bridge'] == false %}
-{%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
-{%- for network in binding %}
-{%- if network == 'management' %}
-{%- set useDhcp = 'yes' %}
-{%- else %}
-{%- set useDhcp = 'no' %}
-{%- endif %}
+  {%- if pillar['hosts'][grains['type']]['networks']['bridge'] == false %}
+    {%- for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+      {%- for network in binding %}
+        {%- if network == 'management' %}
+          {%- set useDhcp = 'yes' %}
+          {%- else %}
+          {%- set useDhcp = 'no' %}
+        {%- endif %}
             {{ binding[network] }}:
               dhcp4: {{ useDhcp }}
-{%- endfor %}
-{%- endfor %}
-{%- else %}
+      {%- endfor %}
+    {%- endfor %}
+
+  {%- else %}
+
     {%- for network in pillar['hosts'][grains['type']]['networks'] %}
             {{ pillar['hosts'][grains['type']]['networks'][network] }}:
               dhcp4: no
-{%- endfor %}
+    {%- endfor %}
           bridges: 
-{%- for network in pillar['hosts'][grains['type']]['networks'] %}
-{%- if network == 'management' %}
-{%- set useDhcp = 'yes' %}
-{%- else %}
-{%- set useDhcp = 'no' %}
-{%- endif %}
+    {%- for network in pillar['hosts'][grains['type']]['networks'] %}
+      {%- if network == 'management' %}
+        {%- set useDhcp = 'yes' %}
+      {%- else %}
+        {%- set useDhcp = 'no' %}
+      {%- endif %}
             {{ network }}:
               dhcp4: {{ useDhcp }}
               interfaces:
                 - {{ pillar['hosts'][grains['type']]['networks'][network] }}
-{%- endfor %}
-{%- endif %}
+    {%- endfor %}
+  {%- endif %}
 
 netplan apply:
   cmd.run:
