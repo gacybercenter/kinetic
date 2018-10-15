@@ -34,7 +34,6 @@ parallel_deploy_{{ type }}:
           - kwarg:
               mods: 
                 - orch/test_parallel
-                - parallel: True
               pillar:
                 identifier: {{ identifier }}
                 type: {{ type }}
