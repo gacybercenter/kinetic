@@ -35,7 +35,7 @@ wait_for_minion_first_start_{{ type }}-{{ identifier }}:
   salt.wait_for_event:
     - name: salt/minion/{{ type }}-{{ identifier }}/start
     - id_list:
-      - {{ host }}
+      - {{ type }}-{{ identifier }}
     - timeout: 300
     - require:
       - accept_minion_{{ type }}-{{ identifier }}
@@ -58,7 +58,7 @@ apply_networking_{{ type }}-{{ identifier }}:
 
 reboot_{{ type }}-{{ identifier }}:
   salt.function:
-    - tgt: '{{ host }}'
+    - tgt: '{{ type }}-{{ identifier }}'
     - name: system.reboot
     - require:
       - apply_networking_{{ type }}-{{ identifier }}
