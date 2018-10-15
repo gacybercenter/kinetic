@@ -9,7 +9,7 @@
 {% if pillar['hosts'][grains['type']]['networks']['bridge'] == false %}
 {%- for network in pillar['hosts'][grains['type']]['networks']['bindings'] %}
 {%- for interface in network %}
-{%- if network == 'management' %}
+{%- if interface == 'management' %}
 {%- set useDhcp = 'yes' %}
 {%- else %}
 {%- set useDhcp = 'no' %}
