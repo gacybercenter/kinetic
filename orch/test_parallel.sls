@@ -1,5 +1,5 @@
 {% set type = pillar['type'] %}
-{% set identifier = pillar['identifier'] %}
+{% set identifier = salt.cmd.shell("uuidgen") %}
 
 prepare_vm_{{ type }}-{{ identifier }}:
   salt.state:
