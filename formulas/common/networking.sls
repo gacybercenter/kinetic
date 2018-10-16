@@ -1,5 +1,5 @@
 {% if grains['virtual'] == 'physical' %}
-  {% set srv = 'host' %}
+  {% set srv = 'hosts' %}
 {% else %}
   {% set srv = 'virtual' %}
 /etc/netplan/50-cloud-init.yaml:
