@@ -48,7 +48,7 @@ provision_{{ type }}:
 
 ## Bootstrap virtual hosts
 
-provision_virtual:
-  salt.runner:
-    - name: state.orchestrate
-    - mods: orch/virtual
+#provision_virtual:
+#  salt.runner:
+#    - name: state.orchestrate
+#    - mods: orch/virtual
