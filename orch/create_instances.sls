@@ -70,5 +70,6 @@ minion_setup_{{ type }}-{{ identifier }}:
   salt.state:
     - tgt: '{{ type }}-{{ identifier }}'
     - highstate: true
+    - failhard: true
     - require:
       - wait_for_reboot_{{ type }}-{{ identifier }}
