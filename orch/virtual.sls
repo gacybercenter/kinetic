@@ -31,7 +31,7 @@ parallel_deploy_{{ type }}:
         runner_{{ host }}:
           - name: state.orchestrate
           - kwarg:
-              mods: orch/test_parallel
+              mods: orch/create_instances
               pillar:
                 type: {{ type }}
   {% endfor %}
