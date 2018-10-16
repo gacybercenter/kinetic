@@ -28,13 +28,13 @@ parallel_deploy_{{ type }}:
   salt.parallel_runners:
     - runners:
   {% for host in range(count) %}
-  {% set host+-identifier = salt.cmd.shell("uuidgen") %}
+  {% set host~"identifier" = salt.cmd.shell("uuidgen") %}
         {{ host }}-{{ identifier }}_runner:
           - name: state.orchestrate
           - kwarg:
               mods: orch/test_parallel_temp
               pillar:
-                identifier: {{ identifier }}
+                identifier: {{ host~"identifier" }}
                 type: {{ type }}
   {% endfor %}
 {% endfor %}
