@@ -29,6 +29,11 @@ parallel_deploy_{{ type }}:
     - runners:
   {% for host in range(count) %}
   {% set identifier = salt.cmd.shell("uuidgen") %}
+        {{ host }}_func:
+          salt.function:
+            - name: cmd.run
+            - arg:
+              - echo {{ count }}
         {{ host }}_runner:
           - name: state.orchestrate
           - kwarg:
