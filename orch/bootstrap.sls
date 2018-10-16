@@ -10,6 +10,7 @@ pxe_setup:
     - require:
       - master_setup
 
+## Bootstrap physical hosts
 {% for type in pillar['hosts'] %}
 rotate_{{ type }}:
   salt.state:
@@ -44,3 +45,10 @@ provision_{{ type }}:
     - mods: orch/provision
 
 {% endfor %}
+
+## Bootstrap virtual hosts
+
+provision_virtual:
+  salt.runner:
+    - name: state.orchestrate
+    - mods: orch/virtual
