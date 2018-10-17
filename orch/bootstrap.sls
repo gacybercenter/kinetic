@@ -1,3 +1,6 @@
+{% available_public_addresses = '10.0.1.0/24'| network_hosts  %}
+
+
 master_setup:
   salt.state:
     - tgt: 'salt'
