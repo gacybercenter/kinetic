@@ -1,5 +1,6 @@
-import ipaddress
+from netaddr import *
 
-def count_hosts(network):
-	addresses = list(ipaddress.ip_network(u'network').hosts())
-	return addresses
+def addr(address, prefix):
+    ip = IPNetwork(address)
+    ip.prefixlen = int(prefix)
+    return ip
