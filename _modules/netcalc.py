@@ -1,6 +1,5 @@
 from netaddr import *
 
-def addr(address, prefix):
+def addr(address):
     ip = IPNetwork(address)
-    ip.prefixlen = int(prefix)
-    return ip
+    return list(ip)
