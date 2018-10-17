@@ -27,7 +27,7 @@
               dhcp4: {{ useDhcp }}
         {%- else %}
           {% set target_subnet = pillar['subnets'][network] %}
-          {% set target_subnet_netmask = target_subnet.split('/')
+          {% set target_subnet_netmask = target_subnet.split('/') %}
           {% set target_subnet_octets = target_subnet_netmask[0].split('.') %}
             {{ binding[network] }}:
               addresses: {{ target_subnet }} {{ target_subnet_netmask }} {{ target_subnet_octets }}
