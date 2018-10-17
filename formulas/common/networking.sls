@@ -33,7 +33,7 @@
             {{ binding[network] }}:
               addresses: {{ target_subnet_octets[0]}}.{{ target_subnet_octets[1]}}.{{ management_address_octets[2]}}.{{ management_address_octets[3]}}/{{ target_subnet_netmask[1]}}
               dhcp4: {{ useDhcp }}
-              {{ network_hosts }}
+              {{ available_public_addresses }}
         {%- endif %}
       {%- endfor %}
     {%- endfor %}
