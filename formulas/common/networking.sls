@@ -1,4 +1,4 @@
-{% available_public_addresses = '10.0.1.0/24'| network_hosts  %}
+{% set available_public_addresses = '10.0.1.0/24'| network_hosts  %}
 {% if grains['virtual'] == 'physical' %}
   {% set srv = 'hosts' %}
 {% else %}
