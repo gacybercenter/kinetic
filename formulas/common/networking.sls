@@ -5,6 +5,7 @@
 /etc/netplan/50-cloud-init.yaml:
   file.absent
 {% endif %}
+{% set management_address_octets = grains['ipv4'][0].split('.') %}
 {% if grains['osfinger'] == 'Ubuntu-18.04' %}
 /etc/netplan/01-netcfg.yaml:
   file.managed:
@@ -21,8 +22,17 @@
         {%- else %}
           {%- set useDhcp = 'no' %}
         {%- endif %}
+        {%- if useDhcp == 'yes' %}
             {{ binding[network] }}:
               dhcp4: {{ useDhcp }}
+        {%- else %}
+          {% set target_subnet = pillar['subnets'][network] %}
+          {% set target_subnet_netmask = target_subnet.split('/')
+          {% set target_subnet_octets = target_subnet_netmask[0].split('.') %}
+            {{ binding[network] }}:
+              addresses: {{ target_subnet }} {{ target_subnet_netmask }} {{ target_subnet_octets }}
+              dhcp4: {{ useDhcp }}
+        {%- endif %}
       {%- endfor %}
     {%- endfor %}
   {%- else %}
