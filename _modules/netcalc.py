@@ -1,5 +1,4 @@
 import ipaddress
 
 def count_hosts(network):
-	hosts = ipaddress.ip_network(network)
-	return hosts.hosts
+	return list(ipaddress.ip_network(u'network').hosts())
