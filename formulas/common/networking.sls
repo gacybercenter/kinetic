@@ -1,3 +1,4 @@
+{% available_public_addresses = '10.0.1.0/24'| network_hosts  %}
 {% if grains['virtual'] == 'physical' %}
   {% set srv = 'hosts' %}
 {% else %}
@@ -32,6 +33,7 @@
             {{ binding[network] }}:
               addresses: {{ target_subnet_octets[0]}}.{{ target_subnet_octets[1]}}.{{ management_address_octets[2]}}.{{ management_address_octets[3]}}/{{ target_subnet_netmask[1]}}
               dhcp4: {{ useDhcp }}
+              {{ network_hosts }}
         {%- endif %}
       {%- endfor %}
     {%- endfor %}
