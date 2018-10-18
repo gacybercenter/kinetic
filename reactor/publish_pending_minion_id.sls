@@ -5,4 +5,4 @@ publish pending id:
     - tgt: 'pxe'
     - arg:
       - minionmanage.populate
-      - {{ data['path'] }}
+      - /var/www/html/pending_hosts
