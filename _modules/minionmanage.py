@@ -7,4 +7,4 @@ def __virtual__():
     return __virtualname__
 
 def populate(path):
-	return read(path)
+	return file.read(path)
