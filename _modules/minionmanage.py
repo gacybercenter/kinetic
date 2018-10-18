@@ -7,4 +7,5 @@ def __virtual__():
     return __virtualname__
 
 def populate(path):
+	pending = file.readdir(path)
 	return file.read(path)
