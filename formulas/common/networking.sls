@@ -23,7 +23,7 @@
         {%- elif network == 'public' %}
             {{ binding[network] }}:
               dhcp4: no
-        {%- else network == 'public' %}
+        {%- else %}
           {%- set target_subnet = pillar['subnets'][network] %}
           {%- set target_subnet_netmask = target_subnet.split('/') %}
           {%- set target_subnet_octets = target_subnet_netmask[0].split('.') %}
