@@ -4,5 +4,5 @@ publish pending id:
   local.mine.send:
     - tgt: 'pxe'
     - arg:
-      - file.read
+      - minionmanage.populate
       - {{ data['path'] }}

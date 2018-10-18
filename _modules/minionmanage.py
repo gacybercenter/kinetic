@@ -8,4 +8,4 @@ def __virtual__():
 
 def populate(path):
 	pending = file.readdir(path)
-	return file.read(path)
+	return pending

@@ -1,5 +1,6 @@
 {% set host = salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] %}
 
+
 wait_for_provisioning_{{ host }}:
   salt.wait_for_event:
     - name: salt/auth

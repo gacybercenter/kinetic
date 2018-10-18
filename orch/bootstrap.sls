@@ -29,7 +29,8 @@ delete_{{ type }}_key:
     - require:
       - rotate_{{ type }}
 
-wait_for_{{ type }}_hostname_assignment:
+  {% for address in pillar['hosts'][type]['ipmi_addresses'] %}
+wait_for_{{ type }}_{{ address }}_hostname_assignment:
   salt.wait_for_event:
     - name: salt/job/*/ret/pxe
     - event_id: fun
@@ -38,6 +39,7 @@ wait_for_{{ type }}_hostname_assignment:
     - timeout: 300
     - require:
       - rotate_{{ type }}
+  {% endfor %}
 
 provision_{{ type }}:
   salt.runner:
