@@ -1,4 +1,4 @@
-{% set hosts = salt.saltutil.runner('mine.get', tgt='pxe', fun='minionmanage.populate')['pxe'] %}
+{% set hosts = salt.saltutil.runner('mine.get', tgt='pxe', fun='minionmanage.populate') %}
 
 {% for host in hosts %}
 
