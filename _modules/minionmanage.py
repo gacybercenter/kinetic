@@ -8,6 +8,6 @@ def __virtual__():
 
 def populate(path):
 	pending = file.readdir(path)
-	pending.remove(.)
-	pending.remove(..)
+	pending.remove('.')
+	pending.remove('..')
 	return pending
