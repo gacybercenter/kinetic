@@ -1,5 +1,7 @@
-{% set host = salt.saltutil.runner('mine.get', tgt='pxe', fun='file.read')['pxe'] %}
+{% for host in hosts %}
+{% set hosts = salt.saltutil.runner('mine.get', tgt='pxe', fun='minionmanage.populate')['pxe'] %}
 
+{% for host in hosts %}
 
 wait_for_provisioning_{{ host }}:
   salt.wait_for_event:
@@ -24,6 +26,10 @@ wait_for_minion_first_start_{{ host }}:
     - require:
       - accept_minion_{{ host }}
 
+{% endfor %}
+
+{% for host in hosts %}
+
 apply_base_{{ host }}:
   salt.state:
     - tgt: '{{ host }}'
@@ -47,6 +53,10 @@ reboot_{{ host }}:
     - require:
       - apply_networking_{{ host }}
 
+{% endfor %}
+
+{% for host in hosts %}
+
 wait_for_reboot_{{ host }}:
   salt.wait_for_event:
     - name: salt/minion/*/start
@@ -56,10 +66,16 @@ wait_for_reboot_{{ host }}:
       - reboot_{{ host }}
     - timeout: 300
 
-minion_setup_{{ host }}:
-  salt.state:
-    - tgt: '{{ host }}'
-    - highstate: true
-    - failhard: true
-    - require:
-      - wait_for_reboot_{{ host }}
+{% endfor %}
+
+parallel-highstate:
+  salt.parallel_runners:
+    - runners:
+{% for host in hosts %}
+        minion_setup_{{ host }}:
+          - name: state.orchestrate
+          - kwarg:
+              mods: orch/highstate
+              pillar:
+                host: {{ host }}
+{% endfor %}  
