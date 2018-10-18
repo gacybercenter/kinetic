@@ -23,7 +23,7 @@
         {%- elif network == 'public' %}
             {{ binding[network] }}:
               dhcp4: no
-          {% if type == 'cache' %}
+          {% if [grains['type'] == 'cache' %}
               addresses: {{ pillar['subnets']['public']['cache_ip'] }}/{{ pillar['subnets']['public']['network'].split('/')[1] }}
           {% endif %}
         {%- else %}
