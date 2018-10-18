@@ -13,7 +13,7 @@ accept_minion_{{ host }}:
     - match: {{ host }}
     - require:
       - wait_for_provisioning_{{ host }}
-
+  
 wait_for_minion_first_start_{{ host }}:
   salt.wait_for_event:
     - name: salt/minion/{{ host }}/start
