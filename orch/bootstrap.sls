@@ -35,7 +35,6 @@ provision_{{ type }}:
     - name: state.orchestrate
     - mods: orch/provision
 
-{% endfor %}
 
 ## Bootstrap virtual hosts
 
