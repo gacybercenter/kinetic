@@ -11,19 +11,25 @@ pxe_setup:
       - master_setup
 
 ## Bootstrap physical hosts
-{% for phases in pillar['hwmap'] %}
-parallel_provision_{{ phases }}:
+#{% for phases in pillar['hwmap'] %}
+parallel_provision:
   salt.parallel_runners:
     - runners:
-  {% for type in pillar['hwmap']['phase1'] %}
-        provision_{{ type }}:
+#  {% for type in pillar['hwmap'][phases] %}
+        provision_controller:
           - name: state.orchestrate
           - kwarg:
               mods: orch/bootstrap
               pillar:
-                type: {{ type }}
-  {% endfor %}
-{% endfor %}
+                type: controller
+        provision_controllerv2:
+          - name: state.orchestrate
+          - kwarg:
+              mods: orch/bootstrap
+              pillar:
+                type: controllerv1
+#  {% endfor %}
+#{% endfor %}
 
 ## Bootstrap virtual hosts
 
