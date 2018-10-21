@@ -8,6 +8,7 @@ rotate_{{ type }}:
       - orch/states/rotate
     - pillar:
           type: {{ type }}
+    - concurrent: true
 
 delete_{{ type }}_key:
   salt.wheel:
