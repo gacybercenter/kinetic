@@ -31,7 +31,7 @@ remove_pending_{{ host }}:
     - name: file.remove
     - tgt: 'pxe'
     - arg:
-      - /var/www/html/pending_hosts/{{ type }}/{{ host }}
+      - /var/www/html/pending_hosts/{{ host }}
     - require:
       - wait_for_minion_first_start_{{ host }}
 
