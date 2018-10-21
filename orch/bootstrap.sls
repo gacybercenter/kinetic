@@ -1,6 +1,13 @@
 {% set type = pillar['type'] %}
 
 ## Bootstrap physical hosts
+echo {{ type }}:
+  salt.function:
+    - tgt: 'salt'
+    - name: cmd.run
+    - arg:
+      - echo {{ type }}
+
 rotate_{{ type }}:
   salt.state:
     - tgt: 'salt'
