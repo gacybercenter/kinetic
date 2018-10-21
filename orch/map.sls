@@ -11,7 +11,7 @@ pxe_setup:
       - master_setup
 
 ## Bootstrap physical hosts
-{% for phase in pillar['hwmap']
+{% for phase in pillar['hwmap'] %}
   {% for type in phase %}
 rotate_{{ type }}:
   salt.state:
