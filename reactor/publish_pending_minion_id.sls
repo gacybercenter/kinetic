@@ -1,4 +1,4 @@
-{% set type = data['path'].split('/')[3] %}
+{% set type = data['path'].split('/')[5] %}
 
 publish pending id:
   local.mine.send:
