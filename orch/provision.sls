@@ -25,6 +25,15 @@ wait_for_minion_first_start_{{ host }}:
     - require:
       - accept_minion_{{ host }}
 
+remove_pending_{{ host }}
+  salt.function:
+    - name: file.remove
+    - tgt: 'pxe'
+    - arg:
+      - /var/www/html/pending_hosts/{{ host }}
+    - require:
+      - wait_for_minion_first_start_{{ host }}
+
 {% endfor %}
 
 {% for host in hosts %}
