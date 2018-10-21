@@ -31,8 +31,10 @@ wait_for_{{ type }}_{{ address }}_hostname_assignment:
 provision_{{ type }}:
   salt.runner:
     - name: state.orchestrate
-    - mods: orch/provision
-
+    - kwarg:
+        mods: orch/provision
+        pillar:
+          type: {{ type }}
 
 ## Bootstrap virtual hosts
 
