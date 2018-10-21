@@ -25,7 +25,7 @@ parallel_provision:
           - kwarg:
               mods: orch/bootstrap
               pillar:
-                type: controllerv1
+                type: controllerv2
 
 ## Bootstrap virtual hosts
 
