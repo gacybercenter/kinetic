@@ -15,7 +15,7 @@ pxe_setup:
 parallel_provision_{{ phases }}:
   salt.parallel_runners:
     - runners:
-  {% for type in pillar['hwmap'][phases] %}
+  {% for type in pillar['hwmap']['phase1'] %}
         provision_{{ type }}:
           - name: state.orchestrate
           - kwarg:
