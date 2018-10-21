@@ -12,7 +12,7 @@ def populate_cache(path):
 	pending.remove('..')
 	return pending
 
-def populate_contoller(path):
+def populate_controller(path):
 	pending = file.readdir(path)
 	pending.remove('.')
 	pending.remove('..')
