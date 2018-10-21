@@ -1,5 +1,5 @@
 {% set type = pillar['type'] %}
-{% set hosts = salt.saltutil.runner('mine.get', tgt='pxe', fun='minionmanage.populate_'+type) %}
+{% set hosts = salt.saltutil.runner('mine.get', tgt='pxe', fun='minionmanage.populate_'+type)[0] %}
 
 {% for host in hosts %}
 
