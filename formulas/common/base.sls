@@ -3,6 +3,10 @@ role:
   grains.present:
     - value: {{ type[0] }}
 
+type:
+  grains.present:
+    - value: {{ type[0] }}
+
 {% if salt['grains.get']('upgraded') != True %}
 {% if grains['os_family'] == 'Debian' %}
 
