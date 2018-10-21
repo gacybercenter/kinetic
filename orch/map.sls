@@ -22,6 +22,7 @@ parallel_provision_{{ phases }}:
               mods: orch/bootstrap
               pillar:
                 type: {{ type }}
+              concurrent: true
   {% endfor %}
 {% endfor %}
 
