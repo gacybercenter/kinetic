@@ -1,7 +1,7 @@
 {% set type = opts.id.split('-') %}
-type:
+role:
   grains.present:
-    - value: {{ type[0] }}
+    - value: {{ pillar['hosts'][type]['role'] }}
 
 {% if salt['grains.get']('os') != True %}
 {% if grains['os_family'] == 'Debian' %}
