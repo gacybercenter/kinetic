@@ -8,8 +8,6 @@ rotate_{{ type }}:
       - orch/states/rotate
     - pillar:
           type: {{ type }}
-    - require:
-      - pxe_setup
 
 delete_{{ type }}_key:
   salt.wheel:
