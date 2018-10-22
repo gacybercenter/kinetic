@@ -12,7 +12,7 @@ pxe_setup:
 
 ## Bootstrap physical hosts
 {% for phase in pillar['hwmap'] %}
-parallel_provision:
+parallel_provision_phase_{{ phase }}:
   salt.parallel_runners:
     - runners:
   {% for type in pillar['hwmap'][phase] %}
