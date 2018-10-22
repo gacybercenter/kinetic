@@ -11,7 +11,7 @@ pxe_setup:
       - master_setup
 
 ## Bootstrap physical hosts
-{% for phase in pillar['hwmap']
+{% for phase in pillar['hwmap'] %}
 parallel_provision:
   salt.parallel_runners:
     - runners:
