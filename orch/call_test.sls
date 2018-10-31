@@ -8,8 +8,7 @@ parallel_provision_{{ phase }}:
           - kwarg:
               mods: orch/test
               pillar:
-                {{ type }}_type: {{ type }}
+                type: {{ type }}
               orchestration_jid: {{ type }}
-              queue: true
   {% endfor %}
 {% endfor %}
