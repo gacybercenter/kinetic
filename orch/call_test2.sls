@@ -7,5 +7,6 @@
       - orch.test
     - pillar:
         type: {{ type }}
+    - parallel: true
   {% endfor %}
 {% endfor %}
