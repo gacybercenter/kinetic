@@ -5,4 +5,4 @@ test_{{ type }}:
     - name: cmd.run
     - tgt: 'salt'
     - arg:
-      - echo {{ type }}
+      - echo {{ pillar['type'] }}
