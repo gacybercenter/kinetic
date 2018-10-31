@@ -6,7 +6,7 @@ parallel_provision_{{ phase }}:
         provision_{{ type }}:
           - name: state.orchestrate
           - kwarg:
-              mods: orch/bootstrap
+              mods: orch/test
               pillar:
                 type: {{ type }}
   {% endfor %}
