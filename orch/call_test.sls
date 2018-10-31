@@ -10,5 +10,6 @@ parallel_provision_{{ phase }}:
               pillar:
                 type: {{ type }}
               orchestration_jid: {{ type }}
+              queue: true
   {% endfor %}
 {% endfor %}
