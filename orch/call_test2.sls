@@ -8,5 +8,6 @@
     - pillar:
         type: {{ type }}
     - parallel: true
+    - concurrent: true
   {% endfor %}
 {% endfor %}
