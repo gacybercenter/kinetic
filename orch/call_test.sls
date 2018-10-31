@@ -9,6 +9,5 @@ parallel_provision_{{ phase }}:
               mods: orch/test
               pillar:
                 type: {{ type }}
-              orchestration_jid: {{ type }}
   {% endfor %}
 {% endfor %}
