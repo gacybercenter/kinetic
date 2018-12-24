@@ -63,6 +63,7 @@ php7.0_module:
         zone: {{ pillar['timezone'] }}
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
+        interface: {{ pillar['hosts'][type]['interface'] }}
 {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
 {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}

@@ -4,6 +4,7 @@ d-i console-setup/ask_detect                      boolean false
 
 d-i keyboard-configuration/xkb-keymap             select us
 
+d-i netcfg/choose_interface                       select {{ interface }}
 d-i netcfg/get_domain                             string unassigned-domain
 
 d-i hw-detect/load_firmware                       boolean true
