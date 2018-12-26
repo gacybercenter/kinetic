@@ -79,14 +79,7 @@ wait_for_reboot_{{ host }}:
 
 {% endfor %}
 
-parallel-highstate:
-  salt.parallel_runners:
-    - runners:
-{% for host in hosts %}
-        minion_setup_{{ host }}:
-          - name: state.orchestrate
-          - kwarg:
-              mods: orch/highstate
-              pillar:
-                host: {{ host }}
-{% endfor %}  
+highstate_{{ type }}:
+  salt.state:
+    - tgt: '{{ host }}*'
+    - highstate: True
