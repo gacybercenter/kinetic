@@ -4,6 +4,8 @@ master_setup:
     - highstate: true
 
 {% for type in pillar['virtual'] %}
+{% set count = pillar['virtual'][type]['count'] %}
+
 destroy_{{ type }}_domain:
   salt.function:
     - name: cmd.run
@@ -23,7 +25,11 @@ delete_{{ type }}_key:
     - name: key.delete
     - match: '{{ type }}*'
 
-{% set count = pillar['virtual'][type]['count'] %}
+get_valid_targets:
+  salt.function
+
+{% set target = salt.cmd.shell("salt-run manage.alived | grep controller | sort -R | tail -n 3") %}
+
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
     - runners:
@@ -34,5 +40,6 @@ parallel_deploy_{{ type }}:
               mods: orch/create_instances
               pillar:
                 type: {{ type }}
+                target: {{ target[host] }}
   {% endfor %}
 {% endfor %}

@@ -3,7 +3,7 @@
 
 prepare_vm_{{ type }}-{{ identifier }}:
   salt.state:
-    - tgt: __slot__:salt:cmd.run('echo controller-2f810ce4-9dec-4848-89fc-2941337d0974')
+    - tgt: {{ pillar['target'] }}
     - sls:
       - orch/states/virtual_prep
     - pillar:
