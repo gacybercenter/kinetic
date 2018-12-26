@@ -27,7 +27,7 @@ delete_{{ type }}_key:
 
 {% set target = salt.cmd.shell("salt-run manage.alived | grep controller | sort -R | tail -n 3 | awk '{ print $2 }'") %}
 
-echo {{ target[0] }}:
+echo {{ target }}:
   salt.function:
     - tgt: salt
 
