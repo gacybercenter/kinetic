@@ -80,4 +80,4 @@ highstate_{{ type }}:
     - tgt: '{{ type }}*'
     - highstate: True
     - require:
-      - highstate_{{ type }}
+      - wait_for_{{ type }}_reboot
