@@ -2,5 +2,5 @@ reboot_cache:
   salt.function:
     - tgt: 'cache*'
     - name: system.reboot
-    - kwargs:
+    - kwarg:
         at_time: 1
