@@ -43,6 +43,8 @@ fs:
   blockdev.formatted:
     - name: /dev/mapper/kvm_vg-kvm_lv
     - fs_type: xfs
+    - kwargs:
+        -K
     - require:
       - lv_config
 
