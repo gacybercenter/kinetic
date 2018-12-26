@@ -59,7 +59,8 @@ reboot_{{ host }}:
   salt.function:
     - tgt: '{{ host }}'
     - name: system.reboot
-    - at_time: 1
+    - kwarg:
+        at_time: 1
     - require:
       - apply_networking_{{ host }}
 
