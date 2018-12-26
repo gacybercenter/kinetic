@@ -79,8 +79,9 @@ wait_for_{{ type }}_reboot:
 {% endfor %}
     - timeout: 600
 
-
 highstate_{{ type }}:
   salt.state:
     - tgt: '{{ type }}*'
     - highstate: True
+    - require:
+      - highstate_{{ type }}
