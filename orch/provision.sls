@@ -37,8 +37,6 @@ remove_pending_{{ host }}:
 
 {% endfor %}
 
-{% for host in hosts %}
-
 apply_base_{{ type }}:
   salt.state:
     - tgt: '{{ type }}*'
@@ -61,8 +59,6 @@ reboot_{{ type }}:
         at_time: 1
     - require:
       - apply_networking_{{ type }}
-
-{% endfor %}
 
 wait_for_{{ type }}_reboot:
   salt.wait_for_event:
