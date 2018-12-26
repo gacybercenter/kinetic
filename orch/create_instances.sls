@@ -3,7 +3,7 @@
 
 prepare_vm_{{ type }}-{{ identifier }}:
   salt.state:
-    - tgt: controller*
+    - tgt: __slot__:salt:test.echo(controller1)
     - sls:
       - orch/states/virtual_prep
     - pillar:
