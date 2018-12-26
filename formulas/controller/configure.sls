@@ -40,11 +40,10 @@ lv_config:
       - vg_config
 
 fs:
-  blockdev.formatted:
-    - name: /dev/mapper/kvm_vg-kvm_lv
-    - fs_type: xfs
-    - require:
-      - lv_config
+  cmd.run:
+    - name: mkfs.xfs -K /dev/mapper/kvm_vg-kvm_lv
+    - unless:
+      - salt-call disk.fstype /dev/mapper/kvm_vg-kvm_lv | grep -qn xfs
 
 /kvm:
   mount.mounted:
