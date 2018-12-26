@@ -39,30 +39,28 @@ remove_pending_{{ host }}:
 
 {% for host in hosts %}
 
-apply_base_{{ host }}:
+apply_base_{{ type }}:
   salt.state:
-    - tgt: '{{ host }}'
+    - tgt: '{{ type }}*'
     - sls:
       - formulas/common/base
-    - require:
-      - wait_for_minion_first_start_{{ host }}
 
-apply_networking_{{ host }}:
+apply_networking_{{ type }}:
   salt.state:
-    - tgt: '{{ host }}'
+    - tgt: '{{ type }}*'
     - sls:
       - formulas/common/networking
     - require:
-      - apply_base_{{ host }}
+      - apply_base_{{ type }}
 
-reboot_{{ host }}:
+reboot_{{ type }}:
   salt.function:
-    - tgt: '{{ host }}'
+    - tgt: '{{ type }}*'
     - name: system.reboot
     - kwarg:
         at_time: 1
     - require:
-      - apply_networking_{{ host }}
+      - apply_networking_{{ type }}
 
 {% endfor %}
 
