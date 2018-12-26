@@ -28,7 +28,7 @@ delete_{{ type }}_key:
 get_valid_targets:
   salt.function
 
-{% set target = salt.cmd.shell("salt-run manage.alived | grep controller | sort -R | tail -n 3") %}
+{% set target = salt.cmd.shell("salt-run manage.alived | grep controller | sort -R | tail -n 3 | awk '{ print $2 }'") %}
 
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
