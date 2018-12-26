@@ -75,7 +75,7 @@ wait_for_reboot_{{ host }}:
       - {{ host }}
     - require:
       - reboot_{{ host }}
-    - timeout: 300
+    - timeout: 600
 
 {% endfor %}
 
