@@ -72,9 +72,7 @@ wait_for_{{ type }}_reboot:
       - {{ host }}
 {% endfor %}
     - require:
-{% for host in hosts %}
-      - reboot_{{ host }}
-{% endfor %}
+      - reboot_{{ type }}
     - timeout: 600
 
 highstate_{{ type }}:
