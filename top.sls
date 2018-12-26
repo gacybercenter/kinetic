@@ -9,3 +9,7 @@ base:
     - formulas/cache/configure
   controller*:
     - formulas/controller/configure
+  storage*:
+    - formulas/storage/configure
+  compute*:
+    - formulas/compute/configure
