@@ -25,9 +25,6 @@ delete_{{ type }}_key:
     - name: key.delete
     - match: '{{ type }}*'
 
-get_valid_targets:
-  salt.function
-
 {% set target = salt.cmd.shell("salt-run manage.alived | grep controller | sort -R | tail -n 3 | awk '{ print $2 }'") %}
 
 parallel_deploy_{{ type }}:
