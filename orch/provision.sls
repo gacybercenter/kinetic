@@ -81,5 +81,5 @@ wait_for_reboot_{{ host }}:
 
 highstate_{{ type }}:
   salt.state:
-    - tgt: '{{ host }}*'
+    - tgt: '{{ type }}*'
     - highstate: True
