@@ -66,18 +66,19 @@ reboot_{{ host }}:
 
 {% endfor %}
 
-{% for host in hosts %}
-
-wait_for_reboot_{{ host }}:
+wait_for_{{ type }}_reboot:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
+{% for host in hosts %}
       - {{ host }}
+{% endfor %}
     - require:
+{% for host in hosts %}
       - reboot_{{ host }}
+{% endfor %}
     - timeout: 600
 
-{% endfor %}
 
 highstate_{{ type }}:
   salt.state:
