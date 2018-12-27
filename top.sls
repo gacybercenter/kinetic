@@ -13,3 +13,5 @@ base:
     - formulas/storage/configure
   compute*:
     - formulas/compute/configure
+  cephmon*:
+    - formulas/cephmon/configure
