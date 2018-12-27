@@ -21,7 +21,7 @@ upgraded:
     - require:
       - update_all
 
-{% if grains['role'] != 'cache' %}
+{% if salt['grains.get']('role') != 'cache' %}
 /etc/apt/apt.conf.d/02proxy:
   file.managed:
     - contents: |
