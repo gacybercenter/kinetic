@@ -13,7 +13,7 @@ mine.update:
     - template: jinja
     - makedirs: True
     - defaults:
-        fsid: changeme
+        fsid: {{ pillar['ceph']['fsid'] }}
         mon_members: |
           {% for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [mon.{{ host }}]
