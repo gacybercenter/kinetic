@@ -21,7 +21,19 @@ mine.update:
           mon addr = {{ address[0] }}
           {% endfor %}
         sfe_network: {{ pillar['subnets']['sfe'] }}
-        sbe_network: {{ pillar['subnets']['sbe'] }}        
+        sbe_network: {{ pillar['subnets']['sbe'] }}
 
-foo:
-  test.nop
+/tmp/ceph.mon.keyring:
+  file.managed:
+    - contents_pillar: ceph.mon.keyring
+    - mode: 600
+    - user: root
+    - group: root
+
+/etc/ceph/ceph.client.admin.keyring:
+  file.managed:
+    - contents_pillar: ceph.client.admin.keyring
+
+/var/lib/ceph/bootstrap-osd/ceph.keyring:
+  file.managed:
+    - contents_pillar: ceph.keyring
