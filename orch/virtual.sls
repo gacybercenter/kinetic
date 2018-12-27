@@ -35,6 +35,6 @@ parallel_deploy_{{ type }}:
               mods: orch/create_instances
               pillar:
                 type: {{ type }}
-                target: __slot__:salt:cmd.run("echo -n controller-2f810ce4-9dec-4848-89fc-2941337d0974")
+                target: __slot__:salt:cmd.run("shuf -n 1 /root/foo")
   {% endfor %}
 {% endfor %}
