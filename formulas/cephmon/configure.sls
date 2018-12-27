@@ -37,3 +37,42 @@ mine.update:
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
+
+monmaptool --create --generate --clobber -c /etc/ceph/ceph.conf /tmp/monmap:
+  cmd.run:
+    - prereq:
+      - ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring
+
+/var/lib/ceph/mon/ceph-{{ grains['id'] }}:
+  file.directory:
+    - user: ceph
+    - group: ceph
+    - recurse:
+      - user
+      - group
+
+ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring:
+  cmd.run:
+    - requires:
+      - /var/lib/ceph/mon/ceph-{{ grains['id'] }}
+
+/var/lib/ceph/mon/ceph-{{ grains['id'] }}/done:
+  file.managed:
+    - requires:
+      - /var/lib/ceph/mon/ceph-{{ grains['id'] }}
+
+ceph-mon@{{ grains['id'] }}:
+  service.running:
+    - watch:
+      - file: /etc/ceph.conf
+
+/var/lib/ceph/mgr/ceph-{{ grains['id'] }}:
+  file.directory:
+    - user: ceph
+    - group: ceph
+
+ceph-authtool --create-keyring /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring --gen-key -n mgr.{{ grains['id'] }} --cap mon 'allow profile mgr' --cap osd 'allow *' --cap mds 'allow *':
+  cmd.run
+
+ceph auth import -i /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring:
+  cmd.run
