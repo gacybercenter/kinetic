@@ -42,6 +42,6 @@ parallel_deploy_{{ type }}:
               mods: orch/create_instances
               pillar:
                 type: {{ type }}
-                target: __slot__:salt:cmd.run("shuf -n 1 /root/foo")
+                target: __slot__:salt:cmd.run("shuf -n 1 /root/{{ type }}_available_controllers | tee /dev/tty | xargs -i sed -i '/{}/d' /root/{{ type }}_available_controllers")
   {% endfor %}
 {% endfor %}
