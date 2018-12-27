@@ -5,7 +5,8 @@ include:
 
 mine.send:
   module.run:
-    func: network.ip_addrs: [ens3]
+    func: network.ip_addrs
+      - ens3
 
 foo:
   test.nop
