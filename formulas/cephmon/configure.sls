@@ -1,5 +1,5 @@
 include:
-  - formulas/ceph/install
+  - formulas/cephmon/install
   - formulas/common/base
   - formulas/common/networking
 
