@@ -25,6 +25,8 @@ delete_{{ type }}_key:
     - name: key.delete
     - match: '{{ type }}*'
 
+{% set controllers = salt
+
 select_{{ type }}_controllers:
   salt.runner:
     - name: manage.up
@@ -32,6 +34,7 @@ select_{{ type }}_controllers:
         tgt_type: grain
         tgt:
           role:controller
+        out-file: /root/foo3
 
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
