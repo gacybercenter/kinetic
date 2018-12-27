@@ -6,7 +6,6 @@ include:
 mine.update:
   module.run:
       - network.ip_addrs: [ens3]
-      - grains.get: [id]
 
 /etc/ceph/ceph.conf:
   file.managed:
