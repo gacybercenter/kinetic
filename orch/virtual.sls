@@ -25,8 +25,6 @@ delete_{{ type }}_key:
     - name: key.delete
     - match: '{{ type }}*'
 
-{% set controllers = salt
-
 select_{{ type }}_controllers:
   salt.runner:
     - name: manage.up
