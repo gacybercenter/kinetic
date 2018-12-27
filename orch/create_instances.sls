@@ -71,7 +71,7 @@ wait_for_reboot_{{ type }}-{{ identifier }}:
 mine_update_{{ type }}-{{ identifier }}:
   salt.runner:
     - name: mine.update
-    - tgt: '{{ type }}-{{ identifier }}'
+    - tgt: '{{ type }}*'
 
 minion_setup_{{ type }}-{{ identifier }}:
   salt.state:
