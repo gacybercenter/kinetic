@@ -7,9 +7,16 @@ type:
   grains.present:
     - value: {{ type[0] }}
 
-{% if salt['grains.get']('upgraded') != True %}
-{% if grains['os_family'] == 'Debian' %}
 
+{% if grains['os_family'] == 'Debian' %}
+  {% if salt['grains.get']('role') != 'cache' %}
+/etc/apt/apt.conf.d/02proxy:
+  file.managed:
+    - contents: |
+      Acquire::http { Proxy "http://{{ salt['mine.get']('cache*','network.ip_addrs')[0] }}:3142"; };
+  {% endif %}
+
+  {% if salt['grains.get']('upgraded') != True %}
 update_all:
   pkg.uptodate:
     - refresh: true
@@ -20,16 +27,11 @@ upgraded:
     - value: True
     - require:
       - update_all
-
-{% if salt['grains.get']('role') != 'cache' %}
-/etc/apt/apt.conf.d/02proxy:
-  file.managed:
-    - contents: |
-      Acquire::http { Proxy "http://{{ salt['mine.get']('cache*','network.ip_addrs')[0] }}:3142"; };
-{% endif %}
+  {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
 
+  {% if salt['grains.get']('upgraded') != True %}
 update_all:
   pkg.uptodate:
     - refresh: true
@@ -40,7 +42,7 @@ upgraded:
     - require:
       - update_all
 
-{% endif %}
+  {% endif %}
 {% endif %}
 
 {{ pillar['timezone'] }}:
