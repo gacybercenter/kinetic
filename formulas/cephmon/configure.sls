@@ -16,13 +16,10 @@ mine.update:
     - defaults:
         fsid: changeme
         mon_members: |
-          {% for host in salt['mine.get']('role:cephmon', 'grains.get', tgt_type='grain')  %}
+          {% for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain')  %}
           [mon.{{ host }}]
           host = {{ host }}
-          {% endfor %}
-          {% for ip in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort()  %}
-          [mon.{{ ip }}]
-          host = {{ ip }}
+          mon addr = {{ address[0] }}
           {% endfor %}
 
 
