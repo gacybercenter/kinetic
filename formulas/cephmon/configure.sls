@@ -53,6 +53,7 @@ monmaptool --create --generate --clobber -c /etc/ceph/ceph.conf /tmp/monmap:
 
 ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring:
   cmd.run:
+    - runas: ceph
     - requires:
       - /var/lib/ceph/mon/ceph-{{ grains['id'] }}
 
