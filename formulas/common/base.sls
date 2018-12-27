@@ -21,6 +21,13 @@ upgraded:
     - require:
       - update_all
 
+{% if grains['role'] != 'cache' %}
+/etc/apt/apt.conf.d/02proxy:
+  file.managed:
+    - contents: |
+      Acquire::http { Proxy "http://{{ salt['mine.get']('cache*','network.ip_addrs')[0] }}:3142"; };
+{% endif %}
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 update_all:
