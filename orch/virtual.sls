@@ -30,7 +30,7 @@ get_available_controllers_for_{{ type }}:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//'
+      - salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//' > /root/{{ type }}_available_controllers
 
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
