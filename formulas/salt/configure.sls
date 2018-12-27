@@ -33,6 +33,9 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
     - contents_pillar: master-config:{{ directive }}
 {% endfor %}
 
+/srv/dynamic_pillar:
+  file.directory
+
 /etc/salt/master:
   file.managed:
     - contents: ''
