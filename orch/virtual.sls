@@ -25,12 +25,6 @@ delete_{{ type }}_key:
     - name: key.delete
     - match: '{{ type }}*'
 
-{% set target = salt.cmd.shell("salt-run manage.alived | grep controller | sort -R | tail -n 3 | awk '{ print $2 }'") %}
-
-echo {{ target }}:
-  salt.function:
-    - tgt: salt
-
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
     - runners:
@@ -41,6 +35,6 @@ parallel_deploy_{{ type }}:
               mods: orch/create_instances
               pillar:
                 type: {{ type }}
-                target: {{ target[host] }}
+                target: __slot__:salt:cmd.run("shuf -i 1-10 -n 1")
   {% endfor %}
 {% endfor %}
