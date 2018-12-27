@@ -50,11 +50,8 @@
         {%- if network == 'management' %}
               dhcp4: yes
         {%- else %}
-          {%- set target_subnet = pillar['subnets'][network] %}
-          {%- set target_subnet_netmask = target_subnet.split('/') %}
-          {%- set target_subnet_octets = target_subnet_netmask.split('.') %}
               dhcp4: no
-              addresses: [{{ target_subnet_octets[0]}}.{{ target_subnet_octets[1]}}.{{ management_address_octets[2]}}.{{ management_address_octets[3]}}/{{ target_subnet_netmask[1]}}]
+              addresses: foo
         {%- endif %}
               interfaces:
                 - {{ binding[network] }}
