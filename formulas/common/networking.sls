@@ -49,10 +49,15 @@
             {{ network }}:
         {%- if network == 'management' %}
               dhcp4: yes
+        {%- elif network == 'public' %}
+            {{ binding[network] }}:
+              dhcp4: no
         {%- else %}
           {%- set target_subnet = pillar['subnets'][network] %}
+          {%- set target_subnet_netmask = target_subnet.split('/') %}
+          {%- set target_subnet_octets = target_subnet_netmask[0].split('.') %}
               dhcp4: no
-              addresses: {{ target_subnet }}
+              addresses: [{{ target_subnet_octets[0]}}.{{ target_subnet_octets[1]}}.{{ management_address_octets[2]}}.{{ management_address_octets[3]}}/{{ target_subnet_netmask[1]}}]
         {%- endif %}
               interfaces:
                 - {{ binding[network] }}
