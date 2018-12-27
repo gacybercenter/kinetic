@@ -70,9 +70,3 @@ ceph-mon@{{ grains['id'] }}:
   file.directory:
     - user: ceph
     - group: ceph
-
-ceph-authtool --create-keyring /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring --gen-key -n mgr.{{ grains['id'] }} --cap mon 'allow profile mgr' --cap osd 'allow *' --cap mds 'allow *':
-  cmd.run
-
-ceph auth import -i /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring:
-  cmd.run
