@@ -5,7 +5,7 @@ include:
 
 mine.update:
   module.run:
-      - network.ip_addrs: [ens3]
+    - network.ip_addrs: [ens3]
 
 /etc/ceph/ceph.conf:
   file.managed:
