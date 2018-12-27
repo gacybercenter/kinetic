@@ -46,17 +46,16 @@
           bridges: 
     {%- for binding in pillar[srv][grains['type']]['networks']['bindings'] %}
       {%- for network in binding %}
-        {%- if network == 'management' %}
-          {%- set useDhcp = 'yes' %}
-        {%- else %}
-          {%- set useDhcp = 'no' %}
-        {%- endif %}
-        {%- set target_subnet = pillar['subnets'][network] %}
-        {%- set target_subnet_netmask = target_subnet.split('/') %}
-        {%- set target_subnet_octets = target_subnet_netmask[0].split('.') %}
             {{ network }}:
+        {%- if network == 'management' %}
+              dhcp4: yes
+        {%- else %}
+          {%- set target_subnet = pillar['subnets'][network] %}
+          {%- set target_subnet_netmask = target_subnet.split('/') %}
+          {%- set target_subnet_octets = target_subnet_netmask[0].split('.') %}
+              dhcp4: no
               addresses: [{{ target_subnet_octets[0]}}.{{ target_subnet_octets[1]}}.{{ management_address_octets[2]}}.{{ management_address_octets[3]}}/{{ target_subnet_netmask[1]}}]
-              dhcp4: {{ useDhcp }}
+        {%- endif %}
               interfaces:
                 - {{ binding[network] }}
       {%- endfor %}
