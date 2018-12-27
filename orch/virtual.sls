@@ -25,7 +25,13 @@ delete_{{ type }}_key:
     - name: key.delete
     - match: '{{ type }}*'
 
-{% set available_controllers = salt.cmd.shell('salt-run manage.up tgt_type="grain" tgt="role:controller"') %}
+select_{{ type }}_controllers:
+  salt.runner:
+    - name: manage.up
+    - kwarg:
+        tgt_type: grain
+        tgt:
+          role:controller
 
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
@@ -37,6 +43,6 @@ parallel_deploy_{{ type }}:
               mods: orch/create_instances
               pillar:
                 type: {{ type }}
-                target: {{ available_controllers[host] }}
+                target: __slot__:salt:cmd.run("shuf -n 1 /root/foo")
   {% endfor %}
 {% endfor %}
