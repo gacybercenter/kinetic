@@ -38,9 +38,6 @@ mine.update:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
 
-monmaptool --create --generate --clobber -c /etc/ceph/ceph.conf /tmp/monmap:
-  cmd.run:
-
 /var/lib/ceph/mon/ceph-{{ grains['id'] }}:
   file.directory:
     - user: ceph
@@ -48,6 +45,9 @@ monmaptool --create --generate --clobber -c /etc/ceph/ceph.conf /tmp/monmap:
     - recurse:
       - user
       - group
+
+monmaptool --create --generate --clobber -c /etc/ceph/ceph.conf /tmp/monmap:
+  cmd.run
 
 ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring:
   cmd.run:
