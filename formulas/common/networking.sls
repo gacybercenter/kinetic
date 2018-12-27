@@ -50,8 +50,9 @@
         {%- if network == 'management' %}
               dhcp4: yes
         {%- else %}
+          {%- set target_subnet = pillar['subnets'][network] %}
               dhcp4: no
-              addresses: foo
+              addresses: {{ target_subnet }}
         {%- endif %}
               interfaces:
                 - {{ binding[network] }}
