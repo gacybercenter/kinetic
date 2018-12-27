@@ -13,7 +13,7 @@ type:
 /etc/apt/apt.conf.d/02proxy:
   file.managed:
     - contents: |
-      Acquire::http { Proxy "http://{{ salt['mine.get']('cache*','network.ip_addrs')[0] }}:3142"; };
+      Acquire::http { Proxy "http://{{ salt['mine.get']('cache*','network.ip_addrs') }}:3142"; };
   {% endif %}
 
   {% if salt['grains.get']('upgraded') != True %}
