@@ -8,5 +8,17 @@ mine.update:
       - network.ip_addrs: [ens3]
       - grains.get: [id]
 
+/etc/ceph/ceph.conf:
+  file.managed:
+    - source: salt://formulas/cephmon/files/ceph.conf
+    - template: jinja
+    - makedirs: True
+    - defaults:
+        fsid: changeme
+        mon_members: |
+          {% for host in salt.saltutil.runner('mine.get', tgt='cephmon*', fun='grains.get')['cephmon*'] %}
+          [mon.{{ host }}]
+          host = {{ host }}
+          {% endfor %}
 foo:
   test.nop
