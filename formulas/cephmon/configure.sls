@@ -20,5 +20,11 @@ mine.update:
           [mon.{{ host }}]
           host = {{ host }}
           {% endfor %}
+          {% for ip in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain')  %}
+          [mon.{{ ip }}]
+          host = {{ ip }}
+          {% endfor %}
+
+
 foo:
   test.nop
