@@ -51,16 +51,13 @@ monmaptool --create --generate --clobber -c /etc/ceph/ceph.conf /tmp/monmap:
     - creates:
       - /tmp/monmap
 
-ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring:
+ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring && touch /var/lib/ceph/mon/ceph-{{ grains['id'] }}/done:
   cmd.run:
     - runas: ceph
     - requires:
       - /var/lib/ceph/mon/ceph-{{ grains['id'] }}
-
-/var/lib/ceph/mon/ceph-{{ grains['id'] }}/done:
-  file.managed:
-    - requires:
-      - /var/lib/ceph/mon/ceph-{{ grains['id'] }}
+    - creates:
+      - /var/lib/ceph/mon/ceph-{{ grains['id'] }}/done
 
 ceph-mon@{{ grains['id'] }}:
   service.running:
