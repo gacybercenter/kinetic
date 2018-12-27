@@ -11,12 +11,11 @@ type:
 {% if grains['os_family'] == 'Debian' %}
   {% if salt['grains.get']('role') != 'cache' %}
   {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-
 /etc/apt/apt.conf.d/02proxy:
   file.managed:
     - contents: |
   {% for host in cache_addresses_dict %}
-      Acquire::http { Proxy "http://{{ cache_addresses_dict[host][0] }}:3142"; };
+        Acquire::http { Proxy "http://{{ cache_addresses_dict[host][0] }}:3142"; };
   {% endfor %}
   {% endif %}
 
