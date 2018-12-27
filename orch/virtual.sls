@@ -25,12 +25,12 @@ delete_{{ type }}_key:
     - name: key.delete
     - match: '{{ type }}*'
 
-select_{{ type }}_controllers:
+get_available_controllers_for_{{ type }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - salt-run manage.up tgt_type="grain" tgt="role:controller" --out-file=/root/{{ type }}
+      - salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//'
 
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
