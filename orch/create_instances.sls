@@ -68,6 +68,11 @@ wait_for_reboot_{{ type }}-{{ identifier }}:
       - reboot_{{ type }}-{{ identifier }}
     - timeout: 300
 
+mine_update_{{ type }}-{{ identifier }}:
+  salt.runner:
+    - name: mine.update
+    - tgt: '{{ type }}-{{ identifier }}'
+
 minion_setup_{{ type }}-{{ identifier }}:
   salt.state:
     - tgt: '{{ type }}-{{ identifier }}'
