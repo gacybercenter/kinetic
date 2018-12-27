@@ -21,7 +21,8 @@ mine.update:
           host = {{ host }}
           mon addr = {{ address[0] }}
           {% endfor %}
-
+        sfe_network: {{ pillar['subnets']['sfe'] }}
+        sbe_network: {{ pillar['subnets']['sbe'] }}        
 
 foo:
   test.nop
