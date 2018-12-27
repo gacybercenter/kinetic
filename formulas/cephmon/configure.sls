@@ -20,7 +20,7 @@ mine.update:
           [mon.{{ host }}]
           host = {{ host }}
           {% endfor %}
-          {% for ip in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain')  %}
+          {% for ip in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort()  %}
           [mon.{{ ip }}]
           host = {{ ip }}
           {% endfor %}
