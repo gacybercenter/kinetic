@@ -16,7 +16,7 @@ mine.update:
     - defaults:
         fsid: changeme
         mon_members: |
-          {% for host in salt['mine.get']('role:cephmon', 'grains.get', tgt_type='grain') | dictsort() %}
+          {% for host in salt['mine.get']('role:cephmon', 'grains.get', tgt_type='grain')  %}
           [mon.{{ host }}]
           host = {{ host }}
           {% endfor %}
