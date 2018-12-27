@@ -5,7 +5,9 @@
 /etc/netplan/50-cloud-init.yaml:
   file.absent
 {% endif %}
+
 {% set management_address_octets = grains['ipv4'][0].split('.') %}
+
 {% if grains['osfinger'] == 'Ubuntu-18.04' %}
 /etc/netplan/01-netcfg.yaml:
   file.managed:
