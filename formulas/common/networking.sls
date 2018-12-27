@@ -50,7 +50,6 @@
         {%- if network == 'management' %}
               dhcp4: yes
         {%- elif network == 'public' %}
-            {{ binding[network] }}:
               dhcp4: no
         {%- else %}
           {%- set target_subnet = pillar['subnets'][network] %}
