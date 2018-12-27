@@ -27,8 +27,8 @@ mine.update:
   file.managed:
     - contents_pillar: ceph:ceph-mon-keyring
     - mode: 600
-    - user: root
-    - group: root
+    - user: ceph
+    - group: ceph
 
 /etc/ceph/ceph.client.admin.keyring:
   file.managed:
