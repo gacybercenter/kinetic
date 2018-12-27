@@ -25,15 +25,15 @@ mine.update:
 
 /tmp/ceph.mon.keyring:
   file.managed:
-    - contents_pillar: ceph.mon.keyring
+    - contents_pillar: ceph:ceph-mon-keyring
     - mode: 600
     - user: root
     - group: root
 
 /etc/ceph/ceph.client.admin.keyring:
   file.managed:
-    - contents_pillar: ceph.client.admin.keyring
+    - contents_pillar: ceph:ceph-client-admin-keyring
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
-    - contents_pillar: ceph.keyring
+    - contents_pillar: ceph:ceph-keyring
