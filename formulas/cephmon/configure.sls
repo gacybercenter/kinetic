@@ -40,8 +40,6 @@ mine.update:
 
 monmaptool --create --generate --clobber -c /etc/ceph/ceph.conf /tmp/monmap:
   cmd.run:
-    - prereq:
-      - ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring
 
 /var/lib/ceph/mon/ceph-{{ grains['id'] }}:
   file.directory:
