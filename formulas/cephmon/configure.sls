@@ -3,10 +3,9 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-mine.send:
+mine.update:
   module.run:
-    func: network.ip_addrs
-      - ens3
+      - network.ip_addrs: [ens3]
 
 foo:
   test.nop
