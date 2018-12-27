@@ -26,14 +26,11 @@ delete_{{ type }}_key:
     - match: '{{ type }}*'
 
 select_{{ type }}_controllers:
-  salt.runner:
-    - name: manage.up
-    - kwarg:
-        tgt_type: grain
-        tgt:
-          role:controller
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
     - arg:
-      - "--out-file: /root/foo3"
+      - salt-run manage.up tgt_type="grain" tgt="role:controller" --out-file=/root/{{ type }}
 
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
