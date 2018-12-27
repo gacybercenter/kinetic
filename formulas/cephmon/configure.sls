@@ -5,7 +5,7 @@ include:
 
 mine.update:
   module.run:
-    - network.interfaces: [ens3]
+    - network.ip_addrs: [ens3]
     - grains.get: id
 
 foo:
