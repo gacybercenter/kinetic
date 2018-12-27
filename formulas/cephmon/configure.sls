@@ -3,7 +3,7 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-mine.update:
+mine.send:
   module.run:
     - network.ip_addrs: [ens3]
     - grains.get: id
