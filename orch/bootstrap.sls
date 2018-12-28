@@ -24,7 +24,7 @@ delete_{{ type }}_key:
 ## waiting for that amount of hosts to be issued a hostname by the
 ## pxe server.  Every time a host gets an address, the amount of
 ## waiting event listeners decrements by one.  If all hosts successfully
-## get issued an address within 300 seconds,  the orch runner will
+## get issued an address within 300 seconds, the orch runner will
 ## continue to provisioning.  If not, it generally means that a host
 ## has hard locked or has been otherwise unable to PXE boot.
 
@@ -35,7 +35,7 @@ wait_for_{{ type }}_{{ address }}_hostname_assignment:
     - event_id: fun
     - id_list:
       - mine.send
-    - timeout: 300
+    - timeout: 600
     - require:
       - rotate_{{ type }}
   {% endfor %}
