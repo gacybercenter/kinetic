@@ -8,7 +8,7 @@ wait_for_provisioning_{{ host }}:
     - name: salt/auth
     - id_list:
       - {{ host }}
-    - timeout: 1200
+    - timeout: 1800
 
 accept_minion_{{ host }}:
   salt.wheel:
