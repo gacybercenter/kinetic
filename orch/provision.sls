@@ -3,6 +3,13 @@
 
 {% for host in hosts %}
 
+## There is an inotify beacon sitting on the pxe server
+## that watches our custom function write the issued hostnames
+## to a directory.  Once the required amount of hostnames have
+## been issued, thie mine data of all the hostnames is used 
+## to watch the provisioning process.  We allow 30 minutes to
+## install the operating system.  This is probably excessive.
+
 wait_for_provisioning_{{ host }}:
   salt.wait_for_event:
     - name: salt/auth
