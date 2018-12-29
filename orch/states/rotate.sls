@@ -20,8 +20,9 @@ ipmitool -I lanplus chassis power reset -U ADMIN -P {{ pillar['ipmi_password'] }
 ## There is a slight delay between the ipmi commands and execution
 ## This will prevent minions from re-asking to pair with master
 ## after their keys are removed
-sleep 5 for {{ address }}:
-  cmd.run:
-    - name: sleep 5
 
 {% endfor %}
+
+sleep 5 for {{ type }}:
+  cmd.run:
+    - name: sleep 5
