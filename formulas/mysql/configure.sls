@@ -38,7 +38,7 @@ create_{{ service }}_user_{{ host }}:
   mysql_user.present:
     - name: {{ service }}
     - password: {{ pillar [service][service + '_mysql_password'] }}
-    - host: {{ address }}
+    - host: {{ address[loop.index0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
 grant_{{ service }}_privs_{{ host }}:
@@ -46,7 +46,7 @@ grant_{{ service }}_privs_{{ host }}:
     - grant: all privileges
     - database: {{ service }}.*
     - user: {{ service }}
-    - host: {{ host }}
+    - host: {{ host[loop.index0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
   {% endfor %}
