@@ -134,7 +134,7 @@ placeholder for ifupdown:
 {% endif %}
 
 mine.update:
-  module.run:
+  module.run
   event.send:
     - name: {{ grains['type'] }}/mine/address/update
     - data: "{{ grains['type'] }} mine has been updated."
