@@ -53,6 +53,14 @@ journal_partition:
       - parted -s -m /dev/md/db_array print 2>>/dev/null
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
-echo {{ osd }}:
-  cmd.run
+{% set start = osd * 4 %}
+{% set end = start + 4 %}
+journal_mkpart_{{ osd }}:
+  module.run:
+    - name: partition.mkpart
+    - device: /dev/md/db_array
+    - part_type: primary
+    - start: 0%
+    - end: 4%
+
 {% endfor %}
