@@ -51,3 +51,8 @@ journal_partition:
     - label_type: gpt
     - unless:
       - parted -s -m /dev/md/db_array print 2>>/dev/null
+
+{% for osd in range(pillar['osd_mappings'][grains['type']]['journal']) %}
+echo {{ osd }}:
+  cmd.run
+{% endfor %}
