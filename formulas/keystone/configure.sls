@@ -87,8 +87,3 @@ initialize_keystone:
 
 /var/lib/keystone/keystone.db:
   file.absent
-
-/etc/keystone/keystone-paste.ini:
-  file.managed:
-    - source: salt://formulas/keystone/files/keystone-paste.ini
-
