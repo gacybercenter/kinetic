@@ -1,18 +1,14 @@
 include:
-  - /formulas/memcached/install
+  - /formulas/keystone/install
   - formulas/common/base
   - formulas/common/networking
 
-/etc/memcached.conf:
+/etc/keystone/keystone.conf:
   file.managed:
-    - source: salt://formulas/memcached/files/memcached.conf
+    - source: salt://formulas/keystone/files/keystone.conf
     - template: jinja
     - defaults:
-        listen_addr: {{ grains['ipv4'][0] }}
-
-memcached_service_check:
-  service.running:
-    - name: memcached
-    - enable: True
-    - watch:
-      - file: /etc/memcached.conf
+        token_provider: provider = fernet
+        sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone_password'] }}@{{ pillar ['mysql_configuration']['address'] }}/keystone'
+        memcache_servers: memcache_servers = {{ pillar['memcached_servers']['address'] }}:11211
+    - order: 1
