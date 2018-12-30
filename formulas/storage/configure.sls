@@ -47,5 +47,5 @@ db_array:
 journal_partition:
   module.run:
     - name: partition.mklabel
-      - device: /dev/md/db_array
-      - label_type: gpt
+    - device: /dev/md/db_array
+    - label_type: gpt
