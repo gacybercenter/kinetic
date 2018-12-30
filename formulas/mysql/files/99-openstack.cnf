@@ -1,5 +1,5 @@
 [mysqld]
-bind-address = {{ grains['ipv4'][0] }}
+bind-address = {{ ip_address }}
 
 default-storage-engine = innodb
 innodb_file_per_table
