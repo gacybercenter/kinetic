@@ -32,3 +32,15 @@ ceph osd crush add-bucket {{ grains['host'] }} host:
 
 ceph osd crush move {{ grains['host'] }} root=default:
   cmd.run
+
+db_array:
+  raid.present:
+    - name: /dev/md/db_array
+    - level: 0
+    - devices:
+      - /dev/nvme0n1
+      - /dev/nvme1n1
+      - /dev/nvme2n1
+      - /dev/nvme3n1
+    - chunk: 512
+    - run: true
