@@ -29,7 +29,7 @@ haproxy_{{ domain }}_service_running:
 systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalone --agree-tos && cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem && systemctl start haproxy.service:
   cron.present:
     - dayweek: 0
-    - minute: {{ loop.index1 }}
+    - minute: {{ loop.index0 }}
     - hour: 4
 
 {% endfor %}
