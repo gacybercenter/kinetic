@@ -71,3 +71,30 @@ apache2_service:
       - file: /etc/keystone/keystone.conf
       - file: /etc/keystone/domains/keystone.ldap.conf
       - file: /etc/apache2/sites-available/keystone.conf
+
+initialize_keystone:
+  cmd.script:
+    - source: salt://apps/openstack/keystone/files/initialize.sh
+    - source_hash: salt://apps/openstack/keystone/files/hash
+    - template: jinja
+    - defaults:
+        os_password: {{ pillar['openstack_admin_pass'] }}
+        os_username: {{ pillar['admin_openrc']['OS_USERNAME'] }}
+        os_project_name: {{ pillar['admin_openrc']['OS_PROJECT_NAME'] }}
+        os_user_domain_name: {{ pillar['admin_openrc']['OS_USER_DOMAIN_NAME'] }}
+        os_project_domain_name: {{ pillar['admin_openrc']['OS_PROJECT_DOMAIN_NAME'] }}
+        os_identity_api_version: {{ pillar['admin_openrc']['OS_IDENTITY_API_VERSION'] }}
+        os_auth_url: {{ pillar['keystone_configuration']['internal_endpoint']['protocol'] }}{{ pillar['keystone_configuration']['internal_endpoi$        admin_password: {{ pillar['openstack_admin_pass'] }}
+        internal_endpoint: {{ pillar ['keystone_configuration']['internal_endpoint']['protocol'] }}{{ pillar ['keystone_configuration']['interna$
+        admin_endpoint: {{ pillar ['keystone_configuration']['admin_endpoint']['protocol'] }}{{ pillar ['keystone_configuration']['admin_endpoin$
+        public_endpoint: {{ pillar ['keystone_configuration']['public_endpoint']['protocol'] }}{{ pillar ['keystone_configuration']['public_endp$
+        keystone_service_password: {{ pillar ['keystone_service_password'] }}
+    - requires:
+      - service: apache2
+
+/var/lib/keystone/keystone.db:
+  file.absent
+
+/etc/keystone/keystone-paste.ini:
+  file.managed:
+    - source: salt://formulas/keystone/files/keystone-paste.ini
