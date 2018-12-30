@@ -77,7 +77,6 @@ initialize_keystone:
     - source: salt://formulas/keystone/files/initialize.sh
     - template: jinja
     - defaults:
-        os_auth_url: 
         admin_password: {{ pillar['openstack']['admin_password'] }}
         internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
         public_endpoint: {{ pillar [openstack_services][keystone][configuration][public_endpoint][protocol] }}{{ pillar[endpoints][public] }}{{ pillar [openstack_services][keystone][configuration][public_endpoint][port] }}{{ pillar [openstack_services][keystone][configuration][public_endpoint][path] }}
@@ -92,3 +91,4 @@ initialize_keystone:
 /etc/keystone/keystone-paste.ini:
   file.managed:
     - source: salt://formulas/keystone/files/keystone-paste.ini
+
