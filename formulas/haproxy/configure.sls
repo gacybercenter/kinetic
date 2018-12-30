@@ -36,7 +36,7 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
 
 /etc/haproxy/haproxy.cfg:
   file.managed:
-    - source: salt://apps/haproxy/files/haproxy.cfg
+    - source: salt://formulas/haproxy/files/haproxy.cfg
     - template: jinja
     - defaults:
          hostname: {{ grains['id'] }}
