@@ -9,7 +9,7 @@ haproxy_{{ domain }}_service_dead:
   service.dead:
     - name: haproxy
     - prereq:
-      - letsencrypt certonly -d {{ domain }} --agree-tos --email {{ pillar['haproxy']['tls_email'] }}
+      - letsencrypt certonly -d {{ domain }} --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}
 
 letsencrypt certonly -d {{ domain }} --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}:
   cmd.run:
