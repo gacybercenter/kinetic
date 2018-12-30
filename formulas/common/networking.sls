@@ -27,7 +27,7 @@
               dhcp4: no
             ens7f0np0:
               dhcp4: no
-            ens7f0np1:
+            ens7f1np1:
               dhcp4: no
           bonds:
             sfe:
