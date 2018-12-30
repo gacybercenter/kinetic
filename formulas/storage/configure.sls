@@ -52,7 +52,7 @@ journal_partition:
     - unless:
       - parted -s -m /dev/md/db_array print 2>>/dev/null
 
-{% for osd in range(pillar['osd_mappings'][grains['type']]['journal'] | length) %}
+{% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
 echo {{ osd }}:
   cmd.run
 {% endfor %}
