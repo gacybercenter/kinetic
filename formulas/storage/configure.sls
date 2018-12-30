@@ -64,5 +64,5 @@ journal_mkpart_{{ osd }}:
     - start: {{ start }}%
     - end: {{ end }}%
     - unless:
-      - salt-call --local partition.exists /dev/md/db_array{{ osd }}
+      - salt-call --local partition.exists /dev/md/db_array{{ osd }} | grep -qn False
 {% endfor %}
