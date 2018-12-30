@@ -9,9 +9,9 @@ haproxy_{{ domain }}_service_dead:
   service.dead:
     - name: haproxy
     - prereq:
-      - letsencrypt certonly -d {{ domain }} --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}
+      - letsencrypt certonly -d {{ domain }} --non-interactive --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}
 
-letsencrypt certonly -d {{ domain }} --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}:
+letsencrypt certonly -d {{ domain }} --non-interactive --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}:
   cmd.run:
     - creates:
       - /etc/letsencrypt/live/{{ domain }}/fullchain.pem
