@@ -84,10 +84,11 @@ initialize_keystone:
         os_user_domain_name: {{ pillar['admin_openrc']['OS_USER_DOMAIN_NAME'] }}
         os_project_domain_name: {{ pillar['admin_openrc']['OS_PROJECT_DOMAIN_NAME'] }}
         os_identity_api_version: {{ pillar['admin_openrc']['OS_IDENTITY_API_VERSION'] }}
-        os_auth_url: {{ pillar['keystone_configuration']['internal_endpoint']['protocol'] }}{{ pillar['keystone_configuration']['internal_endpoi$        admin_password: {{ pillar['openstack_admin_pass'] }}
-        internal_endpoint: {{ pillar ['keystone_configuration']['internal_endpoint']['protocol'] }}{{ pillar ['keystone_configuration']['interna$
-        admin_endpoint: {{ pillar ['keystone_configuration']['admin_endpoint']['protocol'] }}{{ pillar ['keystone_configuration']['admin_endpoin$
-        public_endpoint: {{ pillar ['keystone_configuration']['public_endpoint']['protocol'] }}{{ pillar ['keystone_configuration']['public_endp$
+        os_auth_url: {{ pillar['keystone_configuration']['internal_endpoint']['protocol'] }}{{ pillar['keystone_configuration']['internal_endpoint']['url'] }}{{ pillar['keystone_configuration']['internal_endpoint']['port'] }}{{ pillar['keystone_configuration']['internal_endpoint']['path'] }}
+        admin_password: {{ pillar['openstack_admin_pass'] }}
+        internal_endpoint: {{ pillar ['keystone_configuration']['internal_endpoint']['protocol'] }}{{ pillar ['keystone_configuration']['internal_endpoint']['url'] }}{{ pillar ['keystone_configuration']['internal_endpoint']['port'] }}{{ pillar ['keystone_configuration']['internal_endpoint']['path'] }}
+        admin_endpoint: {{ pillar ['keystone_configuration']['admin_endpoint']['protocol'] }}{{ pillar ['keystone_configuration']['admin_endpoint']['url'] }}{{ pillar ['keystone_configuration']['admin_endpoint']['port'] }}{{ pillar ['keystone_configuration']['admin_endpoint']['path'] }}
+        public_endpoint: {{ pillar ['keystone_configuration']['public_endpoint']['protocol'] }}{{ pillar ['keystone_configuration']['public_endpoint']['url'] }}{{ pillar ['keystone_configuration']['public_endpoint']['port'] }}{{ pillar ['keystone_configuration']['public_endpoint']['path'] }}
         keystone_service_password: {{ pillar ['keystone_service_password'] }}
     - requires:
       - service: apache2
