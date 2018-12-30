@@ -78,7 +78,7 @@ initialize_keystone:
     - template: jinja
     - defaults:
         os_auth_url: 
-        admin_password: {{ pillar['openstack_admin_pass'] }}
+        admin_password: {{ pillar['openstack']['admin_password'] }}
         internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
     - requires:
