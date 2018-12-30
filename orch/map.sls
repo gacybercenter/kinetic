@@ -16,12 +16,21 @@ parallel_provision_{{ phase }}:
   salt.parallel_runners:
     - runners:
   {% for type in pillar['map'][phase] %}
+  {% if pillar['types'][type] == 'physical' %}
         provision_{{ type }}:
           - name: state.orchestrate
           - kwarg:
               mods: orch/bootstrap
               pillar:
                 type: {{ type }}
+  {% elif if pillar['types'][type] == 'virtual' %}
+        provision_{{ type }}:
+          - name: state.orchestrate
+          - kwarg:
+              mods: orch/virtual
+              pillar:
+                type: {{ type }}
+  {% endif %}
   {% endfor %}
 {% endfor %}
 ## Bootstrap virtual hosts

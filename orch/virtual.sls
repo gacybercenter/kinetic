@@ -1,9 +1,4 @@
-master_setup:
-  salt.state:
-    - tgt: 'salt'
-    - highstate: true
-
-{% for type in pillar['virtual'] %}
+{% set type = pillar['type'] %}
 {% set count = pillar['virtual'][type]['count'] %}
 
 destroy_{{ type }}_domain:
