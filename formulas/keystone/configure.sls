@@ -42,15 +42,20 @@ mine.update:
 {% endfor %}
         public_endpoint: foobar
 
+/etc/apache2/apache2.conf:
+  file.managed:
+    - source: salt://formulas/keystone/files/apache2.conf
+    - template: jinja
+    - defaults:
+        servername: ServerName {{ grains['id'] }}
+
 /etc/keystone/ldap_ca.crt:
   file.managed:
-    - source: salt://apps/public/ipa/files/ipa_ca.crt
-    - source_hash: salt://apps/ipa/files/hash
+    - contents_pillar: ldap_ca
 
 /usr/local/share/ca-certificates/ldap_ca.crt:
   file.managed:
-    - source: salt://apps/public/ipa/files/ipa_ca.crt
-    - source_hash: salt://apps/ipa/files/hash
+    - contents_pillar: ldap_ca
 
 update-ca-certificates:
   cmd.run:
