@@ -19,6 +19,16 @@
           ethernets:
             ens5f0:
               dhcp4: yes
+            ens5f1:
+              dhcp4: no
+            ens5f2:
+              dhcp4: no
+            ens5f3:
+              dhcp4: no
+            ens7f0np0:
+              dhcp4: no
+            ens7f0np1:
+              dhcp4: no
           bonds:
             sfe:
               interfaces:
