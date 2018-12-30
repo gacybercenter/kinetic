@@ -1,7 +1,7 @@
 {% if grains['virtual'] == 'physical' %}
   {% set srv = 'hosts' %}
 {% else %}
-  {% set srv = 'virtual' %}
+  {% set srv = 'virtual' %
 /etc/netplan/50-cloud-init.yaml:
   file.absent
 {% endif %}
@@ -51,6 +51,23 @@
               addresses: [{{ target_subnet_octets[0]}}.{{ target_subnet_octets[1]}}.{{ management_address_octets[2]}}.{{ management_address_octets[3]}}/{{ target_subnet_netmask[1]}}]
               parameters:
                 mode: 802.3ad
+{% elif grains['role'] == 'haproxy' %}
+/etc/netplan/01-netcfg.yaml:
+  file.managed:
+    - contents: |
+        network:
+          version: 2
+          renderer: networkd
+          ethernets:
+            ens3:
+              addresses:
+                - 10.10.5.200/22
+            ens4:
+              addresses:
+                - 10.50.10.0/16
+              gateway4: 10.50.255.254
+              nameservers:
+                  addresses: [10.50.255.254]
 {% else %}
 /etc/netplan/01-netcfg.yaml:
   file.managed:
