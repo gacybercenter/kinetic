@@ -66,3 +66,11 @@ journal_mkpart_{{ osd }}:
     - unless:
       - parted -s -m /dev/md/db_array print {{ osd + 1 }} 2>>/dev/null
 {% endfor %}
+
+{% for osd in pillar['osd_mappings'][grains['type']]['osd'] %}
+create_osd_{{ osd }}:
+  cmd.run:
+    - name: ceph-volume lvm create --bluestore --data {{ osd }} --block.db /dev/md/db_array{{loop.index}}
+    - unless:
+      - vgdisplay --verbose | grep -q {{ osd }}
+{% endfor %}
