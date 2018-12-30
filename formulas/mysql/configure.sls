@@ -12,7 +12,7 @@ include:
         ip_address: {{ grains['ipv4'][0] }}
     - order: 1
 
-mysql:
+mariadb:
   service.running:
     - enable: True
     - watch:
