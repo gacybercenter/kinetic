@@ -68,3 +68,13 @@ ceph-mon@{{ grains['id'] }}:
   file.directory:
     - user: ceph
     - group: ceph
+
+ceph auth get-or-create mgr.{{ grains['id'] }} mon 'allow profile mgr' osd 'allow *' mds 'allow *' > /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring:
+  cmd.run:
+    - creates:
+      - /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring
+
+ceph-mgr@{{ grains['id'] }}:
+  service.running:
+    - watch:
+      - cmd: ceph auth get-or-create mgr.{{ grains['id'] }} mon 'allow profile mgr' osd 'allow *' mds 'allow *' > /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring
