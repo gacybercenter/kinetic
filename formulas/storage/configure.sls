@@ -50,4 +50,4 @@ journal_partition:
     - device: /dev/md/db_array
     - label_type: gpt
     - unless:
-      - parted -s -m /dev/md/db_array print 2>>/dev/null | grep -q "Partition Table: gpt"
+      - parted -s -m /dev/md/db_array print 2>>/dev/null
