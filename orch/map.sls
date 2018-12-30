@@ -11,19 +11,11 @@ pxe_setup:
       - master_setup
 
 ## Bootstrap physical hosts
-{% for phase in pillar['hwmap'] %}
+{% for phase in pillar['map'] %}
 parallel_provision_{{ phase }}:
   salt.parallel_runners:
     - runners:
-  {% for type in pillar['hwmap'][phase] %}
-  {% if type == 'cephmon' %}
-        provision_{{ type }}:
-          - name: state.orchestrate
-          - kwarg:
-              mods: orch/virtual
-              pillar:
-                type: {{ type }}
-  {% else %}
+  {% for type in pillar['map'][phase] %}
         provision_{{ type }}:
           - name: state.orchestrate
           - kwarg:
