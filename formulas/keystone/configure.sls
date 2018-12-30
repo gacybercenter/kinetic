@@ -3,6 +3,9 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+mine.update:
+  module.run
+
 /etc/keystone/keystone.conf:
   file.managed:
     - source: salt://formulas/keystone/files/keystone.conf

@@ -3,6 +3,9 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+mine.update:
+  module.run
+
 /etc/mysql/mariadb.conf.d/99-openstack.cnf:
   file.managed:
     - source: salt://formulas/mysql/files/99-openstack.cnf

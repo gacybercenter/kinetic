@@ -3,6 +3,9 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+mine.update:
+  module.run
+
 /etc/memcached.conf:
   file.managed:
     - source: salt://formulas/memcached/files/memcached.conf

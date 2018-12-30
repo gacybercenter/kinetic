@@ -3,6 +3,9 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+mine.update:
+  module.run
+
 /etc/ceph/ceph.conf:
   file.managed:
     - source: salt://formulas/cephmon/files/ceph.conf
