@@ -8,7 +8,6 @@ include:
     - source: salt://formulas/keystone/files/keystone.conf
     - template: jinja
     - defaults:
-        token_provider: provider = fernet
-        sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone_password'] }}@{{ pillar ['mysql_configuration']['address'] }}/keystone'
-        memcache_servers: memcache_servers = {{ pillar['memcached_servers']['address'] }}:11211
+        sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone_mysql_password'] }}@{{ salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') }}/keystone'
+        memcache_servers: memcache_servers = {{ salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') }}:11211
     - order: 1
