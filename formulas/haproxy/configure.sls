@@ -17,7 +17,7 @@ letsencrypt certonly -d {{ domain }} --agree-tos --email {{ pillar['haproxy']['t
       - /etc/letsencrypt/live/{{ domain }}/fullchain.pem
       - /etc/letsencrypt/live/{{ domain }}/privkey.pem
 
-cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem
+cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem:
   cmd.run:
     - creates:
       - /etc/letsencrypt/live/{{ domain }}/master.pem
