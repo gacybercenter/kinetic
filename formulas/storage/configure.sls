@@ -53,9 +53,9 @@ journal_partition:
       - parted -s -m /dev/md/db_array print 2>>/dev/null
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
-{% set step = 100 // pillar['osd_mappings'][grains['type']]['osd'] | length %}
-{% set start = osd * step %}
-{% set end = start + step %}
+  {% set step = 100 // pillar['osd_mappings'][grains['type']]['osd'] | length %}
+  {% set start = osd * step %}
+  {% set end = start + step %}
 journal_mkpart_{{ osd }}:
   module.run:
     - name: partition.mkpart
@@ -63,4 +63,6 @@ journal_mkpart_{{ osd }}:
     - part_type: primary
     - start: {{ start }}%
     - end: {{ end }}%
+    - unless:
+      - salt-call --local partition.exists /dev/md/db_array{{ osd }}
 {% endfor %}
