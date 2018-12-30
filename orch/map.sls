@@ -16,6 +16,14 @@ parallel_provision_{{ phase }}:
   salt.parallel_runners:
     - runners:
   {% for type in pillar['hwmap'][phase] %}
+  {% if type == 'cephmon' %}
+        provision_{{ type }}:
+          - name: state.orchestrate
+          - kwarg:
+              mods: orch/virtual
+              pillar:
+                type: {{ type }}
+  {% else %}
         provision_{{ type }}:
           - name: state.orchestrate
           - kwarg:
