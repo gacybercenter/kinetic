@@ -74,8 +74,7 @@ apache2_service:
 
 initialize_keystone:
   cmd.script:
-    - source: salt://apps/openstack/keystone/files/initialize.sh
-    - source_hash: salt://apps/openstack/keystone/files/hash
+    - source: salt://formulas/keystone/files/initialize.sh
     - template: jinja
     - defaults:
         os_password: {{ pillar['openstack_admin_pass'] }}
