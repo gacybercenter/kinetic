@@ -46,9 +46,3 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
 {% for domain in pillar['haproxy']['tls_domains'] -%}
            crt /etc/letsencrypt/live/{{ domain }}/master.pem
 {% endfor %}
-         glance_api_hosts: |
-           server glance 10.10.123.123:9292 check inter 2000 rise 2 fall 5
-         dashboard_hosts: |
-           server horizon 10.10.123.123:80 check inter 2000 rise 2 fall 5
-         nova_spiceproxy_hosts: |
-           server nova 10.10.123.123:6082 check inter 2000 rise 2 fall 5
