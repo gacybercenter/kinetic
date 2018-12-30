@@ -11,13 +11,13 @@ keystone-manage bootstrap --bootstrap-password {{ admin_password }} \
   --bootstrap-region-id RegionOne
 
 project_test=$(openstack project list \
---os-username {{ os_username }} \
---os-password {{ os_password }} \
---os-project-name {{ os_project_name }} \
---os-user-domain-name {{ os_user_domain_name }} \
---os-project-domain-name {{ os_project_domain_name }} \
+--os-username admin \
+--os-password {{ admin_password }} \
+--os-project-name admin \
+--os-user-domain-name Default \
+--os-project-domain-name Default \
 --os-auth-url {{ os_auth_url }} \
---os-identity-api-version {{ os_identity_api_version }} \
+--os-identity-api-version 3 \
 | grep service)
 
 if [[ $project_test != '' ]]; then
