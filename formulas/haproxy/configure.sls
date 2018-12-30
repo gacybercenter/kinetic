@@ -51,3 +51,9 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
            server horizon 10.10.123.123:80 check inter 2000 rise 2 fall 5
          nova_spiceproxy_hosts: |
            server nova 10.10.123.123:6082 check inter 2000 rise 2 fall 5
+
+haproxy_cfg_watch:
+  service.running:
+    - name: haproxy
+    - watch:
+      - file: /etc/haproxy/haproxy.cfg
