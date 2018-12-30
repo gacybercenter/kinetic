@@ -5,8 +5,7 @@ include:
 
 /etc/memcached.conf:
   file.managed:
-    - source: salt://apps/memcached/files/memcached.conf
-    - source_hash: salt://apps/memcached/files/hash
+    - source: salt://formulas/memcached/files/memcached.conf
     - template: jinja
     - defaults:
         listen_addr: {{ grains['ipv4'][0] }}
