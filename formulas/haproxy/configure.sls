@@ -44,6 +44,7 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
          public_ip_address: {{ grains['ipv4'][1] }}
          dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
          console_domain:  {{ pillar['haproxy']['console_domain'] }}
+         ssl_config: ssl crt /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
          certificates: |
 {% for domain in pillar['haproxy']['tls_domains'] %}
              crt /etc/letsencrypt/live/{{ domain }}/master.pem 
