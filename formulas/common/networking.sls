@@ -67,6 +67,7 @@
                 - 10.50.10.0/16
               gateway4: 10.50.255.254
               nameservers:
+                  search: [bbh.cyberschool.army.mil]
                   addresses: [10.50.255.254]
 {% else %}
 /etc/netplan/01-netcfg.yaml:
