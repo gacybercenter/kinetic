@@ -64,5 +64,5 @@ journal_mkpart_{{ osd }}:
     - start: {{ start }}%
     - end: {{ end }}%
     - unless:
-      - parted -s -m /dev/md/db_array{{ osd }} print 2>>/dev/null
+      - parted -s -m /dev/md/db_array print {{ osd }} 2>>/dev/null
 {% endfor %}
