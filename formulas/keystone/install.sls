@@ -1,9 +1,3 @@
-mine.update:
-  module.run:
-  event.send:
-    - name: {{ grains['type'] }}/mine/address/update
-    - data: "{{ grains['type'] }} mine has been updated."
-
 uca:
   pkgrepo.managed:
     - humanname: Ubuntu Cloud Archive - Rocky
