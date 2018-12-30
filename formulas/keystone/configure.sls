@@ -79,7 +79,7 @@ initialize_keystone:
     - defaults:
         os_auth_url: 
         admin_password: {{ pillar['openstack_admin_pass'] }}
-        internal_endpoint: {{ pillar ['keystone']['configuration']['internal_endpoint']['protocol'] }}
+        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
     - requires:
       - service: apache2
