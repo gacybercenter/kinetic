@@ -1,7 +1,7 @@
 {% if grains['virtual'] == 'physical' %}
   {% set srv = 'hosts' %}
 {% else %}
-  {% set srv = 'virtual' %
+  {% set srv = 'virtual' %}
 /etc/netplan/50-cloud-init.yaml:
   file.absent
 {% endif %}
