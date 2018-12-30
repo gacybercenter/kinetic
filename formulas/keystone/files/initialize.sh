@@ -52,5 +52,5 @@ if [[ $ldap_domain_test != '' ]]; then
   echo 'Existing ldap domain detected...skipping creation...'
   echo $ldap_domain_test
 else
-  openstack domain create --description "LDAP Domain" ipa
+  openstack domain create --description "LDAP Domain" ldap
 fi
