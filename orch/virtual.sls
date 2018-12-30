@@ -25,7 +25,7 @@ get_available_controllers_for_{{ type }}:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//' > /root/{{ type }}_available_controllers
+      - salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//' > /tmp/{{ type }}_available_controllers
 
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
@@ -37,5 +37,5 @@ parallel_deploy_{{ type }}:
               mods: orch/create_instances
               pillar:
                 type: {{ type }}
-                target: __slot__:salt:cmd.run("shuf -n 1 /root/{{ type }}_available_controllers")
+                target: __slot__:salt:cmd.run("shuf -n 1 /tmp/{{ type }}_available_controllers")
 {% endfor %}
