@@ -133,8 +133,9 @@ placeholder for ifupdown:
   test.nop
 {% endif %}
 
-mine.update:
-  module.run
+networking_mine_update:
+  module.run:
+    - name: mine.update
   event.send:
     - name: {{ grains['type'] }}/mine/address/update
     - data: "{{ grains['type'] }} mine has been updated."
