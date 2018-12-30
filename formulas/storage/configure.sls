@@ -49,5 +49,5 @@ journal_partition:
     - name: partition.mklabel
     - device: /dev/md/db_array
     - label_type: gpt
-    - unless:
+    - onlyif:
       - parted /dev/md/db_array print 2>>/dev/null | grep -q "Partition Table: gpt"
