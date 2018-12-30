@@ -132,3 +132,12 @@
 placeholder for ifupdown:
   test.nop
 {% endif %}
+
+mine.update:
+  module.run:
+  event.send:
+    - name: {{ grains['type'] }}/mine/address/update
+    - data: "{{ grains['type'] }} mine has been updated."
+  - onchanges:
+    - file:
+      - /etc/netplan/01-netcfg.yaml
