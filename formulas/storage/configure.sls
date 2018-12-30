@@ -43,3 +43,9 @@ db_array:
 {% endfor %}
     - chunk: 512
     - run: true
+
+journal_partition:
+  module.run:
+    - name: partition.mklabel
+      - device: /dev/md/db_array
+      - label_type: gpt
