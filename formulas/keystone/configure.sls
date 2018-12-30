@@ -69,5 +69,5 @@ apache2_service:
     - watch:
       - file: /etc/apache2/apache2.conf
       - file: /etc/keystone/keystone.conf
-      - file: /etc/keystone/domains/keystone.ipa.conf
+      - file: /etc/keystone/domains/keystone.ldap.conf
       - file: /etc/apache2/sites-available/keystone.conf
