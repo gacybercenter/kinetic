@@ -38,7 +38,7 @@ db_array:
     - name: /dev/md/db_array
     - level: 0
     - devices:
-{% for device in pillar['osd_mappings'][grains['type']['journal'] %}
+{% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
       - {{ device }}
 {% endfor %}
     - chunk: 512
