@@ -18,3 +18,9 @@ mariadb:
     - watch:
       - file: /etc/mysql/mariadb.conf.d/99-openstack.cnf
     - order: 2
+
+root:
+  mysql_user.present:
+    - host: localhost
+    - password: {{ pillar ['mysql_root_password'] }}
+    - connection_unix_socket: /var/run/mysqld/mysqld.sock
