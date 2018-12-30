@@ -11,7 +11,7 @@ haproxy_{{ domain }}_service_dead:
     - prereq:
       - letsencrypt certonly -d {{ domain }} --agree-tos --email {{ pillar['haproxy']['tls_email'] }}
 
-letsencrypt certonly -d {{ domain }} --agree-tos --email {{ pillar['haproxy']['tls_email'] }}:
+letsencrypt certonly -d {{ domain }} --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}:
   cmd.run:
     - creates:
       - /etc/letsencrypt/live/{{ domain }}/fullchain.pem
