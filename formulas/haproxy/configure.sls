@@ -45,11 +45,6 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
          management_ip_address: {{ grains['ipv4'][0] }}
          dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
          console_domain:  {{ pillar['haproxy']['console_domain'] }}
-         ssl_config: ssl crt /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
-         certificates: |
-{% for domain in pillar['haproxy']['tls_domains'] %}
-             crt /etc/letsencrypt/live/{{ domain }}/master.pem 
-{% endfor %}
          glance_api_hosts: |
            server glance 10.10.123.123:9292 check inter 2000 rise 2 fall 5
          dashboard_hosts: |
