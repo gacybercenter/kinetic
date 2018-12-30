@@ -14,4 +14,6 @@ include:
 {% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         memcache_servers: memcache_servers = {{ address[0] }}:11211
 {% endfor %}
+        public_endpoint: foobar
     - order: 1
+    
