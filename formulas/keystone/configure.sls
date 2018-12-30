@@ -46,19 +46,16 @@ mine.update:
   file.managed:
     - source: salt://apps/public/ipa/files/ipa_ca.crt
     - source_hash: salt://apps/ipa/files/hash
-    - order: 4
 
 /usr/local/share/ca-certificates/ldap_ca.crt:
   file.managed:
     - source: salt://apps/public/ipa/files/ipa_ca.crt
     - source_hash: salt://apps/ipa/files/hash
-    - order: 5
 
 update-ca-certificates:
   cmd.run:
     - onchanges:
       - file: /usr/local/share/ca-certificates/ldap_ca.crt
-    - order: 6
 
 apache2_service:
   service.running:
@@ -69,4 +66,3 @@ apache2_service:
       - file: /etc/keystone/keystone.conf
       - file: /etc/keystone/domains/keystone.ipa.conf
       - file: /etc/apache2/sites-available/keystone.conf
-    - order: 9
