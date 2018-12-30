@@ -32,7 +32,7 @@ create_{{ service }}_db:
     - name: {{ service }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
-  {% for host, address in salt['mine.get']('type:'+service, 'network.ip_addrs', tgt_type='grain') %}
+  {% for host, address in salt['mine.get']('type:'+service, 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 
 create_{{ service }}_user_{{ host }}:
   mysql_user.present:
