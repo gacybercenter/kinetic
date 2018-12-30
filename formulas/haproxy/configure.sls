@@ -50,7 +50,7 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
          console_domain:  {{ pillar['haproxy']['console_domain'] }}
          keystone_hosts: |
            {%- for host, address in salt['mine.get']('type:keystone', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address }}:5000 check inter 2000 rise 2 fall 5
+           server {{ host }} {{ address[0] }}:5000 check inter 2000 rise 2 fall 5
            {% endfor %}
          glance_api_hosts: |
            server glance 10.10.123.123:9292 check inter 2000 rise 2 fall 5
