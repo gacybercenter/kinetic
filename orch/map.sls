@@ -23,7 +23,7 @@ parallel_provision_{{ phase }}:
               mods: orch/bootstrap
               pillar:
                 type: {{ type }}
-  {% elif if pillar['types'][type] == 'virtual' %}
+  {% elif pillar['types'][type] == 'virtual' %}
         provision_{{ type }}:
           - name: state.orchestrate
           - kwarg:
