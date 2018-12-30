@@ -17,3 +17,6 @@ install_ceph:
     - name: ceph
     - require:
       - pkgrepo: ceph_repo
+
+mdadm:
+  pkg.installed
