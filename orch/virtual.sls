@@ -30,7 +30,7 @@ get_available_controllers_for_{{ type }}:
 parallel_deploy_{{ type }}:
   salt.parallel_runners:
     - runners:
-  {% for host in range(count) %}
+{% for host in range(count) %}
         runner_{{ host }}:
           - name: state.orchestrate
           - kwarg:
@@ -38,5 +38,4 @@ parallel_deploy_{{ type }}:
               pillar:
                 type: {{ type }}
                 target: __slot__:salt:cmd.run("shuf -n 1 /root/{{ type }}_available_controllers")
-  {% endfor %}
 {% endfor %}
