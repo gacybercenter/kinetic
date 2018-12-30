@@ -33,7 +33,8 @@ if [[ $user_role_test != '' ]]; then
   echo 'Existing user role detected...skipping creation...'
   echo $user_role_test
 else
-  openstack role create user fi
+  openstack role create user
+fi
 
 service_user_test=$(openstack user list | grep keystone)
 
