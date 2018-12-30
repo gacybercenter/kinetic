@@ -37,7 +37,7 @@ create_{{ service }}_db:
 create_{{ service }}_user_{{ host }}:
   mysql_user.present:
     - name: {{ service }}
-    - password: {{ pillar [service + '_mysql_password'] }}
+    - password: {{ pillar [service][service + '_mysql_password'] }}
     - host: {{ address }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
