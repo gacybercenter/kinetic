@@ -15,3 +15,5 @@ base:
     - formulas/compute/configure
   cephmon*:
     - formulas/cephmon/configure
+  haproxy*:
+    - formulas/haproxy/configure
