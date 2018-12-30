@@ -138,6 +138,6 @@ mine.update:
   event.send:
     - name: {{ grains['type'] }}/mine/address/update
     - data: "{{ grains['type'] }} mine has been updated."
-  - onchanges:
-    - file:
-      - /etc/netplan/01-netcfg.yaml
+    - onchanges:
+      - file:
+        - /etc/netplan/01-netcfg.yaml
