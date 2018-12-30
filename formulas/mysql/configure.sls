@@ -46,7 +46,7 @@ grant_{{ service }}_privs_{{ host }}:
     - grant: all privileges
     - database: {{ service }}.*
     - user: {{ service }}
-    - host: {{ host[loop.index0] }}
+    - host: {{ address[loop.index0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
   {% endfor %}
