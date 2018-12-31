@@ -36,8 +36,8 @@ include:
 
 ceph auth import -i /etc/ceph/ceph.client.images.keyring:
   cmd.run:
-    - onchanges:
-      - file: /etc/ceph/ceph.client.images.keyring
+    - unless:
+      - ceph auth get client.images
 
 /etc/ceph/ceph.client.volumes.keyring:
   file.managed:
@@ -45,8 +45,8 @@ ceph auth import -i /etc/ceph/ceph.client.images.keyring:
 
 ceph auth import -i /etc/ceph/ceph.client.volumes.keyring:
   cmd.run:
-    - onchanges:
-      - file: /etc/ceph/ceph.client.volumes.keyring
+    - unless:
+      - ceph auth get client.volumes
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
