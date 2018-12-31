@@ -32,8 +32,12 @@ make_placement_service:
     - source: salt://formulas/nova/files/nova.conf
     - template: jinja
     - defaults:
-        api_sql_connection_string: 'connection = mysql+pymysql://nova:{{ pillar['nova_password'] }}@{{ pillar ['mysql_configuration']['address'] }}/nova_api'
-        sql_connection_string: 'connection = mysql+pymysql://nova:{{ pillar['nova_password'] }}@{{ pillar ['mysql_configuration']['address'] }}/nova'
+{% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        sql_connection_string: 'connection = mysql+pymysql://nova:{{ pillar['nova']['nova_mysql_password'] }}@{{ address[0] }}/nova'
+        api_sql_connection_string: 'connection = mysql+pymysql://nova:{{ pillar['nova']['nova_mysql_password'] }}@{{ address[0] }}/nova_api'
+{% endfor %}
+
+
         transport_url: transport_url = rabbit://openstack:{{ pillar['rmq_openstack_password'] }}@10.10.6.230
         www_authenticate_uri: www_authenticate_uri = {{ pillar['keystone_configuration']['public_endpoint']['protocol'] }}{{ pillar['keystone_configuration']['public_endpoint']['url'] }}{{ pillar['keystone_configuration']['public_endpoint']['port'] }}{{ pillar['keystone_configuration']['public_endpoint']['path'] }}
         auth_url: auth_url = {{ pillar['keystone_configuration']['internal_endpoint']['protocol'] }}{{ pillar['keystone_configuration']['internal_endpoint']['url'] }}{{ pillar['keystone_configuration']['internal_endpoint']['port'] }}{{ pillar['keystone_configuration']['internal_endpoint']['path'] }}
