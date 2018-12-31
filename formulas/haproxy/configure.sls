@@ -50,7 +50,13 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
            server {{ host }} {{ address[0] }}:5000 check inter 2000 rise 2 fall 5
            {% endfor %}
          glance_api_hosts: |
-           server glance 10.10.123.123:9292 check inter 2000 rise 2 fall 5
+           {%- for host, address in salt['mine.get']('type:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+           server {{ host }} {{ address[0] }}:9292 check inter 2000 rise 2 fall 5
+           {% endfor %}
+         glance_registry_hosts: |
+           {%- for host, address in salt['mine.get']('type:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+           server {{ host }} {{ address[0] }}:9191 check inter 2000 rise 2 fall 5
+           {% endfor %}
          dashboard_hosts: |
            server horizon 10.10.123.123:80 check inter 2000 rise 2 fall 5
          nova_spiceproxy_hosts: |
