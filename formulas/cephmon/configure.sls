@@ -90,5 +90,6 @@ ceph auth get-or-create mgr.{{ grains['id'] }} mon 'allow profile mgr' osd 'allo
 
 ceph-mgr@{{ grains['id'] }}:
   service.running:
+    - enable: true
     - watch:
       - cmd: ceph auth get-or-create mgr.{{ grains['id'] }} mon 'allow profile mgr' osd 'allow *' mds 'allow *' > /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring
