@@ -44,9 +44,9 @@ make_glance_service:
         www_authenticate_uri: {{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['path'] }}
         auth_url: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
 {% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        memcached_servers: memcache_servers = {{ address[0] }}:11211
+        memcached_servers: {{ address[0] }}:11211
 {% endfor %}
-        password: password = {{ pillar['glance_service_password'] }}
+        password: {{ pillar['glance_service_password'] }}
 
 /etc/glance/glance-registry.conf:
   file.managed:
@@ -59,9 +59,9 @@ make_glance_service:
         www_authenticate_uri: {{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints'$
         auth_url: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['interna$
 {% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        memcached_servers: memcache_servers = {{ address[0] }}:11211
+        memcached_servers: {{ address[0] }}:11211
 {% endfor %}
-        password: password = {{ pillar['glance_service_password'] }}
+        password: {{ pillar['glance_service_password'] }}
 
 /bin/sh -c "glance-manage db_sync" glance:
   cmd.run
