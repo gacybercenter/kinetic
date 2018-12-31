@@ -19,8 +19,3 @@ openstack service create --name nova --description "OpenStack Compute" compute
 openstack endpoint create --region RegionOne compute public {{ nova_public_endpoint }}
 openstack endpoint create --region RegionOne compute internal {{ nova_internal_endpoint }}
 openstack endpoint create --region RegionOne compute admin {{ nova_admin_endpoint }}
-
-su -s /bin/sh -c "nova-manage api_db sync" nova
-su -s /bin/sh -c "nova-manage cell_v2 map_cell0" nova
-su -s /bin/sh -c "nova-manage cell_v2 create_cell --name=cell1 --verbose" nova
-su -s /bin/sh -c "nova-manage db sync" nova

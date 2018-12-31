@@ -56,6 +56,20 @@ make_placement_service:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
+su -s /bin/sh -c "nova-manage api_db sync" nova:
+  cmd.run
+
+su -s /bin/sh -c "nova-manage cell_v2 map_cell0" nova:
+  cmd.run
+
+su -s /bin/sh -c "nova-manage cell_v2 create_cell --name=cell1 --verbose" nova:
+  cmd.run:
+    - unless:
+      - nova-manage cell_v2 list_cells | grep -q cell1
+
+su -s /bin/sh -c "nova-manage db sync" nova:
+  cmd.run
+
 nova_api_service:
   service.running:
     - name: nova-api
