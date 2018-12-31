@@ -45,14 +45,15 @@ create_{{ service }}_user_{{ host }}:
     - host: {{ address[0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
+    {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 grant_{{ service }}_privs_{{ host }}:
    mysql_grants.present:
     - grant: all privileges
-    - database: {{ service }}.*
+    - database: {{ db }}.*
     - user: {{ service }}
     - host: {{ address[0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
-
     {% endfor %}
+  {% endfor %}
 {% endfor %}
 
