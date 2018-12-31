@@ -83,12 +83,9 @@
         {%- if network == 'management' %}
             {{ binding[network] }}:
               dhcp4: yes
-        {%- elif network == 'public' %}
+        {%- elif grains['type'] == 'cache' and network == 'public' %}
             {{ binding[network] }}:
-              dhcp4: no
-          {%- if grains['type'] == 'cache' %}
               addresses: [{{ pillar['subnets']['public']['cache_ip'] }}/{{ pillar['subnets']['public']['network'].split('/')[1] }}]
-          {%- endif %}
         {%- else %}
           {%- set target_subnet = pillar['subnets'][network] %}
           {%- set target_subnet_netmask = target_subnet.split('/') %}
