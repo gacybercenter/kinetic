@@ -73,10 +73,10 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
            {%- for host, address in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
            server {{ host }} {{ address[0] }}:6082 check inter 2000 rise 2 fall 5
            {%- endfor %}
-
-
          dashboard_hosts: |
-           server horizon 10.10.123.123:80 check inter 2000 rise 2 fall 5
+           {%- for host, address in salt['mine.get']('type:horizon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+           server {{ host }} {{ address[0] }}:80 check inter 2000 rise 2 fall 5
+           {%- endfor %}
 
 haproxy_cfg_watch:
   service.running:
