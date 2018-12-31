@@ -57,10 +57,13 @@ make_placement_service:
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
 su -s /bin/sh -c "nova-manage api_db sync" nova:
-  cmd.run
+  cmd.run:
+    - unless:
+      - nova-manage api_db version | grep -q 61
 
 su -s /bin/sh -c "nova-manage cell_v2 map_cell0" nova:
-  cmd.run
+  cmd.run:
+    - unless: nova-manage cell_v2 list_cells | grep -q cell0
 
 su -s /bin/sh -c "nova-manage cell_v2 create_cell --name=cell1 --verbose" nova:
   cmd.run:
@@ -68,7 +71,9 @@ su -s /bin/sh -c "nova-manage cell_v2 create_cell --name=cell1 --verbose" nova:
       - nova-manage cell_v2 list_cells | grep -q cell1
 
 su -s /bin/sh -c "nova-manage db sync" nova:
-  cmd.run
+  cmd.run:
+    - unless:
+      - nova-manage db version | grep -q 390
 
 nova_api_service:
   service.running:
