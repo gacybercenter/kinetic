@@ -3,8 +3,13 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-mine.update:
-  module.run
+{{ grains['type'] }}_mine_update:
+  event.send:
+    - name: {{ grains['type'] }}/mine/address/update
+    - data: "{{ grains['type'] }} mine has been updated."
+
+sleep 5:
+  cmd.run
 
 /etc/keystone/keystone.conf:
   file.managed:
