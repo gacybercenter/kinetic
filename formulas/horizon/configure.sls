@@ -26,13 +26,6 @@ include:
     - user: horizon
     - group: horizon
 
-heat_db_resources:
-  archive.extracted:
-    - name: /var/lib/openstack-dashboard/static/dashboard/project/
-    - source: salt://formulas/horizon/files/heat.tar
-    - user: horizon
-    - group: horizon
-
 apache2_service:
   service.running:
     - name: apache2
