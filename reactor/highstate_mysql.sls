@@ -1,3 +1,3 @@
-highstate:
-  local.state.apply:
+highstate_mysql:
+  local.state.highstate:
     - tgt: mysql*
