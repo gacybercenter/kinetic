@@ -136,11 +136,7 @@ placeholder for ifupdown:
 networking_mine_update:
   module.run:
     - name: mine.update
-    - onchanges:
-      - file: /etc/netplan/01-netcfg.yaml
   event.send:
     - name: {{ grains['type'] }}/mine/address/update
     - data: "{{ grains['type'] }} mine has been updated."
-    - onchanges:
-      - file: /etc/netplan/01-netcfg.yaml
 
