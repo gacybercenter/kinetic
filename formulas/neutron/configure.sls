@@ -35,3 +35,37 @@ make_neutron_service:
         my_ip: {{ grains['ipv4'][0] }}
         nova_password: {{ pillar['nova']['nova_service_password'] }}
         designate_url: fixme
+
+/etc/neutron/api-paste.ini:
+  file.managed:
+    - source: salt://formulas/neutron/files/api-paste.ini
+
+/etc/neutron/plugins/ml2/ml2_conf.ini:
+  file.managed:
+    - source: salt://formulas/neutron/files/ml2_conf.ini
+
+/etc/neutron/plugins/ml2/linuxbridge_agent.ini:
+  file.managed:
+    - source: salt://formulas/neutron/files/linuxbridge_agent.ini
+    - template: jinja
+    - defaults:
+        local_ip: {% salt['network.ip_addrs']('cidr=10.60.4.0/22')[0] %}
+
+/etc/neutron/l3_agent.ini:
+  file.managed:
+    - source: salt://apps/openstack/neutron/files/l3_agent.ini
+    - source_hash: salt://apps/openstack/neutron/files/hash
+
+/etc/neutron/dhcp_agent.ini:
+  file.managed:
+    - source: salt://apps/openstack/neutron/files/dhcp_agent.ini
+    - source_hash: salt://apps/openstack/neutron/files/hash
+
+/etc/neutron/metadata_agent.ini:
+  file.managed:
+    - source: salt://apps/openstack/neutron/files/metadata_agent.ini
+    - source_hash: salt://apps/openstack/neutron/files/hash
+    - template: jinja
+    - defaults:
+        nova_metadata_host: nova_metadata_host = {{ pillar['nova_configuration']['internal_endpoint']['url'] }}
+        metadata_proxy_shared_secret: metadata_proxy_shared_secret = {{ pillar['metadata_secret'] }}
