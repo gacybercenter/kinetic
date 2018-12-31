@@ -79,8 +79,12 @@ initialize_keystone:
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
-    - requires:
-      - service: apache2
+
+restart_apache2:
+  cmd.run:
+    - name: systemctl restart apache2.service
+    - onchanges:
+      - cmd: initialize_keystone
 
 /var/lib/keystone/keystone.db:
   file.absent
