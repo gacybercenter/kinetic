@@ -3,16 +3,6 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-{{ grains['type'] }}_mine_update:
-  module.run:
-    - name: mine.update
-  event.send:
-    - name: {{ grains['type'] }}/mine/address/update
-    - data: "{{ grains['type'] }} mine has been updated."
-
-sleep 5:
-  cmd.run
-
 /etc/keystone/keystone.conf:
   file.managed:
     - source: salt://formulas/keystone/files/keystone.conf
