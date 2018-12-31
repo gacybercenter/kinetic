@@ -26,14 +26,18 @@ root:
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
 {% for service in pillar['openstack_services'] %}
-
-create_{{ service }}_db:
+  {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
+create_{{ db }}_db:
   mysql_database.present:
-    - name: {{ service }}
+    - name: {{ db }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
-
-  {% for host, address in salt['mine.get']('type:'+service, 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-
+  {% endfor %}
+  {% if service == 'placement' %}
+    {% for host, address in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+  {% else %}
+    {% for host, address in salt['mine.get']('type:'+service, 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+  {% endif %}
+  
 create_{{ service }}_user_{{ host }}:
   mysql_user.present:
     - name: {{ service }}
@@ -49,6 +53,6 @@ grant_{{ service }}_privs_{{ host }}:
     - host: {{ address[0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
-  {% endfor %}
+    {% endfor %}
 {% endfor %}
 
