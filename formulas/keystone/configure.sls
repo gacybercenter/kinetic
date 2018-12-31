@@ -4,6 +4,8 @@ include:
   - formulas/common/networking
 
 {{ grains['type'] }}_mine_update:
+  module.run:
+    - name: mine.update
   event.send:
     - name: {{ grains['type'] }}/mine/address/update
     - data: "{{ grains['type'] }} mine has been updated."
