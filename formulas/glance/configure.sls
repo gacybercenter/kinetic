@@ -62,7 +62,7 @@ make_glance_service:
 {% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
-        password: {{ pillar['glance_service_password'] }}
+        password: {{ pillar['glance']['glance_service_password'] }}
 
 /etc/glance/glance-registry.conf:
   file.managed:
@@ -77,7 +77,7 @@ make_glance_service:
 {% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
-        password: {{ pillar['glance_service_password'] }}
+        password: {{ pillar['glance']['glance_service_password'] }}
 
 /bin/sh -c "glance-manage db_sync" glance:
   cmd.run
