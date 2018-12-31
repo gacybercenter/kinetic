@@ -1,5 +1,5 @@
 include:
-  - /formulas/keystone/install
+  - /formulas/horizon/install
   - formulas/common/base
   - formulas/common/networking
 
