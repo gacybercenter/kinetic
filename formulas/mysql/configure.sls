@@ -46,7 +46,7 @@ create_{{ service }}_user_{{ host }}:
 
       {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
-grant_{{ service }}_privs_{{ host }}:
+grant_{{ service }}_privs_{{ host }}_{{ db }}:
    mysql_grants.present:
     - grant: all privileges
     - database: {{ db }}.*
