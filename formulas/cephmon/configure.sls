@@ -39,6 +39,15 @@ ceph auth import -i /etc/ceph/ceph.client.images.keyring:
     - onchanges:
       - file: /etc/ceph/ceph.client.images.keyring
 
+/etc/ceph/ceph.client.volumes.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-volumes-keyring
+
+ceph auth import -i /etc/ceph/ceph.client.volumes.keyring:
+  cmd.run:
+    - onchanges:
+      - file: /etc/ceph/ceph.client.volumes.keyring
+
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
