@@ -30,6 +30,15 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-client-admin-keyring
 
+/etc/ceph/ceph.client.images.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-images-keyring
+
+ceph auth import -i /etc/ceph/ceph.client.images.keyring:
+  cmd.run:
+    - onchanges:
+      - file: /etc/ceph/ceph.client.images.keyring
+
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
