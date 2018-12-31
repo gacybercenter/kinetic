@@ -3,9 +3,6 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-mine.update:
-  module.run
-
 {% for domain in pillar['haproxy']['tls_domains'] %}
 
 haproxy_{{ domain }}_service_dead:
