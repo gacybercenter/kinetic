@@ -3,9 +3,6 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-mine.update:
-  module.run
-
 rabbitmqctl add_user openstack {{ pillar['rabbitmq_password'] }}:
   cmd.run:
     - unless:
