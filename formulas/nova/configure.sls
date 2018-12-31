@@ -27,14 +27,6 @@ make_placement_service:
         placement_admin_endpoint: {{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['path'] }}
         placement_service_password: {{ pillar ['placement']['placement_service_password'] }}
 
-/usr/share/spice-html5/spice_auto.html:
-  file.managed:
-    - source: salt://formulas/nova/files/spice_auto.html
-
-/usr/share/spice-html5/spice.css:
-  file.managed:
-    - source: salt://formulas/nova/files/spice.css
-
 /etc/nova/nova.conf:
   file.managed:
     - source: salt://formulas/nova/files/nova.conf
