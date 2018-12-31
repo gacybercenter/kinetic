@@ -93,3 +93,12 @@ ceph-mgr@{{ grains['id'] }}:
     - enable: true
     - watch:
       - cmd: ceph auth get-or-create mgr.{{ grains['id'] }} mon 'allow profile mgr' osd 'allow *' mds 'allow *' > /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring
+
+fs.file-max:
+  sysctl.present:
+    - value: 500000
+
+
+/etc/security/limits.conf:
+  file.managed:
+    source: salt://formulas/cephmon/files/limits.conf
