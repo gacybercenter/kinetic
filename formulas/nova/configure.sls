@@ -47,13 +47,14 @@ make_placement_service:
 {% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         memcache_servers: {{ address[0] }}:11211
 {% endfor %}
-        password: {{ pillar['nova_service_password'] }}
+        password: {{ pillar['nova']['nova_service_password'] }}
         my_ip: {{ grains['ipv4'][0] }}
-        api_servers: api_servers = {{ pillar['glance_configuration']['internal_endpoint']['protocol'] }}{{ pillar['glance_configuration']['internal_endpoint']['url'] }}{{ pillar['glance_configuration']['internal_endpoint']['port'] }}{{ pillar['glance_configuration']['internal_endpoint']['path'] }}
-        neutron_url: url = {{ pillar['neutron_configuration']['internal_endpoint']['protocol'] }}{{ pillar['neutron_configuration']['internal_endpoint']['url'] }}{{ pillar['neutron_configuration']['internal_endpoint']['port'] }}{{ pillar['neutron_configuration']['internal_endpoint']['path'] }}
-        metadata_proxy_shared_secret: metadata_proxy_shared_secret = {{ pillar['metadata_secret'] }}
-        neutron_password: password = {{ pillar['neutron_service_password'] }}
-        placement_password: password = {{ pillar['placement_service_password'] }}
+        api_servers: {{ pillar['glance_configuration']['internal_endpoint']['protocol'] }}{{ pillar['glance_configuration']['internal_endpoint']['url'] }}{{ pillar['glance_configuration']['internal_endpoint']['port'] }}{{ pillar['glance_configuration']['internal_endpoint']['path'] }}
+        neutron_url: {{ pillar['neutron_configuration']['internal_endpoint']['protocol'] }}{{ pillar['neutron_configuration']['internal_endpoint']['url'] }}{{ pillar['neutron_configuration']['internal_endpoint']['port'] }}{{ pillar['neutron_configuration']['internal_endpoint']['path'] }}
+        metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
+        neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
+        placement_password: {{ pillar['placement']['placement_service_password'] }}
+        console_domain: {{ pillar['haproxy']['console_domain'] }}
 
 nova_api_service:
   service.running:
