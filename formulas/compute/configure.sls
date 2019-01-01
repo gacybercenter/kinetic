@@ -72,7 +72,7 @@ virsh secret-define --file /etc/ceph/ceph-volumes.xml:
 virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(cat /etc/ceph/client.volumes.key):
   cmd.run:
     - unless:
-      - virsh secret-get-value {{ pillar['volumes']['nova-uuid'] }}
+      - virsh secret-get-value {{ pillar['ceph']['volumes-uuid'] }}
 
 /etc/nova/nova.conf:
   file.managed:
