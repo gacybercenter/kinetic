@@ -10,14 +10,14 @@ include:
     - template: jinja
     - defaults:
         ip_address: {{ grains['ipv4'][0] }}
-    - order: 1
+    - require:
+      - sls: /formulas/mysql/install
 
 mariadb:
   service.running:
     - enable: True
     - watch:
       - file: /etc/mysql/mariadb.conf.d/99-openstack.cnf
-    - order: 2
 
 root:
   mysql_user.present:
