@@ -123,7 +123,13 @@ nova_compute_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['subnets']['private'])[0] }}
-        public_interface: {{ pillar['hosts'][grains['type']]['networks']['bindings'][3]['public'] }}
+{% for binding in pillar['virtual'][grains['type']]['networks']['bindings'] %}
+  {%- for network in binding %}
+    {% if network == 'public' %}
+        public_interface: {{ binding[network] }}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
 
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
