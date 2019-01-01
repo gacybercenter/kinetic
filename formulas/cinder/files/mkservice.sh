@@ -15,8 +15,8 @@ fi
 
 openstack user create --domain default --password {{ cinder_service_password }} cinder
 openstack role add --project service --user cinder admin
-openstack service create --name cinderv2 --description "OpenStack Block Storage" volumesv2
-openstack service create --name cinderv3 --description "OpenStack Block Storage" volumesv3
+openstack service create --name cinderv2 --description "OpenStack Block Storage" volumev2
+openstack service create --name cinderv3 --description "OpenStack Block Storage" volumev3
 openstack endpoint create --region RegionOne volumev2 public {{ cinder_public_endpoint_v2 }}
 openstack endpoint create --region RegionOne volumev2 internal {{ cinder_internal_endpoint_v2 }}
 openstack endpoint create --region RegionOne volumev2 admin {{ cinder_admin_endpoint_v2 }}
