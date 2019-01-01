@@ -96,7 +96,7 @@ nova_compute_service:
 
 /etc/neutron/neutron.conf:
   file.managed:
-    - source: salt://formuasl/compute/files/neutron-compute.conf
+    - source: salt://formulas/compute/files/neutron.conf
     - template: jinja
     - defaults:
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
