@@ -43,7 +43,7 @@ include:
 virsh secret-define --file /etc/ceph/ceph-nova.xml:
   cmd.run
 
-virsh secret-set-value --secret da05968d-4636-4545-aa09-e06b445cb22a --base64 $(cat /etc/ceph/client.compute.key):
+virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat /etc/ceph/client.compute.key):
   cmd.run
 
 /etc/ceph/client.volumes.key:
@@ -63,7 +63,7 @@ virsh secret-set-value --secret da05968d-4636-4545-aa09-e06b445cb22a --base64 $(
 virsh secret-define --file /etc/ceph/ceph-volumes.xml:
   cmd.run
 
-virsh secret-set-value --secret 03c3f5bc-2a8b-4de6-b74d-eb3c70f55ff4 --base64 $(cat /etc/ceph/client.volumes.key):
+virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(cat /etc/ceph/client.volumes.key):
   cmd.run
 
 /etc/nova/nova.conf:
