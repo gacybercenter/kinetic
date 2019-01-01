@@ -69,7 +69,9 @@ make_neutron_service:
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
 
 /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron:
-  cmd.run
+  cmd.run:
+    - unless:
+      - neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini current | grep -q 5c85685d616d
 
 fs.inotify.max_user_instances:
   sysctl.present:
