@@ -34,19 +34,9 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-client-images-keyring
 
-ceph auth import -i /etc/ceph/ceph.client.images.keyring:
-  cmd.run:
-    - unless:
-      - ceph auth get client.images
-
 /etc/ceph/ceph.client.volumes.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-volumes-keyring
-
-ceph auth import -i /etc/ceph/ceph.client.volumes.keyring:
-  cmd.run:
-    - unless:
-      - ceph auth get client.volumes
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
@@ -101,3 +91,17 @@ fs.file-max:
 /etc/security/limits.conf:
   file.managed:
     - source: salt://formulas/cephmon/files/limits.conf
+
+ceph auth import -i /etc/ceph/ceph.client.images.keyring:
+  cmd.run:
+    - onchanges:
+      - /etc/ceph/ceph.client.images.keyring
+    - require:
+      - service: ceph-mon@{{ grains['id'] }}
+
+ceph auth import -i /etc/ceph/ceph.client.volumes.keyring:
+  cmd.run:
+    - onchanges:
+      - /etc/ceph/ceph.client.volumes.keyring
+    - require:
+      - service: ceph-mon@{{ grains['id'] }}
