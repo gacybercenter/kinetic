@@ -1,5 +1,5 @@
 <secret ephemeral="no" private="no">
-<uuid>da05968d-4636-4545-aa09-e06b445cb22a</uuid>
+<uuid>{{ uuid }}</uuid>
 <usage type="ceph">
 <name>client.compute secret</name>
 </usage>
