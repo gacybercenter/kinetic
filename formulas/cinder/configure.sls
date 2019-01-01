@@ -61,7 +61,7 @@ make_cinder_service:
         my_ip: {{ grains['ipv4'][0] }}
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
 
-/bin/sh -c "cinder-manage db_sync" cinder:
+/bin/sh -c "cinder-manage db sync" cinder:
   cmd.run
 
 cinder_api_service:
