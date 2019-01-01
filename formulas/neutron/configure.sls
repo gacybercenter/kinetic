@@ -51,7 +51,13 @@ make_neutron_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['subnets']['private'])[0] }}
-        public_interface: {{ pillar['virtual']['neutron']['networks']['bindings'][0]['management'] }}
+{% for binding in pillar[srv][grains['type']]['networks']['bindings'] %}
+  {%- for network in binding %}
+    {% if network == 'public' %}
+        public_interface: {{ binding[network] }}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
 
 /etc/neutron/l3_agent.ini:
   file.managed:
