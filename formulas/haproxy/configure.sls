@@ -77,12 +77,10 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
            {%- for host, address in salt['mine.get']('type:horizon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
            server {{ host }} {{ address[0] }}:80 check inter 2000 rise 2 fall 5
            {%- endfor %}
-         neutron_hosts: |
+         neutron_api_hosts: |
            {%- for host, address in salt['mine.get']('type:neutron', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
            server {{ host }} {{ address[0] }}:9696 check inter 2000 rise 2 fall 5
            {%- endfor %}
-
-
 
 haproxy_cfg_watch:
   service.running:
