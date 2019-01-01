@@ -38,6 +38,10 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-client-volumes-keyring
 
+/etc/ceph/ceph.client.compute.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-compute-keyring
+
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
@@ -103,5 +107,12 @@ ceph auth import -i /etc/ceph/ceph.client.volumes.keyring:
   cmd.run:
     - onchanges:
       - /etc/ceph/ceph.client.volumes.keyring
+    - require:
+      - service: ceph-mon@{{ grains['id'] }}
+
+ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
+  cmd.run:
+    - onchanges:
+      - /etc/ceph/ceph.client.compute.keyring
     - require:
       - service: ceph-mon@{{ grains['id'] }}
