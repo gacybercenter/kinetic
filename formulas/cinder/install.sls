@@ -19,6 +19,7 @@ update_packages_uca:
     - onchanges:
       - pkgrepo: uca
     - dist_upgrade: True
+
 update_packages_ceph:
   pkg.uptodate:
     - refresh: true
@@ -34,9 +35,4 @@ cinder_packages:
       - python-openstackclient
       - cinder-volume
       - python-memcache
-
-install_ceph:
-  pkg.installed:
-    - name: ceph-common
-    - require:
-      - pkgrepo: ceph_repo
+      - ceph-common
