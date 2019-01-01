@@ -88,7 +88,7 @@ virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         password: {{ pillar['nova']['nova_service_password'] }}
-        my_ip: my_ip = {{ grains['ipv4'][0] }}
+        my_ip: {{ grains['ipv4'][0] }}
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
         neutron_url: {{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['path'] }}
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
