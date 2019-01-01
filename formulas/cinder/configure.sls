@@ -21,7 +21,7 @@ include:
 
 /etc/ceph/ceph.client.volumes.keyring:
   file.managed:
-    - contents_pillar: ceph-client-volumes-keyring
+    - contents_pillar: ceph:ceph-client-volumes-keyring
     - mode: 640
     - user: root
     - group: cinder
@@ -33,7 +33,7 @@ make_cinder_service:
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
         keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        cinder_internal_endpoint3_v2: {{ pillar ['openstack_services']['cinder']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['cinder']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['cinder']['configuration']['internal_endpoint']['v2_path'] }}
+        cinder_internal_endpoint_v2: {{ pillar ['openstack_services']['cinder']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['cinder']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['cinder']['configuration']['internal_endpoint']['v2_path'] }}
         cinder_public_endpoint_v2: {{ pillar ['openstack_services']['cinder']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['cinder']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['cinder']['configuration']['public_endpoint']['v2_path'] }}
         cinder_admin_endpoint_v2: {{ pillar ['openstack_services']['cinder']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['cinder']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['cinder']['configuration']['admin_endpoint']['v2_path'] }}
         cinder_internal_endpoint_v3: {{ pillar ['openstack_services']['cinder']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['cinder']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['cinder']['configuration']['internal_endpoint']['v3_path'] }}
