@@ -1,11 +1,11 @@
 include:
-  - /formulas/glance/install
+  - /formulas/heat/install
   - formulas/common/base
   - formulas/common/networking
 
 make_heat_service:
   cmd.script:
-    - source: salt://apps/openstack/heat/files/mkservice.sh
+    - source: salt://formulas/heat/files/mkservice.sh
     - template: jinja
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
@@ -20,8 +20,7 @@ make_heat_service:
 
 /etc/heat/heat.conf:
   file.managed:
-    - source: salt://apps/openstack/heat/files/heat.conf
-    - source_hash: salt://apps/openstack/heat/files/hash
+    - source: salt://formulas/heat/files/heat.conf
     - template: jinja
     - defaults:
         sql_connection_string: 'connection = mysql+pymysql://heat:{{ pillar['heat_password'] }}@{{ pillar ['mysql_configuration']['address'] }}/heat'
