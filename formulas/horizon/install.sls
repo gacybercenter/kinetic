@@ -21,4 +21,4 @@ horizon_packages:
       - python-heat-dashboard
       - python-pip
       - python-setuptools
-      - designate-dashboard
+      - python-designate-dashboard
