@@ -41,7 +41,7 @@ include:
         uuid: {{ pillar['ceph']['nova-uuid'] }}
 
 virsh secret-define --file /etc/ceph/ceph-nova.xml:
-  cmd.run
+  cmd.run:
     - unless:
       - virsh secret-list | grep -q {{ pillar['ceph']['nova-uuid'] }}
 
