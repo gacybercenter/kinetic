@@ -68,16 +68,16 @@ cinder_api_service:
   service.running:
     - name: apache2
     - watch:
-      - file: /etc/glance/cinder.conf
+      - file: /etc/cinder/cinder.conf
 
 cinder_scheduler_service:
   service.running:
     - name: cinder-scheduler
     - watch:
-      - file: /etc/glance/cinder.conf
+      - file: /etc/cinder/cinder.conf
 
 cinder_volume_service:
   service.running:
     - name: cinder-scheduler
     - watch:
-      - file: /etc/glance/cinder.conf
+      - file: /etc/cinder/cinder.conf
