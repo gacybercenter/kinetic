@@ -22,4 +22,3 @@ horizon_packages:
       - python-heat-dashboard
       - python-designate-dashboard
       - python-pip
-      - clamav
