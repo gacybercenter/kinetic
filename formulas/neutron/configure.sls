@@ -50,8 +50,7 @@ make_neutron_service:
     - source: salt://formulas/neutron/files/linuxbridge_agent.ini
     - template: jinja
     - defaults:
-        local_ip: {{ salt['network.ip_addrs'](cidr="10.60.4.0/22") }}
-#        local_ip: {{ salt['network.ip_addrs']('cidr="'+pillar['subnets']['private']+'"') }}
+        local_ip: {{ salt['network.ip_addrs'](cidr="pillar['subnets']['private']") }}
 
 /etc/neutron/l3_agent.ini:
   file.managed:
