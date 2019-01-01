@@ -56,14 +56,6 @@ make_placement_service:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
-/usr/share/spice-html5/spice_auto.html:
-  file.managed:
-    - source: salt://formulas/nova/files/spice_auto.html
-
-/usr/share/spice-html5/spice.css:
-  file.managed:
-    - source: salt://formulas/nova/files/spice.css
-
 su -s /bin/sh -c "nova-manage api_db sync" nova:
   cmd.run:
     - unless:
