@@ -86,6 +86,7 @@ virsh secret-set-value --secret 03c3f5bc-2a8b-4de6-b74d-eb3c70f55ff4 --base64 $(
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
+        console_domain: {{ pillar['haproxy']['console_domain'] }}
 
 nova_compute_service:
   service.running:
