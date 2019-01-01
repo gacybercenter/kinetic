@@ -19,3 +19,6 @@ horizon_packages:
       - openstack-dashboard
       - python-openstackclient
       - python-heat-dashboard
+      - python-pip
+      - python-setuptools
+      - designate-dashboard
