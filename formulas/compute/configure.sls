@@ -115,7 +115,7 @@ nova_compute_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['subnets']['private'])[0] }}
-        public_interface" {{ pillar['hosts'][grains['type']]['networks']['bindings']['public'] }}
+        public_interface" {{ pillar['hosts'][grains['type']]['networks']['bindings']['public'][3] }}
 
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
