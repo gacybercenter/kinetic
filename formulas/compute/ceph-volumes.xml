@@ -1,0 +1,6 @@
+<secret ephemeral="no" private="no">
+<uuid>03c3f5bc-2a8b-4de6-b74d-eb3c70f55ff4</uuid>
+<usage type="ceph">
+<name>client.volumes secret</name>
+</usage>
+</secret>
