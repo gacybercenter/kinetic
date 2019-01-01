@@ -35,6 +35,7 @@ make_neutron_service:
         my_ip: {{ grains['ipv4'][0] }}
         nova_password: {{ pillar['nova']['nova_service_password'] }}
         designate_url: fixme
+        designate_password: fixme
 
 /etc/neutron/api-paste.ini:
   file.managed:
