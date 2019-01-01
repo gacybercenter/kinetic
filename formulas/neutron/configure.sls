@@ -146,4 +146,8 @@ mk_public_network:
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
         keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-
+        start: {{ pillar['subnets']['float_start'] }}
+        end: {{ pillar['subnets']['float_end'] }}
+        dns: {{ pillar['subnets']['float_dns'] }}
+        gateway: {{ pillar['subnets']['float_gateway'] }}
+        cidr: {{ pillar['subnets']['public'] }}
