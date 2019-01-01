@@ -16,9 +16,9 @@ update_packages_uca:
 horizon_packages:
   pkg.installed:
     - pkgs:
-      - openstack-dashboard
       - python-openstackclient
       - python-heat-dashboard
       - python-pip
       - python-setuptools
       - python-designate-dashboard
+      - openstack-dashboard
