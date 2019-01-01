@@ -98,7 +98,6 @@ fs.file-max:
   sysctl.present:
     - value: 500000
 
-
 /etc/security/limits.conf:
   file.managed:
-    source: salt://formulas/cephmon/files/limits.conf
+    - source: salt://formulas/cephmon/files/limits.conf
