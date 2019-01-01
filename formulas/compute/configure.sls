@@ -38,7 +38,7 @@ include:
     - source: salt://formulas/compute/files/ceph-nova.xml
     - template: jinja
     - defaults:
-        uuid: {{ pillar['ceph']['nova-uuid']
+        uuid: {{ pillar['ceph']['nova-uuid'] }}
 
 virsh secret-define --file /etc/ceph/ceph-nova.xml:
   cmd.run
@@ -58,7 +58,7 @@ virsh secret-set-value --secret da05968d-4636-4545-aa09-e06b445cb22a --base64 $(
     - source: salt://formulas/compute/files/ceph-volumes.xml
     - template: jinja
     - defaults:
-        uuid: {{ pillar['ceph']['volumes-uuid']
+        uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
 virsh secret-define --file /etc/ceph/ceph-volumes.xml:
   cmd.run
