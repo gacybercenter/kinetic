@@ -123,7 +123,7 @@ nova_compute_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['subnets']['private'])[0] }}
-{% for binding in pillar['virtual'][grains['type']]['networks']['bindings'] %}
+{% for binding in pillar['host'][grains['type']]['networks']['bindings'] %}
   {%- for network in binding %}
     {% if network == 'public' %}
         public_interface: {{ binding[network] }}
