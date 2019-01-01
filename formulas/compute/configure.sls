@@ -28,7 +28,7 @@ include:
 
 /etc/ceph/client.compute.key:
   file.managed:
-    - contents_pillar: ceph:client-compute-key
+    - contents_pillar: ceph:ceph-client-compute-key
     - mode: 640
     - user: root
     - group: nova
@@ -48,7 +48,7 @@ virsh secret-set-value --secret da05968d-4636-4545-aa09-e06b445cb22a --base64 $(
 
 /etc/ceph/client.volumes.key:
   file.managed:
-    - contents_pillar: ceph:client-volumes-key
+    - contents_pillar: ceph:ceph-client-volumes-key
     - mode: 640
     - user: nova
     - group: nova
