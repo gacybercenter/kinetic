@@ -78,6 +78,6 @@ cinder_scheduler_service:
 
 cinder_volume_service:
   service.running:
-    - name: cinder-vulume
+    - name: cinder-volume
     - watch:
       - file: /etc/cinder/cinder.conf
