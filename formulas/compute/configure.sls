@@ -42,9 +42,13 @@ include:
 
 virsh secret-define --file /etc/ceph/ceph-nova.xml:
   cmd.run
+    - unless:
+      - virsh secret-list | grep -q {{ pillar['ceph']['nova-uuid'] }}
 
 virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat /etc/ceph/client.compute.key):
-  cmd.run
+  cmd.run:
+    - unless:
+      - virsh secret-get-value {{ pillar['ceph']['nova-uuid'] }}
 
 /etc/ceph/client.volumes.key:
   file.managed:
@@ -61,10 +65,14 @@ virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat
         uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
 virsh secret-define --file /etc/ceph/ceph-volumes.xml:
-  cmd.run
+  cmd.run:
+    - unless:
+      - virsh secret-list | grep -q {{ pillar['ceph']['volumes-uuid'] }}
 
 virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(cat /etc/ceph/client.volumes.key):
-  cmd.run
+  cmd.run:
+    - unless:
+      - virsh secret-get-value {{ pillar['volumes']['nova-uuid'] }}
 
 /etc/nova/nova.conf:
   file.managed:
