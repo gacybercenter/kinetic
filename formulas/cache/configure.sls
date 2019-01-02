@@ -14,6 +14,7 @@ apt-cacher-ng_service:
       - file: /etc/apt-cacher-ng/acng.conf
 
 {% for os, args in pillar.get('images', {}).items() %}
+  {% if args['controller'] == true %}
 /var/www/html/images/{{ args['name'] }}:
   file.managed:
     - source: {{ args['remote_url'] }}
@@ -21,12 +22,13 @@ apt-cacher-ng_service:
     - source_hash_name: {{ args['remote_source_hash_name'] }}
     - makedirs: True
 
-{% if args['needs_conversion'] == true %}
+    {% if args['needs_conversion'] == true %}
 qemu-img convert -f qcow2 {{ args['name'] }} {{ os }}.raw:
   cmd.run:
     - cwd: /var/www/html/images
     - creates: /var/www/html/images/{{ os }}.raw
-{% endif %}
+    {% endif %}
+  {% endif %}
 {% endfor %}
 
 sha512sum * > checksums:
