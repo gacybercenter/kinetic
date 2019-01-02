@@ -51,3 +51,41 @@ initialize_keystone:
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
 
+/etc/apache2/apache2.conf:
+  file.managed:
+    - source: salt://formulas/keystone/files/apache2.conf
+    - template: jinja
+    - defaults:
+        servername: ServerName {{ grains['id'] }}
+
+/etc/keystone/ldap_ca.crt:
+  file.managed:
+    - contents_pillar: ldap_ca
+
+/usr/local/share/ca-certificates/ldap_ca.crt:
+  file.managed:
+    - contents_pillar: ldap_ca
+
+update-ca-certificates:
+  cmd.run:
+    - onchanges:
+      - file: /usr/local/share/ca-certificates/ldap_ca.crt
+
+systemctl restart apache2.service && sleep 10:
+  cmd.run:
+    - prereq:
+      - cmd: project_init
+
+project_init:
+  cmd.script:
+    - source: salt://formulas/keystone/files/project_init.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
+        keystone_domain: {{ keystone_domain }}
+    - onchanges:
+      - file: /etc/keystone/keystone.conf
+      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
+
