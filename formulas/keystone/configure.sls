@@ -1,4 +1,4 @@
-{% set keystone_domain = pillar['common_ldap_configuration']['keystone_domain'] %}
+{% set keystone_domain = pillar['keystone_ldap_configuration']['keystone_domain'] %}
 
 include:
   - /formulas/keystone/install
