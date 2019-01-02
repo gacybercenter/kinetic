@@ -131,7 +131,7 @@ create_user_projects:
         end: {{ args['enddate'] }}
 {% endfor %}
 
-{% for project, args in pillar.get('projects', {}).items() %}
+{% for project, args in pillar.get('course_projects', {}).items() %}
 {{ project }}_project_creation:
   cmd.script:
     - source: salt://formulas/keystone/files/course_projects.sh
