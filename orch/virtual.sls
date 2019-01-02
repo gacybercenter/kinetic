@@ -46,17 +46,3 @@ sleep_{{ type }}_{{ host }}:
     - arg:
       - sleep 1
 {% endfor %}
-
-#parallel_deploy_{{ type }}:
-#  salt.parallel_runners:
-#    - runners:
-#{% for host in range(count) %}
-#        runner_{{ host }}:
-#          - name: state.orchestrate
-#          - kwarg:
-#              mods: orch/create_instances
-#              pillar:
-#                type: {{ type }}
-#                target: __slot__:salt:cmd.run("shuf -n 1 /tmp/{{ type }}_available_controllers")
-#                spawning: {{ loop.index0 }}
-#{% endfor %}
