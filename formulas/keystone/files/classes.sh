@@ -43,7 +43,7 @@ if [ $today -lt $startdate ]; then
       openstack role add --project {{ class }}-student-$students --user {{ class }}-student-$students user
       if [ "$urltemplate" != "None" ]; then
         export OS_USERNAME={{ class }}-student-$students
-        export OS_PASSWORD={{ password }}
+        export OS_PASSWORD={{ default_password }}
         export OS_PROJECT_NAME={{ class }}-student-$students
         export OS_USER_DOMAIN_NAME=Default
         export OS_PROJECT_DOMAIN_NAME=Default
@@ -70,7 +70,7 @@ if [ $today -lt $startdate ]; then
       openstack role add --project {{ class }}-instructor-$instructors --user {{ class }}-instructor-$instructors user
       if [ "$urltemplate" != "None" ]; then
         export OS_USERNAME={{ class }}-instructor-$instructors
-        export OS_PASSWORD={{ password }}
+        export OS_PASSWORD={{ default_password }}
         export OS_PROJECT_NAME={{ class }}-instructor-$instructors
         export OS_USER_DOMAIN_NAME=Default
         export OS_PROJECT_DOMAIN_NAME=Default
