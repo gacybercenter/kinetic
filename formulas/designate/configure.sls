@@ -35,7 +35,7 @@ make_designate_service:
 
 /etc/designate/tlds.conf:
   file.managed:
-    - source: salt://formulas/designate/files/tlds
+    - source: salt://formulas/designate/files/tlds.conf
 
 /etc/bind/named.conf.options:
   file.managed:
