@@ -38,6 +38,7 @@ ceph_user_exists:
       - Defaults:ceph !requiretty
     - file_mode: 644
 
+{% if grains['prime'] == true %}
 make_glance_service:
   cmd.script:
     - source: salt://formulas/glance/files/mkservice.sh
@@ -49,6 +50,7 @@ make_glance_service:
         glance_public_endpoint: {{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['path'] }}
         glance_admin_endpoint: {{ pillar ['openstack_services']['glance']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['glance']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['admin_endpoint']['path'] }}
         glance_service_password: {{ pillar ['glance']['glance_service_password'] }}
+{% endif %}
 
 /etc/glance/glance-api.conf:
   file.managed:
