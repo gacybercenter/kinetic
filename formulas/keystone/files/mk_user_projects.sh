@@ -29,4 +29,4 @@ do
 done
 
 # Cleanup
-rm /tmp/ipa_projects
+rm /tmp/ldap_projects
