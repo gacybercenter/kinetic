@@ -5,6 +5,18 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+initialize_keystone:
+  cmd.script:
+    - source: salt://formulas/keystone/files/initialize.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
+        admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
+        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
+        keystone_domain: {{ keystone_domain }}
+
 /etc/keystone/keystone.conf:
   file.managed:
     - source: salt://formulas/keystone/files/keystone.conf
@@ -70,26 +82,6 @@ apache2_service:
       - file: /etc/keystone/keystone.conf
       - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
       - file: /etc/apache2/sites-available/keystone.conf
-
-initialize_keystone:
-  cmd.script:
-    - source: salt://formulas/keystone/files/initialize.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
-        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
-        keystone_domain: {{ keystone_domain }}
-    - require:
-      - service: apache2
-
-restart_apache2:
-  cmd.run:
-    - name: systemctl restart apache2.service
-    - onchanges:
-      - cmd: initialize_keystone
 
 /var/lib/keystone/keystone.db:
   file.absent
