@@ -93,6 +93,10 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
            {%- for host, address in salt['mine.get']('type:cinder', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
            server {{ host }} {{ address[0] }}:8776 check inter 2000 rise 2 fall 5
            {%- endfor %}
+         designate_api_hosts: |
+           {%- for host, address in salt['mine.get']('type:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+           server {{ host }} {{ address[0] }}:9001 check inter 2000 rise 2 fall 5
+           {%- endfor %}
 
 
 haproxy_cfg_watch:
