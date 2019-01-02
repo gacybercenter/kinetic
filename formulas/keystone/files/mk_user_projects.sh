@@ -12,43 +12,6 @@ export OS_PROJECT_DOMAIN_NAME=Default
 export OS_AUTH_URL={{ internal_endpoint }}
 export OS_IDENTITY_API_VERSION=3
 
-project_test=$(openstack project list | grep service)
-
-if [[ $project_test != '' ]]; then
-  echo 'Existing service project detected...skipping creation...'
-  echo $project_test
-else
-  openstack project create --domain default --description "Service Project" service
-fi
-
-user_role_test=$(openstack role list | grep user)
-
-if [[ $user_role_test != '' ]]; then
-  echo 'Existing user role detected...skipping creation...'
-  echo $user_role_test
-else
-  openstack role create user
-fi
-
-service_user_test=$(openstack user list | grep keystone)
-
-if [[ $service_user_test != '' ]]; then
-  echo 'Existing keystone service user detected...skipping creation...'
-  echo $service_user_test
-else
-openstack user create --domain default --password {{ keystone_service_password }} keystone
-openstack role add --project service --user keystone admin
-fi
-
-ldap_domain_test=$(openstack domain list | grep "LDAP Domain")
-
-if [[ $ldap_domain_test != '' ]]; then
-  echo 'Existing ldap domain detected...skipping creation...'
-  echo $ldap_domain_test
-else
-  openstack domain create --description "LDAP Domain" {{ keystone_domain }}
-fi
-
 # Get current project list in the specified keystone domain and save to /tmp/{{ keystone_domain }}_projects
 openstack project list --domain {{ keystone_domain }} > /tmp/{{ keystone_domain }}_projects
 openstack user list --domain {{ keystone_domain }} | grep -P '[[:alnum:]]{64}' | awk '{ print $4 }' | while read uid

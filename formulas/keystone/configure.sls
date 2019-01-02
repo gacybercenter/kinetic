@@ -71,6 +71,23 @@ update-ca-certificates:
     - onchanges:
       - file: /usr/local/share/ca-certificates/ldap_ca.crt
 
+systemctl restart apache2.service:
+  cmd.run:
+    - onchanges:
+      - file: /etc/apache2/apache2.conf
+      - file: /etc/keystone/keystone.conf
+      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
+      - file: /etc/apache2/sites-available/keystone.conf      
+
+project_init:
+  cmd.script:
+    - source: salt://formulas/keystone/files/mk_user_projects.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints$
+        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
+
 apache2_service:
   service.running:
     - name: apache2
