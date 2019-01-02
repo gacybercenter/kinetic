@@ -41,6 +41,13 @@ set_prime_{{ type }}-{{ identifier }}:
     - tgt: '{{ type }}-{{ identifier }}'
     - arg:
       - prime true
+{% else %}
+set_prime_{{ type }}-{{ identifier }}:
+  salt.function:
+    - name grains.set
+    - tgt: '{{ type }}-{{ identifier }}'
+    - arg:
+      - prime false
 {% endif %}
 
 apply_base_{{ type }}-{{ identifier }}:
