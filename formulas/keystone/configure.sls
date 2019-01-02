@@ -71,8 +71,37 @@ update-ca-certificates:
     - onchanges:
       - file: /usr/local/share/ca-certificates/ldap_ca.crt
 
-systemctl restart apache2.service && sleep 10:
-  cmd.run:
-    - prereq:
-      - cmd: project_init
+project_init:
+  cmd.script:
+    - source: salt://formulas/keystone/files/project_init.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
+        keystone_domain: {{ keystone_domain }}
+    - onchanges:
+      - file: /etc/keystone/keystone.conf
+      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
 
+apache2_service:
+  service.running:
+    - name: apache2
+    - enable: True
+    - watch:
+      - file: /etc/keystone/keystone.conf
+      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
+      - file: /etc/apache2/apache2.conf
+
+/var/lib/keystone/keystone.db:
+  file.absent
+
+create_user_projects:
+  cmd.script:
+    - source: salt://formulas/keystone/files/mk_user_projects.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        keystone_domain: {{ keystone_domain }}
+        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
