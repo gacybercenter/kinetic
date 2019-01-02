@@ -10,9 +10,7 @@ make_designate_service:
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
         keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        designate_internal_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['designate']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['internal_endpoint']['path'] }}
         designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
-        designate_admin_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['designate']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['admin_endpoint']['path'] }}
         designate_service_password: {{ pillar ['designate']['designate_service_password'] }}
 
 /etc/designate/designate.conf:
@@ -33,63 +31,68 @@ make_designate_service:
 {% endfor %}
         password: {{ pillar['designate']['designate_service_password'] }}
         listen_api: {{ grains['ipv4'][0] }}:9001
-        trustee_domain_admin_password: {{ pillar['designate']['designate_service_password'] }}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/etc/glance/glance-api.conf:
+/etc/bind/named.conf.options:
   file.managed:
-    - source: salt://formulas/glance/files/glance-api.conf
+    - source: salt://formulas/designate/files/named.conf.options
     - template: jinja
     - defaults:
-{% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        sql_connection_string: 'connection = mysql+pymysql://glance:{{ pillar['glance']['glance_mysql_password'] }}@{{ address[0] }}/glance'
-{% endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-{% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        memcached_servers: {{ address[0] }}:11211
-{% endfor %}
-        password: {{ pillar['glance']['glance_service_password'] }}
+        host: {{ grains['ipv4'][1] }}
 
-/etc/glance/glance-registry.conf:
+/etc/designate/pools.yaml:
   file.managed:
-    - source: salt://formulas/glance/files/glance-registry.conf
+    - source: salt://apps/openstack/designate/files/pools.yaml
+    - source_hash: salt://apps/openstack/designate/files/hash
     - template: jinja
     - defaults:
-{% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        sql_connection_string: 'connection = mysql+pymysql://glance:{{ pillar['glance']['glance_mysql_password'] }}@{{ address[0] }}/glance'
-{% endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-{% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        memcached_servers: {{ address[0] }}:11211
-{% endfor %}
-        password: {{ pillar['glance']['glance_service_password'] }}
+        hostname: {{ grains['fqdn'] }}.
+        host: {{ grains['ipv4'][1] }}
 
-/bin/sh -c "glance-manage db_sync" glance:
+/etc/bind/rndc.key:
+  file.managed:
+    - contents_pillar: rndc_key
+    - mode: 640
+    - user: root
+    - group: bind
+
+/bin/sh -c "designate-manage database sync" designate:
   cmd.run
 
-glance_registry_service:
+designate_api_service:
   service.running:
-    - name: glance-registry
+    - name: designate-api
     - watch:
-      - file: /etc/glance/glance-registry.conf
+      - file: /etc/designate/designate.conf
 
-glance_api_service:
+designate_central_service:
   service.running:
-    - name: glance-api
+    - name: designate-central
     - watch:
-      - file: /etc/glance/glance-api.conf
+      - file: /etc/designate/designate.conf
+
+designate_worker_service:
+  service.running:
+    - name: designate-worker
+    - watch:
+      - file: /etc/designate/designate.conf
+
+designate_producer_service:
+  service.running:
+    - name: designate-producer
+    - watch:
+      - file: /etc/designate/designate.conf
+
+designate_mdns_service:
+  service.running:
+    - name: designate-mdns
+    - watch:
+      - file: /etc/designate/designate.conf
+
+designate_bind9_service:
+  service.running:
+    - name: bind9
+    - watch:
+      - file: /etc/bind/rndc.key
+
+/bin/sh -c "designate-manage pool update" designate:
+  cmd.run
