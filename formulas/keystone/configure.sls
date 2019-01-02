@@ -71,11 +71,6 @@ update-ca-certificates:
     - onchanges:
       - file: /usr/local/share/ca-certificates/ldap_ca.crt
 
-systemctl restart apache2.service && sleep 10:
-  cmd.run:
-    - prereq:
-      - cmd: project_init
-
 project_init:
   cmd.script:
     - source: salt://formulas/keystone/files/project_init.sh
@@ -88,6 +83,11 @@ project_init:
     - onchanges:
       - file: /etc/keystone/keystone.conf
       - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
+
+systemctl restart apache2.service && sleep 10:
+  cmd.run:
+    - prereq:
+      - cmd: project_init
 
 apache2_service:
   service.running:
