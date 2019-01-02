@@ -42,7 +42,7 @@ set_prime_{{ type }}-{{ identifier }}:
     - arg:
       - prime
     - kwarg:
-          val: true
+          val: {{ pillar['spawning'] }}
 
 {% else %}
 
@@ -53,7 +53,7 @@ set_prime_{{ type }}-{{ identifier }}:
     - arg:
       - prime
     - kwarg:
-          val: false
+          val: {{ pillar['spawning'] }}
 
 {% endif %}
 
