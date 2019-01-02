@@ -68,7 +68,6 @@ if [ $today -lt $startdate ]; then
       openstack user create {{ class }}-instructor-$instructors --password {{ password }} --or-show
       openstack project create {{ class }}-instructor-$instructors --or-show
       openstack role add --project {{ class }}-instructor-$instructors --user {{ class }}-instructor-$instructors user
-      openstack quota set --ram {{ maxram }} --instances {{ maxinstances }} --cores {{ maxvcpus }} {{ class }}-instructor-$instructors
       if [ "$urltemplate" != "None" ]; then
         export OS_USERNAME={{ class }}-instructor-$instructors
         export OS_PASSWORD={{ password }}

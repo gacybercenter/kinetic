@@ -124,9 +124,6 @@ create_user_projects:
         class: {{ class }}
         password: {{ args['password'] }}
         template: {{ args['heattemplate'] }}
-        maxvcpus: {{ args['maxvcpus'] }}
-        maxinstances: {{ args['maxinstances'] }}
-        maxram: {{ args['maxram'] }}
         start: {{ args['startdate'] }}
         end: {{ args['enddate'] }}
 {% endfor %}
