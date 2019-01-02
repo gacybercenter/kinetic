@@ -17,8 +17,6 @@ include:
         memcache_servers: memcache_servers = {{ address[0] }}:11211
 {% endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
-    - onchanges_in:
-      - cmd: project_init
 
 /etc/apache2/sites-available/keystone.conf:
   file.managed:
