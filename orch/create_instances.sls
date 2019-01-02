@@ -37,14 +37,16 @@ wait_for_minion_first_start_{{ type }}-{{ identifier }}:
 {% if pillar['spawning'] == 0 %}
 set_prime_{{ type }}-{{ identifier }}:
   salt.function:
-    - name grains.set
+    - name: grains.set
     - tgt: '{{ type }}-{{ identifier }}'
     - arg:
       - prime true
+
 {% else %}
+
 set_prime_{{ type }}-{{ identifier }}:
   salt.function:
-    - name grains.set
+    - name: grains.set
     - tgt: '{{ type }}-{{ identifier }}'
     - arg:
       - prime false
