@@ -44,4 +44,5 @@ else
   openstack domain create --description "LDAP Domain" {{ keystone_domain }}
   systemctl restart apache2.service
   sleep 10
+  touch /etc/keystone/projects_done
 fi
