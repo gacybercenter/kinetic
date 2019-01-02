@@ -38,4 +38,5 @@ parallel_deploy_{{ type }}:
               pillar:
                 type: {{ type }}
                 target: __slot__:salt:cmd.run("shuf -n 1 /tmp/{{ type }}_available_controllers")
+                spawning: {{ loop.index0 }}
 {% endfor %}
