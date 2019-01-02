@@ -42,7 +42,7 @@ set_prime_{{ type }}-{{ identifier }}:
     - arg:
       - prime
     - kwarg:
-          val: false
+          val: true
 
 {% else %}
 
@@ -51,7 +51,9 @@ set_prime_{{ type }}-{{ identifier }}:
     - name: grains.set
     - tgt: '{{ type }}-{{ identifier }}'
     - arg:
-      - prime "val=false"
+      - prime
+    - kwarg:
+          val: false
 
 {% endif %}
 
