@@ -150,7 +150,7 @@ neutron_l3_agent_service:
       - file: /etc/neutron/metadata_agent.ini
       - file: /etc/neutron/api-paste.ini
 
-{% if grains['prime'] == true %}
+{% if grains['spawning'] == 0 %}
 mk_public_network:
   cmd.script:
     - source: salt://formulas/neutron/files/mkpublic.sh
