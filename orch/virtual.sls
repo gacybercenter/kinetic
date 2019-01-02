@@ -27,16 +27,29 @@ get_available_controllers_for_{{ type }}:
     - arg:
       - salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//' > /tmp/{{ type }}_available_controllers
 
-parallel_deploy_{{ type }}:
-  salt.parallel_runners:
-    - runners:
 {% for host in range(count) %}
-        runner_{{ host }}:
-          - name: state.orchestrate
-          - kwarg:
-              mods: orch/create_instances
-              pillar:
-                type: {{ type }}
-                target: __slot__:salt:cmd.run("shuf -n 1 /tmp/{{ type }}_available_controllers")
-                spawning: {{ loop.index0 }}
+create_{{ type }}_{{ host }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/create_instances
+        pillar:
+          type: {{ type }}
+          target: __slot__:salt:cmd.run("shuf -n 1 /tmp/{{ type }}_available_controllers")
+          spawning: {{ loop.index0 }}
+    - parallel: true
 {% endfor %}
+
+#parallel_deploy_{{ type }}:
+#  salt.parallel_runners:
+#    - runners:
+#{% for host in range(count) %}
+#        runner_{{ host }}:
+#          - name: state.orchestrate
+#          - kwarg:
+#              mods: orch/create_instances
+#              pillar:
+#                type: {{ type }}
+#                target: __slot__:salt:cmd.run("shuf -n 1 /tmp/{{ type }}_available_controllers")
+#                spawning: {{ loop.index0 }}
+#{% endfor %}
