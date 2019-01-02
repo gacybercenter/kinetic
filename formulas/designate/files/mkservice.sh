@@ -17,8 +17,3 @@ openstack user create --domain default --password {{ designate_service_password 
 openstack role add --project service --user designate admin
 openstack service create --name designate --description "DNS" dns
 openstack endpoint create --region RegionOne dns public {{ designate_public_endpoint }}
-openstack endpoint create --region RegionOne dns internal {{ designate_internal_endpoint }}
-openstack endpoint create --region RegionOne dns admin {{ designate_admin_endpoint }}
-openstack domain create --description "designate projects and users" designate
-openstack user create --domain designate --password {{ designate_service_password }} designate_domain_admin
-openstack role add --domain designate --user-domain designate --user designate_domain_admin admin
