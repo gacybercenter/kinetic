@@ -3,7 +3,7 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-{% if grains['spawning'] == '0' %}
+{% if grains['spawning'] == 0 %}
 make_neutron_service:
   cmd.script:
     - source: salt://formulas/neutron/files/mkservice.sh
