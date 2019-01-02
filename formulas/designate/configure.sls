@@ -33,6 +33,9 @@ make_designate_service:
         listen_api: {{ grains['ipv4'][0] }}:9001
         designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
 
+/etc/designate/tlds.conf:
+  file.managed:
+    - source: salt://formulas/designate/files/tlds
 
 /etc/bind/named.conf.options:
   file.managed:
@@ -100,4 +103,11 @@ designate_bind9_service:
       - file: /etc/bind/rndc.key
 
 /bin/sh -c "designate-manage pool update" designate:
-  cmd.run
+  cmd.run:
+    - onchanges:
+      - file: /etc/designate/pools.yaml
+
+/bin/sh -c "designate-manage tlds import --input_file /etc/designate/tlds.conf" designate:
+  cmd.run:
+    - onchanges:
+      - file: /etc/designate/tlds.conf
