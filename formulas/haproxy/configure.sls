@@ -37,7 +37,7 @@ include:
 #{% endfor %}
 
 /etc/letsencrypt/live/cybbh.space/master.pem:
-  file.maanaged:
+  file.managed:
     - contents_pillar: letsencrypt:master.pem
     - makedirs: true
 
