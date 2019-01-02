@@ -56,7 +56,9 @@ make_designate_service:
     - group: bind
 
 /bin/sh -c "designate-manage database sync" designate:
-  cmd.run
+  cmd.run:
+    - unless:
+      - /bin/sh -c "designate-manage database version" designate | grep -q 100
 
 designate_api_service:
   service.running:
