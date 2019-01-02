@@ -17,6 +17,8 @@ include:
         memcache_servers: memcache_servers = {{ address[0] }}:11211
 {% endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
+    - onchanges_in:
+      - cmd: project_init
 
 /etc/apache2/sites-available/keystone.conf:
   file.managed:
@@ -40,6 +42,8 @@ include:
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ address[0] }}/keystone'
 {% endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
+    - onchanges_in:
+      - cmd: project_init
 
 initialize_keystone:
   cmd.script:
@@ -80,9 +84,6 @@ project_init:
         internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
         keystone_domain: {{ keystone_domain }}
-    - onchanges:
-      - file: /etc/keystone/keystone.conf
-      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
 
 systemctl restart apache2.service && sleep 10:
   cmd.run:
