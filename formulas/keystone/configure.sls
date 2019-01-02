@@ -1,4 +1,4 @@
-{% set keystone_domain = pillar['keystone_ldap_configuration']['keystone_domain'] %}
+7{% set keystone_domain = pillar['keystone_ldap_configuration']['keystone_domain'] %}
 
 include:
   - /formulas/keystone/install
@@ -75,17 +75,4 @@ systemctl restart apache2.service && sleep 10:
   cmd.run:
     - prereq:
       - cmd: project_init
-
-project_init:
-  cmd.script:
-    - source: salt://formulas/keystone/files/project_init.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
-        keystone_domain: {{ keystone_domain }}
-    - onchanges:
-      - file: /etc/keystone/keystone.conf
-      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
 
