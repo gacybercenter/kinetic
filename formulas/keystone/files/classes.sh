@@ -13,7 +13,7 @@ startdate=`date +%s -d {{ start }}`
 enddate=`date +%s -d {{ end }}`
 maxstudents=$(({{number_of_students}}-1))
 maxinstructors=$(({{number_of_instructors}}-1))
-subpassword={{ password }}
+subpassword={{ default_password }}
 subpassword=${subpassword:0:10}
 urltemplate={{ template }}
 echo "urltemplate:($urltemplate)"
@@ -38,7 +38,7 @@ if [ $today -lt $startdate ]; then
       export OS_PROJECT_DOMAIN_NAME=Default
       export OS_AUTH_URL={{ internal_endpoint }}
       export OS_IDENTITY_API_VERSION=3
-      openstack user create {{ class }}-student-$students --password {{ password }} --or-show
+      openstack user create {{ class }}-student-$students --password {{ default_password }} --or-show
       openstack project create {{ class }}-student-$students --or-show
       openstack role add --project {{ class }}-student-$students --user {{ class }}-student-$students user
       if [ "$urltemplate" != "None" ]; then
@@ -65,7 +65,7 @@ if [ $today -lt $startdate ]; then
       export OS_PROJECT_DOMAIN_NAME=Default
       export OS_AUTH_URL={{ internal_endpoint }}
       export OS_IDENTITY_API_VERSION=3
-      openstack user create {{ class }}-instructor-$instructors --password {{ password }} --or-show
+      openstack user create {{ class }}-instructor-$instructors --password {{ default_password }} --or-show
       openstack project create {{ class }}-instructor-$instructors --or-show
       openstack role add --project {{ class }}-instructor-$instructors --user {{ class }}-instructor-$instructors user
       if [ "$urltemplate" != "None" ]; then

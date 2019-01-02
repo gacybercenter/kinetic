@@ -122,10 +122,10 @@ create_user_projects:
         number_of_students: {{ args['students'] }}
         number_of_instructors: {{ args['instructors'] }}
         class: {{ class }}
-        password: {{ args['password'] }}
         template: {{ args['heattemplate'] }}
         start: {{ args['startdate'] }}
         end: {{ args['enddate'] }}
+        default_password: {{ pillar['classpw']['default_password'] }}
 {% endfor %}
 
 {% for project, args in pillar.get('projects', {}).items() %}
