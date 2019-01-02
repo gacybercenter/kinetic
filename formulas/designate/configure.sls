@@ -37,7 +37,7 @@ make_designate_service:
     - source: salt://formulas/designate/files/named.conf.options
     - template: jinja
     - defaults:
-        host: {{ grains['ipv4'][1] }}
+        public_dns: {{ pillar['subnets']['float_dns'] }}
 
 /etc/designate/pools.yaml:
   file.managed:
