@@ -3,6 +3,7 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+{% if grains['prime'] == true %}
 make_nova_service:
   cmd.script:
     - source: salt://formulas/nova/files/mkservice.sh
@@ -26,6 +27,7 @@ make_placement_service:
         placement_public_endpoint: {{ pillar ['openstack_services']['placement']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['placement']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['placement']['configuration']['public_endpoint']['path'] }}
         placement_admin_endpoint: {{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['path'] }}
         placement_service_password: {{ pillar ['placement']['placement_service_password'] }}
+{% endif %}
 
 /etc/nova/nova.conf:
   file.managed:

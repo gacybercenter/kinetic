@@ -3,6 +3,7 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+{% if grains['prime'] == true %}
 make_neutron_service:
   cmd.script:
     - source: salt://formulas/neutron/files/mkservice.sh
@@ -14,6 +15,7 @@ make_neutron_service:
         neutron_public_endpoint: {{ pillar ['openstack_services']['neutron']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['neutron']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['public_endpoint']['path'] }}
         neutron_admin_endpoint: {{ pillar ['openstack_services']['neutron']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['neutron']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['admin_endpoint']['path'] }}
         neutron_service_password: {{ pillar ['neutron']['neutron_service_password'] }}
+{% endif %}
 
 /etc/neutron/neutron.conf:
   file.managed:
@@ -148,6 +150,7 @@ neutron_l3_agent_service:
       - file: /etc/neutron/metadata_agent.ini
       - file: /etc/neutron/api-paste.ini
 
+{% if grains['prime'] == true %}
 mk_public_network:
   cmd.script:
     - source: salt://formulas/neutron/files/mkpublic.sh
@@ -160,3 +163,4 @@ mk_public_network:
         dns: {{ pillar['subnets']['float_dns'] }}
         gateway: {{ pillar['subnets']['float_gateway'] }}
         cidr: {{ pillar['subnets']['public'] }}
+{% endif %}
