@@ -111,34 +111,34 @@ create_user_projects:
         keystone_domain: {{ keystone_domain }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
 
-{% for class, args in pillar.get('classes', {}).items() %}
-{{ class }}_class_create:
-  cmd.script:
-    - source: salt://formulas/keystone/files/classes.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        number_of_students: {{ args['students'] }}
-        number_of_instructors: {{ args['instructors'] }}
-        class: {{ class }}
-        template: {{ args['heattemplate'] }}
-        start: {{ args['startdate'] }}
-        end: {{ args['enddate'] }}
-        default_password: {{ pillar['classpw']['default_password'] }}
-{% endfor %}
+# {% for class, args in pillar.get('classes', {}).items() %}
+# {{ class }}_class_create:
+#  cmd.script:
+#    - source: salt://formulas/keystone/files/classes.sh
+#    - template: jinja
+#    - defaults:
+#        admin_password: {{ pillar['openstack']['admin_password'] }}
+#        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+#        number_of_students: {{ args['students'] }}
+#        number_of_instructors: {{ args['instructors'] }}
+#        class: {{ class }}
+#        template: {{ args['heattemplate'] }}
+#        start: {{ args['startdate'] }}
+#        end: {{ args['enddate'] }}
+#        default_password: {{ pillar['classpw']['default_password'] }}
+# {% endfor %}
 
-{% for project, args in pillar.get('projects', {}).items() %}
-{{ project }}_project_creation:
-  cmd.script:
-    - source: salt://formulas/keystone/files/course_projects.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        project: {{ project }}
-        maxvcpus: {{ args['maxvcpus'] }}
-        maxinstances: {{ args['maxinstances'] }}
-        maxram: {{ args['maxram'] }}
-        gigabytes: {{ args['gigabytes'] }}
-{% endfor %}
+# {% for project, args in pillar.get('projects', {}).items() %}
+# {{ project }}_project_creation:
+#  cmd.script:
+#    - source: salt://formulas/keystone/files/course_projects.sh
+#    - template: jinja
+#    - defaults:
+#        admin_password: {{ pillar['openstack']['admin_password'] }}
+#        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+#        project: {{ project }}
+#        maxvcpus: {{ args['maxvcpus'] }}
+#        maxinstances: {{ args['maxinstances'] }}
+#        maxram: {{ args['maxram'] }}
+#        gigabytes: {{ args['gigabytes'] }}
+# {% endfor %}
