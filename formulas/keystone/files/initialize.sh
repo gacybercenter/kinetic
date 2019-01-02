@@ -7,7 +7,6 @@ export OS_PROJECT_DOMAIN_NAME=Default
 export OS_AUTH_URL={{ internal_endpoint }}
 export OS_IDENTITY_API_VERSION=3
 
-
 /bin/sh -c "keystone-manage db_sync" keystone
 keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
 keystone-manage credential_setup --keystone-user keystone --keystone-group keystone

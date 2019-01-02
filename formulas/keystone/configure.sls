@@ -82,6 +82,8 @@ initialize_keystone:
         admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
         keystone_domain: {{ keystone_domain }}
+    - require:
+      - service: apache2
 
 restart_apache2:
   cmd.run:
