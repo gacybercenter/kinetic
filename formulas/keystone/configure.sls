@@ -93,6 +93,10 @@ apache2_service:
   service.running:
     - name: apache2
     - enable: True
+    - watch:
+      - file: /etc/keystone/keystone.conf
+      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
+      - file: /etc/apache2/apache2.conf
 
 /var/lib/keystone/keystone.db:
   file.absent
