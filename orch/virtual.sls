@@ -38,6 +38,13 @@ create_{{ type }}_{{ host }}:
           target: __slot__:salt:cmd.run("shuf -n 1 /tmp/{{ type }}_available_controllers")
           spawning: {{ loop.index0 }}
     - parallel: true
+
+sleep_{{ type }}_{{ host }}:
+  salt.function:
+    - name: cmd.run
+    - tgt: 'salt'
+    - arg:
+      - sleep 1
 {% endfor %}
 
 #parallel_deploy_{{ type }}:
