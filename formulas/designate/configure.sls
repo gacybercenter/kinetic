@@ -41,16 +41,14 @@ make_designate_service:
 
 /etc/designate/pools.yaml:
   file.managed:
-    - source: salt://apps/openstack/designate/files/pools.yaml
-    - source_hash: salt://apps/openstack/designate/files/hash
+    - source: salt://formulas/designate/files/pools.yaml
     - template: jinja
     - defaults:
         hostname: {{ grains['fqdn'] }}.
-        host: {{ grains['ipv4'][1] }}
 
 /etc/bind/rndc.key:
   file.managed:
-    - contents_pillar: rndc_key
+    - contents_pillar: designate:designate_rndc_key
     - mode: 640
     - user: root
     - group: bind
@@ -73,18 +71,21 @@ designate_central_service:
 designate_worker_service:
   service.running:
     - name: designate-worker
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
 
 designate_producer_service:
   service.running:
     - name: designate-producer
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
 
 designate_mdns_service:
   service.running:
     - name: designate-mdns
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
 
