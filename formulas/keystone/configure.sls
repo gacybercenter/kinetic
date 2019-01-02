@@ -99,4 +99,4 @@ create_user_projects:
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
         internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-
+        keystone_domain: {{ keystone_domain }}
