@@ -73,7 +73,7 @@ update-ca-certificates:
 
 project_init:
   cmd.script:
-    - source: salt://formulas/keystone/files/mk_user_projects.sh
+    - source: salt://formulas/keystone/files/project_init.sh
     - template: jinja
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
