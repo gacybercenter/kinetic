@@ -3,36 +3,43 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-{% for domain in pillar['haproxy']['tls_domains'] %}
 
-haproxy_{{ domain }}_service_dead:
-  service.dead:
-    - name: haproxy
-    - prereq:
-      - letsencrypt certonly -d {{ domain }} --non-interactive --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}
+## Hit LE renewal limits.  Temporarily commenting out and using manual wildcard cert.  This code works.
+#{% for domain in pillar['haproxy']['tls_domains'] %}
 
-letsencrypt certonly -d {{ domain }} --non-interactive --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}:
-  cmd.run:
-    - creates:
-      - /etc/letsencrypt/live/{{ domain }}/fullchain.pem
-      - /etc/letsencrypt/live/{{ domain }}/privkey.pem
+#haproxy_{{ domain }}_service_dead:
+#  service.dead:
+#    - name: haproxy
+#    - prereq:
+#      - letsencrypt certonly -d {{ domain }} --non-interactive --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}
 
-cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem:
-  cmd.run:
-    - creates:
-      - /etc/letsencrypt/live/{{ domain }}/master.pem
+#letsencrypt certonly -d {{ domain }} --non-interactive --standalone --agree-tos --email {{ pillar['haproxy']['tls_email'] }}:
+#  cmd.run:
+#    - creates:
+#      - /etc/letsencrypt/live/{{ domain }}/fullchain.pem
+#      - /etc/letsencrypt/live/{{ domain }}/privkey.pem
 
-haproxy_{{ domain }}_service_running:
-  service.running:
-    - name: haproxy
+#cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem:
+#  cmd.run:
+#    - creates:
+#      - /etc/letsencrypt/live/{{ domain }}/master.pem
 
-systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalone --agree-tos && cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem && systemctl start haproxy.service:
-  cron.present:
-    - dayweek: 0
-    - minute: {{ loop.index0 }}
-    - hour: 4
+#haproxy_{{ domain }}_service_running:
+#  service.running:
+#    - name: haproxy
 
-{% endfor %}
+#systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalone --agree-tos && cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem && systemctl start haproxy.service:
+#  cron.present:
+#    - dayweek: 0
+#    - minute: {{ loop.index0 }}
+#    - hour: 4
+
+#{% endfor %}
+
+/etc/letsencrypt/live/cybbh.space/master.pem:
+  file.maanaged:
+    - contents_pillar: letsencrypt:master.pem
+    - makedirs: true
 
 /etc/haproxy/haproxy.cfg:
   file.managed:
@@ -97,7 +104,6 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
            {%- for host, address in salt['mine.get']('type:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
            server {{ host }} {{ address[0] }}:9001 check inter 2000 rise 2 fall 5
            {%- endfor %}
-
 
 haproxy_cfg_watch:
   service.running:
