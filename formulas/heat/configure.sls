@@ -3,6 +3,7 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+{% if grains['prime'] == true %}
 make_heat_service:
   cmd.script:
     - source: salt://formulas/heat/files/mkservice.sh
@@ -17,6 +18,7 @@ make_heat_service:
         heat_internal_endpoint_cfn: {{ pillar['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['path'] }}
         heat_public_endpoint_cfn: {{ pillar['openstack_services']['heat']['configuration']['public_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['heat']['configuration']['public_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['public_endpoint_cfn']['path'] }}
         heat_admin_endpoint_cfn: {{ pillar['openstack_services']['heat']['configuration']['admin_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint_cfn']['path'] }}
+{% endif %}
 
 /etc/heat/heat.conf:
   file.managed:
