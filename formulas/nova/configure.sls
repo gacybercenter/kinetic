@@ -113,3 +113,17 @@ nova-spiceproxy_service:
       - nova-spiceproxy
     - watch:
       - file: /etc/nova/nova.conf
+
+{% for flavor_name, args in pillar.get('flavors', {}).items() %}
+{{ flavor_name }}_flavor_creation:
+  cmd.script:
+    - source: salt://formulas/nova/files/flavors.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        vcpus: {{ args['vcpus'] }}
+        ram: {{ args['ram'] }}
+        disk: {{ args['disk'] }}
+        flavor_name: {{ flavor_name }}
+{% endfor %}
