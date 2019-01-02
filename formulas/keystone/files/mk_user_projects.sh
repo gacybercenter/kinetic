@@ -12,21 +12,21 @@ export OS_PROJECT_DOMAIN_NAME=Default
 export OS_AUTH_URL={{ internal_endpoint }}
 export OS_IDENTITY_API_VERSION=3
 
-# Get current project list in the specified keystone domain and save to /tmp/ldap_projects
-openstack project list --domain ldap > /tmp/ldap_projects
-openstack user list --domain ldap | grep -P '[[:alnum:]]{64}' | awk '{ print $4 }' | while read uid
+# Get current project list in the specified keystone domain and save to /tmp/{{ keystone_domain }}_projects
+openstack project list --domain {{ keystone_domain }} > /tmp/{{ keystone_domain }}_projects
+openstack user list --domain {{ keystone_domain }} | grep -P '[[:alnum:]]{64}' | awk '{ print $4 }' | while read uid
 do
-  project_test=$(grep $uid /tmp/ldap_projects)
+  project_test=$(grep $uid /tmp/{{ keystone_domain }}_projects)
   if [[ $project_test != '' ]]; then
     echo -n 'Existing '
     echo -n $uid
     echo ' project detected...skipping creation...'
     echo $project_test
   else
-    openstack project create $uid --domain ldap
-    openstack role add --user $uid --user-domain ldap --project $uid --project-domain ldap user
+    openstack project create $uid --domain {{ keystone_domain }}
+    openstack role add --user $uid --user-domain {{ keystone_domain }} --project $uid --project-domain {{ keystone_domain }} user
   fi
 done
 
 # Cleanup
-rm /tmp/ldap_projects
+rm /tmp/{{ keystone_domain }}_projects
