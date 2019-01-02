@@ -1,3 +1,5 @@
+{% set keystone_domain = pillar['common_ldap_configuration']['keystone_domain'] %}
+
 include:
   - /formulas/keystone/install
   - formulas/common/base
@@ -20,7 +22,7 @@ include:
   file.managed:
     - source: salt://formulas/keystone/files/apache-keystone.conf
 
-/etc/keystone/domains/keystone.ldap.conf:
+/etc/keystone/domains/keystone.{{ keystone_domain }}.conf:
   file.managed:
     - source: salt://formulas/keystone/files/keystone-ldap.conf
     - makedirs: True
@@ -66,7 +68,7 @@ apache2_service:
     - watch:
       - file: /etc/apache2/apache2.conf
       - file: /etc/keystone/keystone.conf
-      - file: /etc/keystone/domains/keystone.ldap.conf
+      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
       - file: /etc/apache2/sites-available/keystone.conf
 
 initialize_keystone:
@@ -79,6 +81,7 @@ initialize_keystone:
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
+        keystone_domain: {{ keystone_domain }}
 
 restart_apache2:
   cmd.run:

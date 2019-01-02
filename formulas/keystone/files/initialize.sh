@@ -43,7 +43,7 @@ if [[ $service_user_test != '' ]]; then
   echo $service_user_test
 else
 openstack user create --domain default --password {{ keystone_service_password }} keystone
-openstack role add --project service --user keystone admin 
+openstack role add --project service --user keystone admin
 fi
 
 ldap_domain_test=$(openstack domain list | grep "LDAP Domain")
@@ -52,5 +52,5 @@ if [[ $ldap_domain_test != '' ]]; then
   echo 'Existing ldap domain detected...skipping creation...'
   echo $ldap_domain_test
 else
-  openstack domain create --description "LDAP Domain" ldap
+  openstack domain create --description "LDAP Domain" {{ keystone_domain }}
 fi
