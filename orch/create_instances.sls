@@ -39,7 +39,7 @@ set_spawning_{{ type }}-{{ identifier }}:
     - name: grains.set
     - tgt: '{{ type }}-{{ identifier }}'
     - arg:
-      - prime
+      - spawning
     - kwarg:
           val: {{ pillar['spawning'] }}
 
