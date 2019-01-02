@@ -51,13 +51,6 @@ initialize_keystone:
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
 
-systemctl restart apache2.service:
-  cmd.run:
-    - onchanges:
-      - file: /etc/apache2/apache2.conf
-      - file: /etc/keystone/keystone.conf
-      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
-
 /etc/apache2/apache2.conf:
   file.managed:
     - source: salt://formulas/keystone/files/apache2.conf
@@ -78,6 +71,11 @@ update-ca-certificates:
     - onchanges:
       - file: /usr/local/share/ca-certificates/ldap_ca.crt
 
+systemctl restart apache2.service && sleep 10:
+  cmd.run:
+    - prereq:
+      - cmd: project_init
+
 project_init:
   cmd.script:
     - source: salt://formulas/keystone/files/project_init.sh
@@ -87,6 +85,9 @@ project_init:
         internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
         keystone_domain: {{ keystone_domain }}
+    - onchanges:
+      - file: /etc/keystone/keystone.conf
+      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
 
 apache2_service:
   service.running:
