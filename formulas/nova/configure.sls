@@ -80,6 +80,8 @@ nova-manage db sync:
     - require:
       - file: /etc/nova/nova.conf
       - service: nova-api
+    - creates:
+      - /etc/nova/flavors/{{ flavor_name }}
 
   {% endfor %}
 
