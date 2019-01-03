@@ -55,6 +55,8 @@ make_glance_service:
 glance-manage db_sync:
   cmd.run:
     - runas: glance
+    - unless:
+      - glance-manage db check  
 
 spawnzero_complete:
   event.send:
@@ -62,7 +64,6 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
     - onchanges:
       - cmd: glance-manage db_sync
-
 
 {% endif %}
 
@@ -111,15 +112,15 @@ glance_api_service:
     - watch:
       - file: /etc/glance/glance-api.conf
 
-{% for image, args in pillar.get('images', {}).items() %}
-{{ image }}_upload:
-  cmd.script:
-    - source: salt://formulas/glance/files/image_upload.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        needs_conversion: {{ args['needs_conversion'] }}
-        remote_url: {{ args['remote_url'] }}
-        glance_name: {{ args['glance_name'] }}
-{% endfor %}
+#{% for image, args in pillar.get('images', {}).items() %}
+#{{ image }}_upload:
+#  cmd.script:
+#    - source: salt://formulas/glance/files/image_upload.sh
+#    - template: jinja
+#    - defaults:
+#        admin_password: {{ pillar['openstack']['admin_password'] }}
+#        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+#        needs_conversion: {{ args['needs_conversion'] }}
+#        remote_url: {{ args['remote_url'] }}
+#        glance_name: {{ args['glance_name'] }}
+#{% endfor %}
