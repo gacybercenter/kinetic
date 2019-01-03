@@ -82,6 +82,18 @@ mine_update_{{ type }}-{{ identifier }}:
     - name: mine.update
     - tgt: '{{ type }}*'
 
+{% if pillar['spawning']|int != 0 %}
+
+wait_for_spawning_0_{{ type }}-{{ identifier }}:
+  salt.wait_for_event:
+    - name: {{ type }}/spawnzero/complete
+    - id_list:
+      - {{ type }}/spawnzero/complete
+    - event_id: tag
+    - timeout: 600
+
+{% endif %}
+
 minion_setup_{{ type }}-{{ identifier }}:
   salt.state:
     - tgt: '{{ type }}-{{ identifier }}'
