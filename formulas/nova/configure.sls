@@ -31,21 +31,33 @@ make_placement_service:
 
 nova-manage api_db sync:
   cmd.run:
+    - runas: nova
+    - require:
+      - file: /etc/nova/nova.conf
     - unless:
       - nova-manage api_db version | grep -q 61
 
 nova-manage cell_v2 map_cell0:
   cmd.run:
+    - runas: nova
+    - require:
+      - file: /etc/nova/nova.conf
     - unless:
       - nova-manage cell_v2 list_cells | grep -q cell0
 
 nova-manage cell_v2 create_cell --name=cell1 --verbose:
   cmd.run:
+    - runas: nova
+    - require:
+      - file: /etc/nova/nova.conf
     - unless:
       - nova-manage cell_v2 list_cells | grep -q cell1
 
 nova-manage db sync:
   cmd.run:
+    - runas: nova
+    - require:
+      - file: /etc/nova/nova.conf
     - unless:
       - nova-manage db version | grep -q 390
 
