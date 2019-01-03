@@ -140,5 +140,5 @@ create_user_projects:
         maxinstances: {{ args['maxinstances'] }}
         maxram: {{ args['maxram'] }}
         gigabytes: {{ args['gigabytes'] }}
-  {% for member in args.get('members') -%}member,{%- endfor %}
+        members: {{ args['members'] }}
 {% endfor %}
