@@ -14,11 +14,14 @@ export OS_AUTH_URL={{ internal_endpoint }}
 export OS_IDENTITY_API_VERSION=3
 
 
-echo "Checking for {{ flavor_name }}..."
-flavorexistcheck=$(openstack flavor list | grep -q {{ flavor_name }} )
-if [[ $? != 0 ]]; then
-    # flavor does not exist.  if the openstack command fails for a general failure it will fall here as well
-    openstack flavor create --ram {{ ram }} --disk {{ disk }} --vcpus {{ vcpus }} --public {{ flavor_name }}
-else
-    echo "flavor - {{ flavor_name }} - exists already.  Exiting..."
+try=0
+until [ $try -ge 5 ]
+do
+  openstack flavor create --ram {{ ram }} --disk {{ disk }} --vcpus {{ vcpus }} --public {{ flavor_name }} && break
+  $try=[$try+1]
+  sleep 5
+done
+if [[ $? = 0 ]]
+then
+  touch /etc/nova/flavors/{{ flavor_name }}
 fi
