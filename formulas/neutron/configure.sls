@@ -19,6 +19,14 @@ make_neutron_service:
 neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head:
   cmd.run:
     - runas: neutron
+    - require:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+      - file: /etc/neutron/l3_agent.ini
+      - file: /etc/neutron/dhcp_agent.ini
+      - file: /etc/neutron/metadata_agent.ini
+      - file: /etc/neutron/api-paste.ini
     - unless:
       - neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini current | grep -q 5c85685d616d
 
