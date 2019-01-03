@@ -7,11 +7,11 @@ export OS_USER_DOMAIN_NAME=Default
 export OS_PROJECT_DOMAIN_NAME=Default
 export OS_AUTH_URL={{ internal_endpoint }}
 export OS_IDENTITY_API_VERSION=3
-echo {{ members }}
-#if [ `openstack project list | grep {{ project }} -c` -eq 0 ]; then
-#  echo "INFO: CREATED {{ project }} and set quotas"
-#  openstack project create {{ project }} --or-show
-#  openstack quota set --ram {{ maxram }} --instances {{ maxinstances }} --cores {{ maxvcpus }} --gigabytes {{ gigabytes }} {{ project }}
+
+if [ `openstack project list | grep {{ project }} -c` -eq 0 ]; then
+  echo "INFO: CREATED {{ project }} and set quotas"
+  openstack project create {{ project }} --or-show
+  openstack quota set --ram {{ maxram }} --instances {{ maxinstances }} --cores {{ maxvcpus }} --gigabytes {{ gigabytes }} {{ project }}
 #  for member in {{ members }}; do
 #    openstack role add --project {{ project }} --user $member --user-domain ipa user
 #  done
