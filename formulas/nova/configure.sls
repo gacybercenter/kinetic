@@ -29,12 +29,35 @@ make_placement_service:
         placement_admin_endpoint: {{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['path'] }}
         placement_service_password: {{ pillar ['placement']['placement_service_password'] }}
 
+nova-manage api_db sync:
+  cmd.run:
+    - unless:
+      - nova-manage api_db version | grep -q 61
+
+nova-manage cell_v2 map_cell0:
+  cmd.run:
+    - unless:
+      - nova-manage cell_v2 list_cells | grep -q cell0
+
+nova-manage cell_v2 create_cell --name=cell1 --verbose:
+  cmd.run:
+    - unless:
+      - nova-manage cell_v2 list_cells | grep -q cell1
+
+nova-manage db sync:
+  cmd.run:
+    - unless:
+      - nova-manage db version | grep -q 390
+
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
     - onchanges:
-      - cmd: neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head
+      - cmd: nova-manage api_db sync
+      - cmd: nova-manage cell_v2 map_cell0
+      - cmd: nova-manage cell_v2 create_cell --name=cell1 --verbose
+      - cmd: nova-manage db sync
 
 {% endif %}
 
@@ -66,26 +89,6 @@ spawnzero_complete:
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
-
-su -s /bin/sh -c "nova-manage api_db sync" nova:
-  cmd.run:
-    - unless:
-      - nova-manage api_db version | grep -q 61
-
-su -s /bin/sh -c "nova-manage cell_v2 map_cell0" nova:
-  cmd.run:
-    - unless:
-      - nova-manage cell_v2 list_cells | grep -q cell0
-
-su -s /bin/sh -c "nova-manage cell_v2 create_cell --name=cell1 --verbose" nova:
-  cmd.run:
-    - unless:
-      - nova-manage cell_v2 list_cells | grep -q cell1
-
-su -s /bin/sh -c "nova-manage db sync" nova:
-  cmd.run:
-    - unless:
-      - nova-manage db version | grep -q 390
 
 nova_api_service:
   service.running:
