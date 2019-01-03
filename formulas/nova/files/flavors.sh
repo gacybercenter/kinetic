@@ -14,8 +14,8 @@ export OS_AUTH_URL={{ internal_endpoint }}
 export OS_IDENTITY_API_VERSION=3
 
 
-echo "Check flavor existence"
-flavorexistcheck=$(openstack flavor show {{ flavor_name }} )
+echo "Checking for {{ flavor_name }}..."
+flavorexistcheck=$(openstack flavor list | grep -q {{ flavor_name }} )
 if [[ $? != 0 ]]; then
     # flavor does not exist.  if the openstack command fails for a general failure it will fall here as well
     openstack flavor create --ram {{ ram }} --disk {{ disk }} --vcpus {{ vcpus }} --public {{ flavor_name }}
