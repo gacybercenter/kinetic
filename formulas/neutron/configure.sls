@@ -4,6 +4,7 @@ include:
   - formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
+
 make_neutron_service:
   cmd.script:
     - source: salt://formulas/neutron/files/mkservice.sh
@@ -168,6 +169,7 @@ neutron_l3_agent_service:
       - file: /etc/neutron/api-paste.ini
 
 {% if grains['spawning'] == 0 %}
+
 mk_public_network:
   cmd.script:
     - source: salt://formulas/neutron/files/mkpublic.sh
@@ -180,4 +182,5 @@ mk_public_network:
         dns: {{ pillar['subnets']['float_dns'] }}
         gateway: {{ pillar['subnets']['float_gateway'] }}
         cidr: {{ pillar['subnets']['public'] }}
+
 {% endif %}

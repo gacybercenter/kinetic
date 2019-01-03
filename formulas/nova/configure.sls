@@ -3,7 +3,8 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-{% if grains['prime'] == true %}
+{% if grains['spawning'] == 0 %}
+
 make_nova_service:
   cmd.script:
     - source: salt://formulas/nova/files/mkservice.sh
@@ -27,6 +28,14 @@ make_placement_service:
         placement_public_endpoint: {{ pillar ['openstack_services']['placement']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['placement']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['placement']['configuration']['public_endpoint']['path'] }}
         placement_admin_endpoint: {{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['path'] }}
         placement_service_password: {{ pillar ['placement']['placement_service_password'] }}
+
+spawnzero_complete:
+  event.send:
+    - name: nova/spawnzero/complete
+    - data: "Nova spawnzero is complete."
+    - onchanges:
+      - cmd: neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head
+
 {% endif %}
 
 /etc/nova/nova.conf:
@@ -65,7 +74,8 @@ su -s /bin/sh -c "nova-manage api_db sync" nova:
 
 su -s /bin/sh -c "nova-manage cell_v2 map_cell0" nova:
   cmd.run:
-    - unless: nova-manage cell_v2 list_cells | grep -q cell0
+    - unless:
+      - nova-manage cell_v2 list_cells | grep -q cell0
 
 su -s /bin/sh -c "nova-manage cell_v2 create_cell --name=cell1 --verbose" nova:
   cmd.run:
