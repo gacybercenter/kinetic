@@ -18,6 +18,7 @@ make_neutron_service:
 
 neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head:
   cmd.run:
+    - runas: neutron
     - unless:
       - neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini current | grep -q 5c85685d616d
 
