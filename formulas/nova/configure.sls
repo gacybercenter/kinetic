@@ -61,6 +61,9 @@ nova-manage db sync:
     - unless:
       - nova-manage db version | grep -q 390
 
+/etc/nova/flavors:
+  file.directory
+
   {% for flavor_name, args in pillar.get('flavors', {}).items() %}
 
 {{ flavor_name }}_flavor_creation:
