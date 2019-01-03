@@ -21,6 +21,13 @@ make_neutron_service:
     - unless:
       - neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini current | grep -q 5c85685d616d
 
+spawnzero_complete:
+  event.send:
+    - name: neutron/spawnzero/complete
+    - data: "Neutron spawnzero is complete."
+    - onchanges:
+      - cmd: /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
+
 {% endif %}
 
 /etc/neutron/neutron.conf:
