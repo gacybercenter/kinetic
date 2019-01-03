@@ -8,6 +8,7 @@ export OS_PROJECT_DOMAIN_NAME=Default
 export OS_AUTH_URL={{ internal_endpoint }}
 export OS_IDENTITY_API_VERSION=3
 
+echo {{ members }}
 if [ `openstack project list | grep {{ project }} -c` -eq 0 ]; then
   echo "INFO: CREATED {{ project }} and set quotas"
   openstack project create {{ project }} --or-show
