@@ -3,7 +3,8 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-{% if grains['prime'] == true %}
+{% if grains['spawning'] == 0 %}
+
 make_heat_service:
   cmd.script:
     - source: salt://formulas/heat/files/mkservice.sh
@@ -18,6 +19,18 @@ make_heat_service:
         heat_internal_endpoint_cfn: {{ pillar['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['path'] }}
         heat_public_endpoint_cfn: {{ pillar['openstack_services']['heat']['configuration']['public_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['heat']['configuration']['public_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['public_endpoint_cfn']['path'] }}
         heat_admin_endpoint_cfn: {{ pillar['openstack_services']['heat']['configuration']['admin_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint_cfn']['path'] }}
+
+heat-manage db_sync:
+  cmd.run:
+    - runas: heat
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
+    - onchanges:
+      - cmd: heat-manage db_sync
+
 {% endif %}
 
 /etc/heat/heat.conf:
@@ -41,9 +54,6 @@ make_heat_service:
         ec2_authtoken_auth_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         heat_metadata_server_url: {{ pillar['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['port'] }}
         heat_waitcondition_server_url: {{ pillar['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['path'] }}/waitcondition
-
-/bin/sh -c "heat-manage db_sync" heat:
-  cmd.run
 
 heat_api_service:
   service.running:
