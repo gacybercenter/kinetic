@@ -52,6 +52,17 @@ make_glance_service:
         glance_admin_endpoint: {{ pillar ['openstack_services']['glance']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['glance']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['admin_endpoint']['path'] }}
         glance_service_password: {{ pillar ['glance']['glance_service_password'] }}
 
+glance-manage db_sync:
+  cmd.run:
+    - runas: glance
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
+    - onchanges:
+      - cmd: glance-manage db_sync
+
 
 {% endif %}
 
