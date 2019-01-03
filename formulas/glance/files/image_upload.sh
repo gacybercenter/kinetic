@@ -15,6 +15,6 @@ if [ "$(openstack image list | grep {{ glance_name }}) -eq 0" ]; then
     openstack image create {{ glance_name }}.raw --container-format bare --disk-format raw --public --protected
     rm image.qcow2
   else
-    curl -s -L {{ remote_url }} | openstack image create {{ glance_name }} --container-format bare disk-format raw --public --protected
+    curl -s -L {{ remote_url }} | openstack image create {{ glance_name }} --container-format bare --disk-format raw --public --protected
   fi
 fi
