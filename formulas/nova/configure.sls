@@ -141,7 +141,9 @@ nova-spiceproxy_service:
     - watch:
       - file: /etc/nova/nova.conf
 
-{% for flavor_name, args in pillar.get('flavors', {}).items() %}
+{% if grains['spawning'] == 0 %}
+  {% for flavor_name, args in pillar.get('flavors', {}).items() %}
+
 {{ flavor_name }}_flavor_creation:
   cmd.script:
     - source: salt://formulas/nova/files/flavors.sh
@@ -153,4 +155,8 @@ nova-spiceproxy_service:
         ram: {{ args['ram'] }}
         disk: {{ args['disk'] }}
         flavor_name: {{ flavor_name }}
-{% endfor %}
+    - require:
+      - service: nova-api
+
+  {% endfor %}
+{% endif %}
