@@ -76,4 +76,4 @@ radosgw_service:
     - name: radosgw
     - enable: true
     - watch:
-      - file: /etc/ceph/ceph.client.swift.keyring
+      - file: /etc/ceph/ceph.conf
