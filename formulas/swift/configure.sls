@@ -55,6 +55,10 @@ make_swift_service:
     - user: ceph
     - group: ceph
 
+/etc/ceph/ceph.client.admin.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-admin-keyring
+
 ceph_user_exists:
   user.present:
     - name: ceph
