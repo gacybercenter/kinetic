@@ -1,5 +1,5 @@
 include:
-  - formulas/radosgw/install
+  - formulas/swift/install
   - formulas/common/base
   - formulas/common/networking
 
