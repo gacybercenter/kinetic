@@ -34,7 +34,7 @@
               interfaces:
                 - ens7f0np0
                 - ens7f1np1
-          {%- set target_subnet = '10.30.0.0/22' %}
+          {%- set target_subnet = pillar['subnets']['sfe'] %}
           {%- set target_subnet_netmask = target_subnet.split('/') %}
           {%- set target_subnet_octets = target_subnet_netmask[0].split('.') %}
               addresses: [{{ target_subnet_octets[0]}}.{{ target_subnet_octets[1]}}.{{ management_address_octets[2]}}.{{ management_address_octets[3]}}/{{ target_subnet_netmask[1]}}]
@@ -45,7 +45,7 @@
                 - ens5f1
                 - ens5f2
                 - ens5f3
-          {%- set target_subnet = '10.40.0.0/22' %}
+          {%- set target_subnet = pillar['subnets']['sbe'] %}
           {%- set target_subnet_netmask = target_subnet.split('/') %}
           {%- set target_subnet_octets = target_subnet_netmask[0].split('.') %}
               addresses: [{{ target_subnet_octets[0]}}.{{ target_subnet_octets[1]}}.{{ management_address_octets[2]}}.{{ management_address_octets[3]}}/{{ target_subnet_netmask[1]}}]
