@@ -1,3 +1,6 @@
+include:
+  - formulas/common/syslog
+
 {% set type = opts.id.split('-') %}
 role:
   grains.present:
