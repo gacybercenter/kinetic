@@ -1,5 +1,3 @@
-{% set host = opts.id.split('.') %}
-
 include:
   - formulas/swift/install
   - formulas/common/base
@@ -68,13 +66,13 @@ ceph_user_exists:
       - Defaults:ceph !requiretty
     - file_mode: 644
 
-ceph-authtool -C -n client.swift.{{ host }} --gen-key /etc/ceph/ceph.client.swift.keyring:
+ceph-authtool -C -n client.swift.{{ grains['id'] }} --gen-key /etc/ceph/ceph.client.swift.keyring:
   cmd.run
 
-ceph-authtool -n client.swift.{{ host }} --cap mon 'allow rwx' --cap osd 'allow rwx' /etc/ceph/ceph.client.swift.keyring:
+ceph-authtool -n client.swift.{{ grains['id'] }} --cap mon 'allow rwx' --cap osd 'allow rwx' /etc/ceph/ceph.client.swift.keyring:
   cmd.run
 
-ceph auth add client.swift.{{ host }} --in-file=/etc/ceph/ceph.client.swift.keyring:
+ceph auth add client.swift.{{ grains['id'] }} --in-file=/etc/ceph/ceph.client.swift.keyring:
   cmd.run
 
 radosgw_service:
