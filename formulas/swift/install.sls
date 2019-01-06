@@ -31,5 +31,4 @@ swift_packages:
   pkg.installed:
     - pkgs:
       - radosgw
-      - ceph-common
       - python-openstackclient
