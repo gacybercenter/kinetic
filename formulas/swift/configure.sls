@@ -80,7 +80,7 @@ ceph-authtool -n client.swift.{{ grains['id'] }} --cap mon 'allow rwx' --cap osd
 ceph auth add client.swift.{{ grains['id'] }} --in-file=/etc/ceph/ceph.client.swift.keyring:
   cmd.run
 
-ceph auth get cient.swift.{{ grains['id'] }} mon 'allow profile mgr' osd 'allow *' mds 'allow *' > /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring:
+ceph auth get-or-create cient.swift.{{ grains['id'] }} mon 'allow profile mgr' osd 'allow *' mds 'allow *' > /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring:
   cmd.run:
     - creates:
       - /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring
