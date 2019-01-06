@@ -66,6 +66,11 @@ ceph_user_exists:
       - Defaults:ceph !requiretty
     - file_mode: 644
 
+/var/lib/ceph/radosgw/ceph-{{ grains['id'] }}:
+  file.directory:
+    - user: ceph
+    - group: ceph
+
 ceph-authtool -C -n client.swift.{{ grains['id'] }} --gen-key /etc/ceph/ceph.client.swift.keyring:
   cmd.run
 
@@ -74,6 +79,11 @@ ceph-authtool -n client.swift.{{ grains['id'] }} --cap mon 'allow rwx' --cap osd
 
 ceph auth add client.swift.{{ grains['id'] }} --in-file=/etc/ceph/ceph.client.swift.keyring:
   cmd.run
+
+ceph auth get cient.swift.{{ grains['id'] }} mon 'allow profile mgr' osd 'allow *' mds 'allow *' > /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring:
+  cmd.run:
+    - creates:
+      - /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring
 
 radosgw_service:
   service.running:
