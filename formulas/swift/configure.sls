@@ -71,6 +71,9 @@ ceph auth caps client.radosgw.{{ host[0] }} osd 'allow rwx' mon 'allow rwx':
 /etc/ceph/ceph.client.admin.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-admin-keyring
+    - mode: 600
+    - user: root
+    - group: root
 
 ceph_user_exists:
   user.present:
