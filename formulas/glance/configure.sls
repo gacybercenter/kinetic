@@ -24,7 +24,7 @@ include:
           rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
           rgw keystone api version = 3
           rgw keystone admin user = keystone
-          rgw keystone admin password = {{ pillar['keystone_service_password'] }}
+          rgw keystone admin password = {{ pillar ['keystone']['keystone_service_password'] }}
           rgw keystone admin project = service
           rgw keystone admin domain = default
           rgw keystone accepted roles = admin,user
