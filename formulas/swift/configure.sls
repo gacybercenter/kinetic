@@ -83,10 +83,10 @@ ceph auth add client.swift.{{ grains['id'] }} --in-file=/etc/ceph/ceph.client.sw
   cmd.run:
     - unless: ceph auth get client.swift{{ grains['id'] }}
 
-ceph auth get cient.swift.{{ grains['id'] }} > /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring:
-  cmd.run:
-    - creates:
-      - /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring
+#ceph auth get cient.swift.{{ grains['id'] }} > /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring:
+#  cmd.run:
+#    - creates:
+#      - /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring
 
 radosgw_service:
   service.running:
