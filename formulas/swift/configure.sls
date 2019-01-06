@@ -1,3 +1,5 @@
+{% set host = opts.id.split('.') %}
+
 include:
   - formulas/swift/install
   - formulas/common/base
@@ -57,7 +59,14 @@ make_swift_service:
 
 ceph auth import -i /etc/ceph/ceph.client.radosgw.keyring:
   cmd.run:
-    - unless: ceph auth get client.radosgw
+    - unless: ceph auth get client.radosgw.{{ host[0] }}
+    - requires:
+      - /etc/ceph/ceph.client.radosgw.keyring
+
+ceph auth caps client.radosgw.{{ host[0] }} osd 'allow rwx' mon 'allow rwx':
+  cmd.run:
+    - requires:
+      - cmd: ceph auth import -i /etc/ceph/ceph.client.radosgw.keyring
 
 /etc/ceph/ceph.client.admin.keyring:
   file.managed:
