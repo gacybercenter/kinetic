@@ -73,7 +73,8 @@ ceph_user_exists:
 
 ceph auth get-or-create client.swift.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}/keyring:
   cmd.run:
-    - /var/lib/ceph/radosgw/ceph-swift.{{ grains['id'] }}/keyring
+    - creates:
+      - /var/lib/ceph/radosgw/ceph-swift.{{ grains['id'] }}/keyring
 
 radosgw_service:
   service.running:
