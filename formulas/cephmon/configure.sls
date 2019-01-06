@@ -59,7 +59,7 @@ include:
     - contents_pillar: ceph:ceph-client-compute-keyring
 
 {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-ceph auth get cient.swift.{{ host }} > /etc/ceph/ceph.client.swift.keyring:
+ceph auth get client.swift.{{ host }} > /etc/ceph/ceph.client.swift.keyring:
   cmd.run
 {% endfor %}
 
