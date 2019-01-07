@@ -1,6 +1,10 @@
 include:
   - /formulas/salt/install
 
+/srv/salt:
+  file.directory:
+    - makedirs: true
+
 mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
   cmd.run:
     - creates:
