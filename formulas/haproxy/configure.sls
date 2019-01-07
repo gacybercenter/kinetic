@@ -105,7 +105,7 @@ include:
            server {{ host }} {{ address[0] }}:9001 check inter 2000 rise 2 fall 5
            {%- endfor %}
          swift_hosts: |
-            {% for host in salt['mine.get']('type:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {% for host, address in salt['mine.get']('type:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
             server {{ host }} {{ address[0] }}:7480 check inter 2000 rise 2 fall 5
             {% endfor %}
 
