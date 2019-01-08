@@ -18,9 +18,9 @@ include:
           {% endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          [client.swift.{{ host }}]
+          [client.swift]
           host = {{ host }}
-          keyring = /etc/ceph/ceph.client.{{ host }}.keyring
+          keyring = /etc/ceph/ceph.client.swift.keyring
           rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}
           rgw keystone api version = 3
           rgw keystone admin user = keystone

@@ -16,23 +16,22 @@ include:
           host = {{ host }}
           mon addr = {{ address[0] }}
           {% endfor %}
-        swift_members: |
-          {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          [client.swift.{{ host }}]
-          host = {{ host }}
-          keyring = /etc/ceph/ceph.client.{{ host }}.keyring
-          rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}
-          rgw keystone api version = 3
-          rgw keystone admin user = keystone
-          rgw keystone admin password = {{ pillar ['keystone']['keystone_service_password'] }}
-          rgw keystone admin project = service
-          rgw keystone admin domain = default
-          rgw keystone accepted roles = admin,user
-          rgw keystone token cache size = 10
-          rgw keystone revocation interval = 300
-          rgw keystone implicit tenants = true
-          rgw swift account in url = true
-          {% endfor %}
+        {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        [client.swift]
+        host = {{ host }}
+        keyring = /etc/ceph/ceph.client.swift.keyring
+        rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}
+        rgw keystone api version = 3
+        rgw keystone admin user = keystone
+        rgw keystone admin password = {{ pillar ['keystone']['keystone_service_password'] }}
+        rgw keystone admin project = service
+        rgw keystone admin domain = default
+        rgw keystone accepted roles = admin,user
+        rgw keystone token cache size = 10
+        rgw keystone revocation interval = 300
+        rgw keystone implicit tenants = true
+        rgw swift account in url = true
+        {% endfor %}
         sfe_network: {{ pillar['subnets']['sfe'] }}
         sbe_network: {{ pillar['subnets']['sbe'] }}
 
@@ -59,10 +58,14 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-client-compute-keyring
 
-{% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-ceph auth get client.swift.{{ host }} > /etc/ceph/ceph.client.swift.keyring:
-  cmd.run
-{% endfor %}
+/etc/ceph/ceph.client.swift.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-swift-keyring
+
+ceph auth add client.swift osd 'allow rwx' mon 'allow rwx' -i /etc/ceph/ceph.client.swift.keyring:
+  cmd.run:
+    - requires:
+      - /etc/ceph/ceph.client.swift.keyring
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
@@ -137,4 +140,10 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
     - onchanges:
       - /etc/ceph/ceph.client.compute.keyring
     - require:
+      - service: ceph-mon@{{ grains['id'] }}
+
+ceph auth import -i /etc/ceph/ceph.client.swift.keyring:
+  cmd.run:
+    - onchanges: /etc/ceph/ceph.client.swift.keyring
+    - requires:
       - service: ceph-mon@{{ grains['id'] }}
