@@ -18,9 +18,9 @@ include:
           {% endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          [client.swift]
+          [client.swift.{{ host }}]
           host = {{ host }}
-          keyring = /etc/ceph/ceph.client.swift.keyring
+          keyring = /etc/ceph/ceph.client.{{ host }}.keyring
           rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}
           rgw keystone api version = 3
           rgw keystone admin user = keystone
@@ -59,9 +59,10 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-client-compute-keyring
 
-/etc/ceph/ceph.client.swift.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-swift-keyring
+{% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+ceph auth get client.swift.{{ host }} > /etc/ceph/ceph.client.swift.keyring:
+  cmd.run
+{% endfor %}
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
@@ -136,11 +137,4 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
     - onchanges:
       - /etc/ceph/ceph.client.compute.keyring
     - require:
-      - service: ceph-mon@{{ grains['id'] }}
-
-ceph auth import -i /etc/ceph/ceph.client.swift.keyring:
-  cmd.run:
-    - onchanges:
-      - /etc/ceph/ceph.client.swift.keyring
-    - requires:
       - service: ceph-mon@{{ grains['id'] }}

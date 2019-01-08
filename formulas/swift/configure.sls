@@ -30,9 +30,9 @@ make_swift_service:
           {% endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          [client.swift]
+          [client.swift.{{ host }}]
           host = {{ host }}
-          keyring = /etc/ceph/ceph.client.swift.keyring
+          keyring = /etc/ceph/ceph.client.{{ host }}.keyring
           rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}
           rgw keystone api version = 3
           rgw keystone admin user = keystone
@@ -67,28 +67,15 @@ ceph_user_exists:
       - Defaults:ceph !requiretty
     - file_mode: 644
 
-/etc/ceph/ceph.client.radosgw.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-swift-keyring
-    - mode: 640
-    - user: ceph
-    - group: ceph
-
-ceph auth import -i /etc/ceph/ceph.client.swift.keyring:
-  cmd.run:
-    - unless: ceph auth get client.swift
-    - requires:
-      - cmd: /etc/ceph/ceph.client.radosgw.keyring
-
-ceph auth caps client.swift osd 'allow rwx' mon 'allow rwx':
-  cmd.run:
-    - requires:
-      - cmd: ceph auth import -i ceph.client.swift.keyring
-
 /var/lib/ceph/radosgw/ceph-{{ grains['id'] }}:
   file.directory:
     - user: ceph
     - group: ceph
+
+ceph auth get-or-create client.swift.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
+  cmd.run:
+    - creates:
+      - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
 
 radosgw_service:
   service.running:
