@@ -145,6 +145,7 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
 
 ceph auth import -i /etc/ceph/ceph.client.swift.keyring:
   cmd.run:
-    - onchanges: /etc/ceph/ceph.client.swift.keyring
+    - onchanges:
+      - /etc/ceph/ceph.client.swift.keyring
     - requires:
       - service: ceph-mon@{{ grains['id'] }}
