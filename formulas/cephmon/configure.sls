@@ -63,11 +63,6 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-client-swift-keyring
 
-ceph auth add client.swift osd 'allow rwx' mon 'allow rwx' -i /etc/ceph/ceph.client.swift.keyring:
-  cmd.run:
-    - requires:
-      - /etc/ceph/ceph.client.swift.keyring
-
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
