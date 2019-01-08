@@ -1,0 +1,2 @@
+test.nop:
+  cmd.run
