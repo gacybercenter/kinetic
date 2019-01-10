@@ -46,6 +46,7 @@ make_kuryr_service:
         auth_protocol: auth_protocol = http
         password: {{ pillar['zun']['zun_service_password'] }}
         api: host_ip = {{ grains['ipv4'][0] }}
+        my_ip: my_ip = {{ grains['ipv4'][0] }}
         wsproxy_host: wsproxy_host = {{ grains['ipv4'][0] }}
 
 /etc/sudoers.d/zun_sudoers:
