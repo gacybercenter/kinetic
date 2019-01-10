@@ -22,7 +22,7 @@ make_kuryr_service:
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
         keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        kuryr_service_password: {{ pillar ['zun']['kury_service_password'] }}
+        kuryr_service_password: {{ pillar ['zun']['kuryr_service_password'] }}
 
 /etc/zun/zun.conf:
   file.managed:
