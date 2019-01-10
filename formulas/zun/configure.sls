@@ -81,7 +81,7 @@ make_kuryr_service:
         {% for host, address in salt['mine.get']('role:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         {{ host }}=http://{{ address[0] }}:2380|join(', ')
         {% endfor %}
-        etcd_name: {{ grains{['id'] }}
+        etcd_name: {{ grains['id'] }}
         etcd_listen: {{ grains['ipv4'][0] }}
 
 etcd_service:
