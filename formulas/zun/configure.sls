@@ -1,5 +1,5 @@
 include:
-  - formulas/zun-compute/install
+  - formulas/zun/install
   - formulas/common/base
   - formulas/common/networking
 
