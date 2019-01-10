@@ -108,6 +108,14 @@ include:
             {% for host, address in salt['mine.get']('type:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
             server {{ host }} {{ address[0] }}:7480 check inter 2000 rise 2 fall 5
             {% endfor %}
+         zun_api_hosts: |
+            {% for host, address in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            server {{ host }} {{ address[0] }}:9517 check inter 2000 rise 2 fall 5
+            {% endfor %}
+         etcd_hosts: |
+            {% for host, address in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            server {{ host }} {{ address[0] }}:2380 check inter 2000 rise 2 fall 5
+            {% endfor %}
 
 haproxy_cfg_watch:
   service.running:
