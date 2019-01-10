@@ -79,7 +79,7 @@ make_kuryr_service:
     - defaults:
         etcd_hosts: |
           {% for host, address in salt['mine.get']('role:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          {{ host }}=http://{{ address[0] }}:2380|join(', ')
+          ETCD_INITIAL_CLUSTER="{{ host }}=http://{{ address[0] }}:2380"
           {% endfor %}
         etcd_name: {{ grains['id'] }}
         etcd_listen: {{ grains['ipv4'][0] }}
