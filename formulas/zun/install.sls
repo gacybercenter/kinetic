@@ -14,48 +14,14 @@ docker_repo:
     - key_url: https://download.docker.com/linux/ubuntu/gpg
 
 
-zuncompute_packages:
+zun_packages:
   pkg.installed:
     - pkgs:
       - python-pip
       - git
       - python-openstackclient
-      - docker-ce
-
-kuryr:
-  group.present:
-    - system: True
-  user.present:
-    - shell: /bin/false
-    - createhome: True
-    - home: /var/lib/kuryr
-    - system: True
-    - groups:
-      - kuryr
-
-/etc/kuryr:
-  file.directory:
-    - user: kuryr
-    - group: kuryr
-    - mode: 755
-    - makedirs: True
-
-kuryr_latest:
-  git.latest:
-    - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
-    - branch: stable/rocky
-    - target: /var/lib/kuryr
-    - fetch_tags: True
-    - rev: 0.8.0
-    - force_clone: true
-
-pip install -r /var/lib/kuryr/requirements.txt:
-  cmd.run
-
-installkuryr:
-  cmd.run:
-    - name: python setup.py install
-    - cwd: /var/lib/kuryr/
+      - python-memcache
+      - etcd
 
 zun:
   group.present:

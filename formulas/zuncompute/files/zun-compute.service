@@ -1,0 +1,9 @@
+[Unit]
+Description = OpenStack Container Service Compute Agent
+
+[Service]
+ExecStart = /usr/local/bin/zun-compute
+User = zun
+
+[Install]
+WantedBy = multi-user.target
