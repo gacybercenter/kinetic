@@ -26,7 +26,7 @@ make_kuryr_service:
 
 /etc/zun/zun.conf:
   file.managed:
-    - source: salt://formulas/zuncompute/files/zun.conf
+    - source: salt://formulas/zun/files/zun.conf
     - template: jinja
     - defaults:
 {% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -46,7 +46,6 @@ make_kuryr_service:
         auth_protocol: auth_protocol = http
         password: {{ pillar['zun']['zun_service_password'] }}
         api: host_ip = {{ grains['ipv4'][0] }}
-        my_ip: my_ip = {{ grains['ipv4'][0] }}
         wsproxy_host: wsproxy_host = {{ grains['ipv4'][0] }}
 
 /etc/sudoers.d/zun_sudoers:

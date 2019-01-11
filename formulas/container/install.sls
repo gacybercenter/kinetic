@@ -14,7 +14,7 @@ docker_repo:
     - key_url: https://download.docker.com/linux/ubuntu/gpg
 
 
-zuncompute_packages:
+container_packages:
   pkg.installed:
     - pkgs:
       - python-pip

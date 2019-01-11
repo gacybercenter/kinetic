@@ -1,11 +1,11 @@
 include:
-  - formulas/zuncompute/install
+  - formulas/container/install
   - formulas/common/base
   - formulas/common/networking
 
 /etc/zun/zun.conf:
   file.managed:
-    - source: salt://formulas/zuncompute/files/zun.conf
+    - source: salt://formulas/container/files/zun.conf
     - template: jinja
     - defaults:
 {% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -32,7 +32,7 @@ include:
 
 /etc/kuryr/kuryr.conf:
   file.managed:
-    - source: salt://formulas/zuncompute/files/kuryr.conf
+    - source: salt://formulas/container/files/kuryr.conf
     - template: jinja
     - defaults:
         www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
@@ -41,43 +41,43 @@ include:
 
 /etc/sudoers.d/zun_sudoers:
   file.managed:
-    - source: salt://formulas/zuncompute/files/zun_sudoers
+    - source: salt://formulas/container/files/zun_sudoers
     - requires:
-      - /formulas/zuncompute/install
+      - /formulas/container/install
 
 /etc/zun/rootwrap.d/zun.filters:
   file.managed:
-    - source: salt://formulas/zuncompute/files/zun.filters
+    - source: salt://formulas/container/files/zun.filters
     - requires:
-      - /formulas/zuncompute/install
+      - /formulas/container/install
 
 /etc/systemd/system/docker.service.d/docker.conf:
   file.managed:
-    - source: salt://formulas/zuncompute/files/docker.conf
+    - source: salt://formulas/container/files/docker.conf
     - makedirs: True
     - template: jinja
     - defaults:
         etcd_url: {{ pillar['endpoints']['internal'] }}
     - requires:
-      - /formulas/zuncompute/install
+      - /formulas/container/install
 
 /etc/zun/rootwrap.conf:
   file.managed:
-    - source: salt://formulas/zuncompute/files/rootwrap.conf
+    - source: salt://formulas/container/files/rootwrap.conf
     - requires:
-      - /formulas/zuncompute/install
+      - /formulas/container/install
 
 /etc/systemd/system/zun-compute.service:
   file.managed:
-    - source: salt://formulas/zuncompute/files/zun-compute.service
+    - source: salt://formulas/container/files/zun-compute.service
     - requires:
-      - /formulas/zuncompute/install
+      - /formulas/container/install
 
 /etc/systemd/system/kuryr-libnetwork.service:
   file.managed:
-    - source: salt://formulas/zuncompute/files/kuryr-libnetwork.service
+    - source: salt://formulas/container/files/kuryr-libnetwork.service
     - requires:
-      - /formulas/zuncompute/install
+      - /formulas/container/install
 
 systemctl daemon-reload:
   cmd.wait:

@@ -36,7 +36,7 @@ def populate_compute(path):
 	pending.remove('..')
 	return pending
 
-def populate_zuncompute(path):
+def populate_container(path):
 	pending = file.readdir(path)
 	pending.remove('.')
 	pending.remove('..')
