@@ -5,7 +5,7 @@ include:
 
 make_zun_service:
   cmd.script:
-    - source: salt://apps/openstack/zun/files/mkservice.sh
+    - source: salt://formulas/zun/files/mkservice.sh
     - template: jinja
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
@@ -17,7 +17,7 @@ make_zun_service:
 
 make_kuryr_service:
   cmd.script:
-    - source: salt://apps/openstack/zun/files/mkservice_kuryr.sh
+    - source: salt://formulas/zun/files/mkservice_kuryr.sh
     - template: jinja
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
