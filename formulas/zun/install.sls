@@ -24,10 +24,7 @@ zun_packages:
       - etcd
 
 pymysql_sa:
-  pip.installed:
-    - require:
-      - cmd: pip-install
-    - reload_modules: True
+  pip.installed
 
 zun:
   group.present:
