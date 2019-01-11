@@ -23,6 +23,12 @@ zun_packages:
       - python-memcache
       - etcd
 
+pymysql_sa:
+  pip.installed:
+    - require:
+      - cmd: pip-install
+    - reload_modules: True
+
 zun:
   group.present:
     - system: True
