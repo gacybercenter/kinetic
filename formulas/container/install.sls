@@ -21,6 +21,8 @@ container_packages:
       - git
       - python-openstackclient
       - docker-ce
+      - neutron-linuxbridge-agent
+      - python-tornado
 
 pymysql_sa:
   pip.installed

@@ -39,6 +39,46 @@ include:
         auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
         password: {{ pillar ['zun']['kuryr_service_password'] }}
 
+/etc/neutron/neutron.conf:
+  file.managed:
+    - source: salt://formulas/compute/files/neutron.conf
+    - template: jinja
+    - defaults:
+{% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        transport_url: rabbit://openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address[0] }}
+{% endfor %}
+        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
+        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+{% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        memcached_servers: {{ address[0] }}:11211
+{% endfor %}
+        password: {{ pillar['neutron']['neutron_service_password'] }}
+
+/etc/neutron/plugins/ml2/linuxbridge_agent.ini:
+  file.managed:
+    - source: salt://formulas/compute/files/linuxbridge_agent.ini
+    - template: jinja
+    - defaults:
+        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['subnets']['private'])[0] }}
+{% for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
+  {%- for network in binding %}
+    {% if network == 'public' %}
+        public_interface: {{ binding[network] }}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+
+/etc/sudoers.d/neutron_sudoers:
+  file.managed:
+    - source: salt://formulas/compute/files/neutron_sudoers
+
+neutron_linuxbridge_agent_service:
+  service.running:
+    - name: neutron-linuxbridge-agent
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+
 /etc/sudoers.d/zun_sudoers:
   file.managed:
     - source: salt://formulas/container/files/zun_sudoers
