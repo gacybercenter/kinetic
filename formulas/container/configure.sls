@@ -37,7 +37,7 @@ include:
     - defaults:
         www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        password: password = {{ pillar ['zun']['kuryr_service_password'] }}
+        password: {{ pillar ['zun']['kuryr_service_password'] }}
 
 /etc/sudoers.d/zun_sudoers:
   file.managed:
@@ -57,7 +57,9 @@ include:
     - makedirs: True
     - template: jinja
     - defaults:
-        etcd_url: {{ pillar['endpoints']['internal'] }}
+{% for host, address in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        etcd_ip: {{ address[0] }}
+{% endfor %}
     - requires:
       - /formulas/container/install
 
