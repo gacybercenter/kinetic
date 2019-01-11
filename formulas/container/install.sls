@@ -46,7 +46,7 @@ kuryr_latest:
     - branch: stable/rocky
     - target: /var/lib/kuryr
     - fetch_tags: True
-    - rev: 0.8.0
+    - rev: 2.0.0
     - force_clone: true
 
 pip install -r /var/lib/kuryr/requirements.txt:
