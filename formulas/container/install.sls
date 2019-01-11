@@ -22,6 +22,9 @@ container_packages:
       - python-openstackclient
       - docker-ce
 
+pymysql_sa:
+  pip.installed
+
 kuryr:
   group.present:
     - system: True
