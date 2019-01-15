@@ -59,10 +59,15 @@ zun_latest:
     - rev: 2.1.0
     - force_clone: true
 
-pip install -r /var/lib/zun/requirements.txt:
-  cmd.run
+pip install --upgrade -r /var/lib/zun/requirements.txt:
+  cmd.run:
+    - stateful: True
+    - onchanges:
+      - file: /var/lib/requirements.txt
 
 installzun:
   cmd.run:
     - name: python setup.py install
     - cwd : /var/lib/zun/
+    - onchanges:
+      - cmd: pip install --upgrade -r /var/lib/zun/requirements.txt
