@@ -61,7 +61,6 @@ zun_latest:
 
 pip install --upgrade -r /var/lib/zun/requirements.txt:
   cmd.run:
-    - stateful: True
     - onchanges:
       - file: /var/lib/zun/requirements.txt
 
@@ -70,4 +69,4 @@ installzun:
     - name: python setup.py install
     - cwd : /var/lib/zun/
     - onchanges:
-      - cmd: pip install --upgrade -r /var/lib/zun/requirements.txt
+      - file: /var/lib/zun/requirements.txt
