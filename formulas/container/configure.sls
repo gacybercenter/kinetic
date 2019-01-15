@@ -27,7 +27,7 @@ include:
         my_ip: my_ip = {{ grains['ipv4'][0] }}
         docker_ip: docker_remote_api_host = {{ grains['ipv4'][0] }}
 {% for host, address in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        etcd_host: etcd_host = {{ host }}
+        etcd_host: etcd_host = {{ address[0] }}
 {% endfor %}
 
 /etc/kuryr/kuryr.conf:
