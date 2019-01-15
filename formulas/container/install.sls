@@ -50,8 +50,6 @@ kuryr_latest:
     - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
     - branch: stable/rocky
     - target: /var/lib/kuryr
-    - fetch_tags: True
-    - rev: 2.0.0
     - force_clone: true
 
 pip install -r /var/lib/kuryr/requirements.txt:
@@ -95,8 +93,6 @@ zun_latest:
     - name: https://git.openstack.org/openstack/zun.git
     - branch: stable/rocky
     - target: /var/lib/zun
-    - fetch_tags: True
-    - rev: 2.1.0
     - force_clone: true
 
 pip install -r /var/lib/zun/requirements.txt:

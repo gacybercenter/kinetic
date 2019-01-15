@@ -55,8 +55,6 @@ zun_latest:
     - name: https://git.openstack.org/openstack/zun.git
     - branch: stable/rocky
     - target: /var/lib/zun
-    - fetch_tags: True
-    - rev: 2.1.0
     - force_clone: true
 
 pip install --upgrade -r /var/lib/zun/requirements.txt:
