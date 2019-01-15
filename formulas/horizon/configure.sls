@@ -2,6 +2,7 @@ include:
   - /formulas/horizon/install
   - formulas/common/base
   - formulas/common/networking
+  - /formulas/horizon/install-zun-ui
 
 /etc/openstack-dashboard/local_settings.py:
   file.managed:
