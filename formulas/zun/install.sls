@@ -61,12 +61,12 @@ zun_latest:
 
 pip install --upgrade -r /var/lib/zun/requirements.txt:
   cmd.run:
-    - onchanges:
-      - file: /var/lib/zun/requirements.txt
+    - unless:
+      - systemctl is-active zun-api
 
 installzun:
   cmd.run:
     - name: python setup.py install
     - cwd : /var/lib/zun/
-    - onchanges:
-      - file: /var/lib/zun/requirements.txt
+    - unless:
+      - systemctl is-active zun-api
