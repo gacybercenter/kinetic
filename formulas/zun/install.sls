@@ -63,7 +63,7 @@ pip install --upgrade -r /var/lib/zun/requirements.txt:
   cmd.run:
     - stateful: True
     - onchanges:
-      - file: /var/lib/requirements.txt
+      - file: /var/lib/zun/requirements.txt
 
 installzun:
   cmd.run:
