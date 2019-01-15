@@ -55,12 +55,16 @@ kuryr_latest:
     - force_clone: true
 
 pip install -r /var/lib/kuryr/requirements.txt:
-  cmd.run
+  cmd.run:
+    - unless:
+      - systemctl is-active kuryr-libnetwork
 
 installkuryr:
   cmd.run:
     - name: python setup.py install
     - cwd: /var/lib/kuryr/
+    - unless:
+      - systemctl is-active kuryr-libnetwork
 
 zun:
   group.present:
@@ -96,9 +100,13 @@ zun_latest:
     - force_clone: true
 
 pip install -r /var/lib/zun/requirements.txt:
-  cmd.run
+  cmd.run:
+    - unless:
+      - systemctl is-active zun-compute
 
 installzun:
   cmd.run:
     - name: python setup.py install
     - cwd : /var/lib/zun/
+    - unless:
+      - systemctl is-active zun-compute
