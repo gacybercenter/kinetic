@@ -2,7 +2,7 @@ include:
   - /formulas/devvm/install
   - formulas/common/base
   - formulas/common/networking
-  - /formulas/devvm/install-zun-ui
+#  - /formulas/devvm/install-zun-ui
 
 /etc/openstack-dashboard/local_settings.py:
   file.managed:
