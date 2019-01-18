@@ -14,10 +14,10 @@ zun_latest:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_0330_cloud_shell.py
     - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_0330_cloud_shell.py
 
-1330_project_container_panalgroup.py:
+1330_project_container_panelgroup.py:
   file.copy:
-    - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_1330_project_container_panalgroup.py
-    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_1330_project_container_panalgroup.py
+    - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_1330_project_container_panelgroup.py
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_1330_project_container_panelgroup.py
 
 1331_project_container_containers_panel.py:
   file.copy:
