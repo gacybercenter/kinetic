@@ -44,7 +44,7 @@ zun_latest:
     - source: salt://formulas/horizon/files/_0330_cloud_shell_settings.py
 
 pip install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
-  cmd.run:
+  cmd.run
 
 installzun-ui:
   cmd.run:
