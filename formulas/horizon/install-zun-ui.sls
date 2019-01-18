@@ -55,15 +55,11 @@ collect-static:
   cmd.run:
     - name: python manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
-    - unless:
-      - /usr/share/openstack-dashboard/manage.py check
 
 compress-static:
   cmd.run:
     - name: python manage.py compress
     - cwd: /usr/share/openstack-dashboard/
-    - unless:
-      - /usr/share/openstack-dashboard/manage.py check
 
 /usr/local/lib/python2.7/dist-packages/zunclient/common/websocketclient/websocketclient.py:
   file.managed:
