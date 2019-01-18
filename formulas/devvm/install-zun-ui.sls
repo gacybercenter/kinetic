@@ -44,22 +44,30 @@ zun_latest:
     - source: salt://formulas/devvm/files/_0330_cloud_shell_settings.py
 
 pip install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
-  cmd.run
+  cmd.run:
+    - unless:
+      - zun --version
 
 installzun-ui:
   cmd.run:
     - name: python setup.py install
     - cwd: /usr/share/openstack-dashboard/zun-ui/
+    - unless:
+      - zun --version
 
 collect-static:
   cmd.run:
     - name: python manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
+    - unless:
+      - /usr/share/openstack-dashboard/manage.py check
 
 compress-static:
   cmd.run:
     - name: python manage.py compress
     - cwd: /usr/share/openstack-dashboard/
+    - unless:
+      - /usr/share/openstack-dashboard/manage.py check
 
 /usr/local/lib/python2.7/dist-packages/zunclient/common/websocketclient/websocketclient.py:
   file.managed:
