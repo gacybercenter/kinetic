@@ -7,37 +7,37 @@ zun_latest:
 
 /usr/share/openstack-dashboard/zun-ui/requirements.txt:
   file.managed:
-    - source: salt://formulas/devvm/files/requiremnts.txt
+    - source: salt://formulas/devvm/files/requirements.txt
 
 0330_cloud_shell.py:
   file.copy:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_0330_cloud_shell.py
-    - source: /usr/share/openstack-dashboard/zun-ui/zun-ui/enabled/_0330_cloud_shell.py
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_0330_cloud_shell.py
 
 1330_project_container_panalgroup.py:
   file.copy:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_1330_project_container_panalgroup.py
-    - source: /usr/share/openstack-dashboard/zun-ui/zun-ui/enabled/_1330_project_container_panalgroup.py
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_1330_project_container_panalgroup.py
 
 1331_project_container_containers_panel.py:
   file.copy:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_1331_project_container_containers_panel.py
-    - source: /usr/share/openstack-dashboard/zun-ui/zun-ui/enabled/_1331_project_container_containers_panel.py
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_1331_project_container_containers_panel.py
 
 1332_project_container_capsules_panel.py:
   file.copy:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_1332_project_container_capsules_panel.py
-    - source: /usr/share/openstack-dashboard/zun-ui/zun-ui/enabled/_1332_project_container_capsules_panel.py
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_1332_project_container_capsules_panel.py
 
 2330_admin_container_panelgroup.py:
   file.copy:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_2330_admin_container_panelgroup.py
-    - source: /usr/share/openstack-dashboard/zun-ui/zun-ui/enabled/_2330_admin_container_panelgroup.py
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_2330_admin_container_panelgroup.py
 
 2331_admin_container_images_panel.py:
   file.copy:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_2331_admin_container_images_panel.py
-    - source: /usr/share/openstack-dashboard/zun-ui/zun-ui/enabled/_2331_admin_container_images_panel.py
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_2331_admin_container_images_panel.py
 
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_0330_cloud_shell_settings.py:
   file.managed:
