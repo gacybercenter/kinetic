@@ -45,15 +45,11 @@ zun_latest:
 
 pip install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
   cmd.run:
-    - unless:
-      - zun --version
 
 installzun-ui:
   cmd.run:
     - name: python setup.py install
     - cwd: /usr/share/openstack-dashboard/zun-ui/
-    - unless:
-      - zun --version
 
 collect-static:
   cmd.run:
