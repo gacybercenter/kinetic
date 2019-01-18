@@ -43,7 +43,7 @@ zun_latest:
   file.managed:
     - source: salt://formulas/devvm/files/_0330_cloud_shell_settings.py
 
-pip install -r /usr/share/openstack-dashboard/zun-ui/requiremts.txt:
+pip install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
   cmd.run
 
 installzun-ui:
