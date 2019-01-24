@@ -36,6 +36,12 @@ def populate_compute(path):
 	pending.remove('..')
 	return pending
 
+def populate_computev2(path):
+	pending = file.readdir(path)
+	pending.remove('.')
+	pending.remove('..')
+	return pending
+
 def populate_container(path):
 	pending = file.readdir(path)
 	pending.remove('.')
