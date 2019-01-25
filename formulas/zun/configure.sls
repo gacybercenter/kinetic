@@ -47,6 +47,7 @@ make_kuryr_service:
         password: {{ pillar['zun']['zun_service_password'] }}
         api: host_ip = {{ grains['ipv4'][0] }}
         wsproxy_host: wsproxy_host = {{ grains['ipv4'][0] }}
+        dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
 
 /etc/sudoers.d/zun_sudoers:
   file.managed:
