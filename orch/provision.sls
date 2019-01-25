@@ -6,7 +6,7 @@
 ## There is an inotify beacon sitting on the pxe server
 ## that watches our custom function write the issued hostnames
 ## to a directory.  Once the required amount of hostnames have
-## been issued, thie mine data of all the hostnames is used 
+## been issued, thie mine data of all the hostnames is used
 ## to watch the provisioning process.  We allow 30 minutes to
 ## install the operating system.  This is probably excessive.
 
@@ -15,7 +15,7 @@ wait_for_provisioning_{{ host }}:
     - name: salt/auth
     - id_list:
       - {{ host }}
-    - timeout: 1200
+    - timeout: 1500
 
 accept_minion_{{ host }}:
   salt.wheel:
@@ -23,7 +23,7 @@ accept_minion_{{ host }}:
     - match: {{ host }}
     - require:
       - wait_for_provisioning_{{ host }}
-  
+
 wait_for_minion_first_start_{{ host }}:
   salt.wait_for_event:
     - name: salt/minion/{{ host }}/start
