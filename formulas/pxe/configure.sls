@@ -64,7 +64,6 @@ php7.2_module:
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
         method: {{ pillar['hosts'][type]['partman_config']['method'] }}
-        type:{{ pillar['hosts'][type]['partman_config']['type'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
         expert_recipe: |
           {%- if pillar['hosts'][type]['partman_config']['method'] == "raid" %}
