@@ -99,7 +99,6 @@ php7.2_module:
                   method{ swap }                            \
                   format{ }                                 \
                   .
-
           d-i partman-auto-raid/recipe string               \
               {{ pillar['hosts'][type]['partman_config']['method']['type'] }} {{ pillar['hosts'][type]['partman_config']['method']['count'] }} {{ pillar['hosts'][type]['partman_config']['method']['spares'] }} lvm - {{ pillar['hosts'][type]['partman_config']['method']['disks'] }} \
               .
