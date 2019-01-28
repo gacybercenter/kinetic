@@ -63,7 +63,78 @@ php7.2_module:
         zone: {{ pillar['timezone'] }}
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
+        method: {{ pillar['hosts'][type]['partman_config']['method'] }}
+        type:{{ pillar['hosts'][type]['partman_config']['type'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
+        expert_recipe: |
+          {%- if pillar['hosts'][type]['partman_config']['method'] == raid %}
+          d-i partman-auto/expert_recipe string             \
+              efi-lvm ::                                    \
+                  256 10 256 fat32                          \
+                  \$primary{ }                              \
+                  \$lvmignore{ }                            \
+                  method{ efi }                             \
+                  format{ }                                 \
+                  .                                         \
+                  65536 30 -1 raid                          \
+                  \$lvmignore{ }                            \
+                  \$primary{ }                              \
+                  method{ raid }                            \
+                  .                                         \
+                  65536 50 -1 ext4                          \
+                  \$defaultignore{ }                        \
+                  \$lvmok{ }                                \
+                  lv_name{ rootfs }                         \
+                  method{ format }                          \
+                  format{ }                                 \
+                  use_filesystem{ }                         \
+                  filesystem{ ext4 }                        \
+                  mountpoint{ / }                           \
+                  label{ Root }                             \
+                  .                                         \
+                  8192 40 8192 swap                         \
+                  \$defaultignore{ }                        \
+                  \$lvmok{ }                                \
+                  lv_name{ swap }                           \
+                  method{ swap }                            \
+                  format{ }                                 \
+                  .
+
+          d-i partman-auto-raid/recipe string               \
+              {{ pillar['hosts'][type]['partman_config']['method']['type'] }} {{ pillar['hosts'][type]['partman_config']['method']['count'] }} {{ pillar['hosts'][type]['partman_config']['method']['spares'] }} lvm - {{ pillar['hosts'][type]['partman_config']['method']['disks'] }} \
+              .
+          {$- else %}
+          d-i partman-auto/expert_recipe string             \
+              efi-lvm-bigram ::                             \
+                  538 538 1075 free                         \
+                  $iflabel{ gpt }                           \
+                  $reusemethod{ }                           \
+                  method{ efi }                             \
+                  format{ }                                 \
+                  .                                         \
+              128 512 256 ext2                              \
+                  $defaultignore{ }                         \
+                  method{ format }                          \
+                  format{ }                                 \
+                  use_filesystem{ }                         \
+                  filesystem{ ext2 }                        \
+                  mountpoint{ /boot }                       \
+                  .                                         \
+              512 10000 -1 $default_filesystem              \
+                  $lvmok{ }                                 \
+                  method{ format }                          \
+                  format{ }                                 \
+                  use_filesystem{ }                         \
+                  $default_filesystem{ }                    \
+                  mountpoint{ / }                           \
+                  .                                         \
+              8192 512 8192 linux-swap                      \
+                  $lvmok{ }                                 \
+                  $reusemethod{ }                           \
+                  method{ swap }                            \
+                  format{ }                                 \
+                  .
+          {% endif %}
 {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
 {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}

@@ -43,46 +43,19 @@ d-i partman-lvm/confirm_nooverwrite               boolean true
 
 d-i partman-auto/disk                             string {{ disk }}
 
-d-i partman-auto/method                           string lvm
+d-i partman-auto/method                           string {{ method }}
 d-i partman-auto-lvm/new_vg_name                  string vg0
 d-i partman-auto-lvm/guided_size                  string max
 
+{{ expert_recipe }}
 
-d-i partman-auto/expert_recipe string             \
-    efi-lvm-bigram ::                             \
-    538 538 1075 free                             \
-        $iflabel{ gpt }                           \
-        $reusemethod{ }                           \
-        method{ efi }                             \
-        format{ }                                 \
-        .                                         \
-    128 512 256 ext2                              \
-        $defaultignore{ }                         \
-        method{ format }                          \
-        format{ }                                 \
-        use_filesystem{ }                         \
-        filesystem{ ext2 }                        \
-        mountpoint{ /boot }                       \
-        .                                         \
-    512 10000 -1 $default_filesystem              \
-        $lvmok{ }                                 \
-        method{ format }                          \
-        format{ }                                 \
-        use_filesystem{ }                         \
-        $default_filesystem{ }                    \
-        mountpoint{ / }                           \
-        .                                         \
-    8192 512 8192 linux-swap                      \
-        $lvmok{ }                                 \
-        $reusemethod{ }                           \
-        method{ swap }                            \
-        format{ }                                 \
-        .
-
+d-i partman-md/confirm                            boolean true
 d-i partman-partitioning/confirm_write_new_label  boolean true
 d-i partman/choose_partition                      select Finish partitioning and write changes to disk
 d-i partman/confirm                               boolean true
+d-i partman-md/confirm_nooverwrite                boolean true
 d-i partman/confirm_nooverwrite                   boolean true
+d-i mdadm/boot_degraded                           boolean true
 
 d-i partman-efi/non_efi_system                    boolean true
 
