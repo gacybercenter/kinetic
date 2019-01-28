@@ -67,7 +67,7 @@ php7.2_module:
         type:{{ pillar['hosts'][type]['partman_config']['type'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
         expert_recipe: |
-          {%- if pillar['hosts'][type]['partman_config']['method'] == raid %}
+          {%- if pillar['hosts'][type]['partman_config']['method'] == "raid" %}
           d-i partman-auto/expert_recipe string             \
               efi-lvm ::                                    \
                   256 10 256 fat32                          \
