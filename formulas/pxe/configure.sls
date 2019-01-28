@@ -100,7 +100,7 @@ php7.2_module:
                   format{ }                                 \
                   .
           d-i partman-auto-raid/recipe string               \
-              {{ pillar['hosts'][type]['partman_config']['method']['type'] }} {{ pillar['hosts'][type]['partman_config']['method']['count'] }} {{ pillar['hosts'][type]['partman_config']['method']['spares'] }} lvm - {{ pillar['hosts'][type]['partman_config']['method']['disks'] }} \
+              {{ pillar['hosts'][type]['partman_config']['type'] }} {{ pillar['hosts'][type]['partman_config']['count'] }} {{ pillar['hosts'][type]['partman_config']['spares'] }} lvm - {{ pillar['hosts'][type]['partman_config']['disks'] }} \
               .
           {$- else %}
           d-i partman-auto/expert_recipe string             \
