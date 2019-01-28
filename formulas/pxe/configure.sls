@@ -101,7 +101,7 @@ php7.2_module:
           d-i partman-auto-raid/recipe string               \
               {{ pillar['hosts'][type]['partman_config']['type'] }} {{ pillar['hosts'][type]['partman_config']['count'] }} {{ pillar['hosts'][type]['partman_config']['spares'] }} lvm - {{ pillar['hosts'][type]['partman_config']['disks'] }} \
               .
-          {$- else %}
+          {%- else %}
           d-i partman-auto/expert_recipe string             \
               efi-lvm-bigram ::                             \
                   538 538 1075 free                         \
