@@ -70,19 +70,19 @@ php7.2_module:
           d-i partman-auto/expert_recipe string             \
               efi-lvm ::                                    \
                   256 10 256 fat32                          \
-                  \$primary{ }                              \
-                  \$lvmignore{ }                            \
+                  $primary{ }                               \
+                  $lvmignore{ }                             \
                   method{ efi }                             \
                   format{ }                                 \
                   .                                         \
                   65536 30 -1 raid                          \
-                  \$lvmignore{ }                            \
-                  \$primary{ }                              \
+                  $lvmignore{ }                             \
+                  $primary{ }                               \
                   method{ raid }                            \
                   .                                         \
                   65536 50 -1 ext4                          \
-                  \$defaultignore{ }                        \
-                  \$lvmok{ }                                \
+                  $defaultignore{ }                         \
+                  $lvmok{ }                                 \
                   lv_name{ rootfs }                         \
                   method{ format }                          \
                   format{ }                                 \
@@ -92,8 +92,8 @@ php7.2_module:
                   label{ Root }                             \
                   .                                         \
                   8192 40 8192 swap                         \
-                  \$defaultignore{ }                        \
-                  \$lvmok{ }                                \
+                  $defaultignore{ }                         \
+                  $lvmok{ }                                 \
                   lv_name{ swap }                           \
                   method{ swap }                            \
                   format{ }                                 \
