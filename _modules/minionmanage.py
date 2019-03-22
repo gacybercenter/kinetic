@@ -53,3 +53,9 @@ def populate_container(path):
 	pending.remove('.')
 	pending.remove('..')
 	return pending
+
+def populate_containerv2(path):
+	pending = file.readdir(path)
+	pending.remove('.')
+	pending.remove('..')
+	return pending
