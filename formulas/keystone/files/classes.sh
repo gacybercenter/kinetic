@@ -53,7 +53,7 @@ if [ $today -lt $startdate ]; then
         # let sid++
         # echo "sid: $sid"
         # master yaml takes last_name and password while windows yaml also takes the student_id
-        openstack stack create --template {{ template }} --enable-rollback --wait stack-{{ class }}-student-$students
+        openstack stack create --template {{ template }} --parameter "last_name=student" --parameter "password=$subpassword" --enable-rollback --wait stack-{{ class }}-student-$students
       fi
     done
     for instructors in $(seq -w 00 $maxinstructors)
@@ -80,7 +80,7 @@ if [ $today -lt $startdate ]; then
         # let iid++
         # echo "iid: $iid"
         # master yaml takes last_name and password while windows yaml also takes the student_id
-        openstack stack create --template {{ template }} --enable-rollback --wait stack-{{ class }}-instructor-$instructors
+        openstack stack create --template {{ template }} --parameter "last_name=student" --parameter "password=$subpassword" --enable-rollback --wait stack-{{ class }}-instructor-$instructors
       fi
     done
   fi
