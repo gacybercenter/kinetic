@@ -91,6 +91,8 @@ spawnzero_complete:
 /etc/neutron/dhcp_agent.ini:
   file.managed:
     - source: salt://formulas/neutron/files/dhcp_agent.ini
+    - defauts:
+      dns: {{ pillar['subnets']['float_dns'] }}
 
 /etc/neutron/metadata_agent.ini:
   file.managed:
