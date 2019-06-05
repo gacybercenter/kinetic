@@ -7,7 +7,7 @@ tftpd-hpa:
 apache2:
   pkg.installed
 
-php7.2:
+php7.0:
   pkg.installed
 
 git:
