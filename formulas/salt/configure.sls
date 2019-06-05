@@ -28,10 +28,6 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
             - saltenv:
               - base:
                 - ref: {{ pillar['gitfs_remote_configuration']['branch'] }}
-          - {{ pillar['gitfs_stig_remote_configuration']['url'] }}:
-            - saltenv:
-              - base:
-                - ref: {{ pillar['gitfs_stig_remote_configuration']['branch'] }}
         gitfs_saltenv_whitelist:
           - base
 
