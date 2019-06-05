@@ -4,4 +4,4 @@ base:
   '*':
     - formulas/common/base
   {{ type }}*:
-    - formulas/grains['type']/configure
+    - formulas/grains{{ type }}/configure
