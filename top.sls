@@ -3,5 +3,5 @@
 base:
   '*':
     - formulas/common/base
-  {{ opts.id.split('-')[0] }}*:
+  {{ type }}*:
     - formulas/grains['type']/configure
