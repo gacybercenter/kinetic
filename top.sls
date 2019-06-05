@@ -1,7 +1,5 @@
 base:
   '*':
     - formulas/common/base
-{% if grains['type'] == opts.id.split('-') %}
-  grains['type']*:
+  {{ opts.id.split('-') }}*:
     - formulas/grains['type']/configure
-{% endif %}
