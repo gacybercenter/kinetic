@@ -1,2 +1,0 @@
-include:
-  - formulas/container/configure

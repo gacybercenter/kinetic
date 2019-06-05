@@ -1,5 +1,0 @@
-#!/bin/sh
-
-curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
-/bin/sh /tmp/bootstrap_salt.sh -X -i {{ hostname }}
-reboot
