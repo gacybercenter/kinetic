@@ -17,3 +17,8 @@ install_ceph:
     - name: ceph
     - require: 
       - pkgrepo: ceph_repo
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
