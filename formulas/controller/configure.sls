@@ -130,7 +130,6 @@ fs:
 {% else %}
     - source_hash: {{ args['local_hash'] }}
 {% endif %}
-    - source_hash_name: {{ args['local_source_hash_name'] }}
     - require:
       - /kvm/images
 
