@@ -1,12 +1,3 @@
-{% if grains['spawning'] == 0 %}
-
-spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
-
-{% endif %}
-
 ceph_repo:
   pkgrepo.managed:
     - humanname: Ceph Nautilus

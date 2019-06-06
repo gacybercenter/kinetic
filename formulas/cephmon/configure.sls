@@ -36,6 +36,15 @@ include:
         sfe_network: {{ pillar['subnets']['sfe'] }}
         sbe_network: {{ pillar['subnets']['sbe'] }}
 
+{% if grains['spawning'] == 0 %}
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
+
+{% endif %}
+
 /tmp/ceph.mon.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-mon-keyring
