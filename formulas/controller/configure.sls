@@ -110,13 +110,13 @@ fs:
       - /kvm
 
 {% for os, args in pillar.get('images', {}).items() %}
-/kvm/images/{{ args['local_name'] }}:
+/kvm/images/{{ args['name'] }}:
   file.managed:
     - source:
 {% if args['local_url'] == "pull_from_mine" %}
 {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
 {% for host in cache_addresses_dict %}
-      - http://{{ cache_addresses_dict[host][0] }}/images/{{ args['local_name'] }}
+      - http://{{ cache_addresses_dict[host][0] }}/images/{{ args['name'] }}
 {% endfor %}
 {% else %}
       - {{ args['local_url'] }}
@@ -136,8 +136,8 @@ fs:
 
 /kvm/images/{{ os }}-latest:
   file.symlink:
-    - target: /kvm/images/{{ args['local_name'] }}
+    - target: /kvm/images/{{ args['name'] }}
     - force: True
     - require:
-      - /kvm/images/{{ args['local_name'] }}
+      - /kvm/images/{{ args['name'] }}
 {% endfor %}
