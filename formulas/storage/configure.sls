@@ -79,6 +79,7 @@ journal_mkpart_{{ osd }}:
     - name: partition.mkpart
     - device: /dev/md/db_array
     - part_type: primary
+    - fs_type: journal
     - start: {{ start }}%
     - end: {{ end }}%
     - unless:
