@@ -60,6 +60,7 @@ db_array:
 {% endfor %}
     - chunk: 512
     - run: true
+    - force: true
 
 journal_partition:
   module.run:
