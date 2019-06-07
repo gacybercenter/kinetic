@@ -93,18 +93,3 @@ create_osd_{{ osd }}:
     - unless:
       - vgdisplay --verbose | grep -q {{ osd }}
 {% endfor %}
-
-ceph osd pool create vms {{ pillar['cephconf']['vms_pgs'] }}:
-  cmd.run:
-    - unless:
-      - ceph osd pool get vms pg_num | grep -q {{ pillar['cephconf']['vms_pgs'] }}
-
-ceph osd pool create images {{ pillar['cephconf']['images_pgs'] }}:
-  cmd.run:
-    - unless:
-      - ceph osd pool get images pg_num | grep -q {{ pillar['cephconf']['images_pgs'] }}
-
-ceph osd pool create volumes {{ pillar['cephconf']['volumes_pgs'] }}:
-  cmd.run:
-    - unless:
-      - ceph osd pool get volumes pg_num | grep -q {{ pillar['cephconf']['volumes_pgs'] }}
