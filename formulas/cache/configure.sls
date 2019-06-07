@@ -14,13 +14,11 @@ apt-cacher-ng_service:
       - file: /etc/apt-cacher-ng/acng.conf
 
 {% for os, args in pillar.get('images', {}).items() %}
-  {% if args['controller'] == true %}
 /var/www/html/images/{{ args['name'] }}:
   file.managed:
     - source: {{ args['remote_url'] }}
     - source_hash: {{ args['remote_hash'] }}
     - makedirs: True
-  {% endif %}
 {% endfor %}
 
 sha512sum * > checksums:
