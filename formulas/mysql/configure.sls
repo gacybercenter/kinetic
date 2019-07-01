@@ -23,6 +23,8 @@ root:
   mysql_user.present:
     - host: localhost
     - password: {{ pillar ['mysql_root_password'] }}
+    - unix_socket: true
+    - allow_passwordless: true
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
 {% for service in pillar['openstack_services'] %}
