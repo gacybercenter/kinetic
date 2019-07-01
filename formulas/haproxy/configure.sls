@@ -34,11 +34,6 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
 
 {% endfor %}
 
-/etc/letsencrypt/live/cybbh.space/master.pem:
-  file.managed:
-    - contents_pillar: letsencrypt:master.pem
-    - makedirs: true
-
 /etc/haproxy/haproxy.cfg:
   file.managed:
     - source: salt://formulas/haproxy/files/haproxy.cfg
