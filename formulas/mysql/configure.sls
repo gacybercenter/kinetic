@@ -42,6 +42,7 @@ create_{{ service }}_user_{{ host }}:
     - name: {{ service }}
     - password: {{ pillar [service][service + '_mysql_password'] }}
     - host: {{ address[0] }}
+    - connection_unix_socket: /var/run/mysqld/mysqld.sock
     - unix_socket: true
     - allow_passwordless: true
 
