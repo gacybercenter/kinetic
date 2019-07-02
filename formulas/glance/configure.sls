@@ -52,7 +52,7 @@ ceph_user_exists:
     - contents:
       - ceph ALL = (root) NOPASSWD:ALL
       - Defaults:ceph !requiretty
-    - file_mode: 644
+    - mode: 644
 
 {% if grains['spawning'] == 0 %}
 
