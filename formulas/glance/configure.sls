@@ -113,9 +113,6 @@ spawnzero_complete:
 {% endfor %}
         password: {{ pillar['glance']['glance_service_password'] }}
 
-/bin/sh -c "glance-manage db_sync" glance:
-  cmd.run
-
 glance_registry_service:
   service.running:
     - name: glance-registry
