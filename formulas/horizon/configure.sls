@@ -21,6 +21,9 @@ include:
 /var/www/html/index.html:
   file.managed:
     - source: salt://formulas/horizon/files/index.html
+    - tempate: jinja
+    - defaults:
+        dashboard_domain: {{ pillar['dashboard_domain'] }}
 
 /var/lib/openstack-dashboard/secret_key:
   file.managed:
