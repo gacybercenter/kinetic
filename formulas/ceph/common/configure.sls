@@ -9,11 +9,11 @@
           mon initial members = 
           {%- for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           {{ host }},
-          {% endfor %}
+          {%- endfor %}
           mon host = 
           {%- for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           {{ address[1] }},
-          {% endfor %}
+          {%- endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [client.swift.{{ host }}]
