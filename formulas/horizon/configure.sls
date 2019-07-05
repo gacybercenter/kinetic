@@ -20,10 +20,9 @@ include:
 /var/www/html/index.html:
   file.managed:
     - source: salt://formulas/horizon/files/index.html
-    - tempate: jinja
+    - template: jinja
     - defaults:
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
-        keystone_url: {{ pillar['endpoints']['internal'] }}
 
 /var/lib/openstack-dashboard/secret_key:
   file.managed:
