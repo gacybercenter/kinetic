@@ -6,7 +6,7 @@
     - defaults:
         fsid: {{ pillar['ceph']['fsid'] }}
         mon_global: |
-          mon host = 10.120.5.100, 10.120.5.101, 10.120.5.99
+          mon host = [v2:10.120.5.99:3300,v1:10.120.5.99:6789],[v2:10.120.5.100:3300,v1:10.120.5.100:6789],[v2:10.120.5.101:3300,v1:10.120.5.101:6789]
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [client.swift.{{ host }}]
