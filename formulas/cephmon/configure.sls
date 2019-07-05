@@ -69,7 +69,7 @@ ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyr
 ceph-mon@{{ grains['id'] }}:
   service.running:
     - watch:
-      - file: /etc/ceph/ceph.conf
+      - sls: formulas/ceph/common/configure
 
 /var/lib/ceph/mgr/ceph-{{ grains['id'] }}:
   file.directory:
