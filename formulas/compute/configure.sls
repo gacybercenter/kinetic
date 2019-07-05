@@ -14,13 +14,14 @@ include:
           {% for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [mon.{{ host }}]
           host = {{ host }}
-          mon addr = {{ address[0] }}
+          mon addr = v2:{{ address[0] }}:3300/0
           {% endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [client.swift.{{ host }}]
           host = {{ host }}
-          rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+          keyring = /etc/ceph/ceph.client.{{ host }}.keyring
+          rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}
           rgw keystone api version = 3
           rgw keystone admin user = keystone
           rgw keystone admin password = {{ pillar ['keystone']['keystone_service_password'] }}
