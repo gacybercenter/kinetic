@@ -5,7 +5,7 @@ include:
 
 /etc/ceph/ceph.conf:
   file.managed:
-    - source: salt://formulas/cephmon/files/ceph.conf
+    - source: salt://formulas/ceph/common/files/ceph.conf
     - template: jinja
     - makedirs: True
     - defaults:
@@ -14,7 +14,6 @@ include:
           {% for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [mon.{{ host }}]
           host = {{ host }}
-          mon addr = v2:{{ address[0] }}:3300/0
           {% endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
