@@ -6,13 +6,10 @@
     - defaults:
         fsid: {{ pillar['ceph']['fsid'] }}
         mon_members: |
-          mon initial members = 
-          {%- for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {{ host }},
-          {%- endfor %}
-          mon host = 
-          {%- for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {{ address[1] }},
+          {% for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+          [mon.{{ host }}]
+          host = {{ host }}
+          mon addr = {{ address[1] }}
           {%- endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
