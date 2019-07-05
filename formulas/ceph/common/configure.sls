@@ -8,7 +8,7 @@
         mon_global: |
           mon host =
           {%- for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {{ address[0] }},
+          {{ address[1] }},
           {%- endfor %}
         mon_members: |
           {% for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
