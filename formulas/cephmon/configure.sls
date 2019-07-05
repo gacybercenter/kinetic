@@ -13,7 +13,7 @@ include:
         mon_members: |
           [mon]
           mon host = 
-          {% for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+          {%- for host, address in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           {{ address }}
           {% endfor %}
         swift_members: |
