@@ -27,6 +27,9 @@
           rgw keystone revocation interval = 300
           rgw keystone implicit tenants = true
           rgw swift account in url = true
+          rgw swift url prefix = swift
+          rgw trust forwarded https = true
+
           {% endfor %}
         sfe_network: {{ pillar['subnets']['sfe'] }}
         sbe_network: {{ pillar['subnets']['sbe'] }}
