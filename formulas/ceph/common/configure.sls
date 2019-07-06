@@ -13,7 +13,7 @@
           {%- endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          [client.swift.{{ host }}]
+          [client.{{ host }}]
           host = {{ host }}
           keyring = /etc/ceph/ceph.client.{{ host }}.keyring
           rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}

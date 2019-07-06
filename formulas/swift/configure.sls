@@ -40,7 +40,7 @@ ceph_user_exists:
     - user: ceph
     - group: ceph
 
-ceph auth get-or-create client.swift.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
+ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
   cmd.run:
     - creates:
       - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
