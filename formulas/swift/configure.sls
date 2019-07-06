@@ -47,7 +47,7 @@ ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx
 
 radosgw_service:
   service.running:
-    - name: radosgw
+    - name: ceph-radosgw@{{ grains['id'] }}.service
     - enable: true
     - watch:
       - file: /etc/ceph/ceph.conf
