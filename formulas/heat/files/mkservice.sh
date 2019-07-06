@@ -18,7 +18,7 @@ openstack role add --project service --user heat admin
 openstack service create --name heat --description "Orchestration" orchestration
 openstack service create --name heat-cfn --description "Orchestration" cloudformation
 openstack endpoint create --region RegionOne orchestration public {{ heat_public_endpoint }}
-openstack endpoint create --region RegionOne orchestration internal{{ heat_internal_endpoint }}
+openstack endpoint create --region RegionOne orchestration internal {{ heat_internal_endpoint }}
 openstack endpoint create --region RegionOne orchestration admin {{ heat_admin_endpoint }}
 openstack endpoint create --region RegionOne cloudformation public {{ heat_public_endpoint_cfn }}
 openstack endpoint create --region RegionOne cloudformation internal {{ heat_internal_endpoint_cfn }}
