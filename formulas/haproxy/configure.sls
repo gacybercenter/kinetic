@@ -1,7 +1,6 @@
 include:
   - /formulas/haproxy/install
   - formulas/common/base
-  - formulas/common/networking
 
 {% for domain in pillar['haproxy']['tls_domains'] %}
 
