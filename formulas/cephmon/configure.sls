@@ -4,9 +4,7 @@ include:
   - formulas/cephmon/install
   - formulas/ceph/common/configure
 
-{% if grains['spawning'] == 0 %}
-
-networking_mine_update:
+networking_mine_update_ceph:
   module.run:
     - name: mine.update
     - require:
@@ -15,6 +13,8 @@ networking_mine_update:
     - name: {{ grains['type'] }}/mine/address/update
     - data: "{{ grains['type'] }} mine has been updated."
   
+{% if grains['spawning'] == 0 %}
+
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
