@@ -10,8 +10,7 @@ type:
   grains.present:
     - value: {{ type[0] }}
 
-
-{% if grains['os_family'] == 'Debian' %}
+{% if grains['os_family'] == 'Debian' AND grains ['role'] != 'cache' %}
   {% if salt['grains.get']('role') != 'cache' %}
   {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
 /etc/apt/apt.conf.d/02proxy:
