@@ -1,7 +1,7 @@
 include:
-  - formulas/cephmon/install
   - formulas/common/base
   - formulas/common/networking
+  - formulas/cephmon/install
   - formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
