@@ -6,6 +6,15 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+networking_mine_update:
+  module.run:
+    - name: mine.update
+    - require:
+      - sls: formulas/cephmon/install
+  event.send:
+    - name: {{ grains['type'] }}/mine/address/update
+    - data: "{{ grains['type'] }} mine has been updated."
+  
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
