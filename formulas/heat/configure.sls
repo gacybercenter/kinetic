@@ -23,6 +23,8 @@ make_heat_service:
 heat-manage db_sync:
   cmd.run:
     - runas: heat
+    - require:
+      - file: /etc/heat/heat.conf
 
 spawnzero_complete:
   event.send:
