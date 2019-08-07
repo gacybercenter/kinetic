@@ -20,7 +20,6 @@ antora_packages:
       - lsb-release
       - gnupg
       - nodejs
-      - npm
     - reload_modules: True
 
 install_antora:
