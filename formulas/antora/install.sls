@@ -21,6 +21,7 @@ antora_packages:
       - gnupg
       - nodejs
       - npm
+    - reload_modules: True
 
 install_antora:
   npm.installed:
