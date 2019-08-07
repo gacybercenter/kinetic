@@ -25,6 +25,6 @@ antora_packages:
 install_antora:
   npm.installed:
     - pkgs:
-      - @antora/cli@2.0
-      - @antora/site-generator-default@2.0
+      - "@antora/cli@2.0"
+      - "@antora/site-generator-default@2.0"
 
