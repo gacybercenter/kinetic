@@ -110,8 +110,9 @@ fs:
       - /kvm
 
 {% for os, args in pillar.get('images', {}).items() %}
-/kvm/images/{{ args['name'] }}:
-  file.managed:
+extract_{{ args['name'] }}:
+  archive.extracted:
+    - name: /kvm/images
     - source:
 {% if args['local_url'] == "pull_from_mine" %}
 {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
