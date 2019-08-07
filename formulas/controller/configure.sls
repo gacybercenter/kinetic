@@ -132,7 +132,7 @@ extract_{{ args['name'] }}:
     - source_hash: {{ args['local_hash'] }}
 {% endif %}
     - require:
-      - /kvm/images
+      - file: /kvm/images
 
 /kvm/images/{{ os }}-latest:
   file.symlink:
