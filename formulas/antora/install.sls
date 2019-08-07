@@ -3,7 +3,7 @@ nodesource:
     - humanname: nodesoure node.js 12.x repo
     - name: deb https://deb.nodesource.com/node_12.x bionic main
     - file: /etc/apt/sources.list.d/nodejs.12.list
-    - gpgkey: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+    - key_url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
 
 update_packages_node:
   pkg.uptodate:
