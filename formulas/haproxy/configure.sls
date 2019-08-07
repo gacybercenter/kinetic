@@ -44,6 +44,7 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
          management_ip_address: {{ grains['ipv4'][0] }}
          dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
          console_domain:  {{ pillar['haproxy']['console_domain'] }}
+         docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
          keystone_hosts: |
            {%- for host, address in salt['mine.get']('type:keystone', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
            server {{ host }} {{ address[0] }}:5000 check inter 2000 rise 2 fall 5
@@ -74,6 +75,10 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
            {%- endfor %}
          dashboard_hosts: |
            {%- for host, address in salt['mine.get']('type:horizon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+           server {{ host }} {{ address[0] }}:80 check inter 2000 rise 2 fall 5
+           {%- endfor %}
+         docs_hosts: |
+           {%- for host, address in salt['mine.get']('type:antora', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
            server {{ host }} {{ address[0] }}:80 check inter 2000 rise 2 fall 5
            {%- endfor %}
          neutron_api_hosts: |
