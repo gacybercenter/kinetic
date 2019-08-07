@@ -139,5 +139,5 @@ extract_{{ args['name'] }}:
     - target: /kvm/images/{{ args['name'] }}
     - force: True
     - require:
-      - /kvm/images/{{ args['name'] }}
+      - extract_{{ args['name'] }}
 {% endfor %}
