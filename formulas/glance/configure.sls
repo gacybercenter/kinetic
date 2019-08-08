@@ -46,6 +46,11 @@ glance-manage db_sync:
     - unless:
       - glance-manage db check
 
+make_images_pool:
+  event.send:
+    - name: create/{{ grains['type'] }}/pool
+    - data: "{{ grains['type'] }} is functional.  Create pool now."
+
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
