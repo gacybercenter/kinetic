@@ -1,6 +1,6 @@
 create_glance_pool:
   local.cmd.run:
-    - tgt: 'type:cephmon'
-    - tgt_type: grain
+    - tgt: 'spawning:0 and type:cephmon'
+    - tgt_type: compound
     - arg:
       - touch /root/yayitworks
