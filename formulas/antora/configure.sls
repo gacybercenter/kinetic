@@ -28,8 +28,7 @@ spawnzero_complete:
 antora site.yml:
   cmd.run:
     - cwd: /root
-    - onchanges:
-      - file: /root/site.yml
+    - creates: /var/www/html/docs/latest/index.html
 
 apache2_service:
   service.running:
