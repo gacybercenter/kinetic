@@ -14,10 +14,6 @@ spawnzero_complete:
 
 {% endif %}
 
-/etc/apache2/sites-available/000-default.conf:
-  file.managed:
-    - source: salt://formulas/antora/files/000-default.conf
-
 /root/site.yml:
   file.managed:
     - source: salt://formulas/antora/files/site.yml
@@ -34,5 +30,3 @@ antora generate --fetch /root/site.yml:
 apache2_service:
   service.running:
     - name: apache2
-    - watch:
-      - file: /etc/apache2/sites-available/000-default.conf
