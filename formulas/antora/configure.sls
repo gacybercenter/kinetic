@@ -10,7 +10,7 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
     - onchanges:
-      - file: /etc/apache2/sites-available/000-default.conf
+      - file: /root/site.yml
 
 {% endif %}
 
