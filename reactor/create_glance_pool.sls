@@ -1,5 +1,5 @@
 create_glance_pool:
-  salt.function:
+  local.salt.function:
     - name: cmd.run
     - tgt: 'type:cephmon'
     - tgt_type: grain
