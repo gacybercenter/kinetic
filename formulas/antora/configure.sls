@@ -9,6 +9,8 @@ spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
+    - onchanges:
+      - file: /etc/apache2/sites-available/000-default.conf
 
 {% endif %}
 
