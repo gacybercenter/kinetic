@@ -25,6 +25,12 @@ spawnzero_complete:
     - defaults:
         antora_docs_repo: {{ pillar['antora_docs_repo'] }}
 
+antora site.yml:
+  cmd.run:
+    - cwd: root
+    - onchanges:
+      - file: /root/site.yml
+
 apache2_service:
   service.running:
     - name: apache2
