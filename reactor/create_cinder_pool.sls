@@ -3,4 +3,4 @@ create_cinder_pool:
     - tgt: 'G@spawning:0 and G@type:cephmon'
     - tgt_type: compound
     - arg:
-      - touch /root/cinder
+      - ceph osd pool create volumes {{ pillar['cephconf']['volumes_pgs'] }}
