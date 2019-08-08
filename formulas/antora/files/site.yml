@@ -1,5 +1,6 @@
 site:
   title: Kinetic Documentation and Contribution Guide
+  url: https://{{ docs_domain }}
 content:
   sources:
   - url: {{ antora_docs_repo }}
