@@ -3,4 +3,4 @@ create_nova_pool:
     - tgt: 'G@spawning:0 and G@type:cephmon'
     - tgt_type: compound
     - arg:
-      - ceph osd pool create vms {{ pillar['cephconf']['vms_pgs'] }}
+      - ceph osd pool create vms {{ data ['data']['pgs'] }}
