@@ -27,7 +27,7 @@ spawnzero_complete:
 
 antora site.yml:
   cmd.run:
-    - cwd: root
+    - cwd: /root
     - onchanges:
       - file: /root/site.yml
 
