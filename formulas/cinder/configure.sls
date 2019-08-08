@@ -4,12 +4,7 @@ include:
   - formulas/common/networking
   - formulas/ceph/common/configure
 
-/etc/ceph/ceph.client.volumes.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-volumes-keyring
-    - mode: 640
-    - user: root
-    - group: cinder
+{% if grains['spawning'] == 0 %}
 
 make_cinder_service:
   cmd.script:
@@ -25,6 +20,33 @@ make_cinder_service:
         cinder_public_endpoint_v3: {{ pillar ['openstack_services']['cinder']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['cinder']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['cinder']['configuration']['public_endpoint']['v3_path'] }}
         cinder_admin_endpoint_v3: {{ pillar ['openstack_services']['cinder']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['cinder']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['cinder']['configuration']['admin_endpoint']['v3_path'] }}
         cinder_service_password: {{ pillar ['cinder']['cinder_service_password'] }}
+
+cinder-manage db sync:
+  cmd.run:
+    - runas: cinder
+    - require:
+      - file: /etc/cinder/cinder.conf
+
+make_cinder_pool:
+  event.send:
+    - name: create/{{ grains['type'] }}/pool
+    - data: "{{ grains['type'] }} is functional.  Create pool now."
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
+    - onchanges:
+      - cmd: cinder-manage db sync
+
+{% endif %}
+
+/etc/ceph/ceph.client.volumes.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-volumes-keyring
+    - mode: 640
+    - user: root
+    - group: cinder
 
 /etc/cinder/cinder.conf:
   file.managed:
@@ -45,9 +67,6 @@ make_cinder_service:
         password: {{ pillar['cinder']['cinder_service_password'] }}
         my_ip: {{ grains['ipv4'][0] }}
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
-
-/bin/sh -c "cinder-manage db sync" cinder:
-  cmd.run
 
 cinder_api_service:
   service.running:
