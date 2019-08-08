@@ -4,6 +4,10 @@ include:
   - formulas/common/networking
   - formulas/ceph/common/configure
 
+/etc/modprobe.d/kvm.conf:
+  file.managed:
+    - source: salt://formulas/compute/files/kvm.conf
+
 /etc/ceph/ceph.client.compute.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-compute-keyring
