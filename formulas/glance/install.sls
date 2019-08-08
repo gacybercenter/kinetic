@@ -1,3 +1,10 @@
+ceph_repo:
+  pkgrepo.managed:
+    - humanname: Ceph Nautilus
+    - name: deb https://download.ceph.com/debian-nautilus/ bionic main
+    - file: /etc/apt/sources.list.d/ceph.list
+    - key_url: https://download.ceph.com/keys/release.asc
+
 uca:
   pkgrepo.managed:
     - humanname: Ubuntu Cloud Archive - Rocky
@@ -11,6 +18,7 @@ update_packages_uca:
     - refresh: true
     - onchanges:
       - pkgrepo: uca
+      - pkgrepo: ceph_repo
     - dist_upgrade: True
 
 glance_packages:
@@ -21,3 +29,4 @@ glance_packages:
       - python-rbd
       - python-rados
       - python-openstackclient
+      - ceph-common
