@@ -1,11 +1,11 @@
 site:
   title: Kinetic Documentation and Contribution Guide
   url: https://{{ docs_domain }}
+  start_page: docs::index.adoc
 content:
   sources:
   - url: {{ antora_docs_repo }}
     branches: master
-    start_path: docs
 ui: 
   bundle:
     url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/master/raw/build/ui-bundle.zip?job=bundle-stable
