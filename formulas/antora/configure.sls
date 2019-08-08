@@ -24,6 +24,7 @@ spawnzero_complete:
     - template: jinja
     - defaults:
         antora_docs_repo: {{ pillar['antora_docs_repo'] }}
+        docs_domain: {{ pillar['docs_domain'] }}
 
 antora generate --fetch /root/site.yml:
   cmd.run:
