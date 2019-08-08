@@ -25,10 +25,10 @@ spawnzero_complete:
     - defaults:
         antora_docs_repo: {{ pillar['antora_docs_repo'] }}
 
-antora site.yml:
+antora generate --fetch /root/site.yml:
   cmd.run:
-    - cwd: /root
-    - creates: /var/www/html/docs/latest/index.html
+    - require:
+      - /root/site.yml
 
 apache2_service:
   service.running:
