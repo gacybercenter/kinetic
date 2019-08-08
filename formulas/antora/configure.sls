@@ -12,7 +12,7 @@ spawnzero_complete:
 
 {% endif %}
 
-/etc/apache2/sites-available/000-default.conf
+/etc/apache2/sites-available/000-default.conf:
   file.managed:
     - source: salt://formulas/antora/files/000-default.conf
 
