@@ -30,7 +30,8 @@ cinder-manage db sync:
 make_cinder_pool:
   event.send:
     - name: create/{{ grains['type'] }}/pool
-    - data: "{{ grains['type'] }} is functional.  Create pool now."
+    - data:
+        pgs: {{ pillar['cephconf']['volumes_pgs'] }}
 
 spawnzero_complete:
   event.send:

@@ -88,7 +88,8 @@ nova-manage db sync:
 make_nova_pool:
   event.send:
     - name: create/{{ grains['type'] }}/pool
-    - data: "{{ grains['type'] }} is functional.  Create pool now."
+    - data:
+        pgs: {{ pillar['cephconf']['vms_pgs'] }}
 
 spawnzero_complete:
   event.send:
