@@ -23,8 +23,7 @@
   {% set subnet_network_split = subnet_network.split('/') %}
   {% set subnet_network_octets = subnet_network_split[0].split('.') %}
   {% set subnet_network_netmask = subnet_network_split[1] %}
-[% endfor %}
-
+{% endfor %}
 
 ## Get current management IP address.  This will be used to calculate the
 ## assigned addresses for all of the other networks.
@@ -50,7 +49,9 @@
       - proto: static
       - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
+
 {% endfor %}
+
 {% endif %}
 
 networking_mine_update:
