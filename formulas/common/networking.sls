@@ -12,29 +12,29 @@
   {% set srv = 'virtual' %}
 {% endif %}
 
-## This piece creates the following variables for all system-wide networks:
-## 1. Full network as the variable [subnet]_network (e.g. 1.2.3.0/24)
-## 2. Network and subnet mask split as the variable [subnet]_network_split (e.g. [1.2.3.4, 24])
-## 3. Python list of network octets as the variable [subnet]_netowkr_octets (e.g. [1,2,3,4]
-## 4. Network mask as the variable [subnet]_network_netmask (e.g. 24)
-
-{% for subnet in pillar['networking']['subnets'] %}
-  {% set subnet_network = pillar['networking']['subnets'][subnet] %}
-  {% set subnet_network_split = subnet_network.split('/') %}
-  {% set subnet_network_octets = subnet_network_split[0].split('.') %}
-  {% set subnet_network_netmask = subnet_network_split[1] %}
-{% endfor %}
-
 ## Get current management IP address.  This will be used to calculate the
 ## assigned addresses for all of the other networks.
 {% set management_address_octets = grains['ipv4'][0].split('.') %}
 
 ## First case is the most common - no bridge.
 {% if pillar[srv][grains['type']]['networks']['bridge'] == False %}
+
 ## Loop through all defined interfaces in the pillar for this particular device
 {% for interface in pillar[srv][grains['type']]['networks']['interfaces'] %}
+
 ## Set short variable for easy reference
 {% set current_network = pillar[srv][grains['type']]['networks']['interfaces'][interface]['network'] %}
+
+## This piece creates the following variables for all system-wide networks:
+## 1. Full network as the variable [subnet]_network (e.g. 1.2.3.0/24)
+## 2. Network and subnet mask split as the variable [subnet]_network_split (e.g. [1.2.3.4, 24])
+## 3. Python list of network octets as the variable [subnet]_netowkr_octets (e.g. [1,2,3,4]
+## 4. Network mask as the variable [subnet]_network_netmask (e.g. 24)
+{% set subnet_network = pillar['networking']['subnets'][current_network] %}
+{% set subnet_network_split = subnet_network.split('/') %}
+{% set subnet_network_octets = subnet_network_split[0].split('.') %}
+{% set subnet_network_netmask = subnet_network_split[1] %}
+
 
 ## Actual state data starts here
   {{ interface }}:
