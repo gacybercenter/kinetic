@@ -13,10 +13,10 @@
 {% endif %}
 
 ## This piece creates the following variables for all system-wide networks:
-## 1. Full network as the variable {{ subnet }}_network (e.g. 1.2.3.0/24)
-## 2. Network and subnet mask split as the variable {{ subnet }}_network_split (e.g. [1.2.3.4, 24])
-## 3. Python list of network octets as the variable {{ subnet }}_netowkr_octets (e.g. [1,2,3,4]
-## 4. Network mask as the variable {{ subnet }}_network_netmask (e.g. 24)
+## 1. Full network as the variable [subnet]_network (e.g. 1.2.3.0/24)
+## 2. Network and subnet mask split as the variable [subnet]_network_split (e.g. [1.2.3.4, 24])
+## 3. Python list of network octets as the variable [subnet]_netowkr_octets (e.g. [1,2,3,4]
+## 4. Network mask as the variable [subnet]_network_netmask (e.g. 24)
 
 {% for subnet in pillar['networking']['subnets'] %}
   {% set subnet_network = pillar['networking']['subnets'][subnet] %}
