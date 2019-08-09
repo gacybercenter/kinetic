@@ -37,21 +37,19 @@
 
 
 ## Actual state data starts here
-  {{ interface }}:
-    network.managed:
-      - enabled: true
-      - type: eth
+{{ interface }}:
+  network.managed:
+    - enabled: true
+    - type: eth
 ## If working on the management interface, it should be set to DHCP
 {% if current_network == 'management' %}
-      - proto: dhcp
+    - proto: dhcp
 ## Otherwise, calculate the IP address based on what management currently is.
 {% else %}
-      - proto: static
-      - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
+    - proto: static
+    - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
-
 {% endfor %}
-
 {% endif %}
 
 networking_mine_update:
