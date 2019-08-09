@@ -31,7 +31,7 @@
 {% set management_address_octets = grains['ipv4'][0].split('.') %}
 
 ## First case is the most common - no bridge.
-{% if pillar[srv][grains['type']]['networks']['bridge'] == False
+{% if pillar[srv][grains['type']]['networks']['bridge'] == False %}
 ## Loop through all defined interfaces in the pillar for this particular device
 {% for interface in pillar[srv][grains['type']]['networks']['interfaces'] %}
 ## Set short variable for easy reference
@@ -49,6 +49,8 @@
 {% else %}
       - proto: static
       - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
+{% endif %}
+{% endif %}
 
 networking_mine_update:
   module.run:
