@@ -50,6 +50,7 @@
       - proto: static
       - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
+{% endfor %}
 {% endif %}
 
 networking_mine_update:
