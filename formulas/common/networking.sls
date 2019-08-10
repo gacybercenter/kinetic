@@ -53,10 +53,10 @@ ifupdown:
 ## companion interface
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['bridge'] == True %}
     - proto: manual
-    - bridge: {{ current_network }}_bridge
+    - bridge: {{ current_network }}_br
 ## This is the companion interface if the interface is in bridge mode
 ## This won't exist on non-bridged devices
-{{ current_network }}_bridge:
+{{ current_network }}_br:
   network.managed:
     - enabled: true
     - type: eth
