@@ -53,8 +53,10 @@ ifupdown:
   network.managed:
     - enabled: true
     - type: eth
-## If working on the management interface, it should be set to DHCP
-{% if current_network == 'management' %}
+## If working on the primary interface, it should be set to DHCP
+## This is almost always going to be the management interface except in the
+## case of haproxy, when it will be public
+{% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == false %}
     - proto: dhcp
 ## Otherwise, calculate the IP address based on what management currently is.
 {% else %}
