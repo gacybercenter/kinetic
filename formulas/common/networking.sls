@@ -12,7 +12,6 @@
   {% set srv = 'virtual' %}
 {% endif %}
 
-
 ## Netplan.io is neat, but it only exists in Ubuntu 18.04 which isn't useful
 ## Revisit this if/when it gets more attention
 ## ifupdown is fully supported/developed upstream
@@ -62,11 +61,16 @@ ifupdown:
     - enabled: true
     - type: eth
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == True %}
+## If working on the primary interface, it should be set to DHCP
+## This is almost always going to be the management interface except in the
+## case of haproxy, when it will be public
     - proto: dhcp
 {% else %}
+## Otherwise, calculate the IP address based on what management currently is.
     - proto: static
     - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
+## bind bridged ports to their parents and set appropriate requisite
     - ports: {{ interface }}
     - require:
       - network: {{ interface }}
@@ -80,7 +84,6 @@ ifupdown:
     - proto: static
     - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
-
 {% endfor %}
 
 networking_mine_update:
