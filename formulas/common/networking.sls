@@ -56,7 +56,7 @@ ifupdown:
 ## If working on the primary interface, it should be set to DHCP
 ## This is almost always going to be the management interface except in the
 ## case of haproxy, when it will be public
-{% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == false %}
+{% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == True %}
     - proto: dhcp
 ## Otherwise, calculate the IP address based on what management currently is.
 {% else %}
