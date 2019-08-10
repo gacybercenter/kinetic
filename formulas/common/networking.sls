@@ -28,9 +28,6 @@ ifupdown:
 ## assigned addresses for all of the other networks.
 {% set management_address_octets = grains['ipv4'][0].split('.') %}
 
-## First case is the most common - no bridge.
-{% if pillar[srv][grains['type']]['networks']['bridge'] == False %}
-
 ## Loop through all defined interfaces in the pillar for this particular device
 {% for interface in pillar[srv][grains['type']]['networks']['interfaces'] %}
 
@@ -47,24 +44,44 @@ ifupdown:
 {% set subnet_network_octets = subnet_network_split[0].split('.') %}
 {% set subnet_network_netmask = subnet_network_split[1] %}
 
-
 ## Actual state data starts here
+## Physical interface definition
 {{ interface }}:
   network.managed:
     - enabled: true
     - type: eth
+## If this interface is bridged, set appropriate state and master and
+## companion interface
+{% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['bridge'] == True %}
+    - proto: manual
+    - bridge: {{ current_network }}_bridge
+## This is the companion interface if the interface is in bridge mode
+## This won't exist on non-bridged devices
+{{ current_network }}_bridge:
+  network.managed:
+    - enabled: true
+    - type: eth
+{% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == True %}
+    - proto: dhcp
+{% else %}
+    - proto: static
+    - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
+{% endif %}
+    - ports: {{ interface }}
+    - require:
+      - network: {{ interface }}
 ## If working on the primary interface, it should be set to DHCP
 ## This is almost always going to be the management interface except in the
 ## case of haproxy, when it will be public
-{% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == True %}
+{% elif pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == True %}
     - proto: dhcp
 ## Otherwise, calculate the IP address based on what management currently is.
 {% else %}
     - proto: static
     - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
+
 {% endfor %}
-{% endif %}
 
 networking_mine_update:
   module.run:
