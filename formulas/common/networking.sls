@@ -59,7 +59,7 @@ ifupdown:
 {{ current_network }}_br:
   network.managed:
     - enabled: true
-    - type: eth
+    - type: bridge
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == True %}
 ## If working on the primary interface, it should be set to DHCP
 ## This is almost always going to be the management interface except in the
