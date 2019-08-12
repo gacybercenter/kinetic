@@ -34,6 +34,15 @@ wait_for_minion_first_start_{{ type }}-{{ identifier }}:
     - require:
       - accept_minion_{{ type }}-{{ identifier }}
 
+wait_for_netplan_userdata_reboot_{{ type }}-{{ identifier }}:
+  salt.wait_for_event:
+    - name: salt/minion/*/start
+    - id_list:
+      - {{ type }}-{{ identifier }}
+    - require:
+      - wait_for_minion_first_start_{{ type }}-{{ identifier }}
+    - timeout: 300
+
 set_spawning_{{ type }}-{{ identifier }}:
   salt.function:
     - name: grains.set
@@ -49,7 +58,7 @@ apply_base_{{ type }}-{{ identifier }}:
     - sls:
       - formulas/common/base
     - require:
-      - wait_for_minion_first_start_{{ type }}-{{ identifier }}
+      - wait_for_netplan_userdata_reboot_{{ type }}-{{ identifier }}
 
 apply_networking_{{ type }}-{{ identifier }}:
   salt.state:
