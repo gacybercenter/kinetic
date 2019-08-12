@@ -72,6 +72,7 @@ ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyr
 
 ceph-mon@{{ grains['id'] }}:
   service.running:
+    - enable: true
     - watch:
       - sls: formulas/ceph/common/configure
 
