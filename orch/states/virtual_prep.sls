@@ -11,7 +11,7 @@
         ram: {{ pillar['virtual'][type]['ram'] }}
         cpu: {{ pillar['virtual'][type]['cpu'] }}
         networks: |
-        {% for interface in pillar['virtual'][type]['networks']['interfaces']|reverse %}
+        {% for interface in pillar['virtual'][type]['networks']['interfaces']|sort() %}
           <interface type='bridge'>
             <source bridge='{{ pillar['virtual'][type]['networks']['interfaces'][interface]['network'] }}'/>
             <target dev='vnet{{ loop.index0 }}'/>
