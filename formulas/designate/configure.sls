@@ -42,7 +42,7 @@ make_designate_service:
     - source: salt://formulas/designate/files/named.conf.options
     - template: jinja
     - defaults:
-        public_dns: {{ pillar['subnets']['float_dns'] }}
+        public_dns: {{ pillar['networking']['addresses']['float_dns'] }}
 
 /etc/designate/pools.yaml:
   file.managed:

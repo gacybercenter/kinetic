@@ -31,5 +31,5 @@
           rgw trust forwarded https = true
 
           {% endfor %}
-        sfe_network: {{ pillar['subnets']['sfe'] }}
-        sbe_network: {{ pillar['subnets']['sbe'] }}
+        sfe_network: {{ pillar['networking']['subnets']['sfe'] }}
+        sbe_network: {{ pillar['networking']['subnets']['sbe'] }}

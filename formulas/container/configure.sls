@@ -63,7 +63,7 @@ include:
     - source: salt://formulas/compute/files/linuxbridge_agent.ini
     - template: jinja
     - defaults:
-        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['subnets']['private'])[0] }}
+        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
 {% for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
   {%- for network in binding %}
     {% if network == 'public' %}
