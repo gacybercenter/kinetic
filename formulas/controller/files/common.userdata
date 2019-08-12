@@ -2,11 +2,10 @@
 
 
 #### Ubuntu 18.04 stuff
-apt-get install -y ifupdown
-echo auto ens3 > /etc/network/interfaces
-echo iface ens3 inet dhcp >> /etc/network/interfaces
-rm -rf /etc/netplan/*
+##apt-get install -y ifupdown
+##echo auto ens3 > /etc/network/interfaces
+##echo iface ens3 inet dhcp >> /etc/network/interfaces
+##rm -rf /etc/netplan/*
 ####
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
-/bin/sh /tmp/bootstrap_salt.sh -X -i {{ hostname }}
-reboot
+/bin/sh /tmp/bootstrap_salt.sh -i {{ hostname }}
