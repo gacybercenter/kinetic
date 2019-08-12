@@ -11,11 +11,9 @@
         ram: {{ pillar['virtual'][type]['ram'] }}
         cpu: {{ pillar['virtual'][type]['cpu'] }}
         networks: |
-        {% for network in pillar['virtual'][type]['networks']['bindings'] %}
+        {% for interface in pillar['virtual'][type]['networks']['interfaces'] %}
           <interface type='bridge'>
-          {%- for interface in network %}
-            <source bridge='{{ interface }}'/>
-          {%- endfor %}
+            <source bridge='{{ pillar['virtual'][type]['networks']['interfaces'][interface]['network'] }}'/>
             <target dev='vnet{{ loop.index0 }}'/>
             <model type='virtio'/>
             <alias name='net{{ loop.index0 }}'/>
