@@ -14,9 +14,9 @@
         {% for interface in pillar['virtual'][type]['networks']['interfaces'] %}
           <interface type='bridge'>
             <source bridge='{{ pillar['virtual'][type]['networks']['interfaces'][interface]['network'] }}'/>
-            <target dev='vnet{{ loop.index0 }}'/>
+            <target dev='vnet{{ loop.revindex0 }}'/>
             <model type='virtio'/>
-            <alias name='net{{ loop.index0 }}'/>
+            <alias name='net{{ loop.revindex0 }}'/>
           </interface>
         {% endfor %}
 
