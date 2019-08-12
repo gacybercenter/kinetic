@@ -20,7 +20,8 @@ netplan.io:
   pkg.removed
 
 ifupdown:
-  pkg.installed
+  pkg.installed:
+    - reload_modules: true
 {% endif %}
 
 ## Get current management IP address.  This will be used to calculate the
