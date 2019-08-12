@@ -19,6 +19,10 @@
 netplan.io:
   pkg.removed
 
+/etc/netplan:
+  file.directory:
+    - clean: true
+
 ifupdown:
   pkg.installed:
     - reload_modules: true
