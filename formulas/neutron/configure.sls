@@ -76,7 +76,7 @@ spawnzero_complete:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for interface, attributes in pillar['virtual'][grains['type']]['networks']['interfaces'] %}
+{% for interface in pillar['virtual'][grains['type']]['networks']['interfaces'] %}
   {% if pillar['virtual'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
         public_interface: {{ interface }}
   {% endif %}
