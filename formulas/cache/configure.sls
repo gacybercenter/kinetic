@@ -35,7 +35,7 @@ sha512sum * > checksums:
   cmd.run:
     - cwd: /var/www/html/images
     - onchanges: 
-      - archive: /var/www/html/images/*
+      - archive: extract_*
 
 mine.update:
   module.run:
