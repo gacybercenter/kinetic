@@ -3,6 +3,15 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+{% if grains['spawning'] == 0 %}
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
+
+{% endif %}
+
 /usr/lib/python2.7/dist-packages/salt/modules/mysql.py:
   file.managed:
     - source: https://raw.githubusercontent.com/garethgreenaway/salt/598bc70d2d4d3910e7d6903c1ab3ba0b074464ce/salt/modules/mysql.py

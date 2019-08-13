@@ -95,11 +95,6 @@ spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
-    - onchanges:
-      - cmd: nova-manage api_db sync
-      - cmd: nova-manage cell_v2 map_cell0
-      - cmd: nova-manage cell_v2 create_cell --name=cell1 --verbose
-      - cmd: nova-manage db sync
 
 {% endif %}
 

@@ -30,8 +30,6 @@ spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
-    - onchanges:
-      - cmd: heat-manage db_sync
 
 {% endif %}
 

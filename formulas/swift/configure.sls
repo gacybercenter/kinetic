@@ -4,6 +4,15 @@ include:
   - formulas/common/networking
   - formulas/ceph/common/configure
 
+{% if grains['spawning'] == 0 %}
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
+
+{% endif %}
+
 make_swift_service:
   cmd.script:
     - source: salt://formulas/swift/files/mkservice.sh

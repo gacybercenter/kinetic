@@ -2,6 +2,15 @@ include:
   - /formulas/haproxy/install
   - formulas/common/base
 
+{% if grains['spawning'] == 0 %}
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
+
+{% endif %}
+
 {% for domain in pillar['haproxy']['tls_domains'] %}
 
 haproxy_{{ domain }}_service_dead:

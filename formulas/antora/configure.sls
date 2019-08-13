@@ -9,8 +9,6 @@ spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
-    - onchanges:
-      - file: /root/site.yml
 
 {% endif %}
 
