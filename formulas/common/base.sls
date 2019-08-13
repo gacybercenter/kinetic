@@ -9,7 +9,6 @@ role:
 type:
   grains.present:
     - value: {{ type[0] }}
-    - reload_modules: true
 
 {% if grains['os_family'] == 'Debian' %}
   {% if opts.id.split('-')[0] != 'cache' %}
