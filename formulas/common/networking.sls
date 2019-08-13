@@ -12,22 +12,6 @@
   {% set srv = 'virtual' %}
 {% endif %}
 
-## Netplan.io is neat, but it only exists in Ubuntu 18.04 which isn't useful
-## Revisit this if/when it gets more attention
-## ifupdown is fully supported/developed upstream
-{% if grains['os_family'] == 'Debian' %}
-netplan.io:
-  pkg.removed
-
-/etc/netplan:
-  file.directory:
-    - clean: true
-
-ifupdown:
-  pkg.installed:
-    - reload_modules: true
-{% endif %}
-
 ## Get current management IP address.  This will be used to calculate the
 ## assigned addresses for all of the other networks.
 {% set management_address_octets = grains['ipv4'][0].split('.') %}

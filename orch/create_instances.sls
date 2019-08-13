@@ -34,13 +34,30 @@ wait_for_minion_first_start_{{ type }}-{{ identifier }}:
     - require:
       - accept_minion_{{ type }}-{{ identifier }}
 
-wait_for_netplan_userdata_reboot_{{ type }}-{{ identifier }}:
+run_once_{{ type }}-{{ identifier }}:
+  salt.state:
+    - tgt: '{{ type }}-{{ identifier }}'
+    - sls:
+      - formulas/common/runonce
+    - require:
+      - wait_for_minion_first_start_{{ type }}-{{ identifier }}
+
+run_once_reboot_{{ type }}-{{ identifier }}:
+  salt.function:
+    - tgt: '{{ type }}-{{ identifier }}'
+    - name: system.reboot
+    - kwarg:
+        at_time: 1
+    - require:
+      - run_once_{{ type }}-{{ identifier }}
+
+wait_for_run_once_reboot_{{ type }}-{{ identifier }}:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
       - {{ type }}-{{ identifier }}
     - require:
-      - wait_for_minion_first_start_{{ type }}-{{ identifier }}
+      - run_once_reboot_{{ type }}-{{ identifier }}
     - timeout: 300
 
 set_spawning_{{ type }}-{{ identifier }}:
@@ -51,6 +68,8 @@ set_spawning_{{ type }}-{{ identifier }}:
       - spawning
     - kwarg:
           val: {{ pillar['spawning'] }}
+    - require:
+      - wait_for_run_once_reboot_{{ type }}-{{ identifier }}
 
 apply_base_{{ type }}-{{ identifier }}:
   salt.state:
@@ -58,7 +77,7 @@ apply_base_{{ type }}-{{ identifier }}:
     - sls:
       - formulas/common/base
     - require:
-      - wait_for_netplan_userdata_reboot_{{ type }}-{{ identifier }}
+      - set_spawning_{{ type }}-{{ identifier }}
 
 apply_networking_{{ type }}-{{ identifier }}:
   salt.state:
@@ -68,7 +87,7 @@ apply_networking_{{ type }}-{{ identifier }}:
     - require:
       - apply_base_{{ type }}-{{ identifier }}
 
-reboot_{{ type }}-{{ identifier }}:
+apply_networking_reboot_{{ type }}-{{ identifier }}:
   salt.function:
     - tgt: '{{ type }}-{{ identifier }}'
     - name: system.reboot
@@ -77,19 +96,21 @@ reboot_{{ type }}-{{ identifier }}:
     - require:
       - apply_networking_{{ type }}-{{ identifier }}
 
-wait_for_reboot_{{ type }}-{{ identifier }}:
+wait_for_apply_networking_reboot_{{ type }}-{{ identifier }}:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
       - {{ type }}-{{ identifier }}
     - require:
-      - reboot_{{ type }}-{{ identifier }}
+      - apply_networking_reboot_{{ type }}-{{ identifier }}
     - timeout: 300
 
 mine_update_{{ type }}-{{ identifier }}:
   salt.runner:
     - name: mine.update
     - tgt: '{{ type }}*'
+    - require:
+      - wait_for_apply_networking_reboot_{{ type }}-{{ identifier }}
 
 {% if pillar['spawning']|int != 0 %}
 
@@ -100,6 +121,8 @@ wait_for_spawning_0_{{ type }}-{{ identifier }}:
       - {{ type }}/spawnzero/complete
     - event_id: tag
     - timeout: 600
+    - require:
+      - mine_update_{{ type }}-{{ identifier }}
 
 {% endif %}
 
@@ -109,4 +132,4 @@ minion_setup_{{ type }}-{{ identifier }}:
     - highstate: true
     - failhard: true
     - require:
-      - wait_for_reboot_{{ type }}-{{ identifier }}
+      - mine_update_{{ type }}-{{ identifier }}
