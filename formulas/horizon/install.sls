@@ -13,11 +13,6 @@ update_packages_uca:
       - pkgrepo: uca
     - dist_upgrade: True
 
-spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
-
 horizon_packages:
   pkg.installed:
     - pkgs:
