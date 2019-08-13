@@ -6,8 +6,7 @@ d-i keyboard-configuration/xkb-keymap             select us
 
 d-i netcfg/choose_interface                       select {{ interface }}
 d-i netcfg/get_domain                             string unassigned-domain
-d-i netcfg/do_not_use_netplan                     boolean false
-d-i netcfg/target_network_config                  select ifupdown
+d-i netcfg/do_not_use_netplan                     boolean true
 
 d-i hw-detect/load_firmware                       boolean true
 
