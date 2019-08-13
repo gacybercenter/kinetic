@@ -23,18 +23,19 @@ apt-cacher-ng_service:
       - file: /etc/apt-cacher-ng/acng.conf
 
 {% for os, args in pillar.get('images', {}).items() %}
-/var/www/html/images/{{ args['name'] }}:
-  file.managed:
+extract_{{ args['name'] }}:
+  archive.extracted:
+    - name: /var/www/html/images
     - source: {{ args['remote_url'] }}
     - source_hash: {{ args['remote_hash'] }}
-    - makedirs: True
+    - makedirs: true
 {% endfor %}
 
 sha512sum * > checksums:
   cmd.run:
     - cwd: /var/www/html/images
     - onchanges: 
-      - file: /var/www/html/images/*
+      - archive: /var/www/html/images/*
 
 mine.update:
   module.run:
