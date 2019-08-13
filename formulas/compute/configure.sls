@@ -112,8 +112,8 @@ nova_compute_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for interface in pillar['virtual'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['virtual'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+{% for interface in pillar['host'][grains['type']]['networks']['interfaces'] %}
+  {% if pillar['host'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
         public_interface: {{ interface }}
   {% endif %}
 {% endfor %}
