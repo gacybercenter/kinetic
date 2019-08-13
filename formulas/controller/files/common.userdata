@@ -2,8 +2,3 @@
 
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
 /bin/sh /tmp/bootstrap_salt.sh -i {{ hostname }}
-salt-call --local state.single pkg.removed name=netplan.io
-salt-call --local state.single file.directory name=/etc/netplan clean=true
-salt-call --local state.single pkg.installed name=ifupdown reload_modules=true
-salt-call --local state.single network.managed name=ens3 enabled=true type=eth proto=dhcp
-reboot
