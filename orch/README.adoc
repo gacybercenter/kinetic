@@ -1,0 +1,40 @@
+== Orchestration States
+
+These states can be used to control the lifecycle of your kinetic deployment
+
+=== `bootstrap.sls`
+
+Called by `map.sls`.
+Can be used independently to rotate a single physical host type directly from the cli by passing manual pillar data in the form:
+
+`salt-run state.orch orch.bootstrap pillar='{"type":"controller"}'`
+
+=== `create_instances.sls`
+
+Called by `virtual.sls`.
+Can *not* be used independently.
+Creates guests on controller nodes.
+
+=== `highstate.sls`
+
+Called by several different orchestration states.
+Highstates target minion based on passed-in pillar data.
+
+=== `map.sls`
+
+Master orchestration state.
+Completely wipes environment and starts fresh based on current mapping:
+
+`salt-run state.orch orch.map`
+
+=== `provision.sls`
+
+Can *not* be used independently.
+Manages deployment of physical hosts on behalf of `bootstrap.sls`
+
+=== `virtual.sls`
+
+Called by 'map.sls'
+Can be used independently to rotate a single virtual host type directly from the cli by passing manual pillar data in the form:
+
+`salt-run state.orch orch.virtual pillar='{"type":"designate"}'`
