@@ -7,7 +7,7 @@ include:
 modprobe -r kvm:
   cmd.run:
     - prereq:
-      - file: /etc/modprobe/kvm.conf
+      - file: /etc/modprobe.d/kvm.conf
 
 /etc/modprobe.d/kvm.conf:
   file.managed:
