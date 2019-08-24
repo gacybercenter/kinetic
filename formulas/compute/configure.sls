@@ -13,6 +13,11 @@ modprobe -r kvm:
   file.managed:
     - source: salt://formulas/compute/files/kvm.conf
 
+modprobe kvm:
+  cmd.run:
+    - onchanges:
+      - file: /etc/modprobe.d/kvm.conf
+
 /etc/ceph/ceph.client.compute.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-compute-keyring
