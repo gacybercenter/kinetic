@@ -20,7 +20,6 @@ nova_packages:
       - nova-conductor
       - nova-consoleauth
       - nova-spiceproxy
-      - nova-novncproxy
       - nova-scheduler
       - python-openstackclient
       - nova-placement-api
