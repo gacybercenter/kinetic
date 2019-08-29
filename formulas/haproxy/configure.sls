@@ -70,7 +70,7 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
            {%- endfor %}
          nova_spiceproxy_hosts: |
            {%- for host, address in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:6082 check inter 2000 rise 2 fall 5
+           server {{ host }} {{ address[0] }}:6080 check inter 2000 rise 2 fall 5
            {%- endfor %}
          dashboard_hosts: |
            {%- for host, address in salt['mine.get']('type:horizon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
