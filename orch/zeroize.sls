@@ -9,7 +9,8 @@
   {% if salt['pillar.get']('global', 'False') == True %}
     {% set api_host = pillar['target'] %}
   {% else %}
-    {% set api_host = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address')[target] %}
+    {% set api_host = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address') %}
+    {% set api_host = api_host[target] %}
   {% endif %}
 zeroize_host:
   salt.function:
