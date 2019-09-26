@@ -66,3 +66,7 @@ upgraded:
     - hostnames:
       - {{ grains['id'] }}
       - {{ grains['host'] }}
+
+base_mine_update:
+  module.run:
+    - name: mine.update
