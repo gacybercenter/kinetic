@@ -24,7 +24,6 @@ sleep_{{ address }}:
 {% endfor %}
 
 {% for mac in pillar['hosts'][type]['macs'] %}
-{% set mac+value = 4294967296 | random_hash | uuid %}
 provision_{{ mac }}:
   salt.runner:
     - name: state.orchestrate
@@ -35,7 +34,6 @@ provision_{{ mac }}:
           target: {{ mac }}
           global: True
           api_user: {{ pillar['api_user'] }}
-          uuid: {{ mac+'uuid' }}
     - parallel: true
 
 sleep_{{ mac }}:
