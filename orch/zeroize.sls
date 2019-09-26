@@ -5,7 +5,6 @@
 {% set api_pass = pillar['ipmi_password'] %}
 {% set api_user = pillar['api_user'] %}
 
-
 {% if style == 'physical' %}
   {% if salt['pillar.get']('global', 'False') == True %}
     {% set api_host = pillar[address] %}
@@ -17,14 +16,14 @@ zeroize_host:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - salt-call ipmi.raw_command netfn=0x00 command=0x08 data=[0x05,0xa0,0x04,0x00,0x00,0x00] api_host={{ api_host }} api_user=ADMIN api_pass={{ api_pass }}
+      - salt-call ipmi.raw_command netfn=0x00 command=0x08 data=[0x05,0xa0,0x04,0x00,0x00,0x00] api_host={{ api_host }} api_user={{ api_user }} api_pass={{ api_pass }}
 
 reboot_host:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - salt-call ipmi.set_power boot wait=5 api_host={{ api_host }} api_user=ADMIN api_pass={{ api_pass }}
+      - salt-call ipmi.set_power boot wait=5 api_host={{ api_host }} api_user={{ api_user }} api_pass={{ api_pass }}
 
 {% elif style == 'virtual' %}
 destroy_{{ type }}_domain:
