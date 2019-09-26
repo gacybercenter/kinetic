@@ -45,7 +45,7 @@ remove_pending_{{ type }}-{{ uuid }}}:
     - name: file.remove
     - tgt: 'pxe'
     - arg:
-      - /var/www/html/assignments/{{ mac }}
+      - /var/www/html/assignments/{{ target }}
     - require:
       - wait_for_minion_first_start_{{ type }}-{{ uuid }}
 
