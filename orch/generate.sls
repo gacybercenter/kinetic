@@ -1,4 +1,5 @@
-{% set style = pillar['types']['type'] %}
+{% set type = pillar['type'] %}
+{% set style = pillar['types'][type] %}
 
 {% if style == 'physical' %}
 zeroize_{{ type }}:
