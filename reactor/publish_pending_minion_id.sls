@@ -5,4 +5,4 @@ publish pending id:
     - args:
       - tag: /newhost/{{ type }}
       - data:
-        - foo: bar
+          foo: bar
