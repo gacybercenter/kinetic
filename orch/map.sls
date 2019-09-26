@@ -21,7 +21,6 @@ parallel_provision_{{ phase }}:
               mods: orch/generate
               pillar:
                 type: {{ type }}
-                style: {{ pillar['types'][type] }}
   {% endfor %}
 {% endfor %}
 
