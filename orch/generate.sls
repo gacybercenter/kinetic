@@ -5,7 +5,7 @@
 zeroize_{{ type }}:
   salt.parallel_runners:
     - runners:
-{% for address in pillar['hosts']['type']['ipmi_addresses'] %}
+{% for address in pillar['hosts'][type]['ipmi_addresses'] %}
         zeroize_{{ address }}:
           - name: state.orchestrate
           - kwarg:
