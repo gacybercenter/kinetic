@@ -15,7 +15,7 @@ zeroize_{{ address }}:
           api_user: {{ pillar['api_user'] }}
     - parallel: true
 
-sleep_{{ type }}_{{ host }}:
+sleep_{{ address }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
