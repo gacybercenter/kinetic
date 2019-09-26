@@ -4,11 +4,13 @@ haveged:
 curl:
   pkg.installed
 
-ipmitool:
-  pkg.installed
-
-freeipmi-tools:
-  pkg.installed
-
 uuid-runtime:
   pkg.installed
+
+python-pip:
+  pkg.installed
+   - reload_modules: true
+
+pyghmi:
+  pip.installed:
+    - require: pkg: python-pip
