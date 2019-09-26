@@ -7,6 +7,7 @@ zeroize_host:
   salt.runner:
     - name: salt.cmd
     - kwargs:
+        fun:ipmi.raw_command
         netfn:0x00
         command:0x08
         data:[0x05,0xa0,0x04,0x00,0x00,0x00]
