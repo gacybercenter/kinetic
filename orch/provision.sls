@@ -1,5 +1,6 @@
 {% set type = pillar['type'] %}
 {% set target = pillar['target'] %}
+{% set uuid = pillar['uuid'] %}
 
 ## There is an inotify beacon sitting on the pxe server
 ## that watches our custom function write the issued hostnames
@@ -10,91 +11,83 @@
 
 assign_uuid_to_{{ target }}:
   salt.function:
-    - name: file.append
+    - name: file.write
     - tgt: 'pxe'
     - arg:
       - /var/www/html/assignments/{{ target }}
-      - {{ type }}+'-'+{{ pillar['uuid'] }}
+      - {{ type }}-{{ uuid }}
 
-wait_for_{{ target }}_hostname_assignment:
-  salt.wait_for_event:
-    - name: newhost/{{ type }}*
-    - event_id: type
-    - id_list:
-      - {{ type }}
-    - timeout: 600
-
-wait_for_provisioning_{{ target }}:
+wait_for_provisioning_{{ type }}-{{ uuid }}:
   salt.wait_for_event:
     - name: salt/auth
     - id_list:
-      - {{ host }}
+      - {{ type }}-{{ uuid }}
     - timeout: 1200
 
-accept_minion_{{ host }}:
+accept_minion_{{ type }}-{{ uuid }}:
   salt.wheel:
     - name: key.accept
-    - match: {{ host }}
+    - match: {{ type }}-{{ uuid }}
     - require:
-      - wait_for_provisioning_{{ host }}
+      - wait_for_provisioning_{{ type }}-{{ uuid }}
 
-wait_for_minion_first_start_{{ host }}:
+wait_for_minion_first_start_{{ type }}-{{ uuid }}:
   salt.wait_for_event:
-    - name: salt/minion/{{ host }}/start
+    - name: salt/minion/{{ type }}-{{ uuid }}/start
     - id_list:
-      - {{ host }}
+      - {{ type }}-{{ uuid }}
     - timeout: 60
     - require:
-      - accept_minion_{{ host }}
+      - accept_minion_{{ type }}-{{ uuid }}
 
 remove_pending_{{ host }}:
   salt.function:
     - name: file.remove
     - tgt: 'pxe'
     - arg:
-      - /var/www/html/pending_hosts/{{ type }}/{{ host }}
+      - /var/www/html/assignments/{{ mac }}
     - require:
-      - wait_for_minion_first_start_{{ host }}
+      - wait_for_minion_first_start_{{ type }}-{{ uuid }}
 
 {% endfor %}
 
-apply_base_{{ type }}:
-  salt.state:
-    - tgt: '{{ type }}*'
-    - sls:
-      - formulas/common/base
-
-apply_networking_{{ type }}:
-  salt.state:
-    - tgt: '{{ type }}*'
-    - sls:
-      - formulas/common/networking
-    - require:
-      - apply_base_{{ type }}
-
-reboot_{{ type }}:
-  salt.function:
-    - tgt: '{{ type }}*'
-    - name: system.reboot
-    - kwarg:
-        at_time: 1
-    - require:
-      - apply_networking_{{ type }}
-
-wait_for_{{ type }}_reboot:
-  salt.wait_for_event:
-    - name: salt/minion/*/start
-    - id_list:
-{% for host in hosts %}
-      - {{ host }}
-{% endfor %}
-    - require:
-      - reboot_{{ type }}
-    - timeout: 600
-
-highstate_{{ type }}:
-  salt.state:
-    - tgt: '{{ type }}*'
-    - highstate: True
-    - require:
-      - wait_for_{{ type }}_reboot
+# apply_base_{{ type }}:
+#   salt.state:
+#     - tgt: '{{ type }}*'
+#     - sls:
+#       - formulas/common/base
+#
+# apply_networking_{{ type }}:
+#   salt.state:
+#     - tgt: '{{ type }}*'
+#     - sls:
+#       - formulas/common/networking
+#     - require:
+#       - apply_base_{{ type }}
+#
+# reboot_{{ type }}:
+#   salt.function:
+#     - tgt: '{{ type }}*'
+#     - name: system.reboot
+#     - kwarg:
+#         at_time: 1
+#     - require:
+#       - apply_networking_{{ type }}
+#
+# wait_for_{{ type }}_reboot:
+#   salt.wait_for_event:
+#     - name: salt/minion/*/start
+#     - id_list:
+# {% for host in hosts %}
+#       - {{ host }}
+# {% endfor %}
+#     - require:
+#       - reboot_{{ type }}
+#     - timeout: 600
+#
+# highstate_{{ type }}:
+#   salt.state:
+#     - tgt: '{{ type }}*'
+#     - highstate: True
+#     - require:
+#       - wait_for_{{ type }}_reboot
