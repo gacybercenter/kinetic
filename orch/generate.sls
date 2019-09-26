@@ -14,5 +14,6 @@ zeroize_{{ type }}:
                 type: {{ type }}
                 target: {{ address }}
                 global: True
+                api_user: {{ pillar['api_user'] }}
 {% endfor %}
 {% endif %}
