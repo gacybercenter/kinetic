@@ -1,6 +1,6 @@
 {% set type = pillar['type'] %}
 {% set target = pillar['target'] %}
-{% set uuid = pillar['uuid'] %}
+{% set uuid = 4294967296 | random_hash | uuid %}
 
 ## There is an inotify beacon sitting on the pxe server
 ## that watches our custom function write the issued hostnames
