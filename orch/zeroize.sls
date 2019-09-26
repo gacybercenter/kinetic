@@ -1,8 +1,8 @@
-{% set type = pillar['type'] %}
 {% set style = pillar['types'][type] %}
 {% set api_pass = pillar['ipmi_password'] %}
 {% set api_user = pillar['api_user'] %}
 {% set target = pillar['target'] %}
+{% set type = target.split('-')[0] %}
 
 {% if style == 'physical' %}
 {% set api_host = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address') %}
