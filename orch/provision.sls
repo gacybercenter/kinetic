@@ -8,6 +8,14 @@
 ## to watch the provisioning process.  We allow 30 minutes to
 ## install the operating system.  This is probably excessive.
 
+assign_uuid_to_{{ target }}:
+  salt.function:
+    - name: file.append
+    - tgt: 'pxe'
+    - arg:
+      - /var/www/html/assignments/{{ target }}
+      - {{ type }}+'-'+{{ pillar['uuid'] }}
+
 wait_for_{{ target }}_hostname_assignment:
   salt.wait_for_event:
     - name: newhost/{{ type }}*
