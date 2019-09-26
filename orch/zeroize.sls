@@ -5,7 +5,7 @@
 {% if type == 'physical' %}
 zeroize_host:
   salt.runner:
-    - name: salt.cmd
+    - name: salt.cmd:
       - fun: ipmi.raw_command
       - netfn: 0x00
       - command: 0x08
