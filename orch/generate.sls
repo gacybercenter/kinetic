@@ -43,4 +43,8 @@ sleep_{{ mac }}:
     - arg:
       - sleep 1
 {% endfor %}
+
+{% elif style == 'virtual' %}
+nop:
+  test.nop
 {% endif %}

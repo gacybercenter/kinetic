@@ -46,7 +46,14 @@ destroy_{{ type }}_domain:
     - name: cmd.run
     - tgt: 'controller*'
     - arg:
-      - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
+      - virsh list | grep {{ target }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
+
+wipe_{{ type }}_vms:
+  salt.function:
+    - name: cmd.run
+    - tgt: 'controller*'
+    - arg:
+      - ls /kvm/vms | grep {{ target }} | while read id;do rm -rf /kvm/vms/$id;done  
 {% endif %}
 
 delete_{{ target }}_key:
