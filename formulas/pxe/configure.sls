@@ -29,20 +29,6 @@ php7.0_module:
 /var/www/html/index.html:
   file.absent
 
-/var/www/html/pending_hosts:
-  file.directory:
-    - user: www-data
-    - group: www-data
-
-/var/www/html/hosts:
-  file.managed:
-    - contents: |
-      {% for type, macs in salt['pillar.get']('hosts', {}).items() %}
-        {% for mac in pillar['hosts'][type]['macs'] %}
-          {{ mac }} = {{ type }}
-        {%- endfor %}
-      {% endfor %}
-
 /var/www/html/index.php:
   file.managed:
     - source: salt://formulas/pxe/files/index.php
