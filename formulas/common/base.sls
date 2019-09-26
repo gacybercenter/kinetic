@@ -11,7 +11,7 @@ type:
     - value: {{ type[0] }}
 
 {% if grains['os_family'] == 'Debian' %}
-  {% if ['cache', 'salt'] not in opts.id %}
+  {% if opts.id.split('-')[0] not in ['cache', 'salt'] %}
   {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
 /etc/apt/apt.conf.d/02proxy:
   file.managed:
