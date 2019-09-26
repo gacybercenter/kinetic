@@ -6,7 +6,7 @@
 zeroize_host:
   salt.function:
     - name: ipmi.raw_command
-    - tgt: 'salt'
+    - tgt: salt
     - arg:
       - netfn=0x00
       - command=0x08
