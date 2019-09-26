@@ -3,4 +3,4 @@
 publish pending id:
   runner.event.send:
     - args:
-      - tag: foo/bar/baz
+      - tag: {{ type }}
