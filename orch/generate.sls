@@ -1,6 +1,6 @@
 {% set style = pillar['types'][type] %}
 
-{% if style == 'physical'}
+{% if style == 'physical' %}
 zeroize_{{ type }}:
   salt.parallel_runners:
     - runners:
