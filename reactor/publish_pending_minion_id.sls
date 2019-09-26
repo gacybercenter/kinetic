@@ -1,4 +1,4 @@
-{% set type = data['path'].split('/')[5] %}
+{% set type = data['path'].split('/')[6] %}
 
 publish pending id:
   runner.event.send:
