@@ -8,9 +8,10 @@ uuid-runtime:
   pkg.installed
 
 python-pip:
-  pkg.installed
+  pkg.installed:
    - reload_modules: true
 
 pyghmi:
   pip.installed:
-    - require: pkg: python-pip
+    - require:
+      - pkg: python-pip

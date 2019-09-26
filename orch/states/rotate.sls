@@ -26,3 +26,5 @@ ipmitool -I lanplus chassis power reset -U ADMIN -P {{ pillar['ipmi_password'] }
 sleep 5 for {{ type }}:
   cmd.run:
     - name: sleep 5
+
+salt-call ipmi.raw_command netfn=0x00 command=0x08 data=[0x05,0xa0,0x04,0x00,0x00,0x00]
