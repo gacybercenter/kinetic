@@ -11,6 +11,7 @@ zeroize_{{ type }}:
           - kwarg:
               mods: orch/zeroize
               pillar:
+                type: {{ type }}
                 target: {{ address }}
                 global: True
 {% endfor %}

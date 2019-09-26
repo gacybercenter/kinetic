@@ -1,13 +1,18 @@
 
 {% set target = pillar['target'] %}
-{% set type = target.split('-')[0] %}
+{% if salt['pillar.get']('global', 'False') == True %}
+  {% set type = pillar['type'] %}
+{% else %}
+  {% set type = target.split('-')[0] %}
+{% endif %}
+
 {% set style = pillar['types'][type] %}
 {% set api_pass = pillar['ipmi_password'] %}
 {% set api_user = pillar['api_user'] %}
 
 {% if style == 'physical' %}
   {% if salt['pillar.get']('global', 'False') == True %}
-    {% set api_host = pillar['target'] %}
+    {% set api_host = target %}
   {% else %}
     {% set api_host_dict = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address') %}
     {% set api_host = api_host_dict[target] %}
