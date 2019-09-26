@@ -40,7 +40,7 @@ wait_for_minion_first_start_{{ type }}-{{ uuid }}:
     - require:
       - accept_minion_{{ type }}-{{ uuid }}
 
-remove_pending_{{ host }}:
+remove_pending_{{ type }}-{{ uuid }}}:
   salt.function:
     - name: file.remove
     - tgt: 'pxe'
