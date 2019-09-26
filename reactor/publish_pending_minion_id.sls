@@ -3,4 +3,4 @@
 publish pending id:
   runner.event.send:
     - args:
-      - tahg: {{ type }}
+      - tag: /newhost/{{ type }}
