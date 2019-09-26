@@ -1,7 +1,6 @@
 {% set type = pillar['type'] %}
 {% set hosts = salt.saltutil.runner('mine.get', tgt='pxe', fun='minionmanage.populate_'+type)['pxe'] %}
-
-{% for host in hosts %}
+{% set target = pillar['target'] %}
 
 ## There is an inotify beacon sitting on the pxe server
 ## that watches our custom function write the issued hostnames
@@ -9,6 +8,20 @@
 ## been issued, thie mine data of all the hostnames is used
 ## to watch the provisioning process.  We allow 30 minutes to
 ## install the operating system.  This is probably excessive.
+
+
+
+
+
+wait_for_{{ target }}_hostname_assignment:
+  salt.wait_for_event:
+    - name: salt/job/*/ret/pxe
+    - event_id: fun
+    - id_list:
+      - mine.send
+    - timeout: 600
+
+
 
 wait_for_provisioning_{{ host }}:
   salt.wait_for_event:

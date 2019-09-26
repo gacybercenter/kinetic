@@ -39,14 +39,6 @@ reboot_host:
     - arg:
       - salt-call ipmi.set_power boot wait=5 api_host={{ api_host }} api_user={{ api_user }} api_pass={{ api_pass }}
 
-wait_for_{{ target }}_hostname_assignment:
-  salt.wait_for_event:
-    - name: salt/job/*/ret/pxe
-    - event_id: fun
-    - id_list:
-      - mine.send
-    - timeout: 600
-
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
 destroy_{{ type }}_domain:

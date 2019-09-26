@@ -1,8 +1,6 @@
-{% set type = data['path'].split('/')[5] %}
+{% set type = data['path'] %}
 
 publish pending id:
-  local.mine.send:
-    - tgt: 'pxe'
-    - arg:
-      - minionmanage.populate_{{ type }}
-      - /var/www/html/pending_hosts/{{ type }}
+  runner.event.send:
+    - args:
+      - tag: foo/bar/baz
