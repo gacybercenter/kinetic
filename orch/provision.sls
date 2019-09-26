@@ -49,8 +49,6 @@ remove_pending_{{ host }}:
     - require:
       - wait_for_minion_first_start_{{ type }}-{{ uuid }}
 
-{% endfor %}
-
 # apply_base_{{ type }}:
 #   salt.state:
 #     - tgt: '{{ type }}*'
