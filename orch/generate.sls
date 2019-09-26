@@ -24,7 +24,7 @@ sleep_{{ address }}:
 {% endfor %}
 
 {% for mac in pillar['hosts'][type]['macs'] %}
-provision_{{ address }}:
+provision_{{ mac }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
