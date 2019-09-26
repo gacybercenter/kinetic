@@ -1,3 +1,4 @@
+
 {% set target = pillar['target'] %}
 {% set type = target.split('-')[0] %}
 {% set style = pillar['types'][type] %}
@@ -6,20 +7,24 @@
 
 
 {% if style == 'physical' %}
-{% set api_host = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address') %}
+  {% if pillar[global] = True}
+    {% set api_host = pillar[address] %}
+  {% else %}
+    {% set api_host = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address')[target] %}
+  {% endif %}
 zeroize_host:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - salt-call ipmi.raw_command netfn=0x00 command=0x08 data=[0x05,0xa0,0x04,0x00,0x00,0x00] api_host={{ api_host[target] }} api_user=ADMIN api_pass={{ api_pass }}
+      - salt-call ipmi.raw_command netfn=0x00 command=0x08 data=[0x05,0xa0,0x04,0x00,0x00,0x00] api_host={{ api_host }} api_user=ADMIN api_pass={{ api_pass }}
 
 reboot_host:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - salt-call ipmi.set_power boot wait=5 api_host={{ api_host[target] }} api_user=ADMIN api_pass={{ api_pass }}
+      - salt-call ipmi.set_power boot wait=5 api_host={{ api_host }} api_user=ADMIN api_pass={{ api_pass }}
 
 {% elif style == 'virtual' %}
 destroy_{{ type }}_domain:
