@@ -1,4 +1,9 @@
+## This is a collapsed zeroize state that needs to check for two things:
+## Is this state called globally?  If so, nuke everything.  If not, nuke the one things
+## Is this device physical, virtual, container, or something else?  The code path depends on this answers
 
+## set local target variable based on pillar data.
+## Set type either by calculating it based on target hostname, or use the type value itself
 {% set target = pillar['target'] %}
 {% if salt['pillar.get']('global', 'False') == True %}
   {% set type = pillar['type'] %}
@@ -10,6 +15,8 @@
 {% set api_pass = pillar['ipmi_password'] %}
 {% set api_user = pillar['api_user'] %}
 
+
+## Follow this codepath if host is physical
 {% if style == 'physical' %}
   {% if salt['pillar.get']('global', 'False') == True %}
     {% set api_host = target %}
@@ -17,6 +24,7 @@
     {% set api_host_dict = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address') %}
     {% set api_host = api_host_dict[target] %}
   {% endif %}
+
 zeroize_host:
   salt.function:
     - name: cmd.run
@@ -31,6 +39,15 @@ reboot_host:
     - arg:
       - salt-call ipmi.set_power boot wait=5 api_host={{ api_host }} api_user={{ api_user }} api_pass={{ api_pass }}
 
+wait_for_{{ target }}_hostname_assignment:
+  salt.wait_for_event:
+    - name: salt/job/*/ret/pxe
+    - event_id: fun
+    - id_list:
+      - mine.send
+    - timeout: 600
+
+## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
 destroy_{{ type }}_domain:
   salt.function:
