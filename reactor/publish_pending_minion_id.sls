@@ -1,8 +1,10 @@
-{% set type = data['path'].split('/')[6] %}
+{% set hostname = data['path'].split('/')[6] %}
+{% set type = hostname.split('-')[0] %}
 
 publish pending id:
   runner.event.send:
     - args:
-      - tag: /newhost/{{ type }}
+      - tag: /newhost/{{ hostname }}
       - data:
-          foo: bar
+          hostname: {{ hostname }}
+          type: {{ type }}
