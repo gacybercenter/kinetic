@@ -43,4 +43,8 @@ destroy_{{ type }}_domain:
 delete_{{ target }}_key:
   salt.wheel:
     - name: key.delete
-    - match: '{{ target }}'
+{% if salt['pillar.get']('global', 'False') == True %}
+    - match: '{{ type }}*'
+{% else %}
+    - match: {{ target }}
+{% endif %}
