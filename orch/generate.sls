@@ -23,7 +23,7 @@ sleep_{{ address }}:
       - sleep 1
 {% endfor %}
 
-{% for address in pillar['hosts'][type]['ipmi_addresses'] %}
+{% for mac in pillar['hosts'][type]['macs'] %}
 provision_{{ address }}:
   salt.runner:
     - name: state.orchestrate
@@ -31,12 +31,13 @@ provision_{{ address }}:
         mods: orch/provision
         pillar:
           type: {{ type }}
-          target: {{ address }}
+          target: {{ mac }}
           global: True
           api_user: {{ pillar['api_user'] }}
+          uuid: {{ 'random' | uuid }}
     - parallel: true
 
-sleep_{{ address }}:
+sleep_{{ mac }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
