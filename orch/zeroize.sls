@@ -2,7 +2,7 @@
 {% set style = pillar['style'] %}
 {% set ipmi_password = pillar['ipmi_password'] %}
 
-{% if type = 'physical' %}
+{% if type == 'physical' %}
 zeroize_host:
   salt.function:
     - name: ipmi.raw_command
@@ -15,4 +15,4 @@ zeroize_host:
         api_host: 10.100.0.41
         api_user: ADMIN
         api_pass: {{ ipmi_password }}
-{% endif %}        
+{% endif %}
