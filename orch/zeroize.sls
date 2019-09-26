@@ -4,11 +4,10 @@
 
 {% if type == 'physical' %}
 zeroize_host:
-  salt.function:
-    - name: ipmi.raw_command
-    - tgt: salt
-    - arg:
-      - netfn=0x00
-      - command=0x08
-      - data=[0x05,0xa0,0x04,0x00,0x00,0x00]
+  salt.runner:
+    - name: salt.cmd
+    - kwargs:
+        netfn:0x00
+        command:0x08
+        data:[0x05,0xa0,0x04,0x00,0x00,0x00]
 {% endif %}
