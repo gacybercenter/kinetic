@@ -8,7 +8,7 @@
 # target is the ip address of the bmc on the target host OR the hostname if zeroize
 # is going to be called independently
 # global lets the state know that all hosts are being rotated
-{% for address in pillar['hosts'][type]['ipmi_addresses'] %}
+{% for bmc_address in pillar['hosts'][type]['ipmi_addresses'] %}
 zeroize_{{ address }}:
   salt.runner:
     - name: state.orchestrate
@@ -16,7 +16,7 @@ zeroize_{{ address }}:
         mods: orch/zeroize
         pillar:
           type: {{ type }}
-          target: {{ address }}
+          target: {{ bmc_address }}
           global: True
     - parallel: true
 
