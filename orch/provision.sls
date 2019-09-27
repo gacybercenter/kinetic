@@ -142,7 +142,7 @@ wait_for_{{ type }}-{{ uuid }}_reboot:
       - reboot_{{ type }}-{{ uuid }}
     - timeout: 600
 
-{% if (pillar['spawning']|int != 0) and (style == 'virtual') %}
+{% if (spawning|int != 0) and (style == 'virtual') %}
 
 wait_for_spawning_0_{{ type }}-{{ uuid }}:
   salt.wait_for_event:
