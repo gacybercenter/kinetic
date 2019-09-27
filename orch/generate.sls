@@ -52,6 +52,38 @@ sleep_{{ mac }}:
 {% endfor %}
 
 {% elif style == 'virtual' %}
-nop:
-  test.nop
+zeroize_{{ address }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/zeroize
+        pillar:
+          type: {{ type }}
+          target: {{ target }}
+          global: True
+
+sleep_{{ address }}:
+  salt.function:
+    - name: cmd.run
+    - tgt: 'salt'
+    - arg:
+      - sleep 1
+
+{% for host in range(pillar['virtual'][type]['count']) %}
+provision_{{ host }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/privision
+        pillar:
+          type: {{ type }}
+          spawning: {{ loop.index0 }}
+    - parallel: true
+
+sleep_{{ host }}:
+  salt.function:
+    - name: cmd.run
+    - tgt: 'salt'
+    - arg:
+      - sleep 1
 {% endif %}

@@ -12,12 +12,11 @@
 {% endif %}
 
 {% set style = pillar['types'][type] %}
-{% set api_pass = pillar['ipmi_password'] %}
-{% set api_user = pillar['api_user'] %}
-
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
+{% set api_pass = pillar['ipmi_password'] %}
+{% set api_user = pillar['api_user'] %}
   {% if salt['pillar.get']('global', 'False') == True %}
     {% set api_host = target %}
   {% else %}
@@ -41,19 +40,19 @@ reboot_host:
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
-destroy_{{ type }}_domain:
+destroy_{{ target }}_domain:
   salt.function:
     - name: cmd.run
     - tgt: 'controller*'
     - arg:
       - virsh list | grep {{ target }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
 
-wipe_{{ type }}_vms:
+wipe_{{ target }}_vms:
   salt.function:
     - name: cmd.run
     - tgt: 'controller*'
     - arg:
-      - ls /kvm/vms | grep {{ target }} | while read id;do rm -rf /kvm/vms/$id;done  
+      - ls /kvm/vms | grep {{ target }} | while read id;do rm -rf /kvm/vms/$id;done
 {% endif %}
 
 delete_{{ target }}_key:

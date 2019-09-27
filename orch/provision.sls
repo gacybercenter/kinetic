@@ -18,6 +18,24 @@ assign_uuid_to_{{ target }}:
     - arg:
       - /var/www/html/assignments/{{ target }}
       - {{ type }}-{{ uuid }}
+
+{% elif style == 'virtual' %}
+{% set spawning = salt['pillar.get']('spawning', '0') %}
+get_available_controllers_for_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - arg:
+      - salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//' > /tmp/{{ type }}-{{ uuid }}_available_controllers
+
+prepare_vm_{{ type }}-{{ uuid }}:
+  salt.state:
+    - tgt: __slot__:salt:cmd.run("shuf -n 1 /tmp/{{ type }}-{{ uuid }}_available_controllers")
+    - sls:
+      - orch/states/virtual_prep
+    - pillar:
+        hostname: {{ type }}-{{ uuid }}
+    - concurrent: true
 {% endif %}
 
 wait_for_provisioning_{{ type }}-{{ uuid }}:
@@ -43,6 +61,7 @@ wait_for_minion_first_start_{{ type }}-{{ uuid }}:
     - require:
       - accept_minion_{{ type }}-{{ uuid }}
 
+{% if style == 'physical' %}
 remove_pending_{{ type }}-{{ uuid }}:
   salt.function:
     - name: file.remove
@@ -51,6 +70,45 @@ remove_pending_{{ type }}-{{ uuid }}:
       - /var/www/html/assignments/{{ target }}
     - require:
       - wait_for_minion_first_start_{{ type }}-{{ uuid }}
+
+{% elif style == 'virtual' %}
+run_once_{{ type }}-{{ uuid }}:
+  salt.state:
+    - tgt: '{{ type }}-{{ uuid }}'
+    - sls:
+      - formulas/common/runonce
+    - require:
+      - wait_for_minion_first_start_{{ type }}-{{ uuid }}
+
+run_once_reboot_{{ type }}-{{ uuid }}:
+  salt.function:
+    - tgt: '{{ type }}-{{ uuid }}'
+    - name: system.reboot
+    - kwarg:
+        at_time: 1
+    - require:
+      - run_once_{{ type }}-{{ uuid }}
+
+wait_for_run_once_reboot_{{ type }}-{{ uuid }}:
+  salt.wait_for_event:
+    - name: salt/minion/*/start
+    - id_list:
+      - {{ type }}-{{ uuid }}
+    - require:
+      - run_once_reboot_{{ type }}-{{ uuid }}
+    - timeout: 300
+
+set_spawning_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: grains.set
+    - tgt: '{{ type }}-{{ uuid }}'
+    - arg:
+      - spawning
+    - kwarg:
+          val: {{ spawning }}
+    - require:
+      - wait_for_run_once_reboot_{{ type }}-{{ uuid }}
+{% endif %}
 
 apply_base_{{ type }}-{{ uuid }}:
   salt.state:
@@ -83,6 +141,20 @@ wait_for_{{ type }}-{{ uuid }}_reboot:
     - require:
       - reboot_{{ type }}-{{ uuid }}
     - timeout: 600
+
+{% if (pillar['spawning']|int != 0) and (style == 'virtual') %}
+
+wait_for_spawning_0_{{ type }}-{{ uuid }}:
+  salt.wait_for_event:
+    - name: {{ type }}/spawnzero/complete
+    - id_list:
+      - {{ type }}/spawnzero/complete
+    - event_id: tag
+    - timeout: 600
+    - require:
+      - wait_for_{{ type }}-{{ uuid }}_reboot
+
+{% endif %}
 
 highstate_{{ type }}-{{ uuid }}:
   salt.state:

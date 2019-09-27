@@ -1,5 +1,5 @@
-{% set type = pillar['type'] %}
-{% set hostname = type+"-"+pillar['identifier'] %}
+{% set hostname = pillar['hostname'] %}
+{% set type = hostname.split('-')[0] %}
 
 /kvm/vms/{{ hostname }}/config.xml:
   file.managed:
