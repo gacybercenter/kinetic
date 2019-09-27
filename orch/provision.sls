@@ -66,7 +66,7 @@ apply_networking_{{ type }}-{{ uuid }}:
     - require:
       - apply_base_{{ type }}-{{ uuid }}
 
-reboot_{{ type }}:
+reboot_{{ type }}-{{ uuid }}:
   salt.function:
     - tgt: '{{ type }}-{{ uuid }}'
     - name: system.reboot
@@ -75,7 +75,7 @@ reboot_{{ type }}:
     - require:
       - apply_networking_{{ type }}-{{ uuid }}
 
-wait_for_{{ type }}_reboot:
+wait_for_{{ type }}-{{ uuid }}_reboot:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
