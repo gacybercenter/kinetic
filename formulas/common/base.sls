@@ -34,7 +34,7 @@ role:
 
 install_pip:
   pkg.installed:
-    - name:
+    - pkgs:
       - python-pip
       - python3-pip
 
