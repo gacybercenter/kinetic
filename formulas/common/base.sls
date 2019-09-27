@@ -66,11 +66,13 @@ upgraded:
     - enc: {{ pillar['authorized_keys'][ key ]['encoding'] }}
 {% endfor %}
 
+{% if opts.id not in ['salt', 'pxe'] %}
 {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:
   host.only:
     - hostnames:
       - {{ grains['id'] }}
       - {{ grains['host'] }}
+{% endif %}
 
 base_mine_update:
   module.run:
