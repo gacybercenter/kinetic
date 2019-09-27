@@ -9,7 +9,7 @@
 # is going to be called independently
 # global lets the state know that all hosts are being rotated
 {% for bmc_address in pillar['hosts'][type]['ipmi_addresses'] %}
-zeroize_{{ address }}:
+zeroize_{{ bmc_address }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
