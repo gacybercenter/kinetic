@@ -12,7 +12,6 @@ zeroize_{{ address }}:
           type: {{ type }}
           target: {{ address }}
           global: True
-          api_user: {{ pillar['api_user'] }}
     - parallel: true
 
 sleep_{{ address }}:
@@ -23,6 +22,9 @@ sleep_{{ address }}:
       - sleep 1
 {% endfor %}
 
+# type is the type of host (compute, controller, etc.)
+# target is the mac address of the target host on what ipxe considers net0
+# global lets the state know that all hosts are being rotated
 {% for mac in pillar['hosts'][type]['macs'] %}
 provision_{{ mac }}:
   salt.runner:
@@ -33,7 +35,6 @@ provision_{{ mac }}:
           type: {{ type }}
           target: {{ mac }}
           global: True
-          api_user: {{ pillar['api_user'] }}
     - parallel: true
 
 sleep_{{ mac }}:
