@@ -2,23 +2,12 @@
 
 These states can be used to control the lifecycle of your kinetic deployment
 
-=== `bootstrap.sls`
+=== `zeroize.sls`
 
-Called by `map.sls`.
-Can be used independently to rotate a single physical host type directly from the cli by passing manual pillar data in the form:
+Called by `generate.sls`.
+Can be used independently to rotate a single host type directly from the cli by passing manual pillar data in the form:
 
-`salt-run state.orch orch.bootstrap pillar='{"type":"controller"}'`
-
-=== `create_instances.sls`
-
-Called by `virtual.sls`.
-Can *not* be used independently.
-Creates guests on controller nodes.
-
-=== `highstate.sls`
-
-Called by several different orchestration states.
-Highstates target minion based on passed-in pillar data.
+`salt-run state.orch orch.zeroize pillar='{"target":"controller-foobar"}'`
 
 === `map.sls`
 
@@ -29,12 +18,12 @@ Completely wipes environment and starts fresh based on current mapping:
 
 === `provision.sls`
 
-Can *not* be used independently.
-Manages deployment of physical hosts on behalf of `bootstrap.sls`
+Can be used independently.
+Manages deployment of all host types on behalf of `generate.sls` and user calling
 
-=== `virtual.sls`
+`salt-run state.orch orch.provision pillar='{"type":"cache"}'`
 
-Called by 'map.sls'
-Can be used independently to rotate a single virtual host type directly from the cli by passing manual pillar data in the form:
+=== `generate.sls`
 
-`salt-run state.orch orch.virtual pillar='{"type":"designate"}'`
+Can not be used independently.
+Manages zeroization/provisioning of all host types on behalf of `map.sls`
