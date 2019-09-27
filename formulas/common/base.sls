@@ -7,13 +7,17 @@ include:
   {% set type = opts.id %}
 {% endif %}
 
-role:
-  grains.present:
-    - value: {{ type }}
-
 type:
   grains.present:
     - value: {{ type }}
+
+role:
+  grains.present:
+{% if pillar['types'][type] == 'physical' %}
+    - value: {{ pillar['hosts'][type]['role'] }}
+{% else %}
+    - value: {{ type }}
+{% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
   {% if type not in ['cache','salt','pxe'] %}
