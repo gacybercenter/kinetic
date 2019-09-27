@@ -5,7 +5,8 @@
 {% if style == 'physical' %}
 
 # type is the type of host (compute, controller, etc.)
-# target is the ip address of the bmc on the target host OR the hostname if zeroize is going to be called independently
+# target is the ip address of the bmc on the target host OR the hostname if zeroize
+# is going to be called independently
 # global lets the state know that all hosts are being rotated
 {% for address in pillar['hosts'][type]['ipmi_addresses'] %}
 zeroize_{{ address }}:
