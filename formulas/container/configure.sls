@@ -24,9 +24,9 @@ include:
         auth_version: auth_version = v3
         auth_protocol: auth_protocol = http
         password: {{ pillar['zun']['zun_service_password'] }}
-        my_ip: my_ip = {{ grains['ipv4'][0] }}
+        my_ip: my_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
-        docker_ip: docker_remote_api_host = {{ grains['ipv4'][0] }}
+        docker_ip: docker_remote_api_host = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 {% for host, address in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         etcd_host: etcd_host = {{ address[0] }}
 {% endfor %}

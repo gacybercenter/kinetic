@@ -61,7 +61,7 @@ upgraded:
     - enc: {{ pillar['authorized_keys'][ key ]['encoding'] }}
 {% endfor %}
 
-{{ grains['ipv4'][0] }}:
+{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:
   host.only:
     - hostnames:
       - {{ grains['id'] }}

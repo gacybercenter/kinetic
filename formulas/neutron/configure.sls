@@ -55,7 +55,7 @@ spawnzero_complete:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         password: {{ pillar['neutron']['neutron_service_password'] }}
-        my_ip: {{ grains['ipv4'][0] }}
+        my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         nova_password: {{ pillar['nova']['nova_service_password'] }}
         designate_url: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}
         designate_password: {{ pillar['designate']['designate_service_password'] }}

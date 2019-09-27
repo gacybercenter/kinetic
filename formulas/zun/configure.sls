@@ -54,8 +54,8 @@ make_kuryr_service:
         auth_version: auth_version = v3
         auth_protocol: auth_protocol = http
         password: {{ pillar['zun']['zun_service_password'] }}
-        api: host_ip = {{ grains['ipv4'][0] }}
-        wsproxy_host: wsproxy_host = {{ grains['ipv4'][0] }}
+        api: host_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        wsproxy_host: wsproxy_host = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
 
 /etc/sudoers.d/zun_sudoers:
@@ -92,7 +92,7 @@ make_kuryr_service:
           ETCD_INITIAL_CLUSTER="{{ host }}=http://{{ address[0] }}:2380"
           {%- endfor %}
         etcd_name: {{ grains['id'] }}
-        etcd_listen: {{ grains['ipv4'][0] }}
+        etcd_listen: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 
 etcd_service:
   service.running:

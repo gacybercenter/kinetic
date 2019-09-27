@@ -28,7 +28,7 @@ spawnzero_complete:
     - makedirs: True
     - template: jinja
     - defaults:
-        ip_address: {{ grains['ipv4'][0] }}
+        ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - require:
       - sls: /formulas/mysql/install
 
@@ -94,9 +94,8 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     - user: {{ service }}
     - host: {{ address[0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
-      
+
      {% endfor %}
     {% endfor %}
   {% endif %}
 {% endfor %}
-

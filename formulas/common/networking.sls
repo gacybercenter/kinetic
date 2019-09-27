@@ -14,7 +14,7 @@
 
 ## Get current management IP address.  This will be used to calculate the
 ## assigned addresses for all of the other networks.
-{% set management_address_octets = grains['ipv4'][0].split('.') %}
+{% set management_address_octets = salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0].split('.') %}
 
 ## Loop through all defined interfaces in the pillar for this particular device
 {% for interface in pillar[srv][grains['type']]['networks']['interfaces'] %}

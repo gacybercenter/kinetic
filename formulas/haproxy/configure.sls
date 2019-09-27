@@ -39,8 +39,8 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
     - defaults:
          hostname: {{ grains['id'] }}
          syslog: {{ pillar['syslog_url'] }}
-         public_ip_address: {{ grains['ipv4'][1] }}
-         management_ip_address: {{ grains['ipv4'][0] }}
+         public_ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['public'])[0] }}
+         management_ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
          dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
          console_domain:  {{ pillar['haproxy']['console_domain'] }}
          docs_domain:  {{ pillar['haproxy']['docs_domain'] }}

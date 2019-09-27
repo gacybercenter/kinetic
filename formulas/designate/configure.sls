@@ -39,7 +39,7 @@ make_designate_service:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         password: {{ pillar['designate']['designate_service_password'] }}
-        listen_api: {{ grains['ipv4'][0] }}:9001
+        listen_api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:9001
         designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
 
 /etc/designate/tlds.conf:
