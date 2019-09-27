@@ -9,5 +9,4 @@ $bootfile = str_replace("http://pxe/preseed/host-type.preseed", "http://".$_SERV
 $bootfile = str_replace("undefined-hostname", "$hostname[0]", $bootfile);
 $bootfile = str_replace("interface=auto", "interface=$interface[0]", $bootfile);
 echo $bootfile;
-echo $type[0];
 ?>
