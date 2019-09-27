@@ -9,11 +9,11 @@ include:
 
 role:
   grains.present:
-    - value: {{ type[0] }}
+    - value: {{ type }}
 
 type:
   grains.present:
-    - value: {{ type[0] }}
+    - value: {{ type }}
 
 {% if grains['os_family'] == 'Debian' %}
   {% if type not in ['cache','salt', 'pxe']) %}
