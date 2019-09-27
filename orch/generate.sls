@@ -1,7 +1,12 @@
 {% set type = pillar['type'] %}
 {% set style = pillar['types'][type] %}
 
+
 {% if style == 'physical' %}
+
+# type is the type of host (compute, controller, etc.)
+# target is the ip address of the bmc on the target host
+# global lets the state know that all hosts are being rotated
 {% for address in pillar['hosts'][type]['ipmi_addresses'] %}
 zeroize_{{ address }}:
   salt.runner:
