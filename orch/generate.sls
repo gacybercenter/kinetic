@@ -20,7 +20,7 @@ zeroize_{{ address }}:
           global: True
     - parallel: true
 
-sleep_{{ address }}:
+sleep_{{ bmc_address }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
