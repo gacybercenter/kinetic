@@ -59,7 +59,7 @@ zeroize_{{ type }}:
         mods: orch/zeroize
         pillar:
           type: {{ type }}
-          target: {{ target }}
+          target: {{ type }}
           global: True
 
 sleep_{{ type }}:
