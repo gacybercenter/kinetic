@@ -74,7 +74,7 @@ provision_{{ host }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
-        mods: orch/privision
+        mods: orch/provision
         pillar:
           type: {{ type }}
           spawning: {{ loop.index0 }}
