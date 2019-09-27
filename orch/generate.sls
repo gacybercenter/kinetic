@@ -86,4 +86,5 @@ sleep_{{ host }}:
     - tgt: 'salt'
     - arg:
       - sleep 1
+{% endfor %}
 {% endif %}
