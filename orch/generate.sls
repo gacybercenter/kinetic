@@ -52,7 +52,7 @@ sleep_{{ mac }}:
 {% endfor %}
 
 {% elif style == 'virtual' %}
-zeroize_{{ address }}:
+zeroize_{{ type }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
@@ -62,7 +62,7 @@ zeroize_{{ address }}:
           target: {{ target }}
           global: True
 
-sleep_{{ address }}:
+sleep_{{ type }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
