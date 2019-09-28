@@ -1,6 +1,17 @@
 {% set type = pillar['type'] %}
 {% set style = pillar['types'][type] %}
 
+{% if salt['pillar.get']('universal', 'False') == False %}
+master_setup:
+  salt.state:
+    - tgt: 'salt'
+    - highstate: true
+
+pxe_setup:
+  salt.state:
+    - tgt: 'pxe'
+    - highstate: true
+{% endif %}
 
 {% if style == 'physical' %}
 

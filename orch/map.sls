@@ -7,8 +7,6 @@ pxe_setup:
   salt.state:
     - tgt: 'pxe'
     - highstate: true
-    - require:
-      - master_setup
 
 {% for phase in pillar['map'] %}
 parallel_provision_{{ phase }}:
