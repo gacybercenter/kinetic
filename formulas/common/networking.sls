@@ -37,6 +37,7 @@
 {{ interface }}:
   network.managed:
     - enabled: true
+    - require_reboot: True
     - type: eth
 ## If this interface is bridged, set appropriate state and master and
 ## companion interface
@@ -48,6 +49,7 @@
 {{ current_network }}:
   network.managed:
     - enabled: true
+    - require_reboot: True
     - type: bridge
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == True %}
 ## If working on the primary interface, it should be set to DHCP
