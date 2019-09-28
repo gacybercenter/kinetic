@@ -21,5 +21,6 @@ parallel_provision_{{ phase }}:
               mods: orch/generate
               pillar:
                 type: {{ type }}
+                universal: True
   {% endfor %}
 {% endfor %}
