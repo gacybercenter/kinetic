@@ -22,7 +22,7 @@
 bridge-utils_{{ interface }}:
   pkg.installed:
     - reload_modules: True
-{% endif}
+{% endif %}
 ## Set short variable for easy reference
 {% set current_network = pillar[srv][grains['type']]['networks']['interfaces'][interface]['network'] %}
 
