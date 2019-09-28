@@ -19,7 +19,7 @@
 ## Loop through all defined interfaces in the pillar for this particular device
 {% for interface in pillar[srv][grains['type']]['networks']['interfaces'] %}
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['bridge'] == True %}
-bridge-utils:
+bridge-utils_{{ interface }}:
   pkg.installed:
     - reload_modules: True
 {% endif}
