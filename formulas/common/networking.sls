@@ -21,7 +21,7 @@
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['bridge'] == True %}
 bridge-utils_{{ interface }}:
   pkg.installed:
-    - name: bridge_utils
+    - name: bridge-utils
     - reload_modules: True
 {% endif %}
 ## Set short variable for easy reference
