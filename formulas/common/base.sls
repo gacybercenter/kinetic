@@ -31,13 +31,6 @@ role:
   {% endif %}
 
   {% if salt['grains.get']('upgraded') != True %}
-
-install_pip:
-  pkg.installed:
-    - pkgs:
-      - python-pip
-      - python3-pip
-
 update_all:
   pkg.uptodate:
     - refresh: true
