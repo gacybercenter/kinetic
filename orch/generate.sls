@@ -1,7 +1,7 @@
 {% set type = pillar['type'] %}
 {% set style = pillar['types'][type] %}
 
-{% if pillar['universal'] == False %}
+{% if pillar['universal'] == 'False' %}
 master_setup:
   salt.state:
     - tgt: 'salt'
