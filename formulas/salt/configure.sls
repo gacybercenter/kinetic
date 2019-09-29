@@ -51,9 +51,12 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         service_password: {{ salt['random.get_str']('64') }}
 {% if service == 'designate' %}
         extra_opts: |
-            foo:
-              bar:
-                - baz              
+  designate_rndc_key: |
+    key "designate" {
+            algorithm hmac-sha512;
+            secret
+    "somestringhere";
+    };
 {% else %}
         extra_opts: ''
 {% endif %}
