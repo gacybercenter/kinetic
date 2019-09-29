@@ -1,3 +1,10 @@
+ceph_mine_update:
+  module.run:
+    - name: mine.update
+  event.send:
+    - name: {{ grains['type'] }}/mine/address/update
+    - data: "{{ grains['type'] }} mine has been updated."
+
 /etc/ceph/ceph.conf:
   file.managed:
     - source: salt://formulas/ceph/common/files/ceph.conf
