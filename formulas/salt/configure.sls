@@ -47,10 +47,17 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
     - template: jinja
     - defaults:
         service: {{ service }}
-        mysql_password: __slot__:salt:cmd.run('until openssl rand -base64 32 | grep -v '+';do sleep .1;done')
-        service_password: __slot__:salt:cmd.run('until openssl rand -base64 32 | grep -v '+';do sleep .1;done')
-    - creates: /srv/dynamic_pillar/{{ service }}.sls
+        mysql_password: {{ salt['random.get_str']('64') }}
+        service_password: {{ salt['random.get_str']('64') }}
+        extra_opts: ''
+{% if service == 'designate' %}
+        extra_opts: foo
 {% endfor %}
+
+
+
+append: designate, neutron, zun
+different: ceph, mysql, rabbitmq, top, userrc,
 
 /etc/salt/master:
   file.managed:
