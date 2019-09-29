@@ -60,14 +60,25 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% elif service == 'neutron' %}
         extra_opts: |
             metadata_proxy_shared_secret: {{ salt['random.get_str']('64') }}
+{% elif service == 'zun' %}
+        extra_opts: |
+            kuryr_service_password: {{ salt['random.get_str']('64') }}
 {% else %}
         extra_opts: ''
 {% endif %}
 {% endfor %}
 
+/srv/dynamic_pillar/mysql.sls:
+  file.managed:
+    - contents: |
+        mysql_root_password: {{ salt['random.get_str']('64') }}
 
+/srv/dynamic_pillar/rabbitmq.sls:
+  file.managed:
+    - contents: |
+        rabbitmq_password: {{ salt['random.get_str']('64') }}
 
-#append: neutron, zun
+#append:
 #different: ceph, mysql, rabbitmq, top, userrc,
 
 /etc/salt/master:
