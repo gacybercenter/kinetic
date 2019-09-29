@@ -86,6 +86,8 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% set adminkey = salt['cephx.make_key']() %}
 {% set volumeskey = salt['cephx.make_key']() %}
 {% set computekey = salt['cephx.make_key']() %}
+{% set osdkey = salt['cephx.make_key']() %}
+
 /srv/dynamic_pillar/ceph.sls:
   file.managed:
     - replace: false
@@ -104,7 +106,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  caps mon = "allow *"
                  caps osd = "allow *"
             [client.bootstrap-osd]
-                 key = {{ salt['cephx.make_key']() }}
+                 key = {{ osdkey }}
                  caps mon = "profile bootstrap-osd"
           ceph-client-admin-keyring: |
             [client.admin]
@@ -116,7 +118,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  caps osd = "allow *"
           ceph-keyring: |
             [client.bootstrap-osd]
-                 key = {{ salt['cephx.make_key']() }}
+                 key = {{ osdkey }}
                  caps mon = "profile bootstrap-osd"
           ceph-client-images-keyring: |
             [client.images]
