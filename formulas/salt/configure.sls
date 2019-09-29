@@ -52,6 +52,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         extra_opts: ''
 {% if service == 'designate' %}
         extra_opts: foo
+{% endif %}
 {% endfor %}
 
 
