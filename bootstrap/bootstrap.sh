@@ -54,29 +54,29 @@ if [ ! -f /kvm/images/debian9.raw ]
 then
   local_image_hash=bad
 else
-  local_image_hash=$(sha512sum /kvm/images/debian9.raw | awk '{ print $1 }')
+  local_image_hash=$(sha512sum /kvm/images/debian10.raw | awk '{ print $1 }')
 fi
 
-remote_image_hash=$(curl https://cdimage.debian.org/cdimage/openstack/current-9/SHA512SUMS | grep $local_image_hash | awk '{ print $1 }')
+remote_image_hash=$(curl https://cdimage.debian.org/cdimage/openstack/current-10/SHA512SUMS | grep $local_image_hash | awk '{ print $1 }')
 
 if [ "$local_image_hash" == "$remote_image_hash" ]
 then
   echo No new image needed.  Skipping download.
 else
   echo Image hash mismatch.  Re-downloading.
-  wget https://cdimage.debian.org/cdimage/openstack/current-9/debian-9-openstack-amd64.raw -O /kvm/images/debian9.raw
+  wget https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.raw -O /kvm/images/debian10.raw
 fi
 
 
 ## salt
 if [ ! -f /kvm/vms/salt/disk0.raw ]
 then
-  cp /kvm/images/debian9.raw /kvm/vms/salt/disk0.raw
+  cp /kvm/images/debian10.raw /kvm/vms/salt/disk0.raw
 fi
 
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/salt/g; s/{{ interface }}/$interface/g" > /kvm/vms/salt/config.xml
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/salt/g" > /kvm/vms/salt/data/meta-data
-curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s%{{ opts }}%-M -X -i salt -J \'{ \"default_top\": \"base\", \"fileserver_backend\": [ \"git\" ], \"ext_pillar\": [ { \"git\": [ { \"master $pillar\": [ { \"env\": \"base\" } ] } ] } ], \"ext_pillar_first\": true, \"gitfs_remotes\": [ { \"$fileroot\": [ { \"saltenv\": [ { \"base\": [ { \"ref\": \"master\" } ] } ] } ] } ], \"gitfs_saltenv_whitelist\": [ \"base\" ] }\'%g;s%{{ key }}%$key%g" > /kvm/vms/salt/data/user-data
+curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s%{{ opts }}%-M -x python3 -X -i salt -J \'{ \"default_top\": \"base\", \"fileserver_backend\": [ \"git\" ], \"ext_pillar\": [ { \"git\": [ { \"master $pillar\": [ { \"env\": \"base\" } ] } ] } ], \"ext_pillar_first\": true, \"gitfs_remotes\": [ { \"$fileroot\": [ { \"saltenv\": [ { \"base\": [ { \"ref\": \"master\" } ] } ] } ] } ], \"gitfs_saltenv_whitelist\": [ \"base\" ] }\'%g;s%{{ key }}%$key%g" > /kvm/vms/salt/data/user-data
 sed -i "s,{{ extra_commands }},mkdir -p /etc/salt/gpgkeys;chmod 0700 /etc/salt/gpgkeys;curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/key-generation | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg,g" /kvm/vms/salt/data/user-data
 genisoimage -o /kvm/vms/salt/config.iso -V cidata -r -J /kvm/vms/salt/data/meta-data /kvm/vms/salt/data/user-data
 virsh create /kvm/vms/salt/config.xml
@@ -84,11 +84,11 @@ virsh create /kvm/vms/salt/config.xml
 ##pxe
 if [ ! -f /kvm/vms/pxe/disk0.raw ]
 then
-  cp /kvm/images/debian9.raw /kvm/vms/pxe/disk0.raw
+  cp /kvm/images/debian10.raw /kvm/vms/pxe/disk0.raw
 fi
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/pxe/g; s/{{ interface }}/$interface/g" > /kvm/vms/pxe/config.xml
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/pxe/g" > /kvm/vms/pxe/data/meta-data
-curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-X -i pxe/g;s/{{ key }}/$key/g" > /kvm/vms/pxe/data/user-data
+curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-X -x python3 -i pxe/g;s/{{ key }}/$key/g" > /kvm/vms/pxe/data/user-data
 sed -i "s,{{ extra_commands }},echo No extra commands specified,g" /kvm/vms/pxe/data/user-data
 genisoimage -o /kvm/vms/pxe/config.iso -V cidata -r -J /kvm/vms/pxe/data/meta-data /kvm/vms/pxe/data/user-data
 virsh create /kvm/vms/pxe/config.xml
