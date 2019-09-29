@@ -45,6 +45,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
     - contents: |
         cinder:
           cinder_mysql_password: foo
+          cinder_service_password: bar
 
 /etc/salt/master:
   file.managed:
