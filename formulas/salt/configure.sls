@@ -68,13 +68,13 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% endif %}
 {% endfor %}
 
-/srv/dynamic_pillar/mysql.sls:
+/srv/dynamic_pillar/mysql-test.sls:
   file.managed:
     - contents: |
         mysql:
           mysql_root_password: {{ salt['random.get_str']('64') }}
 
-/srv/dynamic_pillar/rabbitmq.sls:
+/srv/dynamic_pillar/rabbitmq-test.sls:
   file.managed:
     - contents: |
         rabbitmq:
