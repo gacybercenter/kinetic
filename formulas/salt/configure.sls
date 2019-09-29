@@ -40,6 +40,12 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 /srv/dynamic_pillar:
   file.directory
 
+/srv/dynamic_pillar/cinder.sls:
+  file.managed:
+    - contents: |
+        cinder:
+          cinder_mysql_password: foo
+
 /etc/salt/master:
   file.managed:
     - contents: ''
