@@ -58,7 +58,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                 "{{ salt['random.get_str']('64') | base64_encode }}";
                 };
 {% elif service == 'neutron' %}
-        extra_ops: |
+        extra_opts: |
             metadata_proxy_shared_secret: {{ salt['random.get_str']('64') }}
 {% else %}
         extra_opts: ''
