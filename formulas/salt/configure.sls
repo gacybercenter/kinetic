@@ -83,6 +83,9 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         rabbitmq:
           rabbitmq_password: {{ salt['random.get_str']('64') }}
 
+{% set client.admin == salt['cephx.make_key']() %}
+{% set client.volumes == salt['cephx.make_key']() %}
+{% set client.compute == salt['cephx.make_key']() %}
 /srv/dynamic_pillar/ceph.sls:
   file.managed:
     - replace: false
@@ -91,21 +94,21 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
           fsid: {{ salt['random.get_str']('64') | uuid }}
           ceph-mon-keyring: |
             [mon.]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ salt['cephx.make_key']() }}
                  caps mon = "allow *"
             [client.admin]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ client.admin }}
                  auid = 0
                  caps mds = "allow *"
                  caps mgr = "allow *"
                  caps mon = "allow *"
                  caps osd = "allow *"
             [client.bootstrap-osd]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ salt['cephx.make_key']() }}
                  caps mon = "profile bootstrap-osd"
           ceph-client-admin-keyring: |
             [client.admin]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ client.admin }}
                  auid = 0
                  caps mds = "allow *"
                  caps mgr = "allow *"
@@ -113,35 +116,35 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  caps osd = "allow *"
           ceph-keyring: |
             [client.bootstrap-osd]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ salt['cephx.make_key']() }}
                  caps mon = "profile bootstrap-osd"
           ceph-client-images-keyring: |
             [client.images]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ salt['cephx.make_key']() }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
           ceph-client-volumes-keyring: |
             [client.volumes]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ client.volumes }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rx pool=images"
           ceph-client-compute-keyring: |
             [client.compute]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ client.compute }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
           ceph-client-swift-keyring: |
             [client.swift]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ salt['cephx.make_key']() }}
                  caps mon = "allow rwx"
                  caps osd = "allow rwx"
           ceph-client-radosgw-keyring: |
             [client.radosgw]
-                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+                 key = {{ salt['cephx.make_key']() }}
                  caps mon = "allow rwx"
                  caps osd = "allow rwx"
-          ceph-client-compute-key: {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
-          ceph-client-volumes-key: {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
+          ceph-client-compute-key: {{ client.compute }}
+          ceph-client-volumes-key: {{ client.volumes }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
           nova-uuid: {{ salt['random.get_str']('30') | uuid }}
 
