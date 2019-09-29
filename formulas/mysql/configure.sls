@@ -41,7 +41,7 @@ mariadb:
 root:
   mysql_user.present:
     - host: localhost
-    - password: {{ pillar ['mysql_root_password'] }}
+    - password: {{ pillar ['mysql']['mysql_root_password'] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
 {% for service in pillar['openstack_services'] %}

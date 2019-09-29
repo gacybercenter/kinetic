@@ -71,12 +71,14 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 /srv/dynamic_pillar/mysql.sls:
   file.managed:
     - contents: |
-        mysql_root_password: {{ salt['random.get_str']('64') }}
+        mysql:
+          mysql_root_password: {{ salt['random.get_str']('64') }}
 
 /srv/dynamic_pillar/rabbitmq.sls:
   file.managed:
     - contents: |
-        rabbitmq_password: {{ salt['random.get_str']('64') }}
+        rabbitmq:
+          rabbitmq_password: {{ salt['random.get_str']('64') }}
 
 #append:
 #different: ceph, mysql, rabbitmq, top, userrc,
