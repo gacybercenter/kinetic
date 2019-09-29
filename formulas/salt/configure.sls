@@ -91,7 +91,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
           fsid: {{ salt['random.get_str']('64') | uuid }}
           ceph-mon-keyring: |
             [mon.]
-                 key = {{ salt['random.get_str']('30') | base64_encode }}
+                 key = {{ salt['cephx.make_key']('') }}
                  caps mon = "allow *"
             [client.admin]
                  key = {{ salt['random.get_str']('30') | base64_encode }}
@@ -154,7 +154,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 
 /srv/dynamic_pillar/top.sls:
   file.managed:
-    - replace: false    
+    - replace: false
     - source: salt://formulas/salt/files/top.sls
 
 /srv/dynamic_pillar/adminrc:
