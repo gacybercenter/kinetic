@@ -83,9 +83,9 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         rabbitmq:
           rabbitmq_password: {{ salt['random.get_str']('64') }}
 
-{% set client.admin == salt['cephx.make_key']() %}
-{% set client.volumes == salt['cephx.make_key']() %}
-{% set client.compute == salt['cephx.make_key']() %}
+{% set client.admin = salt['cephx.make_key']() %}
+{% set client.volumes = salt['cephx.make_key']() %}
+{% set client.compute = salt['cephx.make_key']() %}
 /srv/dynamic_pillar/ceph.sls:
   file.managed:
     - replace: false
