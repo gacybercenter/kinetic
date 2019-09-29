@@ -141,9 +141,9 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
           nova-uuid: {{ salt['random.get_str']('30') | uuid }}
 
-
-#append:
-#different:  top, userrc,
+/srv/dynamic_pillar/top.sls:
+  file.managed:
+    - source: /formulas/salt/files/top.sls
 
 /etc/salt/master:
   file.managed:
