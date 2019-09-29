@@ -55,8 +55,8 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                 key "designate" {
                         algorithm hmac-sha512;
                         secret
-              "somestringhere";
-              };
+                "somestringhere";
+                };
 {% else %}
         extra_opts: ''
 {% endif %}
