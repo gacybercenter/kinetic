@@ -90,18 +90,18 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "allow *"
             [client.admin]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  auid = 0
                  caps mds = "allow *"
                  caps mgr = "allow *"
                  caps mon = "allow *"
                  caps osd = "allow *"
             [client.bootstrap-osd]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "profile bootstrap-osd"
           ceph-client-admin-keyring: |
             [client.admin]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  auid = 0
                  caps mds = "allow *"
                  caps mgr = "allow *"
@@ -109,37 +109,37 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  caps osd = "allow *"
           ceph-keyring: |
             [client.bootstrap-osd]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "profile bootstrap-osd"
           ceph-client-images-keyring: |
             [client.images]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
           ceph-client-volumes-keyring: |
            [client.volumes]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rx pool=images"
           ceph-client-compute-keyring: |
             [client.compute]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
           ceph-client-swift-keyring: |
             [client.swift]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "allow rwx"
                  caps osd = "allow rwx"
           ceph-client-radosgw-keyring: |
             [client.radosgw]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "allow rwx"
                  caps osd = "allow rwx"
-          ceph-client-compute-key: {{ salt['random.get_str']('18') | base64_encode }}
-          ceph-client-volumes-key: {{ salt['random.get_str']('18') | base64_encode }}
-          volumes-uuid: {{ salt['random.get_str']('64') | uuid }}
-          nova-uuid: {{ salt['random.get_str']('64') | uuid }}
+          ceph-client-compute-key: {{ salt['random.get_str']('30') | base64_encode }}
+          ceph-client-volumes-key: {{ salt['random.get_str']('30') | base64_encode }}
+          volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
+          nova-uuid: {{ salt['random.get_str']('30') | uuid }}
 
 
 #append:
