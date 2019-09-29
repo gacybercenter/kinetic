@@ -141,9 +141,27 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
           nova-uuid: {{ salt['random.get_str']('30') | uuid }}
 
-/srv/dynamic_pillar/top.sls:
+/srv/dynamic_pillar/openstack-test.sls:
+  file.managed:
+    - contents: |
+        openstack:
+          admin_password: {{ salt['random.get_str']('64') }}
+
+/srv/dynamic_pillar/top-test.sls:
   file.managed:
     - source: /formulas/salt/files/top.sls
+
+/srv/dynamic_pillar/adminrc-test:
+  file.managed:
+    - contents: |
+        #!/bin/bash
+        export OS_USERNAME=admin
+        export OS_PASSWORD={{ salt['pillar.get']('openstack:admin_password', 'TBD') }}
+        export OS_USER_DOMAIN_NAME=Default
+        export OS_PROJECT_NAME=admin
+        export OS_PROJECT_DOMAIN_NAME=Default
+        export OS_AUTH_URL={{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        export OS_IDENTITY_API_VERSION=3
 
 /etc/salt/master:
   file.managed:
