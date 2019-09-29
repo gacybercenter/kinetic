@@ -1,4 +1,4 @@
-import os, struct
+import os, struct, time
 
 __virtualname__ = 'cephx'
 
