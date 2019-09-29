@@ -41,10 +41,11 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
   file.directory
 
 {% for service in pillar['openstack_services'] %}
-/srv/dynamic_pillar/{{ service }}-test.sls:
+/srv/dynamic_pillar/{{ service }}.sls:
   file.managed:
     - source: salt://formulas/salt/files/openstack_service_template.sls
     - template: jinja
+    - replace: false
     - defaults:
         service: {{ service }}
         mysql_password: {{ salt['random.get_str']('64') }}
@@ -68,20 +69,23 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% endif %}
 {% endfor %}
 
-/srv/dynamic_pillar/mysql-test.sls:
+/srv/dynamic_pillar/mysql.sls:
   file.managed:
+    - replace: false
     - contents: |
         mysql:
           mysql_root_password: {{ salt['random.get_str']('64') }}
 
-/srv/dynamic_pillar/rabbitmq-test.sls:
+/srv/dynamic_pillar/rabbitmq.sls:
   file.managed:
+    - replace: false
     - contents: |
         rabbitmq:
           rabbitmq_password: {{ salt['random.get_str']('64') }}
 
-/srv/dynamic_pillar/ceph-test.sls:
+/srv/dynamic_pillar/ceph.sls:
   file.managed:
+    - replace: false
     - contents: |
         ceph:
           fsid: {{ salt['random.get_str']('64') | uuid }}
@@ -141,17 +145,19 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
           nova-uuid: {{ salt['random.get_str']('30') | uuid }}
 
-/srv/dynamic_pillar/openstack-test.sls:
+/srv/dynamic_pillar/openstack.sls:
   file.managed:
+    - replace: false
     - contents: |
         openstack:
           admin_password: {{ salt['random.get_str']('64') }}
 
-/srv/dynamic_pillar/top-test.sls:
+/srv/dynamic_pillar/top.sls:
   file.managed:
+    - replace: false    
     - source: salt://formulas/salt/files/top.sls
 
-/srv/dynamic_pillar/adminrc-test:
+/srv/dynamic_pillar/adminrc:
   file.managed:
     - contents: |
         #!/bin/bash
