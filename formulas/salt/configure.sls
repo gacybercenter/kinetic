@@ -52,11 +52,11 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% if service == 'designate' %}
         extra_opts: |
             designate_rndc_key: |
-              key "designate" {
-                      algorithm hmac-sha512;
-                      secret
-            "somestringhere";
-            };
+                key "designate" {
+                        algorithm hmac-sha512;
+                        secret
+              "somestringhere";
+              };
 {% else %}
         extra_opts: ''
 {% endif %}
