@@ -44,6 +44,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 /srv/dynamic_pillar/{{ service }}-test.sls:
   file.managed:
     - source: salt://formulas/salt/files/openstack_service_template.sls
+    - template: jinja
     - defaults:
         service: {{ service }}
         mysql_password: __slot__:salt:cmd.run('until openssl rand -base64 32 | grep -v '+';do sleep .1;done')
