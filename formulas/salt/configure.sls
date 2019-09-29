@@ -41,7 +41,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
   file.directory
 
 {% for service in pillar['openstack_services'] %}
-/srv/dynamic_pillar/{{ service }}.sls:
+/srv/dynamic_pillar/{{ service }}-test.sls:
   file.managed:
     - source: salt://formulas/salt/files/openstack_service_template.sls
     - defaults:
