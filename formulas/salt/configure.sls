@@ -50,7 +50,10 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         mysql_password: {{ salt['random.get_str']('64') }}
         service_password: {{ salt['random.get_str']('64') }}
 {% if service == 'designate' %}
-        extra_opts: foo
+        extra_opts: |
+            foo:
+              bar:
+                - baz              
 {% else %}
         extra_opts: ''
 {% endif %}
