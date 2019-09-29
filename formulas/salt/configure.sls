@@ -97,7 +97,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  key = {{ salt['cephx.make_key']() }}
                  caps mon = "allow *"
             [client.admin]
-                 key = {{ client.admin }}
+                 key = {{ adminkey }}
                  auid = 0
                  caps mds = "allow *"
                  caps mgr = "allow *"
@@ -108,7 +108,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  caps mon = "profile bootstrap-osd"
           ceph-client-admin-keyring: |
             [client.admin]
-                 key = {{ client.admin }}
+                 key = {{ adminkey }}
                  auid = 0
                  caps mds = "allow *"
                  caps mgr = "allow *"
@@ -125,12 +125,12 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
           ceph-client-volumes-keyring: |
             [client.volumes]
-                 key = {{ volumes-key }}
+                 key = {{ volumeskey }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rx pool=images"
           ceph-client-compute-keyring: |
             [client.compute]
-                 key = {{ compute-key }}
+                 key = {{ computekey }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
           ceph-client-swift-keyring: |
@@ -143,8 +143,8 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  key = {{ salt['cephx.make_key']() }}
                  caps mon = "allow rwx"
                  caps osd = "allow rwx"
-          ceph-client-compute-key: {{ compute-key }}
-          ceph-client-volumes-key: {{ volumes-key }}
+          ceph-client-compute-key: {{ computekey }}
+          ceph-client-volumes-key: {{ volumeskey }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
           nova-uuid: {{ salt['random.get_str']('30') | uuid }}
 
