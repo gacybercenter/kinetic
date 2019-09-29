@@ -91,7 +91,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
           fsid: {{ salt['random.get_str']('64') | uuid }}
           ceph-mon-keyring: |
             [mon.]
-                 key = {{ salt['cephx.make_key']() }}
+                 key = {{ salt['cmd.run']('ceph-authtool --gen-print-key') }}
                  caps mon = "allow *"
             [client.admin]
                  key = {{ salt['cephx.make_key']() }}
