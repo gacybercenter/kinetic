@@ -40,12 +40,16 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 /srv/dynamic_pillar:
   file.directory
 
-/srv/dynamic_pillar/cinder.sls:
+{% for service in pillar['openstack_services'] %}
+/srv/dynamic_pillar/{{ service }}.sls:
   file.managed:
     - contents: |
-        cinder:
-          cinder_mysql_password: foo
-          cinder_service_password: bar
+        {% service %}:
+          {{ service }}_mysql_password: __slot__:salt:cmd.run('until openssl rand -base64 32 | grep -v '+';do sleep .1;done')
+          {{ service }}_service_password: __slot__:salt:cmd.run('until openssl rand -base64 32 | grep -v '+';do sleep .1;done')
+    - creates: /srv/dynamic_pillar/{{ service }}.sls
+
+{% endfor %}
 
 /etc/salt/master:
   file.managed:
