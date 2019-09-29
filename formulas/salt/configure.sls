@@ -87,7 +87,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
           fsid: {{ salt['random.get_str']('64') | uuid }}
           ceph-mon-keyring: |
             [mon.]
-                 key = {{ salt['random.get_str']('18') | base64_encode }}
+                 key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "allow *"
             [client.admin]
                  key = {{ salt['random.get_str']('18') | base64_encode }}
