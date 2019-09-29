@@ -43,12 +43,12 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% for service in pillar['openstack_services'] %}
 /srv/dynamic_pillar/{{ service }}.sls:
   file.managed:
-    - contents: |
-        {% service %}:
-          {{ service }}_mysql_password: __slot__:salt:cmd.run('until openssl rand -base64 32 | grep -v '+';do sleep .1;done')
-          {{ service }}_service_password: __slot__:salt:cmd.run('until openssl rand -base64 32 | grep -v '+';do sleep .1;done')
+    - source: salt://formulas/salt/files/openstack_service_template.sls
+    - defaults:
+        service: {{ service }}
+        mysql_password: __slot__:salt:cmd.run('until openssl rand -base64 32 | grep -v '+';do sleep .1;done')
+        service_password: __slot__:salt:cmd.run('until openssl rand -base64 32 | grep -v '+';do sleep .1;done')
     - creates: /srv/dynamic_pillar/{{ service }}.sls
-
 {% endfor %}
 
 /etc/salt/master:
