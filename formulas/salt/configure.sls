@@ -83,9 +83,9 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         rabbitmq:
           rabbitmq_password: {{ salt['random.get_str']('64') }}
 
-{% set client.admin = salt['cephx.make_key']() %}
-{% set client.volumes = salt['cephx.make_key']() %}
-{% set client.compute = salt['cephx.make_key']() %}
+{% set admin-key = salt['cephx.make_key']() %}
+{% set volumes-key = salt['cephx.make_key']() %}
+{% set compute-key = salt['cephx.make_key']() %}
 /srv/dynamic_pillar/ceph.sls:
   file.managed:
     - replace: false
@@ -125,12 +125,12 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
           ceph-client-volumes-keyring: |
             [client.volumes]
-                 key = {{ client.volumes }}
+                 key = {{ volumes-key }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rx pool=images"
           ceph-client-compute-keyring: |
             [client.compute]
-                 key = {{ client.compute }}
+                 key = {{ compute-key }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
           ceph-client-swift-keyring: |
@@ -143,8 +143,8 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  key = {{ salt['cephx.make_key']() }}
                  caps mon = "allow rwx"
                  caps osd = "allow rwx"
-          ceph-client-compute-key: {{ client.compute }}
-          ceph-client-volumes-key: {{ client.volumes }}
+          ceph-client-compute-key: {{ compute-key }}
+          ceph-client-volumes-key: {{ volumes-key }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
           nova-uuid: {{ salt['random.get_str']('30') | uuid }}
 
