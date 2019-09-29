@@ -57,8 +57,8 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 
 
 
-append: designate, neutron, zun
-different: ceph, mysql, rabbitmq, top, userrc,
+#append: designate, neutron, zun
+#different: ceph, mysql, rabbitmq, top, userrc,
 
 /etc/salt/master:
   file.managed:
