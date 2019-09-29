@@ -36,7 +36,7 @@ fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ;
 fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done ; \
 fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done ; \
 fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done ; \
-debconf-set partman-auto/disk "/dev/$(lsblk --output name,maj:min,model -d | grep '{{ disk }}' | awk '{ print $1 }')"
+debconf-set partman-auto/disk "/dev/$(sed 's/  */ /g' /proc/partitions | sed 's/^ //' | sed 's/ /:/' | grep {{ disk }} | grep -oE '[^ ]+$')"
 
 d-i partman-lvm/device_remove_lvm                 boolean true
 d-i partman-md/device_remove_md                   boolean true
