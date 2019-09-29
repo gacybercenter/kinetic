@@ -159,7 +159,7 @@ wait_for_spawning_0_{{ type }}-{{ uuid }}:
 update_mine_{{ type }}-{{ uuid }}:
   salt.function:
     - name: mine.update
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt: '{{ type }}*'
 
 highstate_{{ type }}-{{ uuid }}:
   salt.state:
