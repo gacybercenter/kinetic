@@ -117,7 +117,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
           ceph-client-volumes-keyring: |
-           [client.volumes]
+            [client.volumes]
                  key = {{ salt['random.get_str']('30') | base64_encode }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rx pool=images"
