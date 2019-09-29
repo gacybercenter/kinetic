@@ -57,6 +57,9 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                         secret
                 "{{ salt['random.get_str']('64') | base64_encode }}";
                 };
+{% elif service == 'neutron' %}
+        extra_ops: |
+            metadata_proxy_shared_secret: {{ salt['random.get_str']('64') }}
 {% else %}
         extra_opts: ''
 {% endif %}
@@ -64,7 +67,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 
 
 
-#append: designate, neutron, zun
+#append: neutron, zun
 #different: ceph, mysql, rabbitmq, top, userrc,
 
 /etc/salt/master:
