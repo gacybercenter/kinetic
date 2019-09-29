@@ -149,7 +149,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 
 /srv/dynamic_pillar/top-test.sls:
   file.managed:
-    - source: /formulas/salt/files/top.sls
+    - source: salt://formulas/salt/files/top.sls
 
 /srv/dynamic_pillar/adminrc-test:
   file.managed:
