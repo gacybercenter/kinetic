@@ -84,7 +84,3 @@ upgraded:
       - {{ grains['id'] }}
       - {{ grains['host'] }}
 {% endif %}
-
-base_mine_update:
-  module.run:
-    - name: mine.update
