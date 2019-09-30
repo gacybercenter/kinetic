@@ -81,10 +81,3 @@ bridge-utils_{{ interface }}:
     - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
 {% endfor %}
-
-networking_mine_update:
-  module.run:
-    - name: mine.update
-  event.send:
-    - name: {{ grains['type'] }}/mine/address/update
-    - data: "{{ grains['type'] }} mine has been updated."
