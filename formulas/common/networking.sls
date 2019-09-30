@@ -41,8 +41,8 @@ bridge-utils_{{ interface }}:
 ## Physical interface definition
 {{ interface }}:
   network.managed:
-    - noifupdown: False
-    - enabled: true
+    - noifupdown: True
+    - enabled: True
     - type: eth
 ## If this interface is bridged, set appropriate state and master and
 ## companion interface
