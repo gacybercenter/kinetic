@@ -24,7 +24,7 @@ db_array:
     - level: 0
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
-      - {{ salt['cmd.run']("lsblk --output name,model -d -p -n | grep {{ device }} | head -n 1 | awk '{ print $1 }'") }}
+      - {{ salt['cmd.run']("lsblk --output name,model -d -p -n | grep device | head -n 1 | awk '{ print $1 }'") }}
 {% endfor %}
     - chunk: 512
     - run: true
