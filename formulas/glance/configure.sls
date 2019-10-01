@@ -42,7 +42,6 @@ glance-manage db_sync:
     - runas: glance
     - require:
       - file: /etc/glance/glance-api.conf
-      - file: /etc/glance/glance-registry.conf
     - unless:
       - glance-manage db check
 
