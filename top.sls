@@ -1,6 +1,6 @@
 {% set type = opts.id.split('-')[0] %}
 
-dev:
+base:
   '*':
     - formulas/common/base
   {{ type }}*:
