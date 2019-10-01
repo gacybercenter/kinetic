@@ -13,5 +13,8 @@ update_packages_uca:
       - pkgrepo: uca
     - dist_upgrade: True
 
+erlang-base-hipe:
+  pkg.installed
+
 rabbitmq-server:
   pkg.installed
