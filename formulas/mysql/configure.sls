@@ -12,16 +12,6 @@ spawnzero_complete:
 
 {% endif %}
 
-/usr/lib/python2.7/dist-packages/salt/modules/mysql.py:
-  file.managed:
-    - source: https://raw.githubusercontent.com/garethgreenaway/salt/598bc70d2d4d3910e7d6903c1ab3ba0b074464ce/salt/modules/mysql.py
-    - skip_verify: true
-
-/usr/lib/python2.7/dist-packages/salt/states/mysql_user.py:
-  file.managed:
-    - source: https://raw.githubusercontent.com/garethgreenaway/salt/598bc70d2d4d3910e7d6903c1ab3ba0b074464ce/salt/states/mysql_user.py
-    - skip_verify: true
-
 /etc/mysql/mariadb.conf.d/99-openstack.cnf:
   file.managed:
     - source: salt://formulas/mysql/files/99-openstack.cnf
