@@ -34,12 +34,5 @@ extract_{{ args['name'] }}:
 sha512sum * > checksums:
   cmd.run:
     - cwd: /var/www/html/images
-    - onchanges: 
+    - onchanges:
       - archive: extract_*
-
-mine.update:
-  module.run:
-    - network.interfaces: []
-  event.send:
-    - name: cache/mine/address/update
-    - data: "Cache mine has been updated."
