@@ -172,7 +172,7 @@ final_reboot_{{ type }}-{{ uuid }}:
     - require:
       - highstate_{{ type }}-{{ uuid }}
 
-wait_for_final_reboot_{{ type }}-{{ uuid }}_reboot:
+wait_for_final_reboot_{{ type }}-{{ uuid }}:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
