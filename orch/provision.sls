@@ -162,3 +162,21 @@ highstate_{{ type }}-{{ uuid }}:
     - highstate: True
     - require:
       - wait_for_{{ type }}-{{ uuid }}_reboot
+
+final_reboot_{{ type }}-{{ uuid }}:
+  salt.function:
+    - tgt: '{{ type }}-{{ uuid }}'
+    - name: system.reboot
+    - kwarg:
+        at_time: 1
+    - require:
+      - highstate_{{ type }}-{{ uuid }}
+
+wait_for_final_reboot_{{ type }}-{{ uuid }}_reboot:
+  salt.wait_for_event:
+    - name: salt/minion/*/start
+    - id_list:
+      - {{ type }}-{{ uuid }}
+    - require:
+      - final_reboot_{{ type }}-{{ uuid }}
+    - timeout: 600
