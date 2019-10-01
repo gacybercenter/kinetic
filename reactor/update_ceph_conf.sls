@@ -4,4 +4,4 @@ update_ceph_conf_{{ data }}:
     - tgt: '(cephmon*|cinder*|compute*|glance*|storage*|swift*)'
     - name: state.apply
     - args:
-      - modes: formulas/ceph/common/configure
+      - mods: formulas/ceph/common/configure
