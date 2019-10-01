@@ -13,7 +13,7 @@ update_packages_uca:
       - pkgrepo: uca
     - dist_upgrade: True
 
-python-memcache:
+python3-memcache:
   pkg.installed
 
 memcached:
