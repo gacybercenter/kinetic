@@ -14,11 +14,11 @@ spawnzero_complete:
 
 /etc/rabbitmq/rabbit.conf:
   file.managed:
-    source: salt://formulas/rabbitmq/files/rabbitmq.conf
+    - source: salt://formulas/rabbitmq/files/rabbitmq.conf
 
 /etc/rabbitmq/rabbit-env.conf:
   file.managed:
-    source: salt://formulas/rabbitmq/files/rabbitmq-env.conf
+    - source: salt://formulas/rabbitmq/files/rabbitmq-env.conf
 
 rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin:
   cmd.run:
