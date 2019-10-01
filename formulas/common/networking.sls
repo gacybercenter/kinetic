@@ -41,7 +41,6 @@ bridge-utils_{{ interface }}:
 ## Physical interface definition
 {{ interface }}:
   network.managed:
-    - noifupdown: False
     - enabled: True
     - type: eth
 ## If this interface is bridged, set appropriate state and master and
@@ -53,7 +52,6 @@ bridge-utils_{{ interface }}:
 ## This won't exist on non-bridged devices
 {{ current_network }}:
   network.managed:
-    - noifupdown: False
     - enabled: true
     - type: bridge
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['primary'] == True %}
