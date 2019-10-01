@@ -42,8 +42,8 @@ install_pip:
 pyroute2:
   pip.installed:
     - require:
-      - pkg: python-pip
-      - pkg: python3-pip
+      - pkg: install_pip
+    - reload_modules: True
 
 update_all:
   pkg.uptodate:
