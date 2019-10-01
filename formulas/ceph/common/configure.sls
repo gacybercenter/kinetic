@@ -1,5 +1,3 @@
-{% set sfe = salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['sfe'])[0] %}
-
 /etc/ceph/ceph.conf:
   file.managed:
     - source: salt://formulas/ceph/common/files/ceph.conf
@@ -8,17 +6,14 @@
     - defaults:
         fsid: {{ pillar['ceph']['fsid'] }}
         mon_members: |
-          {% for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain')  %}
+          {% for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [mon.{{ host }}]
           host = {{ host }}
-            {%- for address in addresses %}
-              {% if salt['network']['ip_in_subnet'](address, sfe) %}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['sfe']) %}
           mon addr = {{ address }}
-              {% else %}
-          mon addr = {{ addresses }}
-              {% endif %}
-
-            {%- endfor %}
+              {%- endif -%}
+            {%- endfor -%}
           {%- endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
