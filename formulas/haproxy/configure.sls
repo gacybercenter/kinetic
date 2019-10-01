@@ -53,68 +53,124 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
              {%- endfor -%}
            {%- endfor %}
          glance_api_hosts: |
-           {%- for host, address in salt['mine.get']('type:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:9292 check inter 2000 rise 2 fall 5
-           {%- endfor %}
-         glance_registry_hosts: |
-           {%- for host, address in salt['mine.get']('type:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:9191 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}{{ pillar['openstack_services']['glance']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          nova_compute_api_hosts: |
-           {%- for host, address in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:8774 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}{{ pillar['openstack_services']['nova']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          nova_metadata_api_hosts: |
-           {%- for host, address in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:8775 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}:8775 check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          nova_placement_api_hosts: |
-           {%- for host, address in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:8778 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}:8778 check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          nova_spiceproxy_hosts: |
-           {%- for host, address in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:6082 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}:6082 check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          dashboard_hosts: |
-           {%- for host, address in salt['mine.get']('type:horizon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:80 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:horizon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}:80 check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          docs_hosts: |
-           {%- for host, address in salt['mine.get']('type:antora', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:80 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:antora', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}:80 check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          neutron_api_hosts: |
-           {%- for host, address in salt['mine.get']('type:neutron', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:9696 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:neutron', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}{{ pillar['openstack_services']['neutron']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          heat_api_hosts: |
-           {%- for host, address in salt['mine.get']('type:heat', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:8004 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:heat', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}{{ pillar['openstack_services']['heat']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          heat_api_cfn_hosts: |
-           {%- for host, address in salt['mine.get']('type:heat', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:8000 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:heat', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}{{ pillar['openstack_services']['heat']['configuration']['public_endpoint_cfn']['port'] }} check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          cinder_api_hosts: |
-           {%- for host, address in salt['mine.get']('type:cinder', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:8776 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:cinder', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}{{ pillar['openstack_services']['cinder']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          designate_api_hosts: |
-           {%- for host, address in salt['mine.get']('type:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:9001 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}{{ pillar['openstack_services']['designate']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          swift_hosts: |
-           {%- for host, address in salt['mine.get']('type:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:7480 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}{{ pillar['openstack_services']['swift']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          zun_api_hosts: |
-           {%- for host, address in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:9517 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}{{ pillar['openstack_services']['zun']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
          zun_wsproxy_hosts: |
-           {%- for host, address in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-           server {{ host }} {{ address[0] }}:6784 check inter 2000 rise 2 fall 5
+           {%- for host, addresses in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+             {%- for address in addresses -%}
+               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+           server {{ host }} {{ address }}:6784 check inter 2000 rise 2 fall 5
+               {%- endif -%}
+             {%- endfor -%}
            {%- endfor %}
 
 haproxy_cfg_watch:
