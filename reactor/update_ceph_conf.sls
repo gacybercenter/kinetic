@@ -4,3 +4,4 @@ update_ceph_conf_{{ data['id'] }}:
     - tgt: '(cephmon*|cinder*|compute*|glance*|storage*|swift*)'
     - args:
       - mods: formulas/ceph/common/configure
+      - concurrent: true
