@@ -1,4 +1,4 @@
-{% set sfe == salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['sfe'])[0] %}
+{% set sfe = salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['sfe'])[0] %}
 
 /etc/ceph/ceph.conf:
   file.managed:
