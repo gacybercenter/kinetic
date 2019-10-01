@@ -14,7 +14,10 @@
             {%- for address in addresses %}
               {% if salt['network']['ip_in_subnet'](address, sfe) %}
           mon addr = {{ address }}
+              {% else %}
+          mon addr = {{ address }}  
               {% endif %}
+
             {%- endfor %}
           {%- endfor %}
         swift_members: |
