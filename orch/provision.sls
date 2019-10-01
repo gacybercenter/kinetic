@@ -180,3 +180,11 @@ wait_for_final_reboot_{{ type }}-{{ uuid }}:
     - require:
       - final_reboot_{{ type }}-{{ uuid }}
     - timeout: 600
+
+set_production_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: grains.setval
+    - tgt: '{{ type }}-{{ uuid }}'
+    - arg:
+      - production
+      - True
