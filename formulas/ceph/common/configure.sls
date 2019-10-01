@@ -8,14 +8,14 @@
     - defaults:
         fsid: {{ pillar['ceph']['fsid'] }}
         mon_members: |
-          {% for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+          {% for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain')  %}
           [mon.{{ host }}]
           host = {{ host }}
             {%- for address in addresses %}
               {% if salt['network']['ip_in_subnet'](address, sfe) %}
           mon addr = {{ address }}
               {% else %}
-          mon addr = {{ address }}  
+          mon addr = {{ addresses }}
               {% endif %}
 
             {%- endfor %}
