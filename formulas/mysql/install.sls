@@ -16,5 +16,6 @@ update_packages_uca:
 mariadb-server:
   pkg.installed
 
-python-pymysql:
-  pkg.installed
+python3-pymysql:
+  pkg.installed:
+    - reload_modules: True
