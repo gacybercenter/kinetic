@@ -36,6 +36,7 @@ rabbitmqctl set_permissions openstack ".*" ".*" ".*":
 
 rabbitmq-server-service:
   service.running:
+    - name: rabbitmq-server
     - watch:
       - /etc/rabbitmq/rabbit.conf
       - /etc/rabbitmq/rabbit-env.conf
