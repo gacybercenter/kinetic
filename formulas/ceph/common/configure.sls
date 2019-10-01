@@ -11,11 +11,11 @@
           {% for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [mon.{{ host }}]
           host = {{ host }}
-          {% for address in addresses %}
-          {% if salt['network']['ip_in_subnet'](address, sfe) %}
+            {%- for address in addresses %}
+              {% if salt['network']['ip_in_subnet'](address, sfe) %}
           mon addr = {{ addresses[loop.index0] }}
-          {% endif %}
-          {% endfor %}
+              {% endif %}
+            {%- endfor %}
           {%- endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
