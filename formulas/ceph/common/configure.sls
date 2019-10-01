@@ -13,7 +13,7 @@
           host = {{ host }}
             {%- for address in addresses %}
               {% if salt['network']['ip_in_subnet'](address, sfe) %}
-          mon addr = {{ addresses[loop.index0] }}
+          mon addr = {{ address }}
               {% endif %}
             {%- endfor %}
           {%- endfor %}
