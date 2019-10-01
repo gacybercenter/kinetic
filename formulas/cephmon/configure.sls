@@ -4,15 +4,6 @@ include:
   - formulas/cephmon/install
   - formulas/ceph/common/configure
 
-networking_mine_update_ceph:
-  module.run:
-    - name: mine.update
-    - require:
-      - sls: formulas/cephmon/install
-  event.send:
-    - name: {{ grains['type'] }}/mine/address/update
-    - data: "{{ grains['type'] }} mine has been updated."
-  
 {% if grains['spawning'] == 0 %}
 
 spawnzero_complete:
@@ -125,4 +116,3 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
 ceph auth get client.{{ host }} > /etc/ceph/ceph.client.swift.keyring:
   cmd.run
 {% endfor %}
-

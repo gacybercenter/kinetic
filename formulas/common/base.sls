@@ -37,6 +37,13 @@ install_pip:
     - pkgs:
       - python-pip
       - python3-pip
+    - reload_modules: True
+
+pyroute2:
+  pip.installed:
+    - require:
+      - pkg: python-pip
+      - pkg: python3-pip
 
 update_all:
   pkg.uptodate:
@@ -84,7 +91,3 @@ upgraded:
       - {{ grains['id'] }}
       - {{ grains['host'] }}
 {% endif %}
-
-base_mine_update:
-  module.run:
-    - name: mine.update
