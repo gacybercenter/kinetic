@@ -12,6 +12,18 @@ spawnzero_complete:
 
 {% endif %}
 
+/etc/rabbitmq/rabbit.conf:
+  file.managed:
+    source: salt://formulas/rabbitmq/files/rabbitmq.conf
+
+/etc/rabbitmq/rabbit-env.conf:
+  file.managed:
+    source: salt://formulas/rabbitmq/files/rabbitmq-env.conf
+
+rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin:
+  cmd.run:
+    - creates: /tmp/rabbit-hipe/ebin
+
 rabbitmqctl add_user openstack {{ pillar['rabbitmq']['rabbitmq_password'] }}:
   cmd.run:
     - unless:
@@ -21,3 +33,10 @@ rabbitmqctl set_permissions openstack ".*" ".*" ".*":
   cmd.run:
     - unless:
       - rabbitmqctl list_user_permissions openstack
+
+rabbitmq-server:
+  service.running:
+    - watch:
+      - /etc/rabbitmq/rabbit.conf
+      - /etc/rabbitmq/rabbit-env.conf
+      - rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin
