@@ -4,19 +4,9 @@ include:
   - formulas/common/networking
   - formulas/ceph/common/configure
 
-modprobe -r kvm:
-  cmd.run:
-    - prereq:
-      - file: /etc/modprobe.d/kvm.conf
-
 /etc/modprobe.d/kvm.conf:
   file.managed:
     - source: salt://formulas/compute/files/kvm.conf
-
-modprobe kvm:
-  cmd.run:
-    - onchanges:
-      - file: /etc/modprobe.d/kvm.conf
 
 /etc/ceph/ceph.client.compute.keyring:
   file.managed:
