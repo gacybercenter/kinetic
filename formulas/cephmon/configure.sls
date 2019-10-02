@@ -109,8 +109,3 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
       - /etc/ceph/ceph.client.compute.keyring
     - require:
       - service: ceph-mon@{{ grains['id'] }}
-
-{% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-ceph auth get client.{{ host }} > /etc/ceph/ceph.client.swift.keyring:
-  cmd.run
-{% endfor %}
