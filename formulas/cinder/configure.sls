@@ -53,14 +53,14 @@ spawnzero_complete:
     - source: salt://formulas/cinder/files/cinder.conf
     - template: jinja
     - defaults:
-{% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+{% for server, addresses in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
   {%- for address in addresses -%}
     {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
         sql_connection_string: 'connection = mysql+pymysql://cinder:{{ pillar['cinder']['cinder_mysql_password'] }}@{{ address }}/cinder'
     {%- endif -%}
   {%- endfor -%}
 {% endfor %}
-{% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+{% for server, addresses in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
   {%- for address in addresses -%}
     {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
         transport_url: rabbit://openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
