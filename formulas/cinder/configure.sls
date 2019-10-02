@@ -27,7 +27,7 @@ cinder-manage db sync:
     - require:
       - file: /etc/cinder/cinder.conf
       - unless:
-        - cmd: 'cinder-manage db version | grep 123'
+        - 'cinder-manage db version | grep 123'
 
 make_cinder_pool:
   event.send:
