@@ -4,12 +4,10 @@ include:
   - formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
-
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
-
 {% endif %}
 
 /etc/apt-cacher-ng/acng.conf:
