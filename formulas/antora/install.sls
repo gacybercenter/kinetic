@@ -28,4 +28,3 @@ install_antora:
     - pkgs:
       - "@antora/cli@2.0"
       - "@antora/site-generator-default@2.0"
-
