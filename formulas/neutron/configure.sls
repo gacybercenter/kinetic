@@ -93,7 +93,7 @@ spawnzero_complete:
     - source: salt://formulas/neutron/files/metadata_agent.ini
     - template: jinja
     - defaults:
-        nova_metadata_host: {{ pillar['endpoints']['internal'] }}
+        nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
 
 fs.inotify.max_user_instances:
