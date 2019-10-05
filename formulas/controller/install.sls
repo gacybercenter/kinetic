@@ -23,5 +23,5 @@ xfsprogs:
 bridge-utils:
   pkg.installed
 
-python-libvirt:
+python3-libvirt:
   pkg.installed
