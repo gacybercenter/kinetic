@@ -36,6 +36,7 @@ install_pip:
   pkg.install:
     - name:
       - python3-pip
+    - reload_modules: True
 
 /usr/lib/python3/dist-packages/salt/states/pip_state.py:
   file.managed:
