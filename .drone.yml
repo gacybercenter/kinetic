@@ -5,7 +5,7 @@ name: default
 steps:
 - name: syntax-test
   image: opensuse/salt-minion
-  commands: |
+  commands:|
     salt-minion --version
 
 trigger:
