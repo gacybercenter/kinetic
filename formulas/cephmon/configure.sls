@@ -1,8 +1,8 @@
 include:
   - formulas/common/base
   - formulas/common/networking
-  - formulas/cephmon/install
-  - formulas/ceph/common/configure
+  - /formulas/cephmon/install
+  - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
 spawnzero_complete:
@@ -46,10 +46,21 @@ spawnzero_complete:
       - user
       - group
 
-monmaptool --create --generate --clobber -c /etc/ceph/ceph.conf /tmp/monmap:
+monmaptool --create --clobber --fsid {{ pillar['ceph']['fsid'] }} /tmp/monmap:
   cmd.run:
     - creates:
       - /tmp/monmap
+
+{% for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+  {%- for address in addresses -%}
+    {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['sfe']) %}
+monmaptool --addv {{ host }} [v1:{{ address }},v2:{{ address }}] /tmp/monmap:
+  cmd.run:
+    - unless:
+      - 'monmaptool --print tmp/monmap | grep -q {{ host }}'
+    {%- endif -%}
+  {%- endfor -%}
+{% endfor %}
 
 ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring && touch /var/lib/ceph/mon/ceph-{{ grains['id'] }}/done:
   cmd.run:
