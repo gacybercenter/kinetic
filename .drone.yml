@@ -1,4 +1,4 @@
-kind: pipeline:
+kind: pipeline
 type: docker
 name: default
 
