@@ -22,9 +22,9 @@ create_efi_module:
     - cwd: /var/www/html/ipxe/src/
     - creates: /srv/tftp/ipxe.efi
 
-php7.0_module:
+php7.3_module:
   apache_module.enabled:
-    - name: php7.0
+    - name: php7.3
 
 /var/www/html/index.html:
   file.absent
