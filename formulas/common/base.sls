@@ -41,11 +41,12 @@ install_pip:
 /usr/lib/python3/dist-packages/salt/states/pip_state.py:
   file.managed:
     - source: https://raw.githubusercontent.com/dwoz/salt/0bad9cb5d54aa279f45b898ad5448f53de2269a8/salt/states/pip_state.py
+    - skip_verify: true
 
 pyroute2:
   pip.installed:
     - require:
-      - pkg: install_pip
+      - install_pip
     - reload_modules: True
 
 update_all:
