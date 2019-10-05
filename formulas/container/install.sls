@@ -17,12 +17,12 @@ docker_repo:
 container_packages:
   pkg.installed:
     - pkgs:
-      - python-pip
+      - python3-pip
       - git
-      - python-openstackclient
+      - python3-openstackclient
       - docker-ce
       - neutron-linuxbridge-agent
-      - python-tornado
+      - python3-tornado
 
 pymysql_sa:
   pip.installed

@@ -22,5 +22,5 @@ neutron_packages:
       - neutron-l3-agent
       - neutron-dhcp-agent
       - neutron-metadata-agent
-      - python-openstackclient
-      - python-tornado
+      - python3-openstackclient
+      - python3-tornado

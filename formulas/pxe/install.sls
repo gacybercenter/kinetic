@@ -17,7 +17,7 @@ git:
 uuid-runtime:
   pkg.installed
 
-python-pyinotify:
+python3-pyinotify:
   pkg.installed:
     - reload_modules: True
 
@@ -25,4 +25,4 @@ salt-minion_watch:
   service.running:
     - name: salt-minion
     - watch:
-      - python-pyinotify
+      - python3-pyinotify

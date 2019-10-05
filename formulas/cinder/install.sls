@@ -32,7 +32,7 @@ cinder_packages:
     - pkgs:
       - cinder-api
       - cinder-scheduler
-      - python-openstackclient
+      - python3-openstackclient
       - cinder-volume
-      - python-memcache
+      - python3-memcache
       - ceph-common

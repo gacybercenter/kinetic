@@ -23,6 +23,6 @@ designate_packages:
       - designate-worker
       - designate-producer
       - designate-mdns
-      - python-memcache
-      - python-designateclient
-      - python-openstackclient
+      - python3-memcache
+      - python3-designateclient
+      - python3-openstackclient

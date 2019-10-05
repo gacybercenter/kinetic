@@ -19,6 +19,6 @@ heat_packages:
       - heat-api
       - heat-api-cfn
       - heat-engine
-      - python-openstackclient
-      - python-tornado
-      - python-zunclient
+      - python3-openstackclient
+      - python3-tornado
+      - python3-zunclient

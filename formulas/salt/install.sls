@@ -4,11 +4,11 @@ haveged:
 curl:
   pkg.installed
 
-python-pip:
+python3-pip:
   pkg.installed:
    - reload_modules: true
 
 pyghmi:
   pip.installed:
     - require:
-      - pkg: python-pip
+      - pkg: python3-pip

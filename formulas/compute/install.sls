@@ -32,6 +32,6 @@ compute_packages:
     - pkgs:
       - nova-compute
       - neutron-linuxbridge-agent
-      - python-tornado
+      - python3-tornado
       - ceph-common
       - spice-html5

@@ -31,4 +31,4 @@ swift_packages:
   pkg.installed:
     - pkgs:
       - radosgw
-      - python-openstackclient
+      - python3-openstackclient

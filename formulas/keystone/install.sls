@@ -17,9 +17,9 @@ keystone_packages:
   pkg.installed:
     - pkgs:
       - keystone
-      - python-pyldap
-      - python-ldappool
-      - python-openstackclient
+      - python3-pyldap
+      - python3-ldappool
+      - python3-openstackclient
       - ldap-utils
       - apache2
       - libapache2-mod-wsgi

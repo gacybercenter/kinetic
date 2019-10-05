@@ -21,6 +21,6 @@ nova_packages:
       - nova-consoleauth
       - nova-spiceproxy
       - nova-scheduler
-      - python-openstackclient
+      - python3-openstackclient
       - nova-placement-api
       - spice-html5

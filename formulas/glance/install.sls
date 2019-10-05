@@ -17,7 +17,7 @@ glance_packages:
   pkg.installed:
     - pkgs:
       - glance
-      - python-memcache
-      - python-rbd
-      - python-rados
-      - python-openstackclient
+      - python3-memcache
+      - python3-rbd
+      - python3-rados
+      - python3-openstackclient

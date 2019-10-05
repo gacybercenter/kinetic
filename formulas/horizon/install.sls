@@ -16,11 +16,11 @@ update_packages_uca:
 horizon_packages:
   pkg.installed:
     - pkgs:
-      - python-openstackclient
-      - python-heat-dashboard
-      - python-pip
-      - python-setuptools
-      - python-designate-dashboard
+      - python3-openstackclient
+      - python3-heat-dashboard
+      - python3-pip
+      - python3-setuptools
+      - python3-designate-dashboard
       - openstack-dashboard
 
 #python /usr/share/openstack-dashboard/manage.py compress:

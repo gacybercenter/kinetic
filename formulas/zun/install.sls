@@ -17,10 +17,10 @@ docker_repo:
 zun_packages:
   pkg.installed:
     - pkgs:
-      - python-pip
+      - python3-pip
       - git
-      - python-openstackclient
-      - python-memcache
+      - python3-openstackclient
+      - python3-memcache
       - etcd
 
 pymysql_sa:
