@@ -57,7 +57,7 @@ monmaptool --create --clobber --fsid {{ pillar['ceph']['fsid'] }} /tmp/monmap:
 monmaptool --addv {{ host }} [v1:{{ address }}:6789,v2:{{ address }}:3300] /tmp/monmap:
   cmd.run:
     - unless:
-      - 'monmaptool --print tmp/monmap | grep -q {{ host }}'
+      - monmaptool --print /tmp/monmap | grep -q {{ host }}
     {%- endif -%}
   {%- endfor -%}
 {% endfor %}
