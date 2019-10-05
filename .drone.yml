@@ -4,7 +4,7 @@ name: default
 
 steps:
 - name: linter
-  image: debian:latest
+  image: python:buster
   commands:
     - pip3 install salt-lint
     - find . -type f | grep '.sls' | while read file;do salt-lint $file -v;done
