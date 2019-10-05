@@ -4,7 +4,7 @@ name: default
 
 steps:
 - name: syntax-test
-  image: opensuse/salt-minion
+  image: saltstack/salt:latest
   commands:
     - salt-minion --version
 
