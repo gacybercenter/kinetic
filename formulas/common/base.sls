@@ -33,7 +33,7 @@ role:
   {% if salt['grains.get']('upgraded') != True %}
 
 install_pip:
-  pkg.install:
+  pkg.installed:
     - name:
       - python3-pip
     - reload_modules: True
