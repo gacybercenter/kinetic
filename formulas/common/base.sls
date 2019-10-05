@@ -34,7 +34,7 @@ role:
 
 /usr/lib/python3/dist-packages/salt/states/pip_state.py:
   file.managed:
-    source: https://raw.githubusercontent.com/dwoz/salt/0bad9cb5d54aa279f45b898ad5448f53de2269a8/salt/states/pip_state.py
+    - source: https://raw.githubusercontent.com/dwoz/salt/0bad9cb5d54aa279f45b898ad5448f53de2269a8/salt/states/pip_state.py
 
 pyroute2:
   pip.installed:
