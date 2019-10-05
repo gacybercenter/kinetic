@@ -12,4 +12,4 @@ def make_key():
     key = os.urandom(16)
     header = struct.pack('<hiih', 1, int(time.time()), 0, len(key))
     secret = base64.b64encode(header + key)
-    return secret
+    return secret.decode('utf-8')
