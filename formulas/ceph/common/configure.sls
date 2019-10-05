@@ -8,10 +8,9 @@
         mon_members: |
           {% for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [mon.{{ host }}]
-          host = {{ host }}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['sfe']) %}
-          mon addr = {{ address }}
+          mon host = {{ address }}
               {%- endif -%}
             {%- endfor -%}
           {%- endfor %}
