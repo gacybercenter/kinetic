@@ -8,6 +8,7 @@ steps:
   commands:
     - pip3 install salt-lint
     - find . -type f | grep '.sls' | while read file;do salt-lint $file -v;done
+  failure: ignore
 
 trigger:
   branch:
