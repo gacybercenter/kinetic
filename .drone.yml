@@ -1,0 +1,13 @@
+kind: pipeline:
+type: docker
+name: default
+
+steps:
+- name: syntax-test
+  image: opensuse/salt-minion
+  commands: |
+    salt-minion --version
+
+trigger:
+  branch:
+  - master
