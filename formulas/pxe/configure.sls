@@ -37,6 +37,9 @@ php7.3_module:
   file.managed:
     - source: salt://formulas/pxe/files/common.pxe
 
+/var/www/html/assignments:
+  file.directory
+
 {% for type in pillar['hosts'] %}
 /var/www/html/preseed/{{ type }}.preseed:
   file.managed:
