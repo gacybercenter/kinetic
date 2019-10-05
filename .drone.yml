@@ -6,7 +6,7 @@ steps:
 - name: syntax-test
   image: saltstack/salt:latest
   commands:
-    - salt-minion --version
+    - salt-call state.show_sls formulas/common/base --states-dir=.
 
 trigger:
   branch:
