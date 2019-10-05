@@ -3,10 +3,11 @@ type: docker
 name: default
 
 steps:
-- name: syntax-test
-  image: saltstack/salt:latest
+- name: linter
+  image: debian:latest
   commands:
-    - salt-call state.show_sls formulas/common/base --states-dir=.
+    - pip3 install salt-lint
+    - find . -type f | grep '.sls' | while read file;do salt-lint $file -v;done
 
 trigger:
   branch:
