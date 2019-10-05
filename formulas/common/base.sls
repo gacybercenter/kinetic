@@ -34,7 +34,7 @@ role:
 
 install_pip:
   pkg.installed:
-    - name:
+    - pkg:
       - python3-pip
     - reload_modules: True
 
