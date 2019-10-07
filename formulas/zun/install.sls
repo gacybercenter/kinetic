@@ -73,7 +73,7 @@ pip install --upgrade -r /var/lib/zun/requirements.txt:
 
 installzun:
   cmd.run:
-    - name: python setup.py install
+    - name: python3 setup.py install
     - cwd : /var/lib/zun/
     - unless:
       - systemctl is-active zun-api
