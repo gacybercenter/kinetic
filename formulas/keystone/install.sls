@@ -22,4 +22,4 @@ keystone_packages:
       - python3-openstackclient
       - ldap-utils
       - apache2
-      - libapache2-mod-wsgi
+      - libapache2-mod-wsgi-py3
