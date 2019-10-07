@@ -22,5 +22,4 @@ nova_packages:
       - nova-spiceproxy
       - nova-scheduler
       - python3-openstackclient
-      - nova-placement-api
       - spice-html5
