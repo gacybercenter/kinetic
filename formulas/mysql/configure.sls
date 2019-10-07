@@ -64,7 +64,7 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
 
       {% if db == 'zun' %}
         {% for host, address in salt['mine.get']('type:container', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-grant_{{ service }}_privs_{{ host }}_{{ db }}:
+grant_{{ user }}_{{ service }}_privs_{{ host }}_{{ db }}:
    mysql_grants.present:
     - grant: all privileges
     - database: db.*
