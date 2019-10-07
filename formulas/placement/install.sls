@@ -18,3 +18,4 @@ placement_packages:
     - pkgs:
       - python3-openstackclient
       - placement-api
+      - python3-pymysql
