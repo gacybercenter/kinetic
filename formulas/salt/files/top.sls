@@ -42,6 +42,10 @@ base:
     - rabbitmq
     - placement
     - neutron
+  'placement*':
+    - placement
+    - openstack
+    - rabbitmq
   'neutron*':
     - neutron
     - openstack
