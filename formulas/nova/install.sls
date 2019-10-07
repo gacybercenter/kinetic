@@ -18,7 +18,6 @@ nova_packages:
     - pkgs:
       - nova-api
       - nova-conductor
-      - nova-consoleauth
       - nova-spiceproxy
       - nova-scheduler
       - python3-openstackclient

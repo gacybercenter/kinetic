@@ -121,12 +121,6 @@ nova_api_service:
     - watch:
       - file: /etc/nova/nova.conf
 
-nova_consoleauth_service:
-  service.running:
-    - name: nova-consoleauth
-    - watch:
-      - file: /etc/nova/nova.conf
-
 nova_scheduler_service:
   service.running:
     - name: nova-scheduler
