@@ -7,12 +7,13 @@
         fsid: {{ pillar['ceph']['fsid'] }}
         mon_members: |
           mon host =
-          {% for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+          {%- for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['sfe']) %}
-                {{ address }}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['sfe']) -%}
+                {{ " "+address }}
               {%- endif -%}
             {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -36,3 +37,4 @@
           {% endfor %}
         sfe_network: {{ pillar['networking']['subnets']['sfe'] }}
         sbe_network: {{ pillar['networking']['subnets']['sbe'] }}
+        
