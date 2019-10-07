@@ -28,7 +28,6 @@ openstack_rmq:
   rabbitmq_user.present:
     - password: {{ pillar['rabbitmq']['rabbitmq_password'] }}
     - name: openstack
-    - force: True
     - perms:
       - '/':
         - '.*'
