@@ -1,8 +1,8 @@
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Stein
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/stein main
-    - file: /etc/apt/sources.list.d/cloudarchive-stein.list
+    - humanname: Ubuntu Cloud Archive - Train
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
+    - file: /etc/apt/sources.list.d/cloudarchive-train.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
 
