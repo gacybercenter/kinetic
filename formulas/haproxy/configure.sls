@@ -76,8 +76,8 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
                {%- endif -%}
              {%- endfor -%}
            {%- endfor %}
-         nova_placement_api_hosts: |
-           {%- for host, addresses in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+         placement_api_hosts: |
+           {%- for host, addresses in salt['mine.get']('type:placement', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
              {%- for address in addresses -%}
                {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
            server {{ host }} {{ address }}:8778 check inter 2000 rise 2 fall 5
