@@ -66,7 +66,7 @@ zun_latest:
     - target: /var/lib/zun
     - force_clone: true
 
-pip install --upgrade -r /var/lib/zun/requirements.txt:
+pip3 install --upgrade -r /var/lib/zun/requirements.txt:
   cmd.run:
     - unless:
       - systemctl is-active zun-api
