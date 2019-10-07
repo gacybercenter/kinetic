@@ -1,8 +1,8 @@
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Rocky
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/rocky main
-    - file: /etc/apt/sources.list.d/cloudarchive-rocky.list
+    - humanname: Ubuntu Cloud Archive - train
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
+    - file: /etc/apt/sources.list.d/cloudarchive-train.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
 
@@ -48,7 +48,7 @@ kuryr:
 kuryr_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
-    - branch: stable/rocky
+    - branch: stable/train
     - target: /var/lib/kuryr
     - force_clone: true
 
@@ -91,7 +91,7 @@ zun:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/rocky
+    - branch: stable/train
     - target: /var/lib/zun
     - force_clone: true
 

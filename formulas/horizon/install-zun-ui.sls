@@ -1,7 +1,7 @@
 zun_latest:
   git.latest:
     - name: https://github.com/openstack/zun-ui.git
-    - branch: stable/rocky
+    - branch: stable/train
     - target: /usr/share/openstack-dashboard/zun-ui/
     - force_clone: true
 
