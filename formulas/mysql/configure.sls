@@ -74,7 +74,7 @@ create_{{ service }}_user_{{ host }}:
 grant_{{ service }}_privs_{{ host }}_{{ db }}:
    mysql_grants.present:
     - grant: all privileges
-    - database: db.*
+    - database: {{ db }}.*
     - user: {{ service }}
     - host: {{ address[0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
