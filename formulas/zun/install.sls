@@ -13,6 +13,14 @@ docker_repo:
     - file: /etc/apt/sources.list.d/docker.list
     - key_url: https://download.docker.com/linux/ubuntu/gpg
 
+update_packages_uca:
+  pkg.uptodate:
+    - refresh: true
+    - onchanges:
+      - pkgrepo: uca
+      - pkgrepo: docker_repo
+    - dist_upgrade: True
+
 zun_packages:
   pkg.installed:
     - pkgs:
