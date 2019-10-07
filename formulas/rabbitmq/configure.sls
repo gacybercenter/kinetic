@@ -30,7 +30,7 @@ openstack_rmq:
     - name: openstack
     - force: True
     - perms:
-      - '/'
+      - '/':
         - '.*'
         - '.*'
         - '.*'
