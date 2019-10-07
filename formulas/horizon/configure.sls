@@ -1,7 +1,8 @@
 include:
-  - /formulas/horizon/install
   - formulas/common/base
   - formulas/common/networking
+  - /formulas/horizon/install
+  - /formulas/horizon/install-zun-ui
 
 {% if grains['spawning'] == 0 %}
 

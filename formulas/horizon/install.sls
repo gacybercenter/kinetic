@@ -22,8 +22,4 @@ horizon_packages:
       - python3-setuptools
       - python3-designate-dashboard
       - openstack-dashboard
-
-#python /usr/share/openstack-dashboard/manage.py compress:
-#  cmd.run:
-#    - onchanges:
-#      - pkg: horizon_packages
+      - git
