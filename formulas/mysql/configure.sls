@@ -43,8 +43,7 @@ create_{{ db }}_db:
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
   {% endfor %}
-  {% if service == 'placement' %}
-    {% for host, address in salt['mine.get']('type:nova', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+  {% for host, address in salt['mine.get']('type:'+service, 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 
 create_{{ service }}_user_{{ host }}:
   mysql_user.present:
@@ -53,7 +52,7 @@ create_{{ service }}_user_{{ host }}:
     - host: {{ address[0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
-      {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
+    {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
 grant_{{ service }}_privs_{{ host }}_{{ db }}:
    mysql_grants.present:
@@ -63,29 +62,6 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     - host: {{ address[0] }}
     - connection_unix_socket: /var/run/mysqld/mysqld.sock
 
-      {% endfor %}
     {% endfor %}
-  {% else %}
-    {% for host, address in salt['mine.get']('type:'+service, 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-
-create_{{ service }}_user_{{ host }}:
-  mysql_user.present:
-    - name: {{ service }}
-    - password: {{ pillar [service][service + '_mysql_password'] }}
-    - host: {{ address[0] }}
-    - connection_unix_socket: /var/run/mysqld/mysqld.sock
-
-      {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
-
-grant_{{ service }}_privs_{{ host }}_{{ db }}:
-   mysql_grants.present:
-    - grant: all privileges
-    - database: {{ db }}.*
-    - user: {{ service }}
-    - host: {{ address[0] }}
-    - connection_unix_socket: /var/run/mysqld/mysqld.sock
-
-     {% endfor %}
-    {% endfor %}
-  {% endif %}
+  {% endfor %}
 {% endfor %}
