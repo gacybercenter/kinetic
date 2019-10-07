@@ -13,7 +13,7 @@
                 {{ address }}
               {%- endif -%}
             {%- endfor -%}
-          {%- endfor -%}
+          {%- endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [client.{{ host }}]
