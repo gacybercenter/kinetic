@@ -30,6 +30,7 @@ zun_packages:
       - python3-memcache
       - etcd
       - numactl
+      - python3-pymysql
 
 pymysql_sa:
   pip.installed:
