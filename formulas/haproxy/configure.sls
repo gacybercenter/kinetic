@@ -176,3 +176,6 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
 haproxy_service_watch:
   service.running:
     - name: haproxy
+    - reload: true
+    - watch:
+      - file: /etc/haproxy/haproxy.cfg
