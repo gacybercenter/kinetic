@@ -34,7 +34,7 @@ container_packages:
 
 pymysql_sa:
   pip.installed:
-    - bin_env: '/bin/pip3'
+    - bin_env: '/usr/bin/pip3'
     - reload_modules: true
 
 kuryr:
