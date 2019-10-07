@@ -35,3 +35,5 @@ compute_packages:
       - python3-tornado
       - ceph-common
       - spice-html5
+      - python3-rbd
+      - python3-rados
