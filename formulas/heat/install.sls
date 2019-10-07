@@ -22,3 +22,4 @@ heat_packages:
       - python3-openstackclient
       - python3-tornado
       - python3-zunclient
+      - python3-designateclient
