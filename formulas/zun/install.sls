@@ -34,6 +34,7 @@ zun_packages:
 pymysql_sa:
   pip.installed:
     - bin_env: '/bin/pip3'
+    - reload_modules: true
 
 zun:
   group.present:
