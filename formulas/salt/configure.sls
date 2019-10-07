@@ -159,7 +159,6 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 
 /srv/dynamic_pillar/top.sls:
   file.managed:
-    - replace: false
     - source: salt://formulas/salt/files/top.sls
 
 /srv/dynamic_pillar/adminrc:
