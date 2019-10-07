@@ -36,3 +36,5 @@ cinder_packages:
       - cinder-volume
       - python3-memcache
       - ceph-common
+      - python3-rbd
+      - python3-rados
