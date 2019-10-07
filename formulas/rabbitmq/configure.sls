@@ -30,7 +30,7 @@ rabbitmqctl add_user openstack {{ pillar['rabbitmq']['rabbitmq_password'] }}:
       - rabbitmqctl list_users | grep -q openstack
 
 rabbitmqctl set_permissions openstack ".*" ".*" ".*":
-  cmd.run:
+  cmd.run
 
 rabbitmq-server-service:
   service.running:
