@@ -13,7 +13,6 @@ docker_repo:
     - file: /etc/apt/sources.list.d/docker.list
     - key_url: https://download.docker.com/linux/ubuntu/gpg
 
-
 zun_packages:
   pkg.installed:
     - pkgs:
@@ -22,9 +21,11 @@ zun_packages:
       - python3-openstackclient
       - python3-memcache
       - etcd
+      - numactl
 
 pymysql_sa:
-  pip.installed
+  pip.installed:
+    - bin_env: '/bin/pip3'
 
 zun:
   group.present:
