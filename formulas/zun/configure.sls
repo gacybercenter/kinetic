@@ -10,6 +10,12 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
+zun-db-manage upgrade:
+  cmd.run:
+    - runas: zun
+    - require:
+      - file: /etc/zun/zun.conf
+
 {% endif %}
 
 make_zun_service:
@@ -111,6 +117,3 @@ zun_wsproxy_service:
     - name: zun-wsproxy
     - watch:
       - file: /etc/zun/zun.conf
-
-su -s /bin/sh -c "zun-db-manage upgrade" zun:
-  cmd.run
