@@ -64,6 +64,13 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
 
       {% if db == 'zun' %}
         {% for host, address in salt['mine.get']('type:container', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+create_{{ service }}_user_{{ host }}:
+  mysql_user.present:
+    - name: {{ service }}
+    - password: {{ pillar [service][service + '_mysql_password'] }}
+    - host: {{ address[0] }}
+    - connection_unix_socket: /var/run/mysqld/mysqld.sock
+
 grant_{{ service }}_privs_{{ host }}_{{ db }}:
    mysql_grants.present:
     - grant: all privileges
