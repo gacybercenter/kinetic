@@ -285,7 +285,7 @@ REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES',
                               'CREATE_IMAGE_DEFAULTS',
                               'ENFORCE_PASSWORD_CHECK']
 WEBROOT='/horizon/'
-ALLOWED_HOSTS = '{{ allowed_hosts }}'
+ALLOWED_HOSTS = {{ allowed_hosts }}
 COMPRESS_OFFLINE = True
 ALLOWED_PRIVATE_SUBNET_CIDR = {'ipv4': [], 'ipv6': []}
 OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = True
