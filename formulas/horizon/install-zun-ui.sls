@@ -6,7 +6,7 @@ zun_latest:
     - force_clone: true
 
 copy_panels:
-  file.copy_:
+  file.copy:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
     - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/*
     - makedirs: True
