@@ -130,18 +130,21 @@ systemctl daemon-reload:
 
 docker_service:
   service.running:
+    - enable: true
     - name: docker
     - watch:
       - file: /etc/systemd/system/docker.service.d/docker.conf
 
 kuryr_libnetwork_service:
   service.running:
+    - enable: true
     - name: kuryr-libnetwork
     - watch:
       - file: /etc/kuryr/kuryr.conf
 
 zun_compute_service:
   service.running:
+    - enable: true
     - name: zun-compute
     - watch:
       - file: /etc/zun/zun.conf
