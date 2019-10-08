@@ -28,5 +28,5 @@ horizon_packages:
 install_theme:
   archive.extracted:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/themes/
-    - source: {{ salt['pillar.get']('horizon:theme') }}
+    - source: {{ salt['pillar.get']('horizon:theme:url') }}
 {% endif %}
