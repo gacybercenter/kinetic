@@ -8,7 +8,7 @@ zun_latest:
 copy_panels:
   file.copy:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
-    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/*
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/
     - makedirs: True
 
 pip3 install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
