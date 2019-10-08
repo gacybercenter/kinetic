@@ -22,7 +22,7 @@ spawnzero_complete:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         keystone_url: {{ pillar['endpoints']['internal'] }}
-        allowed_hosts: {{ pillar['haproxy']['dashboard_domain'] }}
+        allowed_hosts: [{{ pillar['haproxy']['dashboard_domain'] }}]
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
         theming: |
             DEFAULT_THEME = '{{ pillar['horizon']['theme']['name'] }}'
