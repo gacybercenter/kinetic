@@ -22,6 +22,22 @@ spawnzero_complete:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         keystone_url: {{ pillar['endpoints']['internal'] }}
+        allowed_hosts: {{ pillar['haproxy']['dashboard_domain'] }}
+{% if salt['pillar.get']('horizon:theme:url', False) != False %}
+        theming: |
+            DEFAULT_THEME = '{{ pillar['horizon']['theme']['name'] }}'
+            SITE_BRANDING = "{{ pillar['horizon']['theme']['site_branding'] }}"
+            SITE_BRANDING_LINK = "{{ pillar['horizon']['theme']['site_branding_link'] }}"
+            AVAILABLE_THEMES = [
+                ('{{ pillar['horizon']['theme']['name'] }}', '{{ pillar['horizon']['theme']['name'] }}', 'themes/{{ pillar['horizon']['theme']['name'] }}')
+            ]
+{% else %}
+        theming: |
+            DEFAULT_THEME = 'default'
+            AVAILABLE_THEMES = [
+                ('default', 'default', 'themes/default')
+            ]
+{% endif %}
 
 /etc/apache2/conf-enabled/openstack-dashboard.conf:
   file.managed:

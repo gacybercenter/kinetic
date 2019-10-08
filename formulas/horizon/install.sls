@@ -24,7 +24,7 @@ horizon_packages:
       - openstack-dashboard
       - git
 
-{% if salt['pillar.get']('horizon:theme', False) != False %}
+{% if salt['pillar.get']('horizon:theme:url', False) != False %}
 install_theme:
   archive.extracted:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/themes/

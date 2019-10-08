@@ -284,9 +284,8 @@ REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES',
                               'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN',
                               'CREATE_IMAGE_DEFAULTS',
                               'ENFORCE_PASSWORD_CHECK']
-DEFAULT_THEME = 'default'
 WEBROOT='/horizon/'
-ALLOWED_HOSTS = '*.cybbh.space'
+ALLOWED_HOSTS = '{{ allowed_hosts }}'
 COMPRESS_OFFLINE = True
 ALLOWED_PRIVATE_SUBNET_CIDR = {'ipv4': [], 'ipv6': []}
 OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = True
@@ -294,3 +293,4 @@ OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = "Default"
 OPENSTACK_KEYSTONE_DEFAULT_ROLE = "user"
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 DESIGNATE = { 'records_use_fips': True }
+{{ theming }}
