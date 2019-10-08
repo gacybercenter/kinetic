@@ -103,17 +103,20 @@ make_kuryr_service:
 etcd_service:
   service.running:
     - name: etcd
+    - enable: true
     - watch:
       - file: /etc/default/etcd
 
 zun_api_service:
   service.running:
     - name: zun-api
+    - enable: true
     - watch:
       - file: /etc/zun/zun.conf
 
 zun_wsproxy_service:
   service.running:
     - name: zun-wsproxy
+    - enable: true
     - watch:
       - file: /etc/zun/zun.conf
