@@ -26,9 +26,8 @@ horizon_packages:
 
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
 install_theme:
-  archive.extracted:
-    - name: /usr/share/openstack-dashboard/openstack_dashboard/themes/
-    - source: {{ salt['pillar.get']('horizon:theme:url') }}
-    - source_hash: {{ salt['pillar.get']('horizon:theme:hash') }}
-    - overwrite: true
+  git.latest:
+    - name: {{ salt['pillar.get']('horizon:theme:url') }}
+    - target: /usr/share/openstack-dashboard/openstack_dashboard/themes/{{ salt['pillar.get']('horizon:theme:name') }}
+    - branch: {{ salt['pillar.get']('horizon:theme:branch') }}
 {% endif %}
