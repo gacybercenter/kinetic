@@ -55,6 +55,14 @@ spawnzero_complete:
     - user: horizon
     - group: horizon
 
+{% if salt['pillar.get']('horizon:theme:url', False) != False %}
+install_theme:
+  git.latest:
+    - name: {{ salt['pillar.get']('horizon:theme:url') }}
+    - target: /usr/share/openstack-dashboard/openstack_dashboard/themes/{{ salt['pillar.get']('horizon:theme:name') }}
+    - branch: {{ salt['pillar.get']('horizon:theme:branch') }}
+{% endif %}
+
 apache2_service:
   service.running:
     - name: apache2
@@ -62,3 +70,4 @@ apache2_service:
       - file: /etc/openstack-dashboard/local_settings.py
       - file: /var/lib/openstack-dashboard/secret_key
       - file: /etc/apache2/conf-enabled/openstack-dashboard.conf
+      - git: install_theme
