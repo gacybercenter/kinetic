@@ -14,7 +14,7 @@ CACHES = {
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 OPENSTACK_HOST = "{{ keystone_url }}"
-OPENSTACK_KEYSTONE_URL = "http://%s:5000/v3" % OPENSTACK_HOST
+OPENSTACK_KEYSTONE_URL = "https://%s:5000/v3" % OPENSTACK_HOST
 OPENSTACK_KEYSTONE_BACKEND = {
     'name': 'native',
     'can_edit_user': True,

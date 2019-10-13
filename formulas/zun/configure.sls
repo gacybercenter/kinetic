@@ -60,7 +60,7 @@ make_kuryr_service:
         auth_strategy: auth_strategy = keystone
         auth_type: auth_type = password
         auth_version: auth_version = v3
-        auth_protocol: auth_protocol = http
+        auth_protocol: auth_protocol = https
         password: {{ pillar['zun']['zun_service_password'] }}
         api: host_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         wsproxy_host: wsproxy_host = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
