@@ -39,6 +39,14 @@ spawnzero_complete:
         http_bind_address: {{ grains['ipv4'][0] }}:9000
         root_timezone: {{ pillar['timezone'] }}
 
+rest_conf:
+  cmd.script:
+    - source: salt://formulas/graylog/files/restconf.sh
+    - template: jinja
+    - defaults:
+        password_secret: {{ pillar['graylog']['graylog_password'] }}
+        http_bind_address: {{ grains['ipv4'][0] }}
+
 mongodb_service:
   service.running:
     - enable: True

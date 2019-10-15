@@ -51,4 +51,5 @@ graylog_packages:
       - mongodb-org
       - elasticsearch-oss
       - graylog-server
+      - jq
     - reload_modules: True
