@@ -66,5 +66,6 @@ then
     "node": "null"
   }'
 else
+  echo "Input already exists...exiting"
   exit 0
 fi
