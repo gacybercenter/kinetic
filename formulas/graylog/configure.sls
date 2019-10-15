@@ -34,8 +34,8 @@ spawnzero_complete:
     - source: salt://formulas/graylog/files/server.conf
     - template: jinja
     - defaults:
-        password_secret: {{ pillar['graylog_password'] }}
-        root_password_sha2: {{ pillar['graylog_password_sha2'] }}
+        password_secret: {{ pillar['graylog']['graylog_password'] }}
+        root_password_sha2: {{ pillar['graylog']['graylog_password_sha2'] }}
         web_listen_uri: http://{{ grains['ipv4'][0] }}:9000/
         rest_listen_uri: http://{{ grains['ipv4'][0] }}:9000/api/
 
