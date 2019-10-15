@@ -3,7 +3,7 @@
     - source: salt://formulas/common/files/10-syslog.conf
     - template: jinja
     - defaults:
-{% if pillar['syslog_url'] == false %}
+{% if salt['pillar.get']('syslog_url', False) == False %}
           {% for host, addresses in salt['mine.get']('role:graylog', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
             {% for address in addresses %}
               {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
