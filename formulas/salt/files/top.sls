@@ -28,6 +28,8 @@ base:
     - zun
   'rabbitmq*':
     - rabbitmq
+  'graylog*':
+    - graylog
   'keystone*':
     - keystone
     - openstack
