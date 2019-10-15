@@ -36,7 +36,7 @@ spawnzero_complete:
     - defaults:
         password_secret: {{ pillar['graylog']['graylog_password'] }}
         root_password_sha2: {{ pillar['graylog']['graylog_password_sha2'] }}
-        http_bind_address: {{ grains['ipv4'][0] }}:9000/
+        http_bind_address: {{ grains['ipv4'][0] }}:9000
         root_timezone: {{ pillar['timezone'] }}
 
 mongodb_service:
