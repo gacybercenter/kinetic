@@ -1,5 +1,5 @@
 include:
-  - formulas/gralog/install
+  - formulas/graylog/install
   - formulas/common/base
   - formulas/common/networking
 
