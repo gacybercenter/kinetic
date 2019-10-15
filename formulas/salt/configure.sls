@@ -83,6 +83,15 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         rabbitmq:
           rabbitmq_password: {{ salt['random.get_str']('64') }}
 
+{% set graylog_password = salt['random.get_str']('64') %}
+/srv/dynamic_pillar/graylog.sls:
+  file.managed:
+    - replace: false
+    - contents: |
+        graylog:
+          graylog_password: {{ graylog_password }}
+          graylog_password_sha2: {{ graylog_password | sha256 }}
+
 {% set adminkey = salt['cephx.make_key']() %}
 {% set volumeskey = salt['cephx.make_key']() %}
 {% set computekey = salt['cephx.make_key']() %}
