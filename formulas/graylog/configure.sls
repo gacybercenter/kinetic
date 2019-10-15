@@ -38,6 +38,7 @@ spawnzero_complete:
         root_password_sha2: {{ pillar['graylog']['graylog_password_sha2'] }}
         web_listen_uri: http://{{ grains['ipv4'][0] }}:9000/
         rest_listen_uri: http://{{ grains['ipv4'][0] }}:9000/api/
+        root_timezone: {{ pillar['timezone'] }}
 
 mongodb_service:
   service.running:
