@@ -1,7 +1,7 @@
 mongodb_repo:
   pkgrepo.managed:
     - humanname: MongoDB 4.0 repo
-    - name: https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse
+    - name: deb https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse
     - file: /etc/apt/sources.list.d/mongodb.4.list
     - keyid: E52529D4
     - keyserver: keyserver.ubuntu.com
@@ -16,7 +16,7 @@ update_packages_mongo:
 elasticsearch_repo:
   pkgrepo.managed:
     - humanname: Elastic Search 6
-    - name: https://artifacts.elastic.co/packages/oss-6.x/apt stable main
+    - name: deb https://artifacts.elastic.co/packages/oss-6.x/apt stable main
     - file: /etc/apt/sources.list.d/elastic-6.x.list
     - key_url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
 
