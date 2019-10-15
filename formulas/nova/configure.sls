@@ -23,7 +23,7 @@ nova-manage api_db sync:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage api_db version | grep -q 61
+      - nova-manage api_db version | grep -q 67
 
 nova-manage cell_v2 map_cell0:
   cmd.run:
@@ -47,7 +47,7 @@ nova-manage db sync:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage db version | grep -q 390
+      - nova-manage db version | grep -q 402
 
 /etc/nova/flavors:
   file.directory
