@@ -41,11 +41,16 @@ update_packages_graylog:
       - pkgrepo: graylog_repo
     - dist_upgrade: True
 
+install_java:
+  pkg.installed:
+    - name: openjdk-8-jre-headless
+    - reload_modules: true
+    - require_in: graylog_packages
+
 graylog_packages:
   pkg.installed:
     - pkgs:
       - apt-transport-https
-      - openjdk-8-jre-headless
       - uuid-runtime
       - pwgen
       - mongodb-org
