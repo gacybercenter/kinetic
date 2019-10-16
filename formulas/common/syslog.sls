@@ -8,13 +8,13 @@
             {% for address in addresses %}
               {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
         logger: {{ address }}:5514
+              {% else %}
+        logger: 127.0.0.1:5514
               {% endif %}
             {% endfor %}
           {% endfor %}
-{% elif salt['pillar.get']('syslog_url', False) == True %}
-        logger: {{ pillar['syslog_url'] }}
 {% else %}
-        logger: 127.0.0.1
+        logger: {{ pillar['syslog_url'] }}
 {% endif %}
 
 rsyslog:
