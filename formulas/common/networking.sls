@@ -12,6 +12,8 @@
   {% set srv = 'virtual' %}
 {% endif %}
 
+## Set custom ifwatch grain that contains list of interfaces that I want to monitor with the network
+## beacon
 ifwatch:
   grains.present:
     - value:
