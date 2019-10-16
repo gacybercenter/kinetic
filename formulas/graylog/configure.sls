@@ -39,16 +39,6 @@ spawnzero_complete:
         http_bind_address: {{ grains['ipv4'][0] }}:9000
         root_timezone: {{ pillar['timezone'] }}
 
-rest_conf:
-  cmd.script:
-    - source: salt://formulas/graylog/files/restconf.sh
-    - template: jinja
-    - defaults:
-        password_secret: {{ pillar['graylog']['graylog_password'] }}
-        http_bind_address: {{ grains['ipv4'][0] }}
-    - require:
-      - service: graylog_service
-
 mongodb_service:
   service.running:
     - enable: True
@@ -60,6 +50,9 @@ elasticsearch_service:
     - enable: True
     - watch:
       - /etc/elasticsearch/elasticsearch.yml
+    - require:
+      - file: /etc/elasticsearch/elasticsearch.yml
+      - service: mongodb_service
 
 graylog_service:
   service.running:
@@ -67,3 +60,16 @@ graylog_service:
     - enable: True
     - watch:
       - /etc/graylog/server/server.conf
+    - require:
+      - file: /etc/graylog/server/server.conf
+      - service: elasticsearch_service
+
+rest_conf:
+  cmd.script:
+    - source: salt://formulas/graylog/files/restconf.sh
+    - template: jinja
+    - defaults:
+        password_secret: {{ pillar['graylog']['graylog_password'] }}
+        http_bind_address: {{ grains['ipv4'][0] }}
+    - require:
+      - service: graylog_service
