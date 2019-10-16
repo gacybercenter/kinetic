@@ -11,8 +11,10 @@
               {% endif %}
             {% endfor %}
           {% endfor %}
-{% else %}
+{% elif salt['pillar.get']('syslog_url', False) == True %}
         logger: {{ pillar['syslog_url'] }}
+{% else %}
+        logger: 127.0.0.1
 {% endif %}
 
 rsyslog:
