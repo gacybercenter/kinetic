@@ -14,7 +14,7 @@ CACHES = {
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 OPENSTACK_HOST = "{{ keystone_url }}"
-OPENSTACK_KEYSTONE_URL = "http://%s:5000/v3" % OPENSTACK_HOST
+OPENSTACK_KEYSTONE_URL = "https://%s:5000/v3" % OPENSTACK_HOST
 OPENSTACK_KEYSTONE_BACKEND = {
     'name': 'native',
     'can_edit_user': True,
@@ -284,13 +284,14 @@ REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES',
                               'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN',
                               'CREATE_IMAGE_DEFAULTS',
                               'ENFORCE_PASSWORD_CHECK']
-DEFAULT_THEME = 'default'
 WEBROOT='/horizon/'
-ALLOWED_HOSTS = '*.cybbh.space'
+ALLOWED_HOSTS = {{ allowed_hosts }}
 COMPRESS_OFFLINE = True
 ALLOWED_PRIVATE_SUBNET_CIDR = {'ipv4': [], 'ipv6': []}
 OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = True
 OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = "Default"
 OPENSTACK_KEYSTONE_DEFAULT_ROLE = "user"
+USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 DESIGNATE = { 'records_use_fips': True }
+{{ theming }}

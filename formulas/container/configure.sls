@@ -64,12 +64,10 @@ include:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for binding in pillar['hosts'][grains['type']]['networks']['bindings'] %}
-  {%- for network in binding %}
-    {% if network == 'public' %}
-        public_interface: {{ binding[network] }}
-    {% endif %}
-  {% endfor %}
+{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
+  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+        public_interface: {{ interface }}
+  {% endif %}
 {% endfor %}
 
 /etc/sudoers.d/neutron_sudoers:
@@ -132,18 +130,21 @@ systemctl daemon-reload:
 
 docker_service:
   service.running:
+    - enable: true
     - name: docker
     - watch:
       - file: /etc/systemd/system/docker.service.d/docker.conf
 
 kuryr_libnetwork_service:
   service.running:
+    - enable: true
     - name: kuryr-libnetwork
     - watch:
       - file: /etc/kuryr/kuryr.conf
 
 zun_compute_service:
   service.running:
+    - enable: true
     - name: zun-compute
     - watch:
       - file: /etc/zun/zun.conf

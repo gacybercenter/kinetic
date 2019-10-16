@@ -1,8 +1,8 @@
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Rocky
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/rocky main
-    - file: /etc/apt/sources.list.d/cloudarchive-rocky.list
+    - humanname: Ubuntu Cloud Archive - train
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
+    - file: /etc/apt/sources.list.d/cloudarchive-train.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
 
@@ -22,4 +22,4 @@ keystone_packages:
       - python3-openstackclient
       - ldap-utils
       - apache2
-      - libapache2-mod-wsgi
+      - libapache2-mod-wsgi-py3

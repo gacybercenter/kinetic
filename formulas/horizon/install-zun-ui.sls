@@ -1,13 +1,9 @@
 zun_latest:
   git.latest:
-    - name: https://github.com/openstack/zun-ui.git
-    - branch: stable/rocky
+    - name: https://opendev.org/openstack/zun-ui.git
+    - branch: stable/train
     - target: /usr/share/openstack-dashboard/zun-ui/
     - force_clone: true
-
-/usr/share/openstack-dashboard/zun-ui/requirements.txt:
-  file.managed:
-    - source: salt://formulas/horizon/files/requirements.txt
 
 0330_cloud_shell.py:
   file.copy:
@@ -39,32 +35,34 @@ zun_latest:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_2331_admin_container_images_panel.py
     - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_2331_admin_container_images_panel.py
 
+2332_admin_container_hosts_panel.py:
+  file.copy:
+    - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_2332_admin_container_hosts_panel.py
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_2332_admin_container_hosts_panel.py
+
+2333_admin_container_containers_panel.py:
+  file.copy:
+    - name: /usr/share/openstack-dashboard/openstack_dashboard/enabled/_2333_admin_container_containers_panel.py
+    - source: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/_2333_admin_container_containers_panel.py
+
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_0330_cloud_shell_settings.py:
   file.managed:
     - source: salt://formulas/horizon/files/_0330_cloud_shell_settings.py
 
-pip install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
+pip3 install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
   cmd.run
 
 installzun-ui:
   cmd.run:
-    - name: python setup.py install
+    - name: python3 setup.py install
     - cwd: /usr/share/openstack-dashboard/zun-ui/
 
 collect-static:
   cmd.run:
-    - name: python manage.py collectstatic --noinput
+    - name: python3 manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
 
 compress-static:
   cmd.run:
-    - name: python manage.py compress
+    - name: python3 manage.py compress
     - cwd: /usr/share/openstack-dashboard/
-
-/usr/local/lib/python2.7/dist-packages/zunclient/common/websocketclient/websocketclient.py:
-  file.managed:
-    - source: salt://formulas/horizon/files/websocketclient.py
-
-/usr/local/lib/python2.7/dist-packages/zun_ui/api/client.py:
-  file.managed:
-    - source: salt://formulas/horizon/files/client.py

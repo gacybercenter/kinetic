@@ -1,8 +1,8 @@
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Rocky
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/rocky main
-    - file: /etc/apt/sources.list.d/cloudarchive-rocky.list
+    - humanname: Ubuntu Cloud Archive - train
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
+    - file: /etc/apt/sources.list.d/cloudarchive-train.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
 
@@ -22,3 +22,4 @@ heat_packages:
       - python3-openstackclient
       - python3-tornado
       - python3-zunclient
+      - python3-designateclient

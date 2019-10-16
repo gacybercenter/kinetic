@@ -17,25 +17,13 @@ make_nova_service:
         nova_admin_endpoint: {{ pillar ['openstack_services']['nova']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['nova']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['nova']['configuration']['admin_endpoint']['path'] }}
         nova_service_password: {{ pillar ['nova']['nova_service_password'] }}
 
-make_placement_service:
-  cmd.script:
-    - source: salt://formulas/nova/files/mkservice_placement.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        placement_internal_endpoint: {{ pillar ['openstack_services']['placement']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['placement']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['placement']['configuration']['internal_endpoint']['path'] }}
-        placement_public_endpoint: {{ pillar ['openstack_services']['placement']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['placement']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['placement']['configuration']['public_endpoint']['path'] }}
-        placement_admin_endpoint: {{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['placement']['configuration']['admin_endpoint']['path'] }}
-        placement_service_password: {{ pillar ['placement']['placement_service_password'] }}
-
 nova-manage api_db sync:
   cmd.run:
     - runas: nova
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage api_db version | grep -q 61
+      - nova-manage api_db version | grep -q 67
 
 nova-manage cell_v2 map_cell0:
   cmd.run:
@@ -59,7 +47,7 @@ nova-manage db sync:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage db version | grep -q 390
+      - nova-manage db version | grep -q 402
 
 /etc/nova/flavors:
   file.directory
@@ -121,7 +109,6 @@ spawnzero_complete:
         password: {{ pillar['nova']['nova_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
-        neutron_url: {{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['path'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
@@ -130,12 +117,6 @@ spawnzero_complete:
 nova_api_service:
   service.running:
     - name: nova-api
-    - watch:
-      - file: /etc/nova/nova.conf
-
-nova_consoleauth_service:
-  service.running:
-    - name: nova-consoleauth
     - watch:
       - file: /etc/nova/nova.conf
 
@@ -148,12 +129,6 @@ nova_scheduler_service:
 nova_conductor_service:
   service.running:
     - name: nova-conductor
-    - watch:
-      - file: /etc/nova/nova.conf
-
-nova_placement_api_service:
-  service.running:
-    - name: apache2
     - watch:
       - file: /etc/nova/nova.conf
 

@@ -28,6 +28,8 @@ base:
     - zun
   'rabbitmq*':
     - rabbitmq
+  'graylog*':
+    - graylog
   'keystone*':
     - keystone
     - openstack
@@ -42,6 +44,10 @@ base:
     - rabbitmq
     - placement
     - neutron
+  'placement*':
+    - placement
+    - openstack
+    - rabbitmq
   'neutron*':
     - neutron
     - openstack

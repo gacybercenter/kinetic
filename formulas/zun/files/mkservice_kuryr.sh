@@ -7,10 +7,10 @@ export OS_PROJECT_DOMAIN_NAME=Default
 export OS_AUTH_URL={{ keystone_internal_endpoint }}
 export OS_IDENTITY_API_VERSION=3
 
-service_test=$(openstack service list | grep kuryr)
+user_test=$(openstack user list | grep kuryr)
 
-if [[ $service_test != '' ]]; then
-  echo 'Existing kuryr service detected...exiting...'
+if [[ $user_test != '' ]]; then
+  echo 'Existing kuryr user detected...exiting...'
   exit
 fi
 

@@ -24,15 +24,15 @@ rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin:
   cmd.run:
     - creates: /tmp/rabbit-hipe/ebin
 
-rabbitmqctl add_user openstack {{ pillar['rabbitmq']['rabbitmq_password'] }}:
-  cmd.run:
-    - unless:
-      - rabbitmqctl list_users | grep -q openstack
-
-rabbitmqctl set_permissions openstack ".*" ".*" ".*":
-  cmd.run:
-    - onlyif:
-      - rabbitmqctl add_user openstack
+openstack_rmq:
+  rabbitmq_user.present:
+    - password: {{ pillar['rabbitmq']['rabbitmq_password'] }}
+    - name: openstack
+    - perms:
+      - '/':
+        - '.*'
+        - '.*'
+        - '.*'
 
 rabbitmq-server-service:
   service.running:

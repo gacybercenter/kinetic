@@ -10,6 +10,14 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
+zun-db-manage upgrade:
+  cmd.run:
+    - runas: zun
+    - require:
+      - file: /etc/zun/zun.conf
+    - unless:
+      - zun-db-manage version | grep -q d502ce8fb705
+
 {% endif %}
 
 make_zun_service:
@@ -52,7 +60,7 @@ make_kuryr_service:
         auth_strategy: auth_strategy = keystone
         auth_type: auth_type = password
         auth_version: auth_version = v3
-        auth_protocol: auth_protocol = http
+        auth_protocol: auth_protocol = https
         password: {{ pillar['zun']['zun_service_password'] }}
         api: host_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         wsproxy_host: wsproxy_host = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
@@ -97,20 +105,20 @@ make_kuryr_service:
 etcd_service:
   service.running:
     - name: etcd
+    - enable: true
     - watch:
       - file: /etc/default/etcd
 
 zun_api_service:
   service.running:
     - name: zun-api
+    - enable: true
     - watch:
       - file: /etc/zun/zun.conf
 
 zun_wsproxy_service:
   service.running:
     - name: zun-wsproxy
+    - enable: true
     - watch:
       - file: /etc/zun/zun.conf
-
-su -s /bin/sh -c "zun-db-manage upgrade" zun:
-  cmd.run

@@ -1,8 +1,8 @@
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Rocky
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/rocky main
-    - file: /etc/apt/sources.list.d/cloudarchive-rocky.list
+    - humanname: Ubuntu Cloud Archive - train
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
+    - file: /etc/apt/sources.list.d/cloudarchive-train.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
 
@@ -13,6 +13,13 @@ docker_repo:
     - file: /etc/apt/sources.list.d/docker.list
     - key_url: https://download.docker.com/linux/ubuntu/gpg
 
+update_packages_uca:
+  pkg.uptodate:
+    - refresh: true
+    - onchanges:
+      - pkgrepo: uca
+      - pkgrepo: docker_repo
+    - dist_upgrade: True
 
 container_packages:
   pkg.installed:
@@ -23,9 +30,12 @@ container_packages:
       - docker-ce
       - neutron-linuxbridge-agent
       - python3-tornado
+      - python3-pymysql
 
 pymysql_sa:
-  pip.installed
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
 
 kuryr:
   group.present:
@@ -48,18 +58,18 @@ kuryr:
 kuryr_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
-    - branch: stable/rocky
+    - branch: stable/train
     - target: /var/lib/kuryr
     - force_clone: true
 
-pip install -r /var/lib/kuryr/requirements.txt:
+pip3 install -r /var/lib/kuryr/requirements.txt:
   cmd.run:
     - unless:
       - systemctl is-active kuryr-libnetwork
 
 installkuryr:
   cmd.run:
-    - name: python setup.py install
+    - name: python3 setup.py install
     - cwd: /var/lib/kuryr/
     - unless:
       - systemctl is-active kuryr-libnetwork
@@ -91,18 +101,18 @@ zun:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/rocky
+    - branch: stable/train
     - target: /var/lib/zun
     - force_clone: true
 
-pip install -r /var/lib/zun/requirements.txt:
+pip3 install -r /var/lib/zun/requirements.txt:
   cmd.run:
     - unless:
       - systemctl is-active zun-compute
 
 installzun:
   cmd.run:
-    - name: python setup.py install
+    - name: python3 setup.py install
     - cwd : /var/lib/zun/
     - unless:
       - systemctl is-active zun-compute

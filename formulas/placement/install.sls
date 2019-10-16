@@ -13,8 +13,9 @@ update_packages_uca:
       - pkgrepo: uca
     - dist_upgrade: True
 
-erlang-base-hipe:
-  pkg.installed
-
-rabbitmq-server:
-  pkg.installed
+placement_packages:
+  pkg.installed:
+    - pkgs:
+      - python3-openstackclient
+      - placement-api
+      - python3-pymysql
