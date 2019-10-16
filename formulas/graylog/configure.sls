@@ -46,6 +46,8 @@ rest_conf:
     - defaults:
         password_secret: {{ pillar['graylog']['graylog_password'] }}
         http_bind_address: {{ grains['ipv4'][0] }}
+    - require:
+      - service: graylog_service
 
 mongodb_service:
   service.running:

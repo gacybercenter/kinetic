@@ -8,7 +8,7 @@ while ! nc -z {{ http_bind_address }} 9000; do
     then
         exit 255
     else
-    sleep 5
+    sleep 10
     fi
 done
 
