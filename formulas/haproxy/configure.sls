@@ -36,9 +36,23 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
   file.managed:
     - source: salt://formulas/haproxy/files/haproxy.cfg
     - template: jinja
+{% if salt['pillar.get']('syslog_url', False) == False %}
+  {% for host, addresses in salt['mine.get']('role:graylog', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+    {% for address in addresses %}
+      {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    - context:
+        syslog: {{ address }}:5514
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endif %}
     - defaults:
+{% if salt['pillar.get']('syslog_url', False) != False %}
+        syslog: {{ pillar['syslog_url'] }}
+{% else %}
+        syslog: 127.0.0.1:5514
+{% endif %}
          hostname: {{ grains['id'] }}
-         syslog: {{ pillar['syslog_url'] }}
          management_ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
          dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
          console_domain:  {{ pillar['haproxy']['console_domain'] }}
