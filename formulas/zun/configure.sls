@@ -16,7 +16,7 @@ zun-db-manage upgrade:
     - require:
       - file: /etc/zun/zun.conf
     - unless:
-      - zun-db-manage version | grep -q d502ce8fb705
+      - zun-db-manage version | grep -q e4385cf0e363
 
 {% endif %}
 
