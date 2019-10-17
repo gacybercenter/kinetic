@@ -70,7 +70,7 @@ make_designate_service:
 /bin/sh -c "designate-manage database sync" designate:
   cmd.run:
     - onlyif:
-      - /bin/sh -c "designate-manage database version" designate | grep -q 69
+      - /bin/sh -c "designate-manage database version" designate | grep -q 102
 
 designate_api_service:
   service.running:
