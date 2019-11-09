@@ -50,7 +50,7 @@ mkdir -p /kvm/vms/pxe/data
 
 ## Images
 
-if [ ! -f /kvm/images/debian9.raw ]
+if [ ! -f /kvm/images/debian10.raw ]
 then
   local_image_hash=bad
 else
