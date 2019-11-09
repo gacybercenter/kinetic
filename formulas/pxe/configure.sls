@@ -45,7 +45,7 @@ php7.3_module:
   file.directory
 
 {% for type in pillar['hosts'] %}
-  {% if 'ubuntu' in pillar['hosts'][host]['os'] %}
+  {% if 'ubuntu' in pillar['hosts'][type]['os'] %}
 /var/www/html/preseed/{{ type }}.preseed:
   file.managed:
     - source: salt://formulas/pxe/files/common.preseed
@@ -69,7 +69,7 @@ php7.3_module:
         {% endfor %}
       {% endif %}
     {% endif %}
-  {% elif 'centos' in pillar['hosts'][host]['os'] %}
+  {% elif 'centos' in pillar['hosts'][type]['os'] %}
 /var/www/html/preseed/{{ type }}.preseed:
   file.managed:
     - source: salt://formulas/pxe/files/common.preseed
