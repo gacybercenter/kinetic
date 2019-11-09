@@ -1,0 +1,45 @@
+#platform=x86, AMD64, or Intel EM64T
+#version=DEVEL
+# Install OS instead of upgrade
+install
+# Keyboard layouts
+keyboard 'us'
+# Root password
+rootpw --iscrypted {{ root_password_crypted }}
+# nic
+network --bootproto=dhcp --device={{ interface }}
+# System language
+lang en_US
+# System authorization information
+auth  --useshadow  --passalgo=sha512
+# Use text mode install
+text
+# SELinux configuration
+selinux --enforcing
+# Do not configure the X Window System
+skipx
+
+
+# Firewall configuration
+firewall --disabled
+# Reboot after installation
+reboot
+# System timezone
+timezone {{ zone }} --ntpservers={{ ntp_server }}
+# Use network installation
+url --url="http://mirror.centos.org/centos/7/os/x86_64" --proxy={{ proxy }}
+# System bootloader configuration
+bootloader --location=none
+# Clear the Master Boot Record
+zerombr
+# Partition clearing information
+clearpart --all --initlabel
+# Disk partitioning information
+part / --fstype="xfs" --grow --ondisk=sda --size=1
+part swap --fstype="swap" --size=8192
+
+%packages
+@network-tools
+-libreswan
+
+%end
