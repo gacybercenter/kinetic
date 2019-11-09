@@ -33,14 +33,19 @@ php7.3_module:
   file.managed:
     - source: salt://formulas/pxe/files/index.php
 
-/var/www/html/common.pxe:
+/var/www/html/preseed.pxe:
   file.managed:
-    - source: salt://formulas/pxe/files/common.pxe
+    - source: salt://formulas/pxe/files/preseed.pxe
+
+/var/www/html/kickstart.pxe:
+  file.managed:
+    - source: salt://formulas/pxe/files/kickstart.pxe
 
 /var/www/html/assignments:
   file.directory
 
 {% for type in pillar['hosts'] %}
+  {% if 'ubuntu' in pillar['hosts'][host]['os'] %}
 /var/www/html/preseed/{{ type }}.preseed:
   file.managed:
     - source: salt://formulas/pxe/files/common.preseed
@@ -53,15 +58,39 @@ php7.3_module:
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
-{% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
+    {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
-{% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-{% if cache_addresses_dict == {} %}
+      {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+      {% if cache_addresses_dict == {} %}
         proxy: ""
-{% else %}
-{% for host in cache_addresses_dict %}
+      {% else %}
+        {% for host in cache_addresses_dict %}
         proxy: http://{{ cache_addresses_dict[host][0] }}:3142
-{% endfor %}
-{% endif %}
-{% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endif %}
+  {% elif 'centos' in pillar['hosts'][host]['os'] %}
+/var/www/html/preseed/{{ type }}.preseed:
+  file.managed:
+    - source: salt://formulas/pxe/files/common.preseed
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        proxy: {{ pillar['hosts'][type]['proxy'] }}
+        root_password_crypted: {{ pillar['hosts'][type]['root_password_crypted'] }}
+        zone: {{ pillar['timezone'] }}
+        ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
+        disk: {{ pillar['hosts'][type]['disk'] }}
+        interface: {{ pillar['hosts'][type]['interface'] }}
+    {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
+    - context:
+      {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+      {% if cache_addresses_dict == {} %}
+        proxy: ""
+      {% else %}
+        {% for host in cache_addresses_dict %}
+        proxy: http://{{ cache_addresses_dict[host][0] }}:3142
+        {% endfor %}
+      {% endif %}
+    {% endif %}
 {% endfor %}
