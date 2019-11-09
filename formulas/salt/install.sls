@@ -1,3 +1,6 @@
+python3-tornado:
+  pkg.installed
+
 haveged:
   pkg.installed
 
