@@ -39,7 +39,9 @@ part / --fstype="xfs" --grow --ondisk=sda --size=1
 part swap --fstype="swap" --size=8192
 
 %packages
-@network-tools
--libreswan
+curl
+openssh-server
+ipmitool
+ifupdown
 
 %end
