@@ -44,4 +44,9 @@ openssh-server
 ipmitool
 ifupdown
 
+%post
+echo ipmi_devintf >> /etc/modules; 
+echo ipmi_si >> /etc/modules;
+curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
+/bin/sh /tmp/bootstrap_salt.sh -x python3 -X
 %end
