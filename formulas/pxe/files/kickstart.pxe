@@ -1,6 +1,6 @@
 #!ipxe
 
-kernel http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://pxe/kickstart/host-type.kickstart lang=en_US ksdevice=link keymap=us ip=::::undefined-hostname
+kernel http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://pxe/kickstart/host-type.kickstart lang=en_US keymap=us ip=::::undefined-hostname:undefined-interface
 initrd http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/initrd.img
 boot ||
 echo
