@@ -70,9 +70,9 @@ php7.3_module:
       {% endif %}
     {% endif %}
   {% elif 'centos' in pillar['hosts'][type]['os'] %}
-/var/www/html/preseed/{{ type }}.preseed:
+/var/www/html/kickstart/{{ type }}.kickstart:
   file.managed:
-    - source: salt://formulas/pxe/files/common.preseed
+    - source: salt://formulas/pxe/files/common.kickstart
     - makedirs: True
     - template: jinja
     - defaults:
