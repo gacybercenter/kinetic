@@ -48,9 +48,9 @@ bridge-utils_{{ interface }}:
 {% set subnet_network_cidr = salt['network']['convert_cidr'](subnet_network) %}
 
 {% for retval in subnet_network_cidr %}
-test-state:
+{{ retval }}:
   cmd.run:
-    - name: {{ retval }}
+    - name: foo
 {% endfor %}
 
 ## Actual state data starts here
