@@ -20,11 +20,17 @@ curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http
     - require:
       - file: /etc/apt-cacher-ng/acng.conf
 
+/var/run/apt-cacher-ng:
+  file.directory:
+    - user: apt-cacher-ng
+    - group: apt-cacher-ng
+
 apt-cacher-ng_service:
   service.running:
     - name: apt-cacher-ng
     - watch:
       - file: /etc/apt-cacher-ng/acng.conf
+      - file: /var/run/apt-cacher-ng
 
 {% for os, args in pillar.get('images', {}).items() %}
 extract_{{ args['name'] }}:
