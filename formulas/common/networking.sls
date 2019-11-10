@@ -45,6 +45,7 @@ bridge-utils_{{ interface }}:
 {% set subnet_network_split = subnet_network.split('/') %}
 {% set subnet_network_octets = subnet_network_split[0].split('.') %}
 {% set subnet_network_netmask = subnet_network_split[1] %}
+{% set subnet_network_cidr = salt['network']['convert_cidr'](subnet_network) %}
 
 ## Actual state data starts here
 ## Physical interface definition
