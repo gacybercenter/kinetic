@@ -49,7 +49,7 @@ bridge-utils_{{ interface }}:
 
 test-state:
   cmd.run:
-    - name: {{ subnet_network_cidr }}
+    - name: {{ subnet_network_cidr }}[netmask]
 
 ## Actual state data starts here
 ## Physical interface definition
