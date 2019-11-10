@@ -14,7 +14,6 @@
   <on_reboot>restart</on_reboot>
   <on_crash>destroy</on_crash>
   <devices>
-    <emulator>/usr/bin/kvm-spice</emulator>
     <graphics type='vnc' autoport='yes' />
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw' cache='none' io='native'/>
