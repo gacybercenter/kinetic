@@ -49,7 +49,7 @@ bridge-utils_{{ interface }}:
 
 testing:
   cmd.run:
-    - name: {{ for subnet_network_cidr }}
+    - name: {{ subnet_network_cidr }}
 
 
 ## Actual state data starts here
