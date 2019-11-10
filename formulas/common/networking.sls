@@ -45,10 +45,6 @@ bridge-utils_{{ interface }}:
 {% set subnet_network_split = subnet_network.split('/') %}
 {% set subnet_network_octets = subnet_network_split[0].split('.') %}
 {% set subnet_network_netmask = subnet_network_split[1] %}
-{% set subnet_network_cidr = salt['network']['convert_cidr'](subnet_network)['netmask'] %}
-
-echo {{subnet_network}}_{{ subnet_network_cidr }}:
-  cmd.run
 
 ## Actual state data starts here
 ## Physical interface definition
@@ -80,10 +76,13 @@ echo {{subnet_network}}_{{ subnet_network_cidr }}:
 ## Otherwise, calculate the IP address based on what management currently is.
   {% if grains['os_family'] == 'Debian' %}
     - proto: static
+    - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
   {% elif grains['os_family'] == 'RedHat' %}
     - proto: none
+    - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}
+    - netmask: {% salt['network']['convert_cidr'](subnet_network)['netmask'] %}
   {% endif %}
-    - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
+
 {% endif %}
 ## bind bridged ports to their parents and set appropriate requisite
     - ports: {{ interface }}
@@ -98,9 +97,11 @@ echo {{subnet_network}}_{{ subnet_network_cidr }}:
 {% else %}
   {% if grains['os_family'] == 'Debian' %}
     - proto: static
+    - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
   {% elif grains['os_family'] == 'RedHat' %}
     - proto: none
+    - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}
+    - netmask: {% salt['network']['convert_cidr'](subnet_network)['netmask'] %}
   {% endif %}
-    - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
 {% endfor %}
