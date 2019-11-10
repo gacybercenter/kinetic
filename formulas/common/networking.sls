@@ -47,7 +47,7 @@ bridge-utils_{{ interface }}:
 {% set subnet_network_netmask = subnet_network_split[1] %}
 {% set subnet_network_cidr = salt['network']['convert_cidr'](subnet_network) %}
 
-ddddtesting_{{ current_network }}:
+{{ current_network }}:
   cmd.run:
     - name: {{ subnet_network_cidr }}
 
