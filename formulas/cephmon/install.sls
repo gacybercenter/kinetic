@@ -19,7 +19,8 @@ update_packages_ceph:
 ceph_repo:
   pkgrepo.managed:
     - humanname: Ceph Nautilus
-    - name: https://download.ceph.com/rpm-nautilus/el7/$basearch
+    - name: ceph
+    - baseurl: https://download.ceph.com/rpm-nautilus/el7/$basearch
     - file: /etc/yum.repos.d/ceph.repo
     - key_url: https://download.ceph.com/keys/release.asc
 
