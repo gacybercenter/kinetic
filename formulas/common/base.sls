@@ -59,7 +59,7 @@ upgraded:
 {% elif grains['os_family'] == 'RedHat' %}
   {% if type not in ['cache','salt','pxe'] %}
     {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-/etc/apt/apt.conf.d/02proxy:
+/etc/yum.conf:
   file.managed:
     - contents: |
         [main]
