@@ -51,8 +51,8 @@ tgt=$(lsblk -n --output model,name | grep {{ disk }} | awk '{ print $2 }' | head
 echo "part /boot/efi --fstype efi --ondisk=$tgt --size=256" > /tmp/part-include
 echo "part pv.01 --grow --ondisk=$tgt --size=256" >> /tmp/part-include
 echo "volgroup vg0 pv.01" >> /tmp/part-include
-echo "logvol / --vgname vg0 --fstype xfs --grow --size=256" >> /tmp/part-include
-echo "logvol swap --vgname vg0 --fstype swap --size=8192" >> /tmp/part-include
+echo "logvol / --vgname vg0 --fstype xfs --grow --size=256 --name lv0" >> /tmp/part-include
+echo "logvol swap --vgname vg0 --fstype swap --size=8192 --name lv1" >> /tmp/part-include
 %end
 
 %post
