@@ -57,7 +57,7 @@ bridge-utils_{{ interface }}:
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['bridge'] == True %}
   {% if grains['os_family'] == 'Debian' %}
     - proto: manual
-  {% if grains['os_family'] == 'RedHat' %}
+  {% elif grains['os_family'] == 'RedHat' %}
     - proto: none
   {% endif %}
     - bridge: {{ current_network }}
