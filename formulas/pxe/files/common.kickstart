@@ -19,15 +19,17 @@ selinux --enforcing
 # Do not configure the X Window System
 skipx
 
-
 # Firewall configuration
 firewall --disabled
 # Reboot after installation
 reboot
 # System timezone
 timezone {{ zone }} --ntpservers={{ ntp_server }}
+
 # Use network installation
 url --url="http://mirror.centos.org/centos/7/os/x86_64" --proxy={{ proxy }}
+
+## Disk
 # System bootloader configuration
 bootloader --location=mbr
 # Clear the Master Boot Record
@@ -46,8 +48,11 @@ ipmitool
 %pre
 #!/bin/bash
 tgt=$(lsblk -n --output model,name | grep {{ disk }} | awk '{ print $2 }' | head -n 1 )
-echo "part / --fstype="xfs" --grow --ondisk=$tgt --size=1" > /tmp/part-include
-echo "part swap --fstype="swap" --size=8192" >> /tmp/part-include
+echo "part /boot/efi --fstype efi --ondisk=$tgt --size=256" > /tmp/part-include
+echo "part pv.01 --grow --ondisk=$tgt --size=256" >> /tmp/part-include
+echo "volgroup vg0 pv.01" >> /tmp/part-include
+echo "logvol / --vgname vg0 --fstype xfs --grow --size=256" >> /tmp/part-include
+echo "logvol swap --vgname vg0 --fstype swap --size=8192" >> /tmp/part-include
 %end
 
 %post
