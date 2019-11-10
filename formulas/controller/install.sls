@@ -27,7 +27,7 @@ libvirt-daemon-system:
 qemu-utils:
   pkg.installed
 
-{% elif grains['os_family'] == 'Red Hat' %}
+{% elif grains['os_family'] == 'RedHat' %}
 
 libvirt-python:
   pkg.installed
