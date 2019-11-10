@@ -45,9 +45,9 @@ ipmitool
 
 %pre
 #!/bin/bash
-tgt=$(ls -l /dev/disk/by-id | grep {{ disk }} | grep -v part | awk '{ print $11 }' | cut -d'/' -f 2 | head -n 1 ')
-part / --fstype="xfs" --grow --ondisk=$tgt --size=1
-part swap --fstype="swap" --size=8192
+tgt=$(lsblk -n --output model,name | grep {{ disk }} | awk '{ print $2 }' | head -n 1 )
+echo "part / --fstype="xfs" --grow --ondisk=$tgt --size=1" > /tmp/part-include
+echo "part swap --fstype="swap" --size=8192" >> /tmp/part-include
 %end
 
 %post
