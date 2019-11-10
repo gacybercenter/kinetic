@@ -49,7 +49,7 @@ bridge-utils_{{ interface }}:
 
 {{ current_network }}:
   cmd.run:
-    - name: echo {{ subnet_network_cidr }}(network)
+    - name: echo {{ subnet_network_cidr }}[network]
 
 ## Actual state data starts here
 ## Physical interface definition
