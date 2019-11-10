@@ -35,8 +35,7 @@ zerombr
 # Partition clearing information
 clearpart --all --initlabel
 # Disk partitioning information
-part / --fstype="xfs" --grow --ondisk=sda --size=1
-part swap --fstype="swap" --size=8192
+% include /tmp/part-include
 
 %packages
 curl
@@ -44,7 +43,15 @@ openssh-server
 ipmitool
 %end
 
+%pre
+#!/bin/bash
+tgt=$(ls -l /dev/disk/by-id | grep {{ disk }} | grep -v part | awk '{ print $11 }' | cut -d'/' -f 2 | head -n 1 ')
+part / --fstype="xfs" --grow --ondisk=$tgt --size=1
+part swap --fstype="swap" --size=8192
+%end
+
 %post
+#!/bin/bash
 echo ipmi_devintf >> /etc/modules;
 echo ipmi_si >> /etc/modules;
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
