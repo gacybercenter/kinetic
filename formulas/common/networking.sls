@@ -55,7 +55,11 @@ bridge-utils_{{ interface }}:
 ## If this interface is bridged, set appropriate state and master and
 ## companion interface
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['bridge'] == True %}
+  {% if grains['os_family'] == 'Debian' %}
     - proto: manual
+  {% if grains['os_family'] == 'RedHat' %}
+    - proto: none
+  {% endif %}
     - bridge: {{ current_network }}
 ## This is the companion interface if the interface is in bridge mode
 ## This won't exist on non-bridged devices
