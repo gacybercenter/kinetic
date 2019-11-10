@@ -45,6 +45,7 @@ bridge-utils_{{ interface }}:
 {% set subnet_network_split = subnet_network.split('/') %}
 {% set subnet_network_octets = subnet_network_split[0].split('.') %}
 {% set subnet_network_netmask = subnet_network_split[1] %}
+{% set netmask = salt['network']['convert_cidr'](subnet_network)['netmask'] %}
 
 ## Actual state data starts here
 ## Physical interface definition
@@ -80,9 +81,8 @@ bridge-utils_{{ interface }}:
   {% elif grains['os_family'] == 'RedHat' %}
     - proto: none
     - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}
-    - netmask: {% salt['network']['convert_cidr'](subnet_network)['netmask'] %}
+    - netmask: {{ netmask }}
   {% endif %}
-
 {% endif %}
 ## bind bridged ports to their parents and set appropriate requisite
     - ports: {{ interface }}
@@ -101,7 +101,7 @@ bridge-utils_{{ interface }}:
   {% elif grains['os_family'] == 'RedHat' %}
     - proto: none
     - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}
-    - netmask: {% salt['network']['convert_cidr'](subnet_network)['netmask'] %}
+    - netmask: {{ netmask }}
   {% endif %}
 {% endif %}
 {% endfor %}
