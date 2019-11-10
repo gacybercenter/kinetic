@@ -74,7 +74,11 @@ bridge-utils_{{ interface }}:
     - proto: dhcp
 {% else %}
 ## Otherwise, calculate the IP address based on what management currently is.
+  {% if grains['os_family'] == 'Debian' %}
     - proto: static
+  {% elif grains['os_family'] == 'RedHat' %}
+    - proto: none
+  {% endif %}
     - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
 ## bind bridged ports to their parents and set appropriate requisite
@@ -88,7 +92,11 @@ bridge-utils_{{ interface }}:
     - proto: dhcp
 ## Otherwise, calculate the IP address based on what management currently is.
 {% else %}
+  {% if grains['os_family'] == 'Debian' %}
     - proto: static
+  {% elif grains['os_family'] == 'RedHat' %}
+    - proto: none
+  {% endif %}
     - ipaddr: {{ subnet_network_octets[0] }}.{{ subnet_network_octets[1] }}.{{ management_address_octets[2] }}.{{ management_address_octets[3] }}/{{ subnet_network_netmask }}
 {% endif %}
 {% endfor %}
