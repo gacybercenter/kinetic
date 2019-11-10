@@ -22,7 +22,7 @@ ceph_repo:
     - name: ceph
     - baseurl: https://download.ceph.com/rpm-nautilus/el7/$basearch
     - file: /etc/yum.repos.d/ceph.repo
-    - key_url: https://download.ceph.com/keys/release.asc
+    - gpgkey: https://download.ceph.com/keys/release.asc
 
 update_packages_ceph:
   pkg.uptodate:
