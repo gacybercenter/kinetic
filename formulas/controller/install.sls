@@ -35,6 +35,6 @@ libvirt-python:
 libvirt-client:
   pkg.installed
 
-libvirt-daemon:
+libvirt-daemon-kvm:
   pkg.installed
 {% endif %}
