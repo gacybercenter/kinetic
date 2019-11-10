@@ -42,7 +42,6 @@ part swap --fstype="swap" --size=8192
 curl
 openssh-server
 ipmitool
-ifupdown
 %end
 
 %post
