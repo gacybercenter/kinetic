@@ -29,13 +29,13 @@ timezone {{ zone }} --ntpservers={{ ntp_server }}
 # Use network installation
 url --url="http://mirror.centos.org/centos/7/os/x86_64" --proxy={{ proxy }}
 # System bootloader configuration
-bootloader --location=none
+bootloader --location=mbr
 # Clear the Master Boot Record
 zerombr
 # Partition clearing information
 clearpart --all --initlabel
 # Disk partitioning information
-% include /tmp/part-include
+%include /tmp/part-include
 
 %packages
 curl
