@@ -48,7 +48,7 @@ bridge-utils_{{ interface }}:
 {% set subnet_network_cidr = salt['network']['convert_cidr'](subnet_network) %}
 
 {% for retval in subnet_network_cidr %}
-{{ current_network }}_{{ retval }}:
+{{ current_network }}_{{ retval }}[0]:
   cmd.run
 {% endfor %}
 
