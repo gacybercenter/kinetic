@@ -47,8 +47,9 @@ bridge-utils_{{ interface }}:
 {% set subnet_network_netmask = subnet_network_split[1] %}
 {% set subnet_network_cidr = salt['network']['convert_cidr'](subnet_network) %}
 
-##{{ subnet_network_cidr }}:
-##  test.nop
+test-state:
+  cmd.run:
+    - name: {{ subnet_network_cidr }}
 
 ## Actual state data starts here
 ## Physical interface definition
