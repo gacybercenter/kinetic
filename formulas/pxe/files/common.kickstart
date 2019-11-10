@@ -33,7 +33,7 @@ bootloader --location=mbr
 # Clear the Master Boot Record
 zerombr
 # Partition clearing information
-clearpart --all --initlabel
+clearpart --all --disklabel gpt
 # Disk partitioning information
 %include /tmp/part-include
 
