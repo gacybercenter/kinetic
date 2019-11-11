@@ -71,6 +71,13 @@ update_all:
   {% endif %}
 {% endif %}
 
+upgraded:
+  grains.present:
+    - value: True
+    - require:
+      - update_all
+
+
 install_pip:
   pkg.installed:
     - pkgs:
@@ -82,12 +89,6 @@ pyroute2:
     - require:
       - install_pip
     - reload_modules: True
-
-upgraded:
-  grains.present:
-    - value: True
-    - require:
-      - update_all
 
 {{ pillar['timezone'] }}:
   timezone.system:
