@@ -30,6 +30,7 @@ curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http
 apt-cacher-ng_service:
   service.running:
     - name: apt-cacher-ng
+    - enable: True
     - watch:
       - file: /etc/apt-cacher-ng/acng.conf
       - file: /etc/tmpfiles.d/apt-cacher-ng.conf
