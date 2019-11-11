@@ -37,6 +37,12 @@ update_all:
     - refresh: true
     - dist_upgrade: True
 
+upgraded:
+  grains.present:
+    - value: True
+    - require:
+      - update_all
+
   {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -68,15 +74,14 @@ update_all:
   pkg.uptodate:
     - refresh: true
 
-  {% endif %}
-{% endif %}
-
 upgraded:
   grains.present:
     - value: True
     - require:
       - update_all
 
+  {% endif %}
+{% endif %}
 
 install_pip:
   pkg.installed:
