@@ -5,7 +5,7 @@ apache2_service:
   service.running:
     - name: apache2
 
-https://git.ipxe.org/ipxe.git:
+https://github.com/ipxe/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
     - require:
