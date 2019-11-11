@@ -11,7 +11,7 @@ spawnzero_complete:
 
 {% endif %}
 
-{% if grains['os_family'] = "RedHat" %}
+{% if grains['os_family'] == "RedHat" %}
 haproxy_connect_any:
   selinux.boolean:
     - value: True
@@ -53,12 +53,16 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
     {% endfor %}
   {% endfor %}
 {% endif %}
+{% if grains['os_family'] == "RedHat" %}
+        seamless_reload: stats socket /var/run/haproxy.sock mode 600 expose-fd listeners level user
+{% endif %}        
     - defaults:
 {% if salt['pillar.get']('syslog_url', False) != False %}
         syslog: {{ pillar['syslog_url'] }}
 {% else %}
         syslog: 127.0.0.1:5514
 {% endif %}
+        seamless_reload: stats socket /var/run/haproxy.sock mode 600 expose-fd listeners level user
         hostname: {{ grains['id'] }}
         management_ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
