@@ -32,7 +32,7 @@ apt-cacher-ng_service:
     - name: apt-cacher-ng
     - watch:
       - file: /etc/apt-cacher-ng/acng.conf
-      - file: /var/run/apt-cacher-ng
+      - file: /etc/tmpfiles.d/apt-cacher-ng.conf
 
 {% for os, args in pillar.get('images', {}).items() %}
 extract_{{ args['name'] }}:
