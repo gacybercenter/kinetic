@@ -43,6 +43,18 @@ upgraded:
     - require:
       - update_all
 
+install_pip:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+    - reload_modules: True
+
+pyroute2:
+  pip.installed:
+    - require:
+      - install_pip
+    - reload_modules: True
+
   {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -80,20 +92,11 @@ upgraded:
     - require:
       - update_all
 
+python36-pyroute2:
+  pkg.installed      
+
   {% endif %}
 {% endif %}
-
-install_pip:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-    - reload_modules: True
-
-pyroute2:
-  pip.installed:
-    - require:
-      - install_pip
-    - reload_modules: True
 
 {{ pillar['timezone'] }}:
   timezone.system:
