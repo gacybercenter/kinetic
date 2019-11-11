@@ -11,6 +11,13 @@ spawnzero_complete:
 
 {% endif %}
 
+{% if grains['os_family'] = "RedHat" %}
+haproxy_connect_any:
+  selinux.boolean:
+    - value: True
+    - persist: True
+{% endif %}
+
 {% for domain in pillar['haproxy']['tls_domains'] %}
 
 acme_{{ domain }}:
