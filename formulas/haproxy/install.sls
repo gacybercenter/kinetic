@@ -1,7 +1,6 @@
 haproxy:
   pkg.installed
 
-
 {% if grains['os_family'] == 'Debian' %}
 
 letsencrypt:
