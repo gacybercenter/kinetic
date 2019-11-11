@@ -32,28 +32,11 @@ role:
 
   {% if salt['grains.get']('upgraded') != True %}
 
-install_pip:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-    - reload_modules: True
-
-pyroute2:
-  pip.installed:
-    - require:
-      - install_pip
-    - reload_modules: True
-
 update_all:
   pkg.uptodate:
     - refresh: true
     - dist_upgrade: True
 
-upgraded:
-  grains.present:
-    - value: True
-    - require:
-      - update_all
   {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -80,18 +63,31 @@ upgraded:
   {% endif %}
 
   {% if salt['grains.get']('upgraded') != True %}
+
 update_all:
   pkg.uptodate:
     - refresh: true
+
+  {% endif %}
+{% endif %}
+
+install_pip:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+    - reload_modules: True
+
+pyroute2:
+  pip.installed:
+    - require:
+      - install_pip
+    - reload_modules: True
 
 upgraded:
   grains.present:
     - value: True
     - require:
       - update_all
-
-  {% endif %}
-{% endif %}
 
 {{ pillar['timezone'] }}:
   timezone.system:
