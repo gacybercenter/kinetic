@@ -14,7 +14,7 @@ spawnzero_complete:
 /etc/tmpfiles.d/apt-cacher-ng.conf:
   file.managed:
     - contents: |
-        d /run/apt-cacher-ng 0755 apt-cacher-ng apt=cacher-ng
+        d /run/apt-cacher-ng 0755 apt-cacher-ng apt-cacher-ng
 {% endif %}
 
 /etc/apt-cacher-ng/acng.conf:
@@ -26,11 +26,6 @@ curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http
     - creates: /etc/apt-cacher-ng/centos_mirrors
     - require:
       - file: /etc/apt-cacher-ng/acng.conf
-
-/var/run/apt-cacher-ng:
-  file.directory:
-    - user: apt-cacher-ng
-    - group: apt-cacher-ng
 
 apt-cacher-ng_service:
   service.running:
