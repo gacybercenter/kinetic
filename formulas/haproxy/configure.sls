@@ -53,9 +53,6 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
     {% endfor %}
   {% endfor %}
 {% endif %}
-{% if grains['os_family'] == "RedHat" %}
-        seamless_reload: ""
-{% endif %}
     - defaults:
 {% if salt['pillar.get']('syslog_url', False) != False %}
         syslog: {{ pillar['syslog_url'] }}
