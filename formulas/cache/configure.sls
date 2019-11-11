@@ -33,7 +33,9 @@ apt-cacher-ng_service:
     - enable: True
     - watch:
       - file: /etc/apt-cacher-ng/acng.conf
+{% if grains['os_family'] == 'RedHat' %}
       - file: /etc/tmpfiles.d/apt-cacher-ng.conf
+{% endif %}
 
 {% for os, args in pillar.get('images', {}).items() %}
 extract_{{ args['name'] }}:
