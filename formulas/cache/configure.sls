@@ -20,7 +20,7 @@ curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http
     - require:
       - file: /etc/apt-cacher-ng/acng.conf
 
-/var/run/apt-cacher-ng:
+/run/apt-cacher-ng:
   file.directory:
     - user: apt-cacher-ng
     - group: apt-cacher-ng
