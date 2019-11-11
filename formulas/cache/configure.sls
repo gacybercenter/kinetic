@@ -10,6 +10,13 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 {% endif %}
 
+{% if grains['os_family'] == 'RedHat' %}
+/etc/tmpfiles.d/apt-cacher-ng.conf:
+  file.managed:
+    - contents: |
+        d /run/apt-cacher-ng 0755 apt-cacher-ng apt=cacher-ng
+{% endif %}
+
 /etc/apt-cacher-ng/acng.conf:
   file.managed:
     - source: salt://formulas/cache/files/acng.conf
