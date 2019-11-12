@@ -42,13 +42,6 @@ set_unix_socket_root:
     - database: mysql
     - query: update mysql.user set plugin = 'unix_socket' where user = 'root'
 
-root:
-  mysql_user.present:
-    - host: localhost
-    - allow_passwordless: True
-    - unix_socket: True
-    - connection_unix_socket: {{ sock }}
-
 {% for service in pillar['openstack_services'] %}
   {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
