@@ -109,6 +109,13 @@ fs:
     - require:
       - /kvm
 
+{% if grains['os_family'] == 'RedHat' %}
+libvirtd_service:
+  service.running:
+    - name: libvirtd
+    - enable: true
+{% endif %}    
+
 {% for os, args in pillar.get('images', {}).items() %}
 extract_{{ args['name'] }}:
   archive.extracted:

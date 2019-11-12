@@ -18,6 +18,7 @@ assign_uuid_to_{{ target }}:
     - arg:
       - /var/www/html/assignments/{{ target }}
       - {{ type }}-{{ uuid }}
+      - {{ pillar['hosts'][type]['os'] }}
 
 {% elif style == 'virtual' %}
 {% set spawning = salt['pillar.get']('spawning', '0') %}

@@ -72,6 +72,7 @@ fi
 if [ ! -f /kvm/vms/salt/disk0.raw ]
 then
   cp /kvm/images/debian10.raw /kvm/vms/salt/disk0.raw
+  qemu-img resize -f raw /kvm/vms/salt/disk0.raw 8G
 fi
 
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/salt/g; s/{{ interface }}/$interface/g" > /kvm/vms/salt/config.xml
@@ -85,6 +86,7 @@ virsh create /kvm/vms/salt/config.xml
 if [ ! -f /kvm/vms/pxe/disk0.raw ]
 then
   cp /kvm/images/debian10.raw /kvm/vms/pxe/disk0.raw
+  qemu-img resize -f raw /kvm/vms/pxe/disk0.raw 8G
 fi
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/pxe/g; s/{{ interface }}/$interface/g" > /kvm/vms/pxe/config.xml
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/pxe/g" > /kvm/vms/pxe/data/meta-data
