@@ -27,8 +27,9 @@ openstack.conf:
     - require:
       - sls: formulas/mysql/install
 
-mariadb:
+mariadb_service:
   service.running:
+    - name: mariadb
     - enable: True
     - watch:
       - file: openstack.conf
