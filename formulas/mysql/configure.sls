@@ -12,7 +12,11 @@ spawnzero_complete:
 
 {% endif %}
 
+{% if grains['os_family'] == 'Debian' %}
 /etc/mysql/mariadb.conf.d/99-openstack.cnf:
+{% elif grains['os_family'] == 'RedHat' %}
+/etc/my.cnf.d/openstack.cnf:
+{% endif %}
   file.managed:
     - source: salt://formulas/mysql/files/99-openstack.cnf
     - makedirs: True
