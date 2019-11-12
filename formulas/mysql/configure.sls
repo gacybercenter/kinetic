@@ -24,7 +24,7 @@ spawnzero_complete:
     - defaults:
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - require:
-      - sls: /formulas/mysql/install
+      - sls: formulas/mysql/install
 
 mariadb:
   service.running:
