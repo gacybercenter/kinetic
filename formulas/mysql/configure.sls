@@ -40,10 +40,10 @@ set_unix_socket_root:
   mysql_query.run:
     - database: mysql
     - query: "update mysql.user set plugin = 'unix_socket' where user = 'root';"
-    - output: "/root/socket_assignment"
+    - output: "/root/.socket_assignment"
     - require:
       - service: mariadb_service
-    - creates: /root/socket_assignment
+    - creates: /root/.socket_assignment
 
 {% for service in pillar['openstack_services'] %}
   {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
