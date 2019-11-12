@@ -43,7 +43,8 @@ set_unix_socket_root:
     - output: "/root/.socket_assignment"
     - require:
       - service: mariadb_service
-    - onlyif: test -e /root/.socket_assignment
+    - unless:
+      - test -e /root/.socket_assignment
 
 {% for service in pillar['openstack_services'] %}
   {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
