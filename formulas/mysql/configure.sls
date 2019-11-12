@@ -15,9 +15,9 @@ spawnzero_complete:
 openstack.conf:
   file.managed:
 {% if grains['os_family'] == 'Debian' %}
-    - name: /etc/mysql/mariadb.conf.d/99-openstack.cnf:
+    - name: /etc/mysql/mariadb.conf.d/99-openstack.cnf
 {% elif grains['os_family'] == 'RedHat' %}
-    - name: /etc/my.cnf.d/openstack.cnf:
+    - name: /etc/my.cnf.d/openstack.cnf
 {% endif %}
     - source: salt://formulas/mysql/files/openstack.conf
     - makedirs: True
