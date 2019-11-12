@@ -1,5 +1,5 @@
 include:
-  - formuasl/openstack/common/repo
+  - formulas/openstack/common/repo
 
 mariadb-server:
   pkg.installed
