@@ -36,6 +36,12 @@ mariadb_service:
     - watch:
       - file: openstack.conf
 
+set_unix_socket_root:
+  module.run:
+    - mysql.query:
+      - database: mysql
+      - query: update mysql.user set plugin = 'unix_socket' where user = 'root'
+
 root:
   mysql_user.present:
     - host: localhost
