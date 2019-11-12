@@ -18,7 +18,7 @@ mariadb-server:
 mariadb:
   pkg.installed
 
-python36-pymysql:
+python36-PyMySQL:
   pkg.installed:
     - reload_modules: True
 
