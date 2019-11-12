@@ -1,3 +1,5 @@
+{% if grains['os_family'] == 'Debian' %}
+
 uca:
   pkgrepo.managed:
     - humanname: Ubuntu Cloud Archive - Train
@@ -12,3 +14,23 @@ update_packages_uca:
     - onchanges:
       - pkgrepo: uca
     - dist_upgrade: True
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+rdo:
+  pkg.installed:
+    - name: centos-release-openstack-train
+
+update_packages_rdo:
+  pkg.uptodate:
+    - refresh: true
+    - onchanges:
+      - pkg: rdo
+
+openstack-selinux:
+  pkg.installed:
+    - require:
+      - pkg: rdo
+      - pkg: update_packages_rdo
+
+{% endif %}
