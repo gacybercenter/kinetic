@@ -22,4 +22,8 @@ python36-PyMySQL:
   pkg.installed:
     - reload_modules: True
 
+python36-mysql:
+  pkg.installed:
+    - reload_module: True
+
 {% endif %}
