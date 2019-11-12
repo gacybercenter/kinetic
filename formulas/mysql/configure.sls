@@ -1,5 +1,5 @@
 include:
-  - /formulas/mysql/install
+  - formulas/mysql/install
   - formulas/common/base
   - formulas/common/networking
 
