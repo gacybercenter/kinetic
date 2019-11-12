@@ -1,8 +1,6 @@
 include:
   - formulas/openstack/common/repo
 
-
-
 {% if grains['os_family'] == 'Debian' %}
 
 python3-memcache:
