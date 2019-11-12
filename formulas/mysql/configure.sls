@@ -12,13 +12,14 @@ spawnzero_complete:
 
 {% endif %}
 
-{% if grains['os_family'] == 'Debian' %}
-/etc/mysql/mariadb.conf.d/99-openstack.cnf:
-{% elif grains['os_family'] == 'RedHat' %}
-/etc/my.cnf.d/openstack.cnf:
-{% endif %}
+openstack.conf:
   file.managed:
-    - source: salt://formulas/mysql/files/99-openstack.cnf
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/mysql/mariadb.conf.d/99-openstack.cnf:
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/my.cnf.d/openstack.cnf:
+{% endif %}
+    - source: salt://formulas/mysql/files/openstack.conf
     - makedirs: True
     - template: jinja
     - defaults:
@@ -30,7 +31,7 @@ mariadb:
   service.running:
     - enable: True
     - watch:
-      - file: /etc/mysql/mariadb.conf.d/99-openstack.cnf
+      - file: openstack.conf
 
 root:
   mysql_user.present:
