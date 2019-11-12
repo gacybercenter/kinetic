@@ -41,6 +41,8 @@ set_unix_socket_root:
     - name: mysql.query
     - database: mysql
     - query: update mysql.user set plugin = 'unix_socket' where user = 'root'
+    - require:
+      - service: mariadb_service
 
 {% for service in pillar['openstack_services'] %}
   {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
