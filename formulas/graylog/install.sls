@@ -106,7 +106,7 @@ graylog_packages:
       - apt-transport-https
       - uuid-runtime
 {% elif grains['os_family'] == 'RedHat' %}
-      - nc
+      - nmap-ncat
 {% endif %}
       - mongodb-org
       - elasticsearch-oss
