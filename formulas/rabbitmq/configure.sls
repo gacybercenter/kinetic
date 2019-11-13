@@ -1,5 +1,5 @@
 include:
-  - /formulas/rabbitmq/install
+  - formulas/rabbitmq/install
   - formulas/common/base
   - formulas/common/networking
 
