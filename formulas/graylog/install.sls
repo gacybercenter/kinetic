@@ -105,7 +105,7 @@ graylog_packages:
 {% if grains['os_family'] == 'Debian' %}
       - apt-transport-https
       - uuid-runtime
-{% if grains['os_family'] == 'RedHat' %}
+{% elif grains['os_family'] == 'RedHat' %}
       - nc
 {% endif %}
       - mongodb-org
