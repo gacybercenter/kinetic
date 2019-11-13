@@ -86,7 +86,6 @@ update_packages_graylog:
     - refresh: true
     - onchanges:
       - pkgrepo: graylog_repo
-    - dist_upgrade: True
 
 {% endif %}
 
@@ -106,7 +105,7 @@ graylog_packages:
 {% if grain['os_family'] == 'Debian' %}
       - apt-transport-https
       - uuid-runtime
-{% endif %}      
+{% endif %}
       - mongodb-org
       - elasticsearch-oss
       - graylog-server
