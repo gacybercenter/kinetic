@@ -26,8 +26,8 @@ memcached_config:
 
 memcached_config:
   file.managed:
-    - name: /etc/sysconfig/memcache
-    - source: salt://formulas/memcached/files/memcache
+    - name: /etc/sysconfig/memcached
+    - source: salt://formulas/memcached/files/memcached
     - template: jinja
     - defaults:
         listen_addr: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
