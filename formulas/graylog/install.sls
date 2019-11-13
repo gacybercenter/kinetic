@@ -41,9 +41,14 @@ update_packages_graylog:
       - pkgrepo: graylog_repo
     - dist_upgrade: True
 
+
 install_java:
   pkg.installed:
+{% if grain['os_family'] == 'Debian' %}
     - name: openjdk-8-jre-headless
+{% elif grain['os_family'] == 'RedHat' %}
+    - name: java-1.8.0-openjdk-headless
+{% endif %}    
     - reload_modules: true
     - require_in: graylog_packages
 
