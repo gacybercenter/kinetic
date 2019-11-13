@@ -1,3 +1,5 @@
+{% if grains['os_family'] == 'Debian' %}
+
 ceph_repo:
   pkgrepo.managed:
     - humanname: Ceph Nautilus
@@ -11,6 +13,24 @@ update_packages_ceph:
     - onchanges:
       - ceph_repo
     - dist_upgrade: True
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+ceph_repo:
+  pkgrepo.managed:
+    - humanname: Ceph Nautilus
+    - name: ceph
+    - baseurl: https://download.ceph.com/rpm-nautilus/el7/$basearch
+    - file: /etc/yum.repos.d/ceph.repo
+    - gpgkey: https://download.ceph.com/keys/release.asc
+
+update_packages_ceph:
+  pkg.uptodate:
+    - refresh: true
+    - onchanges:
+      - ceph_repo
+
+{% endif %}
 
 install_ceph:
   pkg.installed:
