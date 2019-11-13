@@ -1,4 +1,4 @@
-{% if grain['os_family'] == 'Debian' %}
+{% if grains['os_family'] == 'Debian' %}
 
 mongodb_repo:
   pkgrepo.managed:
@@ -43,7 +43,7 @@ update_packages_graylog:
       - pkgrepo: graylog_repo
     - dist_upgrade: True
 
-{% elif grain['os_family'] == 'RedHat' %}
+{% elif grains['os_family'] == 'RedHat' %}
 
 mongodb_repo:
   pkgrepo.managed:
@@ -91,9 +91,9 @@ update_packages_graylog:
 
 install_java:
   pkg.installed:
-{% if grain['os_family'] == 'Debian' %}
+{% if grains['os_family'] == 'Debian' %}
     - name: openjdk-8-jre-headless
-{% elif grain['os_family'] == 'RedHat' %}
+{% elif grains['os_family'] == 'RedHat' %}
     - name: java-1.8.0-openjdk-headless
 {% endif %}
     - reload_modules: true
@@ -102,7 +102,7 @@ install_java:
 graylog_packages:
   pkg.installed:
     - pkgs:
-{% if grain['os_family'] == 'Debian' %}
+{% if grains['os_family'] == 'Debian' %}
       - apt-transport-https
       - uuid-runtime
 {% endif %}
