@@ -70,5 +70,5 @@ echo ipmi_devintf >> /etc/modules;
 echo ipmi_si >> /etc/modules;
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
 /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -i $hostname
-echo "log_level_logfile: debug" > /etc/salt/minion.d/log_level_logfile.conf
+echo "log_level_logfile: trace" > /etc/salt/minion.d/log_level_logfile.conf
 %end
