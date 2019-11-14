@@ -35,7 +35,7 @@ db_array:
     - run: true
     - force: true
 
-{% set disk = salt['cmd.run']('lsblk -p -n --output name,model | grep "device" | cut -d" " -f1') %}
+{% set disk = salt['cmd.run']('lsblk -p -n --output name,model | grep "device"') %}
 testing:
   cmd.run:
     - name: echo "{{ disk }}"
