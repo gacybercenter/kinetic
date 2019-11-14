@@ -45,13 +45,13 @@ db_lv:
 journal_mkpart_{{ osd }}:
   module.run:
     - name: partition.mkpart
-    - device: /dev/md/db_array
+    - device: /dev/db_vg/db_lv
     - part_type: primary
     - fs_type: ext2
     - start: {{ start }}%
     - end: {{ end }}%
     - unless:
-      - parted -s -m /dev/md/db_array print {{ osd + 1 }} 2>>/dev/null
+      - parted -s -m /dev/db_vg/db_lv print {{ osd + 1 }} 2>>/dev/null
 {% endfor %}
 
 {% for osd in pillar['osd_mappings'][grains['type']]['osd'] %}
