@@ -22,25 +22,18 @@ ceph osd crush add-bucket {{ grains['host'] }} host:
 ceph osd crush move {{ grains['host'] }} root=default:
   cmd.run
 
-#db_array:
-#  raid.present:
-#    - name: /dev/md/db_array
-#    - level: 0
-#    - devices:
-# {% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
-# {% set disk = salt['cmd.run']('lsblk -p -n --output name,model | "grep device" | cut -d" " -f1') %}
-#      - {{ disk }}
-# {% endfor %}
-#    - chunk: 512
-#    - run: true
-#    - force: true
-
+db_array:
+  raid.present:
+    - name: /dev/md/db_array
+    - level: 0
+    - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
 {% set disk = salt['cmd.run']('lsblk -p -n --output name,model | "grep device" | cut -d" " -f1') %}
-test_state:
-  cmd.run:
-    - name: echo {{ disk }}
+      - {{ disk }}
 {% endfor %}
+    - chunk: 512
+    - run: true
+    - force: true
 
 journal_partition:
   module.run:
