@@ -36,10 +36,10 @@ db_array:
     - force: true
 
 {% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
-{% set disk = salt.cmd.shell('lsblk -p -n --output name,model | grep '"'device'"' | cut -d" " -f1') %}
+{% set disk = salt.cmd.shell('lsblk -p -n --output name,model | grep device  | cut -d" " -f1') %}
 testing:
   cmd.run:
-    - name: echo "{{ disk }}"
+    - name: echo {{ disk }} {{ device }}
 {% endfor %}
 
 journal_partition:
