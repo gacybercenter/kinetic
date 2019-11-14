@@ -31,27 +31,16 @@ db_pv:
 db_vg:
   lvm.vg_present:
     - devices: {{ disk }}
-
-db_lv:
-  lvm.lv_present:
-    - vgname: db_vg
-    - extents: 100%FREE
 {% endfor %}
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
   {% set step = 100 // pillar['osd_mappings'][grains['type']]['osd'] | length %}
   {% set start = osd * step %}
   {% set end = start + step %}
-journal_mkpart_{{ osd }}:
-  module.run:
-    - name: partition.mkpart
-    - device: /dev/db_vg/db_lv
-    - part_type: primary
-    - fs_type: ext2
-    - start: {{ start }}%
-    - end: {{ end }}%
-    - unless:
-      - parted -s -m /dev/db_vg/db_lv print {{ osd + 1 }} 2>>/dev/null
+db_lv_{{ osd }}:
+  lvm.lv_present:
+    - vgname: db_vg
+    - extents: {{ step }}%
 {% endfor %}
 
 {% for osd in pillar['osd_mappings'][grains['type']]['osd'] %}
