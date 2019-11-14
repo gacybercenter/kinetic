@@ -50,7 +50,7 @@ initial_zap_osd_{{ osd }}:
 
 create_osd_{{ osd }}:
   cmd.run:
-    - name: ceph-volume lvm create --bluestore --data {{ osd }} --block.db /dev/db_vg/db_lv_{{ loop.index0 }}
+    - name: ceph-volume lvm create --bluestore --data {{ osd }} --block.db db_vg/db_lv_{{ loop.index0 }}
     - unless:
       - vgdisplay --verbose | grep -q {{ osd }}
     - require:
