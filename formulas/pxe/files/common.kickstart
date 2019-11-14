@@ -34,8 +34,6 @@ url --url="http://mirror.centos.org/centos/7/os/x86_64" --proxy={{ proxy }}
 bootloader --location=mbr
 # Clear the Master Boot Record
 zerombr
-# Partition clearing information
-clearpart --all --disklabel gpt
 # Disk partitioning information
 %include /tmp/part-include
 
