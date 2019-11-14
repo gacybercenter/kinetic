@@ -35,6 +35,10 @@ db_array:
     - run: true
     - force: true
 
+testing:
+  cmd.run:
+    - name: echo "{{ disk }}"
+
 journal_partition:
   module.run:
     - name: partition.mklabel
