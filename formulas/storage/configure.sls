@@ -55,6 +55,12 @@ journal_mkpart_{{ osd }}:
 {% endfor %}
 
 {% for osd in pillar['osd_mappings'][grains['type']]['osd'] %}
+initial_zap_osd_{{ osd }}:
+  cmd.run:
+    - name: ceph-volume lvm zap --destroy {{ osd }}
+    - prereq:
+      - cmd: create_osd_{{ osd }}
+
 create_osd_{{ osd }}:
   cmd.run:
     - name: ceph-volume lvm create --bluestore --data {{ osd }} --block.db /dev/md/db_array{{loop.index}}
