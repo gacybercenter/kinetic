@@ -45,7 +45,6 @@ ipmitool
 
 %pre
 #!/bin/bash
-tgt=$(lsblk -n --output model,name | grep {{ disk }} | awk '{ print $2 }' | head -n 1 )
 vgs --separator=: --noheadings | cut -f1 -d: | while read vg ; do vgchange -an $vg ; done
 pvs --separator=: --noheadings | cut -f1 -d: | while read pv ; do pvremove -ff -y $pv ; done
 mdadm --detail --scan | cut -f2 -d' ' | while read array ; do umount -l $array ; done
@@ -55,6 +54,7 @@ fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ;
 fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done
 fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done
 fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done
+tgt=$(lsblk -n --output model,name | grep "{{ disk }}" | awk '{ print $2 }' | head -n 1 )
 echo "part /boot --fstype xfs --size 512 --ondisk=$tgt" > /tmp/part-include
 echo "part /boot/efi --fstype efi --ondisk=$tgt --size=256" >> /tmp/part-include
 echo "part pv.01 --grow --ondisk=$tgt --size=256" >> /tmp/part-include
