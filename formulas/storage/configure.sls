@@ -1,7 +1,7 @@
 include:
-  - formulas/storage/install
   - formulas/common/base
   - formulas/common/networking
+  - formulas/storage/install
   - formulas/ceph/common/configure
 
 /etc/ceph/ceph.client.admin.keyring:
@@ -17,10 +17,14 @@ include:
     - contents_pillar: ceph:ceph-keyring
 
 ceph osd crush add-bucket {{ grains['host'] }} host:
-  cmd.run
+  cmd.run:
+    - require:
+      - sls: formulas/ceph/common/configure
 
 ceph osd crush move {{ grains['host'] }} root=default:
-  cmd.run
+  cmd.run:
+    - require:
+      - sls: formulas/ceph/common/configure
 
 db_array:
   raid.present:
@@ -71,4 +75,6 @@ create_osd_{{ osd }}:
     - name: ceph-volume lvm create --bluestore --data {{ osd }} --block.db /dev/md/db_array{{loop.index}}
     - unless:
       - vgdisplay --verbose | grep -q {{ osd }}
+    - require:
+      - sls: formulas/ceph/common/configure
 {% endfor %}
