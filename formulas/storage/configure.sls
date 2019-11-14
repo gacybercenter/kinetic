@@ -35,7 +35,7 @@ db_array:
     - run: true
     - force: true
 
-{% set disk = salt['cmd.run']('lsblk -p -n --output name') %}
+{% set disk = salt['cmd.run']('lsblk -p -n --output name').splitlines() %}
 testing:
   cmd.run:
     - name: echo "{{ disk }}"
