@@ -37,8 +37,9 @@ ceph osd crush move {{ grains['host'] }} root=default:
 
 {% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
 {% set disk = salt['cmd.run']('lsblk -p -n --output name,model | "grep device" | cut -d" " -f1') %}
-{{ disk }}:
-  test.nop
+test_state:
+  cmd.run:
+    - name: echo {{ disk }}
 {% endfor %}
 
 journal_partition:
