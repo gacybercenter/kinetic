@@ -8,11 +8,7 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-client-admin-keyring
 
-{% if grains['os_family'] == 'Debian' %}
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
-{% elif grains['os_family'] == 'RedHat' %}
-/etc/ceph/ceph.client.bootstrap-osd.keyring:
-{% endif %}
   file.managed:
     - contents_pillar: ceph:ceph-keyring
 
