@@ -22,26 +22,21 @@ ceph osd crush move {{ grains['host'] }} root=default:
     - require:
       - sls: formulas/ceph/common/configure
 
-db_array:
-  raid.present:
-    - name: /dev/md/db_array
-    - level: 0
-    - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
 {% set disk = salt.cmd.shell('lsblk -p -n --output name,model | grep "'+device+'" | cut -d" " -f1') %}
-      - {{ disk }}
-{% endfor %}
-    - chunk: 512
-    - run: true
-    - force: true
+db_pv:
+  lvm.pv_present:
+    - name: {{ disk }}
 
-journal_partition:
-  module.run:
-    - name: partition.mklabel
-    - device: /dev/md/db_array
-    - label_type: gpt
-    - unless:
-      - parted -s -m /dev/md/db_array print 2>>/dev/null
+db_vg:
+  lvm.vg_present:
+    - devices: {{ disk }}
+
+db_lv:
+  lvm.lv_present:
+    - vgname: db_vg
+    - size:
+{% endfor %}
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
   {% set step = 100 // pillar['osd_mappings'][grains['type']]['osd'] | length %}
