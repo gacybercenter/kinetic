@@ -35,7 +35,7 @@ db_vg:
 db_lv:
   lvm.lv_present:
     - vgname: db_vg
-    - size: 100%
+    - size: 100%FREE
 {% endfor %}
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
