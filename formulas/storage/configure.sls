@@ -44,7 +44,7 @@ db_lv_{{ osd }}:
 {% for osd in pillar['osd_mappings'][grains['type']]['osd'] %}
 initial_zap_osd_{{ osd }}:
   cmd.run:
-    - name: wipefs -fa {{ osd }} && dd if=/dev/zero of={{ osd }} bs=1M count=100
+    - name: ceph-volume lvm zap --destroy {{ osd }}
     - prereq:
       - cmd: create_osd_{{ osd }}
 
