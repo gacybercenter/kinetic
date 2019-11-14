@@ -12,13 +12,18 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
 
-ceph osd crush add-bucket {{ grains['host'] }} host:
+make_crush_bucket:
   cmd.run:
+    - name: ceph osd crush add-bucket {{ grains['host'] }} host
+    - unless:
+      - ceph osd tree | grep {{ grains ['host'] }}
     - require:
       - sls: formulas/ceph/common/configure
 
 ceph osd crush move {{ grains['host'] }} root=default:
   cmd.run:
+    - onchanges:
+      - cmd: make_crush_bucket
     - require:
       - sls: formulas/ceph/common/configure
 
