@@ -35,13 +35,6 @@ db_array:
     - run: true
     - force: true
 
-{% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
-{% set disk = salt.cmd.shell('lsblk -p -n --output name,model | grep "'+device+'" | cut -d" " -f1') %}
-testing:
-  cmd.run:
-    - name: echo {{ disk }} {{ device }}
-{% endfor %}
-
 journal_partition:
   module.run:
     - name: partition.mklabel
