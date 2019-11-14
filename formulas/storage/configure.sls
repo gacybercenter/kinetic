@@ -29,7 +29,7 @@ db_array:
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
 {% set disk = salt['cmd.run']('lsblk -p -n --output name,model | "grep device" | cut -d" " -f1') %}
-      - {{ disk }}
+      - /dev/nvme0n1
 {% endfor %}
     - chunk: 512
     - run: true
