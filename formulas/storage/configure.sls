@@ -35,7 +35,7 @@ db_array:
     - run: true
     - force: true
 
-{% set disk = salt['cmd.run']('lsblk -p -n --output name | grep "INTEL SSDPED1K750GA"').splitlines() %}
+{% set disk = salt['cmd.run']('lsblk -p -n --output name '|' grep "INTEL SSDPED1K750GA"').splitlines() %}
 testing:
   cmd.run:
     - name: echo "{{ disk }}"
