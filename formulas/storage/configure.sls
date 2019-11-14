@@ -37,7 +37,7 @@ db_vg:
   {% set step = 100 // pillar['osd_mappings'][grains['type']]['osd'] | length %}
   {% set start = osd * step %}
   {% set end = start + step %}
-db_lv_{{ osd }}:
+db_lv_{{ osd }}_{{ step }}:
   lvm.lv_present:
     - vgname: db_vg
     - extents: {{ step }}%
