@@ -84,15 +84,28 @@ initialize_keystone:
   file.managed:
     - contents_pillar: ldap_ca
 
+{% if grains['os_family'] == 'Debian' %}
+
 /usr/local/share/ca-certificates/ldap_ca.crt:
   file.managed:
     - contents_pillar: ldap_ca
 
-{% if grains['os_family'] == 'Debian' %}
 update-ca-certificates:
   cmd.run:
     - onchanges:
       - file: /usr/local/share/ca-certificates/ldap_ca.crt
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+/etc/pki/ca-trust/source/anchors/ldap_ca.crt:
+  file.managed:
+    - contents_pillar: ldap_ca
+
+update-ca-trust extract:
+  cmd.run:
+    - onchanges:
+      - file: /usr/local/share/ca-certificates/ldap_ca.crt
+
 {% endif %}
 
 project_init:
