@@ -25,7 +25,7 @@ spawnzero_complete:
 {% endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
 
-{% if grain['os_family'] == 'Debian' %}
+{% if grains['os_family'] == 'Debian' %}
 /etc/apache2/sites-available/keystone.conf:
   file.managed:
     - source: salt://formulas/keystone/files/apache-keystone.conf
@@ -61,7 +61,7 @@ initialize_keystone:
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
 
-{% if grain['os_family'] == 'Debian' %}
+{% if grains['os_family'] == 'Debian' %}
 /etc/apache2/apache2.conf:
   file.managed:
     - source: salt://formulas/keystone/files/apache2.conf
@@ -95,7 +95,7 @@ project_init:
     - creates:
       - /etc/keystone/projects_done
 
-{% if grain['os_family'] == 'Debian' %}
+{% if grains['os_family'] == 'Debian' %}
 systemctl restart apache2.service && sleep 10:
   cmd.run:
     - prereq:
