@@ -1,7 +1,5 @@
-{% set keystone_domain = pillar['keystone_ldap_configuration']['keystone_domain'] %}
-
 include:
-  - /formulas/keystone/install
+  - formulas/keystone/install
   - formulas/common/base
   - formulas/common/networking
 
@@ -27,10 +25,13 @@ spawnzero_complete:
 {% endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
 
+{% if grain['os_family'] == 'Debian' %}
 /etc/apache2/sites-available/keystone.conf:
   file.managed:
     - source: salt://formulas/keystone/files/apache-keystone.conf
+{% endif %}
 
+{% set keystone_domain = pillar['keystone_ldap_configuration']['keystone_domain'] %}
 /etc/keystone/domains/keystone.{{ keystone_domain }}.conf:
   file.managed:
     - source: salt://formulas/keystone/files/keystone-ldap.conf
@@ -60,12 +61,14 @@ initialize_keystone:
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
 
+{% if grain['os_family'] == 'Debian' %}
 /etc/apache2/apache2.conf:
   file.managed:
     - source: salt://formulas/keystone/files/apache2.conf
     - template: jinja
     - defaults:
         servername: ServerName {{ grains['id'] }}
+{% endif %}
 
 /etc/keystone/ldap_ca.crt:
   file.managed:
@@ -92,6 +95,7 @@ project_init:
     - creates:
       - /etc/keystone/projects_done
 
+{% if grain['os_family'] == 'Debian' %}
 systemctl restart apache2.service && sleep 10:
   cmd.run:
     - prereq:
@@ -105,6 +109,7 @@ apache2_service:
       - file: /etc/keystone/keystone.conf
       - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
       - file: /etc/apache2/apache2.conf
+{% endif %}
 
 /var/lib/keystone/keystone.db:
   file.absent
