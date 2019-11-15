@@ -29,6 +29,16 @@ spawnzero_complete:
 /etc/apache2/sites-available/keystone.conf:
   file.managed:
     - source: salt://formulas/keystone/files/apache-keystone.conf
+    - template: jinja
+    - defaults:
+        webserver: apache2
+{% elif grains['os_family'] == 'RedHat' %}
+/etc/httpd/conf.d/keystone.conf:
+  file.managed:
+    - source: salt://formulas/keystone/files/apache-keystone.conf
+    - template: jinja
+    - defaults:
+        webserver: httpd
 {% endif %}
 
 {% set keystone_domain = pillar['keystone_ldap_configuration']['keystone_domain'] %}
