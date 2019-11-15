@@ -132,6 +132,11 @@ project_init:
         internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
         keystone_domain: {{ keystone_domain }}
+{% if grains['os_family'] == 'Debian' %}
+        webserver: apache2
+{% if grains['os_family'] == 'RedHat' %}
+        webserver: httpd
+{% endif %}
     - creates:
       - /etc/keystone/projects_done
 
