@@ -20,9 +20,9 @@ keystone_packages:
   pkg.installed:
     - pkgs:
       - openstack-keystone
-      - python-ldap
-      - python-openstackclient
-      - ldap-utils
+      - python2-ldap ## version agnostic
+      - python2-openstackclient ## version agnostic
+      - openldap-clients
       - httpd
       - mod_wsgi
 
