@@ -18,11 +18,11 @@ nova_packages:
 nova_packages:
   pkg.installed:
     - pkgs:
-      - nova-api
-      - nova-conductor
-      - nova-spiceproxy
-      - nova-scheduler
-      - python3-openstackclient
+      - openstack-nova-api
+      - openstack-nova-conductor
+      - openstack-nova-spiceproxy
+      - openstack-nova-scheduler
+      - python2-openstackclient
       - spice-html5
 
 {% endif %}
