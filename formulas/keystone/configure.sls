@@ -26,19 +26,23 @@ spawnzero_complete:
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
 
 {% if grains['os_family'] == 'Debian' %}
+
 /etc/apache2/sites-available/keystone.conf:
   file.managed:
     - source: salt://formulas/keystone/files/apache-keystone.conf
     - template: jinja
     - defaults:
         webserver: apache2
+
 {% elif grains['os_family'] == 'RedHat' %}
+
 /etc/httpd/conf.d/keystone.conf:
   file.managed:
     - source: salt://formulas/keystone/files/apache-keystone.conf
     - template: jinja
     - defaults:
         webserver: httpd
+
 {% endif %}
 
 {% set keystone_domain = pillar['keystone_ldap_configuration']['keystone_domain'] %}
@@ -72,12 +76,23 @@ initialize_keystone:
         admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
 
 {% if grains['os_family'] == 'Debian' %}
+
 /etc/apache2/apache2.conf:
   file.managed:
     - source: salt://formulas/keystone/files/apache2.conf
     - template: jinja
     - defaults:
-        servername: ServerName {{ grains['id'] }}
+        ServerName: ServerName {{ grains['id'] }}
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+/etc/httpd/conf/httpd.conf:
+  file.managed:
+    - source: salt://formulas/keystone/files/httpd.conf
+    - template: jinja
+    - defaults:
+        ServerName: ServerName {{ grains['id'] }}
+
 {% endif %}
 
 /etc/keystone/ldap_ca.crt:
@@ -134,6 +149,23 @@ apache2_service:
       - file: /etc/keystone/keystone.conf
       - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
       - file: /etc/apache2/apache2.conf
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+systemctl restart httpd.service && sleep 10:
+  cmd.run:
+    - prereq:
+      - cmd: project_init
+
+httpd_service:
+  service.running:
+    - name: httpd
+    - enable: True
+    - watch:
+      - file: /etc/keystone/keystone.conf
+      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
+      - file: /etc/httpd/conf/httpd.conf
+
 {% endif %}
 
 /var/lib/keystone/keystone.db:
