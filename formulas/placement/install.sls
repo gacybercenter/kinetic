@@ -10,7 +10,6 @@ placement_packages:
       - placement-api
       - python3-pymysql
 
-
 {% elif grains['os_family'] == 'RedHat' %}
 
 placement_packages:

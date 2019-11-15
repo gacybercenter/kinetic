@@ -1,7 +1,7 @@
 include:
   - formulas/common/base
   - formulas/common/networking
-  - /formulas/placement/install
+  - formulas/placement/install
 
 {% if grains['spawning'] == 0 %}
 
@@ -47,8 +47,13 @@ spawnzero_complete:
 {% endfor %}
         password: {{ pillar['placement']['placement_service_password'] }}
 
-placement_api_service:
+apache2_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: apache2
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: httpd
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/placement/placement.conf
