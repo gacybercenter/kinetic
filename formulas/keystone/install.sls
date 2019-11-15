@@ -25,5 +25,6 @@ keystone_packages:
       - openldap-clients
       - httpd
       - mod_wsgi
+      - openstack-selinux
 
 {% endif %}
