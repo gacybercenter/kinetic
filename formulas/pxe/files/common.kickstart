@@ -71,4 +71,5 @@ echo ipmi_si >> /etc/modules;
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
 /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -i $hostname
 echo "log_level_logfile: trace" > /etc/salt/minion.d/log_level_logfile.conf
+echo "auth_safemode: true" > /etc/salt/minion.d/auth_safemode.conf
 %end
