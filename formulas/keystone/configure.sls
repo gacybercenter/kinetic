@@ -134,7 +134,7 @@ project_init:
         keystone_domain: {{ keystone_domain }}
 {% if grains['os_family'] == 'Debian' %}
         webserver: apache2
-{% if grains['os_family'] == 'RedHat' %}
+{% elif grains['os_family'] == 'RedHat' %}
         webserver: httpd
 {% endif %}
     - creates:
