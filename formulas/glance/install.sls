@@ -22,6 +22,5 @@ glance_packages:
       - python-rbd
       - python-rados
       - python2-openstackclient
-      - openstack-selinux
 
 {% endif %}
