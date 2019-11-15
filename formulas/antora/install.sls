@@ -45,7 +45,7 @@ antora_packages:
   pkg.installed:
     - pkgs:
       - curl
-      - gnupg
+      - gnupg2
       - nodejs
       - httpd
     - reload_modules: True
