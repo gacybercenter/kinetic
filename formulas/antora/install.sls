@@ -45,7 +45,6 @@ antora_packages:
   pkg.installed:
     - pkgs:
       - curl
-      - lsb-release
       - gnupg
       - nodejs
       - httpd
