@@ -33,7 +33,7 @@ nodesource:
     - name: nodesource
     - baseurl: https://rpm.nodesource.com/pub_12.x/el/7/x86_64/
     - file: /etc/yum.repos.d/nodesource.repo
-    - gpgkey: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+    - gpgkey: https://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
 
 update_packages_nodesource:
   pkg.uptodate:
