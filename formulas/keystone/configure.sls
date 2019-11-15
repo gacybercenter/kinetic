@@ -119,7 +119,7 @@ update-ca-certificates:
 update-ca-trust extract:
   cmd.run:
     - onchanges:
-      - file: /usr/local/share/ca-certificates/ldap_ca.crt
+      - file: /etc/pki/ca-trust/source/anchors/ldap_ca.crt
 
 {% endif %}
 
