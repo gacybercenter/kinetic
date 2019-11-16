@@ -28,6 +28,11 @@ local_settings:
 {% elif grains['os_family'] == 'RedHat' %}
         webroot: dashboard
 {% endif %}
+{% if grains['os_family'] == 'Debian' %}
+        secret_key: /var/lib/openstack-dashboard/secret_key
+{% elif grains['os_family'] == 'RedHat' %}
+        secret_key: /usr/share/openstack-dashboard/openstack_dashboard/local/.secret_key_store
+{% endif %}
 {% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
@@ -74,6 +79,7 @@ apache_conf:
 {% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
+
 secret_key:
   file.managed:
     - name: /var/lib/openstack-dashboard/secret_key

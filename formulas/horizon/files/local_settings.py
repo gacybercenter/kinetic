@@ -4,7 +4,7 @@ from horizon.utils import secret_key
 from openstack_dashboard.settings import HORIZON_CONFIG
 DEBUG = False
 LOCAL_PATH = os.path.dirname(os.path.abspath(__file__))
-SECRET_KEY = secret_key.generate_or_read_from_file('/var/lib/openstack-dashboard/secret_key')
+SECRET_KEY = secret_key.generate_or_read_from_file('{{ secret_key }}')
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
