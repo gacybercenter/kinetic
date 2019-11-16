@@ -72,8 +72,12 @@ make_designate_service:
     - contents_pillar: designate:designate_rndc_key
     - mode: 640
     - user: root
+{% if grains['os_family'] == 'Debian' %}
     - group: bind
-
+{% elif grains['os_family'] == 'RedHat' %}
+    - group: named
+{% endif %}
+    
 designate_api_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
