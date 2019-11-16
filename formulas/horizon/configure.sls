@@ -69,7 +69,7 @@ apache_conf:
   file.managed:
     - user: horizon
     - group: horizon
-{% if grains['os_family'] == 'RedHat' %}
+{% elif grains['os_family'] == 'RedHat' %}
 /var/lib/openstack-dashboard/secret_key:
   file.managed:
     - user: apache
