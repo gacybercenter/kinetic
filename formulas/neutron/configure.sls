@@ -73,6 +73,13 @@ spawnzero_complete:
   file.managed:
     - source: salt://formulas/neutron/files/ml2_conf.ini
 
+{% if grains['os_family'] == 'RedHat' %}
+plugin_symlink:
+  file.symlink:
+    - name: /etc/neutron/plugin.ini
+    - target: /etc/neutron/plugins/ml2/ml2_conf.ini
+{% endif %}
+
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
     - source: salt://formulas/neutron/files/linuxbridge_agent.ini
