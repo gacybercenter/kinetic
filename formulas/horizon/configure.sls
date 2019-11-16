@@ -58,10 +58,12 @@ apache_conf:
     - defaults:
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
 
+{% if grains['os_family'] == 'Debian' %}
 /var/lib/openstack-dashboard/secret_key:
   file.managed:
     - user: horizon
     - group: horizon
+{% endif %}
 
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
 install_theme:
