@@ -156,11 +156,6 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  key = {{ salt['cephx.make_key']() }}
                  caps mon = "allow rwx"
                  caps osd = "allow rwx"
-          ceph-client-radosgw-keyring: |
-            [client.radosgw]
-                 key = {{ salt['cephx.make_key']() }}
-                 caps mon = "allow rwx"
-                 caps osd = "allow rwx"
           ceph-client-compute-key: {{ computekey }}
           ceph-client-volumes-key: {{ volumeskey }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
