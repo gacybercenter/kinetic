@@ -75,7 +75,6 @@ spawnzero_complete:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
 
-
 cinder_api_service:
   service.running:
 {% if grains['os_family'] == 'Debian'}
@@ -97,6 +96,6 @@ cinder_scheduler_service:
 cinder_volume_service:
   service.running:
     - name: cinder-volume
-    - enable: true        
+    - enable: true
     - watch:
       - file: /etc/cinder/cinder.conf
