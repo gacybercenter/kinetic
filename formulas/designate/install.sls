@@ -26,6 +26,7 @@ designate_packages:
       - openstack-designate-mdns
       - openstack-designate-producer
       - openstack-designate-worker
+      - openstack-designate-central
       - bind
       - bind-utils
       - python-memcached
