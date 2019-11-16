@@ -39,9 +39,15 @@ spawnzero_complete:
             ]
 {% endif %}
 
+{% if grains['os_family'] == 'Debian' %}
 /etc/apache2/conf-enabled/openstack-dashboard.conf:
   file.managed:
     - source: salt://formulas/horizon/files/openstack-dashboard.conf
+{% elif grains['os_family'] == 'Debian' %}
+/etc/httpd/conf.d/openstack-dashboard.conf:
+  file.managed:
+    - source: salt://formulas/horizon/files/openstack-dashboard.conf
+{% endif %}
 
 /var/www/html/index.html:
   file.managed:
