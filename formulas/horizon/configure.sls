@@ -84,7 +84,7 @@ apache_conf:
   file.managed:
     - user: apache
     - group: apache
-    - mode: 600    
+    - mode: 600
 {% endif %}
 
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
@@ -104,8 +104,6 @@ apache2_service:
 {% endif %}
     - watch:
       - file: local_settings
-{% if grains['os_family'] == 'Debian' %}
       - file: /var/lib/openstack-dashboard/secret_key
-{% endif %}
       - file: apache_conf
       - git: install_theme
