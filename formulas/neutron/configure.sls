@@ -112,9 +112,9 @@ fs.inotify.max_user_instances:
 neutron_server_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
-        name: neutron-server
+    - name: neutron-server
 {% elif grains['os_family'] == 'RedHat' %}
-        name: openstack-neutron
+    - name: openstack-neutron
 {% endif %}
     - watch:
       - file: /etc/neutron/neutron.conf
