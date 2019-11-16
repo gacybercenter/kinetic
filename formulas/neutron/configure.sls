@@ -119,6 +119,7 @@ fs.inotify.max_user_instances:
 neutron_server_service:
   service.running:
     - name: neutron-server
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -131,6 +132,7 @@ neutron_server_service:
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -143,6 +145,7 @@ neutron_linuxbridge_agent_service:
 neutron_dhcp_agent_service:
   service.running:
     - name: neutron-dhcp-agent
+    - enable: true 
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -155,6 +158,7 @@ neutron_dhcp_agent_service:
 neutron_metadata_agent_service:
   service.running:
     - name: neutron-metadata-agent
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -167,6 +171,7 @@ neutron_metadata_agent_service:
 neutron_l3_agent_service:
   service.running:
     - name: neutron-l3-agent
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
