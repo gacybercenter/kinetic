@@ -74,7 +74,6 @@ make_designate_service:
     - user: root
     - group: bind
 
-
 designate_api_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
