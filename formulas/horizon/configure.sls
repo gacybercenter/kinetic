@@ -102,6 +102,7 @@ apache2_service:
 {% elif grains['os_family'] == 'RedHat' %}
     - name: httpd
 {% endif %}
+    - enable: true
     - watch:
       - file: local_settings
       - file: /var/lib/openstack-dashboard/secret_key
