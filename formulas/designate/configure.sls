@@ -85,55 +85,35 @@ bind_conf:
 
 designate_api_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: designate-api
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-designate-api
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
 
 designate_central_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: designate-central
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-designate-central
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
 
 designate_worker_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: designate-worker
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-designate-worker
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
 
 designate_producer_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: designate-producer
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-designate-producer
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
 
 designate_mdns_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: designate-mdns
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-designate-mdns
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
@@ -143,7 +123,7 @@ designate_bind9_service:
 {% if grains['os_family'] == 'Debian' %}
     - name: bind9
 {% elif grains['os_family'] == 'RedHat' %}
-    - name: bind
+    - name: named
 {% endif %}
     - enable: true
     - watch:
