@@ -1,17 +1,7 @@
-uca:
-  pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - train
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
-    - file: /etc/apt/sources.list.d/cloudarchive-train.list
-    - keyid: ECD76E3E
-    - keyserver: keyserver.ubuntu.com
+include:
+  - formulas/openstack/common/repo
 
-update_packages_uca:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkgrepo: uca
-    - dist_upgrade: True
+{% if grains['os_family'] == 'Debian' %}
 
 horizon_packages:
   pkg.installed:
@@ -23,3 +13,18 @@ horizon_packages:
       - python3-designate-dashboard
       - openstack-dashboard
       - git
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+horizon_packages:
+  pkg.installed:
+    - pkgs:
+      - python2-openstackclient
+      - openstack-heat-ui
+      - python2-pip
+      - python2-setuptools
+      - openstack-designate-ui
+      - openstack-dashboard
+      - git
+
+{% endif %}
