@@ -75,20 +75,28 @@ spawnzero_complete:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
 
+
 cinder_api_service:
   service.running:
+{% if grains['os_family'] == 'Debian'}
     - name: apache2
+{% elif grains['os_family'] == 'RedHat'}
+    - name: httpd
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/cinder/cinder.conf
 
 cinder_scheduler_service:
   service.running:
     - name: cinder-scheduler
+    - enable: true
     - watch:
       - file: /etc/cinder/cinder.conf
 
 cinder_volume_service:
   service.running:
     - name: cinder-volume
+    - enable: true        
     - watch:
       - file: /etc/cinder/cinder.conf
