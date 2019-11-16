@@ -78,11 +78,13 @@ apache_conf:
   file.managed:
     - user: horizon
     - group: horizon
+    - mode: 600
 {% elif grains['os_family'] == 'RedHat' %}
 /var/lib/openstack-dashboard/secret_key:
   file.managed:
     - user: apache
     - group: apache
+    - mode: 600    
 {% endif %}
 
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
