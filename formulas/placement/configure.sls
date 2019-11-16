@@ -48,6 +48,7 @@ spawnzero_complete:
         password: {{ pillar['placement']['placement_service_password'] }}
 
 {% if grains['os_family'] == 'Debian' %}
+
 apache2_service:
   service.running:
     - name: apache2
