@@ -1,5 +1,5 @@
 include:
-  - /formulas/heat/install
+  - formulas/heat/install
   - formulas/common/base
   - formulas/common/networking
 
@@ -15,7 +15,7 @@ make_heat_service:
         heat_service_password: {{ pillar['heat']['heat_service_password'] }}
         heat_internal_endpoint: {{ pillar['openstack_services']['heat']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint']['path'] }}
         heat_public_endpoint: {{ pillar['openstack_services']['heat']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['heat']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['public_endpoint']['path'] }}
-        heat_admin_endpoint: {{ pillar['openstack_services']['heat']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint']['path'] }}        
+        heat_admin_endpoint: {{ pillar['openstack_services']['heat']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint']['path'] }}
         heat_internal_endpoint_cfn: {{ pillar['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['internal_endpoint_cfn']['path'] }}
         heat_public_endpoint_cfn: {{ pillar['openstack_services']['heat']['configuration']['public_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['heat']['configuration']['public_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['public_endpoint_cfn']['path'] }}
         heat_admin_endpoint_cfn: {{ pillar['openstack_services']['heat']['configuration']['admin_endpoint_cfn']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint_cfn']['port'] }}{{ pillar ['openstack_services']['heat']['configuration']['admin_endpoint_cfn']['path'] }}
@@ -57,18 +57,33 @@ spawnzero_complete:
 
 heat_api_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: heat-api
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-heat-api
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/heat/heat.conf
 
 heat_api_cfn_service:
   service.running:
-    - name: heat-api-cfn
+{% if grains['os_family'] == 'Debian' %}
+    - name: heat-api-cfg
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-heat-cfn
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/heat/heat.conf
 
 heat_engine_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: heat-engine
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-heat-engine
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/heat/heat.conf
