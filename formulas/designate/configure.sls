@@ -64,6 +64,11 @@ bind_conf:
     - template: jinja
     - defaults:
         public_dns: {{ pillar['networking']['addresses']['float_dns'] }}
+{% if grains['os_family'] == 'Debian' %}
+        directory: /var/cache/bind
+{% elif grains['os_family'] == 'RedHat' %}
+        directory: /var/named
+{% endif %}
 
 /etc/designate/pools.yaml:
   file.managed:
