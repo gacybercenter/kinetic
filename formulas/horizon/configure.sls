@@ -74,20 +74,21 @@ apache_conf:
 {% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
-/var/lib/openstack-dashboard/secret_key:
+secret_key:
   file.managed:
+    - name: /var/lib/openstack-dashboard/secret_key
     - user: horizon
     - group: horizon
     - mode: 600
 {% elif grains['os_family'] == 'RedHat' %}
-/var/lib/openstack-dashboard/secret_key:
+secret_key:
   file.managed:
+    - name: /var/lib/openstack-dashboard/secret_key
     - user: apache
     - group: apache
     - mode: 600
-
-/usr/share/openstack-dashboard/openstack_dashboard/local/.secret_key_store:
   file.managed:
+    - name: /usr/share/openstack-dashboard/openstack_dashboard/local/.secret_key_store
     - user: apache
     - group: apache
     - mode: 600
@@ -111,6 +112,6 @@ apache2_service:
     - enable: true
     - watch:
       - file: local_settings
-      - file: /var/lib/openstack-dashboard/secret_key
+      - file: secret_key
       - file: apache_conf
       - git: install_theme
