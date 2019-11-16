@@ -67,7 +67,7 @@ nova-manage db sync:
         flavor_name: {{ flavor_name }}
     - require:
       - file: /etc/nova/nova.conf
-      - service: nova-api
+      - service: nova_api_service
     - creates:
       - /etc/nova/flavors/{{ flavor_name }}
 
