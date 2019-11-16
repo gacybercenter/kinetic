@@ -44,7 +44,7 @@ apache_conf:
   file.managed:
     - name: /etc/apache2/conf-enabled/openstack-dashboard.conf
     - source: salt://formulas/horizon/files/openstack-dashboard.conf
-{% elif grains['os_family'] == 'Debian' %}
+{% elif grains['os_family'] == 'RedHat' %}
 apache_conf:
   file.managed:
     - name: /etc/httpd/conf.d/openstack-dashboard.conf
@@ -75,7 +75,7 @@ apache2_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
     - name: apache2
-{% elif grains['os_family'] == 'RedHat' %}    
+{% elif grains['os_family'] == 'RedHat' %}
     - name: httpd
 {% endif %}
     - watch:
