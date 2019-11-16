@@ -66,7 +66,7 @@ apache_conf:
 {% if grains['os_family'] == 'Debian' %}
     - alias: horizon
 {% elif grains['os_family'] == 'RedHat' %}
-    - name: dashboard
+    - alias: dashboard
 {% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
