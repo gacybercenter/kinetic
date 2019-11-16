@@ -63,6 +63,11 @@ apache_conf:
     - template: jinja
     - defaults:
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
+{% if grains['os_family'] == 'Debian' %}
+    - alias: horizon
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: dashboard
+{% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
 /var/lib/openstack-dashboard/secret_key:
