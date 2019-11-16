@@ -43,12 +43,12 @@ spawnzero_complete:
 apache_conf:
   file.managed:
     - name: /etc/apache2/conf-enabled/openstack-dashboard.conf
-    - source: salt://formulas/horizon/files/openstack-dashboard.conf
+    - source: salt://formulas/horizon/files/uca-dashboard.conf
 {% elif grains['os_family'] == 'RedHat' %}
 apache_conf:
   file.managed:
     - name: /etc/httpd/conf.d/openstack-dashboard.conf
-    - source: salt://formulas/horizon/files/openstack-dashboard.conf
+    - source: salt://formulas/horizon/files/rdo-dashboard.conf
 {% endif %}
 
 /var/www/html/index.html:
