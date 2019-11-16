@@ -86,6 +86,7 @@ secret_key:
     - user: horizon
     - group: horizon
     - mode: 600
+    - contents_pillar: horizon:horizon_secret_key
 {% elif grains['os_family'] == 'RedHat' %}
 
 secret_key:
@@ -94,6 +95,7 @@ secret_key:
     - user: apache
     - group: apache
     - mode: 600
+    - contents_pillar: horizon:horizon_secret_key    
 
 {% endif %}
 
