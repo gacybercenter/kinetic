@@ -100,7 +100,7 @@ cinder_scheduler_service:
 cinder_volume_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
-    - name: cinder-scheduler
+    - name: cinder-volume
 {% elif grains['os_family'] == 'RedHat' %}
     - name: openstack-cinder-volume
 {% endif %}
