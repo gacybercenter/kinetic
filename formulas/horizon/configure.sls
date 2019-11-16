@@ -85,6 +85,12 @@ apache_conf:
     - user: apache
     - group: apache
     - mode: 600
+
+/usr/share/openstack-dashboard/openstack_dashboard/local/.secret_key_store:
+  file.managed:
+    - user: apache
+    - group: apache
+    - mode: 600
 {% endif %}
 
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
