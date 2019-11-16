@@ -25,17 +25,17 @@ make_swift_service:
         swift_internal_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['path'] }}
         swift_admin_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['path'] }}
 
-/etc/ceph/ceph.client.admin.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-admin-keyring
-    - mode: 600
-    - user: root
-    - group: root
-
 ceph_user_exists:
   user.present:
     - name: ceph
     - home: /etc/ceph
+
+/etc/ceph/ceph.client.swift.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-swift-keyring
+    - mode: 600
+    - user: ceph
+    - group: ceph
 
 /etc/sudoers.d/ceph:
   file.managed:
@@ -48,11 +48,6 @@ ceph_user_exists:
   file.directory:
     - user: ceph
     - group: ceph
-
-ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
-  cmd.run:
-    - creates:
-      - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
 
 radosgw_service:
   service.running:
