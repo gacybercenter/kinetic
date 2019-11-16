@@ -1,5 +1,5 @@
 include:
-  - /formulas/nova/install
+  - formulas/nova/install
   - formulas/common/base
   - formulas/common/networking
 
@@ -116,27 +116,44 @@ spawnzero_complete:
 
 nova_api_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: nova-api
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-nova-api
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/nova/nova.conf
 
 nova_scheduler_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: nova-scheduler
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-nova-scheduler
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/nova/nova.conf
 
 nova_conductor_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: nova-conductor
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-nova-conductor
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/nova/nova.conf
 
 nova-spiceproxy_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: nova-spiceproxy
-    - enable: True
-    - requires:
-      - nova-spiceproxy
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-nova-spiceproxy
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/nova/nova.conf
