@@ -53,8 +53,13 @@ make_designate_service:
   file.managed:
     - source: salt://formulas/designate/files/tlds.conf
 
-/etc/bind/named.conf.options:
+bind_conf:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/bind/named.conf.options
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/named.conf
+{% endif %}            
     - source: salt://formulas/designate/files/named.conf.options
     - template: jinja
     - defaults:
@@ -77,7 +82,7 @@ make_designate_service:
 {% elif grains['os_family'] == 'RedHat' %}
     - group: named
 {% endif %}
-    
+
 designate_api_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
