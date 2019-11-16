@@ -75,7 +75,7 @@ apache2_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
     - name: apache2
-{% if grains['os_family'] == 'RedHat' %}    
+{% elif grains['os_family'] == 'RedHat' %}    
     - name: httpd
 {% endif %}
     - watch:
