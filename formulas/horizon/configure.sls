@@ -90,7 +90,7 @@ secret_key:
 
 secret_key:
   file.managed:
-    - name: /usr/share/openstack-dashboard/openstack_dashboard/local/.secret_key_store
+    - name: /var/lib/openstack-dashboard/secret_key
     - user: apache
     - group: apache
     - mode: 600
