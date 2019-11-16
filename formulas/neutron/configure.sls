@@ -59,6 +59,11 @@ spawnzero_complete:
         nova_password: {{ pillar['nova']['nova_service_password'] }}
         designate_url: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}
         designate_password: {{ pillar['designate']['designate_service_password'] }}
+{% if grains['os_family'] == 'Debian' %}
+        lock_path: /var/lock/neutron
+{% elif grains['os_family'] == 'RedHat' %}
+        lock_path: /var/lib/neutron/tmp
+{% endif %}        
 
 /etc/neutron/api-paste.ini:
   file.managed:
