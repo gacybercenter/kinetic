@@ -64,9 +64,9 @@ apache_conf:
     - defaults:
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
 {% if grains['os_family'] == 'Debian' %}
-    - alias: horizon
+        alias: horizon
 {% elif grains['os_family'] == 'RedHat' %}
-    - alias: dashboard
+        alias: dashboard
 {% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
