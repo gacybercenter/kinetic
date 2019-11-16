@@ -25,7 +25,7 @@ heat_packages:
       - python2-openstackclient
       - uwsgi-plugin-python2-tornado
       - python2-designateclient
-      - python-pip
+      - python2-pip
     - reload_module: true
 
 zunclient_install:
