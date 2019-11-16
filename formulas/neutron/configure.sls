@@ -145,7 +145,7 @@ neutron_linuxbridge_agent_service:
 neutron_dhcp_agent_service:
   service.running:
     - name: neutron-dhcp-agent
-    - enable: true 
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
