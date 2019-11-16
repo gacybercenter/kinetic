@@ -13,7 +13,6 @@ spawnzero_complete:
 
 {% endif %}
 
-
 local_settings:
   file.managed:
 {% if grains['os_family'] == 'Debian' %}
