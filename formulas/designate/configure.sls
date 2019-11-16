@@ -59,7 +59,7 @@ bind_conf:
     - name: /etc/bind/named.conf.options
 {% elif grains['os_family'] == 'RedHat' %}
     - name: /etc/named.conf
-{% endif %}            
+{% endif %}
     - source: salt://formulas/designate/files/named.conf.options
     - template: jinja
     - defaults:
@@ -72,7 +72,7 @@ bind_conf:
     - defaults:
         hostname: {{ grains['fqdn'] }}.
 
-/etc/bind/rndc.key:
+/etc/designate/rndc.key:
   file.managed:
     - contents_pillar: designate:designate_rndc_key
     - mode: 640
