@@ -113,6 +113,8 @@ apache2_service:
     - name: httpd
 {% endif %}
     - enable: true
+    - require:
+      - file: local_settings
     - watch:
       - file: local_settings
       - file: secret_key
