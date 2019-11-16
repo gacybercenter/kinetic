@@ -147,7 +147,7 @@ designate_bind9_service:
 {% endif %}
     - enable: true
     - watch:
-      - file: /etc/bind/rndc.key
+      - file: /etc/designate/rndc.key
 
 /bin/sh -c "designate-manage pool update" designate:
   cmd.run:
