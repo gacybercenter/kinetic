@@ -24,6 +24,11 @@ local_settings:
     - source: salt://formulas/horizon/files/local_settings.py
     - template: jinja
     - defaults:
+{% if grains['os_family'] == 'Debian' %}
+        webroot: horizon
+{% elif grains['os_family'] == 'RedHat' %}
+        webroot: dashboard
+{% endif %}
 {% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
