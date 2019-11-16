@@ -69,9 +69,9 @@ heat_api_service:
 heat_api_cfn_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
-    - name: heat-api-cfg
+    - name: heat-api-cfn
 {% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-heat-cfn
+    - name: openstack-heat-api-cfn
 {% endif %}
     - enable: true
     - watch:
