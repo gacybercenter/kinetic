@@ -81,17 +81,14 @@ secret_key:
     - group: horizon
     - mode: 600
 {% elif grains['os_family'] == 'RedHat' %}
+
 secret_key:
-  file.managed:
-    - name: /var/lib/openstack-dashboard/secret_key
-    - user: apache
-    - group: apache
-    - mode: 600
   file.managed:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/local/.secret_key_store
     - user: apache
     - group: apache
     - mode: 600
+
 {% endif %}
 
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
