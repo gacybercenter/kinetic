@@ -80,7 +80,7 @@ cinder_api_service:
 {% if grains['os_family'] == 'Debian' %}
     - name: apache2
 {% elif grains['os_family'] == 'RedHat' %}
-    - name: httpd
+    - name: openstack-cinder-api
 {% endif %}
     - enable: true
     - watch:
@@ -88,14 +88,22 @@ cinder_api_service:
 
 cinder_scheduler_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: cinder-scheduler
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-cinder-scheduler
+{% endif %}
     - enable: true
     - watch:
       - file: /etc/cinder/cinder.conf
 
 cinder_volume_service:
   service.running:
-    - name: cinder-volume
+{% if grains['os_family'] == 'Debian' %}
+    - name: cinder-scheduler
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-cinder-volume
+{% endif %}
     - enable: true
     - watch:
       - file: /etc/cinder/cinder.conf
