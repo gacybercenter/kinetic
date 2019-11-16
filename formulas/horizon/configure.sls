@@ -1,8 +1,8 @@
 include:
   - formulas/common/base
   - formulas/common/networking
-  - /formulas/horizon/install
-  - /formulas/horizon/install-zun-ui
+  - formulas/horizon/install
+  - formulas/horizon/install-zun-ui
 
 {% if grains['spawning'] == 0 %}
 
@@ -87,7 +87,7 @@ apache2_service:
     - name: httpd
 {% endif %}
     - watch:
-      - file: /etc/openstack-dashboard/local_settings.py
+      - file: local_settings
 {% if grains['os_family'] == 'Debian' %}
       - file: /var/lib/openstack-dashboard/secret_key
 {% endif %}
