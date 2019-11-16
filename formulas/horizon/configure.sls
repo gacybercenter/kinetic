@@ -40,12 +40,14 @@ spawnzero_complete:
 {% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
-/etc/apache2/conf-enabled/openstack-dashboard.conf:
+apache_conf:
   file.managed:
+    - name: /etc/apache2/conf-enabled/openstack-dashboard.conf
     - source: salt://formulas/horizon/files/openstack-dashboard.conf
 {% elif grains['os_family'] == 'Debian' %}
-/etc/httpd/conf.d/openstack-dashboard.conf:
+apache_conf:
   file.managed:
+    - name: /etc/httpd/conf.d/openstack-dashboard.conf
     - source: salt://formulas/horizon/files/openstack-dashboard.conf
 {% endif %}
 
@@ -71,9 +73,13 @@ install_theme:
 
 apache2_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: apache2
+{% if grains['os_family'] == 'RedHat' %}    
+    - name: httpd
+{% endif %}
     - watch:
       - file: /etc/openstack-dashboard/local_settings.py
       - file: /var/lib/openstack-dashboard/secret_key
-      - file: /etc/apache2/conf-enabled/openstack-dashboard.conf
+      - file: apache_conf
       - git: install_theme
