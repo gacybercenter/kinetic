@@ -82,6 +82,8 @@ apache2_service:
 {% endif %}
     - watch:
       - file: /etc/openstack-dashboard/local_settings.py
+{% if grains['os_family'] == 'Debian' %}
       - file: /var/lib/openstack-dashboard/secret_key
+{% endif %}
       - file: apache_conf
       - git: install_theme
