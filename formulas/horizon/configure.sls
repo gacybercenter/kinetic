@@ -13,8 +13,14 @@ spawnzero_complete:
 
 {% endif %}
 
-/etc/openstack-dashboard/local_settings.py:
+
+local_settings:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/openstack-dashboard/local_settings.py
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/openstack-dashboard/local_settings
+{% endif %}
     - source: salt://formulas/horizon/files/local_settings.py
     - template: jinja
     - defaults:
