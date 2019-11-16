@@ -22,7 +22,10 @@ designate_packages:
 designate_packages:
   pkg.installed:
     - pkgs:
-      - openstack-designate\*
+      - openstack-designate-api
+      - openstack-designate-mdns
+      - openstack-designate-producer
+      - openstack-designate-worker
       - bind
       - bind-utils
       - python-memcached
