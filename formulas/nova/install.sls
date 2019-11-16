@@ -20,7 +20,7 @@ nova_packages:
     - pkgs:
       - openstack-nova-api
       - openstack-nova-conductor
-      - openstack-nova-spiceproxy
+      - openstack-nova-spicehtml5proxy
       - openstack-nova-scheduler
       - python2-openstackclient
       - spice-html5

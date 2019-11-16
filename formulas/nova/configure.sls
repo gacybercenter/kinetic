@@ -152,7 +152,7 @@ nova-spiceproxy_service:
 {% if grains['os_family'] == 'Debian' %}
     - name: nova-spiceproxy
 {% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-nova-spiceproxy
+    - name: openstack-nova-spicehtml5proxy
 {% endif %}
     - enable: true
     - watch:
