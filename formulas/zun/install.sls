@@ -42,7 +42,7 @@ python3-memcached:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
 
-python3-openstackclient:
+python-openstackclient:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
