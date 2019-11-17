@@ -113,6 +113,11 @@ nova_compute_service:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         password: {{ pillar['neutron']['neutron_service_password'] }}
+{% if grains['os_family'] == 'Debian' %}
+        lock_path: /var/lock/neutron
+{% elif grains['os_family'] == 'RedHat' %}
+        lock_path: /var/lib/neutron/tmp
+{% endif %}
 
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
