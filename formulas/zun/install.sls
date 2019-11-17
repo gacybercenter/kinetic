@@ -3,49 +3,8 @@ include:
   - formulas/openstack/common/repo
   - formulas/ceph/common/repo
   - formulas/docker/common/repo
-  
+
 {% if grains['os_family'] == 'Debian' %}
-
-swift_packages:
-  pkg.installed:
-    - pkgs:
-      - radosgw
-      - python3-openstackclient
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-swift_packages:
-  pkg.installed:
-    - pkgs:
-      - ceph-radosgw
-      - python2-openstackclient
-
-{% endif %}
-
-
-
-uca:
-  pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - train
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
-    - file: /etc/apt/sources.list.d/cloudarchive-train.list
-    - keyid: ECD76E3E
-    - keyserver: keyserver.ubuntu.com
-
-docker_repo:
-  pkgrepo.managed:
-    - humanname: docker
-    - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
-    - file: /etc/apt/sources.list.d/docker.list
-    - key_url: https://download.docker.com/linux/ubuntu/gpg
-
-update_packages_uca:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkgrepo: uca
-      - pkgrepo: docker_repo
-    - dist_upgrade: True
 
 zun_packages:
   pkg.installed:
@@ -62,6 +21,25 @@ pymysql_sa:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+zun_packages:
+  pkg.installed:
+    - pkgs:
+      - python2-pip
+      - git
+      - python-devel
+      - libffi-devel
+      - gcc
+      - openssl-devel
+      - python2-openstackclient
+      - python-memcached
+      - etcd
+      - numactl
+      - python2-PyMySQL
+
+{% endif %}
 
 zun:
   group.present:

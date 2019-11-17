@@ -37,4 +37,3 @@
           {% endfor %}
         sfe_network: {{ pillar['networking']['subnets']['sfe'] }}
         sbe_network: {{ pillar['networking']['subnets']['sbe'] }}
-        

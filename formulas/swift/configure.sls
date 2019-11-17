@@ -30,7 +30,7 @@ ceph_user_exists:
     - name: ceph
     - home: /etc/ceph
 
-/etc/ceph/ceph.client.swift.keyring:
+/etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-swift-keyring
     - mode: 600
