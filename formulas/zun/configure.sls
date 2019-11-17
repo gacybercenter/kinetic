@@ -96,7 +96,7 @@ etcd_conf:
     - name: /etc/default/etcd
 {% elif grains.item['os_family'] == 'RedHat' %}
     - name: /etc/etcd/etcd.conf
-{% endif %}    
+{% endif %}
     - source: salt://formulas/zun/files/etcd
     - template: jinja
     - defaults:
@@ -112,7 +112,7 @@ etcd_service:
     - name: etcd
     - enable: true
     - watch:
-      - file: /etc/default/etcd
+      - file: etcd_conf
 
 zun_api_service:
   service.running:
