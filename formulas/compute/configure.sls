@@ -92,7 +92,7 @@ nova_compute_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
     - name: nova-compute
-{% elif grains['os_family'] == 'Debian' %}
+{% elif grains['os_family'] == 'RedHat' %}
     - name: openstack-nova-compute
 {% endif %}
     - enable: true
