@@ -7,7 +7,7 @@ include:
 
 /bin/sh -c "designate-manage database sync" designate:
   cmd.run:
-    - onlyif:
+    - unless:
       - /bin/sh -c "designate-manage database version" designate | grep -q 102
     - require:
       - file: /etc/designate/designate.conf
