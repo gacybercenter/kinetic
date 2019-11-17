@@ -1,4 +1,3 @@
-
 include:
   - formulas/openstack/common/repo
   - formulas/ceph/common/repo
