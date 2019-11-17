@@ -12,10 +12,10 @@ include:
 
 make_crush_bucket:
   cmd.run:
-    - name: ceph osd crush add-bucket {{ grains['host'] }} host && touch /root/ceph/bucket_done
+    - name: ceph osd crush add-bucket {{ grains['host'] }} host && touch /etc/ceph/bucket_done
     - require:
       - sls: formulas/ceph/common/configure
-    - creates: /root/ceph/bucket_done
+    - creates: /etc/ceph/bucket_done
 
 align_crush_bucket:
   cmd.run:
