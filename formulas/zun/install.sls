@@ -22,23 +22,6 @@ pymysql_sa:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
 
-zun_requirements:
-  cmd.run:
-    - name: pip3 install --upgrade -r /var/lib/zun/requirements.txt
-    - unless:
-      - systemctl is-active zun-api
-    - require:
-      - git: zun_latest
-
-installzun:
-  cmd.run:
-    - name: python3 setup.py install
-    - cwd : /var/lib/zun/
-    - unless:
-      - systemctl is-active zun-api
-    - require:
-      - cmd: zun_requirements
-
 {% elif grains['os_family'] == 'RedHat' %}
 
 zun_packages:
@@ -56,24 +39,9 @@ zun_packages:
       - numactl
       - python2-PyMySQL
 
-zun_requirements:
-  cmd.run:
-    - name: pip install --upgrade -r /var/lib/zun/requirements.txt
-    - unless:
-      - systemctl is-active zun-api
-    - require:
-      - git: zun_latest
-
-installzun:
-  cmd.run:
-    - name: python2 setup.py install
-    - cwd : /var/lib/zun/
-    - unless:
-      - systemctl is-active zun-api
-    - require:
-      - cmd: zun_requirements
-
 {% endif %}
+
+
 
 zun:
   group.present:
@@ -105,3 +73,20 @@ zun_latest:
     - branch: stable/train
     - target: /var/lib/zun
     - force_clone: true
+
+zun_requirements:
+  cmd.run:
+    - name: pip3 install --upgrade -r /var/lib/zun/requirements.txt
+    - unless:
+      - systemctl is-active zun-api
+    - require:
+      - git: zun_latest
+
+installzun:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd : /var/lib/zun/
+    - unless:
+      - systemctl is-active zun-api
+    - require:
+      - cmd: zun_requirements
