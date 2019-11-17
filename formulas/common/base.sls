@@ -19,6 +19,13 @@ role:
     - value: {{ type }}
 {% endif %}
 
+{% if type in ['salt','pxe'] %}
+ifwatch:
+  grains.present:
+    - value:
+      - eth0
+{% endif %}
+
 {% if grains['os_family'] == 'Debian' %}
   {% if type not in ['cache','salt','pxe'] %}
     {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
@@ -93,7 +100,7 @@ upgraded:
       - update_all
 
 python36-pyroute2:
-  pkg.installed      
+  pkg.installed
 
   {% endif %}
 {% endif %}
