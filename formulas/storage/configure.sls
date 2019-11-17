@@ -35,11 +35,28 @@ remove_admin_keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
 
+
+## Journal Creation
+## Read in the model and respective quantities of each disk
+## identified to be a journal in the pillar (see environmen/osd_mappings in your pillar)
+## This section will identify unused disks of the correct model in the correct quantity,
+## create a pv, and write a unique single-line file with the path to the device
+## in /etc/ceph/journals/( model of device)/(number representing order in which it was made into a pv)
+## if in your pillar you specify:
+##
+## journals:
+##   foomodel:
+##     qty: 3
+##   barmodel:
+##     qty: 2
+##
+##This section will create /etc/ceph/journals/foomodel/[1-3] and /etc/ceph/journals/barmodel/[1-2], with the contents of each file being /dev/path/to/disk
+## on line 1
+
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
 /etc/ceph/journals/{{ device }}:
   file.directory:
     - makedirs: true
-
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
 db_pv:
   lvm.pv_present:
