@@ -42,18 +42,26 @@ ceph_user_exists:
     - user: ceph
     - group: ceph
 
-/etc/ceph/ceph.client.admin.keyring:
+get_adminkey:
   file.managed:
+    - name: /etc/ceph/ceph.client.admin.keyring
     - contents_pillar: ceph:ceph-client-admin-keyring
     - mode: 600
     - user: root
     - group: root
+    - prereq:
+      - cmd: make_{{ grains['id'] }}_swiftkey
 
-ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
+make_{{ grains['id'] }}_swiftkey:
   cmd.run:
+    - name: ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
     - creates:
       - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
 
+wipe_adminkey:
+  file.absent:
+    - name: /etc/ceph/ceph.client.admin.keyring
+    
 radosgw_service:
   service.running:
     - name: ceph-radosgw@{{ grains['id'] }}.service
