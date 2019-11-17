@@ -28,11 +28,9 @@ make_zun_service:
         zun_internal_endpoint: {{ pillar ['openstack_services']['zun']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['zun']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['zun']['configuration']['internal_endpoint']['path'] }}
         zun_public_endpoint: {{ pillar ['openstack_services']['zun']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['zun']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['zun']['configuration']['public_endpoint']['path'] }}
         zun_admin_endpoint: {{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['path'] }}
-        zun_service_password: {{ pillar ['zun']['zun_service_password'] }}      
+        zun_service_password: {{ pillar ['zun']['zun_service_password'] }}
 
 {% endif %}
-
-
 
 make_kuryr_service:
   cmd.script:
@@ -92,8 +90,13 @@ make_kuryr_service:
     - requires:
       - /formulas/zun/install
 
-/etc/default/etcd:
+etcd_conf:
   file.managed:
+{% if grains.item['os_family'] == 'Debian' %}
+    - name: /etc/default/etcd
+{% elif grains.item['os_family'] == 'RedHat' %}
+    - name: /etc/etcd/etcd.conf
+{% endif %}    
     - source: salt://formulas/zun/files/etcd
     - template: jinja
     - defaults:
