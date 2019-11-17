@@ -92,9 +92,9 @@ make_kuryr_service:
 
 etcd_conf:
   file.managed:
-{% if grains.item['os_family'] == 'Debian' %}
+{% if grains['os_family'] == 'Debian' %}
     - name: /etc/default/etcd
-{% elif grains.item['os_family'] == 'RedHat' %}
+{% elif grains['os_family'] == 'RedHat' %}
     - name: /etc/etcd/etcd.conf
 {% endif %}
     - source: salt://formulas/zun/files/etcd
