@@ -6,11 +6,15 @@ master_setup:
   salt.state:
     - tgt: 'salt'
     - highstate: true
+    - fail_minions:
+      - salt
 
 pxe_setup:
   salt.state:
     - tgt: 'pxe'
     - highstate: true
+    - fail_minions:
+      - pxe
 {% endif %}
 
 {% if style == 'physical' %}
