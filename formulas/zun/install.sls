@@ -33,11 +33,19 @@ zun_packages:
       - libffi-devel
       - gcc
       - openssl-devel
-      - python2-openstackclient
-      - python-memcached
       - etcd
       - numactl
       - python36-PyMySQL
+
+python3-memcached:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
+
+python3-openstackclient:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
 
 {% endif %}
 
