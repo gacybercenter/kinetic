@@ -45,7 +45,7 @@ include:
 
 /etc/neutron/neutron.conf:
   file.managed:
-    - source: salt://formulas/compute/files/neutron.conf
+    - source: salt://formulas/container/files/neutron.conf
     - template: jinja
     - defaults:
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -57,6 +57,11 @@ include:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         password: {{ pillar['neutron']['neutron_service_password'] }}
+{% if grains['os_family'] == 'Debian' %}
+        lock_path: /var/lock/neutron
+{% elif grains['os_family'] == 'RedHat' %}
+        lock_path: /var/lib/neutron/tmp
+{% endif %}
 
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:

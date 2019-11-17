@@ -32,8 +32,7 @@ container_packages:
       - libffi-devel
       - gcc
       - openssl-devel
-      - etcd
-      - numactl
+      - openstack-neutron-linuxbridge
       - python36-PyMySQL
       - docker-ce
 
