@@ -7,14 +7,14 @@ master_setup:
     - tgt: 'salt'
     - highstate: true
     - fail_minions:
-      - salt
+      - 'salt'
 
 pxe_setup:
   salt.state:
     - tgt: 'pxe'
     - highstate: true
     - fail_minions:
-      - pxe
+      - 'pxe'
 {% endif %}
 
 {% if style == 'physical' %}
