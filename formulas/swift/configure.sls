@@ -11,8 +11,6 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
-{% endif %}
-
 make_swift_service:
   cmd.script:
     - source: salt://formulas/swift/files/mkservice.sh
@@ -24,6 +22,8 @@ make_swift_service:
         swift_public_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['swift']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['public_endpoint']['path'] }}
         swift_internal_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['path'] }}
         swift_admin_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['path'] }}
+
+{% endif %}
 
 ceph_user_exists:
   user.present:
@@ -61,7 +61,7 @@ make_{{ grains['id'] }}_swiftkey:
 wipe_adminkey:
   file.absent:
     - name: /etc/ceph/ceph.client.admin.keyring
-    
+
 radosgw_service:
   service.running:
     - name: ceph-radosgw@{{ grains['id'] }}.service
