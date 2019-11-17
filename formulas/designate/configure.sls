@@ -5,6 +5,16 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+make_designate_service:
+  cmd.script:
+    - source: salt://formulas/designate/files/mkservice.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
+        designate_service_password: {{ pillar ['designate']['designate_service_password'] }}
+
 /bin/sh -c "designate-manage database sync" designate:
   cmd.run:
     - unless:
@@ -18,16 +28,6 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 
 {% endif %}
-
-make_designate_service:
-  cmd.script:
-    - source: salt://formulas/designate/files/mkservice.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
-        designate_service_password: {{ pillar ['designate']['designate_service_password'] }}
 
 /etc/designate/designate.conf:
   file.managed:

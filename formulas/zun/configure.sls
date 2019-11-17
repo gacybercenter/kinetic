@@ -18,8 +18,6 @@ zun-db-manage upgrade:
     - unless:
       - zun-db-manage version | grep -q e4385cf0e363
 
-{% endif %}
-
 make_zun_service:
   cmd.script:
     - source: salt://formulas/zun/files/mkservice.sh
@@ -30,7 +28,11 @@ make_zun_service:
         zun_internal_endpoint: {{ pillar ['openstack_services']['zun']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['zun']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['zun']['configuration']['internal_endpoint']['path'] }}
         zun_public_endpoint: {{ pillar ['openstack_services']['zun']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['zun']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['zun']['configuration']['public_endpoint']['path'] }}
         zun_admin_endpoint: {{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['path'] }}
-        zun_service_password: {{ pillar ['zun']['zun_service_password'] }}
+        zun_service_password: {{ pillar ['zun']['zun_service_password'] }}      
+
+{% endif %}
+
+
 
 make_kuryr_service:
   cmd.script:
