@@ -71,7 +71,7 @@ db_vg:
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-       - __slot__:salt:cmd.run("cat "/etc/ceph/journals/{{ device }}/{{ loop.index }}""")
+       - __slot__:salt:cmd.run("cat "/etc/ceph/journals/{{ device }}/{{ loop.index }}"")
   {% endfor %}
 {% endfor %}
 
