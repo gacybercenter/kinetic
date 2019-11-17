@@ -7,25 +7,33 @@ include:
 /etc/ceph/ceph.client.admin.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-admin-keyring
-
-/var/lib/ceph/bootstrap-osd/ceph.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-keyring
+    - prereq:
+      - cmd: make_crush_bucket
 
 make_crush_bucket:
   cmd.run:
-    - name: ceph osd crush add-bucket {{ grains['host'] }} host
-    - unless:
-      - ceph osd tree | grep {{ grains ['host'] }}
+    - name: ceph osd crush add-bucket {{ grains['host'] }} host && touch /root/ceph/bucket_done
     - require:
       - sls: formulas/ceph/common/configure
+    - creates: /root/ceph/bucket_done
 
-ceph osd crush move {{ grains['host'] }} root=default:
+align_crush_bucket:
   cmd.run:
+    - name: ceph osd crush move {{ grains['host'] }} root=default
     - onchanges:
       - cmd: make_crush_bucket
     - require:
       - sls: formulas/ceph/common/configure
+
+remove_admin_keyring:
+  file.absent:
+    - name: /etc/ceph/ceph.client.admin.keyring
+    - onchanges:
+      - cmd: align_crush_bucket
+
+/var/lib/ceph/bootstrap-osd/ceph.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-keyring
 
 {% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
 {% set disk = salt.cmd.shell('lsblk -p -n --output name,model | grep "'+device+'" | cut -d" " -f1') %}
