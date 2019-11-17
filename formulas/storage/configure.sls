@@ -35,15 +35,27 @@ remove_admin_keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
 
-{% for device in pillar['osd_mappings'][grains['type']]['journal'] %}
-{% set disk = salt.cmd.shell('lsblk -p -n --output name,model | grep "'+device+'" | cut -d" " -f1') %}
+{% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
+/etc/ceph/journals/{{ device }}:
+  file.directory:
+    - makedirs: true
+
+  {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
 db_pv:
   lvm.pv_present:
-    - name: {{ disk }}
+    - name: __slot__:salt:cmd.shell("lsblk -psn --output name,model | grep "{{ device }}" | grep -i "^[/]" | sort | sed -n '{{ loop.index }}p' | cut -d" " -f1 | tee /etc/ceph/journals/{{ device }}/{{ loop.index }}")
+    - unless:
+      - test /etc/ceph/journals/{{ device }}/{{ loop.index }}
+  {% endfor %}
+{% endfor %}
 
 db_vg:
   lvm.vg_present:
-    - devices: {{ disk }}
+    - devices:
+{% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
+  {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
+       - __slot__:salt:cmd.run("cat /etc/ceph/journals/{{ device }}/{{ loop.index }}")
+  {% endfor %}
 {% endfor %}
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
