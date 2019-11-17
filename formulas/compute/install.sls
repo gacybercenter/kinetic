@@ -22,7 +22,7 @@ compute_packages:
   pkg.installed:
     - pkgs:
       - openstack-nova-compute
-      - openstack-neutron-linuxbridge-agent
+      - openstack-neutron-linuxbridge
       - python-tornado
       - ceph-common
       - spice-html5

@@ -86,7 +86,12 @@ virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(
 
 nova_compute_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: nova-compute
+{% elif grains['os_family'] == 'Debian' %}
+    - name: openstack-nova-compute
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/nova/nova.conf
 
@@ -124,6 +129,7 @@ nova_compute_service:
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
