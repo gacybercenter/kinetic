@@ -27,7 +27,7 @@ pymysql_sa:
 zun_packages:
   pkg.installed:
     - pkgs:
-      - python2-pip
+      - python3-pip
       - git
       - python-devel
       - libffi-devel
@@ -37,11 +37,9 @@ zun_packages:
       - python-memcached
       - etcd
       - numactl
-      - python2-PyMySQL
+      - python36-PyMySQL
 
 {% endif %}
-
-
 
 zun:
   group.present:
