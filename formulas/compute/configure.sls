@@ -29,13 +29,15 @@ include:
     - defaults:
         uuid: {{ pillar['ceph']['nova-uuid'] }}
 
-virsh secret-define --file /etc/ceph/ceph-nova.xml:
+define_ceph_compute_key:
   cmd.run:
+    - name: virsh secret-define --file /etc/ceph/ceph-nova.xml
     - unless:
       - virsh secret-list | grep -q {{ pillar['ceph']['nova-uuid'] }}
 
-virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat /etc/ceph/client.compute.key):
+load_ceph_compute_key:
   cmd.run:
+    - name: virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat /etc/ceph/client.compute.key)
     - unless:
       - virsh secret-get-value {{ pillar['ceph']['nova-uuid'] }}
 
@@ -53,13 +55,15 @@ virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat
     - defaults:
         uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
-virsh secret-define --file /etc/ceph/ceph-volumes.xml:
+define_ceph_volumes_key:
   cmd.run:
+    - name: virsh secret-define --file /etc/ceph/ceph-volumes.xml
     - unless:
       - virsh secret-list | grep -q {{ pillar['ceph']['volumes-uuid'] }}
 
-virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(cat /etc/ceph/client.volumes.key):
+load_ceph_volumes_key:
   cmd.run:
+    - name: virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(cat /etc/ceph/client.volumes.key)
     - unless:
       - virsh secret-get-value {{ pillar['ceph']['volumes-uuid'] }}
 
@@ -125,6 +129,18 @@ nova_compute_service:
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
+
+{% if grains['os_family'] == 'RedHat' %}
+libvirtd_service:
+  service.running:
+    - name: libvirtd
+    - enable: true
+    - require_in:
+      - cmd: define_ceph_compute_key
+      - cmd: load_ceph_compute_key
+      - cmd: define_ceph_volumes_key
+      - cmd: load_ceph_volumes_key
+{% endif %}
 
 neutron_linuxbridge_agent_service:
   service.running:
