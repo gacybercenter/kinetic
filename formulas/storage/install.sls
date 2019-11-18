@@ -8,4 +8,5 @@ install_ceph:
       - sls: formulas/ceph/common/repo
 
 install_jq:
-  pkg.installed
+  pkg.installed:
+    - name: jq
