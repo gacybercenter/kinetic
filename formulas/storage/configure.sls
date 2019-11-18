@@ -49,7 +49,7 @@ align_crush_bucket:
 
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-    {% set pvs = salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="+device+") | select(.locked==0) | .path'") | dictsort() %}
+    {% set pvs = salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="+device+") | select(.locked==0) | .path'") %}
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
     - name: {{ pvs }}{{ loop.index }}
