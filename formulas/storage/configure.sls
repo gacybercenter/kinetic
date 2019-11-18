@@ -53,7 +53,7 @@ align_crush_bucket:
 journal_def_{{ device }}_{{ loop.index }}:
   file.managed:
     - name: /etc/ceph/journals/{{ device }}/{{ loop.index }}
-    - contents: __slot__:salt:cmd.shell("lsblk -psn --output name,model")
+    - contents: __slot__:salt:cmd.shell("lsblk -psn --output name,model | grep {{ device }}")
     - unless:
       - test -f "/etc/ceph/journals/{{ device }}/{{ loop.index }}"
 
