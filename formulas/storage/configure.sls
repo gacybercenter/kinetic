@@ -7,6 +7,8 @@ include:
 /etc/ceph/ceph.client.admin.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-admin-keyring
+    - prereq:
+      - cmd: make_crush_bucket
 
 make_crush_bucket:
   cmd.run:
