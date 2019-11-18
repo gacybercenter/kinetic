@@ -51,7 +51,7 @@ align_crush_bucket:
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
-{% if salt.cmd.shell("test -d /dev/db_vg") %}
+{% if grains['production'] == True %}
     - name: dummy
 {% else %}
     - name: __slot__:salt:cmd.shell("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model==\"{{ device }}\") | select(.locked==0) | .path' | sed -n '{{ loop.index }}p'")
