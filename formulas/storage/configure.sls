@@ -52,7 +52,7 @@ align_crush_bucket:
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
 db_pv:
   lvm.pv_present:
-    - name: __slot__:salt:cmd.shell('lsblk -psn --output name,model | grep "{{ device }}" | grep -i "^[/]" | sort | sed -n '{{ loop.index }}p' | awk '{ print $1 }' | tee "/etc/ceph/journals/{{ device }}/{{ loop.index }}"')
+    - name: __slot__:salt:cmd.shell('lsblk -psn --output name,model | grep "{{ device }}" | grep -i "^[/]" | sort | sed -n '{{ loop.index }}p' | awk '{ print $1 }' | tee /etc/ceph/journals/{{ device }}/{{ loop.index }}')
     - unless:
       - test -f "/etc/ceph/journals/{{ device }}/{{ loop.index }}"
   {% endfor %}
