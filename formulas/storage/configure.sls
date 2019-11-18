@@ -7,8 +7,6 @@ include:
 /etc/ceph/ceph.client.admin.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-admin-keyring
-    - prereq:
-      - cmd: make_crush_bucket
 
 make_crush_bucket:
   cmd.run:
@@ -22,12 +20,6 @@ align_crush_bucket:
     - name: ceph osd crush move {{ grains['host'] }} root=default
     - require:
       - sls: formulas/ceph/common/configure
-
-remove_admin_keyring:
-  file.absent:
-    - name: /etc/ceph/ceph.client.admin.keyring
-    - onchanges:
-      - cmd: align_crush_bucket
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
