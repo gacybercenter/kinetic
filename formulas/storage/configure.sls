@@ -63,7 +63,7 @@ db_pv:
   {% endfor %}
 {% endfor %}
 
-{# db_vg:
+db_vg:
   lvm.vg_present:
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
