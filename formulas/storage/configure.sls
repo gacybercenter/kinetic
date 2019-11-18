@@ -50,11 +50,16 @@ align_crush_bucket:
   file.directory:
     - makedirs: true
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-db_pv:
-  lvm.pv_present:
-    - name: __slot__:salt:cmd.shell("lsblk -psn --output name,model | grep "{{ device }}" | grep -i "^[/]" | sort | sed -n '{{ loop.index }}p' | awk '{ print $1 }'")
+journal_def:
+  file.managed:
+    - name: /etc/ceph/journals/{{ device }}/{{ loop.index }}
+    - contents: __slot__:salt:cmd.shell("lsblk -psn --output name,model | grep "{{ device }}" | grep -i "^[/]" | sort | sed -n '{{ loop.index }}p' | awk '{ print $1 }'")
     - unless:
       - test -f "/etc/ceph/journals/{{ device }}/{{ loop.index }}"
+
+db_pv:
+  lvm.pv_present:
+    - name: __slot__:salt:cmd.shell("head -n 1 /etc/ceph/journals/{{ device }}/{{ loop.index }}")
   {% endfor %}
 {% endfor %}
 
