@@ -6,3 +6,6 @@ install_ceph:
     - name: ceph
     - require:
       - sls: formulas/ceph/common/repo
+
+install_jq:
+  pkg.installed
