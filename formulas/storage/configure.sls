@@ -54,7 +54,7 @@ db_pv:
   lvm.pv_present:
     - name: __slot__:salt:cmd.shell("lsblk -psn --output name,model | grep "{{ device }}" | grep -i "^[/]" | sort | sed -n '{{ loop.index }}p' | cut -d" " -f1 | tee "/etc/ceph/journals/{{ device }}/{{ loop.index }}"")
     - unless:
-      - test "/etc/ceph/journals/{{ device }}/{{ loop.index }}"
+      - test -f "/etc/ceph/journals/{{ device }}/{{ loop.index }}"
   {% endfor %}
 {% endfor %}
 
