@@ -48,22 +48,11 @@ align_crush_bucket:
 ## on line 1
 
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
-/etc/ceph/journals/{{ device }}:
-  file.directory:
-    - makedirs: true
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-journal_def_{{ device }}_{{ loop.index }}:
-  file.managed:
-    - name: /etc/ceph/journals/{{ device }}/{{ loop.index }}
-    - contents: {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="+device+") | select(.locked==0) | .path' | sed -n '+loop.index+p'") }}
-    - unless:
-      - test -f "/etc/ceph/journals/{{ device }}/{{ loop.index }}"
-
+    {% set 'pv'+device = salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="+device+") | select(.locked==0) | .path' | sed -n '+loop.index+p'") %}
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
-    - name: {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="+device+") | select(.locked==0) | .path' | sed -n '+loop.index+p'") }}
-    - require:
-      - file: journal_def_{{ device }}_{{ loop.index }}
+    - name: 'pv'+{{ device }}
   {% endfor %}
 {% endfor %}
 
