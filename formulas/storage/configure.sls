@@ -60,7 +60,7 @@ db_vg:
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-      - {{ salt['cmd.shell']("cat /root/json | jq -r '.[] | .sys_api | select(.model==\""+device+"\") | select(.locked==0) | .path' | sed -n '"+loop.index|string+"p'") }}
+      - {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model==\""+device+"\") | select(.locked==0) | .path' | sed -n '"+loop.index|string+"p'") }}
   {% endfor %}
 {% endfor %}
 
