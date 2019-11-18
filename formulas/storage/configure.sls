@@ -59,7 +59,7 @@ journal_def:
 
 db_pv:
   lvm.pv_present:
-    - name: __slot__:salt:cmd.shell("head -n 1 /etc/ceph/journals/{{ device }}/{{ loop.index }}")
+    - name: __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")
   {% endfor %}
 {% endfor %}
 
