@@ -74,7 +74,6 @@ db_vg:
   {% endfor %}
 {% endfor %}
 
-
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
   {% set step = 100 // pillar['osd_mappings'][grains['type']]['osd'] | length %}
 db_lv_{{ osd }}:
