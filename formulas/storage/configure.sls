@@ -50,7 +50,7 @@ align_crush_bucket:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
 db_pv_{{ device }}_{{ loop.index }}:
-  cmd.shell:
+  cmd.run:
     - name: ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="INTEL SSDPED1K750GA") | select(.locked==0) | .path'
   {% endfor %}
 {% endfor %}
