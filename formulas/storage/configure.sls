@@ -51,7 +51,7 @@ align_crush_bucket:
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
     {% set pvs = salt['cmd.shell']("ceph-volume inventory") %}
 db_pv_{{ device }}_{{ loop.index }}:
-  cmd.run:
+  cmd.shell:
     - name: echo {{ pvs }}
   {% endfor %}
 {% endfor %}
