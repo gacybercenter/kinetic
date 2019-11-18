@@ -67,12 +67,12 @@ db_pv_{{ device }}_{{ loop.index }}:
 
 db_vg:
   lvm.vg_present:
-    - devices: [
-{%- for device in pillar['osd_mappings'][grains['type']]['journals'] %}
-  {%- for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-'__slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")',
-  {%- endfor %}
-{%- endfor %}]
+    - devices:
+{% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
+  {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
+        __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")
+  {% endfor %}
+{% endfor %}
 
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
