@@ -20,6 +20,9 @@ align_crush_bucket:
     - name: ceph osd crush move {{ grains['host'] }} root=default
     - require:
       - sls: formulas/ceph/common/configure
+      - cmd: make_crush_bucket
+    - onchanges:
+      - cmd: make_crush_bucket
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
