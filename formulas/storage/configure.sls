@@ -67,11 +67,9 @@ db_pv_{{ device }}_{{ loop.index }}:
 
 db_vg:
   lvm.vg_present:
-    - devices: __slot__:salt:file.read("/etc/ceph/journals/{{ device }}/{{ loop.index }}")
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-    - require:
-      - lvm: db_pv_{{ device }}_{{ loop.index }}
+    - devices: __slot__:salt:file.read("/etc/ceph/journals/{{ device }}/{{ loop.index }}")
   {% endfor %}
 {% endfor %}
 
