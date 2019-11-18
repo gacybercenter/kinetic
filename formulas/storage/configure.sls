@@ -52,7 +52,7 @@ align_crush_bucket:
     {% set pvs = salt['cmd.shell']("ceph-volume inventory") %}
 db_pv_{{ device }}_{{ loop.index }}:
   cmd.run:
-    - name: echo {{ pvs }}
+    - name: echo foo
   {% endfor %}
 {% endfor %}
 
