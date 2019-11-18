@@ -20,8 +20,6 @@ make_crush_bucket:
 align_crush_bucket:
   cmd.run:
     - name: ceph osd crush move {{ grains['host'] }} root=default
-    - onchanges:
-      - cmd: make_crush_bucket
     - require:
       - sls: formulas/ceph/common/configure
 
