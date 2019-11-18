@@ -52,8 +52,6 @@ align_crush_bucket:
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
     - name: __slot__:salt:cmd.shell("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="{{ device }}") | select(.locked==0) | .path' | sed '{{ loop.index }}p'")
-    - require:
-      - file: journal_def_{{ device }}_{{ loop.index }}
   {% endfor %}
 {% endfor %}
 
