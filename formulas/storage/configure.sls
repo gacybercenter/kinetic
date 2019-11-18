@@ -50,8 +50,19 @@ align_crush_bucket:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
 db_pv_{{ device }}_{{ loop.index }}:
-  cmd.run:
-    - name: ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="INTEL SSDPED1K750GA") | select(.locked==0) | .path'
+  lvm.pv_present:
+    - name: __slot__:salt:cmd.shell("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="{{ device }}") | select(.locked==0) | .path' | sed '{{ loop.inded }}p'")
+    - require:
+      - file: journal_def_{{ device }}_{{ loop.index }}
+  {% endfor %}
+{% endfor %}
+
+db_vg:
+  lvm.vg_present:
+    - devices:
+{% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
+  {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
+        __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")
   {% endfor %}
 {% endfor %}
 
