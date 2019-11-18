@@ -55,7 +55,7 @@ align_crush_bucket:
 journal_def_{{ device }}_{{ loop.index }}:
   file.managed:
     - name: /etc/ceph/journals/{{ device }}/{{ loop.index }}
-    - contents: {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="{{ device }}") | select(.locked==0) | .path' | sed -n '{{ loop.index }}p'") }}
+    - contents: {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="+device+") | select(.locked==0) | .path' | sed -n '{{ loop.index }}p'") }}
     - unless:
       - test -f "/etc/ceph/journals/{{ device }}/{{ loop.index }}"
 
