@@ -47,34 +47,32 @@ align_crush_bucket:
 ##This section will create /etc/ceph/journals/foomodel/[1-3] and /etc/ceph/journals/barmodel/[1-2], with the contents of each file being /dev/path/to/disk
 ## on line 1
 
-{% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
-/etc/ceph/journals/{{ device }}:
+
+/etc/ceph/journals/test:
   file.directory:
     - makedirs: true
-  {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-journal_def_{{ device }}_{{ loop.index }}:
+  {% for qty in range(2) %}
+journal_def_test_{{ loop.index }}:
   file.managed:
-    - name: /etc/ceph/journals/{{ device }}/{{ loop.index }}
-    - contents: __slot__:salt:cmd.shell("lsblk -psn --output name,model | grep '{{ device }}' | grep -i '^[/]' | sort | sed -n '{{ loop.index }}p' | sed 's/{{ device }}//'")
+    - name: /etc/ceph/journals/test/{{ loop.index }}
+    - contents: __slot__:salt:cmd.shell("cat /root/foo | sed -n '{{ loop.index }}p' | sed 's/test//'")
     - unless:
-      - test -f "/etc/ceph/journals/{{ device }}/{{ loop.index }}"
+      - test -f "/etc/ceph/journals/test/{{ loop.index }}"
 
-db_pv_{{ device }}_{{ loop.index }}:
+db_pv_test_{{ loop.index }}:
   lvm.pv_present:
-    - name: __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")
+    - name: __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/test/{{ loop.index }}'")
     - require:
-      - file: journal_def_{{ device }}_{{ loop.index }}
+      - file: journal_def_test_{{ loop.index }}
   {% endfor %}
-{% endfor %}
+
 
 db_vg:
   lvm.vg_present:
     - devices:
-{% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
-  {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-        __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")
+  {% for qty in range(2) %}
+        __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/test/{{ loop.index }}'")
   {% endfor %}
-{% endfor %}
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
   {% set step = 100 // pillar['osd_mappings'][grains['type']]['osd'] | length %}
