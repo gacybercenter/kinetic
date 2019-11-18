@@ -51,11 +51,9 @@ align_crush_bucket:
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
-{% if grains['production'] == True %}
-    - name: dummy
-{% else %}
-    - name: {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model==\""+device+"\") | select(.locked==0) | .path' | sed -n '"+loop.index|string+"p'") }}
-{% endif %}
+    - name: __slot__:salt:cmd.shell("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model==\"{{ device }}\") | select(.locked==0) | .path' | sed -n '{{ loop.index }}p'")
+    - unless:
+      - test -d /dev/db_vg
   {% endfor %}
 {% endfor %}
 
@@ -67,6 +65,8 @@ db_vg:
       - {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model==\""+device+"\") | select(.locked==0) | .path' | sed -n '"+loop.index|string+"p'") }}
   {% endfor %}
 {% endfor %}
+    - unless:
+      - test -d /dev/db_vg
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
   {% set step = 100 // pillar['osd_mappings'][grains['type']]['osd'] | length %}
