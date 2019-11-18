@@ -71,7 +71,7 @@ db_vg:
   lvm.vg_present:
     - devices:
   {% for qty in range(2) %}
-        __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/test/{{ loop.index }}'")
+      -__slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/test/{{ loop.index }}'")
   {% endfor %}
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
