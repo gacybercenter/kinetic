@@ -53,13 +53,13 @@ align_crush_bucket:
 journal_def_{{ device }}_{{ loop.index }}:
   file.managed:
     - name: /etc/ceph/journals/{{ device }}/{{ loop.index }}
-    - contents: __slot__:salt:cmd.shell("lsblk -psn --output name,model | grep '{{ device }}' | grep -i '^[/]' | sort | sed -n '{{ loop.index }}p' | cut -d' ' -f1")
+    - contents: __slot__:salt:cmd.shell("lsblk -psn --output name,model | grep '{{ device }}' | grep -i '^[/]' | sort | sed -n '{{ loop.index }}p' | sed 's/{{ device }}//'")
     - unless:
       - test -f "/etc/ceph/journals/{{ device }}/{{ loop.index }}"
 
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
-    - name: __slot__:salt:file.read("/etc/ceph/journals/{{ device }}/{{ loop.index }}")
+    - name: __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")
     - require:
       - file: journal_def_{{ device }}_{{ loop.index }}
   {% endfor %}
@@ -67,9 +67,10 @@ db_pv_{{ device }}_{{ loop.index }}:
 
 db_vg:
   lvm.vg_present:
+    - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-    - devices: __slot__:salt:file.read("/etc/ceph/journals/{{ device }}/{{ loop.index }}")
+       - __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")
   {% endfor %}
 {% endfor %}
 
