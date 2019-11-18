@@ -59,7 +59,7 @@ journal_def_{{ device }}_{{ loop.index }}:
 
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
-    - name: __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")
+    - name: __slot__:salt:file.read("/etc/ceph/journals/INTEL SSDPED1K750GA/1")
     - require:
       - file: journal_def_{{ device }}_{{ loop.index }}
   {% endfor %}
@@ -70,7 +70,7 @@ db_vg:
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-       - __slot__:salt:cmd.shell("head -n 1 '/etc/ceph/journals/{{ device }}/{{ loop.index }}'")
+       -  __slot__:salt:file.read("/etc/ceph/journals/INTEL SSDPED1K750GA/1")
   {% endfor %}
 {% endfor %}
 
