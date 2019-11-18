@@ -52,7 +52,7 @@ align_crush_bucket:
     {% set pvs = salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="+device+") | select(.locked==0) | .path'") | dictsort() %}
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
-    - name: 'pv'+{{ device }}
+    - name: {{ pvs }}{{ loop.index }}
   {% endfor %}
 {% endfor %}
 
