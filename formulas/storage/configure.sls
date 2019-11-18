@@ -49,7 +49,7 @@ align_crush_bucket:
 
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-    {% set pvs = salt['cmd.shell']("ceph-volume inventory") %}
+    {% set pvs = salt['cmd.shell']('ceph-volume inventory') %}
 db_pv_{{ device }}_{{ loop.index }}:
   cmd.shell:
     - name: echo {{ pvs }}
