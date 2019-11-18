@@ -61,7 +61,7 @@ journal_def_{{ device }}_{{ loop.index }}:
 
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
-    - name: {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="{{ device }}") | select(.locked==0) | .path' | sed -n '{{ loop.index }}p'") }}
+    - name: {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="+device+") | select(.locked==0) | .path' | sed -n '+loop.index+p'") }}
     - require:
       - file: journal_def_{{ device }}_{{ loop.index }}
   {% endfor %}
@@ -72,7 +72,7 @@ db_vg:
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-    - {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="{{ device }}") | select(.locked==0) | .path' | sed -n '{{ loop.index }}p'") }}
+    - {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model=="+device+") | select(.locked==0) | .path' | sed -n '+loop.index+p'") }}
   {% endfor %}
 {% endfor %}
 
