@@ -99,7 +99,6 @@ spawnzero_complete:
 {% endif %}
         vni_ranges: 1:65536
 
-
 {% if grains['os_family'] == 'RedHat' %}
 plugin_symlink:
   file.symlink:
@@ -118,22 +117,6 @@ plugin_symlink:
         public_interface: {{ interface }}
   {% endif %}
 {% endfor %}
-
-/etc/neutron/l3_agent.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/l3_agent.ini
-
-/etc/neutron/dhcp_agent.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/dhcp_agent.ini
-
-/etc/neutron/metadata_agent.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/metadata_agent.ini
-    - template: jinja
-    - defaults:
-        nova_metadata_host: {{ pillar['endpoints']['public'] }}
-        metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
 
 fs.inotify.max_user_instances:
   sysctl.present:
@@ -156,9 +139,22 @@ neutron_server_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-{% endif %}
 
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
+/etc/neutron/l3_agent.ini:
+  file.managed:
+    - source: salt://formulas/neutron/files/l3_agent.ini
+
+/etc/neutron/dhcp_agent.ini:
+  file.managed:
+    - source: salt://formulas/neutron/files/dhcp_agent.ini
+
+/etc/neutron/metadata_agent.ini:
+  file.managed:
+    - source: salt://formulas/neutron/files/metadata_agent.ini
+    - template: jinja
+    - defaults:
+        nova_metadata_host: {{ pillar['endpoints']['public'] }}
+        metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
 
 neutron_linuxbridge_agent_service:
   service.running:
