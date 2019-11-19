@@ -225,6 +225,8 @@ ovn_northd_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+    - require:
+      - service: openvswitch_service    
 
 ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
   cmd.run:
