@@ -119,18 +119,6 @@ nova_compute_service:
         lock_path: /var/lib/neutron/tmp
 {% endif %}
 
-/etc/neutron/plugins/ml2/linuxbridge_agent.ini:
-  file.managed:
-    - source: salt://formulas/compute/files/linuxbridge_agent.ini
-    - template: jinja
-    - defaults:
-        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
-        public_interface: {{ interface }}
-  {% endif %}
-{% endfor %}
-
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
@@ -147,6 +135,8 @@ libvirtd_service:
       - cmd: load_ceph_volumes_key
 {% endif %}
 
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
+
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
@@ -154,3 +144,54 @@ neutron_linuxbridge_agent_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+
+/etc/neutron/plugins/ml2/linuxbridge_agent.ini:
+  file.managed:
+    - source: salt://formulas/compute/files/linuxbridge_agent.ini
+    - template: jinja
+    - defaults:
+        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
+{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
+  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+        public_interface: {{ interface }}
+  {% endif %}
+{% endfor %}
+
+{% elif pillar['neutron']['backend'] == "networking-ovn" %}
+
+openvswitch_service:
+  service.running:
+    - name: openvswitch
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+
+ovs-vsctl set open . external-ids:ovn-remote=tcp:10.100.6.43:6642:
+  cmd.run:
+    - require:
+      - service: openvswitch_service
+
+set_encap:
+  cmd.run:
+    - name: ovs-vsctl set open . external-ids:ovn-encap-type=geneve,vxlan
+    - require:
+      - service: openvswitch_service
+
+set_encap_ip:
+  cmd.run:
+    - name: ovs-vsctl set open . external-ids:ovn-encap-ip={{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
+    - require:
+      - service: openvswitch_service
+
+ovn_controller_service:
+  service.running:
+    - name: ovn-controller
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+
+{% endif %}
