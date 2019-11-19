@@ -182,14 +182,17 @@ ovn_metadata_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
 
-ovs-vsctl set open . external-ids:ovn-remote=tcp:10.100.6.43:6642:
+
+{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
   cmd.run:
     - require:
       - service: openvswitch_service
+{% endfor %}
 
 set_encap:
   cmd.run:
-    - name: ovs-vsctl set open . external-ids:ovn-encap-type=geneve,vxlan
+    - name: ovs-vsctl set open . external-ids:ovn-encap-type=geneve
     - require:
       - service: openvswitch_service
 
@@ -198,6 +201,7 @@ set_encap_ip:
     - name: ovs-vsctl set open . external-ids:ovn-encap-ip={{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
     - require:
       - service: openvswitch_service
+      - cmd: set_encap
 
 make_bridge:
   cmd.run:
@@ -214,14 +218,21 @@ map_bridge:
       - service: openvswitch_service
       - cmd: set_encap
       - cmd: set_encap_ip
+      - cmd: make_bridge
 
+{% for interface in pillar['virtual'][grains['type']]['networks']['interfaces'] %}
+  {% if pillar['virtual'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
 enable_bridge:
   cmd.run:
-    - name: ovs-vsctl --may-exist add-port br-provider enp113s0f0
+    - name: ovs-vsctl --may-exist add-port br-provider {{ interface }}
     - require:
       - service: openvswitch_service
       - cmd: set_encap
       - cmd: set_encap_ip
+      - cmd: make_bridge
+      - cmd: map_bridge
+  {% endif %}
+{% endfor %}
 
 ovn_controller_service:
   service.running:
