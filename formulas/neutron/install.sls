@@ -26,7 +26,7 @@ neutron_packages:
       - ebtables
       - python2-openstackclient
 
-{% if pillar['answers']['neutron']['backend'] == "networking-ovn" %}
+  {% if pillar['answers']['neutron']['backend'] == "networking-ovn" %}
 
 neutron_packages:
   pkg.installed:
@@ -39,4 +39,5 @@ neutron_packages:
       - ebtables
       - python2-openstackclient
 
+  {% endif %}
 {% endif %}
