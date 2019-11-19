@@ -158,6 +158,13 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+/etc/neutron/networking_ovn_metadata_agent.ini:
+  file.managed:
+    - source: salt://formulas/neutron/files/networking_ovn_metadata_agent.ini
+    - template: jinja
+    - defaults:
+        nova_metadata_host: {{ pillar['endpoints']['public'] }}
+        metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
 
 openvswitch_service:
   service.running:
@@ -165,6 +172,7 @@ openvswitch_service:
     - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/networking_ovn_metadata_agent.ini    
 
 ovs-vsctl set open . external-ids:ovn-remote=tcp:10.100.6.43:6642:
   cmd.run:
