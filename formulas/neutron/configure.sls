@@ -229,6 +229,15 @@ ovn_northd_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
 
+ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
+  cmd.run:
+    - require:
+      - service: ovn_northd_service
+
+ovn-sbctl set-connection ptcp:6642:0.0.0.0 -- set connection . inactivity_probe=60000:
+  cmd.run:
+    - require:
+      - service: ovn_northd_service
 {% endif %}
 
 {% if grains['spawning'] == 0 %}
