@@ -35,8 +35,6 @@ compute_packages:
     - pkgs:
       - openstack-nova-compute
       - ovn-host
-      - ovn
-      - python2-networking-ovn
       - python2-networking-ovn-metadata-agent
       - python-tornado
       - ceph-common
