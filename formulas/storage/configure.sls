@@ -61,7 +61,7 @@ db_pv_{{ device }}_{{ loop.index }}:
 
 db_vg:
   lvm.vg_present:
-     - unless:
+    - unless:
        - test -d /dev/db_vg
     - require:
       - sls: formulas/storage/install
