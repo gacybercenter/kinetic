@@ -43,7 +43,7 @@ spawnzero_complete:
     - source: salt://formulas/neutron/files/neutron.conf
     - template: jinja
     - defaults:
-        core_plugin: neutron.plugins.ml2.plugin:Ml2Plugin
+        core_plugin: neutron.plugins.ml2.plugin.Ml2Plugin
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
         service_plugins: router
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
@@ -228,7 +228,7 @@ ovn_northd_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      
+
 {% endif %}
 
 {% if grains['spawning'] == 0 %}
