@@ -12,15 +12,6 @@ neutron_packages:
       - python3-tornado
 
 {% elif grains['os_family'] == 'RedHat' %}
-  {% if pillar['neutron']['backend'] == "linuxbridge" %}
-neutron_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-neutron
-      - openstack-neutron-ml2
-      - python2-openstackclient
-
-  {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
 neutron_packages:
   pkg.installed:
@@ -29,5 +20,4 @@ neutron_packages:
       - openstack-neutron-ml2
       - python2-openstackclient
 
-  {% endif %}
 {% endif %}
