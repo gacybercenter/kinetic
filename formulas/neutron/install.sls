@@ -10,6 +10,7 @@ neutron_packages:
       - neutron-plugin-ml2
       - python3-openstackclient
       - python3-tornado
+      - networking-ovn      
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -19,5 +20,6 @@ neutron_packages:
       - openstack-neutron
       - openstack-neutron-ml2
       - python2-openstackclient
+      - python2-networking-ovn
 
 {% endif %}
