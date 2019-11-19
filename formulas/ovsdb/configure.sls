@@ -33,3 +33,8 @@ ovn-sbctl set-connection ptcp:6642:0.0.0.0 -- set connection . inactivity_probe=
   cmd.run:
     - require:
       - service: ovn_northd_service
+
+ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
+  cmd.run:
+    - require:
+      - service: ovn_northd_service
