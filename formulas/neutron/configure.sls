@@ -121,7 +121,7 @@ neutron_server_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/neutron/api-paste.ini
-{% pillar['neutron']['backend'] == "networking-ovn" %}      
+{% if pillar['neutron']['backend'] == "networking-ovn" %}      
       - file: /etc/neutron/networking_ovn_metadata_agent.ini
 {% endif %}
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
