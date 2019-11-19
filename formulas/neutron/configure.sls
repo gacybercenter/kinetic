@@ -92,6 +92,7 @@ spawnzero_complete:
         ovn_nb_connection: ovn_nb_connection = tcp:10.100.6.43:6641
         ovn_sb_connection: ovn_sb_connection = tcp:10.100.6.43:6642
         ovn_l3_scheduler: ovn_l3_scheduler = leastloaded
+        ovn_native_dhcp: ovn_native_dhcp = True
 {% endif %}
         vni_ranges: 1:65536
 
