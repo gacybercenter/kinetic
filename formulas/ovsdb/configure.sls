@@ -33,5 +33,3 @@ ovn-sbctl set-connection ptcp:6642:0.0.0.0 -- set connection . inactivity_probe=
   cmd.run:
     - require:
       - service: ovn_northd_service
-
-{% endif %}
