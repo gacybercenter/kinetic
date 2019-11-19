@@ -1,5 +1,5 @@
 include:
-  - /formulas/neutron/install
+  - formulas/neutron/install
   - formulas/common/base
   - formulas/common/networking
 
@@ -134,34 +134,3 @@ neutron_server_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/neutron/api-paste.ini
-{% if pillar['neutron']['backend'] == "networking-ovn" %}
-      - file: /etc/neutron/networking_ovn_metadata_agent.ini
-{% elif pillar['neutron']['backend'] == "linuxbridge" %}
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-{% endif %}
-
-{% if pillar['neutron']['backend'] == "networking-ovn" %}
-
-/etc/neutron/plugins/ml2/linuxbridge_agent.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/linuxbridge_agent.ini
-    - template: jinja
-    - defaults:
-        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for interface in pillar['virtual'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['virtual'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
-        public_interface: {{ interface }}
-  {% endif %}
-{% endfor %}
-
-{% elif pillar['neutron']['backend'] == "networking-ovn" %}
-
-/etc/neutron/networking_ovn_metadata_agent.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/networking_ovn_metadata_agent.ini
-    - template: jinja
-    - defaults:
-        nova_metadata_host: {{ pillar['endpoints']['public'] }}
-        metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
-
-{% endif %}
