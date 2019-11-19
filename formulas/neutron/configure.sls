@@ -85,11 +85,17 @@ spawnzero_complete:
         tenant_network_types: vxlan
         mechanism_drivers: linuxbridge,l2population
         extension_drivers: port_security,dns_domain_ports
+        ovn_nb_connection: ""
+        ovn_sb_connection: ""
+        ovn_l3_scheduler: ""
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
         type_drivers: local,flat,vlan,geneve
         tenant_network_types: geneve
         mechanism_drivers: ovn
         extension_drivers: port_security
+        ovn_nb_connection: ovn_nb_connection = tcp:10.100.5.138:6641
+        ovn_sb_connection: ovn_sb_connection = tcp:10.100.5.138:6642
+        ovn_l3_scheduler: ovn_l3_scheduler = OVN_L3_SCHEDULER
 {% endif %}
         vni_ranges: 1:65536
 
