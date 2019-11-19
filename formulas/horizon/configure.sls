@@ -1,8 +1,8 @@
 include:
   - formulas/common/base
   - formulas/common/networking
-  - /formulas/horizon/install
-  - /formulas/horizon/install-zun-ui
+  - formulas/horizon/install
+  - formulas/horizon/install-zun-ui
 
 {% if grains['spawning'] == 0 %}
 
@@ -13,11 +13,26 @@ spawnzero_complete:
 
 {% endif %}
 
-/etc/openstack-dashboard/local_settings.py:
+local_settings:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/openstack-dashboard/local_settings.py
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/openstack-dashboard/local_settings
+{% endif %}
     - source: salt://formulas/horizon/files/local_settings.py
     - template: jinja
     - defaults:
+{% if grains['os_family'] == 'Debian' %}
+        webroot: horizon
+{% elif grains['os_family'] == 'RedHat' %}
+        webroot: dashboard
+{% endif %}
+{% if grains['os_family'] == 'Debian' %}
+        secret_key: /var/lib/openstack-dashboard/secret_key
+{% elif grains['os_family'] == 'RedHat' %}
+        secret_key: /var/lib/openstack-dashboard/secret_key
+{% endif %}
 {% for server, address in salt['mine.get']('type:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
@@ -39,9 +54,17 @@ spawnzero_complete:
             ]
 {% endif %}
 
-/etc/apache2/conf-enabled/openstack-dashboard.conf:
+{% if grains['os_family'] == 'Debian' %}
+apache_conf:
   file.managed:
-    - source: salt://formulas/horizon/files/openstack-dashboard.conf
+    - name: /etc/apache2/conf-enabled/openstack-dashboard.conf
+    - source: salt://formulas/horizon/files/uca-dashboard.conf
+{% elif grains['os_family'] == 'RedHat' %}
+apache_conf:
+  file.managed:
+    - name: /etc/httpd/conf.d/openstack-dashboard.conf
+    - source: salt://formulas/horizon/files/rdo-dashboard.conf
+{% endif %}
 
 /var/www/html/index.html:
   file.managed:
@@ -49,11 +72,32 @@ spawnzero_complete:
     - template: jinja
     - defaults:
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
+{% if grains['os_family'] == 'Debian' %}
+        alias: horizon
+{% elif grains['os_family'] == 'RedHat' %}
+        alias: dashboard
+{% endif %}
 
-/var/lib/openstack-dashboard/secret_key:
+{% if grains['os_family'] == 'Debian' %}
+
+secret_key:
   file.managed:
+    - name: /var/lib/openstack-dashboard/secret_key
     - user: horizon
     - group: horizon
+    - mode: 600
+    - contents_pillar: horizon:horizon_secret_key
+{% elif grains['os_family'] == 'RedHat' %}
+
+secret_key:
+  file.managed:
+    - name: /var/lib/openstack-dashboard/secret_key
+    - user: apache
+    - group: apache
+    - mode: 600
+    - contents_pillar: horizon:horizon_secret_key    
+
+{% endif %}
 
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
 install_theme:
@@ -65,9 +109,16 @@ install_theme:
 
 apache2_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: apache2
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: httpd
+{% endif %}
+    - enable: true
+    - require:
+      - file: local_settings
     - watch:
-      - file: /etc/openstack-dashboard/local_settings.py
-      - file: /var/lib/openstack-dashboard/secret_key
-      - file: /etc/apache2/conf-enabled/openstack-dashboard.conf
+      - file: local_settings
+      - file: secret_key
+      - file: apache_conf
       - git: install_theme

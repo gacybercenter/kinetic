@@ -19,6 +19,13 @@ role:
     - value: {{ type }}
 {% endif %}
 
+{% if type in ['salt','pxe'] %}
+ifwatch:
+  grains.present:
+    - value:
+      - eth0
+{% endif %}
+
 {% if grains['os_family'] == 'Debian' %}
   {% if type not in ['cache','salt','pxe'] %}
     {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
@@ -32,6 +39,17 @@ role:
 
   {% if salt['grains.get']('upgraded') != True %}
 
+update_all:
+  pkg.uptodate:
+    - refresh: true
+    - dist_upgrade: True
+
+upgraded:
+  grains.present:
+    - value: True
+    - require:
+      - update_all
+
 install_pip:
   pkg.installed:
     - pkgs:
@@ -44,21 +62,33 @@ pyroute2:
       - install_pip
     - reload_modules: True
 
-update_all:
-  pkg.uptodate:
-    - refresh: true
-    - dist_upgrade: True
-
-upgraded:
-  grains.present:
-    - value: True
-    - require:
-      - update_all
   {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
+  {% if type not in ['cache','salt','pxe'] %}
+    {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+/etc/yum.conf:
+  file.managed:
+    - contents: |
+        [main]
+        cachedir=/var/cache/yum/$basearch/$releasever
+        keepcache=0
+        debuglevel=2
+        logfile=/var/log/yum.log
+        exactarch=1
+        obsoletes=1
+        gpgcheck=1
+        plugins=1
+        installonly_limit=5
+        bugtracker_url=http://bugs.centos.org/set_project.php?project_id=23&ref=http://bugs.centos.org/bug_report_page.php?category=yum
+        distroverpkg=centos-release
+    {% for host in cache_addresses_dict %}
+        proxy=http://{{ cache_addresses_dict[host][0] }}:3142
+    {% endfor %}
+  {% endif %}
 
   {% if salt['grains.get']('upgraded') != True %}
+
 update_all:
   pkg.uptodate:
     - refresh: true
@@ -68,6 +98,9 @@ upgraded:
     - value: True
     - require:
       - update_all
+
+python36-pyroute2:
+  pkg.installed
 
   {% endif %}
 {% endif %}

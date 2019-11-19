@@ -18,6 +18,7 @@ assign_uuid_to_{{ target }}:
     - arg:
       - /var/www/html/assignments/{{ target }}
       - {{ type }}-{{ uuid }}
+      - {{ pillar['hosts'][type]['os'] }}
 
 {% elif style == 'virtual' %}
 {% set spawning = salt['pillar.get']('spawning', '0') %}
@@ -156,12 +157,20 @@ wait_for_spawning_0_{{ type }}-{{ uuid }}:
 
 {% endif %}
 
+apply_install_{{ type }}-{{ uuid }}:
+  salt.state:
+    - tgt: '{{ type }}-{{ uuid }}'
+    - sls:
+      - formulas/{{ type }}/install
+    - require:
+      - wait_for_{{ type }}-{{ uuid }}_reboot
+
 highstate_{{ type }}-{{ uuid }}:
   salt.state:
     - tgt: '{{ type }}-{{ uuid }}'
     - highstate: True
     - require:
-      - wait_for_{{ type }}-{{ uuid }}_reboot
+      - apply_install_{{ type }}-{{ uuid }}
 
 final_reboot_{{ type }}-{{ uuid }}:
   salt.function:

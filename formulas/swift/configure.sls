@@ -11,8 +11,6 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
-{% endif %}
-
 make_swift_service:
   cmd.script:
     - source: salt://formulas/swift/files/mkservice.sh
@@ -25,12 +23,7 @@ make_swift_service:
         swift_internal_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['path'] }}
         swift_admin_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['path'] }}
 
-/etc/ceph/ceph.client.admin.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-admin-keyring
-    - mode: 600
-    - user: root
-    - group: root
+{% endif %}
 
 ceph_user_exists:
   user.present:
@@ -49,10 +42,25 @@ ceph_user_exists:
     - user: ceph
     - group: ceph
 
-ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
+get_adminkey:
+  file.managed:
+    - name: /etc/ceph/ceph.client.admin.keyring
+    - contents_pillar: ceph:ceph-client-admin-keyring
+    - mode: 600
+    - user: root
+    - group: root
+    - prereq:
+      - cmd: make_{{ grains['id'] }}_swiftkey
+
+make_{{ grains['id'] }}_swiftkey:
   cmd.run:
+    - name: ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
     - creates:
       - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
+
+wipe_adminkey:
+  file.absent:
+    - name: /etc/ceph/ceph.client.admin.keyring
 
 radosgw_service:
   service.running:

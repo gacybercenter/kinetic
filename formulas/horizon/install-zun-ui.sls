@@ -49,6 +49,8 @@ zun_latest:
   file.managed:
     - source: salt://formulas/horizon/files/_0330_cloud_shell_settings.py
 
+{% if grains['os_family'] == 'Debian' %}
+
 pip3 install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
   cmd.run
 
@@ -66,3 +68,25 @@ compress-static:
   cmd.run:
     - name: python3 manage.py compress
     - cwd: /usr/share/openstack-dashboard/
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+pip install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
+  cmd.run
+
+installzun-ui:
+  cmd.run:
+    - name: python2 setup.py install
+    - cwd: /usr/share/openstack-dashboard/zun-ui/
+
+collect-static:
+  cmd.run:
+    - name: python2 manage.py collectstatic --noinput
+    - cwd: /usr/share/openstack-dashboard/
+
+compress-static:
+  cmd.run:
+    - name: python2 manage.py compress
+    - cwd: /usr/share/openstack-dashboard/
+
+{% endif %}    

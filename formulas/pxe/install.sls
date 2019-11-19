@@ -1,9 +1,6 @@
 build-essential:
   pkg.installed
 
-tftpd-hpa:
-  pkg.installed
-
 apache2:
   pkg.installed
 

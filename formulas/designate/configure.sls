@@ -1,16 +1,9 @@
 include:
-  - /formulas/designate/install
+  - formulas/designate/install
   - formulas/common/base
   - formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
-
-spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
-
-{% endif %}
 
 make_designate_service:
   cmd.script:
@@ -21,6 +14,20 @@ make_designate_service:
         keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
         designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
         designate_service_password: {{ pillar ['designate']['designate_service_password'] }}
+
+/bin/sh -c "designate-manage database sync" designate:
+  cmd.run:
+    - unless:
+      - /bin/sh -c "designate-manage database version" designate | grep -q "Current: 102"
+    - require:
+      - file: /etc/designate/designate.conf
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
+
+{% endif %}
 
 /etc/designate/designate.conf:
   file.managed:
@@ -46,12 +53,22 @@ make_designate_service:
   file.managed:
     - source: salt://formulas/designate/files/tlds.conf
 
-/etc/bind/named.conf.options:
+bind_conf:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/bind/named.conf.options
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/named.conf
+{% endif %}
     - source: salt://formulas/designate/files/named.conf.options
     - template: jinja
     - defaults:
         public_dns: {{ pillar['networking']['addresses']['float_dns'] }}
+{% if grains['os_family'] == 'Debian' %}
+        directory: /var/cache/bind
+{% elif grains['os_family'] == 'RedHat' %}
+        directory: /var/named
+{% endif %}
 
 /etc/designate/pools.yaml:
   file.managed:
@@ -60,27 +77,28 @@ make_designate_service:
     - defaults:
         hostname: {{ grains['fqdn'] }}.
 
-/etc/bind/rndc.key:
+/etc/designate/rndc.key:
   file.managed:
     - contents_pillar: designate:designate_rndc_key
     - mode: 640
     - user: root
+{% if grains['os_family'] == 'Debian' %}
     - group: bind
-
-/bin/sh -c "designate-manage database sync" designate:
-  cmd.run:
-    - onlyif:
-      - /bin/sh -c "designate-manage database version" designate | grep -q 102
+{% elif grains['os_family'] == 'RedHat' %}
+    - group: named
+{% endif %}
 
 designate_api_service:
   service.running:
     - name: designate-api
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
 
 designate_central_service:
   service.running:
     - name: designate-central
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
 
@@ -107,9 +125,14 @@ designate_mdns_service:
 
 designate_bind9_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: bind9
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: named
+{% endif %}
+    - enable: true
     - watch:
-      - file: /etc/bind/rndc.key
+      - file: /etc/designate/rndc.key
 
 /bin/sh -c "designate-manage pool update" designate:
   cmd.run:

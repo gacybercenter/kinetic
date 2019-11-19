@@ -69,6 +69,13 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% endif %}
 {% endfor %}
 
+/srv/dynamic_pillar/horizon.sls:
+  file.managed:
+    - replace: false
+    - contents: |
+        horizon:
+          horizon_secret_key: {{ salt['random.get_str']('64') }}
+
 /srv/dynamic_pillar/mysql.sls:
   file.managed:
     - replace: false
@@ -144,16 +151,6 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  key = {{ computekey }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
-          ceph-client-swift-keyring: |
-            [client.swift]
-                 key = {{ salt['cephx.make_key']() }}
-                 caps mon = "allow rwx"
-                 caps osd = "allow rwx"
-          ceph-client-radosgw-keyring: |
-            [client.radosgw]
-                 key = {{ salt['cephx.make_key']() }}
-                 caps mon = "allow rwx"
-                 caps osd = "allow rwx"
           ceph-client-compute-key: {{ computekey }}
           ceph-client-volumes-key: {{ volumeskey }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}

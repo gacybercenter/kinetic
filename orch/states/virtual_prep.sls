@@ -19,6 +19,11 @@
             <alias name='net{{ loop.index0 }}'/>
           </interface>
         {% endfor %}
+        {% if grains['os_family'] == 'Debian' %}
+        seclabel: <seclabel type='dynamic' model='apparmor' relabel='yes'/>
+        {% elif grains['os_family'] == 'RedHat' %}
+        seclabel: <seclabel type='dynamic' model='selinux' relabel='yes'/>
+        {% endif %}
 
 /kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:

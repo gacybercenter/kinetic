@@ -84,3 +84,5 @@ base:
     - rabbitmq
     - keystone
     - neutron
+  'horizon*':
+    - horizon

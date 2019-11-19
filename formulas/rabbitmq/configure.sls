@@ -1,5 +1,5 @@
 include:
-  - /formulas/rabbitmq/install
+  - formulas/rabbitmq/install
   - formulas/common/base
   - formulas/common/networking
 
@@ -33,10 +33,13 @@ openstack_rmq:
         - '.*'
         - '.*'
         - '.*'
+    - require:
+      - service: rabbitmq-server-service
 
 rabbitmq-server-service:
   service.running:
     - name: rabbitmq-server
+    - enable: true
     - watch:
       - /etc/rabbitmq/rabbit.conf
       - /etc/rabbitmq/rabbit-env.conf

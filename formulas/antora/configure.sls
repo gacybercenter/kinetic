@@ -1,5 +1,5 @@
 include:
-  - /formulas/antora/install
+  - formulas/antora/install
   - formulas/common/base
   - formulas/common/networking
 
@@ -25,4 +25,9 @@ antora generate --fetch /root/site.yml:
 
 apache2_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: apache2
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: httpd
+{% endif %}
+    - enable: true

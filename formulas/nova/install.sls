@@ -1,17 +1,7 @@
-uca:
-  pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - train
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
-    - file: /etc/apt/sources.list.d/cloudarchive-train.list
-    - keyid: ECD76E3E
-    - keyserver: keyserver.ubuntu.com
+include:
+  - formulas/openstack/common/repo
 
-update_packages_uca:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkgrepo: uca
-    - dist_upgrade: True
+{% if grains['os_family'] == 'Debian' %}
 
 nova_packages:
   pkg.installed:
@@ -22,3 +12,17 @@ nova_packages:
       - nova-scheduler
       - python3-openstackclient
       - spice-html5
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+nova_packages:
+  pkg.installed:
+    - pkgs:
+      - openstack-nova-api
+      - openstack-nova-conductor
+      - openstack-nova-spicehtml5proxy
+      - openstack-nova-scheduler
+      - python2-openstackclient
+      - spice-html5
+
+{% endif %}

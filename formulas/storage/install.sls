@@ -1,22 +1,16 @@
-ceph_repo:
-  pkgrepo.managed:
-    - humanname: Ceph Nautilus
-    - name: deb https://download.ceph.com/debian-nautilus/ bionic main
-    - file: /etc/apt/sources.list.d/ceph.list
-    - key_url: https://download.ceph.com/keys/release.asc
-
-update_packages_ceph:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - ceph_repo
-    - dist_upgrade: True
+include:
+  - formulas/ceph/common/repo
 
 install_ceph:
   pkg.installed:
     - name: ceph
     - require:
-      - pkgrepo: ceph_repo
+      - sls: formulas/ceph/common/repo
 
-mdadm:
-  pkg.installed
+## This is for the current method of dealing with dynamic journal Creation
+## this should eventually be dropped and the current __slot__ mechanism
+## be turned into a custom module, or do a PR against the current
+## ceph modules to bring them up to date
+install_jq:
+  pkg.installed:
+    - name: jq

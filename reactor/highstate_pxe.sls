@@ -1,3 +1,3 @@
-highstate:
-  local.state.apply:
-    - tgt: pxe
+highstate_pxe:
+  local.state.highstate:
+    - tgt: 'pxe'

@@ -3,9 +3,8 @@ from django.utils.translation import ugettext_lazy as _
 from horizon.utils import secret_key
 from openstack_dashboard.settings import HORIZON_CONFIG
 DEBUG = False
-WEBROOT = '/'
 LOCAL_PATH = os.path.dirname(os.path.abspath(__file__))
-SECRET_KEY = secret_key.generate_or_read_from_file('/var/lib/openstack-dashboard/secret_key')
+SECRET_KEY = secret_key.generate_or_read_from_file('{{ secret_key }}')
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
@@ -284,7 +283,7 @@ REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES',
                               'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN',
                               'CREATE_IMAGE_DEFAULTS',
                               'ENFORCE_PASSWORD_CHECK']
-WEBROOT='/horizon/'
+WEBROOT='/{{ webroot }}/'
 ALLOWED_HOSTS = {{ allowed_hosts }}
 COMPRESS_OFFLINE = True
 ALLOWED_PRIVATE_SUBNET_CIDR = {'ipv4': [], 'ipv6': []}

@@ -1,17 +1,7 @@
-uca:
-  pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - train
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
-    - file: /etc/apt/sources.list.d/cloudarchive-train.list
-    - keyid: ECD76E3E
-    - keyserver: keyserver.ubuntu.com
+include:
+  - formulas/openstack/common/repo
 
-update_packages_uca:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkgrepo: uca
-    - dist_upgrade: True
+{% if grains['os_family'] == 'Debian' %}
 
 heat_packages:
   pkg.installed:
@@ -23,3 +13,23 @@ heat_packages:
       - python3-tornado
       - python3-zunclient
       - python3-designateclient
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+heat_packages:
+  pkg.installed:
+    - pkgs:
+      - openstack-heat-api
+      - openstack-heat-api-cfn
+      - openstack-heat-engine
+      - python2-openstackclient
+      - uwsgi-plugin-python2-tornado
+      - python2-designateclient
+      - python2-pip
+    - reload_module: true
+
+zunclient_install:
+  pip.installed:
+    - name: python-zunclient
+
+{% endif %}

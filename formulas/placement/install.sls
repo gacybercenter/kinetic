@@ -1,17 +1,7 @@
-uca:
-  pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - train
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
-    - file: /etc/apt/sources.list.d/cloudarchive-train.list
-    - keyid: ECD76E3E
-    - keyserver: keyserver.ubuntu.com
+include:
+  - formulas/openstack/common/repo
 
-update_packages_uca:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkgrepo: uca
-    - dist_upgrade: True
+{% if grains['os_family'] == 'Debian' %}
 
 placement_packages:
   pkg.installed:
@@ -19,3 +9,14 @@ placement_packages:
       - python3-openstackclient
       - placement-api
       - python3-pymysql
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+placement_packages:
+  pkg.installed:
+    - pkgs:
+      - python2-openstackclient
+      - openstack-placement-api
+      - python36-PyMySQL
+
+{% endif %}

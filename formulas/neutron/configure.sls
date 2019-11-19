@@ -59,6 +59,11 @@ spawnzero_complete:
         nova_password: {{ pillar['nova']['nova_service_password'] }}
         designate_url: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}
         designate_password: {{ pillar['designate']['designate_service_password'] }}
+{% if grains['os_family'] == 'Debian' %}
+        lock_path: /var/lock/neutron
+{% elif grains['os_family'] == 'RedHat' %}
+        lock_path: /var/lib/neutron/tmp
+{% endif %}
 
 /etc/neutron/api-paste.ini:
   file.managed:
@@ -67,6 +72,13 @@ spawnzero_complete:
 /etc/neutron/plugins/ml2/ml2_conf.ini:
   file.managed:
     - source: salt://formulas/neutron/files/ml2_conf.ini
+
+{% if grains['os_family'] == 'RedHat' %}
+plugin_symlink:
+  file.symlink:
+    - name: /etc/neutron/plugin.ini
+    - target: /etc/neutron/plugins/ml2/ml2_conf.ini
+{% endif %}
 
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
@@ -107,6 +119,7 @@ fs.inotify.max_user_instances:
 neutron_server_service:
   service.running:
     - name: neutron-server
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -119,6 +132,7 @@ neutron_server_service:
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -131,6 +145,7 @@ neutron_linuxbridge_agent_service:
 neutron_dhcp_agent_service:
   service.running:
     - name: neutron-dhcp-agent
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -143,6 +158,7 @@ neutron_dhcp_agent_service:
 neutron_metadata_agent_service:
   service.running:
     - name: neutron-metadata-agent
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -155,6 +171,7 @@ neutron_metadata_agent_service:
 neutron_l3_agent_service:
   service.running:
     - name: neutron-l3-agent
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini

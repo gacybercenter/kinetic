@@ -1,7 +1,7 @@
 include:
   - formulas/common/base
   - formulas/common/networking
-  - /formulas/placement/install
+  - formulas/placement/install
 
 {% if grains['spawning'] == 0 %}
 
@@ -47,8 +47,27 @@ spawnzero_complete:
 {% endfor %}
         password: {{ pillar['placement']['placement_service_password'] }}
 
-placement_api_service:
+{% if grains['os_family'] == 'Debian' %}
+
+apache2_service:
   service.running:
     - name: apache2
+    - enable: true
     - watch:
       - file: /etc/placement/placement.conf
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+/etc/httpd/conf.d/00-placement-api.conf:
+  file.managed:
+    - source: salt://formulas/placement/files/00-placement-api.conf
+
+apache2_service:
+  service.running:
+    - name: httpd
+    - enable: true
+    - watch:
+      - file: /etc/placement/placement.conf
+      - file: /etc/httpd/conf.d/00-placement-api.conf
+
+{% endif %}

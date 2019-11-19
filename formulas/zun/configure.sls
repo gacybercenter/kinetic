@@ -18,8 +18,6 @@ zun-db-manage upgrade:
     - unless:
       - zun-db-manage version | grep -q e4385cf0e363
 
-{% endif %}
-
 make_zun_service:
   cmd.script:
     - source: salt://formulas/zun/files/mkservice.sh
@@ -31,6 +29,8 @@ make_zun_service:
         zun_public_endpoint: {{ pillar ['openstack_services']['zun']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['zun']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['zun']['configuration']['public_endpoint']['path'] }}
         zun_admin_endpoint: {{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['path'] }}
         zun_service_password: {{ pillar ['zun']['zun_service_password'] }}
+
+{% endif %}
 
 make_kuryr_service:
   cmd.script:
@@ -90,8 +90,13 @@ make_kuryr_service:
     - requires:
       - /formulas/zun/install
 
-/etc/default/etcd:
+etcd_conf:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/default/etcd
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/etcd/etcd.conf
+{% endif %}
     - source: salt://formulas/zun/files/etcd
     - template: jinja
     - defaults:
@@ -107,7 +112,7 @@ etcd_service:
     - name: etcd
     - enable: true
     - watch:
-      - file: /etc/default/etcd
+      - file: etcd_conf
 
 zun_api_service:
   service.running:

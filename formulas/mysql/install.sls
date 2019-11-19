@@ -1,17 +1,7 @@
-uca:
-  pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - train
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
-    - file: /etc/apt/sources.list.d/cloudarchive-train.list
-    - keyid: ECD76E3E
-    - keyserver: keyserver.ubuntu.com
+include:
+  - formulas/openstack/common/repo
 
-update_packages_uca:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkgrepo: uca
-    - dist_upgrade: True
+{% if grains['os_family'] == 'Debian' %}
 
 mariadb-server:
   pkg.installed
@@ -19,3 +9,21 @@ mariadb-server:
 python3-pymysql:
   pkg.installed:
     - reload_modules: True
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+mariadb-server:
+  pkg.installed
+
+mariadb:
+  pkg.installed
+
+python36-PyMySQL:
+  pkg.installed:
+    - reload_modules: True
+
+python36-mysql:
+  pkg.installed:
+    - reload_module: True
+
+{% endif %}

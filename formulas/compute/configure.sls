@@ -29,13 +29,15 @@ include:
     - defaults:
         uuid: {{ pillar['ceph']['nova-uuid'] }}
 
-virsh secret-define --file /etc/ceph/ceph-nova.xml:
+define_ceph_compute_key:
   cmd.run:
+    - name: virsh secret-define --file /etc/ceph/ceph-nova.xml
     - unless:
       - virsh secret-list | grep -q {{ pillar['ceph']['nova-uuid'] }}
 
-virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat /etc/ceph/client.compute.key):
+load_ceph_compute_key:
   cmd.run:
+    - name: virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat /etc/ceph/client.compute.key)
     - unless:
       - virsh secret-get-value {{ pillar['ceph']['nova-uuid'] }}
 
@@ -53,13 +55,15 @@ virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat
     - defaults:
         uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
-virsh secret-define --file /etc/ceph/ceph-volumes.xml:
+define_ceph_volumes_key:
   cmd.run:
+    - name: virsh secret-define --file /etc/ceph/ceph-volumes.xml
     - unless:
       - virsh secret-list | grep -q {{ pillar['ceph']['volumes-uuid'] }}
 
-virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(cat /etc/ceph/client.volumes.key):
+load_ceph_volumes_key:
   cmd.run:
+    - name: virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(cat /etc/ceph/client.volumes.key)
     - unless:
       - virsh secret-get-value {{ pillar['ceph']['volumes-uuid'] }}
 
@@ -86,7 +90,12 @@ virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(
 
 nova_compute_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: nova-compute
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-nova-compute
+{% endif %}
+    - enable: true
     - watch:
       - file: /etc/nova/nova.conf
 
@@ -104,6 +113,11 @@ nova_compute_service:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         password: {{ pillar['neutron']['neutron_service_password'] }}
+{% if grains['os_family'] == 'Debian' %}
+        lock_path: /var/lock/neutron
+{% elif grains['os_family'] == 'RedHat' %}
+        lock_path: /var/lib/neutron/tmp
+{% endif %}
 
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
@@ -121,9 +135,22 @@ nova_compute_service:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
 
+{% if grains['os_family'] == 'RedHat' %}
+libvirtd_service:
+  service.running:
+    - name: libvirtd
+    - enable: true
+    - require_in:
+      - cmd: define_ceph_compute_key
+      - cmd: load_ceph_compute_key
+      - cmd: define_ceph_volumes_key
+      - cmd: load_ceph_volumes_key
+{% endif %}
+
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini

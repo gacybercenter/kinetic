@@ -40,4 +40,4 @@
         port: 53
         rndc_host: 127.0.0.1
         rndc_port: 953
-        rndc_key_file: /etc/bind/rndc.key
+        rndc_key_file: /etc/designate/rndc.key

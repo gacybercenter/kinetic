@@ -1,31 +1,8 @@
-uca:
-  pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - train
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
-    - file: /etc/apt/sources.list.d/cloudarchive-train.list
-    - keyid: ECD76E3E
-    - keyserver: keyserver.ubuntu.com
+include:
+  - formulas/openstack/common/repo
+  - formulas/ceph/common/repo
 
-ceph_repo:
-  pkgrepo.managed:
-    - humanname: Ceph Nautilus
-    - name: deb https://download.ceph.com/debian-nautilus/ bionic main
-    - file: /etc/apt/sources.list.d/ceph.list
-    - key_url: https://download.ceph.com/keys/release.asc
-
-update_packages_ceph:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - ceph_repo
-    - dist_upgrade: True
-
-update_packages_uca:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkgrepo: uca
-    - dist_upgrade: True
+{% if grains['os_family'] == 'Debian' %}
 
 compute_packages:
   pkg.installed:
@@ -37,3 +14,19 @@ compute_packages:
       - spice-html5
       - python3-rbd
       - python3-rados
+
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+compute_packages:
+  pkg.installed:
+    - pkgs:
+      - openstack-nova-compute
+      - openstack-neutron-linuxbridge
+      - python-tornado
+      - ceph-common
+      - spice-html5
+      - python-rbd
+      - python-rados
+
+{% endif %}

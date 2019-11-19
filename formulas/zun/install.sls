@@ -1,25 +1,9 @@
-uca:
-  pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - train
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
-    - file: /etc/apt/sources.list.d/cloudarchive-train.list
-    - keyid: ECD76E3E
-    - keyserver: keyserver.ubuntu.com
+include:
+  - formulas/openstack/common/repo
+  - formulas/ceph/common/repo
+  - formulas/docker/common/repo
 
-docker_repo:
-  pkgrepo.managed:
-    - humanname: docker
-    - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
-    - file: /etc/apt/sources.list.d/docker.list
-    - key_url: https://download.docker.com/linux/ubuntu/gpg
-
-update_packages_uca:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkgrepo: uca
-      - pkgrepo: docker_repo
-    - dist_upgrade: True
+{% if grains['os_family'] == 'Debian' %}
 
 zun_packages:
   pkg.installed:
@@ -36,6 +20,33 @@ pymysql_sa:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+zun_packages:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+      - git
+      - python3-devel
+      - libffi-devel
+      - gcc
+      - openssl-devel
+      - etcd
+      - numactl
+      - python36-PyMySQL
+
+python3-memcached:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
+
+python-openstackclient:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
+
+{% endif %}
 
 zun:
   group.present:
@@ -68,10 +79,13 @@ zun_latest:
     - target: /var/lib/zun
     - force_clone: true
 
-pip3 install --upgrade -r /var/lib/zun/requirements.txt:
+zun_requirements:
   cmd.run:
+    - name: pip3 install --upgrade -r /var/lib/zun/requirements.txt
     - unless:
       - systemctl is-active zun-api
+    - require:
+      - git: zun_latest
 
 installzun:
   cmd.run:
@@ -79,3 +93,5 @@ installzun:
     - cwd : /var/lib/zun/
     - unless:
       - systemctl is-active zun-api
+    - require:
+      - cmd: zun_requirements
