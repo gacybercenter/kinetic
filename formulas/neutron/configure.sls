@@ -23,10 +23,6 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
     - require:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-      - file: /etc/neutron/l3_agent.ini
-      - file: /etc/neutron/dhcp_agent.ini
-      - file: /etc/neutron/metadata_agent.ini
       - file: /etc/neutron/api-paste.ini
     - unless:
       - neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini current | grep -q 5c85685d616d
@@ -106,18 +102,6 @@ plugin_symlink:
     - target: /etc/neutron/plugins/ml2/ml2_conf.ini
 {% endif %}
 
-/etc/neutron/plugins/ml2/linuxbridge_agent.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/linuxbridge_agent.ini
-    - template: jinja
-    - defaults:
-        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for interface in pillar['virtual'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['virtual'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
-        public_interface: {{ interface }}
-  {% endif %}
-{% endfor %}
-
 fs.inotify.max_user_instances:
   sysctl.present:
     - value: 1024
@@ -139,6 +123,18 @@ neutron_server_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
+
+/etc/neutron/plugins/ml2/linuxbridge_agent.ini:
+  file.managed:
+    - source: salt://formulas/neutron/files/linuxbridge_agent.ini
+    - template: jinja
+    - defaults:
+        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
+{% for interface in pillar['virtual'][grains['type']]['networks']['interfaces'] %}
+  {% if pillar['virtual'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+        public_interface: {{ interface }}
+  {% endif %}
+{% endfor %}
 
 /etc/neutron/l3_agent.ini:
   file.managed:
@@ -226,7 +222,7 @@ ovn_northd_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
     - require:
-      - service: openvswitch_service    
+      - service: openvswitch_service
 
 ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
   cmd.run:

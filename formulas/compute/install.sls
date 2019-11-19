@@ -17,12 +17,27 @@ compute_packages:
 
 
 {% elif grains['os_family'] == 'RedHat' %}
-
+  {% if pillar['neutron']['backend'] == "linuxbridge" %}
 compute_packages:
   pkg.installed:
     - pkgs:
       - openstack-nova-compute
       - openstack-neutron-linuxbridge
+      - python-tornado
+      - ceph-common
+      - spice-html5
+      - python-rbd
+      - python-rados
+
+  {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+compute_packages:
+  pkg.installed:
+    - pkgs:
+      - openstack-nova-compute
+      - ovn-host
+      - ovn
+      - python2-networking-ovn
+      - python2-networking-ovn-metadata-agent
       - python-tornado
       - ceph-common
       - spice-html5
