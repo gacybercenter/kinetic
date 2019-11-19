@@ -160,7 +160,7 @@ neutron_linuxbridge_agent_service:
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini:
   file.managed:
-    - source: salt://formulas/neutron/files/networking_ovn_metadata_agent.ini
+    - source: salt://formulas/compute/files/networking_ovn_metadata_agent.ini
     - template: jinja
     - defaults:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
