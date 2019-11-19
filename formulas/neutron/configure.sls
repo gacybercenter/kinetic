@@ -150,11 +150,15 @@ neutron_server_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/api-paste.ini
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
       - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-      - file: /etc/neutron/api-paste.ini
+{% endif %}
+
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 neutron_linuxbridge_agent_service:
   service.running:
@@ -207,6 +211,25 @@ neutron_l3_agent_service:
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
       - file: /etc/neutron/api-paste.ini
+
+{% elif pillar['neutron']['backend'] == "networking-ovn" %}
+openvswitch_service:
+  service.running:
+    - name: openvswitch
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+
+ovn_northd_service:
+  service.running:
+    - name: ovn-northd
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      
+{% endif %}
 
 {% if grains['spawning'] == 0 %}
 
