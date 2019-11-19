@@ -1,44 +1,9 @@
 include:
-  - /formulas/neutron/install
+  - formulas/network/install
   - formulas/common/base
   - formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
-
-make_neutron_service:
-  cmd.script:
-    - source: salt://formulas/neutron/files/mkservice.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        neutron_internal_endpoint: {{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['path'] }}
-        neutron_public_endpoint: {{ pillar ['openstack_services']['neutron']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['neutron']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['public_endpoint']['path'] }}
-        neutron_admin_endpoint: {{ pillar ['openstack_services']['neutron']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['neutron']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['admin_endpoint']['path'] }}
-        neutron_service_password: {{ pillar ['neutron']['neutron_service_password'] }}
-
-neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head:
-  cmd.run:
-    - runas: neutron
-    - require:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/api-paste.ini
-
-mk_public_network:
-  cmd.script:
-    - source: salt://formulas/neutron/files/mkpublic.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        start: {{ pillar['networking']['addresses']['float_start'] }}
-        end: {{ pillar['networking']['addresses']['float_end'] }}
-        dns: {{ pillar['networking']['addresses']['float_dns'] }}
-        gateway: {{ pillar['networking']['addresses']['float_gateway'] }}
-        cidr: {{ pillar['networking']['subnets']['public'] }}
-    - require:
-      service: neutron_server_service
 
 spawnzero_complete:
   event.send:
@@ -79,10 +44,6 @@ spawnzero_complete:
 {% elif grains['os_family'] == 'RedHat' %}
         lock_path: /var/lib/neutron/tmp
 {% endif %}
-
-/etc/neutron/api-paste.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/api-paste.ini
 
 /etc/neutron/plugins/ml2/ml2_conf.ini:
   file.managed:
@@ -126,25 +87,11 @@ fs.inotify.max_user_instances:
   file.managed:
     - source: salt://formulas/neutron/files/neutron_sudoers
 
-neutron_server_service:
-  service.running:
-    - name: neutron-server
-    - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/api-paste.ini
-{% if pillar['neutron']['backend'] == "networking-ovn" %}
-      - file: /etc/neutron/networking_ovn_metadata_agent.ini
-{% elif pillar['neutron']['backend'] == "linuxbridge" %}
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-{% endif %}
-
-{% if pillar['neutron']['backend'] == "networking-ovn" %}
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
-    - source: salt://formulas/neutron/files/linuxbridge_agent.ini
+    - source: salt://formulas/network/files/linuxbridge_agent.ini
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
@@ -153,6 +100,74 @@ neutron_server_service:
         public_interface: {{ interface }}
   {% endif %}
 {% endfor %}
+
+/etc/neutron/l3_agent.ini:
+  file.managed:
+    - source: salt://formulas/network/files/l3_agent.ini
+
+/etc/neutron/dhcp_agent.ini:
+  file.managed:
+    - source: salt://formulas/network/files/dhcp_agent.ini
+
+/etc/neutron/metadata_agent.ini:
+  file.managed:
+    - source: salt://formulas/network/files/metadata_agent.ini
+    - template: jinja
+    - defaults:
+        nova_metadata_host: {{ pillar['endpoints']['public'] }}
+        metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
+
+neutron_linuxbridge_agent_service:
+  service.running:
+    - name: neutron-linuxbridge-agent
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+      - file: /etc/neutron/l3_agent.ini
+      - file: /etc/neutron/dhcp_agent.ini
+      - file: /etc/neutron/metadata_agent.ini
+      - file: /etc/neutron/api-paste.ini
+
+neutron_dhcp_agent_service:
+  service.running:
+    - name: neutron-dhcp-agent
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+      - file: /etc/neutron/l3_agent.ini
+      - file: /etc/neutron/dhcp_agent.ini
+      - file: /etc/neutron/metadata_agent.ini
+      - file: /etc/neutron/api-paste.ini
+
+neutron_metadata_agent_service:
+  service.running:
+    - name: neutron-metadata-agent
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+      - file: /etc/neutron/l3_agent.ini
+      - file: /etc/neutron/dhcp_agent.ini
+      - file: /etc/neutron/metadata_agent.ini
+      - file: /etc/neutron/api-paste.ini
+
+neutron_l3_agent_service:
+  service.running:
+    - name: neutron-l3-agent
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+      - file: /etc/neutron/l3_agent.ini
+      - file: /etc/neutron/dhcp_agent.ini
+      - file: /etc/neutron/metadata_agent.ini
+      - file: /etc/neutron/api-paste.ini
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -164,4 +179,33 @@ neutron_server_service:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
 
+openvswitch_service:
+  service.running:
+    - name: openvswitch
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/networking_ovn_metadata_agent.ini
+
+ovn_northd_service:
+  service.running:
+    - name: ovn-northd
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/networking_ovn_metadata_agent.ini
+    - require:
+      - service: openvswitch_service
+
+ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
+  cmd.run:
+    - require:
+      - service: ovn_northd_service
+
+ovn-sbctl set-connection ptcp:6642:0.0.0.0 -- set connection . inactivity_probe=60000:
+  cmd.run:
+    - require:
+      - service: ovn_northd_service
 {% endif %}
