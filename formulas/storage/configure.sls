@@ -52,15 +52,15 @@ align_crush_bucket:
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
     - name: __slot__:salt:cmd.shell("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model==\"{{ device }}\") | select(.locked==0) | .path' | sed -n '{{ loop.index }}p'")
-    - unless:
-      - test -d /dev/db_vg
+    # - unless:
+    #   - test -d /dev/db_vg
   {% endfor %}
 {% endfor %}
 
 db_vg:
   lvm.vg_present:
-    - unless:
-      - test -d /dev/db_vg
+    # - unless:
+    #   - test -d /dev/db_vg
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
