@@ -158,7 +158,7 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-/etc/neutron/networking_ovn_metadata_agent.ini:
+/etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini:
   file.managed:
     - source: salt://formulas/neutron/files/networking_ovn_metadata_agent.ini
     - template: jinja
@@ -172,7 +172,15 @@ openvswitch_service:
     - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/networking_ovn_metadata_agent.ini    
+      - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+
+ovn_metadata_service:
+  service.running:
+    - name: networking-ovn-metadata-agent
+    - enable: True
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
 
 ovs-vsctl set open . external-ids:ovn-remote=tcp:10.100.6.43:6642:
   cmd.run:
