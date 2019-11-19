@@ -209,6 +209,7 @@ neutron_l3_agent_service:
       - file: /etc/neutron/api-paste.ini
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+
 openvswitch_service:
   service.running:
     - name: openvswitch
