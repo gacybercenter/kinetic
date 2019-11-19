@@ -59,14 +59,14 @@ db_pv_{{ device }}_{{ loop.index }}:
 
 db_vg:
   lvm.vg_present:
+    - unless:
+      - test -d /dev/db_vg
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
       - {{ salt['cmd.shell']("ceph-volume inventory --format json-pretty | jq -r '.[] | .sys_api | select(.model==\""+device+"\") | select(.locked==0) | .path' | sed -n '"+loop.index|string+"p'") }}
   {% endfor %}
 {% endfor %}
-    - unless:
-      - test -d /dev/db_vg
 
 {% for osd in range(pillar['osd_mappings'][grains['type']]['osd'] | length) %}
   {% set step = 100 // pillar['osd_mappings'][grains['type']]['osd'] | length %}
