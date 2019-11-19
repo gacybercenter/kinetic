@@ -97,14 +97,16 @@ spawnzero_complete:
         ovn_nb_connection: ""
         ovn_sb_connection: ""
         ovn_l3_scheduler: ""
-        ovn_metadata_enabled: ""   
+        ovn_metadata_enabled: ""
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
         type_drivers: local,flat,vlan,geneve
         tenant_network_types: geneve
         mechanism_drivers: ovn
         extension_drivers: port_security
-        ovn_nb_connection: ovn_nb_connection = tcp:10.100.6.43:6641
-        ovn_sb_connection: ovn_sb_connection = tcp:10.100.6.43:6642
+{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        ovn_nb_connection: ovn_nb_connection = tcp:{{ address[0] }}:6641
+        ovn_sb_connection: ovn_sb_connection = tcp:{{ address[0] }}:6642
+{% endfor %}
         ovn_l3_scheduler: ovn_l3_scheduler = leastloaded
         ovn_native_dhcp: ovn_native_dhcp = True
         ovn_l3_mode: ovn_l3_mode = True
