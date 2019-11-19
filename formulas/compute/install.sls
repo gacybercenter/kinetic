@@ -44,4 +44,6 @@ compute_packages:
       - python-rbd
       - python-rados
 
+  {% endif %}
+
 {% endif %}
