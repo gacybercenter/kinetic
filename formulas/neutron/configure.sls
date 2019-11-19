@@ -38,7 +38,7 @@ mk_public_network:
         gateway: {{ pillar['networking']['addresses']['float_gateway'] }}
         cidr: {{ pillar['networking']['subnets']['public'] }}
     - require:
-      service: neutron_server_service
+      - service: neutron_server_service
 
 spawnzero_complete:
   event.send:
@@ -97,6 +97,7 @@ spawnzero_complete:
         ovn_nb_connection: ""
         ovn_sb_connection: ""
         ovn_l3_scheduler: ""
+        ovn_metadata_enabled: ""   
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
         type_drivers: local,flat,vlan,geneve
         tenant_network_types: geneve
