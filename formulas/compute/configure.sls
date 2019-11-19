@@ -183,6 +183,30 @@ set_encap_ip:
     - require:
       - service: openvswitch_service
 
+make_bridge:
+  cmd.run:
+    - name: ovs-vsctl --may-exist add-br br-provider -- set bridge br-provider protocols=OpenFlow13
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+
+map_bridge:
+  cmd.run:
+    - name: ovs-vsctl set open . external-ids:ovn-bridge-mappings=provider:br-provider
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+
+enable_bridge:
+  cmd.run:
+    - name: ovs-vsctl --may-exist add-port br-provider enp113s0f0
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+
 ovn_controller_service:
   service.running:
     - name: ovn-controller
