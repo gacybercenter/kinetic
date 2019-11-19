@@ -95,7 +95,7 @@ spawnzero_complete:
         extension_drivers: port_security
         ovn_nb_connection: ovn_nb_connection = tcp:10.100.5.138:6641
         ovn_sb_connection: ovn_sb_connection = tcp:10.100.5.138:6642
-        ovn_l3_scheduler: ovn_l3_scheduler = OVN_L3_SCHEDULER
+        ovn_l3_scheduler: ovn_l3_scheduler = leastloaded
 {% endif %}
         vni_ranges: 1:65536
 
