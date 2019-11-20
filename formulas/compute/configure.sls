@@ -236,6 +236,27 @@ ovn_controller_service:
       - cmd: set_encap
       - cmd: set_encap_ip
 
+# The below section is a workaround for the issue identified at: http://lists.openstack.org/pipermail/openstack-discuss/2019-August/008542.html
+# I am pretty sure the below is not ideal, but its better than running as root
+###
+
+neutron:
+  group.present:
+    - adduser:
+      - openvswitch
+
+networking_ovn_systemd:
+  file.managed:
+    - name: /usr/lib/systemd/system/networking-ovn-metadata-agent.service
+    - source: salt://formulas/compute/files/networking-ovn-metadata-agent.service
+
+service.systemctl_reload:
+  module.run:
+    - onchanges:
+      - file: networking_ovn_systemd
+
+###
+
 ovn_metadata_service:
   service.running:
     - name: networking-ovn-metadata-agent
