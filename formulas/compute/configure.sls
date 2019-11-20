@@ -174,15 +174,6 @@ openvswitch_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
 
-ovn_metadata_service:
-  service.running:
-    - name: networking-ovn-metadata-agent
-    - enable: True
-    - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
-
-
 {% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
   cmd.run:
@@ -244,5 +235,13 @@ ovn_controller_service:
       - service: openvswitch_service
       - cmd: set_encap
       - cmd: set_encap_ip
+
+ovn_metadata_service:
+  service.running:
+    - name: networking-ovn-metadata-agent
+    - enable: True
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
 
 {% endif %}
