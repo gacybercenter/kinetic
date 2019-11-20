@@ -165,6 +165,9 @@ neutron_linuxbridge_agent_service:
     - defaults:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
+{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        ovn_sb_connection: tcp:{{ address[0] }}:6642
+{% endfor %}        
 
 openvswitch_service:
   service.running:
@@ -175,7 +178,7 @@ openvswitch_service:
       - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
 
 {% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
+ovs-vsctl set open . external-ids:ovn-remote=tcp::6642:
   cmd.run:
     - require:
       - service: openvswitch_service
