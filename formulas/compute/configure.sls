@@ -211,8 +211,8 @@ map_bridge:
       - cmd: set_encap_ip
       - cmd: make_bridge
 
-{% for interface in pillar['virtual'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['virtual'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
+  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
 enable_bridge:
   cmd.run:
     - name: ovs-vsctl --may-exist add-port br-provider {{ interface }}
