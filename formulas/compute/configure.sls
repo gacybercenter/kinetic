@@ -242,7 +242,7 @@ ovn_controller_service:
 
 neutron:
   group.present:
-    - addusers:
+    - delusers:
       - openvswitch
 
 networking_ovn_systemd:
