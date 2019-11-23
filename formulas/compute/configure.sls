@@ -258,6 +258,7 @@ ovn_metadata_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+      - file: /usr/share/neutron/rootwrap/privsep.filters
     - require:
       - cmd: ovsdb_listen
 
