@@ -17,6 +17,7 @@
             <target dev='vnet{{ loop.index0 }}'/>
             <model type='virtio'/>
             <alias name='net{{ loop.index0 }}'/>
+            <mac address='{{ '52:54:00' | gen_mac }}'
           </interface>
         {% endfor %}
         {% if grains['os_family'] == 'Debian' %}
