@@ -165,6 +165,9 @@ neutron_linuxbridge_agent_service:
     - defaults:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
+{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        ovn_sb_connection: tcp:{{ address[0] }}:6642
+{% endfor %}
 
 openvswitch_service:
   service.running:
@@ -213,7 +216,7 @@ map_bridge:
 
 ovsdb_listen:
   cmd.run:
-    - name: ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6640:127.0.0.1      
+    - name: ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6640:127.0.0.1
 
 {% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
   {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
