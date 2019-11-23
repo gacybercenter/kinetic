@@ -169,6 +169,10 @@ neutron_linuxbridge_agent_service:
         ovn_sb_connection: tcp:{{ address[0] }}:6642
 {% endfor %}
 
+/usr/share/neutron/rootwrap/privsep.filters:
+  file.managed:
+    - source: salt://formulas/compute/files/privsep.filters
+
 openvswitch_service:
   service.running:
     - name: openvswitch
