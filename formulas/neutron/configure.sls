@@ -137,3 +137,8 @@ neutron_server_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/neutron/api-paste.ini
+    - require:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/api-paste.ini
+      - file: /etc/sudoers.d/neutron_sudoers      
