@@ -211,6 +211,10 @@ map_bridge:
       - cmd: set_encap_ip
       - cmd: make_bridge
 
+ovsdb_listen:
+  cmd.run:
+    - name: ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6640:127.0.0.1      
+
 {% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
   {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
 enable_bridge:
@@ -240,23 +244,6 @@ ovn_controller_service:
 # I am pretty sure the below is not ideal, but its better than running as root
 ###
 
-neutron:
-  group.present:
-    - delusers:
-      - openvswitch
-
-networking_ovn_systemd:
-  file.managed:
-    - name: /usr/lib/systemd/system/networking-ovn-metadata-agent.service
-    - source: salt://formulas/compute/files/networking-ovn-metadata-agent.service
-
-service.systemctl_reload:
-  module.run:
-    - onchanges:
-      - file: networking_ovn_systemd
-
-###
-
 ovn_metadata_service:
   service.running:
     - name: networking-ovn-metadata-agent
@@ -264,5 +251,6 @@ ovn_metadata_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+    - require: ovsdb_listen
 
 {% endif %}
