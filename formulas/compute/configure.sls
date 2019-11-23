@@ -254,6 +254,7 @@ ovn_metadata_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
-    - require: ovsdb_listen
+    - require:
+      - cmd: ovsdb_listen
 
 {% endif %}
