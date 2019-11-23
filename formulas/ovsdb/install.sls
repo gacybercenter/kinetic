@@ -15,5 +15,4 @@ ovsdb_packages:
     - pkgs:
       - ovn-central
       - libibverbs
-      - libmlx5
 {% endif %}
