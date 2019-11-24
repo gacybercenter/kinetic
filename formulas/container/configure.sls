@@ -63,6 +63,20 @@ include:
         lock_path: /var/lib/neutron/tmp
 {% endif %}
 
+/etc/sudoers.d/neutron_sudoers:
+  file.managed:
+    - source: salt://formulas/compute/files/neutron_sudoers
+
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
+
+neutron_linuxbridge_agent_service:
+  service.running:
+    - name: neutron-linuxbridge-agent
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/linuxbridge_agent.ini
@@ -75,16 +89,82 @@ include:
   {% endif %}
 {% endfor %}
 
-/etc/sudoers.d/neutron_sudoers:
-  file.managed:
-    - source: salt://formulas/compute/files/neutron_sudoers
+{% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
-neutron_linuxbridge_agent_service:
+openvswitch_service:
   service.running:
-    - name: neutron-linuxbridge-agent
+    - name: openvswitch
+    - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+
+{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
+  cmd.run:
+    - require:
+      - service: openvswitch_service
+{% endfor %}
+
+set_encap:
+  cmd.run:
+    - name: ovs-vsctl set open . external-ids:ovn-encap-type=geneve
+    - require:
+      - service: openvswitch_service
+
+set_encap_ip:
+  cmd.run:
+    - name: ovs-vsctl set open . external-ids:ovn-encap-ip={{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+
+make_bridge:
+  cmd.run:
+    - name: ovs-vsctl --may-exist add-br br-provider -- set bridge br-provider protocols=OpenFlow13
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+
+map_bridge:
+  cmd.run:
+    - name: ovs-vsctl set open . external-ids:ovn-bridge-mappings=provider:br-provider
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+      - cmd: make_bridge
+
+ovsdb_listen:
+  cmd.run:
+    - name: ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6640:127.0.0.1
+
+{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
+  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+enable_bridge:
+  cmd.run:
+    - name: ovs-vsctl --may-exist add-port br-provider {{ interface }}
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+      - cmd: make_bridge
+      - cmd: map_bridge
+  {% endif %}
+{% endfor %}
+
+ovn_controller_service:
+  service.running:
+    - name: ovn-controller
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+
+{% endif %}
 
 /etc/sudoers.d/zun_sudoers:
   file.managed:

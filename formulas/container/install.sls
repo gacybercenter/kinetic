@@ -48,6 +48,7 @@ container_packages:
       - ovn-host
       - python36-PyMySQL
       - docker-ce
+  {% endif %}
 
 python-openstackclient:
   pip.installed:
