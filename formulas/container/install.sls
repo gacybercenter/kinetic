@@ -48,6 +48,7 @@ container_packages:
       - ovn-host
       - python36-PyMySQL
       - docker-ce
+      - libibverbs
   {% endif %}
 
 python-openstackclient:
