@@ -22,7 +22,7 @@ pymysql_sa:
     - reload_modules: true
 
 {% elif grains['os_family'] == 'RedHat' %}
-
+  {% if pillar['neutron']['backend'] == "linuxbridge" %}
 container_packages:
   pkg.installed:
     - pkgs:
@@ -33,6 +33,19 @@ container_packages:
       - gcc
       - openssl-devel
       - openstack-neutron-linuxbridge
+      - python36-PyMySQL
+      - docker-ce
+  {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+container_packages:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+      - git
+      - python3-devel
+      - libffi-devel
+      - gcc
+      - openssl-devel
+      - ovn-host
       - python36-PyMySQL
       - docker-ce
 
