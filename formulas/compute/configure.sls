@@ -169,10 +169,6 @@ neutron_linuxbridge_agent_service:
         ovn_sb_connection: tcp:{{ address[0] }}:6642
 {% endfor %}
 
-/usr/share/neutron/rootwrap/privsep.filters:
-  file.managed:
-    - source: salt://formulas/compute/files/privsep.filters
-
 openvswitch_service:
   service.running:
     - name: openvswitch
@@ -258,7 +254,6 @@ ovn_metadata_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
-      - file: /usr/share/neutron/rootwrap/privsep.filters
     - require:
       - cmd: ovsdb_listen
 
