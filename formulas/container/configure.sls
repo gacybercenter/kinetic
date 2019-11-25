@@ -174,6 +174,8 @@ enable_bridge:
       - cmd: set_encap_ip
       - cmd: make_bridge
       - cmd: map_bridge
+    - unless:
+      - ovs-vsctl port-to-br {{ interface }} | grep -q "br-provider"      
   {% endif %}
 {% endfor %}
 
