@@ -189,6 +189,8 @@ set_encap:
     - name: ovs-vsctl set open . external-ids:ovn-encap-type=geneve
     - require:
       - service: openvswitch_service
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-encap-type | grep -q "geneve"
 
 set_encap_ip:
   cmd.run:
@@ -196,6 +198,8 @@ set_encap_ip:
     - require:
       - service: openvswitch_service
       - cmd: set_encap
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-encap-ip | grep -q "{{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}"
 
 make_bridge:
   cmd.run:
@@ -204,6 +208,8 @@ make_bridge:
       - service: openvswitch_service
       - cmd: set_encap
       - cmd: set_encap_ip
+    - unless:
+      - ovs-vsctl br-exists br-provider
 
 map_bridge:
   cmd.run:
@@ -213,6 +219,8 @@ map_bridge:
       - cmd: set_encap
       - cmd: set_encap_ip
       - cmd: make_bridge
+    - unelss:
+      - ovs-vsctl get open . external-ids:ovn-bridge-mappings | grep -q "provider:br-provider" 
 
 ovsdb_listen:
   cmd.run:
