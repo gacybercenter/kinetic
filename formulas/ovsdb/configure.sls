@@ -28,13 +28,19 @@ ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=
   cmd.run:
     - require:
       - service: ovn_northd_service
+    - unless:
+      - ovn-nbctl get-connection | grep -q "ptcp:6641:0.0.0.0"
 
 ovn-sbctl set-connection ptcp:6642:0.0.0.0 -- set connection . inactivity_probe=60000:
   cmd.run:
     - require:
       - service: ovn_northd_service
+    - unless:
+      - ovn-sbctl get-connection | grep -q "ptcp:6642:0.0.0.0"
 
 ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
   cmd.run:
     - require:
       - service: ovn_northd_service
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"      
