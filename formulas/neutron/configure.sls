@@ -98,6 +98,7 @@ spawnzero_complete:
         ovn_sb_connection: ""
         ovn_l3_scheduler: ""
         ovn_metadata_enabled: ""
+        enable_distributed_floating_ip:  ""        
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
         type_drivers: local,flat,vlan,geneve
         tenant_network_types: geneve
@@ -111,6 +112,7 @@ spawnzero_complete:
         ovn_native_dhcp: ovn_native_dhcp = True
         ovn_l3_mode: ovn_l3_mode = True
         ovn_metadata_enabled: ovn_metadata_enabled = True
+        enable_distributed_floating_ip:  enable_distributed_floating_ip = True
 {% endif %}
         vni_ranges: 1:65536
 
@@ -141,4 +143,4 @@ neutron_server_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/neutron/api-paste.ini
-      - file: /etc/sudoers.d/neutron_sudoers      
+      - file: /etc/sudoers.d/neutron_sudoers
