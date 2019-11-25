@@ -183,7 +183,7 @@ ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
     - require:
       - service: openvswitch_service
     - unless:
-      - ovs-vsctl set open . external-ids:ovn-remote | grep -q "tcp:{{ address[0] }}:6642"
+      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "tcp:{{ address[0] }}:6642"
 {% endfor %}
 
 set_encap:
