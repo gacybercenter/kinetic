@@ -220,11 +220,13 @@ map_bridge:
       - cmd: set_encap_ip
       - cmd: make_bridge
     - unelss:
-      - ovs-vsctl get open . external-ids:ovn-bridge-mappings | grep -q "provider:br-provider" 
+      - ovs-vsctl get open . external-ids:ovn-bridge-mappings | grep -q "provider:br-provider"
 
 ovsdb_listen:
   cmd.run:
-    - name: ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6640:127.0.0.1
+    - name: ovs-vsctl set-manager ptcp:6640:127.0.0.1
+    - onlyif:
+      - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
 {% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
   {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
