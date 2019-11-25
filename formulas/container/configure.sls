@@ -175,7 +175,7 @@ enable_bridge:
       - cmd: make_bridge
       - cmd: map_bridge
     - unless:
-      - ovs-vsctl port-to-br {{ interface }} | grep -q "br-provider"      
+      - ovs-vsctl port-to-br {{ interface }} | grep -q "br-provider"
   {% endif %}
 {% endfor %}
 
@@ -198,6 +198,12 @@ ovn_controller_service:
     - requires:
       - /formulas/container/install
 
+/etc/zun/rootwrap.conf:
+  file.managed:
+    - source: salt://formulas/container/files/rootwrap.conf
+    - requires:
+      - /formulas/container/install
+
 /etc/zun/rootwrap.d/zun.filters:
   file.managed:
     - source: salt://formulas/container/files/zun.filters
@@ -213,12 +219,6 @@ ovn_controller_service:
 {% for host, address in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         etcd_ip: {{ address[0] }}
 {% endfor %}
-    - requires:
-      - /formulas/container/install
-
-/etc/zun/rootwrap.conf:
-  file.managed:
-    - source: salt://formulas/container/files/rootwrap.conf
     - requires:
       - /formulas/container/install
 
@@ -238,6 +238,8 @@ systemctl daemon-reload:
   cmd.wait:
     - watch:
       - file: /etc/systemd/system/docker.service.d/docker.conf
+      - file: /etc/systemd/system/zun-compute.service
+      - file: /etc/systemd/system/kuryr-libnetwork.service
 
 docker_service:
   service.running:
