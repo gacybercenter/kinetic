@@ -135,9 +135,21 @@ map_bridge:
       - cmd: set_encap_ip
       - cmd: make_bridge
 
+## kuryr-libnetwork does not work with ovn by default
+## you need to add a localhost remote and adjust the ovs-vsctl commands
+## to use the correct remote.  These should be capture in configuration
+## options upstream
+
 ovsdb_listen:
   cmd.run:
     - name: ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6640:127.0.0.1
+
+modify_ovs_script:
+  file.managed:
+    - name: /usr/local/libexec/kuryr/ovs
+    - source: salt://formulas/container/files/ovs
+    - require:
+      - cmd: ovsdb_listen
 
 {% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
   {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
