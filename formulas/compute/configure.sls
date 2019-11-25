@@ -227,7 +227,7 @@ map_bridge:
 ovsdb_listen:
   cmd.run:
     - name: ovs-vsctl set-manager ptcp:6640:127.0.0.1
-    - onlyif:
+    - unless:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
 {% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
