@@ -103,6 +103,8 @@ ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
   cmd.run:
     - require:
       - service: openvswitch_service
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "tcp:{{ address[0] }}:6642"
 {% endfor %}
 
 set_encap:
@@ -110,6 +112,8 @@ set_encap:
     - name: ovs-vsctl set open . external-ids:ovn-encap-type=geneve
     - require:
       - service: openvswitch_service
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-encap-type | grep -q "geneve"
 
 set_encap_ip:
   cmd.run:
@@ -117,6 +121,8 @@ set_encap_ip:
     - require:
       - service: openvswitch_service
       - cmd: set_encap
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-encap-ip | grep -q "{{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}"
 
 make_bridge:
   cmd.run:
@@ -125,6 +131,8 @@ make_bridge:
       - service: openvswitch_service
       - cmd: set_encap
       - cmd: set_encap_ip
+    - unless:
+      - ovs-vsctl br-exists br-provider
 
 map_bridge:
   cmd.run:
@@ -134,15 +142,19 @@ map_bridge:
       - cmd: set_encap
       - cmd: set_encap_ip
       - cmd: make_bridge
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-bridge-mappings | grep -q "provider:br-provider"
+
+ovsdb_listen:
+  cmd.run:
+    - name: ovs-vsctl set-manager ptcp:6640:127.0.0.1
+    - unless:
+      - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
 ## kuryr-libnetwork does not work with ovn by default
 ## you need to add a localhost remote and adjust the ovs-vsctl commands
 ## to use the correct remote.  These should be capture in configuration
 ## options upstream
-
-ovsdb_listen:
-  cmd.run:
-    - name: ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6640:127.0.0.1
 
 modify_ovs_script:
   file.managed:
