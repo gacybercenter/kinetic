@@ -219,7 +219,7 @@ map_bridge:
       - cmd: set_encap
       - cmd: set_encap_ip
       - cmd: make_bridge
-    - unelss:
+    - unless:
       - ovs-vsctl get open . external-ids:ovn-bridge-mappings | grep -q "provider:br-provider"
 
 ovsdb_listen:
