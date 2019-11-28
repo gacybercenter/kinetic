@@ -15,6 +15,9 @@ https://github.com/ipxe/ipxe.git:
   file.managed:
     - source: salt://formulas/pxe/files/kinetic.ipxe
 
+/srv/tftp:
+  file.directory
+
 create_efi_module:
   cmd.run:
     - name: |
