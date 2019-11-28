@@ -98,7 +98,7 @@ spawnzero_complete:
         ovn_sb_connection: ""
         ovn_l3_scheduler: ""
         ovn_metadata_enabled: ""
-        enable_distributed_floating_ip:  ""        
+        enable_distributed_floating_ip:  ""
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
         type_drivers: local,flat,vlan,geneve
         tenant_network_types: geneve
@@ -121,6 +121,8 @@ plugin_symlink:
   file.symlink:
     - name: /etc/neutron/plugin.ini
     - target: /etc/neutron/plugins/ml2/ml2_conf.ini
+    - require_in:
+      - service: neutron_server_service
 {% endif %}
 
 fs.inotify.max_user_instances:
