@@ -43,6 +43,8 @@ include:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
 
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
+
 /etc/neutron/neutron.conf:
   file.managed:
     - source: salt://formulas/container/files/neutron.conf
@@ -67,8 +69,6 @@ include:
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
-
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 neutron_linuxbridge_agent_service:
   service.running:
