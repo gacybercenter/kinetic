@@ -96,8 +96,6 @@ openvswitch_service:
   service.running:
     - name: openvswitch
     - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
 
 {% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
@@ -184,8 +182,6 @@ ovn_controller_service:
   service.running:
     - name: ovn-controller
     - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
     - require:
       - service: openvswitch_service
       - cmd: set_encap
