@@ -249,7 +249,6 @@ ovn_controller_service:
   service.running:
     - name: ovn-controller
     - enable: true
-    - watch:
     - require:
       - service: openvswitch_service
       - cmd: set_encap
