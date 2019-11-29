@@ -46,6 +46,7 @@ include:
 /etc/neutron/neutron.conf:
   file.managed:
     - source: salt://formulas/container/files/neutron.conf
+    - makedirs: true
     - template: jinja
     - defaults:
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
