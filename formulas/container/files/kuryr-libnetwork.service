@@ -1,5 +1,7 @@
 [Unit]
 Description = Kuryr-libnetwork - Docker network plugin for Neutron
+After = network-online.target
+Wants = network-online.target
 
 [Service]
 ExecStart = /usr/local/bin/kuryr-server --config-file /etc/kuryr/kuryr.conf
