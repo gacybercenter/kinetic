@@ -147,6 +147,8 @@ map_bridge:
 ovsdb_listen:
   cmd.run:
     - name: ovs-vsctl set-manager ptcp:6640:127.0.0.1
+    - require:
+      - cmd: map_bridge
     - unless:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
