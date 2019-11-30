@@ -19,6 +19,7 @@ network_packages:
 network_packages:
   pkg.installed:
     - pkgs:
+      - openstack-neutron
       - openstack-neutron-ml2
       - openstack-neutron-linuxbridge
       - ebtables
