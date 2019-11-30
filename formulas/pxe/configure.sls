@@ -5,6 +5,11 @@ apache2_service:
   service.running:
     - name: apache2
 
+git lfs install:
+  cmd.run:
+    - creates:
+      - /root/.gitconfig
+
 https://github.com/ipxe/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
@@ -73,7 +78,7 @@ php7.3_module:
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
-        master_record: {{ pillar['master_record'] }}        
+        master_record: {{ pillar['master_record'] }}
     {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
       {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}

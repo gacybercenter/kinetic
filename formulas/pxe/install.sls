@@ -11,6 +11,9 @@ git:
   pkg.installed:
     - reload_modules: True
 
+git-lfs:
+  pkg.installed    
+
 uuid-runtime:
   pkg.installed
 
