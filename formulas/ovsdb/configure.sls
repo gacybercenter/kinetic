@@ -18,12 +18,16 @@ openvswitch_service:
     - name: openvswitch
 {% elif grains['os_family'] == 'Debian' %}
     - name: openvswitch-switch
-{% endif %}    
+{% endif %}
     - enable: true
 
 ovn_northd_service:
   service.running:
+{% if grains['os_family'] == 'RedHat' %}
     - name: ovn-northd
+{% elif grains['os_family'] == 'Debian' %}
+    - name: ovn-central
+{% endif %}
     - enable: true
     - require:
       - service: openvswitch_service
