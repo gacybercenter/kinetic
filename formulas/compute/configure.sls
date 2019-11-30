@@ -168,6 +168,11 @@ networking-ovn-metadata-agent.ini:
 {% endif %}
     - template: jinja
     - defaults:
+{% if grains['os_family'] == 'RedHat' %}
+        ini_file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+{% elif grains['os_family'] == 'Debian' %}
+        ini_file: /etc/neutron/networking_ovn_metadata_agent.ini
+{% endif %}
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
 {% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
