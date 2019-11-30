@@ -171,7 +171,11 @@ neutron_linuxbridge_agent_service:
 
 openvswitch_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
+    - name: openvswitch-switch
+{% elif grains['os_family'] == 'RedHat' %}
     - name: openvswitch
+{% endif %}
     - enable: true
     - watch:
       - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
