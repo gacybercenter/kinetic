@@ -16,6 +16,8 @@ git:
 
 git-lfs:
   pkg.installed
+    - require:
+      - pkg: git
 
 uuid-runtime:
   pkg.installed
