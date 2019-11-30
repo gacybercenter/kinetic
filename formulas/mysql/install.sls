@@ -8,7 +8,7 @@ mariadb_repo:
     - humanname: MariaDB 10.3
     - name: deb http://ftp.osuosl.org/pub/mariadb/repo/10.3/ubuntu bionic main
     - file: /etc/apt/sources.list.d/mariadb-10.3.list
-    - keyid: F1656F24
+    - keyid: C74CD1D8
     - keyserver: keyserver.ubuntu.com
 
 update_packages_mariadb:
