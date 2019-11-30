@@ -23,7 +23,6 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
     - require:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/api-paste.ini
 
 mk_public_network:
   cmd.script:
@@ -79,10 +78,6 @@ spawnzero_complete:
 {% elif grains['os_family'] == 'RedHat' %}
         lock_path: /var/lib/neutron/tmp
 {% endif %}
-
-/etc/neutron/api-paste.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/api-paste.ini
 
 /etc/neutron/plugins/ml2/ml2_conf.ini:
   file.managed:
@@ -140,9 +135,7 @@ neutron_server_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/api-paste.ini
     - require:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/api-paste.ini
       - file: /etc/sudoers.d/neutron_sudoers
