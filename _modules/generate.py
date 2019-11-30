@@ -6,7 +6,7 @@ __virtualname__ = 'generate'
 def __virtual__():
     return __virtualname__
 
-def mac(prefix):
+def mac(prefix='AC:DE:48'):
     return '{0}:{1:02X}:{2:02X}:{3:02X}'.format(prefix,
                                                 random.randint(0, 0xff),
                                                 random.randint(0, 0xff),
