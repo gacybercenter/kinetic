@@ -1,4 +1,4 @@
-## generate objects on-demand
+## generate various items on-demand.  For use in sls files when no appropriate module exists.
 import random
 
 __virtualname__ = 'generate'
