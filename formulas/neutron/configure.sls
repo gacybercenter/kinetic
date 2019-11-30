@@ -92,6 +92,8 @@ spawnzero_complete:
         ovn_nb_connection: ""
         ovn_sb_connection: ""
         ovn_l3_scheduler: ""
+        ovn_native_dhcp: ""
+        ovn_l3_mode: ""        
         ovn_metadata_enabled: ""
         enable_distributed_floating_ip:  ""
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
