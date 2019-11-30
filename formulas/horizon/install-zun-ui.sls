@@ -8,8 +8,9 @@ zun_latest:
 copy_zun_panels:
   module.run:
     - file.copy:
-      - src: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/*
+      - src: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/
       - dst: /usr/share/openstack-dashboard/openstack_dashboard/enabled/
+      - recurse: True
 
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_0330_cloud_shell_settings.py:
   file.managed:
