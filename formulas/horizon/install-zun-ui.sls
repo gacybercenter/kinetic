@@ -11,6 +11,8 @@ copy_zun_panels:
     - src: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/
     - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
     - recurse: True
+    - unless:
+      - test -f /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/_0330_cloud_shell.py
 
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_0330_cloud_shell_settings.py:
   file.managed:
