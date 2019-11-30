@@ -1,4 +1,4 @@
 #!ipxe
 
 dhcp
-chain http://pxe2/index.php?mac=${net0/mac}
+chain http://{{ pxe_record }}/index.php?mac=${net0/mac}

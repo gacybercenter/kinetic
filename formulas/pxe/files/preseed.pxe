@@ -1,6 +1,6 @@
 #!ipxe
 
-kernel http://us.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux --- auto=true url=http://pxe2/preseed/host-type.preseed locale=en_US interface=auto keymap=us netcfg/get_hostname=undefined-hostname netcfg/do_not_use_netplan=true debian-installer/allow_unauthenticated_ssl=true initrd=initrd.gz
+kernel http://us.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux --- auto=true url=http://{{ pxe_record }}/preseed/host-type.preseed locale=en_US interface=auto keymap=us netcfg/get_hostname=undefined-hostname netcfg/do_not_use_netplan=true debian-installer/allow_unauthenticated_ssl=true initrd=initrd.gz
 initrd http://us.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
 boot ||
 echo
