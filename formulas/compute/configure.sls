@@ -251,7 +251,11 @@ enable_bridge:
 
 ovn_controller_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
+    - name: ovn-host
+{% elif grains['os_family'] == 'RedHat' %}
     - name: ovn-controller
+{% endif %}
     - enable: true
     - require:
       - service: openvswitch_service

@@ -4,7 +4,7 @@ include:
   - formulas/docker/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
-
+  {% if pillar['neutron']['backend'] == "linuxbridge" %}
 container_packages:
   pkg.installed:
     - pkgs:
@@ -20,6 +20,26 @@ pymysql_sa:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
+
+  {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+
+container_packages:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+      - git
+      - python3-openstackclient
+      - docker-ce
+      - ovn-host
+      - python3-tornado
+      - python3-pymysql
+
+pymysql_sa:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
+
+    {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
