@@ -15,6 +15,22 @@ compute_packages:
       - python3-rbd
       - python3-rados
 
+  {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+
+compute_packages:
+  pkg.installed:
+    - pkgs:
+      - nova-compute
+      - python3-tornado
+      - ceph-common
+      - spice-html5
+      - python3-rbd
+      - python3-rados
+      - ovn-host
+      - networking-ovn-metadata-agent
+
+  {% endif %}
+
 
 {% elif grains['os_family'] == 'RedHat' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
@@ -28,7 +44,7 @@ compute_packages:
       - spice-html5
       - python-rbd
       - python-rados
-      - conntrack-tools      
+      - conntrack-tools
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 compute_packages:
