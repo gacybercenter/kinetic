@@ -106,6 +106,28 @@ install_theme:
     - branch: {{ salt['pillar.get']('horizon:theme:branch') }}
 {% endif %}
 
+collect-static:
+  cmd.run:
+{% if grains['os_family'] == 'Debian' %}
+    - name: python3 manage.py collectstatic --noinput
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: python2 manage.py collectstatic --noinput
+{% endif %}
+    - cwd: /usr/share/openstack-dashboard/
+    - prereq:
+      - cmd: compress-static
+
+compress-static:
+  cmd.run:
+{% if grains['os_family'] == 'Debian' %}
+    - name: python3 manage.py compress
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: python2 manage.py compress
+{% endif %}
+    - cwd: /usr/share/openstack-dashboard/
+    - prereq:
+      - service: apache2_service 
+
 apache2_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
