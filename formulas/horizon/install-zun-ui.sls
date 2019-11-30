@@ -7,7 +7,7 @@ zun_latest:
 
 copy_zun_panels:
   module.run:
-    - name: file.copy:
+    - name: file.copy
     - src: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/
     - dst: /usr/share/openstack-dashboard/openstack_dashboard/enabled/
     - recurse: True
