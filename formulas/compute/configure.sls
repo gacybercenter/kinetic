@@ -158,9 +158,14 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-/etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini:
+networking-ovn-metadata-agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/networking_ovn_metadata_agent.ini
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+{% elif grains['os_family'] == 'Debian' %}
+    - name: /etc/neutron/networking-ovn-metadata-agent.ini
+{% endif %}
     - template: jinja
     - defaults:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
@@ -178,7 +183,7 @@ openvswitch_service:
 {% endif %}
     - enable: true
     - watch:
-      - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+      - file: networking-ovn-metadata-agent.ini
 
 {% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
@@ -271,7 +276,7 @@ ovn_metadata_service:
     - name: networking-ovn-metadata-agent
     - enable: True
     - watch:
-      - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+      - file: networking-ovn-metadata-agent.ini
     - require:
       - cmd: ovsdb_listen
 
