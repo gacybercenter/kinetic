@@ -164,7 +164,7 @@ networking-ovn-metadata-agent.ini:
 {% if grains['os_family'] == 'RedHat' %}
     - name: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
 {% elif grains['os_family'] == 'Debian' %}
-    - name: /etc/neutron/networking-ovn-metadata-agent.ini
+    - name: /etc/neutron/networking_ovn_metadata_agent.ini
 {% endif %}
     - template: jinja
     - defaults:
