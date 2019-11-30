@@ -58,42 +58,60 @@ copy_zun_panels:
 
 {% if grains['os_family'] == 'Debian' %}
 
-pip3 install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
-  cmd.run
+zun_ui_requirements:
+  cmd.run:
+    - name: pip3 install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt
+    - onchanges:
+      - git: zun_latest
 
-installzun-ui:
+install_zun_ui:
   cmd.run:
     - name: python3 setup.py install
     - cwd: /usr/share/openstack-dashboard/zun-ui/
+    - onchanges:
+      - cmd: zun_ui_requirements
 
 collect-static:
   cmd.run:
     - name: python3 manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: install_zun_ui
 
 compress-static:
   cmd.run:
     - name: python3 manage.py compress
     - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: collect-static
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-pip install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt:
-  cmd.run
+zun_ui_requirements:
+  cmd.run:
+    - name: pip install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt
+    - onchanges:
+      - git: zun_latest
 
-installzun-ui:
+install_zun_ui:
   cmd.run:
     - name: python2 setup.py install
     - cwd: /usr/share/openstack-dashboard/zun-ui/
+    - onchanges:
+      - cmd: zun_ui_requirements
 
 collect-static:
   cmd.run:
     - name: python2 manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: install_zun_ui
 
 compress-static:
   cmd.run:
     - name: python2 manage.py compress
     - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: collect-static
 
 {% endif %}
