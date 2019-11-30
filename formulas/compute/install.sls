@@ -3,7 +3,7 @@ include:
   - formulas/ceph/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
-
+  {% if pillar['neutron']['backend'] == "linuxbridge" %}
 compute_packages:
   pkg.installed:
     - pkgs:
