@@ -19,7 +19,8 @@ neutron_packages:
       - neutron-server
       - neutron-plugin-ml2
       - python3-openstackclient
-      - python2-networking-ovn
+      - python3-networking-ovn
+      - python3-tornado      
 
   {% endif %}
 
