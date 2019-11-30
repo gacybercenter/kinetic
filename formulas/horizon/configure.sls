@@ -106,7 +106,7 @@ install_theme:
     - branch: {{ salt['pillar.get']('horizon:theme:branch') }}
 {% endif %}
 
-collect-static:
+configure-collect-static:
   cmd.run:
 {% if grains['os_family'] == 'Debian' %}
     - name: python3 manage.py collectstatic --noinput
@@ -115,9 +115,9 @@ collect-static:
 {% endif %}
     - cwd: /usr/share/openstack-dashboard/
     - prereq:
-      - cmd: compress-static
+      - cmd: configure-compress-static
 
-compress-static:
+configure-compress-static:
   cmd.run:
 {% if grains['os_family'] == 'Debian' %}
     - name: python3 manage.py compress
@@ -126,7 +126,7 @@ compress-static:
 {% endif %}
     - cwd: /usr/share/openstack-dashboard/
     - prereq:
-      - service: apache2_service 
+      - service: apache2_service
 
 apache2_service:
   service.running:
