@@ -53,6 +53,7 @@ spawnzero_complete:
         ovn_nb_connection: ""
         ovn_sb_connection: ""
         ovn_l3_scheduler: ""
+        ovn_native_dhcp: ""
         ovn_metadata_enabled: ""
         enable_distributed_floating_ip:  ""
         vni_ranges: 1:65536
