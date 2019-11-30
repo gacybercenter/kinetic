@@ -112,7 +112,6 @@ neutron_linuxbridge_agent_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-      - file: /etc/neutron/api-paste.ini
 
 neutron_dhcp_agent_service:
   service.running:
@@ -125,7 +124,6 @@ neutron_dhcp_agent_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-      - file: /etc/neutron/api-paste.ini
 
 neutron_metadata_agent_service:
   service.running:
@@ -138,7 +136,6 @@ neutron_metadata_agent_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-      - file: /etc/neutron/api-paste.ini
 
 neutron_l3_agent_service:
   service.running:
@@ -151,4 +148,3 @@ neutron_l3_agent_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-      - file: /etc/neutron/api-paste.ini
