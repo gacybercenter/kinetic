@@ -2,7 +2,6 @@ include:
   - formulas/common/base
   - formulas/common/networking
   - formulas/horizon/install
-  - formulas/horizon/install-zun-ui
 
 {% if grains['spawning'] == 0 %}
 
@@ -95,7 +94,7 @@ secret_key:
     - user: apache
     - group: apache
     - mode: 600
-    - contents_pillar: horizon:horizon_secret_key    
+    - contents_pillar: horizon:horizon_secret_key
 
 {% endif %}
 
