@@ -3,7 +3,7 @@ include:
 
 {% if grains['os_family'] == 'Debian' %}
 
-neutron_packages:
+network_packages:
   pkg.installed:
     - pkgs:
       - neutron-plugin-ml2
@@ -15,8 +15,8 @@ neutron_packages:
       - python3-tornado
 
 {% elif grains['os_family'] == 'RedHat' %}
-  {% if pillar['neutron']['backend'] == "linuxbridge" %}
-neutron_packages:
+
+network_packages:
   pkg.installed:
     - pkgs:
       - openstack-neutron-ml2
@@ -24,15 +24,4 @@ neutron_packages:
       - ebtables
       - python2-openstackclient
 
-  {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-
-neutron_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-neutron-ml2
-      - ovn-central
-      - ebtables
-      - python2-openstackclient
-
-  {% endif %}
 {% endif %}
