@@ -114,8 +114,8 @@ configure-collect-static:
     - name: python2 manage.py collectstatic --noinput
 {% endif %}
     - cwd: /usr/share/openstack-dashboard/
-    - prereq:
-      - cmd: configure-compress-static
+    - onchanges:
+      - git: install_theme
 
 configure-compress-static:
   cmd.run:
@@ -125,8 +125,8 @@ configure-compress-static:
     - name: python2 manage.py compress
 {% endif %}
     - cwd: /usr/share/openstack-dashboard/
-    - prereq:
-      - service: apache2_service
+    - onchanges:
+      - cmd: configure-collect-static
 
 apache2_service:
   service.running:
@@ -143,3 +143,4 @@ apache2_service:
       - file: secret_key
       - file: apache_conf
       - git: install_theme
+      - cmd: configure-compress-static
