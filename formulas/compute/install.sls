@@ -28,6 +28,7 @@ compute_packages:
       - spice-html5
       - python-rbd
       - python-rados
+      - conntrack-tools      
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 compute_packages:
