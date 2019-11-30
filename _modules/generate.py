@@ -1,5 +1,5 @@
 ## generate objects on-demand
-
+import random
 
 __virtualname__ = 'generate'
 
