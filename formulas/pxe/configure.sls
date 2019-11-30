@@ -13,6 +13,7 @@ git lfs install:
 https://github.com/ipxe/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
+    - user: root
     - require:
       - sls: /formulas/pxe/install
 
