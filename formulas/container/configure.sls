@@ -94,7 +94,11 @@ neutron_linuxbridge_agent_service:
 
 openvswitch_service:
   service.running:
+{% if grains['os_family'] == 'RedHat' %}
     - name: openvswitch
+{% elif grains['os_family'] == 'Debian' %}
+    - name: openvswitch-switch
+{% endif %}
     - enable: true
 
 {% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -186,7 +190,7 @@ ovn_controller_service:
     - name: ovn-controller
 {% elif grains['os_family'] == 'Debian' %}
     - name: ovn-host
-{% endif %}    
+{% endif %}
     - enable: true
     - require:
       - service: openvswitch_service
