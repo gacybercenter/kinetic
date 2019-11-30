@@ -24,6 +24,24 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
 
+mk_public_network:
+  cmd.script:
+    - source: salt://formulas/neutron/files/mkpublic.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        start: {{ pillar['networking']['addresses']['float_start'] }}
+        end: {{ pillar['networking']['addresses']['float_end'] }}
+        dns: {{ pillar['networking']['addresses']['float_dns'] }}
+        gateway: {{ pillar['networking']['addresses']['float_gateway'] }}
+        cidr: {{ pillar['networking']['subnets']['public'] }}
+    - require:
+      - service: neutron_server_service
+    - retry:
+        attempts: 3
+        interval: 10
+
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
@@ -126,22 +144,3 @@ neutron_server_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/sudoers.d/neutron_sudoers
-
-{% if grains['spawning'] == 0 %}
-
-mk_public_network:
-  cmd.script:
-    - source: salt://formulas/neutron/files/mkpublic.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        start: {{ pillar['networking']['addresses']['float_start'] }}
-        end: {{ pillar['networking']['addresses']['float_end'] }}
-        dns: {{ pillar['networking']['addresses']['float_dns'] }}
-        gateway: {{ pillar['networking']['addresses']['float_gateway'] }}
-        cidr: {{ pillar['networking']['subnets']['public'] }}
-    - require:
-      - service: neutron_server_service
-
-{% endif %}
