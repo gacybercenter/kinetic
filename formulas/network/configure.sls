@@ -14,15 +14,11 @@ spawnzero_complete:
 
 /etc/neutron/neutron.conf:
   file.managed:
-    - source: salt://formulas/neutron/files/neutron.conf
+    - source: salt://formulas/network/files/neutron.conf
     - template: jinja
     - defaults:
         core_plugin: neutron.plugins.ml2.plugin.Ml2Plugin
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
         service_plugins: router
-{% elif pillar['neutron']['backend'] == "networking-ovn" %}
-        service_plugins: networking_ovn.l3.l3_ovn.OVNL3RouterPlugin
-{% endif %}
 {% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         sql_connection_string: 'connection = mysql+pymysql://neutron:{{ pillar['neutron']['neutron_mysql_password'] }}@{{ address[0] }}/neutron'
 {% endfor %}
@@ -47,10 +43,9 @@ spawnzero_complete:
 
 /etc/neutron/plugins/ml2/ml2_conf.ini:
   file.managed:
-    - source: salt://formulas/neutron/files/ml2_conf.ini
+    - source: salt://formulas/network/files/ml2_conf.ini
     - template: jinja
     - defaults:
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
         type_drivers: flat,vlan,vxlan
         tenant_network_types: vxlan
         mechanism_drivers: linuxbridge,l2population
