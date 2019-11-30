@@ -36,6 +36,7 @@ mariadb_service:
     - watch:
       - file: openstack.conf
 
+{% if grains['os_family'] == 'RedHat' %}
 set_unix_socket_root:
   mysql_query.run:
     - database: mysql
@@ -45,6 +46,7 @@ set_unix_socket_root:
       - service: mariadb_service
     - unless:
       - test -e /root/.socket_assignment
+{% endif %}
 
 {% for service in pillar['openstack_services'] %}
   {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
