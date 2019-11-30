@@ -19,7 +19,7 @@ copy_zun_panels:
     - source: salt://formulas/horizon/files/_0330_cloud_shell_settings.py
     - template: jinja
     - defaults:
-        cloud_shell_image: {{ pillar ['zun']['cloud_shell_image'] }}
+        cloud_shell_image: {{ pillar['zun']['cloud_shell_image'] }}
 
 {% if grains['os_family'] == 'Debian' %}
 
