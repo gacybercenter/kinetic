@@ -16,9 +16,9 @@ neutron_packages:
 neutron_packages:
   pkg.installed:
     - pkgs:
-      - openstack-neutron
-      - openstack-neutron-ml2
-      - python2-openstackclient
+      - neutron-server
+      - neutron-plugin-ml2
+      - python3-openstackclient
       - python2-networking-ovn
 
   {% endif %}
