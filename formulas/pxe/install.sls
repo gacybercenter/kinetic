@@ -15,7 +15,7 @@ git:
     - reload_modules: True
 
 git-lfs:
-  pkg.installed
+  pkg.installed:
     - require:
       - pkg: git
 
