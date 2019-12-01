@@ -1,6 +1,5 @@
 include:
   - formulas/openstack/common/repo
-  - formulas/ceph/common/repo
   - formulas/docker/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
