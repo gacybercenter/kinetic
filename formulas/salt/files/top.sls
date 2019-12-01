@@ -39,7 +39,7 @@ base:
     - openstack
     - keystone
     - rabbitmq
-  'barbican*':
+  'magnum*':
     - magnum
     - openstack
     - keystone
