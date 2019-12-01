@@ -115,3 +115,11 @@ compress-static:
       - cmd: collect-static
 
 {% endif %}
+
+## barbican-ui installation routine
+barbican_latest:
+  git.latest:
+    - name: https://opendev.org/openstack/barbican-ui.git
+    - branch: master
+    - target: /usr/share/openstack-dashboard/barbican-ui/
+    - force_clone: true
