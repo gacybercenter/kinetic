@@ -47,7 +47,7 @@ spawnzero_complete:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         password: {{ pillar['barbican']['barbican_service_password'] }}
-        kek: {{ pillar['barbican']['simplecrypto_key'] }}
+        kek: kek = '{{ pillar['barbican']['simplecrypto_key'] }}'
 
 /etc/httpd/conf.d/wsgi-barbican.conf:
   file.managed:
