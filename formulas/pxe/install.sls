@@ -1,6 +1,9 @@
 build-essential:
   pkg.installed
 
+python3-tornado:
+  pkg.installed
+
 apache2:
   pkg.installed
 
@@ -10,6 +13,11 @@ php7.3:
 git:
   pkg.installed:
     - reload_modules: True
+
+git-lfs:
+  pkg.installed:
+    - require:
+      - pkg: git
 
 uuid-runtime:
   pkg.installed

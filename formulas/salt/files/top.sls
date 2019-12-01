@@ -54,6 +54,12 @@ base:
     - rabbitmq
     - nova
     - designate
+  'network*':
+    - neutron
+    - openstack
+    - rabbitmq
+    - nova
+    - designate
   'heat*':
     - heat
     - openstack

@@ -107,4 +107,4 @@ d-i preseed/late_command                          string                        
     in-target echo ipmi_devintf >> /etc/modules;                                                                                           \
     in-target echo ipmi_si >> /etc/modules;                                                                                                \
     in-target curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;                                                           \
-    in-target /bin/sh /tmp/bootstrap_salt.sh -x python3 -X
+    in-target /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ master_record }}

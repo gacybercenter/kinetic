@@ -43,9 +43,12 @@ include:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
 
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
+
 /etc/neutron/neutron.conf:
   file.managed:
     - source: salt://formulas/container/files/neutron.conf
+    - makedirs: true
     - template: jinja
     - defaults:
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -63,6 +66,18 @@ include:
         lock_path: /var/lib/neutron/tmp
 {% endif %}
 
+/etc/sudoers.d/neutron_sudoers:
+  file.managed:
+    - source: salt://formulas/compute/files/neutron_sudoers
+
+neutron_linuxbridge_agent_service:
+  service.running:
+    - name: neutron-linuxbridge-agent
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/linuxbridge_agent.ini
@@ -75,20 +90,124 @@ include:
   {% endif %}
 {% endfor %}
 
-/etc/sudoers.d/neutron_sudoers:
-  file.managed:
-    - source: salt://formulas/compute/files/neutron_sudoers
+{% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
-neutron_linuxbridge_agent_service:
+openvswitch_service:
   service.running:
-    - name: neutron-linuxbridge-agent
-    - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+{% if grains['os_family'] == 'RedHat' %}
+    - name: openvswitch
+{% elif grains['os_family'] == 'Debian' %}
+    - name: openvswitch-switch
+{% endif %}
+    - enable: true
+
+{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
+  cmd.run:
+    - require:
+      - service: openvswitch_service
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "tcp:{{ address[0] }}:6642"
+{% endfor %}
+
+set_encap:
+  cmd.run:
+    - name: ovs-vsctl set open . external-ids:ovn-encap-type=geneve
+    - require:
+      - service: openvswitch_service
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-encap-type | grep -q "geneve"
+
+set_encap_ip:
+  cmd.run:
+    - name: ovs-vsctl set open . external-ids:ovn-encap-ip={{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-encap-ip | grep -q "{{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}"
+
+make_bridge:
+  cmd.run:
+    - name: ovs-vsctl --may-exist add-br br-provider -- set bridge br-provider protocols=OpenFlow13
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+    - unless:
+      - ovs-vsctl br-exists br-provider
+
+map_bridge:
+  cmd.run:
+    - name: ovs-vsctl set open . external-ids:ovn-bridge-mappings=provider:br-provider
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+      - cmd: make_bridge
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-bridge-mappings | grep -q "provider:br-provider"
+
+ovsdb_listen:
+  cmd.run:
+    - name: ovs-vsctl set-manager ptcp:6640:127.0.0.1
+    - require:
+      - cmd: map_bridge
+    - unless:
+      - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
+
+## kuryr-libnetwork does not work with ovn by default
+## you need to add a localhost remote and adjust the ovs-vsctl commands
+## to use the correct remote.  These should be capture in configuration
+## options upstream
+
+modify_ovs_script:
+  file.managed:
+    - name: /usr/local/libexec/kuryr/ovs
+    - source: salt://formulas/container/files/ovs
+    - require:
+      - cmd: ovsdb_listen
+
+{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
+  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+enable_bridge:
+  cmd.run:
+    - name: ovs-vsctl --may-exist add-port br-provider {{ interface }}
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+      - cmd: make_bridge
+      - cmd: map_bridge
+    - unless:
+      - ovs-vsctl port-to-br {{ interface }} | grep -q "br-provider"
+  {% endif %}
+{% endfor %}
+
+ovn_controller_service:
+  service.running:
+{% if grains['os_family'] == 'RedHat' %}
+    - name: ovn-controller
+{% elif grains['os_family'] == 'Debian' %}
+    - name: ovn-host
+{% endif %}
+    - enable: true
+    - require:
+      - service: openvswitch_service
+      - cmd: set_encap
+      - cmd: set_encap_ip
+
+{% endif %}
 
 /etc/sudoers.d/zun_sudoers:
   file.managed:
     - source: salt://formulas/container/files/zun_sudoers
+    - requires:
+      - /formulas/container/install
+
+/etc/zun/rootwrap.conf:
+  file.managed:
+    - source: salt://formulas/container/files/rootwrap.conf
     - requires:
       - /formulas/container/install
 
@@ -110,12 +229,6 @@ neutron_linuxbridge_agent_service:
     - requires:
       - /formulas/container/install
 
-/etc/zun/rootwrap.conf:
-  file.managed:
-    - source: salt://formulas/container/files/rootwrap.conf
-    - requires:
-      - /formulas/container/install
-
 /etc/systemd/system/zun-compute.service:
   file.managed:
     - source: salt://formulas/container/files/zun-compute.service
@@ -132,6 +245,8 @@ systemctl daemon-reload:
   cmd.wait:
     - watch:
       - file: /etc/systemd/system/docker.service.d/docker.conf
+      - file: /etc/systemd/system/zun-compute.service
+      - file: /etc/systemd/system/kuryr-libnetwork.service
 
 docker_service:
   service.running:

@@ -17,6 +17,7 @@
             <target dev='vnet{{ loop.index0 }}'/>
             <model type='virtio'/>
             <alias name='net{{ loop.index0 }}'/>
+            <mac address='{{ salt['generate.mac']('52:54:00') }}'/>
           </interface>
         {% endfor %}
         {% if grains['os_family'] == 'Debian' %}
@@ -49,6 +50,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['virtual'][ty
     - template: jinja
     - defaults:
         hostname: {{ hostname }}
+        master_record: {{ pillar['master_record'] }}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:
