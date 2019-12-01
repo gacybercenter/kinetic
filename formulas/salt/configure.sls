@@ -64,6 +64,9 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% elif service == 'zun' %}
         extra_opts: |
             kuryr_service_password: {{ salt['random.get_str']('64') }}
+{% elif service == 'barbican' %}
+        extra_opts: |
+            simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}            
 {% else %}
         extra_opts: ''
 {% endif %}

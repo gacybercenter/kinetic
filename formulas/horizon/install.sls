@@ -71,19 +71,21 @@ install_zun_ui:
     - onchanges:
       - cmd: zun_ui_requirements
 
-collect-static:
+
+collect-static-zun:
   cmd.run:
     - name: python3 manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
       - cmd: install_zun_ui
 
-compress-static:
+
+compress-static-zun:
   cmd.run:
     - name: python3 manage.py compress
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
-      - cmd: collect-static
+      - cmd: collect-static-zun
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -100,18 +102,98 @@ install_zun_ui:
     - onchanges:
       - cmd: zun_ui_requirements
 
-collect-static:
+
+collect-static-zun:
   cmd.run:
     - name: python2 manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
       - cmd: install_zun_ui
 
-compress-static:
+
+compress-static-zun:
   cmd.run:
     - name: python2 manage.py compress
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
+      - cmd: collect-static-zun
+
+{% endif %}
+
+## barbican-ui installation routine
+barbican_latest:
+  git.latest:
+    - name: https://opendev.org/openstack/barbican-ui.git
+    - branch: master
+    - target: /usr/share/openstack-dashboard/barbican-ui/
+    - force_clone: true
+
+copy_barbican_panels:
+  module.run:
+    - name: file.copy
+    - src: /usr/share/openstack-dashboard/barbican-ui/barbican_ui/enabled/
+    - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+    - recurse: True
+    - unless:
+      - test -f /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/_90_barbican_barbican_panelgroup.py
+
+{% if grains['os_family'] == 'Debian' %}
+
+barbican_ui_requirements:
+  cmd.run:
+    - name: pip3 install -r /usr/share/openstack-dashboard/barbican-ui/requirements.txt
+    - onchanges:
+      - git: barbican_latest
+
+install_barbican_ui:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd: /usr/share/openstack-dashboard/barbican-ui/
+    - onchanges:
+      - cmd: barbican_ui_requirements
+
+collect-static-barbican:
+  cmd.run:
+    - name: python3 manage.py collectstatic --noinput
+    - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: install_barbican_ui
+
+compress-static-barbican:
+  cmd.run:
+    - name: python3 manage.py compress
+    - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: collect-static-barbican
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+barbican_ui_requirements:
+  cmd.run:
+    - name: pip install -r /usr/share/openstack-dashboard/barbican-ui/requirements.txt
+    - onchanges:
+      - git: barbican_latest
+
+install_barbican_ui:
+  cmd.run:
+    - name: python2 setup.py install
+    - cwd: /usr/share/openstack-dashboard/barbican-ui/
+    - onchanges:
+      - cmd: barbican_ui_requirements
+
+collect-static-barbican:
+  cmd.run:
+    - name: python2 manage.py collectstatic --noinput
+    - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: install_barbican_ui
+
+compress-static-barbican:
+  cmd.run:
+    - name: python2 manage.py compress
+    - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: collect-static-barbican
       - cmd: collect-static
 
 {% endif %}
