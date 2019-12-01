@@ -50,9 +50,25 @@ spawnzero_complete:
         kek: kek = '{{ pillar['barbican']['simplecrypto_key'] }}'
         host_href: host_href = {{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['port'] }}
 
+{% if grains['os_family'] == 'RedHat' %}
 /etc/httpd/conf.d/wsgi-barbican.conf:
   file.managed:
     - source: salt://formulas/barbican/files/wsgi-barbican.conf
+{% endif %}
+
+barbican_keystone_listener_service:
+  service.running:
+    - name: barbican-keystone-listener
+    - enable: True
+    - watch:
+      - file: /etc/barbican/barbican.conf    
+
+barbican_worker_service:
+  service.running:
+    - name: barbican-worker
+    - enable: True
+    - watch:
+      - file: /etc/barbican/barbican.conf
 
 barbican_service:
   service.running:
@@ -64,4 +80,6 @@ barbican_service:
     - enable: true
     - watch:
       - file: /etc/barbican/barbican.conf
+{% if grains['os_family'] == 'RedHat' %}
       - file: /etc/httpd/conf.d/wsgi-barbican.conf
+{% endif %}
