@@ -19,5 +19,6 @@ barbican_packages:
       - openstack-barbican-api
       - python2-openstackclient
       - httpd
+      - mod_wsgi
 
 {% endif %}
