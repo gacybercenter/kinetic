@@ -37,14 +37,10 @@ zerombr
 # Disk partitioning information
 %include /tmp/part-include
 
-#enable epel during install
-repo --name="epel" --baseurl=http://download.fedoraproject.org/pub/epel/7/x86_64
-
 %packages
 curl
 openssh-server
 ipmitool
-haveged
 %end
 
 %pre
@@ -71,7 +67,7 @@ echo "logvol swap --vgname vg0 --fstype swap --size=8192 --name lv1" >> /tmp/par
 #!/bin/bash
 echo ipmi_devintf >> /etc/modules;
 echo ipmi_si >> /etc/modules;
-systemctl enable haveged.service;
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
-/bin/sh /tmp/bootstrap_salt.sh -x python3 -X -i $(hostname) -A {{ master_record }}
+/bin/sh /tmp/bootstrap_salt.sh -x python3 -X -i $(hostname) -A {{ master_record }};
+sed -s 's/After=network.target salt-master.service/After=network-online.target salt-master.service\nWants=network-online.target/' /usr/lib/systemd/system/salt-minion.service -i
 %end
