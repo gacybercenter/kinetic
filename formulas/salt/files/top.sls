@@ -27,6 +27,7 @@ base:
     - swift
     - zun
     - barbican
+    - magnum
   'rabbitmq*':
     - rabbitmq
   'graylog*':
