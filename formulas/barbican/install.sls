@@ -16,7 +16,10 @@ barbican_packages:
 barbican_packages:
   pkg.installed:
     - pkgs:
+      - openstack-barbican
       - openstack-barbican-api
+      - openstack-barbican-keystone-listener
+      - openstack-barbican-worker
       - python2-openstackclient
       - httpd
       - mod_wsgi
