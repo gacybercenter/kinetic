@@ -26,7 +26,7 @@ base:
     - designate
     - swift
     - zun
-    - barbican    
+    - barbican
   'rabbitmq*':
     - rabbitmq
   'graylog*':
@@ -36,6 +36,11 @@ base:
     - openstack
   'barbican*':
     - barbican
+    - openstack
+    - keystone
+    - rabbitmq
+  'barbican*':
+    - magnum
     - openstack
     - keystone
     - rabbitmq
