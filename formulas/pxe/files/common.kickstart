@@ -37,6 +37,9 @@ zerombr
 # Disk partitioning information
 %include /tmp/part-include
 
+#enable epel during install
+repo --name="epel" --baseurl=http://download.fedoraproject.org/pub/epel/7/x86_64
+
 %packages
 curl
 openssh-server
