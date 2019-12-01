@@ -33,6 +33,10 @@ base:
   'keystone*':
     - keystone
     - openstack
+  'barbican*':
+    - barbican
+    - openstack
+    - keystone
   'glance*':
     - glance
     - openstack
