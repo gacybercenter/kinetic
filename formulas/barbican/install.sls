@@ -16,7 +16,7 @@ barbican_packages:
 barbican_packages:
   pkg.installed:
     - pkgs:
-      - barbican-api
+      - openstack-barbican-api
       - python2-openstackclient
 
 {% endif %}
