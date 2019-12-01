@@ -13,7 +13,7 @@ barbican_packages:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-glance_packages:
+barbican_packages:
   pkg.installed:
     - pkgs:
       - barbican-api
