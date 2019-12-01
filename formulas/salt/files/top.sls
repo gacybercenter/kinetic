@@ -37,6 +37,7 @@ base:
     - barbican
     - openstack
     - keystone
+    - rabbitmq
   'glance*':
     - glance
     - openstack
