@@ -194,6 +194,5 @@ compress-static-barbican:
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
       - cmd: collect-static-barbican
-      - cmd: collect-static
 
 {% endif %}
