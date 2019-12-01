@@ -39,7 +39,7 @@ spawnzero_complete:
         transport_url: transport_url = rabbit://openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address[0] }}
 {% endfor %}
 {% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        sql_connection_string: 'sql_connection = mysql+pymysql://magnum:{{ pillar['magnum']['magnum_mysql_password'] }}@{{ address[0] }}/magnum'
+        connection: mysql+pymysql://magnum:{{ pillar['magnum']['magnum_mysql_password'] }}@{{ address[0] }}/magnum
 {% endfor %}
         www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
@@ -47,6 +47,7 @@ spawnzero_complete:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
         password: {{ pillar['magnum']['magnum_service_password'] }}
+        host: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 
 magnum_conductor_service:
   service.running:
