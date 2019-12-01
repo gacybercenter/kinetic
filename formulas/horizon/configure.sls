@@ -150,3 +150,4 @@ apache2_service:
       - file: apache_conf
       - git: install_theme
       - cmd: configure-compress-static
+      - file: serialConsole.js
