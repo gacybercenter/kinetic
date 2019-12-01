@@ -26,6 +26,7 @@ base:
     - designate
     - swift
     - zun
+    - barbican    
   'rabbitmq*':
     - rabbitmq
   'graylog*':
