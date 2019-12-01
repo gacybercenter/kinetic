@@ -1,1 +1,1 @@
-CLOUD_SHELL_IMAGE = "usacys/openstack-client:latest"
+CLOUD_SHELL_IMAGE = "{{ cloud_shell_image }}"

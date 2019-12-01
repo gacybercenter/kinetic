@@ -99,6 +99,19 @@ nova_compute_service:
     - watch:
       - file: /etc/nova/nova.conf
 
+{% if grains['os_family'] == 'RedHat' %}
+libvirtd_service:
+  service.running:
+    - name: libvirtd
+    - enable: true
+    - require_in:
+      - cmd: define_ceph_compute_key
+      - cmd: load_ceph_compute_key
+      - cmd: define_ceph_volumes_key
+      - cmd: load_ceph_volumes_key
+{% endif %}
+
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 /etc/neutron/neutron.conf:
   file.managed:
     - source: salt://formulas/compute/files/neutron.conf
@@ -123,19 +136,6 @@ nova_compute_service:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
 
-{% if grains['os_family'] == 'RedHat' %}
-libvirtd_service:
-  service.running:
-    - name: libvirtd
-    - enable: true
-    - require_in:
-      - cmd: define_ceph_compute_key
-      - cmd: load_ceph_compute_key
-      - cmd: define_ceph_volumes_key
-      - cmd: load_ceph_volumes_key
-{% endif %}
-
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 neutron_linuxbridge_agent_service:
   service.running:
@@ -158,11 +158,21 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-/etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini:
+networking-ovn-metadata-agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/networking_ovn_metadata_agent.ini
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+{% elif grains['os_family'] == 'Debian' %}
+    - name: /etc/neutron/networking_ovn_metadata_agent.ini
+{% endif %}
     - template: jinja
     - defaults:
+{% if grains['os_family'] == 'RedHat' %}
+        ini_file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+{% elif grains['os_family'] == 'Debian' %}
+        ini_file: /etc/neutron/networking_ovn_metadata_agent.ini
+{% endif %}
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
 {% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -171,11 +181,14 @@ neutron_linuxbridge_agent_service:
 
 openvswitch_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
+    - name: openvswitch-switch
+{% elif grains['os_family'] == 'RedHat' %}
     - name: openvswitch
+{% endif %}
     - enable: true
     - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+      - file: networking-ovn-metadata-agent.ini
 
 {% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
@@ -248,10 +261,12 @@ enable_bridge:
 
 ovn_controller_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
+    - name: ovn-host
+{% elif grains['os_family'] == 'RedHat' %}
     - name: ovn-controller
+{% endif %}
     - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
     - require:
       - service: openvswitch_service
       - cmd: set_encap
@@ -266,8 +281,7 @@ ovn_metadata_service:
     - name: networking-ovn-metadata-agent
     - enable: True
     - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
+      - file: networking-ovn-metadata-agent.ini
     - require:
       - cmd: ovsdb_listen
 

@@ -14,12 +14,20 @@ spawnzero_complete:
 
 openvswitch_service:
   service.running:
+{% if grains['os_family'] == 'RedHat' %}
     - name: openvswitch
+{% elif grains['os_family'] == 'Debian' %}
+    - name: openvswitch-switch
+{% endif %}
     - enable: true
 
 ovn_northd_service:
   service.running:
+{% if grains['os_family'] == 'RedHat' %}
     - name: ovn-northd
+{% elif grains['os_family'] == 'Debian' %}
+    - name: ovn-central
+{% endif %}
     - enable: true
     - require:
       - service: openvswitch_service
@@ -43,4 +51,4 @@ ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
     - require:
       - service: ovn_northd_service
     - unless:
-      - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"      
+      - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"

@@ -5,15 +5,27 @@ apache2_service:
   service.running:
     - name: apache2
 
+git lfs install:
+  cmd.run:
+    - creates:
+      - /root/.gitconfig
+
 https://github.com/ipxe/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
+    - user: root
     - require:
       - sls: /formulas/pxe/install
 
 /var/www/html/ipxe/src/kinetic.ipxe:
   file.managed:
     - source: salt://formulas/pxe/files/kinetic.ipxe
+    - template: jinja
+    - defaults:
+        pxe_record: {{ pillar['pxe_record'] }}
+
+/srv/tftp:
+  file.directory
 
 create_efi_module:
   cmd.run:
@@ -32,14 +44,23 @@ php7.3_module:
 /var/www/html/index.php:
   file.managed:
     - source: salt://formulas/pxe/files/index.php
+    - template: jinja
+    - defaults:
+        pxe_record: {{ pillar['pxe_record'] }}
 
 /var/www/html/preseed.pxe:
   file.managed:
     - source: salt://formulas/pxe/files/preseed.pxe
+    - template: jinja
+    - defaults:
+        pxe_record: {{ pillar['pxe_record'] }}
 
 /var/www/html/kickstart.pxe:
   file.managed:
     - source: salt://formulas/pxe/files/kickstart.pxe
+    - template: jinja
+    - defaults:
+        pxe_record: {{ pillar['pxe_record'] }}
 
 /var/www/html/assignments:
   file.directory
@@ -58,6 +79,7 @@ php7.3_module:
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
+        master_record: {{ pillar['master_record'] }}
     {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
       {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
@@ -82,6 +104,7 @@ php7.3_module:
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
+        master_record: {{ pillar['master_record'] }}
     {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
       {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}

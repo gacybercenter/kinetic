@@ -2,7 +2,6 @@ include:
   - formulas/common/base
   - formulas/common/networking
   - formulas/horizon/install
-  - formulas/horizon/install-zun-ui
 
 {% if grains['spawning'] == 0 %}
 
@@ -78,6 +77,11 @@ apache_conf:
         alias: dashboard
 {% endif %}
 
+serialConsole.js:
+  file.managed:
+    - name: /usr/share/openstack-dashboard/openstack_dashboard/static/js/angular/directives/serialConsole.js
+    - source: salt://formulas/horizon/files/serialConsole.js
+
 {% if grains['os_family'] == 'Debian' %}
 
 secret_key:
@@ -95,7 +99,7 @@ secret_key:
     - user: apache
     - group: apache
     - mode: 600
-    - contents_pillar: horizon:horizon_secret_key    
+    - contents_pillar: horizon:horizon_secret_key
 
 {% endif %}
 
@@ -106,6 +110,29 @@ install_theme:
     - target: /usr/share/openstack-dashboard/openstack_dashboard/themes/{{ salt['pillar.get']('horizon:theme:name') }}
     - branch: {{ salt['pillar.get']('horizon:theme:branch') }}
 {% endif %}
+
+configure-collect-static:
+  cmd.run:
+{% if grains['os_family'] == 'Debian' %}
+    - name: python3 manage.py collectstatic --noinput
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: python2 manage.py collectstatic --noinput
+{% endif %}
+    - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - git: install_theme
+      - file: serialConsole.js
+
+configure-compress-static:
+  cmd.run:
+{% if grains['os_family'] == 'Debian' %}
+    - name: python3 manage.py compress
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: python2 manage.py compress
+{% endif %}
+    - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: configure-collect-static
 
 apache2_service:
   service.running:
@@ -122,3 +149,5 @@ apache2_service:
       - file: secret_key
       - file: apache_conf
       - git: install_theme
+      - cmd: configure-compress-static
+      - file: serialConsole.js

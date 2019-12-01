@@ -43,9 +43,12 @@ include:
         memcached_servers: {{ address[0] }}:11211
 {% endfor %}
 
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
+
 /etc/neutron/neutron.conf:
   file.managed:
     - source: salt://formulas/container/files/neutron.conf
+    - makedirs: true
     - template: jinja
     - defaults:
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -66,8 +69,6 @@ include:
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
-
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 neutron_linuxbridge_agent_service:
   service.running:
@@ -93,10 +94,12 @@ neutron_linuxbridge_agent_service:
 
 openvswitch_service:
   service.running:
+{% if grains['os_family'] == 'RedHat' %}
     - name: openvswitch
+{% elif grains['os_family'] == 'Debian' %}
+    - name: openvswitch-switch
+{% endif %}
     - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
 
 {% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
@@ -148,6 +151,8 @@ map_bridge:
 ovsdb_listen:
   cmd.run:
     - name: ovs-vsctl set-manager ptcp:6640:127.0.0.1
+    - require:
+      - cmd: map_bridge
     - unless:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
@@ -181,10 +186,12 @@ enable_bridge:
 
 ovn_controller_service:
   service.running:
+{% if grains['os_family'] == 'RedHat' %}
     - name: ovn-controller
+{% elif grains['os_family'] == 'Debian' %}
+    - name: ovn-host
+{% endif %}
     - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
     - require:
       - service: openvswitch_service
       - cmd: set_encap

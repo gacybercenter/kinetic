@@ -14,15 +14,11 @@ spawnzero_complete:
 
 /etc/neutron/neutron.conf:
   file.managed:
-    - source: salt://formulas/neutron/files/neutron.conf
+    - source: salt://formulas/network/files/neutron.conf
     - template: jinja
     - defaults:
         core_plugin: neutron.plugins.ml2.plugin.Ml2Plugin
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
         service_plugins: router
-{% elif pillar['neutron']['backend'] == "networking-ovn" %}
-        service_plugins: networking_ovn.l3.l3_ovn.OVNL3RouterPlugin
-{% endif %}
 {% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         sql_connection_string: 'connection = mysql+pymysql://neutron:{{ pillar['neutron']['neutron_mysql_password'] }}@{{ address[0] }}/neutron'
 {% endfor %}
@@ -47,10 +43,9 @@ spawnzero_complete:
 
 /etc/neutron/plugins/ml2/ml2_conf.ini:
   file.managed:
-    - source: salt://formulas/neutron/files/ml2_conf.ini
+    - source: salt://formulas/network/files/ml2_conf.ini
     - template: jinja
     - defaults:
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
         type_drivers: flat,vlan,vxlan
         tenant_network_types: vxlan
         mechanism_drivers: linuxbridge,l2population
@@ -58,18 +53,10 @@ spawnzero_complete:
         ovn_nb_connection: ""
         ovn_sb_connection: ""
         ovn_l3_scheduler: ""
-{% elif pillar['neutron']['backend'] == "networking-ovn" %}
-        type_drivers: local,flat,vlan,geneve
-        tenant_network_types: geneve
-        mechanism_drivers: ovn
-        extension_drivers: port_security
-        ovn_nb_connection: ovn_nb_connection = tcp:10.100.6.43:6641
-        ovn_sb_connection: ovn_sb_connection = tcp:10.100.6.43:6642
-        ovn_l3_scheduler: ovn_l3_scheduler = leastloaded
-        ovn_native_dhcp: ovn_native_dhcp = True
-        ovn_l3_mode: ovn_l3_mode = True
-        ovn_metadata_enabled: ovn_metadata_enabled = True
-{% endif %}
+        ovn_native_dhcp: ""
+        ovn_l3_mode: ""
+        ovn_metadata_enabled: ""
+        enable_distributed_floating_ip:  ""
         vni_ranges: 1:65536
 
 {% if grains['os_family'] == 'RedHat' %}
@@ -86,8 +73,6 @@ fs.inotify.max_user_instances:
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
     - source: salt://formulas/neutron/files/neutron_sudoers
-
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
@@ -128,7 +113,6 @@ neutron_linuxbridge_agent_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-      - file: /etc/neutron/api-paste.ini
 
 neutron_dhcp_agent_service:
   service.running:
@@ -141,7 +125,6 @@ neutron_dhcp_agent_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-      - file: /etc/neutron/api-paste.ini
 
 neutron_metadata_agent_service:
   service.running:
@@ -154,7 +137,6 @@ neutron_metadata_agent_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-      - file: /etc/neutron/api-paste.ini
 
 neutron_l3_agent_service:
   service.running:
@@ -167,45 +149,3 @@ neutron_l3_agent_service:
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
-      - file: /etc/neutron/api-paste.ini
-
-{% elif pillar['neutron']['backend'] == "networking-ovn" %}
-
-/etc/neutron/networking_ovn_metadata_agent.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/networking_ovn_metadata_agent.ini
-    - template: jinja
-    - defaults:
-        nova_metadata_host: {{ pillar['endpoints']['public'] }}
-        metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
-
-openvswitch_service:
-  service.running:
-    - name: openvswitch
-    - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/networking_ovn_metadata_agent.ini
-
-ovn_northd_service:
-  service.running:
-    - name: ovn-northd
-    - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/networking_ovn_metadata_agent.ini
-    - require:
-      - service: openvswitch_service
-
-ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
-  cmd.run:
-    - require:
-      - service: ovn_northd_service
-
-ovn-sbctl set-connection ptcp:6642:0.0.0.0 -- set connection . inactivity_probe=60000:
-  cmd.run:
-    - require:
-      - service: ovn_northd_service
-{% endif %}

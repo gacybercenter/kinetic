@@ -1,40 +1,33 @@
-qemu-kvm:
-  pkg.installed
-
-genisoimage:
-  pkg.installed
-
-mdadm:
+controller_packages:
   pkg.installed:
-    - reload_modules: True
-
-xfsprogs:
-  pkg.installed
-
-bridge-utils:
-  pkg.installed
+    - pkgs:
+      - qemu-kvm
+      - genisoimage
+      - mdadm
+      - xfsprogs
+      - bridge-utils
+      - haveged
+    - reload_modules: true
 
 {% if grains['os_family'] == 'Debian' %}
-python3-libvirt:
-  pkg.installed
 
-libvirt-clients:
-  pkg.installed
-
-libvirt-daemon-system:
-  pkg.installed
-
-qemu-utils:
-  pkg.installed
+controller_packages_deb:
+  pkg.installed:
+    - pkgs:
+      - python3-libvirt
+      - libvirt-clients
+      - libvirt-daemon-system
+      - qemu-utils
+    - reload_modules: true
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-libvirt-python:
-  pkg.installed
+controller_packages_rpm:
+  pkg.installed:
+    - pkgs:
+      - libvirt-python
+      - libvirt-client
+      - libvirt-daemon-kvm
+    - reload_modules: true          
 
-libvirt-client:
-  pkg.installed
-
-libvirt-daemon-kvm:
-  pkg.installed
 {% endif %}
