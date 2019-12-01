@@ -7,20 +7,21 @@ export OS_PROJECT_DOMAIN_NAME=Default
 export OS_AUTH_URL={{ keystone_internal_endpoint }}
 export OS_IDENTITY_API_VERSION=3
 
-service_test=$(openstack service list | grep barbican)
+service_test=$(openstack service list | grep magnum)
 if [[ $service_test != '' ]]; then
-  echo 'Existing barbican service detected...exiting...'
+  echo 'Existing magnum service detected...exiting...'
   exit
 fi
 
-openstack user create --domain default --password {{ barbican_service_password }} barbican
-openstack role add --project service --user barbican admin
-openstack service create --name barbican --description "Key Manager" key-manager
-openstack endpoint create --region RegionOne key-manager public {{ barbican_public_endpoint }}
-openstack endpoint create --region RegionOne key-manager internal {{ barbican_internal_endpoint }}
-openstack endpoint create --region RegionOne key-manager admin {{ barbican_admin_endpoint }}
+openstack user create --domain default --password {{ magnum_service_password }} magnum
+openstack role add --project service --user magnum admin
+openstack service create --name magnum --description "OpenStack Container Infrastructure Management Service" container-infrastructure-management
+openstack endpoint create --region RegionOne container-infrastructure-management public {{ magnum_public_endpoint }}
+openstack endpoint create --region RegionOne container-infrastructure-management internal {{ magnum_internal_endpoint }}
+openstack endpoint create --region RegionOne container-infrastructure-management admin {{ magnum_admin_endpoint }}
 
 
-## barbican-specific changes
-openstack role create creator
-openstack role add --project service --user barbican creator
+## magnum-specific changes
+openstack domain create --description "Owns users and projects created by magnum" magnum
+openstack user create --domain magnum --password {{ magnum_service_password }} magnum_domain_admin
+openstack role add --domain magnum --user-domain magnum --user magnum_domain_admin admin
