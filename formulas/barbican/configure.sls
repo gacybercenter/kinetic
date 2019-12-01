@@ -12,10 +12,10 @@ make_barbican_service:
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
         keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        barbican_internal_endpoint: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
-        barbican_public_endpoint: {{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['public_endpoint']['path'] }}
-        barbican_admin_endpoint: {{ pillar ['openstack_services']['glance']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['glance']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['admin_endpoint']['path'] }}
-        barbican_service_password: {{ pillar ['glance']['glance_service_password'] }}
+        barbican_internal_endpoint: {{ pillar ['openstack_services']['barbican']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['barbican']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['barbican']['configuration']['internal_endpoint']['path'] }}
+        barbican_public_endpoint: {{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['path'] }}
+        barbican_admin_endpoint: {{ pillar ['openstack_services']['barbican']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['barbican']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['barbican']['configuration']['admin_endpoint']['path'] }}
+        barbican_service_password: {{ pillar ['barbican']['barbican_service_password'] }}
 
 barbican-manage db upgrade:
   cmd.run:
