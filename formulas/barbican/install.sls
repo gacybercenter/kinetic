@@ -18,5 +18,6 @@ barbican_packages:
     - pkgs:
       - openstack-barbican-api
       - python2-openstackclient
+      - httpd
 
 {% endif %}
