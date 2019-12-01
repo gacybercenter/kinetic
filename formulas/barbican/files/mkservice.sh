@@ -19,3 +19,8 @@ openstack service create --name barbican --description "Key Manager" key-manager
 openstack endpoint create --region RegionOne key-manager public {{ barbican_public_endpoint }}
 openstack endpoint create --region RegionOne key-manager internal {{ barbican_internal_endpoint }}
 openstack endpoint create --region RegionOne key-manager admin {{ barbican_admin_endpoint }}
+
+
+## barbican-specific changes
+openstack role create creator
+openstack role add --project service --user barbican creator
