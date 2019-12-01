@@ -36,7 +36,7 @@ spawnzero_complete:
     - template: jinja
     - defaults:
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        transport_url: transport_url = rabbit://openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address[0] }}
+        transport_url: rabbit://openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address[0] }}
 {% endfor %}
 {% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
         connection: mysql+pymysql://magnum:{{ pillar['magnum']['magnum_mysql_password'] }}@{{ address[0] }}/magnum
