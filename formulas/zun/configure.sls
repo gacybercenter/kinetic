@@ -32,6 +32,11 @@ make_zun_service:
 
 {% endif %}
 
+websocketproxy.py:
+  file.managed:
+    - name: /usr/local/lib/python3.6/dist-packages/zun/websocket/websocketproxy.py
+    - source: salt://formulas/zun/files/websocketproxy.py
+
 make_kuryr_service:
   cmd.script:
     - source: salt://formulas/zun/files/mkservice_kuryr.sh
