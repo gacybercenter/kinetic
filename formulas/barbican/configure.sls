@@ -58,14 +58,22 @@ spawnzero_complete:
 
 barbican_keystone_listener_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: barbican-keystone-listener
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-barbican-keystone-listener
+{% endif %}
     - enable: True
     - watch:
-      - file: /etc/barbican/barbican.conf    
+      - file: /etc/barbican/barbican.conf
 
 barbican_worker_service:
   service.running:
+{% if grains['os_family'] == 'Debian' %}
     - name: barbican-worker
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-barbican-worker
+{% endif %}
     - enable: True
     - watch:
       - file: /etc/barbican/barbican.conf
