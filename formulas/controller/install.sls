@@ -14,6 +14,9 @@ xfsprogs:
 bridge-utils:
   pkg.installed
 
+haveged:
+  pkg.installed
+
 {% if grains['os_family'] == 'Debian' %}
 python3-libvirt:
   pkg.installed

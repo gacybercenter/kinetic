@@ -114,7 +114,7 @@ libvirtd_service:
   service.running:
     - name: libvirtd
     - enable: true
-{% endif %}    
+{% endif %}
 
 {% for os, args in pillar.get('images', {}).items() %}
 extract_{{ args['name'] }}:
@@ -148,3 +148,8 @@ extract_{{ args['name'] }}:
     - require:
       - extract_{{ args['name'] }}
 {% endfor %}
+
+haveged_service:
+  service.running:
+    - name: haveged
+    - enable: true
