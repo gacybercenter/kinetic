@@ -6,9 +6,10 @@ include:
 sahara_packages:
   pkg.installed:
     - pkgs:
-      - magnum-api
-      - magnum-conductor
-      - python3-magnumclient
+      - sahara
+      - sahara-api
+      - sahara-engine
+      - python3-saharaclient
       - python3-openstackclient
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -18,7 +19,6 @@ sahara_packages:
     - pkgs:
       - openstack-sahara-api
       - openstack-sahara-engine
-      - openstack-sahara-image-pack
       - openstack-sahara
       - python2-saharaclient
       - python2-openstackclient
