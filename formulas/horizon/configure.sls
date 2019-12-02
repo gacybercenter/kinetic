@@ -119,6 +119,9 @@ configure-collect-static:
     - name: python2 manage.py collectstatic --noinput
 {% endif %}
     - cwd: /usr/share/openstack-dashboard/
+    - require:
+      - file: local_settings
+      - file: apache_conf
     - onchanges:
       - git: install_theme
       - file: serialConsole.js
@@ -148,6 +151,7 @@ apache2_service:
     - require:
       - file: local_settings
       - cmd: configure-compress-static
+      - file: apache_conf
     - watch:
       - file: local_settings
       - file: secret_key
