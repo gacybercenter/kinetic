@@ -122,6 +122,7 @@ configure-collect-static:
     - onchanges:
       - git: install_theme
       - file: serialConsole.js
+      - file: local_settings
 
 configure-compress-static:
   cmd.run:
@@ -132,6 +133,8 @@ configure-compress-static:
 {% endif %}
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
+      - cmd: configure-collect-static
+    - require:
       - cmd: configure-collect-static
 
 apache2_service:
@@ -144,6 +147,7 @@ apache2_service:
     - enable: true
     - require:
       - file: local_settings
+      - cmd: configure-compress-static
     - watch:
       - file: local_settings
       - file: secret_key
