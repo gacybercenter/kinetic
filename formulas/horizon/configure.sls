@@ -152,6 +152,7 @@ apache2_service:
       - file: local_settings
       - cmd: configure-compress-static
       - file: apache_conf
+      - sls: formulas/horizon/install
     - watch:
       - file: local_settings
       - file: secret_key
