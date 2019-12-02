@@ -70,6 +70,7 @@ horizon_packages:
       - openstack-designate-ui
       - openstack-dashboard
       - openstack-magnum-ui
+      - openstack-sahara-ui
       - git
     - reload_modules: True
 
