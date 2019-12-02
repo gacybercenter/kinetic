@@ -12,7 +12,6 @@ horizon_packages:
       - python3-setuptools
       - python3-designate-dashboard
       - openstack-dashboard
-      - python3-magnum-ui
       - git
     - reload_modules: True
 
