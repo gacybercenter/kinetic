@@ -115,14 +115,12 @@ install_zun_ui:
     - onchanges:
       - cmd: zun_ui_requirements
 
-
 collect-static-zun:
   cmd.run:
     - name: python3 manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
       - cmd: install_zun_ui
-
 
 compress-static-zun:
   cmd.run:
@@ -146,14 +144,12 @@ install_zun_ui:
     - onchanges:
       - cmd: zun_ui_requirements
 
-
 collect-static-zun:
   cmd.run:
     - name: python2 manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
       - cmd: install_zun_ui
-
 
 compress-static-zun:
   cmd.run:
