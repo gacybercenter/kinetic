@@ -16,6 +16,6 @@ fi
 openstack user create --domain default --password {{ sahara_service_password }} sahara
 openstack role add --project service --user sahara admin
 openstack service create --name sahara --description "Sahara Data Processing" data-processing
-openstack endpoint create --region RegionOne container-infra public {{ sahara_public_endpoint }}
-openstack endpoint create --region RegionOne container-infra internal {{ sahara_internal_endpoint }}
-openstack endpoint create --region RegionOne container-infra admin {{ sahara_admin_endpoint }}
+openstack endpoint create --region RegionOne data-processing public {{ sahara_public_endpoint }}
+openstack endpoint create --region RegionOne data-processing internal {{ sahara_internal_endpoint }}
+openstack endpoint create --region RegionOne data-processing admin {{ sahara_admin_endpoint }}
