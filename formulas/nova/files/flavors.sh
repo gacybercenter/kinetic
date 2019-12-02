@@ -15,11 +15,12 @@ export OS_IDENTITY_API_VERSION=3
 
 
 try=0
-until [ $try -ge 5 ]
+until [ $try -ge 2 ]
 do
+  openstack flavor list | grep -q "{{ flavor_name }}" && break
   openstack flavor create --ram {{ ram }} --disk {{ disk }} --vcpus {{ vcpus }} --public {{ flavor_name }} && break
   $try=[$try+1]
-  sleep 5
+  sleep 10
 done
 if [[ $? = 0 ]]
 then
