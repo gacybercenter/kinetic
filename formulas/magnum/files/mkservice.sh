@@ -15,10 +15,10 @@ fi
 
 openstack user create --domain default --password {{ magnum_service_password }} magnum
 openstack role add --project service --user magnum admin
-openstack service create --name magnum --description "OpenStack Container Infrastructure Management Service" container-infrastructure-management
-openstack endpoint create --region RegionOne container-infrastructure-management public {{ magnum_public_endpoint }}
-openstack endpoint create --region RegionOne container-infrastructure-management internal {{ magnum_internal_endpoint }}
-openstack endpoint create --region RegionOne container-infrastructure-management admin {{ magnum_admin_endpoint }}
+openstack service create --name magnum --description "OpenStack Container Infrastructure Management Service" container-infra
+openstack endpoint create --region RegionOne container-infra public {{ magnum_public_endpoint }}
+openstack endpoint create --region RegionOne container-infra internal {{ magnum_internal_endpoint }}
+openstack endpoint create --region RegionOne container-infra admin {{ magnum_admin_endpoint }}
 
 
 ## magnum-specific changes
