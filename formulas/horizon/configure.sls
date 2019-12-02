@@ -119,9 +119,13 @@ configure-collect-static:
     - name: python2 manage.py collectstatic --noinput
 {% endif %}
     - cwd: /usr/share/openstack-dashboard/
+    - require:
+      - file: local_settings
+      - file: apache_conf
     - onchanges:
       - git: install_theme
       - file: serialConsole.js
+      - file: local_settings
 
 configure-compress-static:
   cmd.run:
@@ -132,6 +136,8 @@ configure-compress-static:
 {% endif %}
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
+      - cmd: configure-collect-static
+    - require:
       - cmd: configure-collect-static
 
 apache2_service:
@@ -144,6 +150,9 @@ apache2_service:
     - enable: true
     - require:
       - file: local_settings
+      - cmd: configure-compress-static
+      - file: apache_conf
+      - sls: formulas/horizon/install
     - watch:
       - file: local_settings
       - file: secret_key

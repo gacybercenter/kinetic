@@ -15,6 +15,49 @@ horizon_packages:
       - git
     - reload_modules: True
 
+magnum_latest:
+  git.latest:
+    - name: https://opendev.org/openstack/magnum-ui.git
+    - branch: stable/train
+    - target: /usr/share/openstack-dashboard/magnum-ui/
+    - force_clone: true
+
+copy_magnum_panels:
+  module.run:
+    - name: file.copy
+    - src: /usr/share/openstack-dashboard/magnum-ui/magnum_ui/enabled/
+    - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+    - recurse: True
+    - unless:
+      - test -f /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/_1370_project_container_infra_panel_group.py
+
+magnum_ui_requirements:
+  cmd.run:
+    - name: pip3 install -r /usr/share/openstack-dashboard/magnum-ui/requirements.txt
+    - onchanges:
+      - git: magnum_latest
+
+install_magnum_ui:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd: /usr/share/openstack-dashboard/magnum-ui/
+    - onchanges:
+      - cmd: magnum_ui_requirements
+
+collect-static-magnum:
+  cmd.run:
+    - name: python3 manage.py collectstatic --noinput
+    - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: install_magnum_ui
+
+compress-static-magnum:
+  cmd.run:
+    - name: python3 manage.py compress
+    - cwd: /usr/share/openstack-dashboard/
+    - onchanges:
+      - cmd: collect-static-magnum
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 horizon_packages:
@@ -26,6 +69,7 @@ horizon_packages:
       - python2-setuptools
       - openstack-designate-ui
       - openstack-dashboard
+      - openstack-magnum-ui
       - git
     - reload_modules: True
 
@@ -71,14 +115,12 @@ install_zun_ui:
     - onchanges:
       - cmd: zun_ui_requirements
 
-
 collect-static-zun:
   cmd.run:
     - name: python3 manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
       - cmd: install_zun_ui
-
 
 compress-static-zun:
   cmd.run:
@@ -102,14 +144,12 @@ install_zun_ui:
     - onchanges:
       - cmd: zun_ui_requirements
 
-
 collect-static-zun:
   cmd.run:
     - name: python2 manage.py collectstatic --noinput
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
       - cmd: install_zun_ui
-
 
 compress-static-zun:
   cmd.run:
