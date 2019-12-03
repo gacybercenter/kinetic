@@ -73,7 +73,7 @@ spawnzero_complete:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 {% for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
   {%- for address in addresses -%}
-    {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) %}
         ganesha_ip: {{ address }}
     {%- endif -%}
   {%- endfor -%}
