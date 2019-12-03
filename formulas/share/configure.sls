@@ -20,6 +20,13 @@ make_filesystem:
 
 {% endif %}
 
+/etc/ceph/ceph.client.manila.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-manila-keyring
+    - mode: 640
+    - user: root
+    - group: ceph
+
 /etc/manila/manila.conf:
   file.managed:
     - source: salt://formulas/share/files/manila.conf
