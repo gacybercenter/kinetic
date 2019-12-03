@@ -40,7 +40,7 @@ get_adminkey:
 
 make_{{ grains['id'] }}_mdskey:
   cmd.run:
-    - name: ceph auth get-or-create mds.{{ grains['id'] }} mon 'profile mds' mgr 'profile mds' mds 'allow *' osd 'allow *' > /var/lib/ceph/mds/{{ grains['id'] }}/keyring
+    - name: ceph auth get-or-create mds.{{ grains['id'] }} mon 'profile mds' mgr 'profile mds' mds 'allow *' osd 'allow *' -o /var/lib/ceph/mds/{{ grains['id'] }}/keyring
     - creates:
       - /var/lib/ceph/mds/{{ grains['id'] }}/keyring
 
