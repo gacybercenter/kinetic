@@ -83,3 +83,14 @@ manila_share_service:
     - enable: true
     - watch:
       - file: /etc/manila/manila.conf
+
+nfs_ganesha_service:
+  service.running:
+{% if grains['os_family'] == 'Debian' %}
+    - name: nfs-ganesha
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: nfs-ganesha
+{% endif %}
+    - enable: true
+    - watch:
+      - file: /etc/manila/manila.conf
