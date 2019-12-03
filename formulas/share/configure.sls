@@ -22,6 +22,7 @@ make_filesystem:
 
 /var/lib/manila/tmp:
   file.directory:
+    - makedirs: true
     - user: manila
     - group: manila
 
