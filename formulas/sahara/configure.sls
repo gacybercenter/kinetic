@@ -52,7 +52,7 @@ spawnzero_complete:
 sahara_api_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
-    - name: sahara-api
+    - name: apache2
 {% elif grains['os_family'] == 'RedHat' %}
     - name: openstack-sahara-api
 {% endif %}
