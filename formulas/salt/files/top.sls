@@ -28,6 +28,7 @@ base:
     - zun
     - barbican
     - magnum
+    - sahara
   'rabbitmq*':
     - rabbitmq
   'graylog*':
@@ -42,6 +43,11 @@ base:
     - rabbitmq
   'magnum*':
     - magnum
+    - openstack
+    - keystone
+    - rabbitmq
+  'sahara*':
+    - sahara
     - openstack
     - keystone
     - rabbitmq
