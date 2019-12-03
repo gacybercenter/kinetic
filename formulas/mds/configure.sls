@@ -36,7 +36,7 @@ get_adminkey:
     - user: root
     - group: root
     - prereq:
-      - cmd: make_{{ grains['id'] }}_swiftkey
+      - cmd: make_{{ grains['id'] }}_mdskey
 
 make_{{ grains['id'] }}_mdskey:
   cmd.run:
