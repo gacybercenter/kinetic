@@ -95,6 +95,12 @@ base:
     - rabbitmq
     - keystone
     - ceph
+  'share*':
+    - manila
+    - openstack
+    - rabbitmq
+    - keystone
+    - ceph
   'designate*':
     - designate
     - openstack
