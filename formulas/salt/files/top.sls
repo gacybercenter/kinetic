@@ -14,6 +14,9 @@ base:
   'cephmon*':
     - ceph
     - keystone
+  'mds*':
+    - ceph
+    - keystone
   'mysql*':
     - mysql
     - keystone
