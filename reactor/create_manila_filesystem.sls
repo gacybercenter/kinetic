@@ -18,3 +18,6 @@ create_manila_filesystem:
     - tgt_type: compound
     - arg:
       - ceph fs new manila fileshare_metadata fileshare_data
+    - require:
+      - cmd: create_manila_data_pool
+      - cmd: create_manila_metadata_pool
