@@ -25,5 +25,14 @@ manila_packages:
       - python-memcached
       - centos-release-nfs-ganesha28
       - ceph-common
+    - reload_modules: true
+
+ganesha_packages::
+  pkg.installed:
+    - pkgs:
+      - nfs-ganesha
+      - nfs-ganesha-ceph
+    - require:
+      - pkg: manila_packages
 
 {% endif %}
