@@ -12,6 +12,9 @@ manila_packages:
       - python3-openstackclient
       - python3-manilaclient
       - python3-memcache
+      - ceph-common
+      - python3-rbd
+      - python3-rados
 
 {% elif grains['os_family'] == 'RedHat' %}
 
