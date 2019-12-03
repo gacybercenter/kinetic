@@ -20,6 +20,11 @@ make_filesystem:
 
 {% endif %}
 
+/var/lib/manila/tmp:
+  file.directory:
+    - user: manila
+    - group: manila
+
 /etc/ceph/ceph.client.manila.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-manila-keyring
