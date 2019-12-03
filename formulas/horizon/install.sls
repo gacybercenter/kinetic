@@ -13,6 +13,7 @@ horizon_packages:
       - python3-designate-dashboard
       - openstack-dashboard
       - python3-sahara-dashboard
+      - python3-manila-ui
       - git
     - reload_modules: True
 
@@ -72,6 +73,7 @@ horizon_packages:
       - openstack-dashboard
       - openstack-magnum-ui
       - openstack-sahara-ui
+      - openstack-manila-ui
       - git
     - reload_modules: True
 
