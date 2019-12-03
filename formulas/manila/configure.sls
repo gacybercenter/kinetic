@@ -33,6 +33,12 @@ spawnzero_complete:
 
 {% endif %}
 
+/var/lock/manila:
+  file.directory:
+    - makedirs: true
+    - user: manila
+    - group: manila
+
 /var/lib/manila/tmp:
   file.directory:
     - makedirs: true
