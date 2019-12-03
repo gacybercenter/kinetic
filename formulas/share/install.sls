@@ -25,6 +25,8 @@ manila_packages:
       - python-memcached
       - centos-release-nfs-ganesha28
       - ceph-common
+      - python-rbd
+      - python-rados
     - reload_modules: true
 
 ganesha_packages::
