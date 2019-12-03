@@ -33,6 +33,12 @@ spawnzero_complete:
 
 {% endif %}
 
+/var/lib/manila/tmp:
+  file.directory:
+    - makedirs: true
+    - user: manila
+    - group: manila
+
 /etc/manila/manila.conf:
   file.managed:
     - source: salt://formulas/manila/files/manila.conf
