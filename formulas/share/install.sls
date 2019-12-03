@@ -1,6 +1,6 @@
 include:
   - formulas/openstack/common/repo
-  - formulas/ceph/common/repo  
+  - formulas/ceph/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -23,5 +23,7 @@ manila_packages:
       - python2-openstackclient
       - python2-manilaclient
       - python-memcached
+      - centos-release-nfs-ganesha28
+      - ceph-common
 
 {% endif %}
