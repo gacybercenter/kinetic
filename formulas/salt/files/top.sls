@@ -29,6 +29,7 @@ base:
     - barbican
     - magnum
     - sahara
+    - manila
   'rabbitmq*':
     - rabbitmq
   'graylog*':
@@ -84,6 +85,12 @@ base:
     - rabbitmq
   'cinder*':
     - cinder
+    - openstack
+    - rabbitmq
+    - keystone
+    - ceph
+  'manila*':
+    - manila
     - openstack
     - rabbitmq
     - keystone
