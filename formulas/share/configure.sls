@@ -11,11 +11,12 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
-make_fileshare_pool:
+make_filesystem:
   event.send:
-    - name: create/{{ grains['type'] }}/pool
+    - name: create/manila/filesystem
     - data:
-        pgs: {{ pillar['cephconf']['fileshare_pgs'] }}
+        metadata_pgs: {{ pillar['cephconf']['fileshare_metadata_pgs'] }}
+        data_pgs: {{ pillar['cephconf']['fileshare_data_pgs'] }}
 
 {% endif %}
 
