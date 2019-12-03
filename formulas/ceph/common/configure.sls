@@ -15,6 +15,11 @@
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
+        mds_members: |
+          {% for host, address in salt['mine.get']('role:mds', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+          [mds.{{ host }}]
+          host = {{ host }}
+          {% endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [client.{{ host }}]
