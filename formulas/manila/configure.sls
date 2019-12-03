@@ -35,7 +35,7 @@ spawnzero_complete:
 
 /etc/manila/manila.conf:
   file.managed:
-    - source: salt://formulas/manila/files/manila.conf
+    - source: salt://formulas/share/files/manila.conf
     - template: jinja
     - defaults:
 {% for server, addresses in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -59,6 +59,13 @@ spawnzero_complete:
 {% endfor %}
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+{% for server, addresses in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+  {%- for address in addresses -%}
+    {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+        ganesha_ip: {{ address }}
+    {%- endif -%}
+  {%- endfor -%}
+{% endfor %}
 
 manila_api_service:
   service.running:

@@ -53,6 +53,13 @@ make_filesystem:
 {% endfor %}
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+{% for server, addresses in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+  {%- for address in addresses -%}
+    {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+        ganesha_ip: {{ address }}
+    {%- endif -%}
+  {%- endfor -%}
+{% endfor %}
 
 manila_share_service:
   service.running:
