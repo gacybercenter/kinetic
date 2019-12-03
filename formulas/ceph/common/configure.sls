@@ -19,7 +19,7 @@
           {% for host, address in salt['mine.get']('role:mds', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           [mds.{{ host }}]
           host = {{ host }}
-          keyring = /etc/ceph/ceph.mds.{{ host }}.keyring
+          keyring = /var/lib/ceph/mds/ceph-{{ host }}/keyring
           {% endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
