@@ -94,6 +94,25 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     - connection_unix_socket: {{ sock }}
         {% endfor %}
       {% endif %}
+
+      {% if db == 'manila' %}
+        {% for host, address in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+create_{{ service }}_user_{{ host }}:
+  mysql_user.present:
+    - name: {{ service }}
+    - password: {{ pillar [service][service + '_mysql_password'] }}
+    - host: {{ address[0] }}
+    - connection_unix_socket: {{ sock }}
+
+grant_{{ service }}_privs_{{ host }}_{{ db }}:
+   mysql_grants.present:
+    - grant: all privileges
+    - database: {{ db }}.*
+    - user: {{ service }}
+    - host: {{ address[0] }}
+    - connection_unix_socket: {{ sock }}
+        {% endfor %}
+      {% endif %}
     {% endfor %}
   {% endfor %}
 {% endfor %}
