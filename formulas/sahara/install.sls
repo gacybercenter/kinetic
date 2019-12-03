@@ -6,6 +6,7 @@ include:
 sahara_packages:
   pkg.installed:
     - pkgs:
+      - apache2
       - sahara
       - sahara-api
       - sahara-engine
