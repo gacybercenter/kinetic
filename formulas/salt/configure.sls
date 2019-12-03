@@ -159,7 +159,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
             [client.manila]
                  key = {{ manilakey }}
                  caps mds = "allow *"
-                 caps mon = "allow r, allow command "auth del", allow command "auth caps", allow command "auth get", allow command "auth get-or-create""
+                 caps mon = "allow r, allow command auth del, allow command auth caps, allow command auth get, allow command auth get-or-create"
                  caps osd = "allow rw"
           ceph-client-compute-key: {{ computekey }}
           ceph-client-volumes-key: {{ volumeskey }}
