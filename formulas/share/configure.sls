@@ -1,5 +1,5 @@
 include:
-  - formulas/manila/install
+  - formulas/share/install
   - formulas/common/base
   - formulas/common/networking
   - formulas/ceph/common/configure
