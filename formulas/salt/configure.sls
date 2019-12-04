@@ -66,7 +66,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
             kuryr_service_password: {{ salt['random.get_str']('64') }}
 {% elif service == 'barbican' %}
         extra_opts: |
-            simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}            
+            simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}
 {% else %}
         extra_opts: ''
 {% endif %}
@@ -106,6 +106,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% set volumeskey = salt['cephx.make_key']() %}
 {% set computekey = salt['cephx.make_key']() %}
 {% set osdkey = salt['cephx.make_key']() %}
+{% set manilakey = salt['cephx.make_key']() %}
 
 /srv/dynamic_pillar/ceph.sls:
   file.managed:
@@ -154,6 +155,12 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  key = {{ computekey }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
+          ceph-client-manila-keyring: |
+            [client.manila]
+                 key = {{ manilakey }}
+                 caps mds = "allow *"
+                 caps mon = "allow r, allow command \"auth del\", allow command \"auth caps\", allow command \"auth get\", allow command \"auth get-or-create\""
+                 caps osd = "allow rw"
           ceph-client-compute-key: {{ computekey }}
           ceph-client-volumes-key: {{ volumeskey }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}

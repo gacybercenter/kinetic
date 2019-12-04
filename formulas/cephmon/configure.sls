@@ -34,6 +34,10 @@ spawnzero_complete:
   file.managed:
     - contents_pillar: ceph:ceph-client-compute-keyring
 
+/etc/ceph/ceph.client.manila.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-manila-keyring
+
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
@@ -118,5 +122,12 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
   cmd.run:
     - onchanges:
       - /etc/ceph/ceph.client.compute.keyring
+    - require:
+      - service: ceph-mon@{{ grains['id'] }}
+
+ceph auth import -i /etc/ceph/ceph.client.manila.keyring:
+  cmd.run:
+    - onchanges:
+      - /etc/ceph/ceph.client.manila.keyring
     - require:
       - service: ceph-mon@{{ grains['id'] }}

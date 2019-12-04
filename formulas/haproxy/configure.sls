@@ -221,6 +221,14 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
               {%- endif -%}
             {%- endfor -%}
           {%- endfor %}
+        manila_hosts: |
+          {%- for host, addresses in salt['mine.get']('type:manila', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+          server {{ host }} {{ address }}:8786 check inter 2000 rise 2 fall 5
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %}
 
 haproxy_service_watch:
   service.running:
