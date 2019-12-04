@@ -18,6 +18,7 @@ share_packages:
       - nfs-ganesha
       - nfs-ganesha-ceph
       - python3-cephfs
+      - sqlite3
 
 {% elif grains['os_family'] == 'RedHat' %}
 
