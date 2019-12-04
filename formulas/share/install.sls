@@ -17,6 +17,7 @@ share_packages:
       - python3-rados
       - nfs-ganesha
       - nfs-ganesha-ceph
+      - python3-cephfs
 
 {% elif grains['os_family'] == 'RedHat' %}
 
