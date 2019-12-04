@@ -69,8 +69,6 @@ spawnzero_complete:
   {%- for address in addresses -%}
     {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) %}
         ganesha_ip: {{ address }}
-    {% else %}
-        ganesha_ip: 127.0.0.1
     {%- endif -%}
   {%- endfor -%}
 {% endfor %}
