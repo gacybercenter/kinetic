@@ -4,7 +4,7 @@ include:
 
 {% if grains['os_family'] == 'Debian' %}
 
-manila_packages:
+share_packages:
   pkg.installed:
     - pkgs:
       - manila-share
@@ -15,10 +15,12 @@ manila_packages:
       - ceph-common
       - python3-rbd
       - python3-rados
+      - nfs-ganesha
+      - nfs-ganesha-ceph
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-manila_packages:
+share_packages:
   pkg.installed:
     - pkgs:
       - openstack-manila-share
@@ -38,6 +40,6 @@ ganesha_packages::
       - nfs-ganesha
       - nfs-ganesha-ceph
     - require:
-      - pkg: manila_packages
+      - pkg: share_packages
 
 {% endif %}
