@@ -37,7 +37,7 @@ make_filesystem:
     - contents_pillar: ceph:ceph-client-manila-keyring
     - mode: 640
     - user: root
-    - group: ceph
+    - group: manila
 
 /etc/manila/manila.conf:
   file.managed:
