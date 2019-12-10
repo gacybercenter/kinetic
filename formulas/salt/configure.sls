@@ -93,6 +93,13 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         rabbitmq:
           rabbitmq_password: {{ salt['random.get_str']('64') }}
 
+/srv/dynamic_pillar/etcd.sls:
+  file.managed:
+    - replace: false
+    - contents: |
+        etcd:
+          etcd_cluster_token: {{ salt['random.get_str']('64') }}          
+
 {% set graylog_password = salt['random.get_str']('64') %}
 /srv/dynamic_pillar/graylog.sls:
   file.managed:

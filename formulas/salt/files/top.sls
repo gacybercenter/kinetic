@@ -14,6 +14,8 @@ base:
   'cephmon*':
     - ceph
     - keystone
+  'etcd*':
+    - etcd
   'mds*':
     - ceph
     - keystone
