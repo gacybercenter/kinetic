@@ -31,5 +31,7 @@ heat_packages:
 zunclient_install:
   pip.installed:
     - name: python-zunclient
+    - require:
+      - pkg: heat_packages
 
 {% endif %}
