@@ -27,7 +27,7 @@ etcd_conf:
           {%- for host, addresses in salt['mine.get']('role:etcd', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-                {{ " "+address }}
+                {{ grains['id']=http://+address:2380 }}
               {%- endif -%}
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
