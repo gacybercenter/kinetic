@@ -19,11 +19,11 @@ etcd_conf:
 {% elif grains['os_family'] == 'RedHat' %}
     - name: /etc/etcd/etcd.conf
 {% endif %}
-    - source: salt://formulas/zun/files/etcd
+    - source: salt://formulas/etcd/files/etcd
     - template: jinja
     - defaults:
         etcd_hosts: |
-          {%- for host, address in salt['mine.get']('role:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+          {%- for host, address in salt['mine.get']('role:etcd', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
           ETCD_INITIAL_CLUSTER="{{ host }}=http://{{ address[0] }}:2380"
           {%- endfor %}
         etcd_name: {{ grains['id'] }}
