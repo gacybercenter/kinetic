@@ -34,6 +34,7 @@ etcd_conf:
           {%- endfor %}"
         etcd_name: {{ grains['id'] }}
         etcd_listen: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        cluster_token: {{ pillar['etcd']['etcd_cluster_token'] }}
 
 etcd_service:
   service.running:
