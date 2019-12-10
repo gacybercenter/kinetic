@@ -7,5 +7,5 @@ ETCD_NAME="{{ etcd_name }}"
 ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ etcd_listen }}:2380"
 ETCD_ADVERTISE_CLIENT_URLS="http://{{ etcd_listen }}:2379"
 ETCD_INITIAL_CLUSTER_STATE="new"
-ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster-token"
+ETCD_INITIAL_CLUSTER_TOKEN="{{ cluster_token }}"
 {{ etcd_hosts }}
