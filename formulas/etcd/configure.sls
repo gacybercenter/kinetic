@@ -23,9 +23,15 @@ etcd_conf:
     - template: jinja
     - defaults:
         etcd_hosts: |
-          {%- for host, address in salt['mine.get']('role:etcd', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          ETCD_INITIAL_CLUSTER="{{ host }}=http://{{ address[0] }}:2380"
-          {%- endfor %}
+          ETCD_INITIAL_CLUSTER="
+          {%- for host, addresses in salt['mine.get']('role:etcd', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+                {{ " "+address }}
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}"
         etcd_name: {{ grains['id'] }}
         etcd_listen: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 
