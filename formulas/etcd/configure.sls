@@ -1,5 +1,5 @@
 include:
-  - formulas/ovsdb/install
+  - formulas/etcd/install
   - formulas/common/base
   - formulas/common/networking
 
@@ -12,43 +12,26 @@ spawnzero_complete:
 
 {% endif %}
 
-openvswitch_service:
-  service.running:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: openvswitch
-{% elif grains['os_family'] == 'Debian' %}
-    - name: openvswitch-switch
+etcd_conf:
+  file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/default/etcd
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/etcd/etcd.conf
 {% endif %}
-    - enable: true
+    - source: salt://formulas/zun/files/etcd
+    - template: jinja
+    - defaults:
+        etcd_hosts: |
+          {%- for host, address in salt['mine.get']('role:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+          ETCD_INITIAL_CLUSTER="{{ host }}=http://{{ address[0] }}:2380"
+          {%- endfor %}
+        etcd_name: {{ grains['id'] }}
+        etcd_listen: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 
-ovn_northd_service:
+etcd_service:
   service.running:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: ovn-northd
-{% elif grains['os_family'] == 'Debian' %}
-    - name: ovn-central
-{% endif %}
+    - name: etcd
     - enable: true
-    - require:
-      - service: openvswitch_service
-
-ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
-  cmd.run:
-    - require:
-      - service: ovn_northd_service
-    - unless:
-      - ovn-nbctl get-connection | grep -q "ptcp:6641:0.0.0.0"
-
-ovn-sbctl set-connection ptcp:6642:0.0.0.0 -- set connection . inactivity_probe=60000:
-  cmd.run:
-    - require:
-      - service: ovn_northd_service
-    - unless:
-      - ovn-sbctl get-connection | grep -q "ptcp:6642:0.0.0.0"
-
-ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
-  cmd.run:
-    - require:
-      - service: ovn_northd_service
-    - unless:
-      - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"
+    - watch:
+      - file: etcd_conf
