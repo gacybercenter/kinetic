@@ -55,6 +55,7 @@ container_packages:
       - openstack-neutron-linuxbridge
       - python36-PyMySQL
       - docker-ce
+      - numactl
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 container_packages:
   pkg.installed:
@@ -69,6 +70,7 @@ container_packages:
       - python36-PyMySQL
       - docker-ce
       - libibverbs
+      - numactl      
   {% endif %}
 
 python-openstackclient:
