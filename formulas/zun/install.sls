@@ -11,7 +11,6 @@ zun_packages:
       - git
       - python3-openstackclient
       - python3-memcache
-      - etcd
       - numactl
       - python3-pymysql
 
@@ -31,7 +30,6 @@ zun_packages:
       - libffi-devel
       - gcc
       - openssl-devel
-      - etcd
       - numactl
       - python36-PyMySQL
 
