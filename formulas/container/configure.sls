@@ -223,9 +223,15 @@ ovn_controller_service:
     - makedirs: True
     - template: jinja
     - defaults:
-{% for host, address in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        etcd_ip: {{ address[0] }}
-{% endfor %}
+        etcd_cluster: |
+          {%- for host, addresses in salt['mine.get']('role:etcd', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+                {{ address }}:2379
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
     - requires:
       - /formulas/container/install
 
