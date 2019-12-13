@@ -52,7 +52,7 @@ spawnzero_complete:
               {%- endif -%}
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+          {%- endfor -%}
         password: {{ pillar['barbican']['barbican_service_password'] }}
         kek: kek = '{{ pillar['barbican']['simplecrypto_key'] }}'
         host_href: host_href = {{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['port'] }}
