@@ -46,7 +46,7 @@ spawnzero_complete:
         memcached_servers: |
           {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['sfe']) -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
                 {{ address|indent(10) }}:11211
               {%- endif -%}
             {%- endfor -%}
