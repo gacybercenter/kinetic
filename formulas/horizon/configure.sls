@@ -40,8 +40,8 @@ local_settings:
           '{{ address }}:11211'
               {%- endif -%}
             {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {% endfor -%}
+            {% if loop.index < loop.length %},{% else %}{% endif -%}
+          {%- endfor %}
         keystone_url: {{ pillar['endpoints']['internal'] }}
         allowed_hosts: [{{ pillar['haproxy']['dashboard_domain'] }}]
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
