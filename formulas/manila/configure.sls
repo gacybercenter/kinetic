@@ -66,7 +66,7 @@ spawnzero_complete:
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 {% for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-  {% if server is defined %}
+  {% if server is not defined %}
         ganesha_ip: 127.0.0.1
   {% endif %}
   {%- for address in addresses -%}
