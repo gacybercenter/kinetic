@@ -32,7 +32,7 @@ local_settings:
 {% elif grains['os_family'] == 'RedHat' %}
         secret_key: /var/lib/openstack-dashboard/secret_key
 {% endif %}
-        memcached_servers: |
+        memcached_servers: |-
           {{ ""|indent(10) }}
           {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
@@ -40,7 +40,7 @@ local_settings:
           '{{ address }}:11211'
               {%- endif -%}
             {%- endfor -%}
-            {%- if loop.index < loop.length -%},{%- else -%}{%- endif -%}
+            {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
         keystone_url: {{ pillar['endpoints']['internal'] }}
         allowed_hosts: [{{ pillar['haproxy']['dashboard_domain'] }}]
