@@ -40,7 +40,7 @@ local_settings:
           '{{ address }}:11211'
               {%- endif -%}
             {%- endfor -%}
-            {%- if loop.index < loop.length %},{% endif -%}
+            {%- if loop.index < loop.length -%},{%- endif -%}
           {%- endfor %}
         keystone_url: {{ pillar['endpoints']['internal'] }}
         allowed_hosts: [{{ pillar['haproxy']['dashboard_domain'] }}]
