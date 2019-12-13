@@ -99,30 +99,6 @@ make_kuryr_user:
     - requires:
       - /formulas/zun/install
 
-etcd_conf:
-  file.managed:
-{% if grains['os_family'] == 'Debian' %}
-    - name: /etc/default/etcd
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /etc/etcd/etcd.conf
-{% endif %}
-    - source: salt://formulas/zun/files/etcd
-    - template: jinja
-    - defaults:
-        etcd_hosts: |
-          {%- for host, address in salt['mine.get']('role:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          ETCD_INITIAL_CLUSTER="{{ host }}=http://{{ address[0] }}:2380"
-          {%- endfor %}
-        etcd_name: {{ grains['id'] }}
-        etcd_listen: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-
-etcd_service:
-  service.running:
-    - name: etcd
-    - enable: true
-    - watch:
-      - file: etcd_conf
-
 zun_api_service:
   service.running:
     - name: zun-api

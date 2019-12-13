@@ -1,0 +1,11 @@
+#[member]
+ETCD_DATA_DIR="/var/lib/etcd"
+ETCD_LISTEN_PEER_URLS="http://{{ etcd_listen }}:2380"
+ETCD_LISTEN_CLIENT_URLS="http://{{ etcd_listen }}:2379,http://127.0.0.1:2379"
+ETCD_NAME="{{ etcd_name }}"
+#[clustering]
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ etcd_listen }}:2380"
+ETCD_ADVERTISE_CLIENT_URLS="http://{{ etcd_listen }}:2379"
+ETCD_INITIAL_CLUSTER_STATE="new"
+ETCD_INITIAL_CLUSTER_TOKEN="{{ cluster_token }}"
+ETCD_INITIAL_CLUSTER={{ etcd_hosts }}
