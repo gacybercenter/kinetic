@@ -1,3 +1,4 @@
-highstate_pxe:
+highstate_manila:
   local.state.highstate:
-    - tgt: 'manila'
+    - tgt_type: compound
+    - tgt: 'E@(manila*) and G@production:True'
