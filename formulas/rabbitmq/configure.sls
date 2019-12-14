@@ -15,7 +15,7 @@ spawnzero_complete:
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 rmq_name_resolution_{{ server }}:
   host.present:
-    - name: {{ address[0] }}
+    - ip: {{ address[0] }}
     - hostnames:
       - {{ server }}
 {% endfor %}
