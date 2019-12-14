@@ -5,6 +5,14 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+cluster_policy:
+  rabbitmq_policy.present:
+    - name: ha
+    - pattern: '^(?!amq\.).*'
+    - definition: '{"ha-mode": "all"}'
+    - require:
+      - service: rabbitmq-server-service
+      
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
@@ -47,11 +55,10 @@ openstack_rmq:
 join_cluster:
   rabbitmq_cluster.join:
     - user: rabbit
-{% for server, address in salt['mine.get']('G@type:rabbitmq and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
+  {% for server, address in salt['mine.get']('G@type:rabbitmq and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
     - host: {{ address[0] }}
-{% endfor %}
-
-
+  {% endfor %}
+{% endif %}
 
 rabbitmq-server-service:
   service.running:
