@@ -10,6 +10,9 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
+galera_new_cluster && touch /etc/galera_init_done:
+  cmd.run:
+    - creates: /etc/galera_init_done
 {% endif %}
 
 openstack.conf:
