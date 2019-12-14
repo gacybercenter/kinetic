@@ -16,7 +16,7 @@ spawnzero_complete:
 rmq_name_resolution_{{ server }}:
   host.present:
     - ip: {{ address[0] }}
-    - hostnames:
+    - names:
       - {{ server }}
 {% endfor %}
 
