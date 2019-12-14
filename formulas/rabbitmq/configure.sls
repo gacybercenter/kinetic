@@ -5,14 +5,6 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
-cluster_policy:
-  rabbitmq_policy.present:
-    - name: ha
-    - pattern: '^(?!amq\.).*'
-    - definition: '{"ha-mode": "all"}'
-    - require:
-      - service: rabbitmq-server-service
-      
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
@@ -69,3 +61,11 @@ rabbitmq-server-service:
       - /etc/rabbitmq/rabbit-env.conf
       - rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin
       - /var/lib/rabbitmq/.erlang.cookie
+
+cluster_policy:
+  rabbitmq_policy.present:
+    - name: ha
+    - pattern: '^(?!amq\.).*'
+    - definition: '{"ha-mode": "all"}'
+    - require:
+      - service: rabbitmq-server-service
