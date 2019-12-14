@@ -12,6 +12,21 @@ spawnzero_complete:
 
 {% endif %}
 
+{% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+rmq_name_resolution_{{ server }}:
+  host.present:
+    - ip: {{ address[0] }}
+    - names:
+      - {{ server }}
+{% endfor %}
+
+/var/lib/rabbitmq/.erlang.cookie:
+  file.managed:
+    - contents_pillar: rabbitmq:erlang_cookie
+    - mode: 400
+    - user: rabbitmq
+    - group: rabbitmq
+
 /etc/rabbitmq/rabbit.conf:
   file.managed:
     - source: salt://formulas/rabbitmq/files/rabbitmq.conf
@@ -36,6 +51,19 @@ openstack_rmq:
     - require:
       - service: rabbitmq-server-service
 
+{% if grains['spawning'] != 0 %}
+join_cluster:
+  rabbitmq_cluster.join:
+    - user: rabbit
+  {% for server, address in salt['mine.get']('G@type:rabbitmq and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
+    - host: {{ server }}
+  {% endfor %}
+    - retry:
+        attempts: 5
+        until: True
+        interval: 60
+{% endif %}
+
 rabbitmq-server-service:
   service.running:
     - name: rabbitmq-server
@@ -44,3 +72,12 @@ rabbitmq-server-service:
       - /etc/rabbitmq/rabbit.conf
       - /etc/rabbitmq/rabbit-env.conf
       - rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin
+      - /var/lib/rabbitmq/.erlang.cookie
+
+cluster_policy:
+  rabbitmq_policy.present:
+    - name: ha
+    - pattern: '^(?!amq\.).*'
+    - definition: '{"ha-mode": "all"}'
+    - require:
+      - service: rabbitmq-server-service
