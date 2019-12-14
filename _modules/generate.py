@@ -13,5 +13,5 @@ def mac(prefix='52:54:00'):
                                                 random.randint(0, 0xff),
                                                 random.randint(0, 0xff))
 
-def erlang_cookie():
-    return ''.join(random.choice(string.ascii_uppercase) for i in 20)
+def erlang_cookie(length = 20):
+    return ''.join(random.choice(string.ascii_uppercase) for i in range(length))
