@@ -40,6 +40,7 @@ openstack.conf:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
+        wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}
     - require:
       - sls: formulas/mysql/install
 
