@@ -12,6 +12,13 @@ spawnzero_complete:
 
 {% endif %}
 
+/var/lib/rabbitmq/.erlang.cookie:
+  file.managed:
+    - contents_pillar: rabbitmq:erlang_cookie
+    - mode: 400
+    - user: rabbitmq
+    - group: rabbitmq
+
 /etc/rabbitmq/rabbit.conf:
   file.managed:
     - source: salt://formulas/rabbitmq/files/rabbitmq.conf
