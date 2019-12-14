@@ -43,6 +43,16 @@ openstack_rmq:
     - require:
       - service: rabbitmq-server-service
 
+{% if grains['spawning'] != 0 %}
+join_cluster:
+  rabbitmq_cluster.join:
+    - user: rabbit
+{% for server, address in salt['mine.get']('G@type:rabbitmq and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
+    - host: {{ address[0] }}
+{% endfor %}
+
+
+
 rabbitmq-server-service:
   service.running:
     - name: rabbitmq-server
