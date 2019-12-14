@@ -10,9 +10,10 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
-systemctl start mariadb.server --wsrep-new-cluster && touch /etc/galera_init_done:
+mysqld --wsrep-new-cluster && touch /etc/galera_init_done:
   cmd.run:
     - creates: /etc/galera_init_done
+    - cwd: /usr/libexec
     - require:
       - file: openstack.conf
 
