@@ -13,6 +13,7 @@ spawnzero_complete:
 galera_new_cluster && touch /etc/galera_init_done:
   cmd.run:
     - creates: /etc/galera_init_done
+
 {% endif %}
 
 openstack.conf:
@@ -29,6 +30,16 @@ openstack.conf:
     - template: jinja
     - defaults:
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        wsrep_cluster_address: |-
+          gcomm://
+          {%- for host, addresses in salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+                {{ address }}
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
     - require:
       - sls: formulas/mysql/install
 
