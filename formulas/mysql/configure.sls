@@ -15,7 +15,7 @@ systemctl start mariadb.service && touch /etc/galera_init_done:
     - creates: /etc/galera_init_done
     - env:
       - _WSREP_NEW_CLUSTER: '--wsrep-new-cluster'
-   - require:
+    - require:
       - file: openstack.conf
 
 {% endif %}
