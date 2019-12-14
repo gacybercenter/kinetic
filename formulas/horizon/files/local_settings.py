@@ -8,7 +8,7 @@ SECRET_KEY = secret_key.generate_or_read_from_file('{{ secret_key }}')
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '{{ memcached_servers }}',
+        'LOCATION': [{{ memcached_servers }}]
     },
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
