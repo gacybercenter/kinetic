@@ -13,6 +13,8 @@ spawnzero_complete:
 systemctl start mariadb.server --wsrep-new-cluster && touch /etc/galera_init_done:
   cmd.run:
     - creates: /etc/galera_init_done
+    - require:
+      - file: openstack.conf
 
 {% endif %}
 
