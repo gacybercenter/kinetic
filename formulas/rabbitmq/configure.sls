@@ -57,11 +57,11 @@ join_cluster:
     - user: rabbit
   {% for server, address in salt['mine.get']('G@type:rabbitmq and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
     - host: {{ server }}
+  {% endfor %}
     - retry:
         attempts: 5
         until: True
         interval: 60
-  {% endfor %}
 {% endif %}
 
 rabbitmq-server-service:
