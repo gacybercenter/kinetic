@@ -10,10 +10,9 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
-mysqld --wsrep-new-cluster && touch /etc/galera_init_done:
+/usr/libexec/mysqld --wsrep-new-cluster && touch /etc/galera_init_done:
   cmd.run:
     - creates: /etc/galera_init_done
-    - cwd: /usr/libexec
     - require:
       - file: openstack.conf
 
