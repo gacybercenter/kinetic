@@ -92,7 +92,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
     - contents: |
         rabbitmq:
           rabbitmq_password: {{ salt['random.get_str']('64') }}
-          erlang_cookie: {{ salt['generate.erlang_cookie']('20') }}
+          erlang_cookie: {{ salt['generate.erlang_cookie'](20) }}
 
 /srv/dynamic_pillar/etcd.sls:
   file.managed:
