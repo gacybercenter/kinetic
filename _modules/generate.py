@@ -1,5 +1,6 @@
 ## generate various items on-demand.  For use in sls files when no appropriate module exists.
 import random
+import string
 
 __virtualname__ = 'generate'
 
@@ -11,3 +12,6 @@ def mac(prefix='52:54:00'):
                                                 random.randint(0, 0xff),
                                                 random.randint(0, 0xff),
                                                 random.randint(0, 0xff))
+
+def erlang_cookie():
+    return ''.join(random.choice(string.ascii_uppercase) for i in 20)
