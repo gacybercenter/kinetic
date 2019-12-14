@@ -56,7 +56,7 @@ join_cluster:
   rabbitmq_cluster.join:
     - user: rabbit
   {% for server, address in salt['mine.get']('G@type:rabbitmq and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
-    - host: {{ address[0] }}
+    - host: {{ server }}
   {% endfor %}
 {% endif %}
 
