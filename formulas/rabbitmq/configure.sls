@@ -51,3 +51,4 @@ rabbitmq-server-service:
       - /etc/rabbitmq/rabbit.conf
       - /etc/rabbitmq/rabbit-env.conf
       - rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin
+      - /var/lib/rabbitmq/.erlang.cookie
