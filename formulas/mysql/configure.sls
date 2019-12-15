@@ -5,6 +5,10 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+/bin/galera_new_cluster:
+  file.managed:
+    - source: salt://formulas/mysql/files/galera_new_cluster
+
 bootstrap_mariadb_dead:
   service.dead:
     - name: mariadb
@@ -13,10 +17,8 @@ bootstrap_mariadb_dead:
 
 bootstrap_mariadb_start:
   cmd.run:
-    - name: systemctl start mariadb.service && touch /etc/galera_init_done
+    - name: galera_new_cluster && touch /etc/galera_init_done
     - creates: /etc/galera_init_done
-    - env:
-      - _WSREP_NEW_CLUSTER: '--wsrep-new-cluster'
     - require:
       - file: openstack.conf
 
