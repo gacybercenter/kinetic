@@ -98,16 +98,6 @@ set_unix_socket_root:
 {% endif %}
 
 {% for service in pillar['openstack_services'] %}
-  {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
-
-create_{{ db }}_db:
-  mysql_database.present:
-    - name: {{ db }}
-    - connection_unix_socket: {{ sock }}
-    - require:
-      - service: mariadb_service
-
-  {% endfor %}
 
 create_{{ service }}_user:
   mysql_user.present:
@@ -118,7 +108,14 @@ create_{{ service }}_user:
     - require:
       - service: mariadb_service
 
-  {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
+{% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
+
+create_{{ db }}_db:
+  mysql_database.present:
+    - name: {{ db }}
+    - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
 
 grant_{{ service }}_privs_{{ db }}:
    mysql_grants.present:
@@ -129,8 +126,9 @@ grant_{{ service }}_privs_{{ db }}:
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
+      - mysql: create_{{ service }}_user
+      - mysql: create_{{ db }}_db
 
-  {% endfor %}
 {% endfor %}
 {% endif %}
 
