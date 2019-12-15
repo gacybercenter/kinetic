@@ -188,4 +188,4 @@ cluster_established_final:
     - name: cluster_established
     - value: True
     - require:
-      - service: mariadb_service_enable
+      - service: mariadb_service
