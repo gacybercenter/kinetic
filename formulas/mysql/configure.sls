@@ -10,7 +10,7 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
-systemctl start mariadb.service && touch /etc/galera_init_done:
+systemctl stop mariadb.service && systemctl start mariadb.service && touch /etc/galera_init_done:
   cmd.run:
     - creates: /etc/galera_init_done
     - env:
@@ -143,7 +143,7 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     - host: {{ address[0] }}
     - connection_unix_socket: {{ sock }}
     - require:
-      - service: mariadb_service    
+      - service: mariadb_service
         {% endfor %}
       {% endif %}
     {% endfor %}
