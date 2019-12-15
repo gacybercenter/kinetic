@@ -27,7 +27,7 @@ spawnzero_complete:
 
 {% endif %}
 
-{% if salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain')|length > 1 %}
+{% if salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain')|length > 3 %}
 echo bigger than 1:
   cmd.run
 {% endif %}
