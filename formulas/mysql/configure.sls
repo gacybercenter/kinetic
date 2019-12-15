@@ -3,7 +3,7 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-{% if grains['os_family'] == 'RedHat' %}
+{% if grains['os_family'] == 'blockme' %}
   {% for port in [4444, 4567, 4568 ] %}
 
 galera_selinux_policy_{{ port }}_tcp:
