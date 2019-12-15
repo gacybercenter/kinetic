@@ -17,6 +17,8 @@ bootstrap_mariadb_start:
     - creates: /etc/galera_init_done
     - env:
       - _WSREP_NEW_CLUSTER: '--wsrep-new-cluster'
+    - require:
+      - file: openstack.conf
 
 spawnzero_complete:
   event.send:
