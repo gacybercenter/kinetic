@@ -26,7 +26,7 @@ bootstrap_mariadb_start:
       - file: openstack.conf
 
 /etc/galera_init_done:
-  file.touch:
+  file.managed:
     - require:
       - cmd: bootstrap_mariadb_start
 
@@ -86,7 +86,7 @@ mariadb_service:
 {% if salt['grains.get']('production', False) == True %}
         watch:
           - file: openstack.conf
-{% endif %}          
+{% endif %}
 
 {% if salt['grains.get']('cluster_established', False) == True %}
 
