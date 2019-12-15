@@ -29,16 +29,19 @@ bootstrap_mariadb_start:
     - require:
       - cmd: bootstrap_mariadb_start
 
+master_reboot_pause:
+  module.run:
+    - name: test.sleep
+    - length: 300
+    - onchanges:
+      - grains: cluster_established_final
+    - order: last
+
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
-{% endif %}
-
-{% if salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain')|length > 1 %}
-echo bigger than 1:
-  cmd.run
 {% endif %}
 
 openstack.conf:
@@ -185,10 +188,3 @@ cluster_established_final:
     - value: True
     - require:
       - service: mariadb_service
-
-rolling_reboot:
-  module.run:
-    - name: test.sleep
-    - length: {{ grains['spawning'] * 60 }}
-    - onchanges:
-      - grains: cluster_established_final
