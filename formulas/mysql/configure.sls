@@ -3,10 +3,6 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-cluster_established_init:
-  grains.present:
-    - name: cluster_established
-
 {% if grains['spawning'] == 0 %}
 
 /bin/galera_new_cluster:
