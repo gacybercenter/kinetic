@@ -63,6 +63,8 @@ set_unix_socket_root:
       - service: mariadb_service
     - unless:
       - test -e /root/.socket_assignment
+    - require:
+      - service: mariadb_service
 {% endif %}
 
 {% for service in pillar['openstack_services'] %}
@@ -72,6 +74,8 @@ create_{{ db }}_db:
   mysql_database.present:
     - name: {{ db }}
     - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
 
   {% endfor %}
   {% for host, address in salt['mine.get']('type:'+service, 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -82,6 +86,8 @@ create_{{ service }}_user_{{ host }}:
     - password: {{ pillar [service][service + '_mysql_password'] }}
     - host: {{ address[0] }}
     - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
 
     {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
@@ -92,6 +98,8 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     - user: {{ service }}
     - host: {{ address[0] }}
     - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
 
       {% if db == 'zun' %}
         {% for host, address in salt['mine.get']('type:container', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -101,6 +109,8 @@ create_{{ service }}_user_{{ host }}:
     - password: {{ pillar [service][service + '_mysql_password'] }}
     - host: {{ address[0] }}
     - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
 
 grant_{{ service }}_privs_{{ host }}_{{ db }}:
    mysql_grants.present:
@@ -109,6 +119,8 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     - user: {{ service }}
     - host: {{ address[0] }}
     - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
         {% endfor %}
       {% endif %}
 
@@ -120,6 +132,8 @@ create_{{ service }}_user_{{ host }}:
     - password: {{ pillar [service][service + '_mysql_password'] }}
     - host: {{ address[0] }}
     - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
 
 grant_{{ service }}_privs_{{ host }}_{{ db }}:
    mysql_grants.present:
@@ -128,6 +142,8 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     - user: {{ service }}
     - host: {{ address[0] }}
     - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service    
         {% endfor %}
       {% endif %}
     {% endfor %}
