@@ -69,17 +69,12 @@ openstack.conf:
     - require:
       - sls: formulas/mysql/install
 
-mariadb_service_enable:
-  service.enabled:
-    - name: mariadb
-
-{% if salt['grains.get']('cluster_established', False) == True %}
-
 mariadb_service:
   service.running:
     - name: mariadb
-    - watch:
-      - file: openstack.conf
+    - enable: true
+
+{% if salt['grains.get']('cluster_established', False) == True %}
 
 {% if grains['os_family'] == 'RedHat' %}
 set_unix_socket_root:
