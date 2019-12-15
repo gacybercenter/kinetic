@@ -6,7 +6,6 @@ include:
 cluster_established_init:
   grains.present:
     - name: cluster_established
-    - value: False
 
 {% if grains['spawning'] == 0 %}
 
