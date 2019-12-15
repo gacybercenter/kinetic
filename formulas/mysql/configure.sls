@@ -4,6 +4,7 @@ include:
   - formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
+  {% if pillar['virtual']['mysql']['count'] > 1 %}
 
 /bin/galera_new_cluster:
   file.managed:
@@ -36,12 +37,12 @@ master_reboot_pause:
     - onchanges:
       - grains: cluster_established_final
     - order: last
+  {% endif %}
 
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
-
 {% endif %}
 
 openstack.conf:
@@ -58,6 +59,7 @@ openstack.conf:
     - template: jinja
     - defaults:
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+{% if pillar['virtual']['mysql']['count'] > 1 %}
         wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}
         wsrep_cluster_address: |-
           gcomm://
@@ -69,6 +71,7 @@ openstack.conf:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
+{% endif %}
     - require:
       - sls: formulas/mysql/install
 
@@ -80,6 +83,10 @@ mariadb_service:
         attempts: 5
         until: True
         interval: 60
+{% if salt['grains.get']('production', False) == True %}
+        watch:
+          - file: openstack.conf
+{% endif %}          
 
 {% if salt['grains.get']('cluster_established', False) == True %}
 
