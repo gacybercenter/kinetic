@@ -81,7 +81,7 @@ mariadb_service:
         until: True
         interval: 60
 
-{% if salt['grains.get']('cluster_established', False) == True %}
+{% if salt['grains.get']('Production', False) == True %}
 
 {% if grains['os_family'] == 'RedHat' %}
 set_unix_socket_root:
@@ -108,59 +108,35 @@ create_{{ db }}_db:
       - service: mariadb_service
 
   {% endfor %}
-  {% for host, address in salt['mine.get']('type:'+service, 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 
-create_{{ service }}_user_{{ host }}:
+create_{{ service }}_user:
   mysql_user.present:
     - name: {{ service }}
     - password: {{ pillar [service][service + '_mysql_password'] }}
-    - host: {{ address[0] }}
+    - host: {{ pillar['haproxy']['dashboard_domain'] }}
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
 
-    {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
+  {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
 grant_{{ service }}_privs_{{ host }}_{{ db }}:
    mysql_grants.present:
     - grant: all privileges
     - database: {{ db }}.*
     - user: {{ service }}
-    - host: {{ address[0] }}
+    - host: {{ pillar['haproxy']['dashboard_domain'] }}
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
 
-      {% if db == 'zun' %}
-        {% for host, address in salt['mine.get']('type:container', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+    {% if db == 'zun' %}
+      {% for host, address in salt['mine.get']('type:container', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 create_{{ service }}_user_{{ host }}:
   mysql_user.present:
     - name: {{ service }}
     - password: {{ pillar [service][service + '_mysql_password'] }}
-    - host: {{ address[0] }}
-    - connection_unix_socket: {{ sock }}
-    - require:
-      - service: mariadb_service
-
-grant_{{ service }}_privs_{{ host }}_{{ db }}:
-   mysql_grants.present:
-    - grant: all privileges
-    - database: {{ db }}.*
-    - user: {{ service }}
-    - host: {{ address[0] }}
-    - connection_unix_socket: {{ sock }}
-    - require:
-      - service: mariadb_service
-        {% endfor %}
-      {% endif %}
-
-      {% if db == 'manila' %}
-        {% for host, address in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-create_{{ service }}_user_{{ host }}:
-  mysql_user.present:
-    - name: {{ service }}
-    - password: {{ pillar [service][service + '_mysql_password'] }}
-    - host: {{ address[0] }}
+    - host: {{ pillar['haproxy']['dashboard_domain'] }}
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
@@ -170,21 +146,36 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     - grant: all privileges
     - database: {{ db }}.*
     - user: {{ service }}
-    - host: {{ address[0] }}
+    - host: {{ pillar['haproxy']['dashboard_domain'] }}
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
-        {% endfor %}
-      {% endif %}
-    {% endfor %}
+      {% endfor %}
+    {% endif %}
+
+    {% if db == 'manila' %}
+      {% for host, address in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+create_{{ service }}_user_{{ host }}:
+  mysql_user.present:
+    - name: {{ service }}
+    - password: {{ pillar [service][service + '_mysql_password'] }}
+    - host: {{ pillar['haproxy']['dashboard_domain'] }}
+    - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
+
+grant_{{ service }}_privs_{{ host }}_{{ db }}:
+   mysql_grants.present:
+    - grant: all privileges
+    - database: {{ db }}.*
+    - user: {{ service }}
+    - host: {{ pillar['haproxy']['dashboard_domain'] }}
+    - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
+      {% endfor %}
+    {% endif %}
   {% endfor %}
 {% endfor %}
 
 {% endif %}
-
-cluster_established_final:
-  grains.present:
-    - name: cluster_established
-    - value: True
-    - require:
-      - service: mariadb_service
