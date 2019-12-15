@@ -52,13 +52,7 @@ spawnzero_complete:
     - source: salt://formulas/cinder/files/cinder.conf
     - template: jinja
     - defaults:
-{% for server, addresses in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-  {%- for address in addresses -%}
-    {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-        sql_connection_string: 'connection = mysql+pymysql://cinder:{{ pillar['cinder']['cinder_mysql_password'] }}@{{ address }}/cinder'
-    {%- endif -%}
-  {%- endfor -%}
-{% endfor %}
+        sql_connection_string: 'connection = mysql+pymysql://cinder:{{ pillar['cinder']['cinder_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/cinder'
         transport_url: |-
           rabbit://
           {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}

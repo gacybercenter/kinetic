@@ -38,9 +38,7 @@ spawnzero_complete:
     - source: salt://formulas/heat/files/heat.conf
     - template: jinja
     - defaults:
-{% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        sql_connection_string: 'connection = mysql+pymysql://heat:{{ pillar['heat']['heat_mysql_password'] }}@{{ address[0] }}/heat'
-{% endfor %}
+        sql_connection_string: 'connection = mysql+pymysql://heat:{{ pillar['heat']['heat_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/heat'
         transport_url: |-
           rabbit://
           {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
@@ -53,7 +51,7 @@ spawnzero_complete:
           {%- endfor %}
         auth_uri: {{ pillar['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         auth_url: {{ pillar['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |
+        memcached_servers: |-
           {{ ""|indent(10) }}
           {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
