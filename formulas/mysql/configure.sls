@@ -57,7 +57,7 @@ openstack.conf:
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         wsrep_cluster_address: |-
           gcomm://
-          {%- for host, addresses in salt['mine.get']('G@role:mysql and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
+          {%- for host, addresses in salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
                 {{ address }}
