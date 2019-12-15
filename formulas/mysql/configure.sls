@@ -10,8 +10,15 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
-systemctl stop mariadb.service && systemctl start mariadb.service && touch /etc/galera_init_done:
+bootstrap_mariadb_dead:
+  service.dead:
+    - name: mariadb
+    - prereq:
+      - cmd: bootstrap_mariadb_start
+
+bootstrap_mariadb_start:
   cmd.run:
+    - name: systemctl start mariadb.service && touch /etc/galera_init_done
     - creates: /etc/galera_init_done
     - env:
       - _WSREP_NEW_CLUSTER: '--wsrep-new-cluster'
