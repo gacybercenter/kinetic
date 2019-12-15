@@ -3,6 +3,11 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+cluster_established_init:
+  grains.present:
+    - name: cluster_established
+    - value: False
+
 {% if grains['spawning'] == 0 %}
 
 /bin/galera_new_cluster:
@@ -88,8 +93,6 @@ mariadb_service:
     - watch:
       - file: openstack.conf
       - file: galera.conf
-
-{% endif %}
 
 {% if grains['os_family'] == 'RedHat' %}
 set_unix_socket_root:
@@ -187,3 +190,12 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     {% endfor %}
   {% endfor %}
 {% endfor %}
+
+{% endif %}
+
+cluster_established_final:
+  grains.present:
+    - name: cluster_established
+    - value: True
+    - require:
+      - service: mariadb_service_enable
