@@ -5,11 +5,6 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
-spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
-
 bootstrap_mariadb_dead:
   service.dead:
     - name: mariadb
@@ -22,6 +17,11 @@ bootstrap_mariadb_start:
     - creates: /etc/galera_init_done
     - env:
       - _WSREP_NEW_CLUSTER: '--wsrep-new-cluster'
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
 
 {% endif %}
 
