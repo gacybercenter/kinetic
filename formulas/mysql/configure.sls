@@ -31,7 +31,7 @@ spawnzero_complete:
 
 {% endif %}
 
-{% if salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain')|length > 3 %}
+{% if salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain')|length > 1 %}
 echo bigger than 1:
   cmd.run
 {% endif %}
@@ -76,12 +76,20 @@ galera.conf:
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
 
+mariadb_service_enable:
+  service.enabled:
+    - name: mariadb
+
+{% if grains['cluster_established'] == True %}
+
 mariadb_service:
   service.running:
     - name: mariadb
-    - enable: True
     - watch:
       - file: openstack.conf
+      - file: galera.conf
+
+{% endif %}
 
 {% if grains['os_family'] == 'RedHat' %}
 set_unix_socket_root:
