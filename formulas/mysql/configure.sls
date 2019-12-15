@@ -8,6 +8,8 @@ include:
 /bin/galera_new_cluster:
   file.managed:
     - source: salt://formulas/mysql/files/galera_new_cluster
+    - require_in:
+      - cmd: bootstrap_mariadb_start
 
 bootstrap_mariadb_dead:
   service.dead:
