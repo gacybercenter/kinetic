@@ -188,7 +188,7 @@ cluster_established_final:
 
 rolling_reboot:
   module.run:
-    - test.sleep
-      - opts: {{ grains['spawning'] * 60 }}
+    - test.sleep:
+      - length: {{ grains['spawning'] * 60 }}
       - onchanges:
         - grains: cluster_established_final
