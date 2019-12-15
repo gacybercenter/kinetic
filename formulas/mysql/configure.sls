@@ -74,9 +74,9 @@ mariadb_service:
     - name: mariadb
     - enable: true
     - retry:
-      - attempts: 5
-      - until: True
-      - interval: 60
+        attempts: 5
+        until: True
+        interval: 60
 
 {% if salt['grains.get']('cluster_established', False) == True %}
 
