@@ -46,6 +46,7 @@ openstack.conf:
     - template: jinja
     - defaults:
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}        
     - require:
       - sls: formulas/mysql/install
 
@@ -70,7 +71,6 @@ galera.conf:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-        wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}
 
 mariadb_service:
   service.running:
