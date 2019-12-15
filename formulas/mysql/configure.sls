@@ -4,8 +4,7 @@ include:
   - formulas/common/networking
 
 {% if grains['os_family'] == 'RedHat' %}
-
-{% for port in [4444, 4567, 4568 ] %}
+  {% for port in [4444, 4567, 4568 ] %}
 
 galera_selinux_policy_{{ port }}_tcp:
   selinux.port_policy_present:
@@ -17,7 +16,8 @@ galera_selinux_policy_{{ port }}_udp:
     - name: udp/{{ port }}
     - sel_type: mysqld_{{ port }}_udp
 
-{% endfor %}
+  {% endfor %}
+{% endif %}
 
 {% if grains['spawning'] == 0 %}
 
