@@ -17,6 +17,8 @@ galera_selinux_policy_{{ port }}_udp:
     - name: udp/{{ port }}
     - sel_type: mysqld_{{ port }}_udp
 
+{% endfor %}
+
 {% if grains['spawning'] == 0 %}
 
 bootstrap_mariadb_dead:
