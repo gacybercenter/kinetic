@@ -9,12 +9,12 @@ include:
 galera_selinux_policy_{{ port }}_tcp:
   selinux.port_policy_present:
     - name: tcp/{{ port }}
-    - sel_type: mysqld_port_{{ port }}_tcp
+    - sel_type: mysqld_port_t
 
 galera_selinux_policy_{{ port }}_udp:
   selinux.port_policy_present:
     - name: udp/{{ port }}
-    - sel_type: mysqld_{{ port }}_udp
+    - sel_type: mysqld_port_t
 
   {% endfor %}
 {% endif %}
