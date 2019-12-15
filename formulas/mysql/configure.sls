@@ -27,6 +27,11 @@ spawnzero_complete:
 
 {% endif %}
 
+{% if salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain')|length > 1 %}
+  echo bigger than 1:
+    cmd.run
+{% endif %}
+
 openstack.conf:
   file.managed:
 {% if grains['os_family'] == 'Debian' %}
