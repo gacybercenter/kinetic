@@ -81,7 +81,7 @@ mariadb_service:
         until: True
         interval: 60
 
-{% if salt['grains.get']('Production', False) == True %}
+{% if salt['grains.get']('cluster_established', False) == True %}
 
 {% if grains['os_family'] == 'RedHat' %}
 set_unix_socket_root:
@@ -177,5 +177,11 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
     {% endif %}
   {% endfor %}
 {% endfor %}
-
 {% endif %}
+
+cluster_established_final:
+  grains.present:
+    - name: cluster_established
+    - value: True
+    - require:
+      - service: mariadb_service
