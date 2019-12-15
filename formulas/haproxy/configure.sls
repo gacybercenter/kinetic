@@ -229,6 +229,21 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
               {%- endif -%}
             {%- endfor -%}
           {%- endfor %}
+        mysql_hosts: |-
+          {%- for host, addresses in salt['mine.get']('G@type:mysql and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+          server {{ host }} {{ address }}:3306 check inter 2000 rise 2 fall 5
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %}
+          {%- for host, addresses in salt['mine.get']('G@type:mysql and not G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+          server {{ host }} {{ address }}:3306 check inter 2000 rise 2 fall 5 backup
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %}
 
 haproxy_service_watch:
   service.running:
