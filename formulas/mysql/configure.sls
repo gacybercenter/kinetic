@@ -85,7 +85,7 @@ mariadb_service_enable:
   service.enabled:
     - name: mariadb
 
-{% if grains['cluster_established'] == True %}
+{% if salt['grains.get']('cluster_established', False) == True %}
 
 mariadb_service:
   service.running:
