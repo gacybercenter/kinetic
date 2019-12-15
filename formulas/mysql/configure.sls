@@ -185,3 +185,10 @@ cluster_established_final:
     - value: True
     - require:
       - service: mariadb_service
+
+rolling_reboot:
+  module.run:
+    - test.sleep
+      - length: {% spawning * 60 %}
+      - onchanges:
+        - grains: cluster_established_final 
