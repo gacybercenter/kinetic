@@ -80,7 +80,6 @@ mariadb_service:
     - name: mariadb
     - watch:
       - file: openstack.conf
-      - file: galera.conf
 
 {% if grains['os_family'] == 'RedHat' %}
 set_unix_socket_root:
