@@ -23,10 +23,15 @@ bootstrap_mariadb_dead:
 
 bootstrap_mariadb_start:
   cmd.run:
-    - name: galera_new_cluster && touch /etc/galera_init_done
+    - name: galera_new_cluster
     - creates: /etc/galera_init_done
     - require:
       - file: openstack.conf
+
+/etc/galera_init_done:
+  file.touch:
+    - require:
+      - cmd: bootstrap_mariadb_start
 
 spawnzero_complete:
   event.send:
