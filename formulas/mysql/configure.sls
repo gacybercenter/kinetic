@@ -3,6 +3,20 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+{% if grains['os_family'] == 'RedHat' %}
+
+{% for port in [4444, 4567, 4568 ] %}
+
+galera_selinux_policy_{{ port }}_tcp:
+  selinux.port_policy_present:
+    - name: tcp/{{ port }}
+    - sel_type: mysqld_port_{{ port }}_tcp
+
+galera_selinux_policy_{{ port }}_udp:
+  selinux.port_policy_present:
+    - name: udp/{{ port }}
+    - sel_type: mysqld_{{ port }}_udp
+
 {% if grains['spawning'] == 0 %}
 
 bootstrap_mariadb_dead:
