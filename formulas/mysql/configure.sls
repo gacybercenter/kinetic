@@ -83,7 +83,7 @@ mariadb_service:
 
 {% if salt['grains.get']('cluster_established', False) == True %}
 
-{% if grains['os_family'] == 'RedHat' %}
+  {% if grains['os_family'] == 'RedHat' %}
 set_unix_socket_root:
   mysql_query.run:
     - database: mysql
@@ -95,9 +95,9 @@ set_unix_socket_root:
       - test -e /root/.socket_assignment
     - require:
       - service: mariadb_service
-{% endif %}
+  {% endif %}
 
-{% for service in pillar['openstack_services'] %}
+  {% for service in pillar['openstack_services'] %}
 
 create_{{ service }}_user:
   mysql_user.present:
@@ -108,7 +108,7 @@ create_{{ service }}_user:
     - require:
       - service: mariadb_service
 
-{% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
+    {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
 create_{{ db }}_db:
   mysql_database.present:
@@ -129,7 +129,8 @@ grant_{{ service }}_privs_{{ db }}:
       - mysql: create_{{ service }}_user
       - mysql: create_{{ db }}_db
 
-{% endfor %}
+    {% endfor %}
+  {% endfor %}
 {% endif %}
 
 cluster_established_final:
