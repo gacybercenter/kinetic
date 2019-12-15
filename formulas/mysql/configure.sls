@@ -120,7 +120,7 @@ create_{{ service }}_user:
 
   {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
-grant_{{ service }}_privs_{{ host }}_{{ db }}:
+grant_{{ service }}_privs_{{ db }}:
    mysql_grants.present:
     - grant: all privileges
     - database: {{ db }}.*
@@ -132,7 +132,7 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
 
     {% if db == 'zun' %}
       {% for host, address in salt['mine.get']('type:container', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-create_{{ service }}_user_{{ host }}:
+create_{{ service }}_user:
   mysql_user.present:
     - name: {{ service }}
     - password: {{ pillar [service][service + '_mysql_password'] }}
@@ -141,7 +141,7 @@ create_{{ service }}_user_{{ host }}:
     - require:
       - service: mariadb_service
 
-grant_{{ service }}_privs_{{ host }}_{{ db }}:
+grant_{{ service }}_privs_{{ db }}:
    mysql_grants.present:
     - grant: all privileges
     - database: {{ db }}.*
@@ -155,7 +155,7 @@ grant_{{ service }}_privs_{{ host }}_{{ db }}:
 
     {% if db == 'manila' %}
       {% for host, address in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-create_{{ service }}_user_{{ host }}:
+create_{{ service }}_user:
   mysql_user.present:
     - name: {{ service }}
     - password: {{ pillar [service][service + '_mysql_password'] }}
@@ -164,7 +164,7 @@ create_{{ service }}_user_{{ host }}:
     - require:
       - service: mariadb_service
 
-grant_{{ service }}_privs_{{ host }}_{{ db }}:
+grant_{{ service }}_privs_{{ db }}:
    mysql_grants.present:
     - grant: all privileges
     - database: {{ db }}.*
