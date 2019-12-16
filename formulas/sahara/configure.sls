@@ -45,9 +45,7 @@ spawnzero_complete:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-{% for server, address in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        connection: mysql+pymysql://sahara:{{ pillar['sahara']['sahara_mysql_password'] }}@{{ address[0] }}/sahara
-{% endfor %}
+        connection: mysql+pymysql://sahara:{{ pillar['sahara']['sahara_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/sahara
         www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}
         memcached_servers: |

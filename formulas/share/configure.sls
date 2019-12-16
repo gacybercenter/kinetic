@@ -52,13 +52,7 @@ make_nfs_share_type:
     - source: salt://formulas/share/files/manila.conf
     - template: jinja
     - defaults:
-{% for server, addresses in salt['mine.get']('type:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-  {%- for address in addresses -%}
-    {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-        sql_connection_string: 'connection = mysql+pymysql://manila:{{ pillar['manila']['manila_mysql_password'] }}@{{ address }}/manila'
-    {%- endif -%}
-  {%- endfor -%}
-{% endfor %}
+        sql_connection_string: 'connection = mysql+pymysql://manila:{{ pillar['manila']['manila_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/manila'
         transport_url: |-
           rabbit://
           {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
@@ -71,7 +65,7 @@ make_nfs_share_type:
           {%- endfor %}
         www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
         auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |
+        memcached_servers: |-
           {{ ""|indent(10) }}
           {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}

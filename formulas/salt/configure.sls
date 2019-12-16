@@ -85,6 +85,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
     - contents: |
         mysql:
           mysql_root_password: {{ salt['random.get_str']('64') }}
+          wsrep_cluster_name: {{ salt['random.get_str']('32') }}
 
 /srv/dynamic_pillar/rabbitmq.sls:
   file.managed:

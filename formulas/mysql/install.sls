@@ -23,13 +23,18 @@ mariadb-server:
     - require:
       - pkgrepo: mariadb_repo
 
+galera:
+  pkg.installed:
+    - require:
+      - pkgrepo: mariadb_repo
+
 python3-pymysql:
   pkg.installed:
     - reload_modules: True
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-mariadb-server:
+mariadb-server-galera:
   pkg.installed
 
 mariadb:
