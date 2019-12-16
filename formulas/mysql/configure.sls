@@ -59,7 +59,6 @@ openstack.conf:
     - template: jinja
     - defaults:
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-{% if pillar['virtual']['mysql']['count'] > 1 %}
         wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}
         wsrep_cluster_address: |-
           gcomm://
@@ -71,7 +70,6 @@ openstack.conf:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-{% endif %}
     - require:
       - sls: formulas/mysql/install
 
