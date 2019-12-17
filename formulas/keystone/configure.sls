@@ -40,6 +40,10 @@ project_init:
 {% endif %}
     - require:
       - service: wsgi_service
+    - retry:
+        attempts: 5
+        until: True
+        delay: 60
 
 spawnzero_complete:
   event.send:
@@ -168,6 +172,10 @@ wsgi_service:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain
       - file: webserver_conf
+    - require:
+      - file: /etc/keystone/keystone.conf
+      - file: keystone_domain
+      - file: webserver_conf      
 
 /var/lib/keystone/keystone.db:
   file.absent
