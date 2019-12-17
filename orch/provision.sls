@@ -22,16 +22,10 @@ assign_uuid_to_{{ target }}:
 
 {% elif style == 'virtual' %}
 {% set spawning = salt['pillar.get']('spawning', '0') %}
-get_available_controllers_for_{{ type }}-{{ uuid }}:
-  salt.function:
-    - name: cmd.run
-    - tgt: salt
-    - arg:
-      - salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//' > /tmp/{{ type }}-{{ uuid }}_available_controllers
 
 prepare_vm_{{ type }}-{{ uuid }}:
   salt.state:
-    - tgt: __slot__:salt:cmd.run("shuf -n 1 /tmp/{{ type }}-{{ uuid }}_available_controllers")
+    - tgt: {{ controller }}
     - sls:
       - orch/states/virtual_prep
     - pillar:

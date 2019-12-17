@@ -84,13 +84,22 @@ sleep_{{ type }}:
     - arg:
       - sleep 1
 
+get_controllers_for_{{ type }}:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - arg:
+      - while true ; do if [ $(touch /tmp/{{ type }}_controllers ; cat /tmp/{{ type }}_controllers | wc -l) -lt {{ pillar['virtual'][type]['count'] }} ];then salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//' | shuf >> /tmp/{{ type }}_controllers ; else break ; fi ; done
+
 {% for host in range(pillar['virtual'][type]['count']) %}
+
 provision_{{ host }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
         mods: orch/provision
         pillar:
+          controller: __slot__:salt:cmd.run("sed '{{ host }}q;d' /tmp/{{ type }}_controllers")
           type: {{ type }}
           spawning: {{ loop.index0 }}
     - parallel: true
@@ -102,4 +111,12 @@ sleep_{{ host }}:
     - arg:
       - sleep 1
 {% endfor %}
+
+wipe_controllers_for_{{ type }}:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - arg:
+      - rm -f /tmp/{{ type }}_controllers
+
 {% endif %}
