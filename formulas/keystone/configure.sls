@@ -24,6 +24,11 @@ initialize_keystone:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain
 
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
+
 project_init:
   cmd.script:
     - source: salt://formulas/keystone/files/project_init.sh
@@ -38,17 +43,11 @@ project_init:
 {% elif grains['os_family'] == 'RedHat' %}
         webserver: httpd
 {% endif %}
-    - require:
-      - service: wsgi_service
+    - order: last
     - retry:
-        attempts: 5
+        attempts: 10
         until: True
         delay: 60
-
-spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
 
 {% endif %}
 
@@ -175,7 +174,7 @@ wsgi_service:
     - require:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain
-      - file: webserver_conf      
+      - file: webserver_conf
 
 /var/lib/keystone/keystone.db:
   file.absent
