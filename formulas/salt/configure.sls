@@ -68,9 +68,9 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         extra_opts: |
             simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}
 {% elif service == 'keystone' %}
-        extra_opts: |
+        extra_opts: |2
             fernet_primary: {{ salt['generate.fernet_key']() }}
-              fernet_secondary: {{ salt['generate.fernet_key']() }}
+            fernet_secondary: {{ salt['generate.fernet_key']() }}
 {% else %}
         extra_opts: ''
 {% endif %}
