@@ -86,7 +86,7 @@ sleep_{{ type }}:
 
 get_controllers_for_{{ type }}:
   salt.function:
-    - name: cmd.run
+    - name: cmd.shell
     - tgt: 'salt'
     - arg:
       - while true ; do if [ $(touch /tmp/{{ type }}_controllers ; cat /tmp/{{ type }}_controllers | wc -l) -lt {{ pillar['virtual'][type]['count'] }} ];then salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//' | shuf >> /tmp/{{ type }}_controllers ; else break ; fi ; done
