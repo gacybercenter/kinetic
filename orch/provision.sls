@@ -1,6 +1,7 @@
 {% set type = pillar['type'] %}
 {% set target = pillar['target'] %}
 {% set style = pillar['types'][type] %}
+{% set controller = pillar['controller'] %}
 {% set uuid =  salt['random.get_str']('64') | uuid %}
 
 ## There is an inotify beacon sitting on the pxe server
