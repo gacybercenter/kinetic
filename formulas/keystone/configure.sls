@@ -51,6 +51,9 @@ project_init:
 
 {% endif %}
 
+/var/lib/keystone/keystone.db:
+  file.absent
+
 /etc/keystone/keystone.conf:
   file.managed:
     - source: salt://formulas/keystone/files/keystone.conf
@@ -175,6 +178,3 @@ wsgi_service:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain
       - file: webserver_conf
-
-/var/lib/keystone/keystone.db:
-  file.absent
