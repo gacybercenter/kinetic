@@ -1,7 +1,7 @@
 ## generate various items on-demand.  For use in sls files when no appropriate module exists.
 import random
 import string
-from cryptography.fernet import fernet
+from cryptography.fernet import Fernet
 
 __virtualname__ = 'generate'
 
