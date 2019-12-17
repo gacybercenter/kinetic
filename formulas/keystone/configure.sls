@@ -152,7 +152,7 @@ update-ca-trust extract:
   file.managed:
     - contents_pillar: keystone:fernet_primary
     - makedirs: True
-    - mode: 500
+    - mode: 600
     - user: keystone
     - group: keystone
 
@@ -160,7 +160,7 @@ update-ca-trust extract:
   file.managed:
     - contents_pillar: keystone:fernet_secondary
     - makedirs: True
-    - mode: 500
+    - mode: 600
     - user: keystone
     - group: keystone
 
