@@ -38,7 +38,7 @@ spawnzero_complete:
             {%- endif -%}
           {%- endfor -%}
           {% if loop.index < loop.length %},{% endif %}
-        {%- endfor %} "
+        {%- endfor %}"
 
 openvswitch_service:
   service.running:
