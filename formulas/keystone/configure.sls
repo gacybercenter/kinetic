@@ -38,13 +38,7 @@ project_init:
 {% elif grains['os_family'] == 'RedHat' %}
         webserver: httpd
 {% endif %}
-    - creates:
-      - /etc/keystone/projects_done
-
-systemctl restart {{ webserver }}.service && sleep 10:
-  cmd.run:
-    - prereq:
-      - cmd: project_init
+    - require: wsgi_service
 
 spawnzero_complete:
   event.send:
@@ -168,6 +162,7 @@ wsgi_service:
   service.running:
     - name: {{ webserver }}
     - enable: True
+    - init_delay: 10
     - watch:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain

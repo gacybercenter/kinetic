@@ -42,7 +42,4 @@ if [[ $ldap_domain_test != '' ]]; then
   echo $ldap_domain_test
 else
   openstack domain create --description "LDAP Domain" {{ keystone_domain }}
-  systemctl restart {{ webserver }}.service
-  sleep 10
-  touch /etc/keystone/projects_done
 fi
