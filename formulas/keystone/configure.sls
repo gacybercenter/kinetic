@@ -38,7 +38,8 @@ project_init:
 {% elif grains['os_family'] == 'RedHat' %}
         webserver: httpd
 {% endif %}
-    - require: wsgi_service
+    - require:
+      - service: wsgi_service
 
 spawnzero_complete:
   event.send:
