@@ -22,6 +22,24 @@ ovn-northd-opts:
         --db-sb-create-insecure-remote=yes \
         --db-nb-cluster-local-addr={{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }} \
         --db-sb-cluster-local-addr={{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }} \
+        {% if if grains['spawning'] != 0 %}
+        --db-nb-cluster-remote-addr=
+          {%- for host, addresses in salt['mine.get']('G@role:ovsdb and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+        {{ address }}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %} \
+        --db-sb-cluster-remote-addr=
+          {%- for host, addresses in salt['mine.get']('G@role:ovsdb and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+        {{ address }}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %} \
+        {% endif %}
         --ovn-northd-nb-db=
         {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
           {%- for address in addresses -%}
