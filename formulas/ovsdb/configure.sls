@@ -12,8 +12,9 @@ spawnzero_complete:
 
 {% endif %}
 
-/etc/sysconfig/ovn-northd:
+ovn-northd-opts:
   file.managed:
+    - name: /etc/sysconfig/ovn-northd
     - contents: |
         OVN_NORTHD_OPTS="--db-nb-addr=10.100.7.63 \
         --db-nb-create-insecure-remote=yes \
@@ -59,6 +60,8 @@ ovn_northd_service:
     - enable: true
     - require:
       - service: openvswitch_service
+    - watch:
+      - file: ovn-northd-opts
 
 ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
   cmd.run:
