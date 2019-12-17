@@ -71,26 +71,6 @@ spawnzero_complete:
           {%- endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
 
-{% if grains['os_family'] == 'Debian' %}
-
-/etc/apache2/sites-available/keystone.conf:
-  file.managed:
-    - source: salt://formulas/keystone/files/apache-keystone.conf
-    - template: jinja
-    - defaults:
-        webserver: apache2
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-/etc/httpd/conf.d/keystone.conf:
-  file.managed:
-    - source: salt://formulas/keystone/files/apache-keystone.conf
-    - template: jinja
-    - defaults:
-        webserver: httpd
-
-{% endif %}
-
 keystone_domain:
   file.managed:
     - name: /etc/keystone/domains/keystone.{{ pillar['keystone_ldap_configuration']['keystone_domain'] }}.conf
@@ -111,8 +91,16 @@ keystone_domain:
 
 {% if grains['os_family'] == 'Debian' %}
 
-/etc/apache2/apache2.conf:
+/etc/apache2/sites-available/keystone.conf:
   file.managed:
+    - source: salt://formulas/keystone/files/apache-keystone.conf
+    - template: jinja
+    - defaults:
+        webserver: apache2
+
+webserver_conf:
+  file.managed:
+    - name: /etc/apache2/apache2.conf
     - source: salt://formulas/keystone/files/apache2.conf
     - template: jinja
     - defaults:
@@ -130,8 +118,16 @@ update-ca-certificates:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-/etc/httpd/conf/httpd.conf:
+/etc/httpd/conf.d/keystone.conf:
   file.managed:
+    - source: salt://formulas/keystone/files/apache-keystone.conf
+    - template: jinja
+    - defaults:
+        webserver: httpd
+
+webserver_conf:
+  file.managed:
+    - name: /etc/httpd/conf/httpd.conf
     - source: salt://formulas/keystone/files/httpd.conf
     - template: jinja
     - defaults:
@@ -175,7 +171,7 @@ wsgi_service:
     - watch:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain
-      - file: /etc/apache2/apache2.conf
+      - file: webserver_conf
 
 /var/lib/keystone/keystone.db:
   file.absent
