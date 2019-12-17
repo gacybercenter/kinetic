@@ -116,7 +116,6 @@ update-ca-certificates:
     - onchanges:
       - file: /usr/local/share/ca-certificates/ldap_ca.crt
 
-
 {% elif grains['os_family'] == 'RedHat' %}
 
 /etc/httpd/conf.d/keystone.conf:
