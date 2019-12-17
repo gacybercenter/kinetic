@@ -70,7 +70,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% elif service == 'keystone' %}
         extra_opts: |
             fernet_primary: {{ salt['generate.fernet_key']() }}
-            fernet_secondary: {{ salt['generate.fernet_key']() }}
+              fernet_secondary: {{ salt['generate.fernet_key']() }}
 {% else %}
         extra_opts: ''
 {% endif %}
