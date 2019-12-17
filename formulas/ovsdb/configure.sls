@@ -12,6 +12,34 @@ spawnzero_complete:
 
 {% endif %}
 
+/etc/sysconfig/ovn-northd:
+  file.managed:
+    - contents: |
+        OVN_NORTHD_OPTS="--db-nb-addr=10.100.7.63 \
+        --db-nb-create-insecure-remote=yes \
+        --db-sb-addr={{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }} \
+        --db-sb-create-insecure-remote=yes \
+        --db-nb-cluster-local-addr={{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }} \
+        --db-sb-cluster-local-addr={{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }} \
+        --ovn-northd-nb-db=
+        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+          {%- for address in addresses -%}
+            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+        tcp:{{ address }}:6641
+            {%- endif -%}
+          {%- endfor -%}
+          {% if loop.index < loop.length %},{% endif %}
+        {%- endfor %} \
+        --ovn-northd-sb-db=
+        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+          {%- for address in addresses -%}
+            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+        tcp:{{ address }}:6642
+            {%- endif -%}
+          {%- endfor -%}
+          {% if loop.index < loop.length %},{% endif %}
+        {%- endfor %} "
+
 openvswitch_service:
   service.running:
 {% if grains['os_family'] == 'RedHat' %}
