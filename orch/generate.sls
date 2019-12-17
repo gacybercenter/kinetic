@@ -99,7 +99,7 @@ provision_{{ host }}:
     - kwarg:
         mods: orch/provision
         pillar:
-          controller: __slot__:salt:cmd.run("sed '{{ host }}q;d' /tmp/{{ type }}_controllers")
+          controller: __slot__:salt:cmd.run("sed '{{ loop.index }}q;d' /tmp/{{ type }}_controllers")
           type: {{ type }}
           spawning: {{ loop.index0 }}
     - parallel: true
