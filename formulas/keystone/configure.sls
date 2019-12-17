@@ -3,14 +3,56 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
+{% if grains['os_family'] == 'Debian' %}
+  {% set webserver = 'apache2' %}
+{% elif grains['os_family'] == 'RedHat' %}
+  {% set webserver = 'httpd' %}
+{% endif %}
+
 {% if grains['spawning'] == 0 %}
+
+initialize_keystone:
+  cmd.script:
+    - source: salt://formulas/keystone/files/initialize.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
+        admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
+    - require:
+      - file: /etc/keystone/keystone.conf
+      - file: keystone_domain
 
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 
+project_init:
+  cmd.script:
+    - source: salt://formulas/keystone/files/project_init.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
+        keystone_domain: {{ pillar['keystone_ldap_configuration']['keystone_domain'] }}
+{% if grains['os_family'] == 'Debian' %}
+        webserver: apache2
+{% elif grains['os_family'] == 'RedHat' %}
+        webserver: httpd
 {% endif %}
+    - order: last
+    - retry:
+        attempts: 10
+        until: True
+        delay: 60
+
+{% endif %}
+
+/var/lib/keystone/keystone.db:
+  file.absent
 
 /etc/keystone/keystone.conf:
   file.managed:
@@ -30,29 +72,9 @@ spawnzero_complete:
           {%- endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
 
-{% if grains['os_family'] == 'Debian' %}
-
-/etc/apache2/sites-available/keystone.conf:
+keystone_domain:
   file.managed:
-    - source: salt://formulas/keystone/files/apache-keystone.conf
-    - template: jinja
-    - defaults:
-        webserver: apache2
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-/etc/httpd/conf.d/keystone.conf:
-  file.managed:
-    - source: salt://formulas/keystone/files/apache-keystone.conf
-    - template: jinja
-    - defaults:
-        webserver: httpd
-
-{% endif %}
-
-{% set keystone_domain = pillar['keystone_ldap_configuration']['keystone_domain'] %}
-/etc/keystone/domains/keystone.{{ keystone_domain }}.conf:
-  file.managed:
+    - name: /etc/keystone/domains/keystone.{{ pillar['keystone_ldap_configuration']['keystone_domain'] }}.conf
     - source: salt://formulas/keystone/files/keystone-ldap.conf
     - makedirs: True
     - template: jinja
@@ -68,41 +90,22 @@ spawnzero_complete:
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
 
-initialize_keystone:
-  cmd.script:
-    - source: salt://formulas/keystone/files/initialize.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
-
 {% if grains['os_family'] == 'Debian' %}
 
-/etc/apache2/apache2.conf:
+/etc/apache2/sites-available/keystone.conf:
   file.managed:
+    - source: salt://formulas/keystone/files/apache-keystone.conf
+    - template: jinja
+    - defaults:
+        webserver: apache2
+
+webserver_conf:
+  file.managed:
+    - name: /etc/apache2/apache2.conf
     - source: salt://formulas/keystone/files/apache2.conf
     - template: jinja
     - defaults:
         ServerName: ServerName {{ grains['id'] }}
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-/etc/httpd/conf/httpd.conf:
-  file.managed:
-    - source: salt://formulas/keystone/files/httpd.conf
-    - template: jinja
-    - defaults:
-        ServerName: ServerName {{ grains['id'] }}
-
-{% endif %}
-
-/etc/keystone/ldap_ca.crt:
-  file.managed:
-    - contents_pillar: ldap_ca
-
-{% if grains['os_family'] == 'Debian' %}
 
 /usr/local/share/ca-certificates/ldap_ca.crt:
   file.managed:
@@ -115,6 +118,21 @@ update-ca-certificates:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
+/etc/httpd/conf.d/keystone.conf:
+  file.managed:
+    - source: salt://formulas/keystone/files/apache-keystone.conf
+    - template: jinja
+    - defaults:
+        webserver: httpd
+
+webserver_conf:
+  file.managed:
+    - name: /etc/httpd/conf/httpd.conf
+    - source: salt://formulas/keystone/files/httpd.conf
+    - template: jinja
+    - defaults:
+        ServerName: ServerName {{ grains['id'] }}
+
 /etc/pki/ca-trust/source/anchors/ldap_ca.crt:
   file.managed:
     - contents_pillar: ldap_ca
@@ -126,55 +144,36 @@ update-ca-trust extract:
 
 {% endif %}
 
-project_init:
-  cmd.script:
-    - source: salt://formulas/keystone/files/project_init.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
-        keystone_domain: {{ keystone_domain }}
-{% if grains['os_family'] == 'Debian' %}
-        webserver: apache2
-{% elif grains['os_family'] == 'RedHat' %}
-        webserver: httpd
-{% endif %}
-    - creates:
-      - /etc/keystone/projects_done
+/etc/keystone/ldap_ca.crt:
+  file.managed:
+    - contents_pillar: ldap_ca
 
-{% if grains['os_family'] == 'Debian' %}
-systemctl restart apache2.service && sleep 10:
-  cmd.run:
-    - prereq:
-      - cmd: project_init
+/etc/keystone/fernet-keys/0:
+  file.managed:
+    - contents_pillar: keystone:fernet_primary
+    - makedirs: True
+    - mode: 600
+    - user: keystone
+    - group: keystone
 
-apache2_service:
+/etc/keystone/fernet-keys/1:
+  file.managed:
+    - contents_pillar: keystone:fernet_secondary
+    - makedirs: True
+    - mode: 600
+    - user: keystone
+    - group: keystone
+
+wsgi_service:
   service.running:
-    - name: apache2
+    - name: {{ webserver }}
     - enable: True
+    - init_delay: 10
     - watch:
       - file: /etc/keystone/keystone.conf
-      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
-      - file: /etc/apache2/apache2.conf
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-systemctl restart httpd.service && sleep 10:
-  cmd.run:
-    - prereq:
-      - cmd: project_init
-
-httpd_service:
-  service.running:
-    - name: httpd
-    - enable: True
-    - watch:
+      - file: keystone_domain
+      - file: webserver_conf
+    - require:
       - file: /etc/keystone/keystone.conf
-      - file: /etc/keystone/domains/keystone.{{ keystone_domain }}.conf
-      - file: /etc/httpd/conf/httpd.conf
-
-{% endif %}
-
-/var/lib/keystone/keystone.db:
-  file.absent
+      - file: keystone_domain
+      - file: webserver_conf

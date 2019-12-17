@@ -1,6 +1,7 @@
 ## generate various items on-demand.  For use in sls files when no appropriate module exists.
 import random
 import string
+from cryptography.fernet import Fernet
 
 __virtualname__ = 'generate'
 
@@ -15,3 +16,6 @@ def mac(prefix='52:54:00'):
 
 def erlang_cookie(length = 20):
     return ''.join(random.choice(string.ascii_uppercase) for i in range(length))
+
+def fernet_key():
+    return Fernet.generate_key().decode('utf-8')
