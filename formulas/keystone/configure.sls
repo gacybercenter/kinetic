@@ -118,23 +118,6 @@ keystone_domain:
     - defaults:
         ServerName: ServerName {{ grains['id'] }}
 
-{% elif grains['os_family'] == 'RedHat' %}
-
-/etc/httpd/conf/httpd.conf:
-  file.managed:
-    - source: salt://formulas/keystone/files/httpd.conf
-    - template: jinja
-    - defaults:
-        ServerName: ServerName {{ grains['id'] }}
-
-{% endif %}
-
-/etc/keystone/ldap_ca.crt:
-  file.managed:
-    - contents_pillar: ldap_ca
-
-{% if grains['os_family'] == 'Debian' %}
-
 /usr/local/share/ca-certificates/ldap_ca.crt:
   file.managed:
     - contents_pillar: ldap_ca
@@ -144,7 +127,15 @@ update-ca-certificates:
     - onchanges:
       - file: /usr/local/share/ca-certificates/ldap_ca.crt
 
+
 {% elif grains['os_family'] == 'RedHat' %}
+
+/etc/httpd/conf/httpd.conf:
+  file.managed:
+    - source: salt://formulas/keystone/files/httpd.conf
+    - template: jinja
+    - defaults:
+        ServerName: ServerName {{ grains['id'] }}
 
 /etc/pki/ca-trust/source/anchors/ldap_ca.crt:
   file.managed:
@@ -157,6 +148,26 @@ update-ca-trust extract:
 
 {% endif %}
 
+/etc/keystone/ldap_ca.crt:
+  file.managed:
+    - contents_pillar: ldap_ca
+
+/etc/keystone/fernet-keys/0:
+  file.managed:
+    - contents_pillar: keystone:fernet_primary
+    - makedirs: True
+    - mode: 400
+    - user: keystone
+    - group: keystone
+
+/etc/keystone/fernet-keys/1:
+  file.managed:
+    - contents_pillar: keystone:fernet_secondary
+    - makedirs: True
+    - mode: 400
+    - user: keystone
+    - group: keystone
+
 wsgi_service:
   service.running:
     - name: {{ webserver }}
@@ -165,8 +176,6 @@ wsgi_service:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain
       - file: /etc/apache2/apache2.conf
-
-{% endif %}
 
 /var/lib/keystone/keystone.db:
   file.absent
