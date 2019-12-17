@@ -62,6 +62,12 @@ pyroute2:
       - install_pip
     - reload_modules: True
 
+cryptography:
+  pip.installed:
+    - require:
+      - install_pip
+    - reload_modules: True
+
   {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
