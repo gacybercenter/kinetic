@@ -18,4 +18,4 @@ def erlang_cookie(length = 20):
     return ''.join(random.choice(string.ascii_uppercase) for i in range(length))
 
 def fernet_key():
-    return fernet.generate_key().decode('utf-8')
+    return Fernet.generate_key().decode('utf-8')
