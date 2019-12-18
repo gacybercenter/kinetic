@@ -65,6 +65,9 @@ spawnzero_complete:
   file.managed:
     - source: salt://formulas/designate/files/tlds.conf
 
+
+## Trying to write yaml in yaml via salt with correct indentation is basically impossible when using
+## file.managed with the source directive.  Using contents is ugly, but it works.
 /etc/designate/pools.yaml:
   file.managed:
     - template: jinja
@@ -95,8 +98,8 @@ spawnzero_complete:
                 {%- for d_host, d_addresses in salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
                   {% for d_address in d_addresses %}
                     {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-                - host: {{ d_address }}
-                  port: 5354
+              - host: {{ d_address }}
+                 port: 5354
                     {%- endif -%}
                   {% endfor %}
                 {%- endfor %}
