@@ -16,6 +16,13 @@ designate_packages:
       - python3-openstackclient
       - python3-pip
 
+pymemcache:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
+    - require:
+      - pkg: designate_packages    
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 designate_packages:
