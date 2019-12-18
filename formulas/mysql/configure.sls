@@ -103,15 +103,22 @@ set_unix_socket_root:
   {% endif %}
 
   {% for service in pillar['openstack_services'] %}
+    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {% for address in addresses %}
+        {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
 create_{{ service }}_user:
   mysql_user.present:
     - name: {{ service }}
     - password: {{ pillar [service][service + '_mysql_password'] }}
-    - host: {{ pillar['haproxy']['dashboard_domain'] }}
+    - host: {{ address }}
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
+
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
 
     {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
@@ -122,17 +129,25 @@ create_{{ db }}_db:
     - require:
       - service: mariadb_service
 
+      {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        {% for address in addresses %}
+          {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+
 grant_{{ service }}_privs_{{ db }}:
    mysql_grants.present:
     - grant: all privileges
     - database: {{ db }}.*
     - user: {{ service }}
-    - host: {{ pillar['haproxy']['dashboard_domain'] }}
+    - host: {{ address }}
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
       - mysql_user: create_{{ service }}_user
       - mysql_database: create_{{ db }}_db
+
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
 
     {% endfor %}
   {% endfor %}
