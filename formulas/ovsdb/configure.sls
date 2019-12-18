@@ -58,7 +58,7 @@ ovn-northd-opts:
             {%- endfor -%}
           {%- endfor %} \
         {% elif grains['spawning'] == 0 %}
-          cluster_remote: ""
+        cluster_remote: ""
         {% endif %}"
 
 openvswitch_service:
