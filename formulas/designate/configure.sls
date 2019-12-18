@@ -95,14 +95,14 @@ spawnzero_complete:
             - type: bind9
               description: bind9 server {{ outerloop.index }}
               masters:
-                {%- for d_host, d_addresses in salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-                  {% for d_address in d_addresses %}
-                    {%- if salt['network']['ip_in_subnet'](d_address, pillar['networking']['subnets']['management']) -%}
+              {%- for d_host, d_addresses in salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+                {% for d_address in d_addresses %}
+                  {%- if salt['network']['ip_in_subnet'](d_address, pillar['networking']['subnets']['management']) -%}
                 - host: {{ d_address }}
                   port: 5354
-                    {%- endif -%}
-                  {% endfor %}
-                {%- endfor %}
+                  {%- endif -%}
+                {% endfor %}
+              {%- endfor %}
               options:
                 host: {{ address }}
                 port: 53
