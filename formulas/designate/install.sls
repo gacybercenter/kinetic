@@ -19,6 +19,7 @@ designate_packages:
 designate_packages:
   pkg.installed:
     - pkgs:
+      - bind
       - openstack-designate-api
       - openstack-designate-mdns
       - openstack-designate-producer
