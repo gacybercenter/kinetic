@@ -67,7 +67,6 @@ spawnzero_complete:
 
 /etc/designate/pools.yaml:
   file.managed:
-    - source: salt://formulas/designate/files/pools.yaml
     - template: jinja
     - contents: |
         - name: default
