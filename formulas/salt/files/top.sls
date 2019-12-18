@@ -93,6 +93,11 @@ base:
     - openstack
     - rabbitmq
     - keystone
+  'volume*':
+    - cinder
+    - openstack
+    - rabbitmq
+    - keystone
     - ceph
   'manila*':
     - manila
