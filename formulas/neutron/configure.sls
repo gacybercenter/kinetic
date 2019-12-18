@@ -135,7 +135,6 @@ spawnzero_complete:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-          {% if grains['spawning'] != 0 %}
         ovn_l3_scheduler: ovn_l3_scheduler = leastloaded
         ovn_native_dhcp: ovn_native_dhcp = True
         ovn_l3_mode: ovn_l3_mode = True
