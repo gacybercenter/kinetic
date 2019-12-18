@@ -6,5 +6,5 @@ OVN_NORTHD_OPTS="--db-nb-addr={{ self_ip }} \
 --db-sb-cluster-local-addr={{ self_ip }} \
 --ovn-northd-nb-db={{ nb_cluster }} \
 --ovn-northd-sb-db={{ sb_cluster }} \
-{{ cluster-remote }} \
+{{ cluster_remote }} \
 "
