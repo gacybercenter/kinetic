@@ -76,7 +76,7 @@ spawnzero_complete:
             - hostname: {{ grains['fqdn'] }}.
               priority: 1
           nameservers:
-          {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+          {%- for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
             {% for address in addresses %}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
             - host: {{ address }}
