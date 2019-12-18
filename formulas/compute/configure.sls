@@ -204,7 +204,7 @@ networking-ovn-metadata-agent.ini:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
         ovn_sb_connection: |-
-          ovn_sb_connection =
+          {{ ""|indent(10) }}
           {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
