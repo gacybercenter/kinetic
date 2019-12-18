@@ -89,6 +89,7 @@ base:
     - cinder
     - openstack
     - rabbitmq
+    - ceph
   'volume*':
     - cinder
     - openstack
