@@ -117,7 +117,7 @@ spawnzero_complete:
         mechanism_drivers: ovn
         extension_drivers: port_security
         ovn_nb_connection: |-
-          {{ ""|indent(10) }}
+          ovn_nb_connection =
           {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
@@ -127,7 +127,7 @@ spawnzero_complete:
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
         ovn_sb_connection: |-
-          {{ ""|indent(10) }}
+          ovn_sb_connection =
           {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
