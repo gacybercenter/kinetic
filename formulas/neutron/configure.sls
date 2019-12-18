@@ -116,10 +116,26 @@ spawnzero_complete:
         tenant_network_types: geneve
         mechanism_drivers: ovn
         extension_drivers: port_security
-{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        ovn_nb_connection: ovn_nb_connection = tcp:{{ address[0] }}:6641
-        ovn_sb_connection: ovn_sb_connection = tcp:{{ address[0] }}:6642
-{% endfor %}
+        ovn_nb_connection: |-
+          {{ ""|indent(10) }}
+          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+          tcp:{{ address }}:6641
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
+        ovn_sb_connection: |-
+          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+          tcp:{{ address }}:6642
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
+          {% if grains['spawning'] != 0 %}
         ovn_l3_scheduler: ovn_l3_scheduler = leastloaded
         ovn_native_dhcp: ovn_native_dhcp = True
         ovn_l3_mode: ovn_l3_mode = True
