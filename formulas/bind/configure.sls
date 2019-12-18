@@ -19,7 +19,7 @@ bind_conf:
 {% elif grains['os_family'] == 'RedHat' %}
     - name: /etc/named.conf
 {% endif %}
-    - source: salt://formulas/designate/files/named.conf.options
+    - source: salt://formulas/bind/files/named.conf.options
     - template: jinja
     - defaults:
         public_dns: {{ pillar['networking']['addresses']['float_dns'] }}
