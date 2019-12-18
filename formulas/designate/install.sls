@@ -14,6 +14,7 @@ designate_packages:
       - python3-memcache
       - python3-designateclient
       - python3-openstackclient
+      - python3-pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -29,5 +30,12 @@ designate_packages:
       - python-memcached
       - python2-designateclient
       - python2-openstackclient
+      - python2-pip
+    - reload_modules: True
+
+pymemcache:
+  pip.intalled:
+    - require:
+      - pkg: designate_packages
 
 {% endif %}
