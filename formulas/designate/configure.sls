@@ -81,25 +81,7 @@ spawnzero_complete:
               {% endif %}
             {% endfor %}
           {% endfor %}
-        targets: |-
-          {{ ""|indent(10) }}
-          {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {% for address in addresses %}
-              {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-            - type: bind9
-              description: bind9 server {{ loop.index }}
-              masters:
-                - host: foo
-                  port: 1234
-              options:
-                host: {{ address }}
-                port: 53
-                rndc_host: {{ address }}
-                rndc_port: 953
-                rndc_key_file: /etc/designate/rndc.key
-              {% endif %}
-            {% endfor %}
-          {% endfor %}
+        targets: foo
 
 /etc/designate/rndc.key:
   file.managed:
