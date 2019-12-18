@@ -2,7 +2,6 @@ include:
   - formulas/cinder/install
   - formulas/common/base
   - formulas/common/networking
-  - formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
 
