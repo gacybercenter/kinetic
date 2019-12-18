@@ -83,7 +83,7 @@ spawnzero_complete:
               port: 53
               {%- endif -%}
             {% endfor %}
-          {% endfor -%}
+          {%- endfor %}
 
 /etc/designate/rndc.key:
   file.managed:
