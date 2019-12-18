@@ -21,7 +21,7 @@ pymemcache:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
     - require:
-      - pkg: designate_packages    
+      - pkg: designate_packages
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -42,6 +42,7 @@ designate_packages:
 
 pymemcache:
   pip.installed:
+    - bin_env: '/usr/bin/pip'    
     - require:
       - pkg: designate_packages
 
