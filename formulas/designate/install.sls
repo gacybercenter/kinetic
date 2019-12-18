@@ -7,9 +7,6 @@ designate_packages:
   pkg.installed:
     - pkgs:
       - designate
-      - bind9
-      - bind9utils
-      - bind9-doc
       - designate-worker
       - designate-producer
       - designate-mdns
@@ -27,8 +24,6 @@ designate_packages:
       - openstack-designate-producer
       - openstack-designate-worker
       - openstack-designate-central
-      - bind
-      - bind-utils
       - python-memcached
       - python2-designateclient
       - python2-openstackclient
