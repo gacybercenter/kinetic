@@ -13,6 +13,10 @@ options {
         minimal-responses yes;
 };
 
+acl "designate_hosts" {
+        {{ designate_hosts }}
+};
+
 controls {
-        inet 127.0.0.1 port 953 allow { 127.0.0.1; } keys { "designate"; };
+        inet * port 953 allow { "designate_hosts"; } keys { "designate"; };
 };
