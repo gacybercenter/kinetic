@@ -97,7 +97,7 @@ spawnzero_complete:
               masters:
                 {%- for d_host, d_addresses in salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
                   {% for d_address in d_addresses %}
-                    {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+                    {%- if salt['network']['ip_in_subnet'](d_address, pillar['networking']['subnets']['management']) -%}
                 - host: {{ d_address }}
                   port: 5354
                     {%- endif -%}
