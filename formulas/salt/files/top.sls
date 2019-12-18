@@ -110,6 +110,8 @@ base:
     - designate
     - openstack
     - rabbitmq
+  'bind*':
+    - designate
   'swift*':
     - swift
     - openstack
