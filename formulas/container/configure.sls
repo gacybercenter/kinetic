@@ -131,14 +131,30 @@ openvswitch_service:
 {% endif %}
     - enable: true
 
-{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-ovs-vsctl set open . external-ids:ovn-remote=tcp:{{ address[0] }}:6642:
+set-ovn-remote:
   cmd.run:
+    - name: |-
+        ovs-vsctl set open . external-ids:ovn-remote=
+        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+          {%- for address in addresses -%}
+            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+        tcp:{{ address }}:6642
+            {%- endif -%}
+          {%- endfor -%}
+          {% if loop.index < loop.length %},{% endif %}
+        {%- endfor %}
     - require:
       - service: openvswitch_service
     - unless:
-      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "tcp:{{ address[0] }}:6642"
-{% endfor %}
+      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "
+        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+          {%- for address in addresses -%}
+            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+        tcp:{{ address }}:6642
+            {%- endif -%}
+          {%- endfor -%}
+          {% if loop.index < loop.length %},{% endif %}
+        {%- endfor %}"
 
 set_encap:
   cmd.run:
