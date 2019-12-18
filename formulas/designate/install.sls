@@ -6,6 +6,7 @@ include:
 designate_packages:
   pkg.installed:
     - pkgs:
+      - bind9utils
       - designate
       - designate-worker
       - designate-producer
