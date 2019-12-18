@@ -39,7 +39,7 @@ ovn-northd-opts:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-          {% if grains['spawning'] != 1 %}
+          {% if grains['spawning'] != 0 %}
         cluster_remote: |-
           --db-nb-cluster-remote-addr=
           {%- for host, addresses in salt['mine.get']('G@role:ovsdb and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
