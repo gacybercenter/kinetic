@@ -60,11 +60,20 @@ spawnzero_complete:
         password: {{ pillar['designate']['designate_service_password'] }}
         listen_api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:9001
         designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
+        coordination_server: |-
+          {{ ""|indent(10) }}
+          {%- for host, addresses in salt['mine.get']('G@role:memcached and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+          {{ address }}:11211
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
 
 /etc/designate/tlds.conf:
   file.managed:
     - source: salt://formulas/designate/files/tlds.conf
-
 
 ## Trying to write yaml in yaml via salt with correct indentation is basically impossible when using
 ## file.managed with the source directive.  Using contents is ugly, but it works.
