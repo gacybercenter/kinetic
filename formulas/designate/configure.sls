@@ -69,17 +69,22 @@ spawnzero_complete:
   file.managed:
     - source: salt://formulas/designate/files/pools.yaml
     - template: jinja
-    - defaults:
-        hostname: {{ grains['fqdn'] }}.
-        nameservers: |
+    - contents: |
+        - name: default
+          description: Default Pool
+          attributes: {}
+          ns_records:
+            - hostname: {{ grains['fqdn'] }}.
+              priority: 1
+          nameservers:
           {%- for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
               {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-              {{ "  "+address |indent(4,true) }}
+            - host: {{ address }}
+              port: 53
               {% endif %}
             {%- endfor -%}
           {%- endfor %}
-        targets: foo
 
 /etc/designate/rndc.key:
   file.managed:
