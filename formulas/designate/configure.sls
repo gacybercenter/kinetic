@@ -65,29 +65,48 @@ spawnzero_complete:
   file.managed:
     - source: salt://formulas/designate/files/tlds.conf
 
-bind_conf:
-  file.managed:
-{% if grains['os_family'] == 'Debian' %}
-    - name: /etc/bind/named.conf.options
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /etc/named.conf
-{% endif %}
-    - source: salt://formulas/designate/files/named.conf.options
-    - template: jinja
-    - defaults:
-        public_dns: {{ pillar['networking']['addresses']['float_dns'] }}
-{% if grains['os_family'] == 'Debian' %}
-        directory: /var/cache/bind
-{% elif grains['os_family'] == 'RedHat' %}
-        directory: /var/named
-{% endif %}
-
 /etc/designate/pools.yaml:
   file.managed:
     - source: salt://formulas/designate/files/pools.yaml
     - template: jinja
     - defaults:
         hostname: {{ grains['fqdn'] }}.
+        nameservers: |-
+          {{ ""|indent(10) }}
+          {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {% for address in addresses %}
+              {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+            - host: {{ address }}
+              port: 53
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        targets: |-
+          {{ ""|indent(10) }}
+          {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {% for address in addresses %}
+              {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+            - type: bind9
+              description: bind9 server {{ loop.index }}
+              masters:
+          {% for d_host, d_addresses in salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {% for d_address in d_addresses %}
+              {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+                - host: {{ d_address }}
+                  port: 5354
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+              options:
+                host: {{ address }}
+                port: 53
+                rndc_host: {{ address }}
+                rndc_port: 953
+                rndc_key_file: /etc/designate/rndc.key
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+
 
 /etc/designate/rndc.key:
   file.managed:
@@ -134,17 +153,6 @@ designate_mdns_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
-
-designate_bind9_service:
-  service.running:
-{% if grains['os_family'] == 'Debian' %}
-    - name: bind9
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: named
-{% endif %}
-    - enable: true
-    - watch:
-      - file: /etc/designate/rndc.key
 
 /bin/sh -c "designate-manage pool update" designate:
   cmd.run:
