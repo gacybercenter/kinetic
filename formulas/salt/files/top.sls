@@ -45,17 +45,14 @@ base:
   'barbican*':
     - barbican
     - openstack
-    - keystone
     - rabbitmq
   'magnum*':
     - magnum
     - openstack
-    - keystone
     - rabbitmq
   'sahara*':
     - sahara
     - openstack
-    - keystone
     - rabbitmq
   'glance*':
     - glance
@@ -92,14 +89,16 @@ base:
     - cinder
     - openstack
     - rabbitmq
+  'volume*':
+    - cinder
+    - openstack
+    - rabbitmq
     - keystone
     - ceph
   'manila*':
     - manila
     - openstack
     - rabbitmq
-    - keystone
-    - ceph
   'share*':
     - manila
     - openstack
@@ -119,12 +118,10 @@ base:
     - zun
     - openstack
     - rabbitmq
-    - keystone
   'container*':
     - zun
     - openstack
     - rabbitmq
-    - keystone
     - neutron
   'horizon*':
     - horizon

@@ -1,6 +1,5 @@
 include:
   - formulas/openstack/common/repo
-  - formulas/ceph/common/repo
   - formulas/docker/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
@@ -70,7 +69,7 @@ container_packages:
       - python36-PyMySQL
       - docker-ce
       - libibverbs
-      - numactl      
+      - numactl
   {% endif %}
 
 python-openstackclient:

@@ -2,7 +2,6 @@ include:
   - formulas/cinder/install
   - formulas/common/base
   - formulas/common/networking
-  - formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
 
@@ -39,13 +38,6 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 
 {% endif %}
-
-/etc/ceph/ceph.client.volumes.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-volumes-keyring
-    - mode: 640
-    - user: root
-    - group: cinder
 
 /etc/cinder/cinder.conf:
   file.managed:
@@ -96,17 +88,6 @@ cinder_scheduler_service:
     - name: cinder-scheduler
 {% elif grains['os_family'] == 'RedHat' %}
     - name: openstack-cinder-scheduler
-{% endif %}
-    - enable: true
-    - watch:
-      - file: /etc/cinder/cinder.conf
-
-cinder_volume_service:
-  service.running:
-{% if grains['os_family'] == 'Debian' %}
-    - name: cinder-volume
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-cinder-volume
 {% endif %}
     - enable: true
     - watch:
