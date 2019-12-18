@@ -142,7 +142,7 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
-      - mysql_user: create_{{ service }}_user
+      - mysql_user: create_{{ service }}_user_{{ address }}
       - mysql_database: create_{{ db }}_db
 
           {% endif %}
