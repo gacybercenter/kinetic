@@ -49,7 +49,7 @@ ovn-northd-opts:
               {%- endif -%}
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+          {%- endfor %} \
           --db-sb-cluster-remote-addr=
           {%- for host, addresses in salt['mine.get']('G@role:ovsdb and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
             {%- for address in addresses -%}
