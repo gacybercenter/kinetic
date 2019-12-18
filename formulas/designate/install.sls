@@ -34,7 +34,7 @@ designate_packages:
     - reload_modules: True
 
 pymemcache:
-  pip.intalled:
+  pip.installed:
     - require:
       - pkg: designate_packages
 
