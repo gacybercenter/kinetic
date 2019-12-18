@@ -203,9 +203,16 @@ networking-ovn-metadata-agent.ini:
 {% endif %}
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
-{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        ovn_sb_connection: tcp:{{ address[0] }}:6642
-{% endfor %}
+        ovn_sb_connection: |-
+          ovn_sb_connection =
+          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+          tcp:{{ address }}:6642
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
 
 openvswitch_service:
   service.running:
