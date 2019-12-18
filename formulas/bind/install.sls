@@ -6,7 +6,6 @@ include:
 bind_packages:
   pkg.installed:
     - pkgs:
-      - designate
       - bind9
       - bind9utils
       - bind9-doc
