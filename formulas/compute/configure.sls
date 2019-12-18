@@ -225,7 +225,6 @@ openvswitch_service:
     - watch:
       - file: networking-ovn-metadata-agent.ini
 
-{% for server, address in salt['mine.get']('type:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 set-ovn-remote:
   cmd.run:
     - name: |-
@@ -242,7 +241,6 @@ set-ovn-remote:
       - service: openvswitch_service
     - unless:
       - ovs-vsctl get open . external-ids:ovn-remote | grep -q "tcp:{{ address[0] }}:6642"
-{% endfor %}
 
 set_encap:
   cmd.run:
