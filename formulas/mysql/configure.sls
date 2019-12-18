@@ -107,7 +107,7 @@ set_unix_socket_root:
       {% for address in addresses %}
         {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
-create_{{ service }}_user:
+create_{{ service }}_user_{{ address }}:
   mysql_user.present:
     - name: {{ service }}
     - password: {{ pillar [service][service + '_mysql_password'] }}
@@ -133,7 +133,7 @@ create_{{ db }}_db:
         {% for address in addresses %}
           {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
-grant_{{ service }}_privs_{{ db }}:
+grant_{{ service }}_privs_{{ db }}_{{ address }}:
    mysql_grants.present:
     - grant: all privileges
     - database: {{ db }}.*
