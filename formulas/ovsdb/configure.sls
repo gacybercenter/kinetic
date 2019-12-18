@@ -15,49 +15,28 @@ spawnzero_complete:
 ovn-northd-opts:
   file.managed:
     - name: /etc/sysconfig/ovn-northd
-    - contents: |
-        OVN_NORTHD_OPTS="--db-nb-addr=10.100.7.63 \
-        --db-nb-create-insecure-remote=yes \
-        --db-sb-addr={{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }} \
-        --db-sb-create-insecure-remote=yes \
-        --db-nb-cluster-local-addr={{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }} \
-        --db-sb-cluster-local-addr={{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }} \
-        {%- if grains['spawning'] != 0 -%}
-        --db-nb-cluster-remote-addr=
-          {%- for host, addresses in salt['mine.get']('G@role:ovsdb and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        {{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %} \
-        --db-sb-cluster-remote-addr=
-          {%- for host, addresses in salt['mine.get']('G@role:ovsdb and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        {{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %} \
-        {%- endif -%}
-        --ovn-northd-nb-db=
-        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        tcp:{{ address }}:6641
-            {%- endif -%}
-          {%- endfor -%}
-          {% if loop.index < loop.length %},{% endif %}
-        {%- endfor %} \
-        --ovn-northd-sb-db=
-        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        tcp:{{ address }}:6642
-            {%- endif -%}
-          {%- endfor -%}
-          {% if loop.index < loop.length %},{% endif %}
-        {%- endfor %}"
+    - source: salt://formulas/ovsdb/files/ovn-northd
+    - template: jinja
+    - defaults:
+        self_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        nb_cluster: |-
+            {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+              {%- for address in addresses -%}
+                {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+            tcp:{{ address }}:6641
+                {%- endif -%}
+              {%- endfor -%}
+              {% if loop.index < loop.length %},{% endif %}
+            {%- endfor %}
+        sb_cluster: |-
+            {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+              {%- for address in addresses -%}
+                {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+            tcp:{{ address }}:6641
+                {%- endif -%}
+              {%- endfor -%}
+              {% if loop.index < loop.length %},{% endif %}
+            {%- endfor %}
 
 openvswitch_service:
   service.running:
