@@ -12,7 +12,7 @@ spawnzero_complete:
 
 {% endif %}
 
-ovn-northd-opts:
+ovn_northd_opts:
   file.managed:
     - name: /etc/sysconfig/ovn-northd
     - source: salt://formulas/ovsdb/files/ovn-northd
@@ -83,7 +83,7 @@ ovn_northd_service:
     - require:
       - service: openvswitch_service
     - watch:
-      - file: ovn-northd-opts
+      - file: ovn_northd_opts
 
 ovn-nbctl set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
   cmd.run:
