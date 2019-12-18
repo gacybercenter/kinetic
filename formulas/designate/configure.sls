@@ -84,7 +84,31 @@ spawnzero_complete:
               {%- endif -%}
             {% endfor %}
           {%- endfor %}
-
+          targets:
+          {%- for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {% set outerloop = loop %}
+            {% for address in addresses %}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+            - type: bind9
+              description: bin9 server {{ outerloop.index }}
+              masters:
+                {%- for d_host, d_addresses in salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+                  {% for d_address in d_addresses %}
+                    {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+                - host: {{ d_address }}
+                  port: 5354
+                    {%- endif -%}
+                  {% endfor %}
+                {%- endfor %}
+              options:
+                host: {{ address }}
+                port: 53
+                rndc_host: {{ address }}
+                rndc_port: 953
+                rndc_key_file: /etc/designate/rndc.key                
+              {%- endif -%}
+            {% endfor %}
+          {%- endfor %}
 /etc/designate/rndc.key:
   file.managed:
     - contents_pillar: designate:designate_rndc_key
