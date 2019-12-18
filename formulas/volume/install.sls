@@ -4,11 +4,9 @@ include:
 
 {% if grains['os_family'] == 'Debian' %}
 
-cinder_packages:
+volume_packages:
   pkg.installed:
     - pkgs:
-      - cinder-api
-      - cinder-scheduler
       - python3-openstackclient
       - cinder-volume
       - python3-memcache
@@ -18,7 +16,7 @@ cinder_packages:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-cinder_packages:
+volume_packages:
   pkg.installed:
     - pkgs:
       - openstack-cinder

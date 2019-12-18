@@ -11,9 +11,6 @@ cinder_packages:
       - cinder-scheduler
       - python3-openstackclient
       - python3-memcache
-      - ceph-common
-      - python3-rbd
-      - python3-rados
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -23,8 +20,5 @@ cinder_packages:
       - openstack-cinder
       - python2-openstackclient
       - python-memcached
-      - ceph-common
-      - python-rbd
-      - python-rados
 
 {% endif %}

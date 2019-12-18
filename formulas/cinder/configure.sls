@@ -40,13 +40,6 @@ spawnzero_complete:
 
 {% endif %}
 
-/etc/ceph/ceph.client.volumes.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-volumes-keyring
-    - mode: 640
-    - user: root
-    - group: cinder
-
 /etc/cinder/cinder.conf:
   file.managed:
     - source: salt://formulas/cinder/files/cinder.conf
@@ -96,17 +89,6 @@ cinder_scheduler_service:
     - name: cinder-scheduler
 {% elif grains['os_family'] == 'RedHat' %}
     - name: openstack-cinder-scheduler
-{% endif %}
-    - enable: true
-    - watch:
-      - file: /etc/cinder/cinder.conf
-
-cinder_volume_service:
-  service.running:
-{% if grains['os_family'] == 'Debian' %}
-    - name: cinder-volume
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-cinder-volume
 {% endif %}
     - enable: true
     - watch:
