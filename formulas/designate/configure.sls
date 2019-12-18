@@ -112,6 +112,7 @@ spawnzero_complete:
               {%- endif -%}
             {% endfor %}
           {%- endfor %}
+          
 /etc/designate/rndc.key:
   file.managed:
     - contents_pillar: designate:designate_rndc_key
