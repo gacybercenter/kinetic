@@ -10,6 +10,7 @@ cinder_packages:
       - cinder-api
       - cinder-scheduler
       - python3-openstackclient
+      - cinder-volume
       - python3-memcache
       - ceph-common
       - python3-rbd
