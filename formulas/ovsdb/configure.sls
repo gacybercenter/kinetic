@@ -14,10 +14,19 @@ spawnzero_complete:
 
 ovn_northd_opts:
   file.managed:
+      {% if grains['os_family'] == "RedHat" %}
     - name: /etc/sysconfig/ovn-northd
+      {% elif grains['os_family'] == "Debian" %}
+    - name: /etc/default/ovn-central
+      {% endif %}
     - source: salt://formulas/ovsdb/files/ovn-northd
     - template: jinja
     - defaults:
+        {% if grains['os_family'] == "RedHat" %}
+        opts_name: OVN_NORTHD_OPTS
+        {% elif grains['os_family'] == "Debian" %}
+        opts_name: OVN_CTL_OPTS
+        {% endif %}
         self_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         nb_cluster: |-
           {{ ""|indent(10) }}

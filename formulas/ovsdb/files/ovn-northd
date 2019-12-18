@@ -1,4 +1,4 @@
-OVN_NORTHD_OPTS="--db-nb-addr={{ self_ip }} \
+{{ opts_name }}="--db-nb-addr={{ self_ip }} \
 --db-nb-create-insecure-remote=yes \
 --db-sb-addr={{ self_ip }} \
 --db-sb-create-insecure-remote=yes \
