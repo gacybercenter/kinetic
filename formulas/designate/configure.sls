@@ -72,13 +72,13 @@ spawnzero_complete:
     - defaults:
         hostname: {{ grains['fqdn'] }}.
         nameservers: |
-          {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {% for address in addresses %}
+          {%- for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
               {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
               {{ "  "+address |indent(4,true) }}
               {% endif %}
-            {% endfor %}
-          {% endfor %}
+            {%- endfor -%}
+          {%- endfor %}
         targets: foo
 
 /etc/designate/rndc.key:
