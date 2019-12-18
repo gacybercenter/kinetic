@@ -60,3 +60,4 @@ designate_bind9_service:
     - enable: true
     - watch:
       - file: /etc/designate/rndc.key
+      - file: bind_conf
