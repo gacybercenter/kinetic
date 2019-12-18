@@ -239,7 +239,7 @@ set-ovn-remote:
       {%- endfor %}
     - require:
       - service: openvswitch_service
-    - unless: |-
+    - unless:
         - ovs-vsctl get open . external-ids:ovn-remote | grep -q "
         {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
           {%- for address in addresses -%}
