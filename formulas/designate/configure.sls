@@ -112,17 +112,13 @@ spawnzero_complete:
               {%- endif -%}
             {% endfor %}
           {%- endfor %}
-          
+
 /etc/designate/rndc.key:
   file.managed:
     - contents_pillar: designate:designate_rndc_key
     - mode: 640
     - user: root
-{% if grains['os_family'] == 'Debian' %}
-    - group: bind
-{% elif grains['os_family'] == 'RedHat' %}
-    - group: named
-{% endif %}
+    - group: designate
 
 designate_api_service:
   service.running:
