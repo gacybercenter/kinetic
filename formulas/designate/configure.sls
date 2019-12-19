@@ -160,7 +160,8 @@ designate_api_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: etc/designate/designate.conf
+      - file: /etc/designate/designate.conf
+      - file: /etc/designate/pools.yaml
 
 designate_central_service:
   service.running:
@@ -169,7 +170,8 @@ designate_central_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: etc/designate/designate.conf
+      - file: /etc/designate/designate.conf
+      - file: /etc/designate/pools.yaml
 
 designate_worker_service:
   service.running:
@@ -178,7 +180,8 @@ designate_worker_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: etc/designate/designate.conf
+      - file: /etc/designate/designate.conf
+      - file: /etc/designate/pools.yaml
 
 designate_producer_service:
   service.running:
@@ -187,7 +190,8 @@ designate_producer_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: etc/designate/designate.conf
+      - file: /etc/designate/designate.conf
+      - file: /etc/designate/pools.yaml
 
 designate_mdns_service:
   service.running:
@@ -196,4 +200,5 @@ designate_mdns_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: etc/designate/designate.conf
+      - file: /etc/designate/designate.conf
+      - file: /etc/designate/pools.yaml
