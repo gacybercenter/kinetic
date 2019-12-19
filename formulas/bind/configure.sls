@@ -25,6 +25,7 @@ bind_conf:
         public_dns: {{ pillar['networking']['addresses']['float_dns'] }}
         designate_hosts: |-
           {{ ""|indent(10) }}
+          {% if salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain')|length %}
           {%- for host, addresses in salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
@@ -32,6 +33,9 @@ bind_conf:
               {%- endif -%}
             {%- endfor -%}
           {%- endfor %}
+          {% else %}
+        designate_hosts: 127.0.0.1;
+          {% endif %}
 {% if grains['os_family'] == 'Debian' %}
         directory: /var/cache/bind
 {% elif grains['os_family'] == 'RedHat' %}
