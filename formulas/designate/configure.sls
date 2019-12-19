@@ -178,7 +178,7 @@ designate_worker_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file:
+      - file: etc/designate/designate.conf
 
 designate_producer_service:
   service.running:
