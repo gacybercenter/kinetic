@@ -17,8 +17,6 @@ make_designate_service:
 
 /bin/sh -c "designate-manage database sync" designate:
   cmd.run:
-    - unless:
-      - /bin/sh -c "designate-manage database version" designate | grep -q "Current: 102"
     - require:
       - file: /etc/designate/designate.conf
 
