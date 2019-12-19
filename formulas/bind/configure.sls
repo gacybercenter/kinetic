@@ -23,9 +23,9 @@ bind_conf:
     - template: jinja
     - defaults:
         public_dns: {{ pillar['networking']['addresses']['float_dns'] }}
+          {% if salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain')|length %}
         designate_hosts: |-
           {{ ""|indent(10) }}
-          {% if salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain')|length %}
           {%- for host, addresses in salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
