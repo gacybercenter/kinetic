@@ -19,6 +19,22 @@ make_designate_service:
   cmd.run:
     - require:
       - file: /etc/designate/designate.conf
+    - onchanges:
+      - file: /etc/designate/designate.conf
+
+/bin/sh -c "designate-manage pool update" designate:
+  cmd.run:
+    - require:
+      - file: /etc/designate/pools.yaml
+    - onchanges:
+      - file: /etc/designate/pools.yaml
+
+/bin/sh -c "designate-manage tlds import --input_file /etc/designate/tlds.conf" designate:
+  cmd.run:
+    - require:
+      - file: /etc/designate/tlds.conf
+    - onchanges:
+      - file: /etc/designate/tlds.conf
 
 spawnzero_complete:
   event.send:
@@ -26,6 +42,10 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 
 {% endif %}
+
+/etc/designate/tlds.conf:
+  file.managed:
+    - source: salt://formulas/designate/files/tlds.conf
 
 /etc/designate/designate.conf:
   file.managed:
@@ -68,10 +88,6 @@ spawnzero_complete:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-
-/etc/designate/tlds.conf:
-  file.managed:
-    - source: salt://formulas/designate/files/tlds.conf
 
 ## Trying to write yaml in yaml via salt with correct indentation is basically impossible when using
 ## file.managed with the source directive.  Using contents is ugly, but it works.
@@ -161,13 +177,3 @@ designate_mdns_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
-
-/bin/sh -c "designate-manage pool update" designate:
-  cmd.run:
-    - onchanges:
-      - file: /etc/designate/pools.yaml
-
-/bin/sh -c "designate-manage tlds import --input_file /etc/designate/tlds.conf" designate:
-  cmd.run:
-    - onchanges:
-      - file: /etc/designate/tlds.conf
