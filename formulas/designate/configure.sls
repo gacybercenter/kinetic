@@ -26,6 +26,11 @@ make_designate_service:
   cmd.run:
     - require:
       - file: /etc/designate/pools.yaml
+      - service: designate_api_service
+      - service: designate_central_service
+      - service: designate_mdns_service
+      - service: designate_worker_service
+      - service: designate_producer_service
     - onchanges:
       - file: /etc/designate/pools.yaml
 
@@ -33,6 +38,11 @@ make_designate_service:
   cmd.run:
     - require:
       - file: /etc/designate/tlds.conf
+      - service: designate_api_service
+      - service: designate_central_service
+      - service: designate_mdns_service
+      - service: designate_worker_service
+      - service: designate_producer_service
     - onchanges:
       - file: /etc/designate/tlds.conf
 
@@ -149,6 +159,8 @@ designate_api_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
+    - require:
+      - file: etc/designate/designate.conf
 
 designate_central_service:
   service.running:
@@ -156,6 +168,8 @@ designate_central_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
+    - require:
+      - file: etc/designate/designate.conf
 
 designate_worker_service:
   service.running:
@@ -163,6 +177,8 @@ designate_worker_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
+    - require:
+      - file:
 
 designate_producer_service:
   service.running:
@@ -170,6 +186,8 @@ designate_producer_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
+    - require:
+      - file: etc/designate/designate.conf
 
 designate_mdns_service:
   service.running:
@@ -177,3 +195,5 @@ designate_mdns_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
+    - require:
+      - file: etc/designate/designate.conf
