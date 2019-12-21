@@ -122,7 +122,6 @@ apply_base_{{ type }}-{{ uuid }}:
             attempts: 3
             interval: 10
 
-
 apply_networking_{{ type }}-{{ uuid }}:
   salt.state:
     - tgt: '{{ type }}-{{ uuid }}'
