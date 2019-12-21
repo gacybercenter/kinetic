@@ -112,7 +112,7 @@ spawnzero_complete:
           cephfs_ganesha_server_ip = {{ address }}
               {%- endif -%}
             {% endfor %}
-          {%- endfor %}
+          {% endfor %}
           {%- else -%}
           [cephfsnfs0]
           {%- endif %}
