@@ -81,10 +81,10 @@ make_nfs_share_type:
           {% if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length %}
           {{ ""|indent(10) }}
           {% for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          {% set outerloop = loop %}
+          {% set outerloop = loop.index %}
             {% for address in addresses %}
               {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) %}
-          [cephfsnfs-{{ outerloop.index }}]
+          [cephfsnfs-{{ outerloop }}]
           driver_handles_share_servers = False
           share_backend_name = CEPHFSNFS-{{ outerloop.index }}
           share_driver = manila.share.drivers.cephfs.driver.CephFSDriver
