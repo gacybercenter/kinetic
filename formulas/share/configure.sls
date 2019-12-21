@@ -13,20 +13,6 @@ make_filesystem:
         metadata_pgs: {{ pillar['cephconf']['fileshare_metadata_pgs'] }}
         data_pgs: {{ pillar['cephconf']['fileshare_data_pgs'] }}
 
-make_nfs_share_type:
-  cmd.script:
-    - source: salt://formulas/share/files/mknfs.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-    - require:
-      - service: manila_share_service
-      - service: nfs_ganesha_service
-    - retry:
-        attempts: 3
-        interval: 10
-
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
