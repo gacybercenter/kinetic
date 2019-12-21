@@ -117,6 +117,11 @@ apply_base_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/common/base
+    - kwarg:
+          retry:
+            attempts: 3
+            interval: 10
+
 
 apply_networking_{{ type }}-{{ uuid }}:
   salt.state:
