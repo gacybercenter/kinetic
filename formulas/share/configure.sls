@@ -95,12 +95,12 @@ make_nfs_share_type:
           cephfs_enable_snapshots = True
           cephfs_ganesha_server_is_remote = False
           cephfs_ganesha_server_ip = {{ address }}
-              {% endif %}
-            {% endfor %}
-          {% endfor %}
-          {% else %}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %}
+          {%- else -%}
           [cephfsnfs0]
-          {% endif %}
+          {%- endif -%}
 
 manila_share_service:
   service.running:
