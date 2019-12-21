@@ -65,6 +65,8 @@ spawnzero_complete:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         shares: |-
           [cephfsnfs-{{ grains['id'] }}]
+          ganesha_rados_store_enable = True
+          ganesha_rados_store_pool_name = fileshare_data
           driver_handles_share_servers = False
           share_backend_name = CEPHFSNFS-{{ grains['id'] }}
           share_driver = manila.share.drivers.cephfs.driver.CephFSDriver
