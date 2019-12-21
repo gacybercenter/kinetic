@@ -78,13 +78,13 @@ make_nfs_share_type:
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         enabled_share_backends: |-
-          enabled_share_backends = 
+          enabled_share_backends =
           {%- if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length -%}
           {%- for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
           {%- set outerloop = loop -%}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) -%}
-          cephfsnfs-{{ outerloop.index }}
+          cephfsnfs{{ outerloop.index }}
               {%- endif -%}
             {%- endfor -%}
           {% if loop.index < loop.length %},{% endif %}
@@ -99,9 +99,9 @@ make_nfs_share_type:
           {%- set outerloop = loop -%}
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) -%}
-          [cephfsnfs-{{ outerloop.index }}]
+          [cephfsnfs{{ outerloop.index }}]
           driver_handles_share_servers = False
-          share_backend_name = CEPHFSNFS-{{ outerloop.index }}
+          share_backend_name = CEPHFSNFS{{ outerloop.index }}
           share_driver = manila.share.drivers.cephfs.driver.CephFSDriver
           cephfs_conf_path = /etc/ceph/ceph.conf
           cephfs_protocol_helper_type = NFS
