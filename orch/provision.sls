@@ -117,6 +117,7 @@ apply_base_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/common/base
+    - failhard: True
     - kwarg:
           retry:
             attempts: 3
@@ -127,6 +128,7 @@ apply_networking_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/common/networking
+    - failhard: True      
     - require:
       - apply_base_{{ type }}-{{ uuid }}
 
