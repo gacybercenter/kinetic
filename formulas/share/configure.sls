@@ -64,11 +64,11 @@ spawnzero_complete:
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         shares: |-
-          [cephfsnfs-{{ grains['id'] }}]
+          [cephfsnfs]
           ganesha_rados_store_enable = True
           ganesha_rados_store_pool_name = fileshare_data
           driver_handles_share_servers = False
-          share_backend_name = CEPHFSNFS-{{ grains['id'] }}
+          share_backend_name = CEPHFSNFS
           share_driver = manila.share.drivers.cephfs.driver.CephFSDriver
           cephfs_conf_path = /etc/ceph/ceph.conf
           cephfs_protocol_helper_type = NFS
