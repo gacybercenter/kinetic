@@ -79,7 +79,7 @@ make_nfs_share_type:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         shares: |-
           {% if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length %}
-          {% for server, address in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain', cidr=pillar['networking']['subnets']['public']) | dictsort() %}
+          {% for server, address in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain', cidr="pillar['networking']['subnets']['public']") | dictsort() %}
           [cephfsnfs-{{ loop.index }}]
           driver_handles_share_servers = False
           share_backend_name = CEPHFSNFS-{{ loop.index }}
