@@ -1,4 +1,10 @@
 {% set type = pillar['type'] %}
+{% if pillar['types'][type] == 'physical' %}
+  {% set role = pillar['hosts'][type]['role'] %}
+{% else %}
+  {% set role = type %}
+{% endif %}
+
 {% set target = pillar['target'] %}
 {% set style = pillar['types'][type] %}
 {% set controller = pillar['controller'] %}
@@ -156,7 +162,7 @@ apply_install_{{ type }}-{{ uuid }}:
   salt.state:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
-      - formulas/{{ type }}/install
+      - formulas/{{ role }}/install
     - require:
       - wait_for_{{ type }}-{{ uuid }}_reboot
 
