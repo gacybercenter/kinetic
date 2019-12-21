@@ -69,17 +69,45 @@ spawnzero_complete:
           {%- endfor %}
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-{% if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length %}
-  {% for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {%- for address in addresses -%}
-      {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) %}
-        ganesha_ip: {{ address }}
-      {%- endif -%}
-    {%- endfor -%}
-  {% endfor %}
-{% else %}
-        ganesha_ip: 127.0.0.1
-{% endif %}
+        enabled_share_backends: |-
+          enabled_share_backends =
+          {%- if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length -%}
+          {%- for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+          {%- set outerloop = loop -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) -%}
+          cephfsnfs{{ outerloop.index }}
+              {%- endif -%}
+            {%- endfor -%}
+          {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
+          {%- else -%}
+          cephfsnfs0
+          {%- endif %}
+        shares: |-
+          {{ ""|indent(10) }}
+          {%- if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length -%}
+          {%- for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+          {%- set outerloop = loop -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) -%}
+          [cephfsnfs{{ outerloop.index }}]
+          driver_handles_share_servers = False
+          share_backend_name = CEPHFSNFS{{ outerloop.index }}
+          share_driver = manila.share.drivers.cephfs.driver.CephFSDriver
+          cephfs_conf_path = /etc/ceph/ceph.conf
+          cephfs_protocol_helper_type = NFS
+          cephfs_auth_id = manila
+          cephfs_cluster_name = ceph
+          cephfs_enable_snapshots = True
+          cephfs_ganesha_server_is_remote = False
+          cephfs_ganesha_server_ip = {{ address }}
+              {%- endif -%}
+            {% endfor %}
+          {% endfor %}
+          {%- else -%}
+          [cephfsnfs0]
+          {%- endif %}
 
 manila_api_service:
   service.running:
