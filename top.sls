@@ -7,6 +7,7 @@
   {% endif %}
 {% else %}
   {% set type = opts.id %}
+  {% set role = type %}
 {% endif %}
 
 base:
