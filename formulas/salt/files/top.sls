@@ -89,6 +89,7 @@ base:
     - cinder
     - openstack
     - rabbitmq
+    - keystone
     - ceph
   'volume*':
     - cinder
@@ -110,6 +111,8 @@ base:
     - designate
     - openstack
     - rabbitmq
+  'bind*':
+    - designate
   'swift*':
     - swift
     - openstack

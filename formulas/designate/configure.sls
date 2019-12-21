@@ -17,10 +17,34 @@ make_designate_service:
 
 /bin/sh -c "designate-manage database sync" designate:
   cmd.run:
-    - unless:
-      - /bin/sh -c "designate-manage database version" designate | grep -q "Current: 102"
     - require:
       - file: /etc/designate/designate.conf
+    - onchanges:
+      - file: /etc/designate/designate.conf
+
+/bin/sh -c "designate-manage pool update" designate:
+  cmd.run:
+    - require:
+      - file: /etc/designate/pools.yaml
+      - service: designate_api_service
+      - service: designate_central_service
+      - service: designate_mdns_service
+      - service: designate_worker_service
+      - service: designate_producer_service
+    - onchanges:
+      - file: /etc/designate/pools.yaml
+
+/bin/sh -c "designate-manage tlds import --input_file /etc/designate/tlds.conf" designate:
+  cmd.run:
+    - require:
+      - file: /etc/designate/tlds.conf
+      - service: designate_api_service
+      - service: designate_central_service
+      - service: designate_mdns_service
+      - service: designate_worker_service
+      - service: designate_producer_service
+    - onchanges:
+      - file: /etc/designate/tlds.conf
 
 spawnzero_complete:
   event.send:
@@ -28,6 +52,10 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 
 {% endif %}
+
+/etc/designate/tlds.conf:
+  file.managed:
+    - source: salt://formulas/designate/files/tlds.conf
 
 /etc/designate/designate.conf:
   file.managed:
@@ -60,45 +88,69 @@ spawnzero_complete:
         password: {{ pillar['designate']['designate_service_password'] }}
         listen_api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:9001
         designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
+        coordination_server: |-
+          {{ ""|indent(10) }}
+          {%- for host, addresses in salt['mine.get']('G@role:memcached and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+          {{ address }}:11211
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
 
-/etc/designate/tlds.conf:
-  file.managed:
-    - source: salt://formulas/designate/files/tlds.conf
-
-bind_conf:
-  file.managed:
-{% if grains['os_family'] == 'Debian' %}
-    - name: /etc/bind/named.conf.options
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /etc/named.conf
-{% endif %}
-    - source: salt://formulas/designate/files/named.conf.options
-    - template: jinja
-    - defaults:
-        public_dns: {{ pillar['networking']['addresses']['float_dns'] }}
-{% if grains['os_family'] == 'Debian' %}
-        directory: /var/cache/bind
-{% elif grains['os_family'] == 'RedHat' %}
-        directory: /var/named
-{% endif %}
-
+## Trying to write yaml in yaml via salt with correct indentation is basically impossible when using
+## file.managed with the source directive.  Using contents is ugly, but it works.
 /etc/designate/pools.yaml:
   file.managed:
-    - source: salt://formulas/designate/files/pools.yaml
     - template: jinja
-    - defaults:
-        hostname: {{ grains['fqdn'] }}.
+    - contents: |
+        - name: default
+          description: Default Pool
+          attributes: {}
+          ns_records:
+            - hostname: {{ grains['fqdn'] }}.
+              priority: 1
+          nameservers:
+          {%- for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {% for address in addresses %}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+            - host: {{ address }}
+              port: 53
+              {%- endif -%}
+            {% endfor %}
+          {%- endfor %}
+          targets:
+          {%- for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {% for address in addresses %}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+            - type: bind9
+              description: bind9 server
+              masters:
+              {%- for d_host, d_addresses in salt['mine.get']('role:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+                {% for d_address in d_addresses %}
+                  {%- if salt['network']['ip_in_subnet'](d_address, pillar['networking']['subnets']['management']) -%}
+                - host: {{ d_address }}
+                  port: 5354
+                  {%- endif -%}
+                {% endfor %}
+              {%- endfor %}
+              options:
+                host: {{ address }}
+                port: 53
+                rndc_host: {{ address }}
+                rndc_port: 953
+                rndc_key_file: /etc/designate/rndc.key
+              {%- endif -%}
+            {% endfor %}
+          {%- endfor %}
 
 /etc/designate/rndc.key:
   file.managed:
     - contents_pillar: designate:designate_rndc_key
     - mode: 640
     - user: root
-{% if grains['os_family'] == 'Debian' %}
-    - group: bind
-{% elif grains['os_family'] == 'RedHat' %}
-    - group: named
-{% endif %}
+    - group: designate
 
 designate_api_service:
   service.running:
@@ -106,6 +158,9 @@ designate_api_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
+    - require:
+      - file: /etc/designate/designate.conf
+      - file: /etc/designate/pools.yaml
 
 designate_central_service:
   service.running:
@@ -113,6 +168,9 @@ designate_central_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
+    - require:
+      - file: /etc/designate/designate.conf
+      - file: /etc/designate/pools.yaml
 
 designate_worker_service:
   service.running:
@@ -120,6 +178,9 @@ designate_worker_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
+    - require:
+      - file: /etc/designate/designate.conf
+      - file: /etc/designate/pools.yaml
 
 designate_producer_service:
   service.running:
@@ -127,6 +188,9 @@ designate_producer_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
+    - require:
+      - file: /etc/designate/designate.conf
+      - file: /etc/designate/pools.yaml
 
 designate_mdns_service:
   service.running:
@@ -134,24 +198,6 @@ designate_mdns_service:
     - enable: true
     - watch:
       - file: /etc/designate/designate.conf
-
-designate_bind9_service:
-  service.running:
-{% if grains['os_family'] == 'Debian' %}
-    - name: bind9
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: named
-{% endif %}
-    - enable: true
-    - watch:
-      - file: /etc/designate/rndc.key
-
-/bin/sh -c "designate-manage pool update" designate:
-  cmd.run:
-    - onchanges:
+    - require:
+      - file: /etc/designate/designate.conf
       - file: /etc/designate/pools.yaml
-
-/bin/sh -c "designate-manage tlds import --input_file /etc/designate/tlds.conf" designate:
-  cmd.run:
-    - onchanges:
-      - file: /etc/designate/tlds.conf
