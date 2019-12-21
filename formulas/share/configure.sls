@@ -79,7 +79,9 @@ make_nfs_share_type:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         shares: |-
           {% if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length %}
-          {% for server, address in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain', cidr="pillar['networking']['subnets']['public']") | dictsort() %}
+          {% for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {% for address in addresses %}
+              {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) %}
           [cephfsnfs-{{ loop.index }}]
           driver_handles_share_servers = False
           share_backend_name = CEPHFSNFS-{{ loop.index }}
@@ -91,6 +93,8 @@ make_nfs_share_type:
           cephfs_enable_snapshots = True
           cephfs_ganesha_server_is_remote = False
           cephfs_ganesha_server_ip = {{ address }}
+              {% endif %}
+            {% endfor %}
           {% endfor %}
           {% else %}
           [cephfsnfs0]
