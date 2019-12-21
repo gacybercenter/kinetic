@@ -80,8 +80,8 @@ make_nfs_share_type:
         shares: |
           {{ " "|indent(10) }}
           {%- for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {% for address in addresses %}
-              {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) %}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) -%}
           foo
               {% endif %}
             {% endfor %}
