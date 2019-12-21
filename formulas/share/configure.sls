@@ -111,7 +111,7 @@ spawnzero_complete:
           cephfs_ganesha_server_is_remote = False
           cephfs_ganesha_server_ip = {{ address }}
               {%- endif -%}
-            {%- endfor -%}
+            {%- endfor %}
           {%- endfor %}
           {%- else -%}
           [cephfsnfs0]
