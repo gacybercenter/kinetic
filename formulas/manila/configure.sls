@@ -35,7 +35,7 @@ make_nfs_share_type:
         keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
     - require:
       - service: manila_api_service
-      - service: scheduler
+      - service: manila_scheduler_service
     - retry:
         attempts: 3
         interval: 10
