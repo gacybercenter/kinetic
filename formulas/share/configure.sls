@@ -6,11 +6,6 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
-spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
-
 make_filesystem:
   event.send:
     - name: create/manila/filesystem
@@ -31,6 +26,11 @@ make_nfs_share_type:
     - retry:
         attempts: 3
         interval: 10
+
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
 
 {% endif %}
 
