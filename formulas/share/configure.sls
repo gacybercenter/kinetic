@@ -100,7 +100,7 @@ make_nfs_share_type:
           {%- endfor %}
           {%- else -%}
           [cephfsnfs0]
-          {%- endif -%}
+          {%- endif %}
 
 manila_share_service:
   service.running:
