@@ -78,7 +78,8 @@ make_nfs_share_type:
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         shares: |-
-          {% if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length %}
+          {{ ""|indent(10) }}
+          {%- if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length -%}
           {%- for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
           {%- set outerloop = loop -%}
             {%- for address in addresses -%}
