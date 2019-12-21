@@ -79,6 +79,7 @@ make_nfs_share_type:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         shares: |-
           {% if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length %}
+            {{ ""|indent(10) }}
             {% for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
             {% set outerloop = loop %}
               {% for address in addresses %}
