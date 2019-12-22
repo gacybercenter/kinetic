@@ -26,6 +26,20 @@ manila-manage db sync:
     - require:
       - file: /etc/manila/manila.conf
 
+make_nfs_share_type:
+  cmd.script:
+    - source: salt://formulas/manila/files/mknfs.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+    - require:
+      - service: manila_api_service
+      - service: manila_scheduler_service
+    - retry:
+        attempts: 3
+        interval: 10
+
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
@@ -69,17 +83,6 @@ spawnzero_complete:
           {%- endfor %}
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-{% if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length %}
-  {% for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {%- for address in addresses -%}
-      {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) %}
-        ganesha_ip: {{ address }}
-      {%- endif -%}
-    {%- endfor -%}
-  {% endfor %}
-{% else %}
-        ganesha_ip: 127.0.0.1
-{% endif %}
 
 manila_api_service:
   service.running:

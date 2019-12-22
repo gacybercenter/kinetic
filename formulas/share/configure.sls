@@ -6,11 +6,6 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
-spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
-
 make_filesystem:
   event.send:
     - name: create/manila/filesystem
@@ -18,19 +13,10 @@ make_filesystem:
         metadata_pgs: {{ pillar['cephconf']['fileshare_metadata_pgs'] }}
         data_pgs: {{ pillar['cephconf']['fileshare_data_pgs'] }}
 
-make_nfs_share_type:
-  cmd.script:
-    - source: salt://formulas/share/files/mknfs.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-    - require:
-      - service: manila_share_service
-      - service: nfs_ganesha_service
-    - retry:
-        attempts: 3
-        interval: 10
+spawnzero_complete:
+  event.send:
+    - name: {{ grains['type'] }}/spawnzero/complete
+    - data: "{{ grains['type'] }} spawnzero is complete."
 
 {% endif %}
 
@@ -77,17 +63,21 @@ make_nfs_share_type:
           {%- endfor %}
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-{% if salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain')|length %}
-  {% for server, addresses in salt['mine.get']('type:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {%- for address in addresses -%}
-      {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['public']) %}
-        ganesha_ip: {{ address }}
-      {%- endif -%}
-    {%- endfor -%}
-  {% endfor %}
-{% else %}
-        ganesha_ip: 127.0.0.1
-{% endif %}
+        shares: |-
+          [cephfsnfs{{ grains['spawning'] }}]
+          ganesha_rados_store_enable = True
+          ganesha_rados_store_pool_name = fileshare_data
+          driver_handles_share_servers = False
+          share_backend_name = CEPHFSNFS{{ grains['spawning'] }}
+          share_driver = manila.share.drivers.cephfs.driver.CephFSDriver
+          cephfs_conf_path = /etc/ceph/ceph.conf
+          cephfs_protocol_helper_type = NFS
+          cephfs_auth_id = manila
+          cephfs_cluster_name = ceph
+          cephfs_enable_snapshots = True
+          cephfs_ganesha_server_is_remote = False
+          cephfs_ganesha_server_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['public'])[0] }}
+        backend: cephfsnfs{{ grains['spawning'] }}
 
 manila_share_service:
   service.running:

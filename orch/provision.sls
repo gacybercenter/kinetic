@@ -1,4 +1,10 @@
 {% set type = pillar['type'] %}
+{% if pillar['types'][type] == 'physical' %}
+  {% set role = pillar['hosts'][type]['role'] %}
+{% else %}
+  {% set role = type %}
+{% endif %}
+
 {% set target = pillar['target'] %}
 {% set style = pillar['types'][type] %}
 {% set controller = pillar['controller'] %}
@@ -111,12 +117,18 @@ apply_base_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/common/base
+    - failhard: True
+    - kwarg:
+          retry:
+            attempts: 3
+            interval: 10
 
 apply_networking_{{ type }}-{{ uuid }}:
   salt.state:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/common/networking
+    - failhard: True      
     - require:
       - apply_base_{{ type }}-{{ uuid }}
 
@@ -156,7 +168,7 @@ apply_install_{{ type }}-{{ uuid }}:
   salt.state:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
-      - formulas/{{ type }}/install
+      - formulas/{{ role }}/install
     - require:
       - wait_for_{{ type }}-{{ uuid }}_reboot
 
