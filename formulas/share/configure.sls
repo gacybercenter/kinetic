@@ -85,7 +85,7 @@ wipe_adminkey:
           share_driver = manila.share.drivers.cephfs.driver.CephFSDriver
           cephfs_conf_path = /etc/ceph/ceph.conf
           cephfs_protocol_helper_type = NFS
-          cephfs_auth_id = manila.{{ grains [id'] }}
+          cephfs_auth_id = manila.{{ grains ['id'] }}
           cephfs_cluster_name = ceph
           cephfs_enable_snapshots = True
           cephfs_ganesha_server_is_remote = False
