@@ -47,6 +47,10 @@
           [client.{{ host }}]
           host = {{ host }}
           keyring = /etc/ceph/ceph.client.{{ host }}.keyring
+          client mount uid = 0
+          client mount gid = 0
+          log file = /var/log/ceph/ceph-client.manila.log
+          admin socket = /opt/ceph-$name.$pid.asok
 
           {% endfor %}
         sfe_network: {{ pillar['networking']['subnets']['sfe'] }}
