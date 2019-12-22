@@ -119,7 +119,6 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 {% set volumeskey = salt['cephx.make_key']() %}
 {% set computekey = salt['cephx.make_key']() %}
 {% set osdkey = salt['cephx.make_key']() %}
-{% set manilakey = salt['cephx.make_key']() %}
 
 /srv/dynamic_pillar/ceph.sls:
   file.managed:
