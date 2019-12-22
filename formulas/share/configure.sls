@@ -26,25 +26,12 @@ spawnzero_complete:
     - user: manila
     - group: manila
 
-get_adminkey:
+/etc/ceph/ceph.client.manila.keyring:
   file.managed:
-    - name: /etc/ceph/ceph.client.admin.keyring
-    - contents_pillar: ceph:ceph-client-admin-keyring
-    - mode: 600
+    - contents_pillar: ceph:ceph-client-manila-keyring
+    - mode: 640
     - user: root
-    - group: root
-    - prereq:
-      - cmd: make_{{ grains['id'] }}_manilakey
-
-make_{{ grains['id'] }}_manilakey:
-  cmd.run:
-    - name: ceph auth get-or-create client.{{ grains['id'] }} mds 'allow *' osd 'allow rw' mon 'allow r, allow command "auth del", allow command "auth caps", allow command "auth get", allow command "auth get-or-create"' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
-    - creates:
-      - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
-
-wipe_adminkey:
-  file.absent:
-    - name: /etc/ceph/ceph.client.admin.keyring
+    - group: manila
 
 /etc/manila/manila.conf:
   file.managed:
@@ -78,12 +65,14 @@ wipe_adminkey:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         shares: |-
           [cephfsnfs{{ grains['spawning'] }}]
+          ganesha_rados_store_enable = True
+          ganesha_rados_store_pool_name = fileshare_data
           driver_handles_share_servers = False
           share_backend_name = CEPHFSNFS{{ grains['spawning'] }}
           share_driver = manila.share.drivers.cephfs.driver.CephFSDriver
           cephfs_conf_path = /etc/ceph/ceph.conf
           cephfs_protocol_helper_type = NFS
-          cephfs_auth_id = client.{{ grains ['id'] }}
+          cephfs_auth_id = manila
           cephfs_cluster_name = ceph
           cephfs_enable_snapshots = True
           cephfs_ganesha_server_is_remote = False

@@ -42,16 +42,5 @@
           rgw trust forwarded https = true
 
           {% endfor %}
-        share_members: |
-          {% for host, address in salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          [client.{{ host }}]
-          host = {{ host }}
-          keyring = /etc/ceph/ceph.client.{{ host }}.keyring
-          client mount uid = 0
-          client mount gid = 0
-          log file = /var/log/ceph/ceph-client.manila.log
-          admin socket = /opt/ceph-$name.$pid.asok
-
-          {% endfor %}
         sfe_network: {{ pillar['networking']['subnets']['sfe'] }}
         sbe_network: {{ pillar['networking']['subnets']['sbe'] }}
