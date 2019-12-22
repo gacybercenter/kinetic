@@ -20,7 +20,7 @@
           [mds.{{ host }}]
           host = {{ host }}
           keyring = /var/lib/ceph/mds/ceph-{{ host }}/keyring
-          
+
           {% endfor %}
         swift_members: |
           {% for host, address in salt['mine.get']('role:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -40,6 +40,13 @@
           rgw swift account in url = true
           rgw swift url prefix = swift
           rgw trust forwarded https = true
+
+          {% endfor %}
+        share_members: |
+          {% for host, address in salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+          [client.{{ host }}]
+          host = {{ host }}
+          keyring = /etc/ceph/ceph.client.{{ host }}.keyring
 
           {% endfor %}
         sfe_network: {{ pillar['networking']['subnets']['sfe'] }}
