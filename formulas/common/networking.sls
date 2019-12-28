@@ -22,7 +22,7 @@ ifwatch:
 {% endfor %}
 
 ## Configure bond slaves, if any
-{% if salt['pillar.get'](''+srv+':'+grains['type']+':networks:bonds', False) != False %}
+{% if salt['pillar.get'](srv+':'+grains['type']+':networks:bonds', False) != False %}
   {% for master in pillar[srv][grains['type']]['networks']['bonds'] %}
     {% for slave in pillar[srv][grains['type']]['networks']['bonds'][master] %}
 {{ master }}_{{ slave }}:
@@ -67,7 +67,7 @@ bridge-utils_{{ interface }}:
   network.managed:
     - enabled: True
 ## adjust configuration based on whether or not interface is a bond
-{% if salt['pillar.get'](''+srv+':'+grains['type']+':networks:interfaces:'+interface+':bond', False) == False %}
+{% if salt['pillar.get'](srv+':'+grains['type']+':networks:interfaces:'+interface+':bond', False) == False %}
     - type: eth
 {% else %}
     - type: bond
