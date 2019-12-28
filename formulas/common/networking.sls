@@ -21,6 +21,20 @@ ifwatch:
       - {{ interface }}
 {% endfor %}
 
+## Configure bond slaves, if any
+{% if salt['pillar.get']('srv:grains['type']:networks:bonds', False) != False %}
+  {% for master, slaves in pillar[srv][grains['type']]['networks']['bonds'] %}
+    {% for slave in slaves %}
+{{ master }}_{{ slave }}:
+  network.managed:
+    - name: {{ slave }}
+    - enabled: True
+    - type: slave
+    - master: {{ master }}
+    {% endfor %}
+  {% endfor %}
+{% endif %}
+
 ## Get current management IP address.  This will be used to calculate the
 ## assigned addresses for all of the other networks.
 {% set management_address_octets = salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0].split('.') %}
