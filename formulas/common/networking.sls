@@ -66,7 +66,20 @@ bridge-utils_{{ interface }}:
 {{ interface }}:
   network.managed:
     - enabled: True
+## adjust configuration based on whether or not interface is a bond
+{% if salt['pillar.get']('srv:grains['type']:networks:interfaces:interface:bond', 'False') == False %}
     - type: eth
+{% else %}
+    - type: bond
+    - mode: 802.3ad
+    - slaves: |-
+          {%- for slave in salt['pillar.get']('srv:grains['type']:networks:bonds:interface') -%}
+              {{ " "+slave }}
+          {%- endfor %}
+    - miimon: 100
+    - downdelay: 200
+    - lacp_rate: fast
+{% endif %}
 ## If this interface is bridged, set appropriate state and master and
 ## companion interface
 {% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['bridge'] == True %}
