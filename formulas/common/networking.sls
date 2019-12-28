@@ -22,7 +22,7 @@ ifwatch:
 {% endfor %}
 
 ## Configure bond slaves, if any
-{% if salt['pillar.get']('srv:grains[type]:networks:bonds', "Test") != False %}
+{% if pillar[srv][grains['type']]['networks']['bonds'] != False %}
   {% for master in pillar[srv][grains['type']]['networks']['bonds'] %}
     {% for slave in pillar[srv][grains['type']]['networks']['bonds'][master] %}
 {{ master }}_{{ slave }}:
