@@ -16,6 +16,7 @@
 ## beacon
 ifwatch:
   grains.present:
+    - force: true
     - value:
 {% for interface in pillar[srv][grains['type']]['networks']['interfaces'] %}
       - {{ interface }}
