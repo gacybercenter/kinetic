@@ -67,7 +67,7 @@ bridge-utils_{{ interface }}:
   network.managed:
     - enabled: True
 ## adjust configuration based on whether or not interface is a bond
-{% if salt['pillar.get']('srv:grains[type]:networks:interfaces:interface:bond', 'False') == False %}
+{% if salt['pillar.get']('srv:grains[type]:networks:interfaces:interface:bond', False) == False %}
     - type: eth
 {% else %}
     - type: bond
