@@ -73,6 +73,7 @@ bridge-utils_{{ interface }}:
     - type: bond
     - mode: 802.3ad
     - slaves: |-
+          {{ ""|indent(10) }}
           {%- for slave in salt['pillar.get'](srv+':'+grains['type']+':networks:bonds:'+interface) -%}
               {{ " "+slave }}
           {%- endfor %}
