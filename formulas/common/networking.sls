@@ -23,7 +23,7 @@ ifwatch:
 
 ## Configure bond slaves, if any
 {% if salt['pillar.get']('srv:grains[type]:networks:bonds', "Test") != False %}
-  {% for master, slaves in pillar[srv][grains['type']]['networks']['bonds'] %}
+  {% for master, slaves in salt['pillar.get']('srv:grains[type]:networks:bonds', {}).iteritems() %}
     {% for slave in slaves %}
 {{ master }}_{{ slave }}:
   network.managed:
