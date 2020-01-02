@@ -7,28 +7,18 @@ pxe_setup:
   salt.state:
     - tgt: 'pxe'
     - highstate: true
-    - require:
-      - master_setup
 
-## Bootstrap physical hosts
-{% for phase in pillar['hwmap'] %}
+{% for phase in pillar['map'] %}
 parallel_provision_{{ phase }}:
   salt.parallel_runners:
     - runners:
-  {% for type in pillar['hwmap'][phase] %}
+  {% for type in pillar['map'][phase] %}
         provision_{{ type }}:
           - name: state.orchestrate
           - kwarg:
-              mods: orch/bootstrap
+              mods: orch/generate
               pillar:
                 type: {{ type }}
+                universal: True
   {% endfor %}
 {% endfor %}
-## Bootstrap virtual hosts
-
-##provision_virtual:
-##  salt.runner:
-##    - name: state.orchestrate
-##    - mods: orch/virtual
-##    - require:
-##      - provision_controller

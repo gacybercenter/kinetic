@@ -109,14 +109,22 @@ fs:
     - require:
       - /kvm
 
+{% if grains['os_family'] == 'RedHat' %}
+libvirtd_service:
+  service.running:
+    - name: libvirtd
+    - enable: true
+{% endif %}
+
 {% for os, args in pillar.get('images', {}).items() %}
-/kvm/images/{{ args['local_name'] }}:
-  file.managed:
+extract_{{ args['name'] }}:
+  archive.extracted:
+    - name: /kvm/images
     - source:
 {% if args['local_url'] == "pull_from_mine" %}
 {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
 {% for host in cache_addresses_dict %}
-      - http://{{ cache_addresses_dict[host][0] }}/images/{{ args['local_name'] }}
+      - http://{{ cache_addresses_dict[host][0] }}/images/{{ args['name'] }}
 {% endfor %}
 {% else %}
       - {{ args['local_url'] }}
@@ -130,14 +138,18 @@ fs:
 {% else %}
     - source_hash: {{ args['local_hash'] }}
 {% endif %}
-    - source_hash_name: {{ args['local_source_hash_name'] }}
     - require:
-      - /kvm/images
+      - file: /kvm/images
 
 /kvm/images/{{ os }}-latest:
   file.symlink:
-    - target: /kvm/images/{{ args['local_name'] }}
+    - target: /kvm/images/{{ args['name'] }}
     - force: True
     - require:
-      - /kvm/images/{{ args['local_name'] }}
+      - extract_{{ args['name'] }}
 {% endfor %}
+
+haveged_service:
+  service.running:
+    - name: haveged
+    - enable: true

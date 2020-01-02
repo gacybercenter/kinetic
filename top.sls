@@ -1,11 +1,17 @@
+{% if opts.id not in ['salt', 'pxe'] %}
+  {% set type = opts.id.split('-')[0] %}
+  {% if pillar['types'][type] == 'physical' %}
+    {% set role = pillar['hosts'][type]['role'] %}
+  {% else %}
+    {% set role = type %}
+  {% endif %}
+{% else %}
+  {% set type = opts.id %}
+  {% set role = type %}
+{% endif %}
+
 base:
   '*':
     - formulas/common/base
-  salt:
-    - formulas/salt/configure
-  pxe:
-    - formulas/pxe/configure
-  cache*:
-    - formulas/cache/configure
-  controller*:
-    - formulas/controller/configure
+  {{ type }}*:
+    - formulas/{{ role }}/configure

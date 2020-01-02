@@ -1,14 +1,17 @@
+python3-tornado:
+  pkg.installed
+
 haveged:
   pkg.installed
 
 curl:
   pkg.installed
 
-ipmitool:
-  pkg.installed
+python3-pip:
+  pkg.installed:
+   - reload_modules: true
 
-freeipmi-tools:
-  pkg.installed
-
-uuid-runtime:
-  pkg.installed
+pyghmi:
+  pip.installed:
+    - require:
+      - pkg: python3-pip

@@ -1,8 +1,12 @@
+{% if grains['os_family'] == 'Debian' %}
 apache2:
   pkg.installed
 
-apt-cacher-ng:
-  pkg.installed
+{% elif grains['os_family'] == 'RedHat' %}
 
-qemu-utils:
+httpd:
+  pkg.installed
+{% endif %}
+
+apt-cacher-ng:
   pkg.installed

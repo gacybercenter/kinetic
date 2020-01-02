@@ -6,6 +6,7 @@ d-i keyboard-configuration/xkb-keymap             select us
 
 d-i netcfg/choose_interface                       select {{ interface }}
 d-i netcfg/get_domain                             string unassigned-domain
+d-i netcfg/do_not_use_netplan                     boolean true
 
 d-i hw-detect/load_firmware                       boolean true
 
@@ -34,14 +35,15 @@ mdadm --detail --scan | cut -f2 -d' ' | while read array ; do mdadm --remove $ar
 fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done ; \
 fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done ; \
 fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done ; \
-fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done ;
+fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done ; \
+debconf-set partman-auto/disk "$(parted_devices | grep "{{ disk }}" | cut -f 1 | head -n 1)"
 
 d-i partman-lvm/device_remove_lvm                 boolean true
 d-i partman-md/device_remove_md                   boolean true
 d-i partman-lvm/confirm                           boolean true
 d-i partman-lvm/confirm_nooverwrite               boolean true
 
-d-i partman-auto/disk                             string {{ disk }}
+d-i partman-auto/disk                             string
 
 d-i partman-auto/method                           string lvm
 d-i partman-auto-lvm/new_vg_name                  string vg0
@@ -93,7 +95,7 @@ d-i apt-setup/multiverse                          boolean false
 
 d-i tasksel/first                                 multiselect standard
 
-d-i pkgsel/include                                string openssh-server curl ipmitool uuid-runtime
+d-i pkgsel/include                                string openssh-server curl ipmitool ifupdown
 d-i pkgsel/update-policy                          select none
 
 d-i grub-installer/only_debian                    boolean true
@@ -105,4 +107,4 @@ d-i preseed/late_command                          string                        
     in-target echo ipmi_devintf >> /etc/modules;                                                                                           \
     in-target echo ipmi_si >> /etc/modules;                                                                                                \
     in-target curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;                                                           \
-    in-target /bin/sh /tmp/bootstrap_salt.sh -X
+    in-target /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ master_record }}

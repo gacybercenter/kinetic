@@ -30,7 +30,31 @@ def populate_storage(path):
 	pending.remove('..')
 	return pending
 
+def populate_storagev2(path):
+	pending = file.readdir(path)
+	pending.remove('.')
+	pending.remove('..')
+	return pending
+
 def populate_compute(path):
+	pending = file.readdir(path)
+	pending.remove('.')
+	pending.remove('..')
+	return pending
+
+def populate_computev2(path):
+	pending = file.readdir(path)
+	pending.remove('.')
+	pending.remove('..')
+	return pending
+
+def populate_container(path):
+	pending = file.readdir(path)
+	pending.remove('.')
+	pending.remove('..')
+	return pending
+
+def populate_containerv2(path):
 	pending = file.readdir(path)
 	pending.remove('.')
 	pending.remove('..')

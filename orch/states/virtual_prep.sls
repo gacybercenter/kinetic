@@ -1,5 +1,5 @@
-{% set type = pillar['type'] %}
-{% set hostname = type+"-"+pillar['identifier'] %}
+{% set hostname = pillar['hostname'] %}
+{% set type = hostname.split('-')[0] %}
 
 /kvm/vms/{{ hostname }}/config.xml:
   file.managed:
@@ -11,16 +11,20 @@
         ram: {{ pillar['virtual'][type]['ram'] }}
         cpu: {{ pillar['virtual'][type]['cpu'] }}
         networks: |
-        {% for network in pillar['virtual'][type]['networks']['bindings'] %}
+        {% for interface in pillar['virtual'][type]['networks']['interfaces']|sort() %}
           <interface type='bridge'>
-          {%- for interface in network %}
-            <source bridge='{{ interface }}'/>
-          {%- endfor %}
+            <source bridge='{{ pillar['virtual'][type]['networks']['interfaces'][interface]['network'] }}'/>
             <target dev='vnet{{ loop.index0 }}'/>
             <model type='virtio'/>
             <alias name='net{{ loop.index0 }}'/>
+            <mac address='{{ salt['generate.mac']('52:54:00') }}'/>
           </interface>
         {% endfor %}
+        {% if grains['os_family'] == 'Debian' %}
+        seclabel: <seclabel type='dynamic' model='apparmor' relabel='yes'/>
+        {% elif grains['os_family'] == 'RedHat' %}
+        seclabel: <seclabel type='dynamic' model='selinux' relabel='yes'/>
+        {% endif %}
 
 /kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:
@@ -46,6 +50,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['virtual'][ty
     - template: jinja
     - defaults:
         hostname: {{ hostname }}
+        master_record: {{ pillar['master_record'] }}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:

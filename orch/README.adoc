@@ -1,0 +1,29 @@
+== Orchestration States
+
+These states can be used to control the lifecycle of your kinetic deployment
+
+=== `zeroize.sls`
+
+Called by `generate.sls`.
+Can be used independently to rotate a single host type directly from the cli by passing manual pillar data in the form:
+
+`salt-run state.orch orch.zeroize pillar='{"target":"controller-foobar"}'`
+
+=== `map.sls`
+
+Master orchestration state.
+Completely wipes environment and starts fresh based on current mapping:
+
+`salt-run state.orch orch.map`
+
+=== `provision.sls`
+
+Can be used independently.
+Manages deployment of all host types on behalf of `generate.sls` and user calling
+
+`salt-run state.orch orch.provision pillar='{"type":"cache"}'`
+
+=== `generate.sls`
+
+Can not be used independently.
+Manages zeroization/provisioning of all host types on behalf of `map.sls`

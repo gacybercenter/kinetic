@@ -1,0 +1,11 @@
+[Unit]
+Description = OpenStack Container Service Websocket Proxy
+After = network-online.target
+Wants = network-online.target
+
+[Service]
+ExecStart = /usr/local/bin/zun-wsproxy
+User = zun
+
+[Install]
+WantedBy = multi-user.target

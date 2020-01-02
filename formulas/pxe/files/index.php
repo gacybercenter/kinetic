@@ -1,18 +1,24 @@
 <?php
 header('Content-type: text/plain');
 $mac = ($_GET["mac"]);
-exec("grep $mac hosts", $output);
-$type_array = explode(" = ", $output[0]);
-$type = $type_array[1];
-exec("echo -n $type-$(uuidgen)", $hostname);
-exec("grep 'd-i netcfg/choose_interface' preseed/$type.preseed | awk '{ print $4 }'", $interface);
-$bootfile = file_get_contents("common.pxe");
-$bootfile = str_replace("http://pxe/preseed/host-type.preseed", "http://".$_SERVER['SERVER_ADDR']."/preseed/".$type.".preseed", $bootfile);
-$bootfile = str_replace("undefined-hostname", "$hostname[0]", $bootfile);
+exec("cat assignments/$mac", $host_data);
+$type = explode("-", $host_data[0]);
+
+if (strpos($host_data[1], 'ubuntu') !== false) {
+exec("grep 'd-i netcfg/choose_interface' preseed/$type[0].preseed | awk '{ print $4 }'", $interface);
+$bootfile = file_get_contents("preseed.pxe");
+$bootfile = str_replace("http://{{ pxe_record }}/preseed/host-type.preseed", "http://{{ pxe_record }}/preseed/".$type[0].".preseed", $bootfile);
+$bootfile = str_replace("undefined-hostname", "$host_data[0]", $bootfile);
 $bootfile = str_replace("interface=auto", "interface=$interface[0]", $bootfile);
-if (!is_dir('pending_hosts/' . $type)) {
-  mkdir('pending_hosts/' . $type);
-}
-file_put_contents("pending_hosts/$type/$hostname[0]","$hostname[0]");
 echo $bootfile;
+}
+
+if (strpos($host_data[1], 'centos') !== false) {
+exec("grep 'network --bootproto=dhcp' kickstart/$type[0].kickstart | cut -d'=' -f 3", $interface);
+$bootfile = file_get_contents("kickstart.pxe");
+$bootfile = str_replace("http://{{ pxe_record }}/kickstart/host-type.kickstart", "http://{{ pxe_record }}/kickstart/".$type[0].".kickstart", $bootfile);
+$bootfile = str_replace("undefined-hostname", "$host_data[0]", $bootfile);
+$bootfile = str_replace(":undefined-interface", ":$interface[0]", $bootfile);
+echo $bootfile;
+}
 ?>

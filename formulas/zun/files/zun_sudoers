@@ -1,0 +1,3 @@
+Defaults:zun !requiretty
+
+zun ALL = (root) NOPASSWD: /usr/local/bin/zun-rootwrap /etc/zun/rootwrap.conf *

@@ -1,0 +1,11 @@
+[Unit]
+Description = OpenStack Container Service API
+After = network-online.target
+Wants = network-online.target
+
+[Service]
+ExecStart = /usr/local/bin/zun-api
+User = zun
+
+[Install]
+WantedBy = multi-user.target
