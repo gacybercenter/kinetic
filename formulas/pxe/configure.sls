@@ -5,11 +5,6 @@ apache2_service:
   service.running:
     - name: apache2
 
-git lfs install --force:
-  cmd.run:
-    - creates:
-      - /root/.gitconfig
-
 https://github.com/ipxe/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
