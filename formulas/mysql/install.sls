@@ -5,7 +5,7 @@ include:
 ## Patch that works around https://github.com/GeorgiaCyber/kinetic/issues/51
 ## Remove this when its officially merged
 
-{% if grains['saltversion'] == 3000 %}
+{% if grains['saltversion'] == '3000' %}
 {% for patch in ["modules/mysql.py", "states/mysql_user.py"] %}
 {{ grains['saltpath'] }}/{{ patch }}:
   file.managed:
