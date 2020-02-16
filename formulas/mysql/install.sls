@@ -51,8 +51,8 @@ python36-mysql:
 {% for patch in ["modules/mysql.py", "states/mysql_user.py"] %}
 /usr/lib/python3.6/site-packages/salt/{{ patch }}:
   file.managed:
-    source: https://raw.githubusercontent.com/saltstack/salt/5bfd67c13ec75f912f3b57ac33bf42d38b6dc47d/salt/{{ patch }}
-    skip_verify: True
+    - source: https://raw.githubusercontent.com/saltstack/salt/5bfd67c13ec75f912f3b57ac33bf42d38b6dc47d/salt/{{ patch }}
+    - skip_verify: True
 {% endfor %}
 
 {% endif %}
