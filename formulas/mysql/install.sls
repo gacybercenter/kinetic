@@ -52,7 +52,7 @@ python36-mysql:
   pkg.installed:
     - reload_module: True
 
-/usr/lib/python3.6/site-packages/salt:
+/usr/lib/python3.6/site-packages/salt/:
   file.patch:
     - source: https://patch-diff.githubusercontent.com/raw/saltstack/salt/pull/56174.diff
     - strip: 2
