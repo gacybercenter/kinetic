@@ -34,15 +34,15 @@ python3-pymysql:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-/usr/lib/python3.6/site-packages:
-  file.patch:
-    - source: https://patch-diff.githubusercontent.com/raw/saltstack/salt/pull/56174.patch
-
 mariadb-server-galera:
   pkg.installed
 
 mariadb:
   pkg.installed
+
+patch:
+  pkg.installed:
+    - reload_modules: True
 
 python36-PyMySQL:
   pkg.installed:
@@ -51,5 +51,9 @@ python36-PyMySQL:
 python36-mysql:
   pkg.installed:
     - reload_module: True
+
+/usr/lib/python3.6/site-packages:
+  file.patch:
+    - source: https://patch-diff.githubusercontent.com/raw/saltstack/salt/pull/56174.patch
 
 {% endif %}
