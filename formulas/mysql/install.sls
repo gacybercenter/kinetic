@@ -34,6 +34,10 @@ python3-pymysql:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
+/usr/lib/python3.6/site-packages:
+  file.patch:
+    - source: https://patch-diff.githubusercontent.com/raw/saltstack/salt/pull/56174.patch
+
 mariadb-server-galera:
   pkg.installed
 
