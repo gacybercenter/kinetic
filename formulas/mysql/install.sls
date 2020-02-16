@@ -52,10 +52,10 @@ python36-mysql:
   pkg.installed:
     - reload_module: True
 
-/usr/lib/python3.6/site-packages/salt:
+/usr/lib/python3.6/site-packages/salt/modules/mysql.py:
   file.patch:
     - source: https://patch-diff.githubusercontent.com/raw/saltstack/salt/pull/56174.diff
-    - strip: 1
+    - strip: 2
     - skip_verify: True
     - require:
       - pkg: patch
