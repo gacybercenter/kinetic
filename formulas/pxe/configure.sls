@@ -5,7 +5,7 @@ apache2_service:
   service.running:
     - name: apache2
 
-git lfs install:
+git lfs install --force:
   cmd.run:
     - creates:
       - /root/.gitconfig
