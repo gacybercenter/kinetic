@@ -55,7 +55,6 @@ python36-mysql:
 /usr/lib/python3.6/site-packages/salt/:
   file.patch:
     - source: https://patch-diff.githubusercontent.com/raw/saltstack/salt/pull/56174.diff
-    - strip: 1
     - skip_verify: True
     - require:
       - pkg: patch
