@@ -40,10 +40,6 @@ mariadb-server-galera:
 mariadb:
   pkg.installed
 
-patch:
-  pkg.installed:
-    - reload_modules: True
-
 python36-PyMySQL:
   pkg.installed:
     - reload_modules: True
@@ -52,11 +48,11 @@ python36-mysql:
   pkg.installed:
     - reload_module: True
 
-/usr/lib/python3.6/site-packages/salt/:
-  file.patch:
-    - source: https://patch-diff.githubusercontent.com/raw/saltstack/salt/pull/56174.diff
-    - skip_verify: True
-    - require:
-      - pkg: patch
+{% for patch in (modules/mysql.py, states/mysql_user.py) %}
+/usr/lib/python3.6/site-packages/salt/{{ patch }}:
+  file.managed:
+    source: https://raw.githubusercontent.com/saltstack/salt/5bfd67c13ec75f912f3b57ac33bf42d38b6dc47d/salt/{{ patch }}
+    skip_verify: True
+{% endfor %}
 
 {% endif %}
