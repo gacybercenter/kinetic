@@ -15,6 +15,7 @@ horizon_packages:
       - python3-sahara-dashboard
       - python3-manila-ui
       - git
+      - build-essential
     - reload_modules: True
 
 magnum_latest:
@@ -74,6 +75,7 @@ horizon_packages:
       - openstack-magnum-ui
       - openstack-sahara-ui
       - openstack-manila-ui
+      - gcc
       - git
     - reload_modules: True
 
