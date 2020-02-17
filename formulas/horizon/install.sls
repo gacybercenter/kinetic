@@ -16,6 +16,7 @@ horizon_packages:
       - python3-manila-ui
       - git
       - build-essential
+      - python3-dev
     - reload_modules: True
 
 magnum_latest:
@@ -77,6 +78,8 @@ horizon_packages:
       - openstack-manila-ui
       - gcc
       - git
+      - python-devel
+      - python3-devel
     - reload_modules: True
 
 {% endif %}
