@@ -87,12 +87,6 @@ horizon_packages:
 
 ## zun-ui installation routine
 
-## This is a consequence of zun requiring python3+, RDO still using python2, and django requiring python3 explicitly
-## Remote this when ussuri comes out or python3 support gets added
-python -m pip install --upgrade pip setuptools && touch /root/pip_updated:
-  cmd.run:
-    - creates: /root/pip_updated
-
 zun_latest:
   git.latest:
     - name: https://opendev.org/openstack/zun-ui.git
@@ -146,6 +140,12 @@ compress-static-zun:
       - cmd: collect-static-zun
 
 {% elif grains['os_family'] == 'RedHat' %}
+
+## This is a consequence of zun requiring python3+, RDO still using python2, and django requiring python3 explicitly
+## Remote this when ussuri comes out or python3 support gets added
+python -m pip install --upgrade pip setuptools && touch /root/pip_updated:
+  cmd.run:
+    - creates: /root/pip_updated
 
 zun_ui_requirements:
   cmd.run:
