@@ -10,6 +10,11 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
     - creates:
       - /etc/salt/pki/master/minions/pxe
 
+/etc/salt/master.d/transport.conf:
+  file.managed:
+    - contents: |
+        transport: {{ pillar ['salt_transport'] }}
+
 /etc/salt/master.d/gitfs_pillar.conf:
   file.managed:
     - contents: |
