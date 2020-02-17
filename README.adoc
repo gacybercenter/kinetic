@@ -7,7 +7,7 @@ Kinetic is a deployment and maintenance tool for Cyber Ranges originally develop
 Kinetic is currently in the middle of being converted from a bespoke, single environment solution to a framework - it is not ready for production and pointing your environment at our master branch will break
 everything.  The creation of the version 1.0 tag will indicate that kinetic is production ready.
 
-Kinetic is designed to make the deployment and maintenance of cyber ranges easy and code-driven.  Every piece of the infrastructure is 100% reproducible and zero touch after your initial 
+Kinetic is designed to make the deployment and maintenance of cyber ranges easy and code-driven.  Every piece of the infrastructure is 100% reproducible and zero touch after your initial
 out-of-the-box hardware config (UEFI, etc.).  You configure your local pillar appropriately, start the salt orchestrate runner, and you're done.
 
 The various heat templates that power scenarios all use a standard naming convention.  Sticking to this naming convention (instances, networks, images, etc.) mean that templates can be
@@ -46,7 +46,7 @@ The freshly compiled version will be located at /var/www/html/ipxe.efi on your p
 
 ## Recommendations
 
-Kinetic is desiged to be used on larger environments that have multiples of the same type of hardware performing the same purpose, e.g. your purchasing department bought 50 compute nodes, 50 storage nodes, 
+Kinetic is desiged to be used on larger environments that have multiples of the same type of hardware performing the same purpose, e.g. your purchasing department bought 50 compute nodes, 50 storage nodes,
 and 6 controller nodes at the same time, so they all have the same configuration amongst themselves.  That's not to say that it *can't* be used with hardware that you find randomly and slap together, its
 just going to be a pain.
 
@@ -59,7 +59,7 @@ While the cache is optional, it is *highly* recommended that you use it.  Trying
 
 On your configured Debian host, run:
 ```
-curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |  
+curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
 bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }} -k {{ key }}
 ```
 
