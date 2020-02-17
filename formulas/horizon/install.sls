@@ -86,7 +86,7 @@ horizon_packages:
 ## Remote this when ussuri comes out or python3 support gets added
 python -m pip install --upgrade pip setuptools && touch /root/pip_updated:
   cmd.run:
-    - create: /root/pip_updated
+    - creates: /root/pip_updated
 
 zun_latest:
   git.latest:
