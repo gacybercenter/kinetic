@@ -207,6 +207,17 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         export OS_AUTH_URL={{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
         export OS_IDENTITY_API_VERSION=3
 
+/srv/dynamic_pillar/adminrc.ps1:
+  file.managed:
+    - contents: |
+        $env:OS_USERNAME = "admin"
+        $env:OS_PASSWORD = "{{ salt['pillar.get']('openstack:admin_password', 'TBD') }}"
+        $env:OS_USER_DOMAIN_NAME = "Default"
+        $env:OS_PROJECT_NAME = "admin"
+        $env:OS_PROJECT_DOMAIN_NAME = "Default"
+        $env:OS_AUTH_URL = "{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}"
+        $env:OS_IDENTITY_API_VERSION = "3"
+
 /etc/salt/master:
   file.managed:
     - contents: ''
