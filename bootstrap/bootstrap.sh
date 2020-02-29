@@ -5,7 +5,7 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-if [ $# -lt 8 ]; then
+if [ $# -lt 10 ]; then
   echo 1>&2 "$0: not enough arguments"
   exit 2
 fi
