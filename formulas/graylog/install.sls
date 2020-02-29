@@ -32,7 +32,7 @@ update_packages_elastic:
 graylog_repo:
   pkgrepo.managed:
     - humanname: Graylog
-    - name: deb https://packages.graylog2.org/repo/debian/ stable 3.1
+    - name: deb https://packages.graylog2.org/repo/debian/ stable 3.2
     - file: /etc/apt/sources.list.d/graylog.list
     - key_url: https://packages.graylog2.org/repo/debian/keyring.gpg
 
