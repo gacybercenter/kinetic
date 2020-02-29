@@ -67,7 +67,7 @@ Large, simultaneous operations will almost certainly get you throttled upstream 
 On your configured Debian host, run:
 ```
 curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
-bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }} -k {{ key }}
+bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }} -k {{ key }} -t {{ transport }}
 ```
 
 where
@@ -93,7 +93,7 @@ bash -s -- -i mgmt \
 -f https://github.com/GeorgiaCyber/kinetic.git \
 -p https://github.com/GeorgiaCyber/kinetic-pillar-sample.git \
 -k "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKw+cBx9BBKcoXKLxMLVoGCD7znZqBjnMkaIipAikQJ"
--t "zeromq"
+-t "tcp"
 ```
 
 As the script completes, you should see a message stating that both pxe and salt have been created from their respective config.xml files by virsh.

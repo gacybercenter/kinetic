@@ -10,7 +10,7 @@ if [ $# -lt 8 ]; then
   exit 2
 fi
 
-while getopts ":i:f:p:k:" opt; do
+while getopts ":i:f:p:k:t:" opt; do
   case ${opt} in
     i )
       interface=$OPTARG
@@ -26,7 +26,7 @@ while getopts ":i:f:p:k:" opt; do
       ;;
     t )
       transport=$OPTARG
-        ;;
+      ;;
     \? )
       echo "Invalid option: $OPTARG." 1>&2
       exit
