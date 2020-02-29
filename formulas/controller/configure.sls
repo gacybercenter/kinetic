@@ -3,15 +3,17 @@ include:
   - formulas/common/base
   - formulas/common/networking
 
-{% if 'raid' in pillar['hosts']['controller']['kvm_disk_config']['type'] %}
-{% set raid_level = pillar['hosts']['controller']['kvm_disk_config']['type'].split('raid') %}
+{% set type = grains['type'] %}
+
+{% if 'raid' in pillar['hosts'][type]['kvm_disk_config']['type'] %}
+{% set raid_level = pillar['hosts'][type]['kvm_disk_config']['type'].split('raid') %}
 
 kvm_array:
   raid.present:
     - name: /dev/md/kvm_array
     - level: {{ raid_level[1] }}
     - devices:
-    {% for device in pillar['hosts']['controller']['kvm_disk_config']['members'] %}
+    {% for device in pillar['hosts'][type]['kvm_disk_config']['members'] %}
       - {{ device }}
     {% endfor %}
     - chunk: 512
@@ -55,8 +57,8 @@ fs:
     - require:
       - fs
 
-{% elif 'standard' in pillar['hosts']['controller']['kvm_disk_config']['type'] %}
-{% set target_device = pillar['hosts']['controller']['kvm_disk_config']['members'][0] %}
+{% elif 'standard' in pillar['hosts'][type]['kvm_disk_config']['type'] %}
+{% set target_device = pillar['hosts'][type]['kvm_disk_config']['members'][0] %}
 {% if target_device == "rootfs" %}
 
 /kvm:
