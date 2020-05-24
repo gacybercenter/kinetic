@@ -1,11 +1,11 @@
 include:
   - /formulas/pxe/install
 
-mine.send:
+metal inventory:
   module.run:
-    - kwargs:
-        mine_function: metal.gather
-        network: {{ pillar['networking']['subnets']['oob'] }}
+    - mine.send:
+      - mine_function: metal.gather
+      - {{ pillar['networking']['subnets']['oob'] }}
 
 apache2_service:
   service.running:
