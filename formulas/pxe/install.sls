@@ -21,7 +21,7 @@ python3-pyinotify:
   pkg.installed:
     - reload_modules: True
 
-salt-minion_watch:
+salt-minion_watch_pyinotify:
   service.running:
     - name: salt-minion
     - watch:

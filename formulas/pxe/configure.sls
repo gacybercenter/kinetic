@@ -123,8 +123,9 @@ php7.3_module:
   {% endif %}
 {% endfor %}
 
-salt-minion:
+salt-minion_mine_watch:
   service.running:
+    - name: salt-minion
     - watch:
       - file: /etc/salt/minion.d/mine_functions.conf
     - order: last
