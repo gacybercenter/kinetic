@@ -1,11 +1,10 @@
 include:
   - /formulas/pxe/install
 
-metal.gather:
+mine.send:
   module.run:
-    - name: metal.gather
-    - network: {{ pillar['networking']['subnets']['oob'] }}
-    - parallel: True
+    - name: mine.send
+      - network: {{ pillar['networking']['subnets']['oob'] }}
 
 apache2_service:
   service.running:
