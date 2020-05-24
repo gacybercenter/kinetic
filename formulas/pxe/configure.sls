@@ -1,6 +1,11 @@
 include:
   - /formulas/pxe/install
 
+metal.gather:
+  module.run:
+    - name: metal.gather
+    - network: {{ pillar['networking']['subnets']['oob'] }}
+
 apache2_service:
   service.running:
     - name: apache2
