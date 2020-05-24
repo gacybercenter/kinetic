@@ -17,8 +17,19 @@
 {% if style == 'physical' %}
 {% set api_pass = pillar['bmc_password'] %}
 {% set api_user = pillar['api_user'] %}
-{% set api_host = target %}
-
+  {% if salt['pillar.get']('global', False) == True %}
+    {% set api_host = target %}
+  {% else %}
+    {% set api_host_uuid = salt.saltutil.runner('mine.get',tgt=target,fun='host_uuid') %}
+    {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='metal.gather') | dictsort() %}
+      {% for id in ids %}
+        {% if api_host_uud == id %}
+          {% set api_host = ids[id] %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  {% endif %}
+      
 set_bootonce_host:
   salt.function:
     - name: redfish.set_bootonce
