@@ -4,7 +4,7 @@ include:
 mine.send:
   module.run:
     - mine.send:
-      - metal.gather
+      - name: metal.gather
       - network: {{ pillar['networking']['subnets']['oob'] }}
 
 apache2_service:
