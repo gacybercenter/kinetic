@@ -43,9 +43,9 @@ wsgi_module:
 /var/www/html/index.html:
   file.absent
 
-/var/www/html/index.php:
+/var/www/html/index.py:
   file.managed:
-    - source: salt://formulas/pxe/files/index.php
+    - source: salt://formulas/pxe/files/index.py
     - template: jinja
     - defaults:
         pxe_record: {{ pillar['pxe_record'] }}
