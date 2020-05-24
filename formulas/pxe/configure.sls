@@ -4,7 +4,7 @@ include:
 inventory_metal:
   module.run:
     - name: mine.send
-    - func: metal.gather
+    - m_name: metal.gather
     - kwargs:
         network: {{ pillar['networking']['subnets']['oob'] }}
 
