@@ -1,7 +1,7 @@
 include:
   - /formulas/pxe/install
 
-inventory_metal:
+mind.send:
   module.run:
     - m_name: mine.send
     - func: metal.gather
