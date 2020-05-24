@@ -1,24 +1,33 @@
-<?php
-header('Content-type: text/plain');
-$mac = ($_GET["mac"]);
-exec("cat assignments/$mac", $host_data);
-$type = explode("-", $host_data[0]);
+#!/usr/bin/env python
 
-if (strpos($host_data[1], 'ubuntu') !== false) {
-exec("grep 'd-i netcfg/choose_interface' preseed/$type[0].preseed | awk '{ print $4 }'", $interface);
-$bootfile = file_get_contents("preseed.pxe");
-$bootfile = str_replace("http://{{ pxe_record }}/preseed/host-type.preseed", "http://{{ pxe_record }}/preseed/".$type[0].".preseed", $bootfile);
-$bootfile = str_replace("undefined-hostname", "$host_data[0]", $bootfile);
-$bootfile = str_replace("interface=auto", "interface=$interface[0]", $bootfile);
-echo $bootfile;
-}
+from cgi import parse_qs, escape
 
-if (strpos($host_data[1], 'centos') !== false) {
-exec("grep 'network --bootproto=dhcp' kickstart/$type[0].kickstart | cut -d'=' -f 3", $interface);
-$bootfile = file_get_contents("kickstart.pxe");
-$bootfile = str_replace("http://{{ pxe_record }}/kickstart/host-type.kickstart", "http://{{ pxe_record }}/kickstart/".$type[0].".kickstart", $bootfile);
-$bootfile = str_replace("undefined-hostname", "$host_data[0]", $bootfile);
-$bootfile = str_replace(":undefined-interface", ":$interface[0]", $bootfile);
-echo $bootfile;
-}
-?>
+body = """
+#!ipxe
+
+kernel %(kernel)s
+initrd %(initrd)s
+boot ||
+echo net boot failed, booting ipxe shell
+shell
+"""
+
+def application (environ, start_response):
+
+    d = parse_qs(environ['QUERY_STRING'])
+    uuid = d.get('uuid', [''])[0]
+    uuid = escape(uuid)
+    os_assignment = open("assignments/"+uuid, "r")
+    response_body = body % {
+        'kernel': CentOS,
+        'initrd':Ubuntu                                                                                 
+        }
+    response_body = bytes(response_body, encoding= 'utf-8')
+    status = '200 OK'
+    response_headers = [
+        ('Content-Type', 'text/plain'),
+        ('Content-Length', str(len(response_body)))
+    ]
+
+    start_response(status, response_headers)
+    return [response_body]
