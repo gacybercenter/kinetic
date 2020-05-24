@@ -3,7 +3,7 @@ include:
 
 mine.send:
   module.run:
-    - name: mine.send
+    - name: mine.send:
       - network: {{ pillar['networking']['subnets']['oob'] }}
 
 apache2_service:
