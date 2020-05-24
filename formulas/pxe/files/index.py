@@ -5,8 +5,8 @@ from cgi import parse_qs, escape
 body = """
 #!ipxe
 
-kernel %(kernel)s
-initrd %(initrd)s
+echo %(kernel)s
+echo %(initrd)s
 boot ||
 echo net boot failed, booting ipxe shell
 shell
