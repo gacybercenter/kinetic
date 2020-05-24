@@ -3,8 +3,8 @@ include:
 
 inventory_metal:
   module.run:
-    - name: mine.send
-    - m_name: metal.gather
+    - m_name: mine.send
+    - func: metal.gather
     - kwargs:
         network: {{ pillar['networking']['subnets']['oob'] }}
 
