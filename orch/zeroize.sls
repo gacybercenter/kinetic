@@ -24,7 +24,7 @@
     {% set api_host = api_host_dict[target] %}
   {% endif %}
 
-zeroize_host:
+set_bootonce_host:
   salt.function:
     - name: redfish.set_bootonce
     - tgt: pxe
@@ -37,10 +37,12 @@ zeroize_host:
 
 reboot_host:
   salt.function:
-    - name: cmd.run
-    - tgt: salt
-    - arg:
-      - salt-call ipmi.set_power boot wait=5 api_host={{ api_host }} api_user={{ api_user }} api_pass={{ api_pass }}
+    - name: redfish.reset_host
+    - tgt: pxe
+    - kwarg:
+      - username: {{ api_user }}
+      - password: {{ api_pass }}
+      - host: {{ api_host }}
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}

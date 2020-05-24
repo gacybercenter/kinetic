@@ -37,3 +37,15 @@ def set_bootonce(host, username, password, mode, target):
                                   })
     session.logout()
     return response.text
+
+def reset_host(host, username, password):
+    session = login(host, username, password)
+    status = session.get("/redfish/v1/Systems/1", None)
+    if json.loads(status.text)['PowerState'] == "On":
+      response = session.post("/redfish/v1/Systems/1/Actions/ComputerSystem.Reset/", \
+                              body={"ResetType":"ForceRestart"})
+    if json.loads(status.text)['PowerState'] == "Off":
+      response = session.post("/redfish/v1/Systems/1/Actions/ComputerSystem.Reset/", \
+                              body={"ResetType":"On"})
+    session.logout()
+    return response.text
