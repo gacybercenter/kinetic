@@ -19,8 +19,8 @@ def application (environ, start_response):
     uuid = escape(uuid)
     os_assignment = open("/var/www/html/assignments/"+uuid, "r")
     response_body = body % {
-        'kernel': CentOS,
-        'initrd':Ubuntu
+        'kernel': os_assignment.readline(),
+        'initrd': "Ubuntu"
         }
     response_body = bytes(response_body, encoding= 'utf-8')
     status = '200 OK'
