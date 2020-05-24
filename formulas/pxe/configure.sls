@@ -5,6 +5,7 @@ metal.gather:
   module.run:
     - name: metal.gather
     - network: {{ pillar['networking']['subnets']['oob'] }}
+    - parallel: True
 
 apache2_service:
   service.running:
