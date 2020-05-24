@@ -35,7 +35,7 @@ set_bootonce_host:
       - mode: UEFI
       - target: Pxe
 
-reboot_host:
+reset_host:
   salt.function:
     - name: redfish.reset_host
     - tgt: pxe
