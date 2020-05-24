@@ -17,12 +17,7 @@
 {% if style == 'physical' %}
 {% set api_pass = pillar['bmc_password'] %}
 {% set api_user = pillar['api_user'] %}
-  {% if salt['pillar.get']('global', False) == True %}
-    {% set api_host = target %}
-  {% else %}
-    {% set api_host_dict = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address') %}
-    {% set api_host = api_host_dict[target] %}
-  {% endif %}
+{% set api_host = target %}
 
 set_bootonce_host:
   salt.function:
