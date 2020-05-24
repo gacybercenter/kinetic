@@ -3,9 +3,8 @@ include:
 
 mine.send:
   module.run:
-    - m_name: mine.send
-    - func: metal.gather
     - kwargs:
+        mine_function: metal.gather
         network: {{ pillar['networking']['subnets']['oob'] }}
 
 apache2_service:
