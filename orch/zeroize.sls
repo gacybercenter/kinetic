@@ -26,10 +26,14 @@
 
 zeroize_host:
   salt.function:
-    - name: cmd.run
-    - tgt: salt
-    - arg:
-      - salt-call ipmi.raw_command netfn=0x00 command=0x08 data=[0x05,0xa0,0x04,0x00,0x00,0x00] api_host={{ api_host }} api_user={{ api_user }} api_pass={{ api_pass }}
+    - name: redfish.set_bootonce
+    - tgt: pxe
+    - kwarg:
+      - username: {{ api_user }}
+      - password: {{ api_pass }}
+      - host: {{ api_host }}
+      - mode: UEFI
+      - target: Pxe
 
 reboot_host:
   salt.function:

@@ -25,3 +25,15 @@ def get_uuid(host, username, password):
     response = session.get("/redfish/v1/Systems/1/", None)
     session.logout()
     return json.loads(response.text)['UUID']
+
+def set_bootonce(host, username, password, mode, target):
+    session = login(host, username, password)
+    response = session.patch("/redfish/v1/Systems/1/", \
+                             body={"Boot":{
+                                     "BootSourceOverrideMode" : mode,
+                                     "BootSourceOverrideTarget" : target,
+                                     "BootSourceOverrideEnabled" : "Once"
+                                    }
+                                  })
+    session.logout()
+    return response.text
