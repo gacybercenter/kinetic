@@ -124,8 +124,9 @@ php7.3_module:
 {% endfor %}
 
 salt-minion_mine_watch:
-  service.running:
-    - name: salt-minion
+  cmd.run:
+    - name: 'salt-call service.restart salt-minion'
+    - bg: True
     - watch:
       - file: /etc/salt/minion.d/mine_functions.conf
     - order: last
