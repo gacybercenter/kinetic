@@ -25,15 +25,9 @@ pxe_setup:
 # global lets the state know that all hosts are being rotated
 {% for uuid in pillar['hosts'][type]['uuids'] %}
   {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='metal.gather') | dictsort() %}
-test_{{host}}:
-  salt.function:
-    - name: cmd.run
-    - tgt: salt
-    - arg:
-      - echo {{ host }}
     {% for id in ids %}
       {% if uuid == id %}
-zeroize_{{ bmc_address }}:
+zeroize_{{ uuid }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
@@ -44,7 +38,7 @@ zeroize_{{ bmc_address }}:
           global: True
     - parallel: true
 
-sleep_{{ bmc_address }}:
+sleep_{{ uuid }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
