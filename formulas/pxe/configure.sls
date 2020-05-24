@@ -5,6 +5,7 @@ metal inventory:
   module.run:
     - mine.send:
       - name: metal.gather
+      - mine_function: metal.gather
       - network: {{ pillar['networking']['subnets']['oob'] }}
 
 apache2_service:
