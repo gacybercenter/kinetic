@@ -1,6 +1,6 @@
 ## This is a collapsed zeroize state that needs to check for two things:
-## Is this state called globally?  If so, nuke everything.  If not, nuke the one things
-## Is this device physical, virtual, container, or something else?  The code path depends on this answers
+## Is this state called globally?  If so, nuke everything.  If not, nuke the one thing
+## Is this device physical, virtual, container, or something else?  The code path depends on this answer
 
 ## set local target variable based on pillar data.
 ## Set type either by calculating it based on target hostname, or use the type value itself
@@ -15,7 +15,7 @@
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
-{% set api_pass = pillar['ipmi_password'] %}
+{% set api_pass = pillar['bmc_password'] %}
 {% set api_user = pillar['api_user'] %}
   {% if salt['pillar.get']('global', False) == True %}
     {% set api_host = target %}
