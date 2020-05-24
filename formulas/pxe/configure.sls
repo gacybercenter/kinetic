@@ -127,6 +127,6 @@ salt-minion_mine_watch:
   cmd.run:
     - name: 'salt-call service.restart salt-minion'
     - bg: True
-    - watch:
+    - onchanges:
       - file: /etc/salt/minion.d/mine_functions.conf
     - order: last
