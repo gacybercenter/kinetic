@@ -7,7 +7,7 @@ python3-tornado:
 apache2:
   pkg.installed
 
-php7.3:
+libapache2-mod-wsgi-py3:
   pkg.installed
 
 git:
