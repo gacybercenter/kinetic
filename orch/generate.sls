@@ -52,7 +52,10 @@ sleep_{{ bmc_address }}:
 # type is the type of host (compute, controller, etc.)
 # target is the mac address of the target host on what ipxe considers net0
 # global lets the state know that all hosts are being rotated
-{% for mac in pillar['hosts'][type]['macs'] %}
+{% for uuid in pillar['hosts'][type]['uuids'] %}
+  {% for host, ids in salt['mine.get']('pxe', 'metal.gather') | dictsort() %}
+    {% for id in ids %}
+      {% if uuid == id %}
 provision_{{ mac }}:
   salt.runner:
     - name: state.orchestrate
@@ -60,9 +63,13 @@ provision_{{ mac }}:
         mods: orch/provision
         pillar:
           type: {{ type }}
-          target: {{ mac }}
+          target: {{ id }}
           global: True
     - parallel: true
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endfor %}    
 
 sleep_{{ mac }}:
   salt.function:
