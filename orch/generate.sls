@@ -23,9 +23,6 @@ pxe_setup:
 # target is the ip address of the bmc on the target host OR the hostname if zeroize
 # is going to be called independently
 # global lets the state know that all hosts are being rotated
-    {% set api_host_dict = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address') %}
-    {% set api_host = api_host_dict[target] %}
-
 {% for uuid in pillar['hosts'][type]['uuids'] %}
   {% for host, ids in salt.saltutil.runner('mine.get','tgt=pxe',fun='metal.gather') %}
 test_{{host}}:
