@@ -1,7 +1,12 @@
 include:
   - /formulas/pxe/install
 
-{{ salt['mine.send'](mine_function=metal.gather, pillar['networking']['subnets']['oob']) }}
+/etc/salt/minion.d/mine_functions:
+  file.managed:
+    - contents: |
+        mine_functions:
+          metal.gather:
+            network: {{ pillar ['networking']['subnets']['oob'] }}
 
 apache2_service:
   service.running:
