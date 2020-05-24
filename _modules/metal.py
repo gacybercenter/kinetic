@@ -15,8 +15,8 @@ def gather(network):
         if tcp_connect(ip, 443) == 0:
             redfish_status = requests.get('https://'+str(ip)+'/redfish/v1', timeout=0.5, verify=False)
             if re.match('^.*("RedfishVersion":"1.0.1").*$', redfish_status.text) != None:
-              body = json.loads(redfish_status.text)
-              redfish_endpoints[body['UUID']] = str(ip)
+                body = json.loads(redfish_status.text)
+                redfish_endpoints[body['UUID']] = str(ip)
     return redfish_endpoints
 
 def tcp_connect(ip, port):
