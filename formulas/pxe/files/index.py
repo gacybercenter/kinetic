@@ -17,10 +17,10 @@ def application (environ, start_response):
     d = parse_qs(environ['QUERY_STRING'])
     uuid = d.get('uuid', [''])[0]
     uuid = escape(uuid)
-    os_assignment = open("assignments/"+uuid, "r")
+    os_assignment = open("/var/www/html/assignments/"+uuid, "r")
     response_body = body % {
         'kernel': CentOS,
-        'initrd':Ubuntu                                                                                 
+        'initrd':Ubuntu
         }
     response_body = bytes(response_body, encoding= 'utf-8')
     status = '200 OK'
