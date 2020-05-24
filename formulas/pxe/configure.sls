@@ -1,11 +1,7 @@
 include:
   - /formulas/pxe/install
 
-metal inventory:
-  module.run:
-    - mine.send:
-      - name: metal.gather
-      - {{ pillar['networking']['subnets']['oob'] }}
+{{ salt['mine.send'](metal.gather, pillar['networking']['subnets']['oob']) }}
 
 apache2_service:
   service.running:
