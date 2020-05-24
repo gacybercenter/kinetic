@@ -24,6 +24,12 @@ pxe_setup:
 # is going to be called independently
 # global lets the state know that all hosts are being rotated
 {% for uuid in pillar['hosts'][type]['uuids'] %}
+test_{{uuid}}:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - arg:
+      - echo {{ uuid }}
   {% for host, ids in salt['mine.get']('pxe', 'metal.gather') | dictsort() %}
     {% for id in ids %}
       {% if uuid == id %}
