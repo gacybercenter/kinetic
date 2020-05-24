@@ -56,7 +56,7 @@ sleep_{{ bmc_address }}:
   {% for host, ids in salt['mine.get']('pxe', 'metal.gather') | dictsort() %}
     {% for id in ids %}
       {% if uuid == id %}
-provision_{{ mac }}:
+provision_{{ id }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
@@ -69,7 +69,7 @@ provision_{{ mac }}:
       {% endif %}
     {% endfor %}
   {% endfor %}
-{% endfor %}    
+{% endfor %}
 
 sleep_{{ mac }}:
   salt.function:
