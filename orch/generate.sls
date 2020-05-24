@@ -66,10 +66,6 @@ provision_{{ id }}:
           target: {{ id }}
           global: True
     - parallel: true
-      {% endif %}
-    {% endfor %}
-  {% endfor %}
-{% endfor %}
 
 sleep_{{ mac }}:
   salt.function:
@@ -77,6 +73,9 @@ sleep_{{ mac }}:
     - tgt: 'salt'
     - arg:
       - sleep 1
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
 {% endfor %}
 
 {% elif style == 'virtual' %}
