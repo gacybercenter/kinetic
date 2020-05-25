@@ -14,7 +14,7 @@ def login(database = '/srv/salt/addresses.db'):
     return connection
 
 def show_tables():
-    login()
+    connection = sqlite3.connect('/srv/salt/addresses.db')
     cursor = connection.cursor()
     cursor.execute('''SHOW TABLES''')
     connection.close()
