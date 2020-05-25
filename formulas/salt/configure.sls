@@ -19,7 +19,7 @@ addresses:
       - host TEXT
 
 {% for address in pillar['networking']['subnets']['sfe'] | network_hosts %}
-address_population:
+address_population_{{ address }}:
   sqlite3.row_present:
     - db: /srv/salt/addresses.db
     - table: addresses
@@ -27,7 +27,7 @@ address_population:
     - data:
         email: {{ address }}
         network: sfe
-    - update: True    
+    - update: True
 
 {% endfor %}
 
