@@ -25,3 +25,9 @@ def create_table(table):
     cursor.execute('''CREATE TABLE '''+table+'''
                       (address text, host text)''')
     connection.close()
+
+def drop_table(table):
+    connection = login()
+    cursor = connection.cursor()
+    cursor.execute('''DROP TABLE '''+table)
+    connection.close()
