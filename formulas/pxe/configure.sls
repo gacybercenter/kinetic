@@ -10,10 +10,6 @@ include:
             - {{ pillar ['api_user'] }}
             - {{ pillar ['bmc_password'] }}
 
-/etc/apache2/sites-available/wsgi.conf:
-  file.managed:
-    - source: salt://formulas/pxe/files/wsgi.conf
-
 https://github.com/ipxe/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
@@ -35,9 +31,16 @@ create_efi_module:
     - cwd: /var/www/html/ipxe/src/
     - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
 
+/var/www/html/index.html:
+  file.absent
+
 Disable default site:
   apache_site.disabled:
     - name: default
+
+/etc/apache2/sites-available/wsgi.conf:
+  file.managed:
+    - source: salt://formulas/pxe/files/wsgi.conf
 
 wsgi_site:
   apache_site.enabled:
@@ -46,18 +49,6 @@ wsgi_site:
 wsgi_module:
   apache_module.enabled:
     - name: wsgi
-
-apache2_service:
-  service.running:
-    - name: apache2
-    - watch:
-      - apache_module: wsgi_module
-      - file: /etc/apache2/sites-available/wsgi.conf
-      - apache_site: wsgi
-      - apache_site: default
-
-/var/www/html/index.html:
-  file.absent
 
 /var/www/html/index.py:
   file.managed:
@@ -128,6 +119,15 @@ apache2_service:
     {% endif %}
   {% endif %}
 {% endfor %}
+
+apache2_service:
+  service.running:
+    - name: apache2
+    - watch:
+      - apache_module: wsgi_module
+      - file: /etc/apache2/sites-available/wsgi.conf
+      - apache_site: wsgi
+      - apache_site: default
 
 salt-minion_mine_watch:
   cmd.run:
