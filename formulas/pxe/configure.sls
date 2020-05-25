@@ -10,9 +10,12 @@ include:
             - {{ pillar ['api_user'] }}
             - {{ pillar ['bmc_password'] }}
 
-apache2_service:
-  service.running:
-    - name: apache2
+/etc/apache2/sites-available/wsgi.conf:
+  file.managed:
+    - source: salt://formulas/pxe/files/wsgi.conf
+
+
+
 
 https://github.com/ipxe/ipxe.git:
   git.latest:
@@ -38,9 +41,26 @@ create_efi_module:
     - cwd: /var/www/html/ipxe/src/
     - creates: /srv/tftp/ipxe.efi
 
+Disable default site:
+  apache_site.disabled:
+    - name: default
+
+wsgi_site:
+  apache_site.enabled:
+    - name: wsgi
+
 wsgi_module:
   apache_module.enabled:
     - name: wsgi
+
+apache2_service:
+  service.running:
+    - name: apache2
+    - watch:
+      - apache_module: wsgi_module
+      - file: /etc/apache2/sites-available/wsgi.conf
+      - apache_site: wsgi
+      - apache_site: default
 
 /var/www/html/index.html:
   file.absent
@@ -55,20 +75,6 @@ wsgi_module:
           {% for type in pillar['hosts'] %}
           {{ type }}_interface = ""{{ pillar['hosts'][type]['interface'] }}"
           {%- endfor %}
-
-/var/www/html/preseed.pxe:
-  file.managed:
-    - source: salt://formulas/pxe/files/preseed.pxe
-    - template: jinja
-    - defaults:
-        pxe_record: {{ pillar['pxe_record'] }}
-
-/var/www/html/kickstart.pxe:
-  file.managed:
-    - source: salt://formulas/pxe/files/kickstart.pxe
-    - template: jinja
-    - defaults:
-        pxe_record: {{ pillar['pxe_record'] }}
 
 /var/www/html/assignments:
   file.directory
