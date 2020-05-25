@@ -24,8 +24,10 @@ assign_uuid_to_{{ target }}:
     - tgt: 'pxe'
     - arg:
       - /var/www/html/assignments/{{ target }}
+      - {{ type }}
       - {{ type }}-{{ uuid }}
       - {{ pillar['hosts'][type]['os'] }}
+      - {{ pillar['hosts'][type]['interface'] }}
 
 {% elif style == 'virtual' %}
 {% set spawning = salt['pillar.get']('spawning', '0') %}
@@ -128,7 +130,7 @@ apply_networking_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/common/networking
-    - failhard: True      
+    - failhard: True
     - require:
       - apply_base_{{ type }}-{{ uuid }}
 
