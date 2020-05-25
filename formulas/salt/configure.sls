@@ -5,6 +5,11 @@ include:
   file.directory:
     - makedirs: true
 
+/srv/salt/addresses.db:
+  file.managed:
+    - require:
+      - file: /srv/salt
+
 mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
   cmd.run:
     - creates:
