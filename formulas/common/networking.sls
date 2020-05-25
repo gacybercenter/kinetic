@@ -12,7 +12,7 @@ ifwatch:
   grains.present:
     - value:
 {% for interface in pillar[srv][grains['type']]['networks']['interfaces'] %}
-      - {{ interface }}
+      - {{ pillar[srv][grains['type']]['networks']['interfaces'][interface]['interface'] }}
 {% endfor %}
 
 NetworkManager:
