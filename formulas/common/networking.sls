@@ -30,11 +30,11 @@ systemd-networkd:
 /etc/systemd/network/{{ network }}.network:
   file.managed:
     - contents: |
-      [Match]
-      Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+        [Match]
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
 
-      [Network]
-      DHCP=yes
-      
+        [Network]
+        DHCP=yes
+
   {% endif %}
 {% endfor %}
