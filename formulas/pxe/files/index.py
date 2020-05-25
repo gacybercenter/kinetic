@@ -2,7 +2,7 @@
 
 from cgi import parse_qs, escape
 
-body = """
+body = """\
 #!ipxe
 
 shell
