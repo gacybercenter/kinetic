@@ -14,9 +14,6 @@ include:
   file.managed:
     - source: salt://formulas/pxe/files/wsgi.conf
 
-
-
-
 https://github.com/ipxe/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
@@ -31,15 +28,12 @@ https://github.com/ipxe/ipxe.git:
     - defaults:
         pxe_record: {{ pillar['pxe_record'] }}
 
-/srv/tftp:
-  file.directory
-
 create_efi_module:
   cmd.run:
     - name: |
-        make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe && cp bin-x86_64-efi/ipxe.efi /srv/tftp/
+        make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
     - cwd: /var/www/html/ipxe/src/
-    - creates: /srv/tftp/ipxe.efi
+    - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
 
 Disable default site:
   apache_site.disabled:
