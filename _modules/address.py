@@ -3,3 +3,25 @@
 ## issue of dhcp relay/calculated addresses
 
 import sqlite3
+
+__virtualname__ = 'address'
+
+def __virtual__():
+    return __virtualname__
+
+def login(database = '/srv/salt/addresses.db'):
+    connection = sqlite3.connect(database)
+    return connection
+
+def show_tables():
+    login()
+    cursor = connection.cursor()
+    cursor.execute('''SHOW TABLES''')
+    connection.close()
+
+def create_table(table):
+    login()
+    cursor = connection.cursor()
+    cursor.execute('''CREATE TABLE '''+table+'''
+                      (address text, host text)''')
+    connection.close()
