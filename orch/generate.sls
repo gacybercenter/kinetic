@@ -38,7 +38,7 @@ zeroize_{{ uuid }}:
           global: True
     - parallel: true
 
-sleep_{{ uuid }}:
+sleep_zeroize_{{ uuid }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
@@ -67,7 +67,7 @@ provision_{{ uuid }}:
           global: True
     - parallel: true
 
-sleep_{{ uuid }}:
+sleep_provision_{{ uuid }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
