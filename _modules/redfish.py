@@ -1,10 +1,27 @@
 ## work with metal inventory based on data pulled from pillar
-import redfish, json
+## work with metal inventory based on data pulled from pillar
+import redfish, json, ipaddress, socket, requests, urllib3, re
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+socket.setdefaulttimeout(0.1)
 
 __virtualname__ = 'redfish'
 
 def __virtual__():
     return __virtualname__
+
+def tcp_connect(ip, port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((str(ip), port))
+    sock.close()
+    return result
+
+def check_version(ip):
+    redfish_version = requests.get('https://'+str(ip)+'/redfish/v1', timeout=0.5, verify=False)
+    if re.match('^.*("RedfishVersion":"1.0.1").*$', redfish_version.text) != None:
+        return True
+    else:
+        return False
 
 def login(host, username, password):
     session = redfish.redfish_client(base_url="https://"+host, \
@@ -13,6 +30,18 @@ def login(host, username, password):
                                      default_prefix="/redfish/v1")
     session.login(auth="session")
     return session
+
+def gather_endpoints(network, username, password):
+    redfish_endpoints = {}
+    for ip in ipaddress.IPv4Network(network):
+        if tcp_connect(ip, 443) == 0:
+            if check_version(ip) == True:
+                session = login(str(ip), username, password)
+                redfish_status = session.get('/redfish/v1/Systems/1', None)
+                body = json.loads(redfish_status.text)
+                print(body['UUID'])
+                redfish_endpoints[body['UUID']] = str(ip)
+    return redfish_endpoints
 
 def get_system(host, username, password):
     session = login(host, username, password)
