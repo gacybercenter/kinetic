@@ -1,6 +1,6 @@
 ## This is a collapsed zeroize state that needs to check for two things:
-## Is this state called globally?  If so, nuke everything.  If not, nuke the one things
-## Is this device physical, virtual, container, or something else?  The code path depends on this answers
+## Is this state called globally?  If so, nuke everything.  If not, nuke the one thing
+## Is this device physical, virtual, container, or something else?  The code path depends on this answer
 
 ## set local target variable based on pillar data.
 ## Set type either by calculating it based on target hostname, or use the type value itself
@@ -15,28 +15,41 @@
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
-{% set api_pass = pillar['ipmi_password'] %}
+{% set api_pass = pillar['bmc_password'] %}
 {% set api_user = pillar['api_user'] %}
   {% if salt['pillar.get']('global', False) == True %}
     {% set api_host = target %}
   {% else %}
-    {% set api_host_dict = salt.saltutil.runner('mine.get',tgt=target,fun='bmc_address') %}
-    {% set api_host = api_host_dict[target] %}
+    {% set api_host_uuid = salt.saltutil.runner('mine.get',tgt=target,fun='host_uuid') %}
+    {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints') | dictsort() %}
+      {% for id in ids %}
+        {% if api_host_uud == id %}
+          {% set api_host = ids[id] %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
   {% endif %}
 
-zeroize_host:
+set_bootonce_host:
   salt.function:
-    - name: cmd.run
-    - tgt: salt
+    - name: redfish.set_bootonce
+    - tgt: pxe
     - arg:
-      - salt-call ipmi.raw_command netfn=0x00 command=0x08 data=[0x05,0xa0,0x04,0x00,0x00,0x00] api_host={{ api_host }} api_user={{ api_user }} api_pass={{ api_pass }}
+      - {{ api_host }}
+      - {{ api_user }}
+      - {{ api_pass }}
+      - UEFI
+      - Pxe
 
-reboot_host:
+reset_host:
   salt.function:
-    - name: cmd.run
-    - tgt: salt
+    - name: redfish.reset_host
+    - tgt: pxe
     - arg:
-      - salt-call ipmi.set_power boot wait=5 api_host={{ api_host }} api_user={{ api_user }} api_pass={{ api_pass }}
+      - {{ api_host }}
+      - {{ api_user }}
+      - {{ api_pass }}
+
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}

@@ -1,9 +1,14 @@
 include:
   - /formulas/pxe/install
 
-apache2_service:
-  service.running:
-    - name: apache2
+/etc/salt/minion.d/mine_functions.conf:
+  file.managed:
+    - contents: |
+        mine_functions:
+          redfish.gather_endpoints:
+            - {{ pillar ['networking']['subnets']['oob'] }}
+            - {{ pillar ['api_user'] }}
+            - {{ pillar ['bmc_password'] }}
 
 https://github.com/ipxe/ipxe.git:
   git.latest:
@@ -19,43 +24,42 @@ https://github.com/ipxe/ipxe.git:
     - defaults:
         pxe_record: {{ pillar['pxe_record'] }}
 
-/srv/tftp:
-  file.directory
-
 create_efi_module:
   cmd.run:
     - name: |
-        make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe && cp bin-x86_64-efi/ipxe.efi /srv/tftp/
+        make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
     - cwd: /var/www/html/ipxe/src/
-    - creates: /srv/tftp/ipxe.efi
-
-php7.3_module:
-  apache_module.enabled:
-    - name: php7.3
+    - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
 
 /var/www/html/index.html:
   file.absent
 
-/var/www/html/index.php:
-  file.managed:
-    - source: salt://formulas/pxe/files/index.php
-    - template: jinja
-    - defaults:
-        pxe_record: {{ pillar['pxe_record'] }}
+Disable default site:
+  apache_site.disabled:
+    - name: default
 
-/var/www/html/preseed.pxe:
+/etc/apache2/sites-available/wsgi.conf:
   file.managed:
-    - source: salt://formulas/pxe/files/preseed.pxe
-    - template: jinja
-    - defaults:
-        pxe_record: {{ pillar['pxe_record'] }}
+    - source: salt://formulas/pxe/files/wsgi.conf
 
-/var/www/html/kickstart.pxe:
+wsgi_site:
+  apache_site.enabled:
+    - name: wsgi
+
+wsgi_module:
+  apache_module.enabled:
+    - name: wsgi
+
+/var/www/html/index.py:
   file.managed:
-    - source: salt://formulas/pxe/files/kickstart.pxe
+    - source: salt://formulas/pxe/files/index.py
     - template: jinja
     - defaults:
         pxe_record: {{ pillar['pxe_record'] }}
+        interfaces: |-
+          {% for type in pillar['hosts'] %}
+          {{ type }}_interface = ""{{ pillar['hosts'][type]['interface'] }}"
+          {%- endfor %}
 
 /var/www/html/assignments:
   file.directory
@@ -115,3 +119,20 @@ php7.3_module:
     {% endif %}
   {% endif %}
 {% endfor %}
+
+apache2_service:
+  service.running:
+    - name: apache2
+    - watch:
+      - apache_module: wsgi_module
+      - file: /etc/apache2/sites-available/wsgi.conf
+      - apache_site: wsgi
+      - apache_site: default
+
+salt-minion_mine_watch:
+  cmd.run:
+    - name: 'salt-call service.restart salt-minion'
+    - bg: True
+    - onchanges:
+      - file: /etc/salt/minion.d/mine_functions.conf
+    - order: last

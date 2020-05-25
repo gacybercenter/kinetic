@@ -27,7 +27,7 @@ reboot
 timezone {{ zone }} --ntpservers={{ ntp_server }}
 
 # Use network installation
-url --url="http://mirror.centos.org/centos/7/os/x86_64" --proxy={{ proxy }}
+url --url="http://mirror.centos.org/centos/8/BaseOS/x86_64/os" --proxy={{ proxy }}
 
 ## Disk
 # System bootloader configuration
@@ -40,7 +40,6 @@ zerombr
 %packages
 curl
 openssh-server
-ipmitool
 %end
 
 %pre
@@ -65,8 +64,6 @@ echo "logvol swap --vgname vg0 --fstype swap --size=8192 --name lv1" >> /tmp/par
 
 %post
 #!/bin/bash
-echo ipmi_devintf >> /etc/modules;
-echo ipmi_si >> /etc/modules;
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
-/bin/sh /tmp/bootstrap_salt.sh -x python3 -X -i $(hostname) -A {{ master_record }} -j '{ "transport": "{{ transport }}" }'
+/bin/sh /tmp/bootstrap_salt.sh -x python3 -X -i $(hostname) -A {{ master_record }}
 %end

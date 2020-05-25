@@ -23,47 +23,59 @@ pxe_setup:
 # target is the ip address of the bmc on the target host OR the hostname if zeroize
 # is going to be called independently
 # global lets the state know that all hosts are being rotated
-{% for bmc_address in pillar['hosts'][type]['ipmi_addresses'] %}
-zeroize_{{ bmc_address }}:
+{% for uuid in pillar['hosts'][type]['uuids'] %}
+  {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints') | dictsort() %}
+    {% for id in ids %}
+      {% if uuid == id %}
+zeroize_{{ uuid }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
         mods: orch/zeroize
         pillar:
           type: {{ type }}
-          target: {{ bmc_address }}
+          target: {{ ids[id] }}
           global: True
     - parallel: true
 
-sleep_{{ bmc_address }}:
+sleep_zeroize_{{ uuid }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
     - arg:
       - sleep 1
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
 {% endfor %}
 
 # type is the type of host (compute, controller, etc.)
 # target is the mac address of the target host on what ipxe considers net0
 # global lets the state know that all hosts are being rotated
-{% for mac in pillar['hosts'][type]['macs'] %}
-provision_{{ mac }}:
+{% for uuid in pillar['hosts'][type]['uuids'] %}
+  {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints') | dictsort() %}
+    {% for id in ids %}
+      {% if uuid == id %}
+provision_{{ uuid }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
         mods: orch/provision
         pillar:
           type: {{ type }}
-          target: {{ mac }}
+          target: {{ id }}
           global: True
     - parallel: true
 
-sleep_{{ mac }}:
+sleep_provision_{{ uuid }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
     - arg:
       - sleep 1
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
 {% endfor %}
 
 {% elif style == 'virtual' %}

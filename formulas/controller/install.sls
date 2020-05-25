@@ -5,7 +5,6 @@ controller_packages:
       - genisoimage
       - mdadm
       - xfsprogs
-      - bridge-utils
       - haveged
     - reload_modules: true
 
@@ -28,6 +27,6 @@ controller_packages_rpm:
       - libvirt-python
       - libvirt-client
       - libvirt-daemon-kvm
-    - reload_modules: true          
+    - reload_modules: true
 
 {% endif %}
