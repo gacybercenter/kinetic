@@ -9,18 +9,18 @@ __virtualname__ = 'address'
 def __virtual__():
     return __virtualname__
 
-def login(database = '/srv/salt/addresses.db'):
+def login(database):
     connection = sqlite3.connect(database)
     return connection
 
 def show_tables():
     connection = sqlite3.connect('/srv/salt/addresses.db')
     cursor = connection.cursor()
-    cursor.execute('''SHOW TABLES''')
+    cursor.execute('''.tables''')
     connection.close()
 
 def create_table(table):
-    login()
+    login('/srv/salt/addresses.db')
     cursor = connection.cursor()
     cursor.execute('''CREATE TABLE '''+table+'''
                       (address text, host text)''')
