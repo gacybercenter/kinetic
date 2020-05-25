@@ -13,21 +13,16 @@ def login(database = '/srv/salt/addresses.db'):
     connection = sqlite3.connect(database)
     return connection
 
-def show_tables():
+def get_address(network, host):
     connection = login()
     cursor = connection.cursor()
-    cursor.execute('''SHOW TABLES''')
+    cursor.execute('''something''')
+    connection.commit()
     connection.close()
 
-def create_table(table):
+def release_address(address):
     connection = login()
     cursor = connection.cursor()
-    cursor.execute('''CREATE TABLE '''+table+'''
-                      (address text, host text)''')
-    connection.close()
-
-def drop_table(table):
-    connection = login()
-    cursor = connection.cursor()
-    cursor.execute('''DROP TABLE '''+table)
+    cursor.execute('''something''')
+    connection.commit()
     connection.close()
