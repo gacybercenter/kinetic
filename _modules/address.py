@@ -40,3 +40,10 @@ def release_all_host_addresses(host):
     cursor.execute("UPDATE addresses SET host=NULL WHERE host=?", h)
     connection.commit()
     connection.close()
+
+def release_all_addresses():
+    connection = login()
+    cursor = connection.cursor()
+    cursor.execute("UPDATE addresses SET host=NULL")
+    connection.commit()
+    connection.close()
