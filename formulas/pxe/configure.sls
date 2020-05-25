@@ -5,8 +5,10 @@ include:
   file.managed:
     - contents: |
         mine_functions:
-          metal.gather:
+          redfish.gather_endpoints:
             - {{ pillar ['networking']['subnets']['oob'] }}
+            - {{ pillar ['api_user'] }}
+            - {{ pillar ['bmc_password'] }}
 
 apache2_service:
   service.running:
