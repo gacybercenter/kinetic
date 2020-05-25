@@ -20,7 +20,7 @@ def application (environ, start_response):
     host_type = host_data.readline().strip()
     hostname_assignment = host_data.readline().strip()
     os_assignment = host_data.readline().strip()
-    interface_assignment = host_data.readline().strip()
+    interface = host_data.readline().strip()
 
     if os_assignment == "centos7":
         response_body = body % {
