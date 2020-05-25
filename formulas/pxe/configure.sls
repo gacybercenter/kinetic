@@ -51,9 +51,9 @@ wsgi_module:
     - template: jinja
     - defaults:
         pxe_record: {{ pillar['pxe_record'] }}
-        interfaces: |
+        interfaces: |-
           {% for type in pillar['hosts'] %}
-          {{ type }}_interface = {{ pillar['hosts'][type]['interface']}}
+          {{ type }}_interface = {{ pillar['hosts'][type]['interface'] }}
           {% endfor %}
 
 /var/www/html/preseed.pxe:
