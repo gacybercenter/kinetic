@@ -39,4 +39,3 @@ def release_all_host_addresses(host):
     cursor.execute("UPDATE addresses SET host=NULL WHERE host=?", h)
     connection.commit()
     connection.close()
-    return address
