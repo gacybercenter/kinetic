@@ -23,3 +23,18 @@ systemd-resolved:
 
 systemd-networkd:
   service.enabled
+
+{% for network in pillar[srv][grains['type']]['networks']['interfaces'] %}
+  {% if network == 'management' %}
+
+/etc/systemd/network/{{ network }}.network:
+  file.managed:
+    - contents: |
+      [Match]
+      Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+
+      [Network]
+      DHCP=yes
+      
+  {% endif %}
+{% endfor %}
