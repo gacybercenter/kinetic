@@ -28,7 +28,8 @@ def get_address(network, host):
 def release_single_address(address):
     connection = login()
     cursor = connection.cursor()
-    cursor.execute('''something''')
+    a = (address, )
+    cursor.execute("UPDATE addresses SET host=NULL WHERE address=?", a)
     connection.commit()
     connection.close()
 
