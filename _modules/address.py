@@ -16,9 +16,10 @@ def login(database = '/srv/salt/addresses.db'):
 def get_address(network, host):
     connection = login()
     cursor = connection.cursor()
-    cursor.execute('''something''')
-    connection.commit()
+    cursor.execute('SELECT address FROM addresses where host IS NULL')
+    address = cursor.fetchone()
     connection.close()
+    return address
 
 def release_address(address):
     connection = login()
