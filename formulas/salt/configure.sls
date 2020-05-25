@@ -25,7 +25,7 @@ address_population_{{ address }}:
     - table: addresses
     - where_sql: address='{{ address }}'
     - data:
-        email: {{ address }}
+        address: {{ address }}
         network: sfe
     - update: True
 
