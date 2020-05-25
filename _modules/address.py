@@ -20,7 +20,7 @@ def get_address(network, host):
     cursor.execute('SELECT address FROM addresses where host IS NULL AND network=?', n)
     address = cursor.fetchone()
     d = (host, str(address))
-    cursor.execute('UPDATE addresses SET host=? WHERE address=?', d)
+    cursor.execute("""UPDATE addresses SET host=? WHERE address=?""", d)
     connection.commit()
     connection.close()
     return address
