@@ -40,6 +40,7 @@ def gather_endpoints(network, username, password):
                 redfish_status = session.get('/redfish/v1/Systems/1', None)
                 body = json.loads(redfish_status.text)
                 redfish_endpoints[body['UUID']] = str(ip)
+                session.logout()
     return redfish_endpoints
 
 def get_system(host, username, password):
