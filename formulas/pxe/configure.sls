@@ -53,7 +53,7 @@ wsgi_module:
         pxe_record: {{ pillar['pxe_record'] }}
         interfaces: |
           {% for type in pillar['hosts'] %}
-          type
+          {{ type }}_interface = {{ pillar['hosts'][type]['interface']}}
           {% endfor %}
 
 /var/www/html/preseed.pxe:
