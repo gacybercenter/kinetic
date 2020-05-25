@@ -16,19 +16,27 @@ def login(database = '/srv/salt/addresses.db'):
 def get_address(network, host):
     connection = login()
     cursor = connection.cursor()
-    n = (network,)
+    n = (network)
     cursor.execute('SELECT address FROM addresses where host IS NULL AND network=?', n)
-    host = host
-    address = cursor.fetchone()
-    d = (str(host), str(address))
+    address = cursor.fetchone()[0]
+    d = (host, address)
     cursor.execute("UPDATE addresses SET host=? WHERE address=?", d)
     connection.commit()
     connection.close()
     return address
 
-def release_address(address):
+def release_single_address(address):
     connection = login()
     cursor = connection.cursor()
     cursor.execute('''something''')
     connection.commit()
     connection.close()
+
+def release_all_host_addresses(host):
+    connection = login()
+    cursor = connection.cursor()
+    h = (host, )
+    cursor.execute("UPDATE addresses SET host=NULL WHERE host=?", h)
+    connection.commit()
+    connection.close()
+    return address
