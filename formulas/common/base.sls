@@ -103,12 +103,14 @@ install_pip:
 
 pyroute2:
   pip.installed:
+    - bin_env: '/usr/bin/pip3'
     - require:
       - install_pip
     - reload_modules: True
 
 cryptography:
   pip.installed:
+    - bin_env: '/usr/bin/pip3'
     - require:
       - install_pip
     - reload_modules: True
