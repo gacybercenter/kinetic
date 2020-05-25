@@ -1,5 +1,4 @@
-## work with metal inventory based on data pulled from pillar
-## work with metal inventory based on data pulled from pillar
+## redfish module - primarily used for bootstrapping
 import redfish, json, ipaddress, socket, requests, urllib3, re
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
