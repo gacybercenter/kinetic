@@ -22,7 +22,7 @@ def application (environ, start_response):
     {{ interfaces }}
     if os_assignment == "centos7":
         response_body = body % {
-            'kernel': "http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/kickstart/"+hostname_assignment.split("-")[0]+".kickstart lang=en_US keymap=us ip=::::"+hostname_assignment+":"+interface+":dhcp initrd=initrd.img",
+            'kernel': "http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/kickstart/"+hostname_assignment.split("-")[0]+".kickstart lang=en_US keymap=us ip=::::"+hostname_assignment+":"hostname_assignment.split("-")[0]+interface+":dhcp initrd=initrd.img",
             'initrd': "http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/initrd.img"
             }
 
