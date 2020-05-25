@@ -65,5 +65,5 @@ echo "logvol swap --vgname vg0 --fstype swap --size=8192 --name lv1" >> /tmp/par
 %post
 #!/bin/bash
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
-/bin/sh /tmp/bootstrap_salt.sh -x python3 -X -i $(hostname) -A {{ master_record }} -j '{ "transport": "{{ transport }}" }'
+/bin/sh /tmp/bootstrap_salt.sh -x python3 -X -i $(hostname) -A {{ master_record }}
 %end
