@@ -51,6 +51,10 @@ wsgi_module:
     - template: jinja
     - defaults:
         pxe_record: {{ pillar['pxe_record'] }}
+        interfaces: |
+          {% for type in pillar['hosts'] %}
+          type
+          {% endfor %}
 
 /var/www/html/preseed.pxe:
   file.managed:

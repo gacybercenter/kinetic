@@ -17,13 +17,12 @@ def application (environ, start_response):
     uuid = d.get('uuid', [''])[0]
     uuid = escape(uuid)
     host_data = open("/var/www/html/assignments/"+uuid.upper(), "r")
-    hostname_assignment = host_data.readline()
-    os_assignment = host_data.readline()
-
-    if os_assignment == centos7:
-        host-type = hostname_assignment.split("-")[0]
+    hostname_assignment = host_data.readline().strip()
+    os_assignment = host_data.readline().strip()
+    {{ interfaces }}
+    if os_assignment == "centos7":
         response_body = body % {
-            'kernel': "http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/kickstart/"+host-type+".kickstart lang=en_US keymap=us ip=::::undefined-hostname:undefined-interface:dhcp initrd=initrd.img",
+            'kernel': "http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/kickstart/"+hostname_assignment.split("-")[0]+".kickstart lang=en_US keymap=us ip=::::"+hostname_assignment+":"+interface+":dhcp initrd=initrd.img",
             'initrd': "http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/initrd.img"
             }
 
