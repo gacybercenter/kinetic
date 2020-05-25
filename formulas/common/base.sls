@@ -101,6 +101,10 @@ install_pip:
       - python3-pip
     - reload_modules: True
 
+install_networkd:
+  pkg.installed:
+    - name: systemd-networkd
+
 pyroute2:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
