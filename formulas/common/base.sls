@@ -44,6 +44,10 @@ ifwatch:
 
   {% if salt['grains.get']('upgraded') != True %}
 
+install_networkd:
+  pkg.installed:
+    - name: systemd-networkd
+
 update_all:
   pkg.uptodate:
     - refresh: true
@@ -82,6 +86,10 @@ upgraded:
 
   {% if salt['grains.get']('upgraded') != True %}
 
+install_networkd:
+  pkg.installed:
+    - name: systemd-networkd
+
 update_all:
   pkg.uptodate:
     - refresh: true
@@ -100,10 +108,6 @@ install_pip:
     - pkgs:
       - python3-pip
     - reload_modules: True
-
-install_networkd:
-  pkg.installed:
-    - name: systemd-networkd
 
 pyroute2:
   pip.installed:
