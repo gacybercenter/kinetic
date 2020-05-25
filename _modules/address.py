@@ -19,6 +19,8 @@ def get_address(network, host):
     network = (network,)
     cursor.execute('SELECT address FROM addresses where host IS NULL AND network=?', network)
     address = cursor.fetchone()
+    host = (host,)
+    cursor.execute('UPDATE addresses SET host=?', host' WHERE address=?',address)
     connection.close()
     return address
 
