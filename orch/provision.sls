@@ -133,7 +133,7 @@ assign_secondary_addresses_{{ type }}-{{ uuid }}:
       - /root/secondary_addresses
 {% for network in pillar['hosts'][type]['networks']['interfaces'] %}
   {% if network in ['sfe','private','sbe'] %}
-      - {{ network }}-{{ salt['address.get_address'](network,type+'-'+uuid) }}
+      - {{ network }}-{{ salt.saltutil.runner('address.get_address',network,type+'-'+uuid) }}
   {% endif %}
 {% endfor %}
 
