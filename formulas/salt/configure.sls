@@ -18,7 +18,8 @@ addresses:
       - network TEXT
       - host TEXT
 
-{% for address in pillar['networking']['subnets']['sfe'] | network_hosts %}
+{% for network in [sfe, sbe, private] %}
+  {% for address in pillar['networking']['subnets'][network] | network_hosts %}
 address_population_{{ address }}:
   sqlite3.row_present:
     - db: /srv/salt/addresses.db
@@ -26,9 +27,9 @@ address_population_{{ address }}:
     - where_sql: address='{{ address }}'
     - data:
         address: {{ address }}
-        network: sfe
+        network: {{ network }}
     - update: True
-
+  {% endfor %}
 {% endfor %}
 
 mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
