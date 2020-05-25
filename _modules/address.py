@@ -21,6 +21,7 @@ def get_address(network, host):
     address = cursor.fetchone()
     d = (host, str(address))
     cursor.execute('UPDATE addresses SET host=? WHERE address=?', d)
+    connection.commit()
     connection.close()
     return address
 
