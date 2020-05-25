@@ -53,10 +53,10 @@ sleep_{{ uuid }}:
 # target is the mac address of the target host on what ipxe considers net0
 # global lets the state know that all hosts are being rotated
 {% for uuid in pillar['hosts'][type]['uuids'] %}
-  {% for host, ids in salt['mine.get']('pxe', 'metal.gather') | dictsort() %}
+  {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='metal.gather') | dictsort() %}
     {% for id in ids %}
       {% if uuid == id %}
-provision_{{ id }}:
+provision_{{ uuid }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
@@ -67,7 +67,7 @@ provision_{{ id }}:
           global: True
     - parallel: true
 
-sleep_{{ mac }}:
+sleep_{{ uuid }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
