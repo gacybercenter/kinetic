@@ -10,6 +10,14 @@ include:
     - require:
       - file: /srv/salt
 
+addresses:
+  sqlite3.table_present:
+    - db: /srv/salt/addresses.db
+    - schema:
+      - address: TEXT UNIQUE
+      - network: TEXT
+      - host: TEXT
+
 mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
   cmd.run:
     - creates:
