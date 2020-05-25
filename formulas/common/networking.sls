@@ -41,12 +41,6 @@ ifwatch:
 
 ## Loop through all defined interfaces in the pillar for this particular device
 {% for interface in pillar[srv][grains['type']]['networks']['interfaces'] %}
-{% if pillar[srv][grains['type']]['networks']['interfaces'][interface]['bridge'] == True %}
-bridge-utils_{{ interface }}:
-  pkg.installed:
-    - name: bridge-utils
-    - reload_modules: True
-{% endif %}
 ## Set short variable for easy reference
 {% set current_network = pillar[srv][grains['type']]['networks']['interfaces'][interface]['network'] %}
 
