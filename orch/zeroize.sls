@@ -21,7 +21,7 @@
     {% set api_host = target %}
   {% else %}
     {% set api_host_uuid = salt.saltutil.runner('mine.get',tgt=target,fun='host_uuid') %}
-    {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='metal.gather') | dictsort() %}
+    {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints') | dictsort() %}
       {% for id in ids %}
         {% if api_host_uud == id %}
           {% set api_host = ids[id] %}

@@ -24,7 +24,7 @@ pxe_setup:
 # is going to be called independently
 # global lets the state know that all hosts are being rotated
 {% for uuid in pillar['hosts'][type]['uuids'] %}
-  {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='metal.gather') | dictsort() %}
+  {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints') | dictsort() %}
     {% for id in ids %}
       {% if uuid == id %}
 zeroize_{{ uuid }}:
@@ -53,7 +53,7 @@ sleep_zeroize_{{ uuid }}:
 # target is the mac address of the target host on what ipxe considers net0
 # global lets the state know that all hosts are being rotated
 {% for uuid in pillar['hosts'][type]['uuids'] %}
-  {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='metal.gather') | dictsort() %}
+  {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints') | dictsort() %}
     {% for id in ids %}
       {% if uuid == id %}
 provision_{{ uuid }}:
