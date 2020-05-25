@@ -24,8 +24,8 @@ def application (environ, start_response):
 
     if os_assignment == "centos7":
         response_body = body % {
-            'kernel': "http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/kickstart/"+host_type+".kickstart lang=en_US keymap=us ip=::::"+hostname_assignment+":"+interface+":dhcp initrd=initrd.img",
-            'initrd': "http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/initrd.img"
+            'kernel': "kernel http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/kickstart/"+host_type+".kickstart lang=en_US keymap=us ip=::::"+hostname_assignment+":"+interface+":dhcp initrd=initrd.img",
+            'initrd': "initrd http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/initrd.img"
             }
 
     response_body = bytes(response_body, encoding= 'utf-8')
