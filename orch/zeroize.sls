@@ -29,26 +29,27 @@
       {% endfor %}
     {% endfor %}
   {% endif %}
-      
+
 set_bootonce_host:
   salt.function:
     - name: redfish.set_bootonce
     - tgt: pxe
-    - kwarg:
-      - username: {{ api_user }}
-      - password: {{ api_pass }}
-      - host: {{ api_host }}
-      - mode: UEFI
-      - target: Pxe
+    - arg:
+      - {{ api_host }}
+      - {{ api_user }}
+      - {{ api_pass }}
+      - UEFI
+      - Pxe
 
 reset_host:
   salt.function:
     - name: redfish.reset_host
     - tgt: pxe
     - kwarg:
-      - username: {{ api_user }}
-      - password: {{ api_pass }}
-      - host: {{ api_host }}
+      - {{ api_host }}
+      - {{ api_user }}
+      - {{ api_pass }}
+
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
