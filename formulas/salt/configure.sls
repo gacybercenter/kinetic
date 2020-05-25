@@ -18,7 +18,7 @@ addresses:
       - network TEXT
       - host TEXT
 
-{% for network in [sfe, sbe, private] %}
+{% for network in ['sfe', 'sbe', 'private'] %}
   {% for address in pillar['networking']['subnets'][network] | network_hosts %}
 address_population_{{ address }}:
   sqlite3.row_present:
