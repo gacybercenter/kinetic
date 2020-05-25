@@ -95,7 +95,7 @@ d-i apt-setup/multiverse                          boolean false
 
 d-i tasksel/first                                 multiselect standard
 
-d-i pkgsel/include                                string openssh-server curl ipmitool ifupdown
+d-i pkgsel/include                                string openssh-server curl ifupdown
 d-i pkgsel/update-policy                          select none
 
 d-i grub-installer/only_debian                    boolean true
@@ -104,7 +104,5 @@ d-i grub-installer/bootdev                        string default
 d-i finish-install/reboot_in_progress             note
 
 d-i preseed/late_command                          string                                                                                   \
-    in-target echo ipmi_devintf >> /etc/modules;                                                                                           \
-    in-target echo ipmi_si >> /etc/modules;                                                                                                \
     in-target curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;                                                           \
     in-target /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ master_record }} -j '{ "transport": "{{ transport }}" }'
