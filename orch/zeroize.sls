@@ -45,7 +45,7 @@ reset_host:
   salt.function:
     - name: redfish.reset_host
     - tgt: pxe
-    - kwarg:
+    - arg:
       - {{ api_host }}
       - {{ api_user }}
       - {{ api_pass }}
