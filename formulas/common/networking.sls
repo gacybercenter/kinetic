@@ -52,4 +52,4 @@ get_address_for_{{ network }}:
 
 /root/test2:
   file.managed:
-    - contents: {{ salt['address.client_get_address'](api, pillar['api']['user_password'], network, grains['host']) }}
+    - contents: {{ salt['address.client_get_address']('api', pillar['api']['user_password'], 'sfe', grains['host']) }}
