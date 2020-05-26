@@ -270,6 +270,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 
 salt-api_service:
   service.running:
+    - name: salt-api
     - enabled: True
     - watch:
       - file: /etc/salt/master
