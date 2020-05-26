@@ -7,7 +7,7 @@ create_api_cert:
     - creates:
       - /etc/pki/tls/certs/localhost.cert
       - /etc/pki/tls/certs/localhost.key
-      
+
 api:
   user.present:
     - password: {{ salt['pillar.get']('api:user_password', 'TBD') }}
@@ -268,14 +268,14 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
     - contents: ''
     - contents_newline: False
 
-salt-api:
+salt-api_service:
   service.running:
     - enabled: True
     - watch:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
 
-salt-master:
+salt-master_service:
   service.running:
     - watch:
       - file: /etc/salt/master
