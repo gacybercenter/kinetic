@@ -12,6 +12,8 @@ api:
   user.present:
     - password: {{ salt['pillar.get']('api:user_password', 'TBD') }}
     - hash_password: True
+    - require:
+      - file: /srv/dynamic_pillar/api.sls
 
 /srv/salt:
   file.directory:
