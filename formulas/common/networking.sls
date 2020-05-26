@@ -39,6 +39,10 @@ systemd-networkd:
 
         [Network]
         DHCP=yes
+  {% else %}
 
+test:
+  cmd.run:
+    - name: __slot__:salt:address.client_get_address(api, {{ pillar['api']['user_password'], sfe, foobar }})
   {% endif %}
 {% endfor %}
