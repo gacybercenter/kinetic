@@ -42,7 +42,8 @@ systemd-networkd:
   {% else %}
 
 test_{{ network }}:
-  file.managed:
-    - name: __slot__:salt:address.client_get_address(api, {{ pillar['api']['user_password'] }}, {{ network }}, foobar)
+  file.prepend:
+    - name: /root/test
+    - text: __slot__:salt:address.client_get_address(api, {{ pillar['api']['user_password'] }}, {{ network }}, foobar)
   {% endif %}
 {% endfor %}
