@@ -41,11 +41,15 @@ systemd-networkd:
         DHCP=yes
   {% else %}
 
+get_address_for_{{ network }}:
+  file.managed:
+    - name: /root/test
+    - replace: False
+    - contents: __slot__:salt:address.client_get_address(api, {{ pillar['api']['user_password'] }}, {{ network }}, {{ grains['host'] }})
 
   {% endif %}
 {% endfor %}
 
-whatever:
+/root/test2:
   file.managed:
-    - name: /root/test
-    - contents: __slot__:salt:address.client_get_address(api, {{ pillar['api']['user_password'] }}, sfe, foobar)
+    - contents: {{ salt['address.client_get_address'](api, pillar['api']['user_password'], network, grains['host']) }}
