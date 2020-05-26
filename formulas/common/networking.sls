@@ -46,9 +46,6 @@ systemd-networkd:
 {% endfor %}
 
 whatever:
-  module.run:
-    - name: address.client_get_address
-    - username: api
-    - password: {{ pillar ['api']['user_password'] }}
-    - network: sfe
-    - host: foobar
+  file.managed:
+    - name: /root/test
+    - contents: __slot__:salt:address.client_get_address(api, {{ pillar['api']['user_password'] }}, sfe, foobar)
