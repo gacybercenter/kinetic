@@ -47,8 +47,9 @@ systemd-networkd:
 
 address.client_get_address:
   module.run:
-    - address.client_get_address:
-      - username: api
-      - password: {{ pillar['api']['user_password']}}
-      - network: sfe
-      - host: foobar
+    - address.client_get_address
+    - args:
+       - api
+       - {{ pillar['api']['user_password']}}
+       - sfe
+       - foobar
