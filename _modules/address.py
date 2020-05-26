@@ -59,7 +59,7 @@ def rest_login(username, password):
     return token
 
 def client_get_address(username, password, network, host):
-    token = rest_login(username, password, address)
+    token = rest_login(username, password)
     lease = requests.post('https://salt:8000/', verify=False, headers={'X-Auth-Token':token}, json=[{
     'client': 'local',
     'tgt': 'salt',
