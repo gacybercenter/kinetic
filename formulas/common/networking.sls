@@ -50,6 +50,8 @@ get_address_for_{{ network }}:
   {% endif %}
 {% endfor %}
 
-/root/test2:
+{% for network in ['sfe','sbe','private'] %}
+/root/{{ network }}:
   file.managed:
-    - contents: {{ salt['address.client_get_address']('api', pillar['api']['user_password'], 'sfe', grains['host']) }}
+    - contents: {{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}
+{% endfor %}
