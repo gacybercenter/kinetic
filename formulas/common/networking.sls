@@ -45,13 +45,7 @@ get_address_for_{{ network }}:
   file.managed:
     - name: /root/test
     - replace: False
-    - contents: __slot__:salt:address.client_get_address(api, {{ pillar['api']['user_password'] }}, {{ network }}, {{ grains['host'] }})
+    - contents: {{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}
 
   {% endif %}
-{% endfor %}
-
-{% for network in ['sfe','sbe','private'] %}
-/root/{{ network }}:
-  file.managed:
-    - contents: {{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}
 {% endfor %}
