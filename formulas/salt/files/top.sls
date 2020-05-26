@@ -1,7 +1,8 @@
 base:
+  '*':
+    - api    
   'salt':
     - openstack
-    - api
   'compute*':
     - ceph
     - nova
