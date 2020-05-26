@@ -1,6 +1,18 @@
 include:
   - /formulas/salt/install
 
+create_api_cert:
+  cmd.run:
+    - name: "salt-call --local tls.create_self_signed_cert"
+    - creates:
+      - /etc/pki/tls/certs/localhost.cert
+      - /etc/pki/tls/certs/localhost.key
+      
+api:
+  user.present:
+    - password: {{ salt['pillar.get']('api:user_password', 'TBD') }}
+    - hash_password: False
+
 /srv/salt:
   file.directory:
     - makedirs: true
@@ -218,6 +230,12 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         openstack:
           admin_password: {{ salt['random.get_str']('64') }}
 
+/srv/dynamic_pillar/api.sls:
+  file.managed:
+    - contents: |
+        api:
+          user_password: {{ salt['random.get_str']('64') }}
+
 /srv/dynamic_pillar/top.sls:
   file.managed:
     - source: salt://formulas/salt/files/top.sls
@@ -249,6 +267,13 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
   file.managed:
     - contents: ''
     - contents_newline: False
+
+salt-api:
+  service.running:
+    - enabled: True
+    - watch:
+      - file: /etc/salt/master
+      - file: /etc/salt/master.d/*
 
 salt-master:
   service.running:

@@ -1,6 +1,9 @@
 python3-tornado:
   pkg.installed
 
+salt-api:
+  pkg.installed
+
 sqlite3:
   pkg.installed
 
