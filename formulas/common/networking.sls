@@ -50,3 +50,6 @@ whatever:
     - name: address.client_get_address
     - arg:
       - api
+      - {{ pillar ['api']['user_password'] }}
+      - sfe
+      - foobar
