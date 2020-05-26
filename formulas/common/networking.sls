@@ -41,12 +41,14 @@ systemd-networkd:
         DHCP=yes
   {% else %}
 
+
+  {% endif %}
+{% endfor %}
+
 address.client_get_address:
   module.run:
     - address.client_get_address:
       - api
       - {{ pillar['api']['user_password']}}
-      - {{ network }}
+      - sfe
       - foobar
-  {% endif %}
-{% endfor %}
