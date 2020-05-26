@@ -53,7 +53,7 @@ def release_all_addresses():
 
 def rest_login(username, password, address):
     login = requests.post('https://salt:8000/login', verify=False, json={'username':'api',
-                                                                         'password':''+password+',
+                                                                         'password':''+password+'',
                                                                          'eauth':'pam'})
     token = json.loads(login.text)["return"][0]["token"]
     return token
