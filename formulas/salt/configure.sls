@@ -5,7 +5,7 @@ create_api_cert:
   cmd.run:
     - name: "salt-call --local tls.create_self_signed_cert"
     - creates:
-      - /etc/pki/tls/certs/localhost.cert
+      - /etc/pki/tls/certs/localhost.crt
       - /etc/pki/tls/certs/localhost.key
 
 api:
