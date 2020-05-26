@@ -11,6 +11,7 @@ create_api_cert:
 api:
   user.present:
     - password: {{ salt['pillar.get']('api:user_password', 'TBD') }}
+    - hash_password: True
 
 /srv/salt:
   file.directory:
