@@ -48,5 +48,5 @@ systemd-networkd:
 whatever:
   module.run:
     - name: address.client_get_address
-    - m_username: api
-    - m_password: {{ pillar['api']['user_password'] }}
+    - arg:
+      - api
