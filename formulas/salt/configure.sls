@@ -1,6 +1,28 @@
 include:
   - /formulas/salt/install
 
+addresses:
+  sqlite3.table_present:
+    - db: /srv/salt/addresses.db
+    - schema:
+      - address TEXT UNIQUE
+      - network TEXT
+      - host TEXT
+
+{% for network in ['sfe', 'sbe', 'private'] %}
+  {% for address in pillar['networking']['subnets'][network] | network_hosts %}
+address_population_{{ address }}:
+  sqlite3.row_present:
+    - db: /srv/salt/addresses.db
+    - table: addresses
+    - where_sql: address='{{ address }}'
+    - data:
+        address: {{ address }}
+        network: {{ network }}
+    - update: True
+  {% endfor %}
+{% endfor %}
+
 create_api_cert:
   cmd.run:
     - name: "salt-call --local tls.create_self_signed_cert"
@@ -23,28 +45,6 @@ api:
   file.managed:
     - require:
       - file: /srv/salt
-
-addresses:
-  sqlite3.table_present:
-    - db: /srv/salt/addresses.db
-    - schema:
-      - address TEXT UNIQUE
-      - network TEXT
-      - host TEXT
-
-{% for network in ['sfe', 'sbe', 'private'] %}
-  {% for address in pillar['networking']['subnets'][network] | network_hosts %}
-address_population_{{ address }}:
-  sqlite3.row_present:
-    - db: /srv/salt/addresses.db
-    - table: addresses
-    - where_sql: address='{{ address }}'
-    - data:
-        address: {{ address }}
-        network: {{ network }}
-    - update: True
-  {% endfor %}
-{% endfor %}
 
 mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
   cmd.run:
