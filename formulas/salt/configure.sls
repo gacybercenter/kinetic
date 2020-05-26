@@ -279,6 +279,7 @@ salt-api_service:
 
 salt-master_service:
   service.running:
+    - name: salt-master
     - watch:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
