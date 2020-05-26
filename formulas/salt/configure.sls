@@ -232,6 +232,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 
 /srv/dynamic_pillar/api.sls:
   file.managed:
+    - replace: false
     - contents: |
         api:
           user_password: {{ salt['random.get_str']('64') }}
