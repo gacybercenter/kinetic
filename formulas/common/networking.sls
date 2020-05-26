@@ -45,12 +45,8 @@ systemd-networkd:
   {% endif %}
 {% endfor %}
 
-address.client_get_address:
+whatever:
   module.run:
     - name: address.client_get_address
     - m_username: api
-      foo:
-      - api
-      - {{ pillar['api']['user_password']}}
-      - sfe
-      - foobar
+    - m_password: {{ pillar['api']['user_password'] }}
