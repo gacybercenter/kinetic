@@ -41,7 +41,7 @@ systemd-networkd:
         DHCP=yes
   {% else %}
 
-address.client_get_address_{{ network }}:
+address.client_get_address:
   module.run:
     - address.client_get_address:
       - api
