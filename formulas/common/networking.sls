@@ -42,7 +42,7 @@ systemd-networkd:
   {% else %}
 
 test_{{ network }}:
-  test.echo:
+  file.managed:
     - name: __slot__:salt:address.client_get_address(api, {{ pillar['api']['user_password'] }}, {{ network }}, foobar)
   {% endif %}
 {% endfor %}
