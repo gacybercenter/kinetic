@@ -51,7 +51,7 @@ systemd-networkd:
   file.managed:
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network] }}_br
+        Name={{ network }}_br
 
         [Network]
         DHCP=yes
