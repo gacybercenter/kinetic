@@ -39,13 +39,24 @@ systemd-networkd:
 
         [Network]
         DHCP=yes
+
+  {% elif network =='public' %}
+
+do nothing:
+  test.nop
+  
   {% else %}
 
-get_address_for_{{ network }}:
+/etc/systemd/network/{{ network }}.network:
   file.managed:
-    - name: /root/test
     - replace: False
-    - contents: {{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}
+    - contents: |
+        [Match]
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+
+        [Network]
+        DHCP=no
+        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}
 
   {% endif %}
 {% endfor %}
