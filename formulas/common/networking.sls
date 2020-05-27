@@ -29,6 +29,53 @@ systemd-networkd:
 ###
 
 {% for network in pillar[srv][grains['type']]['networks']['interfaces'] %}
+  {% if pillar[srv][grains['type']]['networks']['interfaces'][network]['bridge'] == True %}
+/etc/systemd/network/{{ network }}.netdev:
+  file.managed:
+    - contents: |
+        [NetDev]
+        Name={{ network }}_br
+        Kind=bridge
+
+/etc/systemd/network/{{ network }}.network:
+  file.managed:
+    - contents: |
+        [Match]
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+
+        [Network]
+        Bridge={{ network }}_br
+
+    {% if network == 'management' %}
+/etc/systemd/network/{{ network }}_br.network:
+  file.managed:
+    - contents: |
+        [Match]
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+
+        [Network]
+        DHCP=yes
+
+    {% elif network =='public' %}
+
+do nothing:
+  test.nop
+
+    {% else %}
+/etc/systemd/network/{{ network }}_br.network:
+  file.managed:
+    - replace: False
+    - contents: |
+        [Match]
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+
+        [Network]
+        DHCP=no
+        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
+
+    {% endif %}
+  {% else %}
+
   {% if network == 'management' %}
 
 /etc/systemd/network/{{ network }}.network:
