@@ -28,8 +28,19 @@ systemd-networkd:
   service.enabled
 ###
 
+### Iterate through all networks
+### Management is always DHCP
+### Public is left up, but unconfigured`
+### Private, sfe, and sbe are assigned addresses from the sqlite db
 {% for network in pillar[srv][grains['type']]['networks']['interfaces'] %}
-  {% if pillar[srv][grains['type']]['networks']['interfaces'][network]['bridge'] == True %}
+### If the interface is a bridge, there are three different files
+### That need to be created
+### 1. a .netdev file creating the bridged interface object
+### 2. a .network file associating the physical interface with the bridged interface object
+### 3. a .network file configuring the bridge with address(es)
+###
+### 1. Create netdev
+  {% if salt['pillar.get']('srv:grains['type']:network:interfaces:'+network+':bridge, False) == True %}
 /etc/systemd/network/{{ network }}.netdev:
   file.managed:
     - contents: |
@@ -37,6 +48,7 @@ systemd-networkd:
         Name={{ network }}_br
         Kind=bridge
 
+### Associate bridge netdev with physical interface
 /etc/systemd/network/{{ network }}.network:
   file.managed:
     - contents: |
@@ -47,6 +59,7 @@ systemd-networkd:
         Bridge={{ network }}_br
 
     {% if network == 'management' %}
+### Configure interface
 /etc/systemd/network/{{ network }}_br.network:
   file.managed:
     - contents: |
