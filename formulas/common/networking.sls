@@ -112,7 +112,7 @@ systemd-networkd:
   file.managed:
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interfaces'][0] }}
 
         [Network]
         DHCP=no
@@ -124,7 +124,7 @@ systemd-networkd:
     - replace: False
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interfaces'][0] }}
 
         [Network]
         DHCP=no
