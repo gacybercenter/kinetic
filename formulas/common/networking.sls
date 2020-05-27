@@ -44,7 +44,7 @@ systemd-networkd:
 
 do nothing:
   test.nop
-  
+
   {% else %}
 
 /etc/systemd/network/{{ network }}.network:
@@ -56,7 +56,7 @@ do nothing:
 
         [Network]
         DHCP=no
-        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}
+        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}{{ pillar['networking']['subnets'][network].split('/')[1] }}
 
   {% endif %}
 {% endfor %}
