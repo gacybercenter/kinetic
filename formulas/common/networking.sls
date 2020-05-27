@@ -40,7 +40,7 @@ systemd-networkd:
 ### 3. a .network file configuring the bridge with address(es)
 ###
 ### 1. Create netdev
-  {% if salt['pillar.get'](srv+':'+grains['type']+':network:interfaces:'+network+':bridge', False) == True %}
+  {% if salt['pillar.get'](srv+':'+grains['type']+':networks:interfaces:'+network+':bridge', False) == True %}
 /etc/systemd/network/{{ network }}.netdev:
   file.managed:
     - contents: |
