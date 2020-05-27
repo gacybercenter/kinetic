@@ -11,8 +11,8 @@
 ifwatch:
   grains.present:
     - value:
-{% for interface in pillar[srv][grains['type']]['networks']['interfaces'] %}
-      - {{ pillar[srv][grains['type']]['networks']['interfaces'][interface]['interfaces'][0] }}
+{% for interface in pillar[srv][grains['type']]['networks'] %}
+      - {{ pillar[srv][grains['type']]['networks'][interfaces]['interfaces'][0] }}
 {% endfor %}
 ###
 
@@ -32,12 +32,12 @@ systemd-networkd:
 ### Management is always DHCP
 ### Public is left up, but unconfigured`
 ### Private, sfe, and sbe are assigned addresses from the sqlite db
-{% for network in pillar[srv][grains['type']]['networks']['interfaces'] %}
+{% for network in pillar[srv][grains['type']]['networks'] %}
 
 ### Test for number of physical interfaces listed.  If >1, it is a bond and a netdev
 ### for the bond should be created.  This is separate and a prereq for any
 ### other types of netdevs (e.g. bridge)
-  {% if salt['pillar.get'](srv+':'+grains['type']+':networks:interfaces:'+network+':interfaces') | length > 1 %}
+  {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
 /etc/systemd/network/{{ network }}_bond.netdev:
   file.managed:
     - contents: |
@@ -57,7 +57,7 @@ systemd-networkd:
 ### 3. a .network file configuring the bridge with address(es)
 ###
 ### 1. Create netdev
-  {% if salt['pillar.get'](srv+':'+grains['type']+':networks:interfaces:'+network+':bridge', False) == True %}
+  {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
 /etc/systemd/network/{{ network }}_br.netdev:
   file.managed:
     - contents: |
@@ -70,7 +70,7 @@ systemd-networkd:
   file.managed:
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interfaces'][0] }}
+        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
 
         [Network]
         Bridge={{ network }}_br
@@ -118,7 +118,7 @@ systemd-networkd:
   file.managed:
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interfaces'][0] }}
+        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
 
         [Network]
         DHCP=yes
@@ -129,7 +129,7 @@ systemd-networkd:
   file.managed:
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interfaces'][0] }}
+        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
 
         [Network]
         DHCP=no
@@ -141,7 +141,7 @@ systemd-networkd:
     - replace: False
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interfaces'][0] }}
+        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
 
         [Network]
         DHCP=no
