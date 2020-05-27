@@ -33,6 +33,22 @@ systemd-networkd:
 ### Public is left up, but unconfigured`
 ### Private, sfe, and sbe are assigned addresses from the sqlite db
 {% for network in pillar[srv][grains['type']]['networks']['interfaces'] %}
+
+### Test for number of physical interfaces listed.  If >1, it is a bond and a netdev
+### should be created
+  {% if salt['pillar.get'](srv+':'+grains['type']+':networks:interfaces:'+network+':interfaces') | length > 1 %}
+/etc/systemd/network/{{ network }}_bond.netdev:
+  file.managed:
+    - contents: |
+        [NetDev]
+        Name={{ network }}_bond
+        Kind=bond
+
+        [Bond]
+        Mode=802.3ad
+        MIIMonitorSec=100ms
+  {% endif %}
+
 ### If the interface is a bridge, there are three different files
 ### That need to be created
 ### 1. a .netdev file creating the bridged interface object
@@ -41,7 +57,7 @@ systemd-networkd:
 ###
 ### 1. Create netdev
   {% if salt['pillar.get'](srv+':'+grains['type']+':networks:interfaces:'+network+':bridge', False) == True %}
-/etc/systemd/network/{{ network }}.netdev:
+/etc/systemd/network/{{ network }}_br.netdev:
   file.managed:
     - contents: |
         [NetDev]
