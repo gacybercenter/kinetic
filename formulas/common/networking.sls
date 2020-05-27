@@ -58,8 +58,14 @@ systemd-networkd:
 
     {% elif network =='public' %}
 
-do nothing:
-  test.nop
+/etc/systemd/network/{{ network }}_br.network:
+  file.managed:
+    - contents: |
+        [Match]
+        Name={{ network }}_br
+
+        [Network]
+        DHCP=no
 
     {% else %}
 /etc/systemd/network/{{ network }}_br.network:
@@ -89,8 +95,14 @@ do nothing:
 
     {% elif network =='public' %}
 
-do nothing:
-  test.nop
+/etc/systemd/network/{{ network }}.network:
+  file.managed:
+    - contents: |
+        [Match]
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+
+        [Network]
+        DHCP=no
 
     {% else %}
 
