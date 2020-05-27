@@ -53,7 +53,7 @@ systemd-networkd:
   file.managed:
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interfaces'][0] }}
 
         [Network]
         Bridge={{ network }}_br
@@ -101,7 +101,7 @@ systemd-networkd:
   file.managed:
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interfaces'][0] }}
 
         [Network]
         DHCP=yes
