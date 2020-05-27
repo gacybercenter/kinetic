@@ -35,7 +35,8 @@ systemd-networkd:
 {% for network in pillar[srv][grains['type']]['networks']['interfaces'] %}
 
 ### Test for number of physical interfaces listed.  If >1, it is a bond and a netdev
-### should be created
+### for the bond should be created.  This is separate and a prereq for any
+### other types of netdevs (e.g. bridge)
   {% if salt['pillar.get'](srv+':'+grains['type']+':networks:interfaces:'+network+':interfaces') | length > 1 %}
 /etc/systemd/network/{{ network }}_bond.netdev:
   file.managed:
