@@ -76,7 +76,7 @@ do nothing:
     {% endif %}
   {% else %}
 
-  {% if network == 'management' %}
+    {% if network == 'management' %}
 
 /etc/systemd/network/{{ network }}.network:
   file.managed:
@@ -87,12 +87,12 @@ do nothing:
         [Network]
         DHCP=yes
 
-  {% elif network =='public' %}
+    {% elif network =='public' %}
 
 do nothing:
   test.nop
 
-  {% else %}
+    {% else %}
 
 /etc/systemd/network/{{ network }}.network:
   file.managed:
@@ -105,5 +105,6 @@ do nothing:
         DHCP=no
         Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
 
+    {% endif %}
   {% endif %}
 {% endfor %}
