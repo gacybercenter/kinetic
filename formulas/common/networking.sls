@@ -67,7 +67,7 @@ do nothing:
     - replace: False
     - contents: |
         [Match]
-        Name={{ pillar[srv][grains['type']]['networks']['interfaces'][network]['interface'] }}
+        Name={{ network }}_br
 
         [Network]
         DHCP=no
