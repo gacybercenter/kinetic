@@ -40,8 +40,13 @@ def expire_dead_hosts():
     connection = login()
     cursor = connection.cursor()
     cursor.execute("SELECT host FROM addresses WHERE host IS NOT NULL")
-    leases = cursor.fetchall()
+    all_leases = cursor.fetchall()
     minions = os.listdir('/etc/salt/pki/master/minions')
+    for minion in minions:
+        m = (minion, )
+        cursor.execute("SELECT host FROM addresses WHERE host=?", m)
+        minion_leases = cursor.fetchall()
+        updated_list = [i for i in all_leases if not in minion_leases]
     connection.commit()
     connection.close()
     return minions
