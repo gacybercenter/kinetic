@@ -52,8 +52,8 @@ def expire_dead_hosts():
     connection.commit()
     connection.close()
     for host in working_list:
-        release_all_host_addresses(str(host))
-    return working_list[0].keys()
+        release_all_host_addresses(str(host[0]))
+    return working_list
 
 def release_all_host_addresses(host):
     connection = login()
