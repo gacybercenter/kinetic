@@ -66,7 +66,5 @@ echo "logvol swap --vgname vg0 --fstype swap --size=8192 --name lv1" >> /tmp/par
 #!/bin/bash
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
 /bin/sh /tmp/bootstrap_salt.sh -x python3 -i $(hostname) -A {{ master_record }}
-echo "master_tries: 5" > /etc/salt/minion.d/master_tries.conf
-echo "acceptance_wait_time_max: 10" > /etc/salt/minion.d/acceptance_wait_time_max.conf
 echo "random_startup_delay: 10" > /etc/salt/minion.d/random_startup_delay.conf
 %end
