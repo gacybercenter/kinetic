@@ -51,9 +51,11 @@ def expire_dead_hosts():
     working_list = list(set(working_list))
     for host in working_list:
         release_all_host_addresses(host)
+    cursor.execute("SELECT host FROM addresses WHERE host IS NOT NULL")
+    remaining_leases = cursor.fetchall()
     connection.commit()
     connection.close()
-    return
+    return remaining_leases
 
 def release_all_host_addresses(host):
     connection = login()
