@@ -40,7 +40,6 @@ zerombr
 %packages
 curl
 openssh-server
-systemd-networkd
 %end
 
 %pre
