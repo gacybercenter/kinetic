@@ -5,7 +5,7 @@
 ## as functions focused on getting those leases issued to clients
 ## in a usable format
 
-import sqlite3, requests, json
+import sqlite3, requests, json, os
 
 __virtualname__ = 'address'
 
@@ -41,9 +41,10 @@ def expire_dead_hosts():
     cursor = connection.cursor()
     cursor.execute("SELECT host FROM addresses WHERE host IS NOT NULL")
     leases = cursor.fetchall()
+    minions = os.listdir(/etc/salt/pki/master/minions)
     connection.commit()
     connection.close()
-    return leases
+    return minions
 
 def release_all_host_addresses(host):
     connection = login()
