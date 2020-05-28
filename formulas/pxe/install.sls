@@ -14,9 +14,6 @@ git:
   pkg.installed:
     - reload_modules: True
 
-uuid-runtime:
-  pkg.installed
-
 python3-pyinotify:
   pkg.installed:
     - reload_modules: True
