@@ -43,10 +43,7 @@ def expire_dead_hosts():
     leases = cursor.fetchall()
     connection.commit()
     connection.close()
-    if leases is None:
-        return "No active leases in database"
-    else:
-        return leases
+    return leases
 
 def release_all_host_addresses(host):
     connection = login()
