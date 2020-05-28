@@ -67,5 +67,4 @@ echo "logvol swap --vgname vg0 --fstype swap --size=8192 --name lv1" >> /tmp/par
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
 /bin/sh /tmp/bootstrap_salt.sh -x python3 -i $(hostname) -A {{ master_record }}
 sed -i '/^ExecStart=/a ExecStartPre=\/bin\/sleep 10' /usr/lib/systemd/system/salt-minion.service
-
 %end
