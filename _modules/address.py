@@ -39,7 +39,8 @@ def release_single_address(address):
 def expire_dead_hosts():
     connection = login()
     cursor = connection.cursor()
-    leases = cursor.execute("SELECT host FROM addresses WHERE host IS NOT NULL")
+    cursor.execute("SELECT host FROM addresses WHERE host IS NOT NULL")
+    leases = cursor.fetchall()
     connection.commit()
     connection.close()
     if leases is None:
