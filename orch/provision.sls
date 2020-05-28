@@ -61,7 +61,7 @@ wait_for_minion_first_start_{{ type }}-{{ uuid }}:
     - name: salt/minion/{{ type }}-{{ uuid }}/start
     - id_list:
       - {{ type }}-{{ uuid }}
-    - timeout: 60
+    - timeout: 300
     - require:
       - accept_minion_{{ type }}-{{ uuid }}
 
