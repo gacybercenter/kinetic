@@ -49,7 +49,7 @@ def expire_dead_hosts():
         updated_list = [i for i in all_leases if i not in minion_leases]
     connection.commit()
     connection.close()
-    return all_leases
+    return updated_list
 
 def release_all_host_addresses(host):
     connection = login()
