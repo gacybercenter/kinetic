@@ -46,7 +46,7 @@ def expire_dead_hosts():
         m = (minion, )
         cursor.execute("SELECT host FROM addresses WHERE host=?", m)
         minion_leases = cursor.fetchall()
-        updated_list = [i for i in all_leases if not in minion_leases]
+        updated_list = [i for i in all_leases if i not in minion_leases]
     connection.commit()
     connection.close()
     return minions
