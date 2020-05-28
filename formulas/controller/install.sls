@@ -6,7 +6,7 @@ controller_packages:
       - mdadm
       - xfsprogs
       - haveged
-      - python3-libvirt      
+      - python3-libvirt
     - reload_modules: true
 
 {% if grains['os_family'] == 'Debian' %}
@@ -14,7 +14,6 @@ controller_packages:
 controller_packages_deb:
   pkg.installed:
     - pkgs:
-
       - libvirt-clients
       - libvirt-daemon-system
       - qemu-utils
@@ -25,7 +24,6 @@ controller_packages_deb:
 controller_packages_rpm:
   pkg.installed:
     - pkgs:
-      - libvirt-python
       - libvirt-client
       - libvirt-daemon-kvm
     - reload_modules: true
