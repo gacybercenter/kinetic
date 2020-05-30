@@ -68,20 +68,6 @@ systemd-networkd:
         [Network]
         bond={{ network }}_bond
     {% endfor %}
-
-### If this bond is also supposed to be a bridge, configure that here in a manner similar to
-### a single interface
-
-    {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
-/etc/systemd/network/{{ network }}.network:
-  file.managed:
-    - contents: |
-        [Match]
-        Name={{ network }}_bond
-
-        [Network]
-        Bridge={{ network }}_br
-    {% endif %}
   {% endif %}
 
 ### If the interface is a bridge, there are three different files
@@ -99,7 +85,8 @@ systemd-networkd:
         Name={{ network }}_br
         Kind=bridge
 
-### Associate bridge netdev with physical interface
+### Associate bridge netdev with physical interface (it could either be an individual interface,
+### or a bond that was created above)
 /etc/systemd/network/{{ network }}_br.network:
   file.managed:
     - contents: |
