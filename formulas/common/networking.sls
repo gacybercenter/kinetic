@@ -48,6 +48,17 @@ systemd-networkd:
         [Bond]
         Mode=802.3ad
         MIIMonitorSec=100ms
+
+    {% for interface in salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces')}
+/etc/systemd/network/{{ interface }}.network:
+  file.managed:
+    - contents: |
+        [Match]
+        Name={{ interface }}
+
+        [Network]
+        bond={{ network }}_bond
+    {% endfor %}
   {% endif %}
 
 ### If the interface is a bridge, there are three different files
