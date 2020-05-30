@@ -100,7 +100,7 @@ systemd-networkd:
         Kind=bridge
 
 ### Associate bridge netdev with physical interface
-/etc/systemd/network/{{ network }}.network:
+/etc/systemd/network/{{ network }}_br.network:
   file.managed:
     - contents: |
         [Match]
