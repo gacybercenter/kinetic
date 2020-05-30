@@ -34,6 +34,13 @@ systemd-networkd:
 ### Private, sfe, and sbe are assigned addresses from the sqlite db
 {% for network in pillar[srv][grains['type']]['networks'] %}
 
+### There are three possible general configurations available:
+### 1. Regular interface
+### 2. Bonded interface
+### 3. Bridged interface
+### 4. Bonded and bridged interface
+
+
 ### Test for number of physical interfaces listed.  If >1, it is a bond and a netdev
 ### for the bond should be created.  This is separate and a prereq for any
 ### other types of netdevs (e.g. bridge)
@@ -49,6 +56,8 @@ systemd-networkd:
         Mode=802.3ad
         MIIMonitorSec=100ms
 
+### For every physical interface that is supposed to be part of the bond,
+### create a network file that associates it accordingly
     {% for interface in salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces')}
 /etc/systemd/network/{{ interface }}.network:
   file.managed:
@@ -59,6 +68,20 @@ systemd-networkd:
         [Network]
         bond={{ network }}_bond
     {% endfor %}
+
+### If this bond is also supposed to be a bridge, configure that here in a manner similar to
+### a single interface
+
+    {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
+/etc/systemd/network/{{ network }}.network:
+  file.managed:
+    - contents: |
+        [Match]
+        Name={{ network }}_bond
+
+        [Network]
+        Bridge={{ network }}_br
+    {% endif %}
   {% endif %}
 
 ### If the interface is a bridge, there are three different files
@@ -81,83 +104,64 @@ systemd-networkd:
   file.managed:
     - contents: |
         [Match]
+      {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+        Name={{ network }}_bond
+      {% else %}
         Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
-
+      {% endif %}
         [Network]
         Bridge={{ network }}_br
+  {% endif %}
 
-    {% if network == 'management' %}
-### Configure interface
-/etc/systemd/network/{{ network }}_br.network:
+  {% if network == 'management' %}
+
+/etc/systemd/network/{{ network }}.network:
   file.managed:
     - contents: |
         [Match]
+    {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
         Name={{ network }}_br
-
+    {% elif salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+        Name={{ network }}_bond
+    {% else %}
+        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
+    {% endif %}
         [Network]
         DHCP=yes
 
-    {% elif network =='public' %}
+  {% elif network =='public' %}
 
-/etc/systemd/network/{{ network }}_br.network:
+/etc/systemd/network/{{ network }}.network:
   file.managed:
     - contents: |
         [Match]
+    {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
         Name={{ network }}_br
-
-        [Network]
-        DHCP=no
-
+    {% elif salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+        Name={{ network }}_bond
     {% else %}
-/etc/systemd/network/{{ network }}_br.network:
-  file.managed:
-    - replace: False
-    - contents: |
-        [Match]
-        Name={{ network }}_br
-
+        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
+    {% endif %}
         [Network]
         DHCP=no
-        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
 
-    {% endif %}
   {% else %}
 
-    {% if network == 'management' %}
-
-/etc/systemd/network/{{ network }}.network:
-  file.managed:
-    - contents: |
-        [Match]
-        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
-
-        [Network]
-        DHCP=yes
-
-    {% elif network =='public' %}
-
-/etc/systemd/network/{{ network }}.network:
-  file.managed:
-    - contents: |
-        [Match]
-        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
-
-        [Network]
-        DHCP=no
-
-    {% else %}
-
 /etc/systemd/network/{{ network }}.network:
   file.managed:
     - replace: False
     - contents: |
         [Match]
+    {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
+        Name={{ network }}_br
+    {% elif salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+        Name={{ network }}_bond
+    {% else %}
         Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
-
+    {% endif %}
         [Network]
         DHCP=no
         Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
 
-    {% endif %}
   {% endif %}
 {% endfor %}
