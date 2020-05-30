@@ -59,7 +59,7 @@ systemd-networkd:
 ### For every physical interface that is supposed to be part of the bond,
 ### create a network file that associates it accordingly
     {% for interface in salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') %}
-/etc/systemd/network/{{ interface }}.network:
+/etc/systemd/network/{{ interface }}_bond.network:
   file.managed:
     - contents: |
         [Match]
