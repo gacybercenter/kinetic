@@ -57,6 +57,8 @@ def get_uuid(host, username, password):
     return json.loads(response.text)['UUID']
 
 def set_bootonce(host, username, password, mode, target):
+    ### Default method is to use redfish api
+    ### if statuscode != 200, fallback to raw ipmi
     session = login(host, username, password)
     response = session.patch("/redfish/v1/Systems/1/", \
                              body={"Boot":{
