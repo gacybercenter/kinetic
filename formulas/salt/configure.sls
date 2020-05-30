@@ -1,9 +1,50 @@
 include:
   - /formulas/salt/install
 
+addresses:
+  sqlite3.table_present:
+    - db: /srv/salt/addresses.db
+    - schema:
+      - address TEXT UNIQUE
+      - network TEXT
+      - host TEXT
+
+{% for network in ['sfe', 'sbe', 'private'] %}
+  {% for address in pillar['networking']['subnets'][network] | network_hosts %}
+address_population_{{ address }}:
+  sqlite3.row_present:
+    - db: /srv/salt/addresses.db
+    - table: addresses
+    - where_sql: address='{{ address }}'
+    - data:
+        address: {{ address }}
+        network: {{ network }}
+    - update: True
+  {% endfor %}
+{% endfor %}
+
+create_api_cert:
+  cmd.run:
+    - name: "salt-call --local tls.create_self_signed_cert"
+    - creates:
+      - /etc/pki/tls/certs/localhost.crt
+      - /etc/pki/tls/certs/localhost.key
+
+api:
+  user.present:
+    - password: {{ salt['pillar.get']('api:user_password', 'TBD') }}
+    - hash_password: True
+    - require:
+      - file: /srv/dynamic_pillar/api.sls
+
 /srv/salt:
   file.directory:
     - makedirs: true
+
+/srv/salt/addresses.db:
+  file.managed:
+    - require:
+      - file: /srv/salt
 
 mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
   cmd.run:
@@ -191,6 +232,13 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
         openstack:
           admin_password: {{ salt['random.get_str']('64') }}
 
+/srv/dynamic_pillar/api.sls:
+  file.managed:
+    - replace: false
+    - contents: |
+        api:
+          user_password: {{ salt['random.get_str']('64') }}
+
 /srv/dynamic_pillar/top.sls:
   file.managed:
     - source: salt://formulas/salt/files/top.sls
@@ -223,8 +271,17 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
     - contents: ''
     - contents_newline: False
 
-salt-master:
+salt-api_service:
   service.running:
+    - name: salt-api
+    - enable: True
+    - watch:
+      - file: /etc/salt/master
+      - file: /etc/salt/master.d/*
+
+salt-master_service:
+  service.running:
+    - name: salt-master
     - watch:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*

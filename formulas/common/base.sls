@@ -44,6 +44,10 @@ ifwatch:
 
   {% if salt['grains.get']('upgraded') != True %}
 
+install_networkd:
+  pkg.installed:
+    - name: systemd-networkd
+
 update_all:
   pkg.uptodate:
     - refresh: true
@@ -65,22 +69,19 @@ upgraded:
     - contents: |
         [main]
         cachedir=/var/cache/yum/$basearch/$releasever
-        keepcache=0
-        debuglevel=2
-        logfile=/var/log/yum.log
-        exactarch=1
-        obsoletes=1
         gpgcheck=1
-        plugins=1
-        installonly_limit=5
-        bugtracker_url=http://bugs.centos.org/set_project.php?project_id=23&ref=http://bugs.centos.org/bug_report_page.php?category=yum
-        distroverpkg=centos-release
+        best=True
+        installonly_limit=3
     {% for host in cache_addresses_dict %}
         proxy=http://{{ cache_addresses_dict[host][0] }}:3142
     {% endfor %}
   {% endif %}
 
   {% if salt['grains.get']('upgraded') != True %}
+
+install_networkd:
+  pkg.installed:
+    - name: systemd-networkd
 
 update_all:
   pkg.uptodate:

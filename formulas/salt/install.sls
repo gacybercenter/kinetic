@@ -1,17 +1,14 @@
 python3-tornado:
   pkg.installed
 
+salt-api:
+  pkg.installed
+
+sqlite3:
+  pkg.installed
+
 haveged:
   pkg.installed
 
 curl:
   pkg.installed
-
-python3-pip:
-  pkg.installed:
-   - reload_modules: true
-
-pyghmi:
-  pip.installed:
-    - require:
-      - pkg: python3-pip

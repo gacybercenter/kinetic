@@ -56,10 +56,6 @@ wsgi_module:
     - template: jinja
     - defaults:
         pxe_record: {{ pillar['pxe_record'] }}
-        interfaces: |-
-          {% for type in pillar['hosts'] %}
-          {{ type }}_interface = ""{{ pillar['hosts'][type]['interface'] }}"
-          {%- endfor %}
 
 /var/www/html/assignments:
   file.directory

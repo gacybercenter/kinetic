@@ -95,7 +95,7 @@ d-i apt-setup/multiverse                          boolean false
 
 d-i tasksel/first                                 multiselect standard
 
-d-i pkgsel/include                                string openssh-server curl ifupdown
+d-i pkgsel/include                                string openssh-server curl
 d-i pkgsel/update-policy                          select none
 
 d-i grub-installer/only_debian                    boolean true

@@ -65,6 +65,13 @@ wait_for_minion_first_start_{{ type }}-{{ uuid }}:
     - require:
       - accept_minion_{{ type }}-{{ uuid }}
 
+sync_all_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: saltutil.sync_all
+    - tgt: '{{ type }}-{{ uuid }}'
+    - require:
+      - wait_for_minion_first_start_{{ type }}-{{ uuid }}
+
 {% if style == 'physical' %}
 remove_pending_{{ type }}-{{ uuid }}:
   salt.function:
@@ -73,7 +80,7 @@ remove_pending_{{ type }}-{{ uuid }}:
     - arg:
       - /var/www/html/assignments/{{ target }}
     - require:
-      - wait_for_minion_first_start_{{ type }}-{{ uuid }}
+      - sync_all_{{ type }}-{{ uuid }}
 
 {% elif style == 'virtual' %}
 run_once_{{ type }}-{{ uuid }}:
@@ -82,7 +89,7 @@ run_once_{{ type }}-{{ uuid }}:
     - sls:
       - formulas/common/runonce
     - require:
-      - wait_for_minion_first_start_{{ type }}-{{ uuid }}
+      - sync_all_{{ type }}-{{ uuid }}
 
 run_once_reboot_{{ type }}-{{ uuid }}:
   salt.function:

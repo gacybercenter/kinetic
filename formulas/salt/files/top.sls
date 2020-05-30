@@ -1,4 +1,6 @@
 base:
+  '*':
+    - api    
   'salt':
     - openstack
   'compute*':

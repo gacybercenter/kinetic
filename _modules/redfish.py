@@ -57,6 +57,8 @@ def get_uuid(host, username, password):
     return json.loads(response.text)['UUID']
 
 def set_bootonce(host, username, password, mode, target):
+    ### Default method is to use redfish api
+    ### if statuscode != 200, fallback to raw ipmi
     session = login(host, username, password)
     response = session.patch("/redfish/v1/Systems/1/", \
                              body={"Boot":{
@@ -72,10 +74,10 @@ def reset_host(host, username, password):
     session = login(host, username, password)
     status = session.get("/redfish/v1/Systems/1", None)
     if json.loads(status.text)['PowerState'] == "On":
-      response = session.post("/redfish/v1/Systems/1/Actions/ComputerSystem.Reset/", \
+        response = session.post("/redfish/v1/Systems/1/Actions/ComputerSystem.Reset/", \
                               body={"ResetType":"ForceRestart"})
     if json.loads(status.text)['PowerState'] == "Off":
-      response = session.post("/redfish/v1/Systems/1/Actions/ComputerSystem.Reset/", \
+        response = session.post("/redfish/v1/Systems/1/Actions/ComputerSystem.Reset/", \
                               body={"ResetType":"On"})
     session.logout()
     return response.text
