@@ -7,4 +7,4 @@ ExecStart=/usr/bin/podman start -a apt-cacher-ng
 ExecStop=/usr/bin/podman stop -t 2 apt-cacher-ng
 
 [Install]
-WantedBy=local.target
+WantedBy=multi-user.target
