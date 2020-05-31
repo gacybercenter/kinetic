@@ -13,7 +13,7 @@
         networks: |
         {% for network in pillar['virtual'][type]['networks']|sort() %}
           <interface type='bridge'>
-            <source bridge='{{ pillar['virtual'][type]['networks'][network]['interfaces'][0] }}'/>
+            <source bridge='{{ network }}_br'/>
             <target dev='vnet{{ loop.index0 }}'/>
             <model type='virtio'/>
             <alias name='net{{ loop.index0 }}'/>
