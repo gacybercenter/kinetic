@@ -1,7 +1,7 @@
 include:
-  - formulas/controller/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/controller/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% set type = grains['type'] %}
 
