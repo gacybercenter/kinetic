@@ -19,7 +19,7 @@ update_packages_uca:
 
 rdo:
   pkg.installed:
-    - name: centos-release-openstack-train
+    - name: centos-release-openstack-ussuri
 
 update_packages_rdo:
   pkg.uptodate:
