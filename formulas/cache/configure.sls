@@ -22,6 +22,11 @@ curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http
   file.managed:
     - source: salt://formulas/cache/files/acng.dockerfile
 
+container_manage_cgroup:
+  selinux.boolean:
+    - value: on
+    - persist: True
+
 buildah bud -t acng acng.dockerfile:
   cmd.run:
     - onchanges:
