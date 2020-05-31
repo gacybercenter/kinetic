@@ -23,7 +23,7 @@
     {% set api_host_uuid = salt.saltutil.runner('mine.get',tgt=target,fun='host_uuid') %}
     {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints') | dictsort() %}
       {% for id in ids %}
-        {% if api_host_uud == id %}
+        {% if api_host_uuid == id %}
           {% set api_host = ids[id] %}
         {% endif %}
       {% endfor %}
@@ -61,6 +61,13 @@ destroy_{{ target }}_domain:
       - virsh list | grep {{ target }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
 
 wipe_{{ target }}_vms:
+  salt.function:
+    - name: cmd.run
+    - tgt: 'controller*'
+    - arg:
+      - ls /kvm/vms | grep {{ target }} | while read id;do rm -rf /kvm/vms/$id;done
+
+wipe_{{ target }}_logs:
   salt.function:
     - name: cmd.run
     - tgt: 'controller*'
