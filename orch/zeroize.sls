@@ -50,7 +50,6 @@ reset_host:
       - {{ api_user }}
       - {{ api_pass }}
 
-
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
 destroy_{{ target }}_domain:
