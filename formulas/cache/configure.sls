@@ -32,4 +32,6 @@ buildah bud -t acng acng.dockerfile:
 
 podman run -d -p 3142:3142 --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng:
   cmd.run:
-    bg: True
+    - bg: True
+    - unless:
+      - podman ps | grep -q acng:latest
