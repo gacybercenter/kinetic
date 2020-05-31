@@ -1,7 +1,7 @@
 include:
   - /formulas/cache/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 spawnzero_complete:
@@ -37,13 +37,17 @@ apt-cacher-ng_service:
       - file: /etc/tmpfiles.d/apt-cacher-ng.conf
 {% endif %}
 
+/var/www/html/images:
+  file.directory
+
 {% for os, args in pillar.get('images', {}).items() %}
-extract_{{ args['name'] }}:
-  archive.extracted:
-    - name: /var/www/html/images
-    - source: {{ args['remote_url'] }}
-    - source_hash: {{ args['remote_hash'] }}
-    - makedirs: true
+create_{{ args['name'] }}:
+  cmd.run:
+    - name: virt-builder --install cloud-init --output {{ os }}.raw {{ args['name'] }}
+    - cwd: /var/www/html/images
+    - creates: /var/www/html/images/{{ os }}.raw
+    - require:
+      - file: /var/www/html/images
 {% endfor %}
 
 sha512sum * > checksums:
