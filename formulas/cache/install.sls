@@ -1,3 +1,6 @@
+include:
+  - formulas/docker/common/repo
+
 {% if grains['os_family'] == 'Debian' %}
 apache2:
   pkg.installed
@@ -8,5 +11,13 @@ httpd:
   pkg.installed
 {% endif %}
 
-apt-cacher-ng:
-  pkg.installed
+cache_packages:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+      - docker-ce
+
+docker:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
