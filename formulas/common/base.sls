@@ -33,12 +33,15 @@ ifwatch:
 
 {% if grains['os_family'] == 'Debian' %}
   {% if type not in ['cache','salt','pxe'] %}
-    {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+    {% for host, addresses in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {%- for address in addresses -%}
+        {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 /etc/apt/apt.conf.d/02proxy:
   file.managed:
     - contents: |
-    {% for host in cache_addresses_dict %}
-        Acquire::http { Proxy "http://{{ cache_addresses_dict[host][0] }}:3142"; };
+        Acquire::http { Proxy "http://{{ address }}:3142"; };
+        {% endif %}
+      {% endfor %}
     {% endfor %}
   {% endif %}
 
@@ -63,7 +66,9 @@ upgraded:
 
 {% elif grains['os_family'] == 'RedHat' %}
   {% if type not in ['cache','salt','pxe'] %}
-    {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+    {% for host, addresses in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {%- for address in addresses -%}
+        {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 /etc/yum.conf:
   file.managed:
     - contents: |
@@ -72,8 +77,9 @@ upgraded:
         gpgcheck=1
         best=True
         installonly_limit=3
-    {% for host in cache_addresses_dict %}
-        proxy=http://{{ cache_addresses_dict[host][0] }}:3142
+        proxy=http://{{ address }}:3142
+        {% endif %}
+      {% endfor %}
     {% endfor %}
   {% endif %}
 
