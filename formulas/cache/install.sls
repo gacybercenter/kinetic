@@ -1,7 +1,6 @@
+{% if grains['os_family'] == 'Debian' %}
 include:
   - formulas/docker/common/repo
-
-{% if grains['os_family'] == 'Debian' %}
 
 cache_packages:
   pkg.installed:
