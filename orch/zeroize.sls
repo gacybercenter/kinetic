@@ -72,7 +72,7 @@ wipe_{{ target }}_logs:
     - name: cmd.run
     - tgt: 'controller*'
     - arg:
-      - ls /kvm/vms | grep {{ target }} | while read id;do rm -rf /kvm/vms/$id;done
+      - ls /var/log/libvirt | grep {{ target }} | while read id;do rm /var/log/libvirt/$id;done
 {% endif %}
 
 delete_{{ target }}_key:
