@@ -2,8 +2,8 @@
 
 ceph_repo:
   pkgrepo.managed:
-    - humanname: Ceph Nautilus
-    - name: deb https://download.ceph.com/debian-nautilus/ bionic main
+    - humanname: Ceph Octopus
+    - name: deb https://download.ceph.com/debian-octopus/ focal main
     - file: /etc/apt/sources.list.d/ceph.list
     - key_url: https://download.ceph.com/keys/release.asc
 
@@ -18,9 +18,9 @@ update_packages_ceph:
 
 ceph_repo:
   pkgrepo.managed:
-    - humanname: Ceph Nautilus
+    - humanname: Ceph Octopus
     - name: ceph
-    - baseurl: https://download.ceph.com/rpm-nautilus/el7/$basearch
+    - baseurl: https://download.ceph.com/rpm-octopus/el8/$basearch
     - file: /etc/yum.repos.d/ceph.repo
     - gpgkey: https://download.ceph.com/keys/release.asc
 
