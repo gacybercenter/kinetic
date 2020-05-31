@@ -119,33 +119,16 @@ libvirtd_service:
 {% endif %}
 
 {% for os, args in pillar.get('images', {}).items() %}
-extract_{{ args['name'] }}:
-  archive.extracted:
-    - name: /kvm/images
-    - source:
-{% if args['local_url'] == "pull_from_mine" %}
-{% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-{% for host in cache_addresses_dict %}
-      - http://{{ cache_addresses_dict[host][0] }}/images/{{ args['name'] }}
-{% endfor %}
-{% else %}
-      - {{ args['local_url'] }}
-{% endif %}
-
-{% if args['local_hash'] == "pull_from_mine" %}
-{% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-{% for host in cache_addresses_dict %}
-    - source_hash: http://{{ cache_addresses_dict[host][0] }}/images/checksums
-{% endfor %}
-{% else %}
-    - source_hash: {{ args['local_hash'] }}
-{% endif %}
+create_{{ args['name'] }}:
+  cmd.run:
+    - name: virt-builder --install cloud-init --output {{ os }}.raw {{ args['name'] }}
+    - cwd: /kvm/images
     - require:
       - file: /kvm/images
 
 /kvm/images/{{ os }}-latest:
   file.symlink:
-    - target: /kvm/images/{{ args['name'] }}
+    - target: /kvm/images/{{ os }}.raw
     - force: True
     - require:
       - extract_{{ args['name'] }}
