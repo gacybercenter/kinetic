@@ -35,9 +35,3 @@ create_{{ args['name'] }}:
     - require:
       - file: /var/www/html/images
 {% endfor %}
-
-sha512sum * > checksums:
-  cmd.run:
-    - cwd: /var/www/html/images
-    - onchanges:
-      - archive: extract_*
