@@ -132,7 +132,7 @@ create_{{ args['name'] }}:
     - target: /kvm/images/{{ os }}.raw
     - force: True
     - require:
-      - extract_{{ args['name'] }}
+      - cmd: create_{{ args['name'] }}
 {% endfor %}
 
 haveged_service:
