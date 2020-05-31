@@ -44,5 +44,7 @@ podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/c
 apt-cacher-ng-container:
   service.running:
     - enable: True
+    - require:
+      - file: /etc/systemd/system/apt-cacher-ng-container.service
     - watch:
       - file: /etc/systemd/system/apt-cacher-ng-container.service
