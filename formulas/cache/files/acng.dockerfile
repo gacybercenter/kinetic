@@ -1,6 +1,7 @@
 FROM debian:latest
 
-VOLUME ["/var/cache/apt-cacher-ng"]
+## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
+## VOLUME ["/var/cache/apt-cacher-ng"]
 
 RUN apt update
 RUN apt upgrade -y
