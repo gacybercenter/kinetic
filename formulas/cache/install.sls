@@ -22,5 +22,6 @@ cache_packages:
     - pkgs:
       - podman
       - httpd
+      - buildah
 
 {% endif %}
