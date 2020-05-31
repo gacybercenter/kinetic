@@ -27,15 +27,17 @@ container_manage_cgroup:
     - value: 1
     - persist: True
 
-buildah bud -t acng acng.dockerfile:
+build acng container image:
   cmd.run:
+    - name: buildah bud -t acng acng.dockerfile
     - onchanges:
       - file: /root/acng.dockerfile
 
 ## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
 ## podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng
-podman create -d -p 3142:3142 --name apt-cacher-ng acng:
+create acng container:
   cmd.run:
+    - name: podman create -d -p 3142:3142 --name apt-cacher-ng acng
     - unless:
       - podman container ls -a | grep -q apt-cacher-ng
 
@@ -44,7 +46,7 @@ podman create -d -p 3142:3142 --name apt-cacher-ng acng:
     - source: salt://formulas/cache/files/apt-cacher-ng-container.service
     - mode: 644
     - require:
-      - cmd: podman create -d -p 3142:3142 --name apt-cacher-ng acng
+      - cmd: create acng container
 
 apt-cacher-ng-container:
   service.running:
