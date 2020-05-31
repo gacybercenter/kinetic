@@ -30,7 +30,7 @@
     </disk>
     {{ networks }}
     <serial type="file">
-      <source path="/kvm/vms/{{ name }}/console.log"/>
+      <source path="/var/log/libvirt/{{ name }}.log"/>
     </serial>
     <rng model='virtio'>
       <backend model='random'>/dev/random</backend>
