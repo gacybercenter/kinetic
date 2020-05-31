@@ -123,6 +123,7 @@ create_{{ args['name'] }}:
   cmd.run:
     - name: virt-builder --install cloud-init --output {{ os }}.raw {{ args['name'] }}
     - cwd: /kvm/images
+    - creates: /kvm/images/{{ os }}.raw
     - require:
       - file: /kvm/images
 
