@@ -10,12 +10,8 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 {% endif %}
 
-{% if grains['os_family'] == 'RedHat' %}
-/etc/tmpfiles.d/apt-cacher-ng.conf:
-  file.managed:
-    - contents: |
-        d /run/apt-cacher-ng 0755 apt-cacher-ng apt-cacher-ng
-{% endif %}
+/etc/apt-cacher-ng:
+  file.directory
 
 /etc/apt-cacher-ng/acng.conf:
   file.managed:
@@ -26,16 +22,6 @@ curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http
     - creates: /etc/apt-cacher-ng/centos_mirrors
     - require:
       - file: /etc/apt-cacher-ng/acng.conf
-
-apt-cacher-ng_service:
-  service.running:
-    - name: apt-cacher-ng
-    - enable: True
-    - watch:
-      - file: /etc/apt-cacher-ng/acng.conf
-{% if grains['os_family'] == 'RedHat' %}
-      - file: /etc/tmpfiles.d/apt-cacher-ng.conf
-{% endif %}
 
 /var/www/html/images:
   file.directory
