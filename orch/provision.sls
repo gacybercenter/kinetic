@@ -92,7 +92,7 @@ set_spawning_{{ type }}-{{ uuid }}:
     - kwarg:
           val: {{ spawning }}
     - require:
-      - wait_for_run_once_reboot_{{ type }}-{{ uuid }}
+      - sync_all_{{ type }}-{{ uuid }
 {% endif %}
 
 apply_base_{{ type }}-{{ uuid }}:
