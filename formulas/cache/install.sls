@@ -14,6 +14,7 @@ httpd:
 cache_packages:
   pkg.installed:
     - pkgs:
+      - containerd.io
       - python3-pip
       - docker-ce
 
