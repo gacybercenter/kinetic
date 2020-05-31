@@ -34,3 +34,15 @@ podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/c
   cmd.run:
     - unless:
       - podman container ls -a | grep -q apt-cacher-ng
+
+/etc/systemd/system/apt-cacher-ng-container.service:
+  file.managed:
+    - source: salt://formulas/cache/files/apt-cacher-ng-container.service
+    - require:
+      - cmd: podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng
+
+apt-cacher-ng-container:
+  service.running:
+    - enable: True
+    - watch:
+      - file: /etc/systemd/system/apt-cacher-ng-container.service
