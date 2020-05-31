@@ -20,3 +20,17 @@ spawnzero_complete:
 curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors:
   cmd.run:
     - creates: /root/centos_mirrors
+
+/root/acng.dockerfile:
+  file.managed:
+    - source: salt://formulas/cache/files/acng.dockerfile
+
+buildah bud -t acng acng.dockerfile:
+  cmd.run:
+    - onchanges:
+      - file: /root/acng.dockerfile
+
+podman run -d -p 3142:3142 --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng:
+  cmd.run:
+    - unless :
+      - podman ps | grep -q acng:latest
