@@ -24,7 +24,7 @@ curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http
 
 container_manage_cgroup:
   selinux.boolean:
-    - value: on
+    - value: 1
     - persist: True
 
 buildah bud -t acng acng.dockerfile:
