@@ -38,6 +38,8 @@ build acng container image:
 create acng container:
   cmd.run:
     - name: podman create -d -p 3142:3142 --name apt-cacher-ng acng
+    - require:
+      - cmd: build acng container image
     - unless:
       - podman container ls -a | grep -q apt-cacher-ng
 
