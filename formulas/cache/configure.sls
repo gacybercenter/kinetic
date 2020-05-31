@@ -30,8 +30,7 @@ buildah bud -t acng acng.dockerfile:
     - onchanges:
       - file: /root/acng.dockerfile
 
-podman run -d -p 3142:3142 --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng:
+podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng:
   cmd.run:
-    - bg: True
     - unless:
-      - podman ps | grep -q acng:latest
+      - podman container ls -a | grep -q apt-cacher-ng
