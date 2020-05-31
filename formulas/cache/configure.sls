@@ -10,6 +10,9 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 {% endif %}
 
+/var/cache/apt-cacher-ng:
+  file.directory
+
 /root/acng.conf:
   file.managed:
     - source: salt://formulas/cache/files/acng.conf
