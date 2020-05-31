@@ -83,32 +83,6 @@ remove_pending_{{ type }}-{{ uuid }}:
       - sync_all_{{ type }}-{{ uuid }}
 
 {% elif style == 'virtual' %}
-run_once_{{ type }}-{{ uuid }}:
-  salt.state:
-    - tgt: '{{ type }}-{{ uuid }}'
-    - sls:
-      - formulas/common/runonce
-    - require:
-      - sync_all_{{ type }}-{{ uuid }}
-
-run_once_reboot_{{ type }}-{{ uuid }}:
-  salt.function:
-    - tgt: '{{ type }}-{{ uuid }}'
-    - name: system.reboot
-    - kwarg:
-        at_time: 1
-    - require:
-      - run_once_{{ type }}-{{ uuid }}
-
-wait_for_run_once_reboot_{{ type }}-{{ uuid }}:
-  salt.wait_for_event:
-    - name: salt/minion/*/start
-    - id_list:
-      - {{ type }}-{{ uuid }}
-    - require:
-      - run_once_reboot_{{ type }}-{{ uuid }}
-    - timeout: 300
-
 set_spawning_{{ type }}-{{ uuid }}:
   salt.function:
     - name: grains.set
