@@ -12,6 +12,6 @@
 
 base:
   '*':
-    - formulas/common/base
+    - /formulas/common/base
   {{ type }}*:
     - formulas/{{ role }}/configure
