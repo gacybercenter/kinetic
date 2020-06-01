@@ -36,6 +36,11 @@ etcd_conf:
         etcd_listen: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         cluster_token: {{ pillar['etcd']['etcd_cluster_token'] }}
 
+systemctl enable etcd.service:
+  cmd.run:
+    - onchanges:
+      - file: etcd_conf
+
 etcd_service:
   service.running:
     - name: etcd
