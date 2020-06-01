@@ -53,13 +53,8 @@ mariadb-server-galera:
 mariadb:
   pkg.installed
 
-python36-PyMySQL:
+python3-PyMySQL:
   pkg.installed:
     - reload_modules: True
-
-python36-mysql:
-  pkg.installed:
-    - reload_module: True
-
 
 {% endif %}
