@@ -18,6 +18,7 @@ rmq_name_resolution_{{ server }}:
     - ip: {{ address[0] }}
     - names:
       - {{ server }}
+    - clean: true
 {% endfor %}
 
 /var/lib/rabbitmq/.erlang.cookie:
