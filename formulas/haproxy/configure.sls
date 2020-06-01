@@ -59,11 +59,7 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
 {% else %}
         syslog: 127.0.0.1:5514
 {% endif %}
-{% if grains['os_family'] == 'RedHat' %}
-        seamless_reload: ""
-{% else %}
         seamless_reload: stats socket /var/run/haproxy.sock mode 600 expose-fd listeners level user
-{% endif %}
         hostname: {{ grains['id'] }}
         management_ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
