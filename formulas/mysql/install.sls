@@ -1,6 +1,5 @@
 include:
-  - formulas/openstack/common/repo
-
+  - /formulas/openstack/common/repo
 
 ## Patch that works around https://github.com/GeorgiaCyber/kinetic/issues/51
 ## Remove this when its officially merged

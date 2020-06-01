@@ -1,7 +1,7 @@
 include:
-  - formulas/mysql/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/mysql/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
   {% if pillar['virtual']['mysql']['count'] > 1 %}
