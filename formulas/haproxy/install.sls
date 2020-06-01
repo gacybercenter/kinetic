@@ -2,6 +2,7 @@ haproxy:
   pkg.installed
 
 ## Workaround for https://github.com/saltstack/salt/issues/56473
+## This fix was written for 2019.2 - there are master conflicts in 3000.3
 # {% if grains['saltversion'] == '3000.3' %}
 # {% for patch in ["modules/acme.py", "states/acme.py"] %}
 # {{ grains['saltpath'] }}/{{ patch }}:
