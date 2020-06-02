@@ -57,3 +57,4 @@ memcached_service_check:
     - watch:
       - file: memcached_config
     - require:
+      - file: memcached_unit_file_update
