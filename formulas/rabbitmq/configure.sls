@@ -28,6 +28,15 @@ rmq_name_resolution_{{ server }}:
     - user: rabbitmq
     - group: rabbitmq
 
+rabbitmq-server-service:
+  service.running:
+    - name: rabbitmq-server
+    - enable: true
+    - watch:
+      - /var/lib/rabbitmq/.erlang.cookie
+    - require:
+      - /var/lib/rabbitmq/.erlang.cookie
+
 {% if grains['spawning'] != 0 %}
 join_cluster:
   rabbitmq_cluster.join:
@@ -40,15 +49,6 @@ join_cluster:
         until: True
         interval: 10
 {% endif %}
-
-rabbitmq-server-service:
-  service.running:
-    - name: rabbitmq-server
-    - enable: true
-    - watch:
-      - /var/lib/rabbitmq/.erlang.cookie
-    - require:
-      - /var/lib/rabbitmq/.erlang.cookie
 
 cluster_policy:
   rabbitmq_policy.present:
