@@ -47,17 +47,35 @@ rmq_name_resolution_{{ server }}:
 ###  cmd.run:
 ###    - creates: /tmp/rabbit-hipe/ebin
 
-openstack_rmq:
-  rabbitmq_user.present:
-    - password: {{ pillar['rabbitmq']['rabbitmq_password'] }}
-    - name: openstack
-    - perms:
-      - '/':
-        - '.*'
-        - '.*'
-        - '.*'
-    - require:
-      - service: rabbitmq-server-service
+
+### ref: https://github.com/saltstack/salt/issues/56258
+### will need to use cmd.run for this until the above is merged
+### in sodium
+###openstack_rmq:
+###  rabbitmq_user.present:
+###    - password: {{ pillar['rabbitmq']['rabbitmq_password'] }}
+###    - name: openstack
+###    - perms:
+###      - '/':
+###        - '.*'
+###        - '.*'
+###        - '.*'
+###    - require:
+###      - service: rabbitmq-server-service
+
+
+### legacy functions.  Remove this when the above works again
+rabbitmqctl add_user openstack {{ pillar['rabbitmq']['rabbitmq_password'] }}:
+  cmd.run:
+    - unless:
+      - rabbitmqctl list_users | grep -q openstack
+
+rabbitmqctl set_permissions openstack ".*" ".*" ".*":
+  cmd.run:
+    - unless:
+      - rabbitmqctl list_user_permissions openstack
+
+### /legacy functions
 
 {% if grains['spawning'] != 0 %}
 join_cluster:
