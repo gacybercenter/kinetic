@@ -12,10 +12,6 @@ spawnzero_complete:
 
 {% endif %}
 
-## workaround for hipe compilation
-## warning: the VM is running with native name encoding of latin1 which may cause Elixir to malfunction as it expects utf8.
-## Please ensure your locale is set to UTF-8 (which can be verified by running "locale" in your shell)
-
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 rmq_name_resolution_{{ server }}:
   host.present:
@@ -32,22 +28,6 @@ rmq_name_resolution_{{ server }}:
     - user: rabbitmq
     - group: rabbitmq
 
-#/etc/rabbitmq/rabbit.conf:
-#  file.managed:
-#    - source: salt://formulas/rabbitmq/files/rabbitmq.conf
-
-#/etc/rabbitmq/rabbit-env.conf:
-#  file.managed:
-#    - source: salt://formulas/rabbitmq/files/rabbitmq-env.conf
-
-### http://erlang.2086793.n4.nabble.com/HiPE-in-OTP-22-td4725613.html
-### HIPE is no longer supported
-###
-###rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin:
-###  cmd.run:
-###    - creates: /tmp/rabbit-hipe/ebin
-
-
 ### ref: https://github.com/saltstack/salt/issues/56258
 ### will need to use cmd.run for this until the above is merged
 ### in sodium
@@ -63,7 +43,6 @@ rmq_name_resolution_{{ server }}:
 ###    - require:
 ###      - service: rabbitmq-server-service
 
-
 ### legacy functions.  Remove this when the above works again
 rabbitmqctl add_user openstack {{ pillar['rabbitmq']['rabbitmq_password'] }}:
   cmd.run:
@@ -74,7 +53,6 @@ rabbitmqctl set_permissions openstack ".*" ".*" ".*":
   cmd.run:
     - unless:
       - rabbitmqctl list_user_permissions openstack
-
 ### /legacy functions
 
 {% if grains['spawning'] != 0 %}
@@ -95,9 +73,6 @@ rabbitmq-server-service:
     - name: rabbitmq-server
     - enable: true
     - watch:
-#      - /etc/rabbitmq/rabbit.conf
-#      - /etc/rabbitmq/rabbit-env.conf
-###      - rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin
       - /var/lib/rabbitmq/.erlang.cookie
 
 cluster_policy:
