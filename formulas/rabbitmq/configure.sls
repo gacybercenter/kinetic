@@ -15,15 +15,6 @@ spawnzero_complete:
 ## workaround for hipe compilation
 ## warning: the VM is running with native name encoding of latin1 which may cause Elixir to malfunction as it expects utf8.
 ## Please ensure your locale is set to UTF-8 (which can be verified by running "locale" in your shell)
-us_locale:
-  locale.present:
-    - name: en_US.UTF-8
-
-default_locale:
-  locale.system:
-    - name: en_US.UTF-8
-    - require:
-      - locale: us_locale
 
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 rmq_name_resolution_{{ server }}:
@@ -49,9 +40,12 @@ rmq_name_resolution_{{ server }}:
   file.managed:
     - source: salt://formulas/rabbitmq/files/rabbitmq-env.conf
 
-rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin:
-  cmd.run:
-    - creates: /tmp/rabbit-hipe/ebin
+### http://erlang.2086793.n4.nabble.com/HiPE-in-OTP-22-td4725613.html
+### HIPE is no longer supported
+###
+###rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin:
+###  cmd.run:
+###    - creates: /tmp/rabbit-hipe/ebin
 
 openstack_rmq:
   rabbitmq_user.present:
@@ -85,7 +79,7 @@ rabbitmq-server-service:
     - watch:
       - /etc/rabbitmq/rabbit.conf
       - /etc/rabbitmq/rabbit-env.conf
-      - rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin
+###      - rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin
       - /var/lib/rabbitmq/.erlang.cookie
 
 cluster_policy:
