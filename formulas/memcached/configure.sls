@@ -37,6 +37,7 @@ memcached_config:
 ## This is necessary because the upstream mcd unit file has a race condition where the network interface
 ## may not fully be up when src=dhcp prior to memcached starting when network.target is the prereq.
 ## network-online.target ensure that there is an address available
+## ref: https://unix.stackexchange.com/questions/157529/how-to-force-network-target-to-wait-for-dhcp-with-systemd-networkd
 memcached_unit_file_update:
   file.line:
     - name: /usr/lib/systemd/system/memcached.service
