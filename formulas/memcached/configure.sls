@@ -34,6 +34,13 @@ memcached_config:
 
 {% endif %}
 
+memcached_unit_file_update:
+  file.line:
+    - name: /usr/lib/systemd/system/memcached.service
+    - content: After=network-online.target
+    - match: After=network.target
+    - mode: replace
+
 memcached_service_check:
   service.running:
     - name: memcached
