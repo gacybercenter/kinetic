@@ -133,6 +133,14 @@ wait_for_{{ type }}-{{ uuid }}_reboot:
       - reboot_{{ type }}-{{ uuid }}
     - timeout: 600
 
+apply_install_{{ type }}-{{ uuid }}:
+  salt.state:
+    - tgt: '{{ type }}-{{ uuid }}'
+    - sls:
+      - formulas/{{ role }}/install
+    - require:
+      - wait_for_{{ type }}-{{ uuid }}_reboot
+
 {% if (salt['pillar.get']('spawning', '0')|int != 0) and (style == 'virtual') %}
 
 wait_for_spawning_0_{{ type }}-{{ uuid }}:
@@ -143,17 +151,9 @@ wait_for_spawning_0_{{ type }}-{{ uuid }}:
     - event_id: tag
     - timeout: 600
     - require:
-      - wait_for_{{ type }}-{{ uuid }}_reboot
+      - apply_install_{{ type }}-{{ uuid }}
 
 {% endif %}
-
-apply_install_{{ type }}-{{ uuid }}:
-  salt.state:
-    - tgt: '{{ type }}-{{ uuid }}'
-    - sls:
-      - formulas/{{ role }}/install
-    - require:
-      - wait_for_{{ type }}-{{ uuid }}_reboot
 
 highstate_{{ type }}-{{ uuid }}:
   salt.state:
