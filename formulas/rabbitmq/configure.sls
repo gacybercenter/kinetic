@@ -32,13 +32,13 @@ rmq_name_resolution_{{ server }}:
     - user: rabbitmq
     - group: rabbitmq
 
-/etc/rabbitmq/rabbit.conf:
-  file.managed:
-    - source: salt://formulas/rabbitmq/files/rabbitmq.conf
+#/etc/rabbitmq/rabbit.conf:
+#  file.managed:
+#    - source: salt://formulas/rabbitmq/files/rabbitmq.conf
 
-/etc/rabbitmq/rabbit-env.conf:
-  file.managed:
-    - source: salt://formulas/rabbitmq/files/rabbitmq-env.conf
+#/etc/rabbitmq/rabbit-env.conf:
+#  file.managed:
+#    - source: salt://formulas/rabbitmq/files/rabbitmq-env.conf
 
 ### http://erlang.2086793.n4.nabble.com/HiPE-in-OTP-22-td4725613.html
 ### HIPE is no longer supported
@@ -77,8 +77,8 @@ rabbitmq-server-service:
     - name: rabbitmq-server
     - enable: true
     - watch:
-      - /etc/rabbitmq/rabbit.conf
-      - /etc/rabbitmq/rabbit-env.conf
+#      - /etc/rabbitmq/rabbit.conf
+#      - /etc/rabbitmq/rabbit-env.conf
 ###      - rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin
       - /var/lib/rabbitmq/.erlang.cookie
 
