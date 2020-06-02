@@ -12,6 +12,19 @@ spawnzero_complete:
 
 {% endif %}
 
+## workaround for hipe compilation
+## warning: the VM is running with native name encoding of latin1 which may cause Elixir to malfunction as it expects utf8.
+## Please ensure your locale is set to UTF-8 (which can be verified by running "locale" in your shell)
+us_locale:
+  locale.present:
+    - name: en_US.UTF-8
+
+default_locale:
+  locale.system:
+    - name: en_US.UTF-8
+    - require:
+      - locale: us_locale
+
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 rmq_name_resolution_{{ server }}:
   host.present:
