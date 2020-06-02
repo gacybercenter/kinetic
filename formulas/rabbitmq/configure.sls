@@ -28,7 +28,6 @@ rmq_name_resolution_{{ server }}:
     - user: rabbitmq
     - group: rabbitmq
 
-
 {% if grains['spawning'] != 0 %}
 join_cluster:
   rabbitmq_cluster.join:
@@ -47,6 +46,8 @@ rabbitmq-server-service:
     - name: rabbitmq-server
     - enable: true
     - watch:
+      - /var/lib/rabbitmq/.erlang.cookie
+    - require:
       - /var/lib/rabbitmq/.erlang.cookie
 
 cluster_policy:
@@ -85,5 +86,5 @@ rabbitmqctl set_permissions openstack ".*" ".*" ".*":
     - unless:
       - rabbitmqctl list_user_permissions openstack
     - require:
-      - service: rabbitmq-server-service      
+      - service: rabbitmq-server-service
 ### /legacy functions
