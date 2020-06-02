@@ -21,6 +21,18 @@ rmq_name_resolution_{{ server }}:
     - clean: true
 {% endfor %}
 
+rabbitmq_unit_file_update:
+  file.line:
+    - name: /usr/lib/systemd/system/rabbitmq-server.service
+    - content: After=network-online.target epmd@0.0.0.0.socket
+    - match: After=network.target epmd@0.0.0.0.socket
+    - mode: replace
+
+systemctl daemon-reload:
+  cmd.run:
+    - onchanges:
+      - file: rabbitmq_unit_file_update
+
 /var/lib/rabbitmq/.erlang.cookie:
   file.managed:
     - contents_pillar: rabbitmq:erlang_cookie
