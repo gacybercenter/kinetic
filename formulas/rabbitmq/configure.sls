@@ -36,9 +36,9 @@ join_cluster:
     - host: {{ server }}
   {% endfor %}
     - retry:
-        attempts: 5
+        attempts: 3
         until: True
-        interval: 60
+        interval: 10
 {% endif %}
 
 rabbitmq-server-service:
