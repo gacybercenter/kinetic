@@ -34,6 +34,9 @@ memcached_config:
 
 {% endif %}
 
+## This is necessary because the upstream mcd unit file has a race condition where the network interface
+## may not fully be up when src=dhcp prior to memcached starting when network.target is the prereq.
+## network-online.target ensure that there is an address available
 memcached_unit_file_update:
   file.line:
     - name: /usr/lib/systemd/system/memcached.service
@@ -41,9 +44,15 @@ memcached_unit_file_update:
     - match: After=network.target
     - mode: replace
 
+systemctl daemon-reload:
+  cmd.run:
+    - onchanges:
+      - file: memcached_unit_file_update
+
 memcached_service_check:
   service.running:
     - name: memcached
     - enable: True
     - watch:
       - file: memcached_config
+    - require:
