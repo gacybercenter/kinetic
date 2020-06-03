@@ -130,6 +130,6 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
 ceph osd pool create {{ pool }}:
   cmd.run:
     - unless:
-      - ceph osd pool get {{ pool }} size
+      - ceph osd pool get {{ pool }} size 1
   {% endfor %}
 {% endif %}
