@@ -5,6 +5,8 @@ include:
   - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
+
+
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
@@ -125,7 +127,7 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
     - require:
       - service: ceph-mon@{{ grains['id'] }}
 
-{% if grains['spawning'] == 0 and grains['production'] == True %}
+{% if grains['spawning'] == 0 and salt['grains.get']('production', False) == True  %}
   {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
 ceph osd pool create {{ pool }} 1:
   cmd.run:
