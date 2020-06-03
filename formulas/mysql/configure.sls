@@ -87,21 +87,6 @@ mariadb_service:
 {% endif %}
 
 {% if salt['grains.get']('cluster_established', False) == True %}
-
-  {% if grains['os_family'] == 'RedHat' %}
-set_unix_socket_root:
-  mysql_query.run:
-    - database: mysql
-    - query: "update mysql.user set plugin = 'unix_socket' where user = 'root';"
-    - output: "/root/.socket_assignment"
-    - require:
-      - service: mariadb_service
-    - unless:
-      - test -e /root/.socket_assignment
-    - require:
-      - service: mariadb_service
-  {% endif %}
-
   {% for service in pillar['openstack_services'] %}
     {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
       {% for address in addresses %}
