@@ -1,7 +1,7 @@
 include:
-  - formulas/graylog/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/graylog/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 spawnzero_complete:
