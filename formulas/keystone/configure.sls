@@ -1,7 +1,7 @@
 include:
-  - formulas/keystone/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/keystone/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['os_family'] == 'Debian' %}
   {% set webserver = 'apache2' %}
