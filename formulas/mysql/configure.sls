@@ -137,6 +137,10 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
   {% endfor %}
 {% endif %}
 
+fs.file-max:
+  sysctl.present:
+    - value: 65535
+
 /usr/lib/systemd/system/mariadb.service:
   file.managed:
     - source: salt://formulas/mysql/files/mariadb.service
