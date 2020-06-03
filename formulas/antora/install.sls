@@ -31,7 +31,7 @@ nodesource:
   pkgrepo.managed:
     - humanname: nodesoure node.js 12.x repo
     - name: nodesource
-    - baseurl: https://rpm.nodesource.com/pub_12.x/el/7/x86_64/
+    - baseurl: https://rpm.nodesource.com/pub_12.x/el/8/x86_64/
     - file: /etc/yum.repos.d/nodesource.repo
     - gpgkey: https://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
 
@@ -55,5 +55,5 @@ antora_packages:
 install_antora:
   npm.installed:
     - pkgs:
-      - "@antora/cli@2.0"
-      - "@antora/site-generator-default@2.0"
+      - "@antora/cli@2.3"
+      - "@antora/site-generator-default@2.3"

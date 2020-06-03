@@ -1,7 +1,7 @@
 include:
-  - formulas/antora/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/antora/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 spawnzero_complete:
