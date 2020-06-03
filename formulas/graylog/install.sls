@@ -77,9 +77,9 @@ graylog_repo:
   pkgrepo.managed:
     - humanname: Graylog
     - name: graylog
-    - baseurl: https://packages.graylog2.org/repo/el/stable/3.2/$basearch/
+    - baseurl: https://packages.graylog2.org/el/stable/3.3/$basearch/
     - file: /etc/yum.repos.d/graylog.repo
-    - gpgkey: https://packages.graylog2.org/repo/debian/pubkey.gpg
+    - gpgkey: https://packages.graylog2.org/debian/pubkey.gpg
 
 update_packages_graylog:
   pkg.uptodate:
