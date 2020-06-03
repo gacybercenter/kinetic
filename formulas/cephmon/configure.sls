@@ -78,7 +78,7 @@ ceph-mon@{{ grains['id'] }}:
   service.running:
     - enable: true
     - watch:
-      - sls: formulas/ceph/common/configure
+      - sls: /formulas/ceph/common/configure
 
 /var/lib/ceph/mgr/ceph-{{ grains['id'] }}:
   file.directory:
