@@ -3,4 +3,4 @@ create_glance_pool:
     - tgt: 'G@spawning:0 and G@type:cephmon'
     - tgt_type: compound
     - arg:
-      - ceph osd pool create images {{ data ['data']['pgs'] }}
+      - ceph osd pool create images
