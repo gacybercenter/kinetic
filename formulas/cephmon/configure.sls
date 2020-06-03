@@ -127,9 +127,9 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
 
 {% if grains['spawning'] == 0 and grains['production'] == True %}
   {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
-ceph osd pool create {{ pool }}:
+ceph osd pool create {{ pool }} 1:
   cmd.run:
     - unless:
-      - ceph osd pool get {{ pool }} size 1
+      - ceph osd pool get {{ pool }} size
   {% endfor %}
 {% endif %}
