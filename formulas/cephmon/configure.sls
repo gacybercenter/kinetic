@@ -125,7 +125,7 @@ ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
     - require:
       - service: ceph-mon@{{ grains['id'] }}
 
-{% if grains['spawning'] == 0 and salt['grains.get']('production', False) == True  %}
+{% if grains['spawning'] == 0 %}
   {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
 ceph osd pool create {{ pool }} 1:
   cmd.run:
