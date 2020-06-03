@@ -1,7 +1,7 @@
 include:
-  - formulas/ovsdb/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/ovsdb/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
