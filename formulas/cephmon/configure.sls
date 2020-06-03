@@ -132,4 +132,8 @@ ceph osd pool create {{ pool }} 1:
     - unless:
       - ceph osd pool get {{ pool }} size
   {% endfor %}
+ceph fs new manila fileshare_metadata fileshare_data:
+  cmd.run:
+    - unless:
+      - ceph fs get manila
 {% endif %}
