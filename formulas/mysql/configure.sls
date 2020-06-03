@@ -138,6 +138,10 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
   {% endfor %}
 {% endif %}
 
+/usr/lib/systemd/system/mariadb.service:
+  file.managed:
+    - source: salt://formulas/mysql/files/mariadb.service
+
 cluster_established_final:
   grains.present:
     - name: cluster_established
