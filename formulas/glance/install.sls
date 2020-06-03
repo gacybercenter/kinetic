@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -18,9 +18,9 @@ glance_packages:
   pkg.installed:
     - pkgs:
       - openstack-glance
-      - python-memcached
-      - python-rbd
-      - python-rados
-      - python2-openstackclient
+      - python3-memcached
+      - python3-rbd
+      - python3-rados
+      - python3-openstackclient
 
 {% endif %}

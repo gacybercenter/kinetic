@@ -1,8 +1,8 @@
 include:
-  - formulas/glance/install
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/ceph/common/configure
+  - /formulas/glance/install
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/ceph/common/configure
 
 /etc/ceph/ceph.client.images.keyring:
   file.managed:
@@ -77,7 +77,6 @@ spawnzero_complete:
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
         password: {{ pillar['glance']['glance_service_password'] }}
-
 
 glance_api_service:
   service.running:
