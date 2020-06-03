@@ -48,8 +48,6 @@ glance-manage db_sync:
 make_images_pool:
   event.send:
     - name: create/{{ grains['type'] }}/pool
-    - data:
-        pgs: {{ pillar['cephconf']['images_pgs'] }}
 
 spawnzero_complete:
   event.send:
