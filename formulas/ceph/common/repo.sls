@@ -16,6 +16,23 @@ update_packages_ceph:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
+ceph_repo:
+  pkgrepo.managed:
+    - humanname: Ceph Octopus
+    - name: ceph
+    - baseurl: https://download.ceph.com/rpm-octopus/el8/$basearch
+    - file: /etc/yum.repos.d/ceph.repo
+    - gpgkey: https://download.ceph.com/keys/release.asc
+
+## new requirement with octopus+el8
+ceph_repo_noarch:
+  pkgrepo.managed:
+    - humanname: Ceph Octopus noarch
+    - name: ceph_noarch
+    - baseurl: https://download.ceph.com/rpm-octopus/el8/noarch
+    - file: /etc/yum.repos.d/ceph_noarch.repo
+    - gpgkey: https://download.ceph.com/keys/release.asc
+
 centos-release-ceph-octopus:
   pkg.installed
 
@@ -23,6 +40,8 @@ update_packages_ceph:
   pkg.uptodate:
     - refresh: true
     - onchanges:
+      - pkgrepo: ceph_repo
+      - pkgrepo: ceph_repo_noarch
       - pkg: centos-release-ceph-octopus
 
 {% endif %}
