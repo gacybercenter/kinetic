@@ -17,6 +17,8 @@ update_packages_uca:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
+## added per https://www.rdoproject.org/install/packstack/
+## official upstream docs do not reflect this yet
 PowerTools:
   pkgrepo.managed:
     - humanname: CentOS PowerTools
@@ -41,6 +43,6 @@ openstack-selinux:
     - require:
       - pkg: rdo
       - pkg: update_packages_rdo
-      - pkgrepo: PowerTools      
+      - pkgrepo: PowerTools
 
 {% endif %}
