@@ -17,6 +17,14 @@ update_packages_uca:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
+PowerTools:
+  pkgrepo.managed:
+    - humanname: CentOS PowerTools
+    - name: PowerTools
+    - mirrorlist: http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=PowerTools&infra=$infra
+    - file: /etc/yum.repos.d/PowerTools.repo
+    - gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+
 rdo:
   pkg.installed:
     - name: centos-release-openstack-ussuri
