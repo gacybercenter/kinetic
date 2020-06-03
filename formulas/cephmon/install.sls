@@ -5,4 +5,4 @@ install_ceph:
   pkg.installed:
     - name: ceph
     - require:
-      - sls: formulas/ceph/common/repo
+      - sls: /formulas/ceph/common/repo
