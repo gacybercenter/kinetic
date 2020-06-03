@@ -141,6 +141,11 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
   file.managed:
     - source: salt://formulas/mysql/files/mariadb.service
 
+systemctl daemon-reload:
+  cmd.run:
+    - onchanges:
+      - file: /usr/lib/systemd/system/mariadb.service
+
 cluster_established_final:
   grains.present:
     - name: cluster_established
