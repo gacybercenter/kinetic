@@ -1,5 +1,5 @@
 include:
-  - formulas/ceph/common/repo
+  - /formulas/ceph/common/repo
 
 install_ceph:
   pkg.installed:
