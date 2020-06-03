@@ -5,8 +5,6 @@ include:
   - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
-
-
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
