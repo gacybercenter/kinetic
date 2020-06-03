@@ -34,6 +34,7 @@ update_packages_rdo:
     - refresh: true
     - onchanges:
       - pkg: rdo
+      - pkg: PowerTools
 
 openstack-selinux:
   pkg.installed:
