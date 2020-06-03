@@ -24,10 +24,19 @@ ceph_repo:
     - file: /etc/yum.repos.d/ceph.repo
     - gpgkey: https://download.ceph.com/keys/release.asc
 
+ceph_repo_noarch:
+  pkgrepo.managed:
+    - humanname: Ceph Octopus noarch
+    - name: ceph_noarch
+    - baseurl: https://download.ceph.com/rpm-octopus/el8/noarch
+    - file: /etc/yum.repos.d/ceph_noarch.repo
+    - gpgkey: https://download.ceph.com/keys/release.asc
+
 update_packages_ceph:
   pkg.uptodate:
     - refresh: true
     - onchanges:
       - ceph_repo
+      - ceph_repo_noarch
 
 {% endif %}
