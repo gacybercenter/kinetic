@@ -133,7 +133,6 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
           {% endif %}
         {% endfor %}
       {% endfor %}
-
     {% endfor %}
   {% endfor %}
 {% endif %}
