@@ -37,7 +37,7 @@ etcd_conf:
         cluster_token: {{ pillar['etcd']['etcd_cluster_token'] }}
 
 etcd_service_enable:
-  service.enable:
+  service.enabled:
     - name: etcd
 
 etcd_service:
