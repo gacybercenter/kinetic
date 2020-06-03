@@ -24,6 +24,7 @@ ceph_repo:
     - file: /etc/yum.repos.d/ceph.repo
     - gpgkey: https://download.ceph.com/keys/release.asc
 
+## new requirement with octopus+el8
 ceph_repo_noarch:
   pkgrepo.managed:
     - humanname: Ceph Octopus noarch
