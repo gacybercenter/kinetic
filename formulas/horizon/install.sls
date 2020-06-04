@@ -107,7 +107,7 @@ install_zun_ui:
       - cmd: zun_ui_requirements
 
 set_module_permissions:
-  file.director:
+  file.directory:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled
     - file_mode: 644
     - recurse:
