@@ -84,11 +84,6 @@ apache_conf:
         alias: dashboard
 {% endif %}
 
-#serialConsole.js:
-#  file.managed:
-#    - name: /usr/share/openstack-dashboard/openstack_dashboard/static/js/angular/directives/serialConsole.js
-#    - source: salt://formulas/horizon/files/serialConsole.js
-
 {% if grains['os_family'] == 'Debian' %}
 
 secret_key:
@@ -127,8 +122,8 @@ configure-collect-static:
       - file: apache_conf
     - onchanges:
       - git: install_theme
-#      - file: serialConsole.js
       - file: local_settings
+      - sls: /formulas/horizon/install
 
 configure-compress-static:
   cmd.run:
@@ -158,4 +153,3 @@ apache2_service:
       - file: apache_conf
       - git: install_theme
       - cmd: configure-compress-static
-#      - file: serialConsole.js

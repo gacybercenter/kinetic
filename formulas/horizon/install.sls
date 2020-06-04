@@ -48,20 +48,6 @@ install_magnum_ui:
     - onchanges:
       - cmd: magnum_ui_requirements
 
-collect-static-magnum:
-  cmd.run:
-    - name: python3 manage.py collectstatic --noinput
-    - cwd: /usr/share/openstack-dashboard/
-    - onchanges:
-      - cmd: install_magnum_ui
-
-compress-static-magnum:
-  cmd.run:
-    - name: python3 manage.py compress
-    - cwd: /usr/share/openstack-dashboard/
-    - onchanges:
-      - cmd: collect-static-magnum
-
 {% elif grains['os_family'] == 'RedHat' %}
 
 horizon_packages:
@@ -119,17 +105,3 @@ install_zun_ui:
     - cwd: /usr/share/openstack-dashboard/zun-ui/
     - onchanges:
       - cmd: zun_ui_requirements
-
-collect-static-zun:
-  cmd.run:
-    - name: python3 manage.py collectstatic --noinput
-    - cwd: /usr/share/openstack-dashboard/
-    - onchanges:
-      - cmd: install_zun_ui
-
-compress-static-zun:
-  cmd.run:
-    - name: python3 manage.py compress
-    - cwd: /usr/share/openstack-dashboard/
-    - onchanges:
-      - cmd: collect-static-zun
