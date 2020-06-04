@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -23,6 +23,6 @@ network_packages:
       - openstack-neutron-ml2
       - openstack-neutron-linuxbridge
       - ebtables
-      - python2-openstackclient
+      - python3-openstackclient
 
 {% endif %}
