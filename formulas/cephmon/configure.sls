@@ -18,29 +18,15 @@ spawnzero_complete:
     - user: ceph
     - group: ceph
 
-/etc/ceph/ceph.client.admin.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-admin-keyring
-
-/etc/ceph/ceph.client.images.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-images-keyring
-
-/etc/ceph/ceph.client.volumes.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-volumes-keyring
-
-/etc/ceph/ceph.client.compute.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-compute-keyring
-
-/etc/ceph/ceph.client.manila.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-manila-keyring
-
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
+
+{% for client-keyring in ['admin', 'images', 'volumes', 'compute', 'manila'] %}
+/etc/ceph/ceph.client.{{ client-keyring }}.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-{{ client-keyring }}-keyring
+{% endfor %}
 
 /var/lib/ceph/mon/ceph-{{ grains['id'] }}:
   file.directory:
@@ -104,26 +90,14 @@ fs.file-max:
   file.managed:
     - source: salt://formulas/cephmon/files/limits.conf
 
-ceph auth import -i /etc/ceph/ceph.client.images.keyring:
+{% for auth in ['images', 'volumes', 'compute'] %}
+ceph auth import -i /etc/ceph/ceph.client.{{ auth }}.keyring:
   cmd.run:
     - onchanges:
-      - /etc/ceph/ceph.client.images.keyring
+      - /etc/ceph/ceph.client.{{ auth }}.keyring
     - require:
       - service: ceph-mon@{{ grains['id'] }}
-
-ceph auth import -i /etc/ceph/ceph.client.volumes.keyring:
-  cmd.run:
-    - onchanges:
-      - /etc/ceph/ceph.client.volumes.keyring
-    - require:
-      - service: ceph-mon@{{ grains['id'] }}
-
-ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
-  cmd.run:
-    - onchanges:
-      - /etc/ceph/ceph.client.compute.keyring
-    - require:
-      - service: ceph-mon@{{ grains['id'] }}
+{% endfor %}
 
 {% if grains['spawning'] == 0 %}
   {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
