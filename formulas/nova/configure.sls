@@ -47,7 +47,7 @@ nova-manage db sync:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage db version | grep -q 402
+      - nova-manage db version | grep -q 407
 
 spawnzero_complete:
   event.send:
