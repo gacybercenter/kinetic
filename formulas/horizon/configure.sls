@@ -1,7 +1,7 @@
 include:
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/horizon/install
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/horizon/install
 
 {% if grains['spawning'] == 0 %}
 
@@ -84,10 +84,10 @@ apache_conf:
         alias: dashboard
 {% endif %}
 
-serialConsole.js:
-  file.managed:
-    - name: /usr/share/openstack-dashboard/openstack_dashboard/static/js/angular/directives/serialConsole.js
-    - source: salt://formulas/horizon/files/serialConsole.js
+#serialConsole.js:
+#  file.managed:
+#    - name: /usr/share/openstack-dashboard/openstack_dashboard/static/js/angular/directives/serialConsole.js
+#    - source: salt://formulas/horizon/files/serialConsole.js
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -120,11 +120,7 @@ install_theme:
 
 configure-collect-static:
   cmd.run:
-{% if grains['os_family'] == 'Debian' %}
     - name: python3 manage.py collectstatic --noinput
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: python2 manage.py collectstatic --noinput
-{% endif %}
     - cwd: /usr/share/openstack-dashboard/
     - require:
       - file: local_settings
@@ -136,11 +132,7 @@ configure-collect-static:
 
 configure-compress-static:
   cmd.run:
-{% if grains['os_family'] == 'Debian' %}
     - name: python3 manage.py compress
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: python2 manage.py compress
-{% endif %}
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
       - cmd: configure-collect-static
@@ -166,4 +158,4 @@ apache2_service:
       - file: apache_conf
       - git: install_theme
       - cmd: configure-compress-static
-      - file: serialConsole.js
+#      - file: serialConsole.js
