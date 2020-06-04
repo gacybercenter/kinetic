@@ -110,5 +110,6 @@ set_module_permissions:
   file.directory:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled
     - file_mode: 644
+    - follow_symlinks: True
     - recurse:
       - mode
