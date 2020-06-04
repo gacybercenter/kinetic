@@ -96,7 +96,7 @@ rabbitmqctl add_user openstack {{ pillar['rabbitmq']['rabbitmq_password'] }}:
 rabbitmqctl set_permissions openstack ".*" ".*" ".*":
   cmd.run:
     - unless:
-      - rabbitmqctl list_user_permissions openstack
+      - rabbitmqctl list_user_permissions openstack | grep -q '/'
     - require:
       - service: rabbitmq-server-service
 ### /legacy functions
