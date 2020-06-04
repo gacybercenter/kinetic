@@ -104,7 +104,7 @@ wsgi_module:
         transport: {{ pillar['salt_transport'] }}
     {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
-      {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() == {} %}
+      {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') is none %}
         proxy: ""
       {% else %}
         {% for host, addresses in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
