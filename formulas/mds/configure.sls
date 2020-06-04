@@ -1,8 +1,8 @@
 include:
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/cephmon/install
-  - formulas/ceph/common/configure
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/cephmon/install
+  - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
 spawnzero_complete:
@@ -52,4 +52,4 @@ ceph-mds@{{ grains['id'] }}:
   service.running:
     - enable: true
     - watch:
-      - sls: formulas/ceph/common/configure
+      - sls: /formulas/ceph/common/configure
