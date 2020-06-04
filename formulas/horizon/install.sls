@@ -78,7 +78,7 @@ horizon_packages:
       - openstack-manila-ui
       - gcc
       - git
-      - python3-devel
+      - platform-python-devel
     - reload_modules: True
 
 {% endif %}
