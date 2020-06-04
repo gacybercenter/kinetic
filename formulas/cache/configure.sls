@@ -32,6 +32,7 @@ build acng container image:
     - name: buildah bud -t acng acng.dockerfile
     - onchanges:
       - file: /root/acng.dockerfile
+      - file: /root/acng.conf
 
 ## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
 ## podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng
