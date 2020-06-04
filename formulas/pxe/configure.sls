@@ -104,14 +104,17 @@ wsgi_module:
         transport: {{ pillar['salt_transport'] }}
     {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
-      {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-      {% if cache_addresses_dict == {} %}
+      {% for host, addresses in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        {%- for address in addresses -%}
+          {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+            {% if address == "" %}
         proxy: ""
-      {% else %}
-        {% for host in cache_addresses_dict %}
-        proxy: http://{{ cache_addresses_dict[host][0] }}:3142
+            {% else %}
+        proxy: http://{{ address }}:3142
+            {% endif %}
+          {% endif %}
         {% endfor %}
-      {% endif %}
+      {% endfor %}
     {% endif %}
   {% endif %}
 {% endfor %}
