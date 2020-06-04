@@ -1,8 +1,8 @@
 include:
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/storage/install
-  - formulas/ceph/common/configure
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/storage/install
+  - /formulas/ceph/common/configure
 
 /etc/ceph/ceph.client.admin.keyring:
   file.managed:
@@ -55,7 +55,7 @@ db_pv_{{ device }}_{{ loop.index }}:
     - unless:
       - test -d /dev/db_vg
     - require:
-      - sls: formulas/storage/install
+      - sls: /formulas/storage/install
   {% endfor %}
 {% endfor %}
 
@@ -64,7 +64,7 @@ db_vg:
     - unless:
        - test -d /dev/db_vg
     - require:
-      - sls: formulas/storage/install
+      - sls: /formulas/storage/install
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
@@ -93,6 +93,6 @@ create_osd_{{ osd }}:
     - unless:
       - vgdisplay --verbose | grep -q {{ osd }}
     - require:
-      - sls: formulas/ceph/common/configure
+      - sls: /formulas/ceph/common/configure
       - lvm: db_lv_{{ loop.index0 }}
 {% endfor %}
