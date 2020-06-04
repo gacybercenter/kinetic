@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -15,8 +15,8 @@ placement_packages:
 placement_packages:
   pkg.installed:
     - pkgs:
-      - python2-openstackclient
+      - python3-openstackclient
       - openstack-placement-api
-      - python36-PyMySQL
+      - python3-PyMySQL
 
 {% endif %}
