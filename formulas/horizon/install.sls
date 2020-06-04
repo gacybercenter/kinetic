@@ -83,6 +83,7 @@ copy_zun_panels:
     - src: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/
     - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
     - recurse: True
+    - mode: 644
     - unless:
       - test -f /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/_0330_cloud_shell.py
 
