@@ -41,6 +41,7 @@ neutron_packages:
       - openstack-neutron
       - openstack-neutron-ml2
       - python3-openstackclient
+      - ovn
 
   {% endif %}
 {% endif %}
