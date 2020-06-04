@@ -1,7 +1,7 @@
 ## redfish module - primarily used for bootstrapping
 ## could potentially be fleshed out and become formal fully-featured
 ## salt module
-import redfish, json, ipaddress, socket, requests, urllib3, re
+import redfish, pyghmi.ipmi.cmd, json, ipaddress, socket, requests, urllib3, re
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 socket.setdefaulttimeout(0.1)
@@ -68,7 +68,12 @@ def set_bootonce(host, username, password, mode, target):
                                     }
                                   })
     session.logout()
-    return response.text
+    if response.status != 200:
+        cmd = pyghmi.ipmi.command.Command(bmc=host, userid=username, password=password, keepalive=False)
+        cmd.set_bootdev(bootdev="network", uefiboot=True)
+        return cmd.get_bootdev()
+    else:
+        return response.text
 
 def reset_host(host, username, password):
     session = login(host, username, password)
