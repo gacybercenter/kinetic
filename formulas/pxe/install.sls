@@ -24,6 +24,12 @@ redfish_pip:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
 
+pyghmi_pip:
+  pip.installed:
+    - name: pyghmi
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
 salt-minion_inotify_watch:
   cmd.run:
     - name: 'salt-call service.restart salt-minion'
