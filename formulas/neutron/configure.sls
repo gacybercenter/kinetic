@@ -58,7 +58,7 @@ spawnzero_complete:
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
         service_plugins: router
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-        service_plugins: networking_ovn.l3.l3_ovn.OVNL3RouterPlugin
+        service_plugins: neutron.services.ovn_l3.plugin.OVNL3RouterPlugin
 {% endif %}
         sql_connection_string: 'connection = mysql+pymysql://neutron:{{ pillar['neutron']['neutron_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/neutron'
         transport_url: |-
