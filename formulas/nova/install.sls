@@ -11,7 +11,7 @@ nova_packages:
       - nova-spiceproxy
       - nova-scheduler
       - python3-openstackclient
-      - spice-html5
+      - git
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -23,5 +23,6 @@ nova_packages:
       - openstack-nova-spicehtml5proxy
       - openstack-nova-scheduler
       - python3-openstackclient
+      - git
 
 {% endif %}

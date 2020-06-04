@@ -93,6 +93,11 @@ spawnzero_complete:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
+spice-html5:
+  git.latest:
+    - name: https://gitlab.freedesktop.org/spice/spice-html5.git
+    - target: /usr/share/spice-html5
+
 nova_api_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
