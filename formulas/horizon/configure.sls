@@ -127,7 +127,7 @@ configure-collect-static:
       - file: apache_conf
     - onchanges:
       - git: install_theme
-      - file: serialConsole.js
+#      - file: serialConsole.js
       - file: local_settings
 
 configure-compress-static:
