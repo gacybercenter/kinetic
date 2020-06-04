@@ -19,7 +19,6 @@ neutron_packages:
       - neutron-server
       - neutron-plugin-ml2
       - python3-openstackclient
-      - python3-networking-ovn
       - python3-tornado
 
   {% endif %}
@@ -32,7 +31,7 @@ neutron_packages:
     - pkgs:
       - openstack-neutron-ml2
       - openstack-neutron
-      - python2-openstackclient
+      - python3-openstackclient
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -42,7 +41,6 @@ neutron_packages:
       - openstack-neutron
       - openstack-neutron-ml2
       - python3-openstackclient
-      - python3-networking-ovn
 
   {% endif %}
 {% endif %}
