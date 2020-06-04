@@ -23,7 +23,7 @@ nova-manage api_db sync:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage api_db version | grep -q 67
+      - nova-manage api_db version | grep -q 72
 
 nova-manage cell_v2 map_cell0:
   cmd.run:
