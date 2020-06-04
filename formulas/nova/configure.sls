@@ -1,7 +1,7 @@
 include:
-  - formulas/nova/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/nova/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
@@ -72,12 +72,6 @@ nova-manage db sync:
       - /etc/nova/flavors/{{ flavor_name }}
 
 {% endfor %}
-
-make_nova_pool:
-  event.send:
-    - name: create/{{ grains['type'] }}/pool
-    - data:
-        pgs: {{ pillar['cephconf']['vms_pgs'] }}
 
 spawnzero_complete:
   event.send:
