@@ -22,10 +22,10 @@ spawnzero_complete:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
 
-{% for client-keyring in ['admin', 'images', 'volumes', 'compute', 'manila'] %}
+{% for client_keyring in ['admin', 'images', 'volumes', 'compute', 'manila'] %}
 /etc/ceph/ceph.client.{{ client-keyring }}.keyring:
   file.managed:
-    - contents_pillar: ceph:ceph-client-{{ client-keyring }}-keyring
+    - contents_pillar: ceph:ceph-client-{{ client_keyring }}-keyring
 {% endfor %}
 
 /var/lib/ceph/mon/ceph-{{ grains['id'] }}:
