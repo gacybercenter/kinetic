@@ -49,30 +49,6 @@ nova-manage db sync:
     - unless:
       - nova-manage db version | grep -q 402
 
-/etc/nova/flavors:
-  file.directory
-
-{% for flavor_name, args in pillar.get('flavors', {}).items() %}
-
-{{ flavor_name }}_flavor_creation:
-  cmd.script:
-    - source: salt://formulas/nova/files/flavors.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        vcpus: {{ args['vcpus'] }}
-        ram: {{ args['ram'] }}
-        disk: {{ args['disk'] }}
-        flavor_name: {{ flavor_name }}
-    - require:
-      - file: /etc/nova/nova.conf
-      - service: nova_api_service
-    - creates:
-      - /etc/nova/flavors/{{ flavor_name }}
-
-{% endfor %}
-
 spawnzero_complete:
   event.send:
     - name: {{ grains['type'] }}/spawnzero/complete
