@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -22,16 +22,17 @@ heat_packages:
       - openstack-heat-api
       - openstack-heat-api-cfn
       - openstack-heat-engine
-      - python2-openstackclient
-      - uwsgi-plugin-python2-tornado
-      - python2-designateclient
-      - python2-pip
+      - python3-openstackclient
+      - uwsgi-plugin-python3-tornado
+      - python3-designateclient
+      - python3-pip
     - reload_modules: true
 
 zunclient_install:
   pip.installed:
-    - name: python-zunclient
+    - bin_env: '/usr/bin/pip3'
     - require:
       - pkg: heat_packages
+    - reload_modules: True
 
 {% endif %}
