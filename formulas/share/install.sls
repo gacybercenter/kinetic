@@ -41,6 +41,7 @@ ganesha_packages::
     - pkgs:
       - nfs-ganesha
       - nfs-ganesha-ceph
+      - nfs-ganesha-selinux
     - require:
       - pkg: share_packages
 
