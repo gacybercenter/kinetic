@@ -198,6 +198,11 @@ neutron_user_exists:
     - name: neutron
     - home: /etc/neutron
 
+/etc/neutron:
+  file.directory:
+    user: neutron
+    group: neutron
+
 neutron-ovn-metadata-agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/neutron_ovn_metadata_agent.ini
