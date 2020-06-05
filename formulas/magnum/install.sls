@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -18,7 +18,7 @@ magnum_packages:
     - pkgs:
       - openstack-magnum-api
       - openstack-magnum-conductor
-      - python2-magnumclient
-      - python2-openstackclient
+      - python3-magnumclient
+      - python3-openstackclient
 
 {% endif %}

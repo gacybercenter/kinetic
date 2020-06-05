@@ -1,7 +1,7 @@
 include:
-  - formulas/magnum/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/magnum/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
