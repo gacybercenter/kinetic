@@ -28,6 +28,7 @@ zun_packages:
       - platform-python-devel
       - libffi-devel
       - gcc
+      - gcc-c++      
       - openssl-devel
       - numactl
       - python3-PyMySQL
