@@ -172,7 +172,6 @@ libvirtd_service:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
 
-
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
@@ -194,6 +193,10 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+neutron_user_exists:
+  user.present:
+    - name: neutron
+
 neutron-ovn-metadata-agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/neutron_ovn_metadata_agent.ini
