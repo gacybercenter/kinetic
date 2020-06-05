@@ -1,6 +1,5 @@
 include:
-  - formulas/openstack/common/repo
-  - formulas/ceph/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -18,7 +17,7 @@ cinder_packages:
   pkg.installed:
     - pkgs:
       - openstack-cinder
-      - python2-openstackclient
-      - python-memcached
+      - python3-openstackclient
+      - pytho3-memcached
 
 {% endif %}

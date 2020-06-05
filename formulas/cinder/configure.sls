@@ -1,7 +1,7 @@
 include:
-  - formulas/cinder/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/cinder/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
@@ -25,12 +25,6 @@ cinder-manage db sync:
     - runas: cinder
     - require:
       - file: /etc/cinder/cinder.conf
-
-make_cinder_pool:
-  event.send:
-    - name: create/{{ grains['type'] }}/pool
-    - data:
-        pgs: {{ pillar['cephconf']['volumes_pgs'] }}
 
 spawnzero_complete:
   event.send:
@@ -71,7 +65,7 @@ spawnzero_complete:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
-        
+
 cinder_api_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
