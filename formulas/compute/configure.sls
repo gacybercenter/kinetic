@@ -67,6 +67,9 @@ load_ceph_volumes_key:
     - unless:
       - virsh secret-get-value {{ pillar['ceph']['volumes-uuid'] }}
 
+/var/log/neutron:
+  file.directory
+
 /etc/nova/nova.conf:
   file.managed:
     - source: salt://formulas/compute/files/nova.conf
