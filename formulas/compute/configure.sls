@@ -67,9 +67,6 @@ load_ceph_volumes_key:
     - unless:
       - virsh secret-get-value {{ pillar['ceph']['volumes-uuid'] }}
 
-/var/log/neutron:
-  file.directory
-
 /etc/nova/nova.conf:
   file.managed:
     - source: salt://formulas/compute/files/nova.conf
@@ -193,9 +190,13 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+/var/log/neutron:
+  file.directory
+
 neutron_user_exists:
   user.present:
     - name: neutron
+    - home: /etc/neutron
 
 neutron-ovn-metadata-agent.ini:
   file.managed:
