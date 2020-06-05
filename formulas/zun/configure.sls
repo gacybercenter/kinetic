@@ -97,19 +97,19 @@ make_kuryr_user:
   file.managed:
     - source: salt://formulas/zun/files/api-paste.ini
     - requires:
-      - /formulas/zun/install
+      - sls: /formulas/zun/install
 
 /etc/systemd/system/zun-api.service:
   file.managed:
     - source: salt://formulas/zun/files/zun-api.service
     - requires:
-      - /formulas/zun/install
+      - sls: /formulas/zun/install
 
 /etc/systemd/system/zun-wsproxy.service:
   file.managed:
     - source: salt://formulas/zun/files/zun-wsproxy.service
     - requires:
-      - /formulas/zun/install
+      - sls: /formulas/zun/install
 
 zun_api_service:
   service.running:
