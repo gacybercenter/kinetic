@@ -200,8 +200,8 @@ neutron_user_exists:
 
 /etc/neutron:
   file.directory:
-    user: neutron
-    group: neutron
+    - user: neutron
+    - group: neutron
 
 neutron-ovn-metadata-agent.ini:
   file.managed:
