@@ -30,7 +30,7 @@ heat_packages:
 
 zunclient_install:
   pip.installed:
-    - name: python3-zunclient
+    - name: python-zunclient
     - bin_env: '/usr/bin/pip3'
     - require:
       - pkg: heat_packages
