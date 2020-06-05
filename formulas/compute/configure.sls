@@ -205,6 +205,7 @@ neutron_user_exists:
     - recurse:
       - user
       - group
+    - follow_symlinks: False
 
 neutron-ovn-metadata-agent.ini:
   file.managed:
