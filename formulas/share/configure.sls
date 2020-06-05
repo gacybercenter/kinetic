@@ -1,8 +1,8 @@
 include:
-  - formulas/share/install
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/ceph/common/configure
+  - /formulas/share/install
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
 
