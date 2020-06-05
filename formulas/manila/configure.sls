@@ -1,7 +1,7 @@
 include:
-  - formulas/manila/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/manila/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
