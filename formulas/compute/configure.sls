@@ -191,9 +191,9 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-networking-ovn-metadata-agent.ini:
+neutron-ovn-metadata-agent.ini:
   file.managed:
-    - source: salt://formulas/compute/files/networking_ovn_metadata_agent.ini
+    - source: salt://formulas/compute/files/neutron_ovn_metadata_agent.ini
     - name: /etc/neutron/neutron_ovn_metadata_agent.ini
     - template: jinja
     - defaults:
@@ -220,7 +220,7 @@ openvswitch_service:
 {% endif %}
     - enable: true
     - watch:
-      - file: networking-ovn-metadata-agent.ini
+      - file: neutron-ovn-metadata-agent.ini
 
 set-ovn-remote:
   cmd.run:
@@ -329,7 +329,7 @@ ovn_metadata_service:
     - name: neutron-ovn-metadata-agent
     - enable: True
     - watch:
-      - file: networking-ovn-metadata-agent.ini
+      - file: neutron-ovn-metadata-agent.ini
     - require:
       - cmd: ovsdb_listen
 
