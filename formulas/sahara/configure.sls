@@ -1,7 +1,7 @@
 include:
-  - formulas/sahara/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/sahara/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
