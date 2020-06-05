@@ -36,7 +36,7 @@ share_packages:
       - python3-rados
     - reload_modules: true
 
-ganesha_packages::
+ganesha_packages:
   pkg.installed:
     - pkgs:
       - nfs-ganesha
