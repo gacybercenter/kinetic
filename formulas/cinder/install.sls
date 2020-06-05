@@ -18,6 +18,6 @@ cinder_packages:
     - pkgs:
       - openstack-cinder
       - python3-openstackclient
-      - pytho3-memcached
+      - python3-memcached
 
 {% endif %}
