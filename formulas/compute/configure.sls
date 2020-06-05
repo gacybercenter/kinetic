@@ -202,6 +202,7 @@ neutron_user_exists:
   file.directory:
     - user: neutron
     - group: neutron
+    - recurse: True
 
 neutron-ovn-metadata-agent.ini:
   file.managed:
