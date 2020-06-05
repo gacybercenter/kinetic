@@ -1,7 +1,7 @@
 include:
-  - formulas/barbican/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/barbican/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
