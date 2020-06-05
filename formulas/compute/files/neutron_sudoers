@@ -1,3 +1,4 @@
 Defaults:neutron !requiretty
 
 neutron ALL = (root) NOPASSWD: /usr/bin/privsep-helper *
+neutron ALL = (root) NOPASSWD: /usr/bin/privsep-helper
