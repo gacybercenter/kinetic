@@ -1,8 +1,8 @@
 include:
-  - formulas/compute/install
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/ceph/common/configure
+  - /formulas/compute/install
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/ceph/common/configure
 
 /etc/modprobe.d/kvm.conf:
   file.managed:
@@ -101,6 +101,11 @@ load_ceph_volumes_key:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
+
+spice-html5:
+  git.latest:
+    - name: https://gitlab.freedesktop.org/spice/spice-html5.git
+    - target: /usr/share/spice-html5
 
 nova_compute_service:
   service.running:
