@@ -326,7 +326,7 @@ ovn_controller_service:
 
 ovn_metadata_service:
   service.running:
-    - name: networking-ovn-metadata-agent
+    - name: neutron-ovn-metadata-agent
     - enable: True
     - watch:
       - file: networking-ovn-metadata-agent.ini
