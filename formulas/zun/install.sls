@@ -28,7 +28,7 @@ zun_packages:
       - platform-python-devel
       - libffi-devel
       - gcc
-      - gcc-c++      
+      - gcc-c++
       - openssl-devel
       - numactl
       - python3-PyMySQL
@@ -70,7 +70,7 @@ zun_latest:
 
 zun_requirements:
   cmd.run:
-    - name: pip3 install --upgrade -r /var/lib/zun/requirements.txt
+    - name: pip3 install -r /var/lib/zun/requirements.txt
     - unless:
       - systemctl is-active zun-api
     - require:
