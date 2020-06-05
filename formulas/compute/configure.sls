@@ -130,6 +130,10 @@ libvirtd_service:
       - cmd: load_ceph_volumes_key
 {% endif %}
 
+/etc/sudoers.d/neutron_sudoers:
+  file.managed:
+    - source: salt://formulas/compute/files/neutron_sudoers
+
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
 /etc/neutron/neutron.conf:
   file.managed:
@@ -164,10 +168,6 @@ libvirtd_service:
 {% elif grains['os_family'] == 'RedHat' %}
         lock_path: /var/lib/neutron/tmp
 {% endif %}
-
-/etc/sudoers.d/neutron_sudoers:
-  file.managed:
-    - source: salt://formulas/compute/files/neutron_sudoers
 
 neutron_linuxbridge_agent_service:
   service.running:
