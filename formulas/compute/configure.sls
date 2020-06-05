@@ -204,6 +204,15 @@ neutron_user_exists:
       - group
     - follow_symlinks: False
 
+/var/lib/neutron:
+  file.directory:
+    - user: neutron
+    - group: neutron
+    - recurse:
+      - user
+      - group
+    - follow_symlinks: False
+
 /var/log/neutron:
   file.directory:
     - user: neutron
@@ -211,7 +220,7 @@ neutron_user_exists:
     - recurse:
       - user
       - group
-    - follow_symlinks: False    
+    - follow_symlinks: False
 
 neutron-ovn-metadata-agent.ini:
   file.managed:
