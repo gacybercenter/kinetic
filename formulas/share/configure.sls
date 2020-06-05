@@ -76,7 +76,9 @@ spawnzero_complete:
           cephfs_cluster_name = ceph
           cephfs_enable_snapshots = True
           cephfs_ganesha_server_is_remote = False
-          cephfs_ganesha_server_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['public'])[0] }}
+## TODO - figure out how to handle shares
+##          cephfs_ganesha_server_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['public'])[0] }}
+          cephfs_ganesha_server_ip = 127.0.0.1
         backend: cephfsnfs{{ grains['spawning'] }}
 
 manila_share_service:
