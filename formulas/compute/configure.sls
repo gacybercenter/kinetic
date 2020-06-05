@@ -200,7 +200,6 @@ neutron-ovn-metadata-agent.ini:
     - name: /etc/neutron/neutron_ovn_metadata_agent.ini
     - template: jinja
     - defaults:
-        ini_file: /etc/neutron/neutron_ovn_metadata_agent.ini
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
         ovn_sb_connection: |-
