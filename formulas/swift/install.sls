@@ -1,6 +1,6 @@
 include:
-  - formulas/openstack/common/repo
-  - formulas/ceph/common/repo
+  - /formulas/openstack/common/repo
+  - /formulas/ceph/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -16,6 +16,6 @@ swift_packages:
   pkg.installed:
     - pkgs:
       - ceph-radosgw
-      - python2-openstackclient
+      - python3-openstackclient
 
 {% endif %}
