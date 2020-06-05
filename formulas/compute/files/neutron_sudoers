@@ -1,3 +1,3 @@
 Defaults:neutron !requiretty
 
-neutron ALL = (root) NOPASSWD: /usr/bin/neutron-rootwrap /etc/neutron/rootwrap.conf *,/usr/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf
+neutron ALL = (root) NOPASSWD: /usr/bin/privsep-helper --config-file /etc/neutron/neutron_ovn_metadata_agent.ini --config-dir /etc/neutron/conf.d/neutron-ovn-metadata-agent --privsep_context neutron.privileged.default --privsep_sock_path *
