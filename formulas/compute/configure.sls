@@ -194,18 +194,10 @@ neutron_linuxbridge_agent_service:
 networking-ovn-metadata-agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/networking_ovn_metadata_agent.ini
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
-{% elif grains['os_family'] == 'Debian' %}
-    - name: /etc/neutron/networking_ovn_metadata_agent.ini
-{% endif %}
+    - name: /etc/neutron/neutron-ovn-metadata-agent.ini
     - template: jinja
     - defaults:
-{% if grains['os_family'] == 'RedHat' %}
-        ini_file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
-{% elif grains['os_family'] == 'Debian' %}
-        ini_file: /etc/neutron/networking_ovn_metadata_agent.ini
-{% endif %}
+        ini_file: /etc/neutron/neutron-ovn-metadata-agent.ini
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
         ovn_sb_connection: |-
