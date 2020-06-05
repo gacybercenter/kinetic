@@ -25,7 +25,7 @@ zun_packages:
     - pkgs:
       - python3-pip
       - git
-      - python3-devel
+      - platform-python-devel
       - libffi-devel
       - gcc
       - openssl-devel
