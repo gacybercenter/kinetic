@@ -1,6 +1,5 @@
 include:
-  - formulas/openstack/common/repo
-  - formulas/docker/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -31,17 +30,9 @@ zun_packages:
       - gcc
       - openssl-devel
       - numactl
-      - python36-PyMySQL
-
-python3-memcached:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
-
-python-openstackclient:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
+      - python3-PyMySQL
+      - python3-memcached
+      - python3-openstackclient
 
 {% endif %}
 
@@ -72,7 +63,7 @@ zun:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/train
+    - branch: stable/ussuri
     - target: /var/lib/zun
     - force_clone: true
 
