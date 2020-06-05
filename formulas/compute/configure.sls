@@ -190,9 +190,6 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-/var/log/neutron:
-  file.directory
-
 neutron_user_exists:
   user.present:
     - name: neutron
@@ -206,6 +203,15 @@ neutron_user_exists:
       - user
       - group
     - follow_symlinks: False
+
+/var/log/neutron:
+  file.directory:
+    - user: neutron
+    - group: neutron
+    - recurse:
+      - user
+      - group
+    - follow_symlinks: False    
 
 neutron-ovn-metadata-agent.ini:
   file.managed:
