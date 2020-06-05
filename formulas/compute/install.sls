@@ -32,7 +32,6 @@ compute_packages:
 
   {% endif %}
 
-
 {% elif grains['os_family'] == 'RedHat' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
 compute_packages:
