@@ -80,8 +80,6 @@ ovn_northd_service:
     - name: ovn-central
 {% endif %}
     - enable: true
-    - require:
-      - service: openvswitch_service
     - watch:
       - file: ovn_northd_opts
 
