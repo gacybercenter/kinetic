@@ -41,6 +41,8 @@ neutron_packages:
       - openstack-neutron
       - openstack-neutron-ml2
       - python3-openstackclient
+      - libibverbs
+      - rdma-core
 
   {% endif %}
 {% endif %}
