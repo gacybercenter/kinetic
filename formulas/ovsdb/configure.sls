@@ -72,15 +72,6 @@ ovn_northd_opts:
         cluster_remote: ""
           {% endif %}
 
-openvswitch_service:
-  service.running:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: openvswitch
-{% elif grains['os_family'] == 'Debian' %}
-    - name: openvswitch-switch
-{% endif %}
-    - enable: true
-
 ovn_northd_service:
   service.running:
 {% if grains['os_family'] == 'RedHat' %}
