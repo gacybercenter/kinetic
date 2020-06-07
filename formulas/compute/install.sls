@@ -56,6 +56,7 @@ compute_packages:
       - ceph-common
       - python3-rbd
       - python3-rados
+      - openstack-neutron-common
 
   {% endif %}
 
