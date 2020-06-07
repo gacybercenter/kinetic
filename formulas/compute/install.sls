@@ -57,6 +57,7 @@ compute_packages:
       - python3-rbd
       - python3-rados
       - openstack-neutron-common
+      - haproxy
 
   {% endif %}
 
