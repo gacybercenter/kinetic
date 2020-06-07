@@ -72,17 +72,6 @@ ovn_northd_opts:
         cluster_remote: ""
           {% endif %}
 
-ovn_northd_service:
-  service.running:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: ovn-northd
-{% elif grains['os_family'] == 'Debian' %}
-    - name: ovn-central
-{% endif %}
-    - enable: true
-    - watch:
-      - file: ovn_northd_opts
-
 openvswitch_service:
   service.running:
 {% if grains['os_family'] == 'RedHat' %}
@@ -93,6 +82,17 @@ openvswitch_service:
     - enable: true
     - require:
       - service: ovn_northd_service
+
+ovn_northd_service:
+  service.running:
+{% if grains['os_family'] == 'RedHat' %}
+    - name: ovn-northd
+{% elif grains['os_family'] == 'Debian' %}
+    - name: ovn-central
+{% endif %}
+    - enable: true
+    - watch:
+      - file: ovn_northd_opts
 
 ovn-nbctl --no-leader-only set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
   cmd.run:
