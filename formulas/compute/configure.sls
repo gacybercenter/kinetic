@@ -130,10 +130,6 @@ libvirtd_service:
       - cmd: load_ceph_volumes_key
 {% endif %}
 
-/etc/sudoers.d/neutron_sudoers:
-  file.managed:
-    - source: salt://formulas/compute/files/neutron_sudoers
-
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
 /etc/neutron/neutron.conf:
   file.managed:
@@ -190,37 +186,6 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-# neutron_user_exists:
-#   user.present:
-#     - name: neutron
-#     - home: /etc/neutron
-#
-# /etc/neutron:
-#   file.directory:
-#     - user: neutron
-#     - group: neutron
-#     - recurse:
-#       - user
-#       - group
-#     - follow_symlinks: False
-# 
-# /var/lib/neutron:
-#   file.directory:
-#     - user: neutron
-#     - group: neutron
-#     - recurse:
-#       - user
-#       - group
-#     - follow_symlinks: False
-#
-# /var/log/neutron:
-#   file.directory:
-#     - user: neutron
-#     - group: neutron
-#     - recurse:
-#       - user
-#       - group
-#     - follow_symlinks: False
 
 neutron-ovn-metadata-agent.ini:
   file.managed:
