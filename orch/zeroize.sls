@@ -82,3 +82,8 @@ delete_{{ target }}_key:
 {% else %}
     - match: {{ target }}
 {% endif %}
+
+expire_{{ target }}_dead_hosts:
+  salt.function:
+    - name: address.expire_dead_hosts
+    - tgt: salt
