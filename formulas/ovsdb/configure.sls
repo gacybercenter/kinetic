@@ -12,7 +12,7 @@ spawnzero_complete:
 
 {% endif %}
 
-openvswitch_ops:
+openvswitch_opts:
   file.managed:
     - name: /etc/sysconfig/openvswitch
     - source: salt://formulas/ovsdb/files/openvswitch
@@ -87,6 +87,8 @@ openvswitch_service:
     - name: openvswitch-switch
 {% endif %}
     - enable: true
+    - watch:
+      - file: openvswitch_opts
 
 ovn_northd_service:
   service.running:
@@ -96,10 +98,8 @@ ovn_northd_service:
     - name: ovn-central
 {% endif %}
     - enable: true
-    - require:
-      - service: openvswitch_service
-#    - watch:
-#      - file: ovn_northd_opts
+    - watch:
+      - file: ovn_northd_opts
 
 ovn-nbctl --no-leader-only set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
   cmd.run:
