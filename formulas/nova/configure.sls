@@ -95,7 +95,7 @@ spawnzero_complete:
 
 spice-html5:
   git.latest:
-    - name: https://gitlab.freedesktop.org/spice/spice-html5.git
+    - name: https://github.com/freedesktop/spice-html5.git
     - target: /usr/share/spice-html5
 
 nova_api_service:
