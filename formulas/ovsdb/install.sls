@@ -15,4 +15,5 @@ ovsdb_packages:
     - pkgs:
       - ovn-central
       - libibverbs
+      - rdma-core
 {% endif %}
