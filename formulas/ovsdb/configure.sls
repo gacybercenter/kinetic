@@ -91,8 +91,8 @@ ovn_northd_service:
     - enable: true
     - require:
       - service: openvswitch_service
-    - watch:
-      - file: ovn_northd_opts
+#    - watch:
+#      - file: ovn_northd_opts
 
 ovn-nbctl --no-leader-only set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
   cmd.run:
