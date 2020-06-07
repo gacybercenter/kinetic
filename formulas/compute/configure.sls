@@ -315,10 +315,6 @@ ovn_controller_service:
       - cmd: set_encap
       - cmd: set_encap_ip
 
-# The below section is a workaround for the issue identified at: http://lists.openstack.org/pipermail/openstack-discuss/2019-August/008542.html
-# I am pretty sure the below is not ideal, but its better than running as root
-###
-
 ovn_metadata_service:
   service.running:
     - name: neutron-ovn-metadata-agent
