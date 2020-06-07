@@ -12,42 +12,13 @@ spawnzero_complete:
 
 {% endif %}
 
-ovn_northd_opts:
+openvswitch_ops:
   file.managed:
-      {% if grains['os_family'] == "RedHat" %}
-    - name: /etc/sysconfig/ovn-northd
-      {% elif grains['os_family'] == "Debian" %}
-    - name: /etc/default/ovn-central
-      {% endif %}
-    - source: salt://formulas/ovsdb/files/ovn-northd
+    - name: /etc/sysconfig/openvswitch
+    - source: salt://formulas/ovsdb/files/openvswitch
     - template: jinja
     - defaults:
-        {% if grains['os_family'] == "RedHat" %}
-        opts_name: OVN_NORTHD_OPTS
-        {% elif grains['os_family'] == "Debian" %}
-        opts_name: OVN_CTL_OPTS
-        {% endif %}
         self_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-        nb_cluster: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          tcp:{{ address }}:6641
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        sb_cluster: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          tcp:{{ address }}:6642
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
           {% if grains['spawning'] != 0 %}
         cluster_remote: |-
           --db-nb-cluster-remote-addr=
@@ -71,6 +42,42 @@ ovn_northd_opts:
           {% elif grains['spawning'] == 0 %}
         cluster_remote: ""
           {% endif %}
+
+ovn_northd_opts:
+  file.managed:
+      {% if grains['os_family'] == "RedHat" %}
+    - name: /etc/sysconfig/ovn-northd
+      {% elif grains['os_family'] == "Debian" %}
+    - name: /etc/default/ovn-central
+      {% endif %}
+    - source: salt://formulas/ovsdb/files/ovn-northd
+    - template: jinja
+    - defaults:
+        {% if grains['os_family'] == "RedHat" %}
+        opts_name: OVN_NORTHD_OPTS
+        {% elif grains['os_family'] == "Debian" %}
+        opts_name: OVN_CTL_OPTS
+        {% endif %}
+        nb_cluster: |-
+          {{ ""|indent(10) }}
+          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+          tcp:{{ address }}:6641
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
+        sb_cluster: |-
+          {{ ""|indent(10) }}
+          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+          tcp:{{ address }}:6642
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
 
 openvswitch_service:
   service.running:
