@@ -190,37 +190,37 @@ neutron_linuxbridge_agent_service:
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-neutron_user_exists:
-  user.present:
-    - name: neutron
-    - home: /etc/neutron
-
-/etc/neutron:
-  file.directory:
-    - user: neutron
-    - group: neutron
-    - recurse:
-      - user
-      - group
-    - follow_symlinks: False
-
-/var/lib/neutron:
-  file.directory:
-    - user: neutron
-    - group: neutron
-    - recurse:
-      - user
-      - group
-    - follow_symlinks: False
-
-/var/log/neutron:
-  file.directory:
-    - user: neutron
-    - group: neutron
-    - recurse:
-      - user
-      - group
-    - follow_symlinks: False
+# neutron_user_exists:
+#   user.present:
+#     - name: neutron
+#     - home: /etc/neutron
+#
+# /etc/neutron:
+#   file.directory:
+#     - user: neutron
+#     - group: neutron
+#     - recurse:
+#       - user
+#       - group
+#     - follow_symlinks: False
+# 
+# /var/lib/neutron:
+#   file.directory:
+#     - user: neutron
+#     - group: neutron
+#     - recurse:
+#       - user
+#       - group
+#     - follow_symlinks: False
+#
+# /var/log/neutron:
+#   file.directory:
+#     - user: neutron
+#     - group: neutron
+#     - recurse:
+#       - user
+#       - group
+#     - follow_symlinks: False
 
 neutron-ovn-metadata-agent.ini:
   file.managed:
