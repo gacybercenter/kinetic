@@ -1,7 +1,5 @@
 {{ opts_name }}="--db-nb-addr={{ self_ip }} \
---db-nb-create-insecure-remote=yes \
 --db-sb-addr={{ self_ip }} \
---db-sb-create-insecure-remote=yes \
 --db-nb-cluster-local-addr={{ self_ip }} \
 --db-sb-cluster-local-addr={{ self_ip }} \
 --ovn-northd-nb-db={{ nb_cluster }} \
