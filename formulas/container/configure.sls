@@ -245,13 +245,6 @@ ovn_controller_service:
 
 {% endif %}
 
-/etc/docker/daemon.json:
-  file.managed:
-    - source: salt://formulas/container/files/daemon.json
-    - template: jinja
-    - defaults:
-        public_dns: {{ pillar['networking']['addresses']['float_dns'] }}
-
 /etc/sudoers.d/zun_sudoers:
   file.managed:
     - source: salt://formulas/container/files/zun_sudoers
