@@ -245,13 +245,6 @@ ovn_controller_service:
 
 {% endif %}
 
-/etc/containerd/config.toml:
-  file.managed:
-    - source: salt://formulas/container/files/config.toml
-    - template: jinja
-    - defaults:
-        zun_group_id: {{ salt['group.info']('zun')['gid'] }}
-
 /etc/sudoers.d/zun_sudoers:
   file.managed:
     - source: salt://formulas/container/files/zun_sudoers
@@ -289,6 +282,18 @@ ovn_controller_service:
     - requires:
       - /formulas/container/install
 
+/etc/containerd/config.toml:
+  file.managed:
+    - source: salt://formulas/container/files/config.toml
+    - template: jinja
+    - defaults:
+        zun_group_id: {{ salt['group.info']('zun')['gid'] }}
+
+cni-plugins:
+  archive.extracted:
+    - name: /opt/cni/bin
+    - source: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-amd64-v0.8.4.tgz
+
 /etc/systemd/system/zun-compute.service:
   file.managed:
     - source: salt://formulas/container/files/zun-compute.service
@@ -321,6 +326,13 @@ kuryr_libnetwork_service:
     - name: kuryr-libnetwork
     - watch:
       - file: /etc/kuryr/kuryr.conf
+
+containerd_service:
+  service.running:
+    - enable: true
+    - name: containerd
+    - watch:
+      - file: /etc/containerd/config.toml
 
 zun_compute_service:
   service.running:
