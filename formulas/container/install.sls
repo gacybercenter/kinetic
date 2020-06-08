@@ -70,14 +70,14 @@ container_packages:
       - libibverbs
       - numactl
       - python3-openstackclient
-      - gcc-c++      
+      - gcc-c++
     - reload_modules: True
 
 install_docker:
   pkg.installed:
     - name: docker-ce
     - kwargs: {
-        nobest: True
+        best: False
       }
   {% endif %}
 
