@@ -70,6 +70,7 @@ container_packages:
       - libibverbs
       - numactl
       - python3-openstackclient
+      - gcc-c++      
     - reload_modules: True
 
 install_docker:
