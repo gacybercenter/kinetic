@@ -292,7 +292,7 @@ ovn_controller_service:
 cni-plugins:
   archive.extracted:
     - name: /opt/cni/bin
-    - source: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-amd64-v0.8.4.tgz
+    - source: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz
     - source_hash: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz.sha512
 
 /etc/systemd/system/zun-compute.service:
