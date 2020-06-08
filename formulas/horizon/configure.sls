@@ -84,6 +84,11 @@ apache_conf:
         alias: dashboard
 {% endif %}
 
+serialConsole.js:
+  file.managed:
+    - name: /usr/share/openstack-dashboard/openstack_dashboard/static/js/angular/directives/serialConsole.js
+    - source: salt://formulas/horizon/files/serialConsole.js
+
 {% if grains['os_family'] == 'Debian' %}
 
 secret_key:
