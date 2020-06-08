@@ -67,10 +67,17 @@ container_packages:
       - openssl-devel
       - ovn-host
       - python3-PyMySQL
-      - docker-ce
       - libibverbs
       - numactl
       - python3-openstackclient
+    - reload_modules: True
+
+install_docker:
+  pkg.installed:
+    - name: docker-ce
+    - kwargs:
+        best: False
+
   {% endif %}
 
 {% endif %}
