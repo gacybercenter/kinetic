@@ -53,8 +53,9 @@ container_packages:
       - openssl-devel
       - openstack-neutron-linuxbridge
       - python3-PyMySQL
-      - docker-ce
       - numactl
+      - python3-openstackclient
+      - gcc-c++
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 container_packages:
   pkg.installed:
@@ -73,12 +74,12 @@ container_packages:
       - gcc-c++
     - reload_modules: True
 
+  {% endif %}
+
 docker-ce:
   pkg.installed:
     - setopt:
       - best=False
-
-  {% endif %}
 
 {% endif %}
 
