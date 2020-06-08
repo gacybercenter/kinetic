@@ -341,6 +341,7 @@ docker_service:
     - name: docker
     - watch:
       - file: /etc/systemd/system/docker.service.d/docker.conf
+      - file: /etc/docker/daemon.json
 
 kuryr_libnetwork_service:
   service.running:
