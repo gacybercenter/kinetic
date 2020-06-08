@@ -47,7 +47,7 @@ container_packages:
     - pkgs:
       - python3-pip
       - git
-      - python3-devel
+      - platform-python-devel
       - libffi-devel
       - gcc
       - openssl-devel
@@ -61,7 +61,7 @@ container_packages:
     - pkgs:
       - python3-pip
       - git
-      - python3-devel
+      - platform-python-devel
       - libffi-devel
       - gcc
       - openssl-devel
@@ -73,12 +73,11 @@ container_packages:
       - gcc-c++
     - reload_modules: True
 
-install_docker:
-  pkg.installed:
-    - name: docker-ce
-    - kwargs: {
-        best: False
-      }
+docker-ce:
+  module.run:
+    - name: pkg.install
+    - setopt: 'best=false'
+
   {% endif %}
 
 {% endif %}
