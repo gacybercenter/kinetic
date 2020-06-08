@@ -60,6 +60,14 @@ local_settings:
             ]
 {% endif %}
 
+### ref: https://bugs.launchpad.net/horizon/+bug/1880188
+swift_ceph_patch:
+  file.line:
+    - name: /usr/lib/python3.6/site-packages/swiftclient/client.py
+    - content: (url, '/swift/info')
+    - match: (url, '/info')
+    - mode: replace
+
 {% if grains['os_family'] == 'Debian' %}
 apache_conf:
   file.managed:
