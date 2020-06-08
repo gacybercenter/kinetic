@@ -359,6 +359,6 @@ zun_compute_service:
 zun_cni_daemon_service:
   service.running:
     - enable: true
-    - name: zun-cni_daemon
+    - name: zun-cni-daemon
     - watch:
       - file: /etc/zun/zun.conf
