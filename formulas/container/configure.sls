@@ -289,17 +289,30 @@ ovn_controller_service:
     - defaults:
         zun_group_id: {{ salt['group.info']('zun')['gid'] }}
 
-cni-plugins:
+cni_plugins:
   archive.extracted:
     - name: /opt/cni/bin
     - source: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz
     - source_hash: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz.sha512
+
+install_zun_cni:
+  cmd.run:
+    - name: install -o zun -m 0555 -D /usr/local/bin/zun-cni /opt/cni/bin/zun-cni
+    - creates:
+      - /opt/cni/bin/zun-cni
 
 /etc/systemd/system/zun-compute.service:
   file.managed:
     - source: salt://formulas/container/files/zun-compute.service
     - requires:
       - /formulas/container/install
+
+/etc/systemd/system/zun-cni-daemon.service:
+  file.managed:
+    - source: salt://formulas/container/files/zun-cni-daemon.service
+    - requires:
+      - archive: cni_plugins
+      - cmd: install_zun_cni
 
 /etc/systemd/system/kuryr-libnetwork.service:
   file.managed:
@@ -313,6 +326,7 @@ systemctl daemon-reload:
       - file: /etc/systemd/system/docker.service.d/docker.conf
       - file: /etc/systemd/system/zun-compute.service
       - file: /etc/systemd/system/kuryr-libnetwork.service
+      - file: /etc/systemd/system/zun-cni-daemon.service
 
 docker_service:
   service.running:
@@ -339,5 +353,12 @@ zun_compute_service:
   service.running:
     - enable: true
     - name: zun-compute
+    - watch:
+      - file: /etc/zun/zun.conf
+
+zun_cni_daemon_service:
+  service.running:
+    - enable: true
+    - name: zun-cni_daemon
     - watch:
       - file: /etc/zun/zun.conf
