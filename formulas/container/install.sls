@@ -75,9 +75,9 @@ container_packages:
 install_docker:
   pkg.installed:
     - name: docker-ce
-    - kwargs:
-        best: False
-
+    - kwargs: {
+        nobest: True
+      }
   {% endif %}
 
 {% endif %}
