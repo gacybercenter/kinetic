@@ -74,9 +74,9 @@ container_packages:
     - reload_modules: True
 
 docker-ce:
-  module.run:
-    - name: pkg.install
-    - m_setopt: 'best=False'
+  pkg.installed:
+    - setopt:
+      - best=False
 
   {% endif %}
 
