@@ -245,6 +245,13 @@ ovn_controller_service:
 
 {% endif %}
 
+/etc/containerd/config.toml:
+  file.managed:
+    - source: salt://formulas/container/files/config.toml
+    - template: jinja
+    - defaults:
+        zun_group_id: {{ salt['group.info']('zun')['gid'] }}
+
 /etc/sudoers.d/zun_sudoers:
   file.managed:
     - source: salt://formulas/container/files/zun_sudoers
