@@ -76,7 +76,7 @@ container_packages:
 docker-ce:
   module.run:
     - name: pkg.install
-    - setopt: 'best=false'
+    - m_setopt: 'best=False'
 
   {% endif %}
 
