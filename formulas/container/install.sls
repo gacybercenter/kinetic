@@ -1,6 +1,6 @@
 include:
-  - formulas/openstack/common/repo
-  - formulas/docker/common/repo
+  - /formulas/openstack/common/repo
+  - /formulas/docker/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
@@ -52,7 +52,7 @@ container_packages:
       - gcc
       - openssl-devel
       - openstack-neutron-linuxbridge
-      - python36-PyMySQL
+      - python3-PyMySQL
       - docker-ce
       - numactl
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
@@ -66,16 +66,12 @@ container_packages:
       - gcc
       - openssl-devel
       - ovn-host
-      - python36-PyMySQL
+      - python3-PyMySQL
       - docker-ce
       - libibverbs
       - numactl
+      - python3-openstackclient
   {% endif %}
-
-python-openstackclient:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
 
 {% endif %}
 
@@ -154,7 +150,7 @@ zun_latest:
 
 zun_requirements:
   cmd.run:
-    - name: pip3 install --upgrade -r /var/lib/zun/requirements.txt
+    - name: pip3 install -r /var/lib/zun/requirements.txt
     - unless:
       - systemctl is-active zun-compute
     - require:

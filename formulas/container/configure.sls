@@ -1,7 +1,7 @@
 include:
-  - formulas/container/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/container/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 /etc/zun/zun.conf:
   file.managed:
@@ -207,12 +207,12 @@ ovsdb_listen:
 ## to use the correct remote.  These should be capture in configuration
 ## options upstream
 
-modify_ovs_script:
-  file.managed:
-    - name: /usr/local/libexec/kuryr/ovs
-    - source: salt://formulas/container/files/ovs
-    - require:
-      - cmd: ovsdb_listen
+# modify_ovs_script:
+#   file.managed:
+#     - name: /usr/local/libexec/kuryr/ovs
+#     - source: salt://formulas/container/files/ovs
+#     - require:
+#       - cmd: ovsdb_listen
 
 {% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
   {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
