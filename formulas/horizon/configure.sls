@@ -150,14 +150,10 @@ apache2_service:
     - name: httpd
 {% endif %}
     - enable: true
-    - require:
-      - file: local_settings
-      - cmd: configure-compress-static
-      - file: apache_conf
-      - sls: /formulas/horizon/install
     - watch:
       - file: local_settings
       - file: secret_key
       - file: apache_conf
       - git: install_theme
       - cmd: configure-compress-static
+      - file: swift_ceph_patch
