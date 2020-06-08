@@ -64,8 +64,8 @@ local_settings:
 swift_ceph_patch:
   file.line:
     - name: /usr/lib/python3.6/site-packages/swiftclient/client.py
-    - content: (url, '/swift/info')
-    - match: (url, '/info')
+    - content: parsed = urlparse(urljoin(url, '/swift/info'))
+    - match: parsed = urlparse(urljoin(url, '/info'))
     - mode: replace
 
 {% if grains['os_family'] == 'Debian' %}
