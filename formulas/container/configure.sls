@@ -207,12 +207,12 @@ ovsdb_listen:
 ## to use the correct remote.  These should be capture in configuration
 ## options upstream
 
-# modify_ovs_script:
-#   file.managed:
-#     - name: /usr/local/libexec/kuryr/ovs
-#     - source: salt://formulas/container/files/ovs
-#     - require:
-#       - cmd: ovsdb_listen
+modify_ovs_script:
+  file.managed:
+    - name: /usr/local/libexec/kuryr/ovs
+    - source: salt://formulas/container/files/ovs
+    - require:
+      - cmd: ovsdb_listen
 
 {% for network in pillar['hosts'][grains['type']]['networks'] %}
   {% if pillar['hosts'][grains['type']]['networks'][network]['network'] == 'public' %}
