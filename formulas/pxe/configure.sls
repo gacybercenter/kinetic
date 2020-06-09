@@ -129,7 +129,7 @@ apache2_service:
       - apache_module: wsgi_module
       - file: /etc/apache2/sites-available/wsgi.conf
       - apache_site: wsgi
-      - apache_site: default
+      - apache_site: 000-default
 
 salt-minion_mine_watch:
   cmd.run:
