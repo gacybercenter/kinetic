@@ -36,7 +36,7 @@ create_efi_module:
 
 Disable default site:
   apache_site.disabled:
-    - name: default
+    - name: 000-default
 
 /etc/apache2/sites-available/wsgi.conf:
   file.managed:
