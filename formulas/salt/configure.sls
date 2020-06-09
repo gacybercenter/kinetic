@@ -34,7 +34,6 @@ api:
   user.present:
     - password: {{ salt['pillar.get']('api:user_password', 'TBD') }}
     - hash_password: True
-    - require:
 
 /srv/salt:
   file.directory:
