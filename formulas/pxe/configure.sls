@@ -10,55 +10,55 @@ include:
             - {{ pillar ['api_user'] }}
             - {{ pillar ['bmc_password'] }}
 
-https://github.com/ipxe/ipxe.git:
-  git.latest:
-    - target: /var/www/html/ipxe
-    - user: root
-    - require:
-      - sls: /formulas/pxe/install
-
-/var/www/html/ipxe/src/kinetic.ipxe:
-  file.managed:
-    - source: salt://formulas/pxe/files/kinetic.ipxe
-    - template: jinja
-    - defaults:
-        pxe_record: {{ pillar['pxe_record'] }}
-
-create_efi_module:
-  cmd.run:
-    - name: |
-        make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
-    - cwd: /var/www/html/ipxe/src/
-    - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
-
-/var/www/html/index.html:
-  file.absent
-
-Disable default site:
-  apache_site.disabled:
-    - name: default
-
-/etc/apache2/sites-available/wsgi.conf:
-  file.managed:
-    - source: salt://formulas/pxe/files/wsgi.conf
-
-wsgi_site:
-  apache_site.enabled:
-    - name: wsgi
-
-wsgi_module:
-  apache_module.enabled:
-    - name: wsgi
-
-/var/www/html/index.py:
-  file.managed:
-    - source: salt://formulas/pxe/files/index.py
-    - template: jinja
-    - defaults:
-        pxe_record: {{ pillar['pxe_record'] }}
-
-/var/www/html/assignments:
-  file.directory
+# https://github.com/ipxe/ipxe.git:
+#   git.latest:
+#     - target: /var/www/html/ipxe
+#     - user: root
+#     - require:
+#       - sls: /formulas/pxe/install
+#
+# /var/www/html/ipxe/src/kinetic.ipxe:
+#   file.managed:
+#     - source: salt://formulas/pxe/files/kinetic.ipxe
+#     - template: jinja
+#     - defaults:
+#         pxe_record: {{ pillar['pxe_record'] }}
+# 
+# create_efi_module:
+#   cmd.run:
+#     - name: |
+#         make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
+#     - cwd: /var/www/html/ipxe/src/
+#     - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+#
+# /var/www/html/index.html:
+#   file.absent
+#
+# Disable default site:
+#   apache_site.disabled:
+#     - name: default
+#
+# /etc/apache2/sites-available/wsgi.conf:
+#   file.managed:
+#     - source: salt://formulas/pxe/files/wsgi.conf
+#
+# wsgi_site:
+#   apache_site.enabled:
+#     - name: wsgi
+#
+# wsgi_module:
+#   apache_module.enabled:
+#     - name: wsgi
+#
+# /var/www/html/index.py:
+#   file.managed:
+#     - source: salt://formulas/pxe/files/index.py
+#     - template: jinja
+#     - defaults:
+#         pxe_record: {{ pillar['pxe_record'] }}
+#
+# /var/www/html/assignments:
+#   file.directory
 
 # {% for type in pillar['hosts'] %}
 #   {% if 'ubuntu' in pillar['hosts'][type]['os'] %}
