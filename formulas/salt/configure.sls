@@ -20,6 +20,8 @@ address_population_{{ address }}:
         address: {{ address }}
         network: {{ network }}
     - update: True
+    - require:
+      - sqlite3: addresses
   {% endfor %}
 {% endfor %}
 
