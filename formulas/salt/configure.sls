@@ -241,6 +241,8 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 /srv/dynamic_pillar/top.sls:
   file.managed:
     - source: salt://formulas/salt/files/top.sls
+    - require:
+      - file: /srv/dynamic_pillar/api.sls
 
 /srv/dynamic_pillar/adminrc:
   file.managed:
