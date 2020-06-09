@@ -114,9 +114,9 @@ neutron_linuxbridge_agent_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
-        public_interface: {{ interface }}
+{% for network in pillar['hosts'][grains['type']]['networks'] %}
+  {% if pillar['hosts'][grains['type']]['networks'][network]['network'] == 'public' %}
+        public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
   {% endif %}
 {% endfor %}
 
@@ -207,18 +207,18 @@ ovsdb_listen:
 ## to use the correct remote.  These should be capture in configuration
 ## options upstream
 
-# modify_ovs_script:
-#   file.managed:
-#     - name: /usr/local/libexec/kuryr/ovs
-#     - source: salt://formulas/container/files/ovs
-#     - require:
-#       - cmd: ovsdb_listen
+modify_ovs_script:
+  file.managed:
+    - name: /usr/local/libexec/kuryr/ovs
+    - source: salt://formulas/container/files/ovs
+    - require:
+      - cmd: ovsdb_listen
 
-{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+{% for network in pillar['hosts'][grains['type']]['networks'] %}
+  {% if pillar['hosts'][grains['type']]['networks'][network]['network'] == 'public' %}
 enable_bridge:
   cmd.run:
-    - name: ovs-vsctl --may-exist add-port br-provider {{ interface }}
+    - name: ovs-vsctl --may-exist add-port br-provider {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
     - require:
       - service: openvswitch_service
       - cmd: set_encap
@@ -226,7 +226,7 @@ enable_bridge:
       - cmd: make_bridge
       - cmd: map_bridge
     - unless:
-      - ovs-vsctl port-to-br {{ interface }} | grep -q "br-provider"
+      - ovs-vsctl port-to-br {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }} | grep -q "br-provider"
   {% endif %}
 {% endfor %}
 
@@ -282,11 +282,37 @@ ovn_controller_service:
     - requires:
       - /formulas/container/install
 
+/etc/containerd/config.toml:
+  file.managed:
+    - source: salt://formulas/container/files/config.toml
+    - template: jinja
+    - defaults:
+        zun_group_id: {{ salt['group.info']('zun')['gid'] }}
+
+cni_plugins:
+  archive.extracted:
+    - name: /opt/cni/bin
+    - source: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz
+    - source_hash: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz.sha512
+
+install_zun_cni:
+  cmd.run:
+    - name: install -o zun -m 0555 -D /usr/local/bin/zun-cni /opt/cni/bin/zun-cni
+    - creates:
+      - /opt/cni/bin/zun-cni
+
 /etc/systemd/system/zun-compute.service:
   file.managed:
     - source: salt://formulas/container/files/zun-compute.service
     - requires:
       - /formulas/container/install
+
+/etc/systemd/system/zun-cni-daemon.service:
+  file.managed:
+    - source: salt://formulas/container/files/zun-cni-daemon.service
+    - requires:
+      - archive: cni_plugins
+      - cmd: install_zun_cni
 
 /etc/systemd/system/kuryr-libnetwork.service:
   file.managed:
@@ -300,6 +326,7 @@ systemctl daemon-reload:
       - file: /etc/systemd/system/docker.service.d/docker.conf
       - file: /etc/systemd/system/zun-compute.service
       - file: /etc/systemd/system/kuryr-libnetwork.service
+      - file: /etc/systemd/system/zun-cni-daemon.service
 
 docker_service:
   service.running:
@@ -315,9 +342,23 @@ kuryr_libnetwork_service:
     - watch:
       - file: /etc/kuryr/kuryr.conf
 
+containerd_service:
+  service.running:
+    - enable: true
+    - name: containerd
+    - watch:
+      - file: /etc/containerd/config.toml
+
 zun_compute_service:
   service.running:
     - enable: true
     - name: zun-compute
+    - watch:
+      - file: /etc/zun/zun.conf
+
+zun_cni_daemon_service:
+  service.running:
+    - enable: true
+    - name: zun-cni-daemon
     - watch:
       - file: /etc/zun/zun.conf

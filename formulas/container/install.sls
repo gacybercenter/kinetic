@@ -1,6 +1,7 @@
 include:
   - /formulas/openstack/common/repo
   - /formulas/docker/common/repo
+  - /formulas/kata/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
@@ -56,6 +57,9 @@ container_packages:
       - numactl
       - python3-openstackclient
       - gcc-c++
+      - kata-runtime
+      - kata-proxy
+      - kata-shim
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 container_packages:
   pkg.installed:
@@ -72,6 +76,9 @@ container_packages:
       - numactl
       - python3-openstackclient
       - gcc-c++
+      - kata-runtime
+      - kata-proxy
+      - kata-shim      
     - reload_modules: True
 
   {% endif %}

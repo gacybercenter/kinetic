@@ -60,6 +60,14 @@ local_settings:
             ]
 {% endif %}
 
+### ref: https://bugs.launchpad.net/horizon/+bug/1880188
+swift_ceph_patch:
+  file.line:
+    - name: /usr/lib/python3.6/site-packages/swiftclient/client.py
+    - content: parsed = urlparse(urljoin(url, '/swift/info'))
+    - match: parsed = urlparse(urljoin(url, '/info'))
+    - mode: replace
+
 {% if grains['os_family'] == 'Debian' %}
 apache_conf:
   file.managed:
@@ -142,14 +150,10 @@ apache2_service:
     - name: httpd
 {% endif %}
     - enable: true
-    - require:
-      - file: local_settings
-      - cmd: configure-compress-static
-      - file: apache_conf
-      - sls: /formulas/horizon/install
     - watch:
       - file: local_settings
       - file: secret_key
       - file: apache_conf
       - git: install_theme
       - cmd: configure-compress-static
+      - file: swift_ceph_patch
