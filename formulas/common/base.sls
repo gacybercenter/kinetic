@@ -1,6 +1,10 @@
 include:
   - formulas/common/syslog
 
+sync_everything:
+  saltutil.sync_all:
+    - refresh: True
+
 {% if opts.id not in ['salt', 'pxe'] %}
   {% set type = opts.id.split('-')[0] %}
 {% else %}
