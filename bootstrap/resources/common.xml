@@ -1,6 +1,7 @@
 <domain type='kvm'>
   <name>{{ name }}</name>
   <memory unit='KiB'>{{ ram }}</memory>
+  <cpu mode='host-model'></cpu>
   <vcpu placement='static'>{{ cpu }}</vcpu>
   <os>
     <type>hvm</type>
