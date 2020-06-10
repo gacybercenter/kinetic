@@ -51,6 +51,19 @@ mkdir -p /kvm/images
 mkdir -p /kvm/vms/salt/data
 mkdir -p /kvm/vms/pxe/data
 
+## kernel configuration
+if $(lscpu | grep -q GenuineIntel)
+then
+  /usr/sbin/modprobe -r kvm_intel
+  echo options kvm_intel nested=1 > /etc/modprobe.d/kvm.conf
+  /usr/sbin/modprobe kvm_intel nested=1
+elif $(lscpu | grep -q AuthenticAMD)
+then
+  /usr/sbin/modprobe -r kvm_amd
+  echo options kvm_amd nested=1 > /etc/modprobe.d/kvm.conf
+  /usr/sbin/modprobe kvm_amd nested=1
+fi
+
 ## Images
 
 if [ ! -f /kvm/images/debian10.raw ]
