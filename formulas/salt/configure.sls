@@ -14,7 +14,7 @@ addresses:
       - network TEXT
       - host TEXT
     - require:
-      file: /srv/salt/addresses.db
+        - file: /srv/salt/addresses.db
 
 {% for network in ['sfe', 'sbe', 'private'] %}
   {% for address in pillar['networking']['subnets'][network] | network_hosts %}
