@@ -134,6 +134,19 @@ salt-call state.highstate
 
 NOTE: You can safely ignore deprecation warnings printed while this command executes.
 
+Depending on the size of your specified networks and speed of your salt-master, this command can take several minutes to execute.
+Here is an example output runtime, for reference:
+
+```
+Summary for local
+--------------
+Succeeded: 827 (changed=823)
+Failed:      0
+--------------
+Total states run:     827
+Total run time:   395.820 s
+```
+
 If you were to run an additional highstate, you would see that some of the states return as being already complete, and some do not.
 This is because when you run the initial salt-master highstate, you are creating several secrets unique to your environment that will then be loaded in to the pillar.
 There are other states in your environment (such as the ones that create your bash and powershell authentication convenience files) that rely on these pillar values to execute successfully.
@@ -146,13 +159,14 @@ salt-call state.highstate
 After this run, you will see a handful of changes in the return dictionary:
 
 ```
+...
 ----------
           ID: /srv/dynamic_pillar/adminrc
     Function: file.managed
       Result: True
      Comment: File /srv/dynamic_pillar/adminrc updated
-     Started: 18:27:36.381691
-    Duration: 2.586 ms
+     Started: 16:38:45.877319
+    Duration: 80.886 ms
      Changes:
               ----------
               diff:
@@ -162,7 +176,7 @@ After this run, you will see a handful of changes in the return dictionary:
                    #!/bin/bash
                    export OS_USERNAME=admin
                   -export OS_PASSWORD=TBD
-                  +export OS_PASSWORD=random_pass_here
+                  +export OS_PASSWORD=random_string
                    export OS_USER_DOMAIN_NAME=Default
                    export OS_PROJECT_NAME=admin
                    export OS_PROJECT_DOMAIN_NAME=Default
@@ -171,8 +185,8 @@ After this run, you will see a handful of changes in the return dictionary:
     Function: file.managed
       Result: True
      Comment: File /srv/dynamic_pillar/adminrc.ps1 updated
-     Started: 18:27:36.384377
-    Duration: 1.928 ms
+     Started: 16:38:45.958400
+    Duration: 13.049 ms
      Changes:
               ----------
               diff:
@@ -181,21 +195,44 @@ After this run, you will see a handful of changes in the return dictionary:
                   @@ -1,5 +1,5 @@
                    $env:OS_USERNAME = "admin"
                   -$env:OS_PASSWORD = "TBD"
-                  +$env:OS_PASSWORD = "random_pass_here"
+                  +$env:OS_PASSWORD = "random_string"
                    $env:OS_USER_DOMAIN_NAME = "Default"
                    $env:OS_PROJECT_NAME = "admin"
                    $env:OS_PROJECT_DOMAIN_NAME = "Default"
-  Name: /etc/salt/master - Function: file.managed - Result: Clean Started: - 18:27:36.386411 Duration: 1.046 ms
-  Name: salt-api - Function: service.running - Result: Clean Started: - 18:27:36.392285 Duration: 22.104 ms
-  Name: salt-master - Function: service.running - Result: Clean Started: - 18:27:36.422128 Duration: 24.762 ms
+----------
+          ID: /etc/salt/master
+    Function: file.managed
+      Result: True
+     Comment: File /etc/salt/master is in the correct state
+     Started: 16:38:45.971714
+    Duration: 2.585 ms
+     Changes:
+----------
+          ID: salt-api_service
+    Function: service.running
+        Name: salt-api
+      Result: True
+     Comment: The service salt-api is already running
+     Started: 16:38:45.987873
+    Duration: 24.491 ms
+     Changes:
+----------
+          ID: salt-master_watch
+    Function: cmd.run
+        Name: salt-call service.restart salt-master
+      Result: True
+     Comment: State was not run because none of the onchanges reqs changed
+     Started: 16:38:46.019181
+    Duration: 0.003 ms
+     Changes:
 
-Summary for salt
+Summary for local
 --------------
 Succeeded: 825 (changed=3)
 Failed:      0
 --------------
 Total states run:     825
-Total run time:   8.580 s
+Total run time:     9.068 s
 ```
 
 At this point, your master is fully configured with your unique environmental information.
@@ -241,14 +278,14 @@ bmc_password: |
 Once you push this change to your pillar gitfs repository, run the following on your salt-master:
 
 ```
-salt salt saltutil.refresh_pillar
+salt-call saltutil.refresh_pillar
 ```
 
 This will tell the salt-master to forcefully pull new pillar data and re-render all of its information.
 At this point, if you call for your bmc_password pillar item, you will get your actual password displayed:
 
 ```
-root@salt:~# salt salt pillar.item bmc_password
+root@salt:~# salt-call pillar.item bmc_password
 salt:
     ----------
     bmc_password:
