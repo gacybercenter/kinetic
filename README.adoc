@@ -129,19 +129,18 @@ salt:
 The next thing you will want to do is highstate your salt master so it can be fully configured and ready to orchestrate the rest of your environment:
 
 ```
-salt salt state.highstate
+salt-call state.highstate
 ```
 
-This command will likely end with an error stating ```Authentication error occurred```.
-That's OK - we made changes to the master configuration that caused the master daemon to restart, so it couldn't return the results properly.
+NOTE: You can safely ignore deprecation warnings printed while this command executes.
 
 If you were to run an additional highstate, you would see that some of the states return as being already complete, and some do not.
 This is because when you run the initial salt-master highstate, you are creating several secrets unique to your environment that will then be loaded in to the pillar.
 There are other states in your environment (such as the ones that create your bash and powershell authentication convenience files) that rely on these pillar values to execute successfully.
-As the salt-pillar cannot be refreshed during the middle of an individual salt run, it is necessary to run a 2nd highstate on your salt master in order to fully prepare it for operation:
+As the salt pillar cannot be refreshed during the middle of an individual salt state run, it is necessary to run a 2nd highstate on your salt master in order to fully prepare it for operation:
 
 ```
-salt salt state.highstate
+salt-call state.highstate
 ```
 
 After this run, you will see a handful of changes in the return dictionary:
@@ -192,11 +191,11 @@ After this run, you will see a handful of changes in the return dictionary:
 
 Summary for salt
 --------------
-Succeeded: 825 (changed=4)
+Succeeded: 825 (changed=3)
 Failed:      0
 --------------
 Total states run:     825
-Total run time:   5.775 s
+Total run time:   8.580 s
 ```
 
 At this point, your master is fully configured with your unique environmental information.
