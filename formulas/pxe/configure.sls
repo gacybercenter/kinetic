@@ -75,7 +75,6 @@ wsgi_module:
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
         master_record: {{ pillar['master_record'] }}
-        transport: {{ pillar['salt_transport'] }}
     {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
       {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
@@ -104,7 +103,6 @@ wsgi_module:
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
         master_record: {{ pillar['master_record'] }}
-        transport: {{ pillar['salt_transport'] }}
     {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
       {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
