@@ -1,6 +1,11 @@
 include:
   - /formulas/salt/install
 
+/srv/salt/addresses.db:
+  file.managed:
+    - require:
+      - file: /srv/salt
+
 addresses:
   sqlite3.table_present:
     - db: /srv/salt/addresses.db
@@ -8,6 +13,8 @@ addresses:
       - address TEXT UNIQUE
       - network TEXT
       - host TEXT
+    - require:
+      file: /srv/salt/addresses.db
 
 {% for network in ['sfe', 'sbe', 'private'] %}
   {% for address in pillar['networking']['subnets'][network] | network_hosts %}
@@ -41,20 +48,10 @@ api:
   file.directory:
     - makedirs: true
 
-/srv/salt/addresses.db:
-  file.managed:
-    - require:
-      - file: /srv/salt
-
 mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
   cmd.run:
     - creates:
       - /etc/salt/pki/master/minions/pxe
-
-/etc/salt/master.d/transport.conf:
-  file.managed:
-    - contents: |
-        transport: {{ pillar ['salt_transport'] }}
 
 /etc/salt/master.d/gitfs_pillar.conf:
   file.managed:
