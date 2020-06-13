@@ -275,7 +275,7 @@ salt-api_service:
 
 salt-master_watch:
   cmd.run:
-    - name: 'sleep 1 && salt-call service.restart salt-master'
+    - name: 'sleep 5 && salt-call service.restart salt-master'
     - bg: True
     - onchanges:
       - file: /etc/salt/master
