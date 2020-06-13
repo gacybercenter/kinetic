@@ -1,7 +1,7 @@
 
 salt_pkgs:
   pkg.installed:
-    pkgs:
+    - pkgs:
       - python3-tornado
       - salt-api
       - sqlite3
