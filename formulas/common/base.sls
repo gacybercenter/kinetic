@@ -1,7 +1,7 @@
 include:
   - formulas/common/syslog
 
-sync_everything:
+initial_module_sync:
   saltutil.sync_all:
     - refresh: True
     - unless:
