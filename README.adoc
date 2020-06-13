@@ -292,5 +292,5 @@ salt:
         mypass
 ```
 
-If you don't get the plaintext version of your password, wait about a minute and then try `saltutil.refresh_pillar` and `pillar.item bmc_password` commands again.
+If you don't get the plaintext version of your password, wait about a minute and then try `salt-call saltutil.refresh_pillar` and `salt-call pillar.item bmc_password` commands again.
 There is a refresh interval that you can miss on occasion if your changes are very fresh.
