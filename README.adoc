@@ -89,7 +89,7 @@ Example:
 ```
 curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
 bash -s -- -i mgmt \
--f https://github.com/GeorgiaCyber/kinetic.git,mybrach \
+-f https://github.com/GeorgiaCyber/kinetic.git,mybranch \
 -p https://github.com/GeorgiaCyber/kinetic-pillar.git,mybranch \
 -k "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKw+cBx9BBKcoXKLxMLVoGCD7znZqBjnMkaIipAikQJ"
 ```
