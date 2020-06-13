@@ -7,6 +7,7 @@ include:
 
 /srv/salt/addresses.db:
   file.managed:
+    - replace: False
     - require:
       - file: /srv/salt
 
