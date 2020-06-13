@@ -6,6 +6,7 @@ pxe_packages:
       - apache2
       - libapache2-mod-wsgi-py3
       - git
+    - reload_modules: True
 
 redfish_pip:
   pip.installed:
