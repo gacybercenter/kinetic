@@ -20,14 +20,7 @@
   {% if salt['pillar.get']('global', False) == True %}
     {% set api_host = target %}
   {% else %}
-    {% set api_host_uuid = salt.saltutil.runner('mine.get',tgt=target,fun='host_uuid') %}
-    {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints') | dictsort() %}
-      {% for id in ids %}
-        {% if api_host_uuid == id %}
-          {% set api_host = ids[id] %}
-        {% endif %}
-      {% endfor %}
-    {% endfor %}
+    {% set api_host = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"][grains['uuid']] %}
   {% endif %}
 
 set_bootonce_host:
