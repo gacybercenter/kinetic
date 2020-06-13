@@ -138,3 +138,13 @@ This command will likely end with an error stating ```Authentication error occur
 That's OK - we made changes to the master configuration that caused the master daemon to restart, so it couldn't return the results properly.
 
 If you run an additional highstate, you will see that some of the states return as being already complete, and some do not.
+
+The next step is to properly encrypt your bmc password so it can be safely stored on a publicly available repository.
+On your salt master, run:
+
+```
+echo -n mypass | gpg --homedir /etc/salt/gpgkeys/ --encrypt --armor --recipient kinetic@georgiacyber | sed 's/-/ -/g'
+```
+
+This will encrypt your bmc password using your unique pki setup that was generated when you ran your initial bootstrap script.
+To see the default parameters for this setup, see bootstrap/resources/key-generation.
