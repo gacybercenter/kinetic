@@ -1,6 +1,10 @@
 include:
   - /formulas/salt/install
 
+/srv/salt:
+  file.directory:
+    - makedirs: true
+
 /srv/salt/addresses.db:
   file.managed:
     - require:
@@ -43,15 +47,6 @@ api:
   user.present:
     - password: {{ salt['pillar.get']('api:user_password', 'TBD') }}
     - hash_password: True
-
-/srv/salt:
-  file.directory:
-    - makedirs: true
-
-mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
-  cmd.run:
-    - creates:
-      - /etc/salt/pki/master/minions/pxe
 
 /etc/salt/master.d/gitfs_pillar.conf:
   file.managed:
