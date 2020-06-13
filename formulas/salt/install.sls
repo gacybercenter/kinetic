@@ -7,3 +7,4 @@ salt_pkgs:
       - sqlite3
       - haveged
       - curl
+    - reload_modules: True

@@ -75,25 +75,23 @@ where
 `{{ interface }}` = the name of the bridged management interface that you have configured on your debian host, e.g. mgmt.
 
 `{{ gitfs file root}}` = the repository from which you wish to source the kinetic static files.
+Append a comma followed by a branch name if you wish to use a branch other than master.
+Otherwise, master is assumed.
 
 `{{ pillar }}` = the repository from which you wish to source your site-specific configuration.
+Append a comma followed by a branch name if you wish to use a branch other than master.
+Otherwise, master is assumed.
 
 `{{ key }}` = the key that you will use to log in to your salt master and pxe server after they boot.
-
-`{{ transport }}` = the salt transport mechanism you would like to use.
-Note that this value *must* match the value in your configured pillar answer file.
-See https://docs.saltstack.com/en/latest/topics/transports/[transports] for more information.
-
 
 Example:
 
 ```
 curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
 bash -s -- -i mgmt \
--f https://github.com/GeorgiaCyber/kinetic.git \
--p https://github.com/GeorgiaCyber/kinetic-pillar-sample.git \
+-f https://github.com/GeorgiaCyber/kinetic.git,mybrach \
+-p https://github.com/GeorgiaCyber/kinetic-pillar.git,mybranch \
 -k "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKw+cBx9BBKcoXKLxMLVoGCD7znZqBjnMkaIipAikQJ"
--t "tcp"
 ```
 
 As the script completes, you should see a message stating that both pxe and salt have been created from their respective config.xml files by virsh.
@@ -136,6 +134,7 @@ The next thing you will want to do is highstate your salt master so it can be fu
 salt salt state.highstate
 ```
 
-This command will likely end with an error stating ```Authentication error occurred```.  That's OK - we made changes to the master configuration
-that caused the master daemon to restart, so it couldn't return the results properly.  If you run an additional highstate, you will see that
-the configurations were successfully applied.
+This command will likely end with an error stating ```Authentication error occurred```.
+That's OK - we made changes to the master configuration that caused the master daemon to restart, so it couldn't return the results properly.
+
+If you run an additional highstate, you will see that some of the states return as being already complete, and some do not.
