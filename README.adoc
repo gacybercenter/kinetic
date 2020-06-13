@@ -46,8 +46,6 @@ you will need to create your own tftp server and have it issue https://fixme[thi
 Your system will automatically compile a fresh copy of this for you from source if you do not wish to use the pre-compiled version.
 The freshly compiled version will be located at /var/www/html/ipxe.efi on your pxe server once it is fully highstated.
 6. DHCP clients can successfully register their leases in your local DNS resolver.
-7. All hosts can reach your pxe server on UDP 69 and TCP 80.
-Your tftp server must be able to reach your hosts on ANY UDP port as well.
 
 ## Recommendations
 
@@ -67,7 +65,7 @@ Large, simultaneous operations will almost certainly get you throttled upstream 
 On your configured Debian host, run:
 ```
 curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
-bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }} -k {{ key }} -t {{ transport }}
+bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }} -k {{ key }}
 ```
 
 where
