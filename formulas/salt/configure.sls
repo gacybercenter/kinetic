@@ -287,3 +287,4 @@ salt-master_service:
     - watch:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
+    - order: last
