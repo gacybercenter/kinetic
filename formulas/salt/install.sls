@@ -1,14 +1,9 @@
-python3-tornado:
-  pkg.installed
 
-salt-api:
-  pkg.installed
-
-sqlite3:
-  pkg.installed
-
-haveged:
-  pkg.installed
-
-curl:
-  pkg.installed
+salt_pkgs:
+  pkg.installed:
+    pkgs:
+      - python3-tornado
+      - salt-api
+      - sqlite3
+      - haveged
+      - curl
