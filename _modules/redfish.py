@@ -1,6 +1,7 @@
 ## redfish module - primarily used for bootstrapping
 ## could potentially be fleshed out and become formal fully-featured
 ## salt module
+
 import redfish, pyghmi, json, ipaddress, socket, requests, urllib3, re
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

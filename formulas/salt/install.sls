@@ -8,3 +8,9 @@ salt_pkgs:
       - haveged
       - curl
     - reload_modules: True
+
+cryptography_pip:
+  pip.installed:
+    - name: cryptography
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True

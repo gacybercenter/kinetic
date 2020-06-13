@@ -107,8 +107,8 @@ api:
             simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}
 {% elif service == 'keystone' %}
         extra_opts: |
-            fernet_primary: {{ salt['generate.fernet_key']() }}
-              fernet_secondary: {{ salt['generate.fernet_key']() }}
+            fernet_primary: {{ salt['fernet.make_key']() }}
+              fernet_secondary: {{ salt['fernet.make_key']() }}
 {% else %}
         extra_opts: ''
 {% endif %}
@@ -153,11 +153,11 @@ api:
           graylog_password: {{ graylog_password }}
           graylog_password_sha2: {{ graylog_password | sha256 }}
 
-{% set adminkey = salt['cephx.make_key']() %}
-{% set volumeskey = salt['cephx.make_key']() %}
-{% set computekey = salt['cephx.make_key']() %}
-{% set osdkey = salt['cephx.make_key']() %}
-{% set manilakey = salt['cephx.make_key']() %}
+{% set adminkey = salt['generate.cephx_key']() %}
+{% set volumeskey = salt['generate.cephx_key']() %}
+{% set computekey = salt['generate.cephx_key']() %}
+{% set osdkey = salt['generate.cephx_key']() %}
+{% set manilakey = salt['generate.cephx_key']() %}
 
 /srv/dynamic_pillar/ceph.sls:
   file.managed:
@@ -167,7 +167,7 @@ api:
           fsid: {{ salt['random.get_str']('64') | uuid }}
           ceph-mon-keyring: |
             [mon.]
-                 key = {{ salt['cephx.make_key']() }}
+                 key = {{ salt['generate.cephx_key']() }}
                  caps mon = "allow *"
             [client.admin]
                  key = {{ adminkey }}
@@ -193,7 +193,7 @@ api:
                  caps mon = "profile bootstrap-osd"
           ceph-client-images-keyring: |
             [client.images]
-                 key = {{ salt['cephx.make_key']() }}
+                 key = {{ salt['generate.cephx_key']() }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
           ceph-client-volumes-keyring: |

@@ -7,7 +7,6 @@ initial_module_sync:
     - unless:
       - salt-call saltutil.list_extmods | grep -q 'redfish\|generate\|cephx\|address'
 
-
 {% if opts.id not in ['salt', 'pxe'] %}
   {% set type = opts.id.split('-')[0] %}
 {% else %}
@@ -111,13 +110,6 @@ install_pip:
     - reload_modules: True
 
 pyroute2:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - require:
-      - install_pip
-    - reload_modules: True
-
-cryptography:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - require:
