@@ -294,3 +294,77 @@ salt:
 
 If you don't get the plaintext version of your password, wait about a minute and then try `salt-call saltutil.refresh_pillar` and `salt-call pillar.item bmc_password` commands again.
 There is a refresh interval that you can miss on occasion if your changes are very fresh.
+
+At this point, you can run a highstate job on your pxe machine:
+
+```
+salt pxe state.highstate
+```
+
+NOTE: `salt-call` is not usable/applicable here because you are running a command on a remote minion, rather than the salt-master itself.
+You must use the `salt` command.
+
+Once again, this command will take several minutes to execute as it includes a few compilation tasks:
+
+```
+...
+----------
+          ID: apache2_service
+    Function: service.running
+        Name: apache2
+      Result: True
+     Comment: Service restarted
+     Started: 20:56:32.788566
+    Duration: 130.199 ms
+     Changes:
+              ----------
+              apache2:
+                  True
+----------
+          ID: salt-minion_mine_watch
+    Function: cmd.run
+        Name: salt-call service.restart salt-minion
+      Result: True
+     Comment: Command "salt-call service.restart salt-minion" run
+     Started: 20:56:32.920253
+    Duration: 10.932 ms
+     Changes:
+              ----------
+              pid:
+                  16536
+              retcode:
+                  None
+              stderr:
+              stdout:
+
+Summary for pxe
+-------------
+Succeeded: 33 (changed=29)
+Failed:     0
+-------------
+Total states run:     33
+Total run time:  405.475 s
+```
+
+As part of your pxe minions highstate process, it ran the custom ```redfish.gather_endpoints``` function, which scraped your out-of-band network specificed in your pillar for active BMCs.
+It cataloged and stored all detected BMCs in a special place called the salt mine so your kinetic deployment is always aware of the various types of physical hardware it needs to interface with.
+
+You can view the current BMC mine data by running:
+
+```
+salt-run mine.get pxe redfish.gather_endpoints
+```
+
+Which will return data that looks like this:
+
+```
+    00000000-0000-0000-0000-AC1F6BB6DF49:
+        10.100.0.33
+    00000000-0000-0000-0000-AC1F6BB6DF4E:
+        10.100.0.35
+    00000000-0000-0000-0000-AC1F6BB6DF4F:
+        10.100.0.32
+```
+
+The pairing of the SMBIOS UUID to the BMC IP address allows your kinetic deployment to easily identify and managed your hardware.
+At this point, your two foundational minions are fully configured and you are ready to being your kinetic deployment.
