@@ -273,10 +273,11 @@ salt-api_service:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
 
-salt-master_service:
-  service.running:
-    - name: salt-master
-    - watch:
+salt-master_watch:
+  cmd.run:
+    - name: 'sleep 1 && salt-call service.restart salt-master'
+    - bg: True
+    - onchanges:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
     - order: last
