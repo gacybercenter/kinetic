@@ -137,14 +137,126 @@ salt salt state.highstate
 This command will likely end with an error stating ```Authentication error occurred```.
 That's OK - we made changes to the master configuration that caused the master daemon to restart, so it couldn't return the results properly.
 
-If you run an additional highstate, you will see that some of the states return as being already complete, and some do not.
+If you were to run an additional highstate, you would see that some of the states return as being already complete, and some do not.
+This is because when you run the initial salt-master highstate, you are creating several secrets unique to your environment that will then be loaded in to the pillar.
+There are other states in your environment (such as the ones that create your bash and powershell authentication convenience files) that rely on these pillar values to execute successfully.
+As the salt-pillar cannot be refreshed during the middle of an individual salt run, it is necessary to run a 2nd highstate on your salt master in order to fully prepare it for operation:
 
+```
+salt salt state.highstate
+```
+
+After this run, you will see a handful of changes in the return dictionary:
+
+```
+----------
+          ID: /srv/dynamic_pillar/adminrc
+    Function: file.managed
+      Result: True
+     Comment: File /srv/dynamic_pillar/adminrc updated
+     Started: 18:27:36.381691
+    Duration: 2.586 ms
+     Changes:
+              ----------
+              diff:
+                  ---
+                  +++
+                  @@ -1,6 +1,6 @@
+                   #!/bin/bash
+                   export OS_USERNAME=admin
+                  -export OS_PASSWORD=TBD
+                  +export OS_PASSWORD=random_pass_here
+                   export OS_USER_DOMAIN_NAME=Default
+                   export OS_PROJECT_NAME=admin
+                   export OS_PROJECT_DOMAIN_NAME=Default
+----------
+          ID: /srv/dynamic_pillar/adminrc.ps1
+    Function: file.managed
+      Result: True
+     Comment: File /srv/dynamic_pillar/adminrc.ps1 updated
+     Started: 18:27:36.384377
+    Duration: 1.928 ms
+     Changes:
+              ----------
+              diff:
+                  ---
+                  +++
+                  @@ -1,5 +1,5 @@
+                   $env:OS_USERNAME = "admin"
+                  -$env:OS_PASSWORD = "TBD"
+                  +$env:OS_PASSWORD = "random_pass_here"
+                   $env:OS_USER_DOMAIN_NAME = "Default"
+                   $env:OS_PROJECT_NAME = "admin"
+                   $env:OS_PROJECT_DOMAIN_NAME = "Default"
+  Name: /etc/salt/master - Function: file.managed - Result: Clean Started: - 18:27:36.386411 Duration: 1.046 ms
+  Name: salt-api - Function: service.running - Result: Clean Started: - 18:27:36.392285 Duration: 22.104 ms
+  Name: salt-master - Function: service.running - Result: Clean Started: - 18:27:36.422128 Duration: 24.762 ms
+
+Summary for salt
+--------------
+Succeeded: 825 (changed=4)
+Failed:      0
+--------------
+Total states run:     825
+Total run time:   5.775 s
+```
+
+At this point, your master is fully configured with your unique environmental information.
 The next step is to properly encrypt your bmc password so it can be safely stored on a publicly available repository.
 On your salt master, run:
 
 ```
-echo -n mypass | gpg --homedir /etc/salt/gpgkeys/ --encrypt --armor --recipient kinetic@georgiacyber | sed 's/-/ -/g'
+echo -n mypass | gpg --homedir /etc/salt/gpgkeys/ --encrypt --armor --recipient kinetic@georgiacyber | sed 's/^/  /g'
 ```
 
+Where 'mypass' is your specific bmc password.
 This will encrypt your bmc password using your unique pki setup that was generated when you ran your initial bootstrap script.
 To see the default parameters for this setup, see bootstrap/resources/key-generation.
+This command will return something similar to the below:
+
+```
+  -----BEGIN PGP MESSAGE-----
+
+  hF4DyVz5FsHlPcwSAQdAsheDK25osLvF9modvTbEbIyDLeikcxfgs/J90au4KS8w
+  okyQP6B39GGUv2msgPTDjgQd4RjEuEoLV6BVxkd55VtGjNk/SoeGYsdaDTUOieTX
+  0kEBhyT7twmzjTt273mQL3hiXIT/WS/FUZ0xLthaWESt9UJ/ufgSzJFXhLoSe+Vl
+  FHNzdk9d+Au14EQpQ6qlKKa7Gg==
+  =oSuH
+  -----END PGP MESSAGE-----
+```
+
+Take this string and place it in your pillar in the environment/bmc_password.sls file like so:
+
+```
+#!yaml|gpg
+
+bmc_password: |
+  -----BEGIN PGP MESSAGE-----
+
+  hF4DyVz5FsHlPcwSAQdAsheDK25osLvF9modvTbEbIyDLeikcxfgs/J90au4KS8w
+  okyQP6B39GGUv2msgPTDjgQd4RjEuEoLV6BVxkd55VtGjNk/SoeGYsdaDTUOieTX
+  0kEBhyT7twmzjTt273mQL3hiXIT/WS/FUZ0xLthaWESt9UJ/ufgSzJFXhLoSe+Vl
+  FHNzdk9d+Au14EQpQ6qlKKa7Gg==
+  =oSuH
+  -----END PGP MESSAGE-----
+```
+
+Once you push this change to your pillar gitfs repository, run the following on your salt-master:
+
+```
+salt salt saltutil.refresh_pillar
+```
+
+This will tell the salt-master to forcefully pull new pillar data and re-render all of its information.
+At this point, if you call for your bmc_password pillar item, you will get your actual password displayed:
+
+```
+root@salt:~# salt salt pillar.item bmc_password
+salt:
+    ----------
+    bmc_password:
+        mypass
+```
+
+If you don't get the plaintext version of your password, wait about a minute and then try `saltutil.refresh_pillar` and `pillar.item bmc_password` commands again.
+There is a refresh interval that you can miss on occasion if your changes are very fresh.
