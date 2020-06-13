@@ -24,22 +24,22 @@ def application (environ, start_response):
 
     if os_assignment == "centos7":
         response_body = body % {
-            'kernel': "kernel http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/kickstart/"+host_type+".kickstart lang=en_US keymap=us ip=::::"+hostname_assignment+":"+interface+":dhcp initrd=initrd.img",
+            'kernel': "kernel http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/configs/"+host_type+" lang=en_US keymap=us ip=::::"+hostname_assignment+":"+interface+":dhcp initrd=initrd.img",
             'initrd': "initrd http://mirror.centos.org/centos/7/os/x86_64/images/pxeboot/initrd.img"
             }
     elif os_assignment == "ubuntu1804":
         response_body = body % {
-            'kernel': "kernel http://us.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux --- auto=true url=http://{{ pxe_record }}/preseed/"+host_type+".preseed locale=en_US interface="+interface+" keymap=us netcfg/get_hostname="+hostname_assignment+" netcfg/do_not_use_netplan=true debian-installer/allow_unauthenticated_ssl=true initrd=initrd.gz",
+            'kernel': "kernel http://us.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux --- auto=true url=http://{{ pxe_record }}/configs/"+host_type+" locale=en_US interface="+interface+" keymap=us netcfg/get_hostname="+hostname_assignment+" netcfg/do_not_use_netplan=true debian-installer/allow_unauthenticated_ssl=true initrd=initrd.gz",
             'initrd': "initrd http://us.archive.ubuntu.com/ubuntu/dists/bionic-updates/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz"
             }
     elif os_assignment == "centos8":
         response_body = body % {
-            'kernel': "kernel http://mirror.centos.org/centos/8/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/kickstart/"+host_type+".kickstart lang=en_US keymap=us ip=::::"+hostname_assignment+":"+interface+":dhcp initrd=initrd.img",
+            'kernel': "kernel http://mirror.centos.org/centos/8/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/configs/"+host_type+" lang=en_US keymap=us ip=::::"+hostname_assignment+":"+interface+":dhcp initrd=initrd.img",
             'initrd': "initrd http://mirror.centos.org/centos/8/BaseOS/x86_64/kickstart/images/pxeboot/initrd.img"
             }
     elif os_assignment == "ubuntu2004":
         response_body = body % {
-            'kernel': "kernel http://us.archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/ubuntu-installer/amd64/linux --- auto=true url=http://{{ pxe_record }}/preseed/"+host_type+".preseed locale=en_US interface="+interface+" keymap=us netcfg/get_hostname="+hostname_assignment+" netcfg/do_not_use_netplan=true debian-installer/allow_unauthenticated_ssl=true initrd=initrd.gz",
+            'kernel': "kernel http://us.archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/ubuntu-installer/amd64/linux --- auto=true url=http://{{ pxe_record }}/configs/"+host_type+" locale=en_US interface="+interface+" keymap=us netcfg/get_hostname="+hostname_assignment+" netcfg/do_not_use_netplan=true debian-installer/allow_unauthenticated_ssl=true initrd=initrd.gz",
             'initrd': "initrd http://us.archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/ubuntu-installer/amd64/initrd.gz"
             }
 

@@ -61,38 +61,13 @@ wsgi_module:
   file.directory
 
 {% for type in pillar['hosts'] %}
+/var/www/html/configs/{{ type }}:
+  file.managed:
   {% if 'ubuntu' in pillar['hosts'][type]['os'] %}
-/var/www/html/preseed/{{ type }}.preseed:
-  file.managed:
     - source: salt://formulas/pxe/files/common.preseed
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        proxy: {{ pillar['hosts'][type]['proxy'] }}
-        root_password_crypted: {{ pillar['hosts'][type]['root_password_crypted'] }}
-        zone: {{ pillar['timezone'] }}
-        ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
-        disk: {{ pillar['hosts'][type]['disk'] }}
-        interface: {{ pillar['hosts'][type]['interface'] }}
-        master_record: {{ pillar['master_record'] }}
-    {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
-    - context:
-      {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
-        proxy: ""
-      {% else %}
-        {% for host, addresses in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-        proxy: http://{{ address }}:3142
-            {% endif %}
-          {% endfor %}
-        {% endfor %}
-      {% endif %}
-    {% endif %}
   {% elif 'centos' in pillar['hosts'][type]['os'] %}
-/var/www/html/kickstart/{{ type }}.kickstart:
-  file.managed:
     - source: salt://formulas/pxe/files/common.kickstart
+  {% endif %}
     - makedirs: True
     - template: jinja
     - defaults:
@@ -103,19 +78,18 @@ wsgi_module:
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
         master_record: {{ pillar['master_record'] }}
-    {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
+  {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
-      {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
+    {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
         proxy: ""
-      {% else %}
-        {% for host, addresses in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {% else %}
+      {% for host, addresses in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        {%- for address in addresses -%}
+          {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
         proxy: http://{{ address }}:3142
-            {% endif %}
-          {% endfor %}
+          {% endif %}
         {% endfor %}
-      {% endif %}
+      {% endfor %}
     {% endif %}
   {% endif %}
 {% endfor %}
