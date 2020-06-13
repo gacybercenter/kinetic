@@ -11,11 +11,6 @@ sync_everything:
   {% set type = opts.id %}
 {% endif %}
 
-/etc/salt/minion.d/transport.conf:
-  file.managed:
-    - contents: |
-        transport: {{ pillar ['salt_transport'] }}
-
 type:
   grains.present:
     - value: {{ type }}

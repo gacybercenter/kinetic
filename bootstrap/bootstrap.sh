@@ -10,7 +10,7 @@ if [ $# -lt 10 ]; then
   exit 2
 fi
 
-while getopts ":i:f:p:k:t:" opt; do
+while getopts ":i:f:p:k:" opt; do
   case ${opt} in
     i )
       interface=$OPTARG
@@ -23,9 +23,6 @@ while getopts ":i:f:p:k:t:" opt; do
       ;;
     k )
       key=$OPTARG
-      ;;
-    t )
-      transport=$OPTARG
       ;;
     \? )
       echo "Invalid option: $OPTARG." 1>&2
