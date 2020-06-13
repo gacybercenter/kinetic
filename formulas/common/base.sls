@@ -48,10 +48,6 @@ ifwatch:
 
   {% if salt['grains.get']('upgraded') != True %}
 
-install_networkd:
-  pkg.installed:
-    - name: systemd-networkd
-
 update_all:
   pkg.uptodate:
     - refresh: true
