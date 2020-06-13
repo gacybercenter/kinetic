@@ -4,6 +4,9 @@ include:
 sync_everything:
   saltutil.sync_all:
     - refresh: True
+    - unless:
+      - salt-call saltutil.list_extmods | grep -q 'redfish\|generate\|cephx\|address'
+
 
 {% if opts.id not in ['salt', 'pxe'] %}
   {% set type = opts.id.split('-')[0] %}
