@@ -368,3 +368,10 @@ Which will return data that looks like this:
 
 The pairing of the SMBIOS UUID to the BMC IP address allows your kinetic deployment to easily identify and managed your hardware.
 At this point, your two foundational minions are fully configured and you are ready to being your kinetic deployment.
+To create your controllers, run:
+
+```
+salt-run state.orch orch.generate pillar='{"type":"controller"}'
+```
+
+This will provision all controllers that you have identified in your pillar.
