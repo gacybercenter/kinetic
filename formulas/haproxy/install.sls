@@ -23,8 +23,6 @@ haproxy_packages:
   pkg.installed:
     - pkgs:
       - certbot
-      - policycoreutils
-      - python3-policycoreutils
       - policycoreutils-python-utils
     - reload_modules: True
 
