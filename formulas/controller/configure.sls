@@ -121,7 +121,7 @@ libvirtd_service:
 {% for os, args in pillar.get('images', {}).items() %}
 create_{{ args['name'] }}:
   cmd.run:
-    - name: virt-builder --update --selinux-relabel --install cloud-init --output {{ os }}.raw {{ args['name'] }}
+    - name: virt-builder --update --delete /etc/sysconfig/network-scripts/ifcfg-enp1s0 --selinux-relabel --install cloud-init  --output {{ os }}.raw {{ args['name'] }}
     - cwd: /kvm/images
     - creates: /kvm/images/{{ os }}.raw
     - require:
