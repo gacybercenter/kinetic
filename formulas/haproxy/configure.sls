@@ -26,16 +26,12 @@ acme_{{ domain }}:
     - email: {{ pillar['haproxy']['tls_email'] }}
     - renew: 14
 
-cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem:
+create_master_pem:
   cmd.run:
-    - onchanges:
+    - name: cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem
+    - creates: /etc/letsencrypt/live/{{ domain }}/master.pem
+    - requires:
       - acme: acme_{{ domain }}
-
-systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalone --agree-tos && cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem && systemctl start haproxy.service:
-  cron.present:
-    - dayweek: 0
-    - minute: {{ loop.index0 }}
-    - hour: 4
 
 {% endfor %}
 
