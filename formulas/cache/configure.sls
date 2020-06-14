@@ -12,7 +12,7 @@ spawnzero_complete:
 
 ## This should not be needed but ref: https://github.com/docker/for-linux/issues/955
 ## podman + firewalld + cgroups2 is just very broken in general
-firewall-cmd --zone=trusted --add-interface=cni-podman0:
+firewall-cmd --zone=trusted --add-interface=cni-podman0 --permanent:
   cmd.run:
     - unless:
       - firewall-cmd --get-zone-of-interface=cni-podman0
