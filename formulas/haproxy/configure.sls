@@ -16,6 +16,8 @@ haproxy_connect_any:
   selinux.boolean:
     - value: True
     - persist: True
+    - require:
+      - sls: /formulas/haproxy/install
 {% endif %}
 
 {% for domain in pillar['haproxy']['tls_domains'] %}
@@ -26,11 +28,11 @@ acme_{{ domain }}:
     - email: {{ pillar['haproxy']['tls_email'] }}
     - renew: 14
 
-create_master_pem:
+create_master_pem_{{ domain }}:
   cmd.run:
     - name: cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem
     - creates: /etc/letsencrypt/live/{{ domain }}/master.pem
-    - requires:
+    - require:
       - acme: acme_{{ domain }}
 
 {% endfor %}
