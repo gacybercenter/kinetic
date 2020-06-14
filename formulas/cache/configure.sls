@@ -13,7 +13,7 @@ spawnzero_complete:
 podman_cni_port:
   firewalld.present:
     - name: trusted
-    - ports: cni-podman0
+    - ports: [cni-podman0]
 
 /root/acng.conf:
   file.managed:
