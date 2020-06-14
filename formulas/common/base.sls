@@ -67,10 +67,10 @@ upgraded:
   file.managed:
     - contents: |
         [main]
-        cachedir=/var/cache/yum/$basearch/$releasever
         gpgcheck=1
-        best=True
         installonly_limit=3
+        clean_requirements_on_remove=True
+        best=True
         proxy=http://{{ address }}:3142
       {% endif %}
     {% endfor %}
