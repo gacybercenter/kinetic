@@ -83,12 +83,11 @@ wsgi_module:
     {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
         proxy: ""
     {% else %}
-      {% for host, addresses in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        {%- for address in addresses -%}
-          {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+      ##pick a random cache and iterate through its addresses, choosing only the management address
+      {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last ()%}
+        {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
         proxy: http://{{ address }}:3142
-          {% endif %}
-        {% endfor %}
+        {% endif %}
       {% endfor %}
     {% endif %}
   {% endif %}
