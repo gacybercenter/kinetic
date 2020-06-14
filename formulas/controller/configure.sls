@@ -132,7 +132,7 @@ sysprep_{{ args['name'] }}:
     - name: virt-sysprep -a {{ os }}.raw
     - cwd: /kvm/images
     - onchanges:
-      - create_{{ args['name'] }}
+      - cmd: create_{{ args['name'] }}
 
 /kvm/images/{{ os }}-latest:
   file.symlink:
