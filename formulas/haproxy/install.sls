@@ -25,6 +25,7 @@ haproxy_packages:
       - certbot
       - policycoreutils
       - python3-policycoreutils
+      - policycoreutils-python-utils
     - reload_modules: True
 
 {% endif %}
