@@ -129,7 +129,7 @@ create_{{ args['name'] }}:
 
 sysprep_{{ args['name'] }}:
   cmd.run:
-    - name: virt-sysprep -a {{ os }}.raw
+    - name: virt-sysprep -a {{ os }}.raw --truncate /etc/machine-id
     - cwd: /kvm/images
     - onchanges:
       - cmd: create_{{ args['name'] }}
