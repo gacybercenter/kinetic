@@ -10,10 +10,10 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 {% endif %}
 
-podman_cni_port:
-  firewalld.present:
-    - name: trusted
-    - ports: [cni-podman0]
+firewall-cmd --zone=trusted --add-interface=cni-podman0:
+  cmd.run:
+    - unless:
+      - firewall-cmd --get-zone-of-interface=cni-podman0
 
 /root/acng.conf:
   file.managed:
