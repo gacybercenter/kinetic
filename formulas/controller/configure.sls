@@ -127,12 +127,19 @@ create_{{ args['name'] }}:
     - require:
       - file: /kvm/images
 
+sysprep_{{ args['name'] }}:
+  cmd.run:
+    - name: virt-sysprep -a {{ os }}.raw
+    - cwd: /kvm/images
+    - onchanges:
+      - create_{{ args['name'] }}
+
 /kvm/images/{{ os }}-latest:
   file.symlink:
     - target: /kvm/images/{{ os }}.raw
     - force: True
     - require:
-      - cmd: create_{{ args['name'] }}
+      - cmd: sysprep_{{ args['name'] }}
 {% endfor %}
 
 haveged_service:
