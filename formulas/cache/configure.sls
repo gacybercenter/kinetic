@@ -10,6 +10,11 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 {% endif %}
 
+podman_cni_port:
+  firewalld.present:
+    - name: trusted
+    - port: cni-podman0
+
 /root/acng.conf:
   file.managed:
     - source: salt://formulas/cache/files/acng.conf
