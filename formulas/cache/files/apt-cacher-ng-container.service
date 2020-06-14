@@ -1,5 +1,7 @@
 [Unit]
 Description=apt-cacher-ng container
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Restart=always
