@@ -66,7 +66,7 @@ systemd-networkd:
         Name={{ interface }}
 
         [Network]
-        bond={{ network }}_bond
+        Bond={{ network }}_bond
     {% endfor %}
   {% endif %}
 
