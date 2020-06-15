@@ -101,7 +101,7 @@ ceph auth import -i /etc/ceph/ceph.client.{{ auth }}.keyring:
 
 {% if grains['spawning'] == 0 %}
   {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
-ceph osd pool create {{ pool }} 1:
+ceph osd pool create {{ pool }} 8:
   cmd.run:
     - unless:
       - ceph osd pool get {{ pool }} size
