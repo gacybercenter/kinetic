@@ -100,33 +100,14 @@ ceph auth import -i /etc/ceph/ceph.client.{{ auth }}.keyring:
 {% endfor %}
 
 {% if grains['spawning'] == 0 %}
-### drop device health metrics pool
-allow_pool_delete:
+  {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
+ceph osd pool create {{ pool }} 32:
   cmd.run:
-    - name: ceph tell mon.\* injectargs '--mon-allow-pool-delete=true'
-    - prereq:
-      - cmd: drop_dhm
-
-drop_dhm:
+    - unless:
+      - ceph osd pool get {{ pool }} size
+  {% endfor %}
+ceph fs new manila fileshare_metadata fileshare_data:
   cmd.run:
-    - name: ceph osd pool rm device_health_metrics device_health_metrics --yes-i-really-really-mean-it
-    - onlyif:
-      - ceph osd pool get device_health_metrics size
-
-disable_pool_delete:
-  cmd.run:
-    - name: ceph tell mon.\* injectargs '--mon-allow-pool-delete=false'
-    - onchanges:
-      - allow_pool_delete
-
-#   {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
-# ceph osd pool create {{ pool }} 32:
-#   cmd.run:
-#     - unless:
-#       - ceph osd pool get {{ pool }} size
-#   {% endfor %}
-# ceph fs new manila fileshare_metadata fileshare_data:
-#   cmd.run:
-#     - unless:
-#       - ceph fs get manila
+    - unless:
+      - ceph fs get manila
 {% endif %}
