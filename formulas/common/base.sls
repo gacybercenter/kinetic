@@ -82,6 +82,9 @@ install_networkd:
   pkg.installed:
     - name: systemd-networkd
 
+firewalld:
+  pkg.removed
+
 update_all:
   pkg.uptodate:
     - refresh: true
