@@ -99,15 +99,15 @@ ceph auth import -i /etc/ceph/ceph.client.{{ auth }}.keyring:
       - service: ceph-mon@{{ grains['id'] }}
 {% endfor %}
 
-{% if grains['spawning'] == 0 %}
-  {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
-ceph osd pool create {{ pool }} 32:
-  cmd.run:
-    - unless:
-      - ceph osd pool get {{ pool }} size
-  {% endfor %}
-ceph fs new manila fileshare_metadata fileshare_data:
-  cmd.run:
-    - unless:
-      - ceph fs get manila
-{% endif %}
+# {% if grains['spawning'] == 0 %}
+#   {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
+# ceph osd pool create {{ pool }} 32:
+#   cmd.run:
+#     - unless:
+#       - ceph osd pool get {{ pool }} size
+#   {% endfor %}
+# ceph fs new manila fileshare_metadata fileshare_data:
+#   cmd.run:
+#     - unless:
+#       - ceph fs get manila
+# {% endif %}
