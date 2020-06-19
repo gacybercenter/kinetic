@@ -41,9 +41,9 @@ etcd_conf:
 ### refuses to be enabled after the completion of the orch run
 ### when using an integrated enabled.  I have not encountered this on any
 ### other service.  It works correctly consistently with this method
-etcd_service_enable:
-  service.enabled:
-    - name: etcd
+# etcd_service_enable:
+#   service.enabled:
+#     - name: etcd
 
 etcd_service:
   service.running:
