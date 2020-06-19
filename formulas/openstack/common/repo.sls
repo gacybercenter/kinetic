@@ -22,7 +22,7 @@ update_packages_uca:
 CentOS PowerTools:
   pkgrepo.managed:
     - humanname: CentOS PowerTools
-    - name: CentOS PowerTools
+    - name: CentOS-PowerTools
     - mirrorlist: http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=PowerTools&infra=$infra
     - file: /etc/yum.repos.d/CentOS-PowerTools.repo
     - gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
