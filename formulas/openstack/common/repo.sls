@@ -19,7 +19,7 @@ update_packages_uca:
 
 ## added per https://www.rdoproject.org/install/packstack/
 ## official upstream docs do not reflect this yet
-CentOS PowerTools PowerTools:
+CentOS PowerTools:
   pkgrepo.managed:
     - humanname: CentOS PowerTools
     - name: PowerTools
