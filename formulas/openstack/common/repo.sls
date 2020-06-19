@@ -36,13 +36,13 @@ update_packages_rdo:
     - refresh: true
     - onchanges:
       - pkg: rdo
-      - pkgrepo: PowerTools
+      - pkgrepo: CentOS PowerTools
 
 openstack-selinux:
   pkg.installed:
     - require:
       - pkg: rdo
       - pkg: update_packages_rdo
-      - pkgrepo: PowerTools
+      - pkgrepo: CentOS PowerTools
 
 {% endif %}
