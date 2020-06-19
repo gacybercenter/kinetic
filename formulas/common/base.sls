@@ -71,6 +71,7 @@ upgraded:
         installonly_limit=3
         clean_requirements_on_remove=True
         best=True
+        skip_if_unavailable=False
         proxy=http://{{ address }}:3142
       {% endif %}
     {% endfor %}
