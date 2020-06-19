@@ -19,10 +19,10 @@ update_packages_uca:
 
 ## added per https://www.rdoproject.org/install/packstack/
 ## official upstream docs do not reflect this yet
-CentOS PowerTools:
+CentOS-PowerTools:
   pkgrepo.managed:
-    - humanname: CentOS PowerTools
-    - name: CentOS PowerTools
+    - humanname: CentOS-PowerTools
+    - name: CentOS-PowerTools
     - mirrorlist: http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=PowerTools&infra=$infra
     - file: /etc/yum.repos.d/CentOS-PowerTools.repo
     - gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
