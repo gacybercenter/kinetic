@@ -32,15 +32,6 @@ make_zun_service:
 
 {% endif %}
 
-#websocketproxy.py:
-#  file.managed:
-##{% if grains['os_family'] == 'Debian' %}
-#    - name: /usr/local/lib/python3.6/dist-packages/zun/websocket/websocketproxy.py
-##{% elif grains['os_family'] == 'RedHat' %}
-#    - name: /usr/local/lib/python3.6/site-packages/zun/websocket/websocketproxy.py
-##{% endif %}
-#    - source: salt://formulas/zun/files/websocketproxy.py
-
 make_kuryr_user:
   cmd.script:
     - source: salt://formulas/zun/files/mkuser_kuryr.sh
