@@ -33,7 +33,7 @@ ifwatch:
 {% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
-  {% if type not in ['cache','salt','pxe'] %}
+  {% if type not in ['cache','salt','pxe'] AND salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0 %}
     {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last ()%}
       {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 /etc/apt/apt.conf.d/02proxy:
