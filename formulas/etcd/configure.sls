@@ -48,5 +48,6 @@ etcd_service_enable:
 etcd_service:
   service.running:
     - name: etcd
+    - enabled: True
     - watch:
       - file: etcd_conf

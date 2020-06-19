@@ -24,7 +24,7 @@ PowerTools:
     - humanname: CentOS PowerTools
     - name: PowerTools
     - mirrorlist: http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=PowerTools&infra=$infra
-    - file: /etc/yum.repos.d/PowerTools.repo
+    - file: /etc/yum.repos.d/CentOS-PowerTools.repo
     - gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
 
 rdo:
