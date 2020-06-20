@@ -18,8 +18,6 @@ crush_bucket:
 remove_/etc/ceph/ceph.client.admin.keyring:
   file.absent:
     - name: /etc/ceph/ceph.client.admin.keyring
-    - require:
-      - cmd: crush_bucket
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
