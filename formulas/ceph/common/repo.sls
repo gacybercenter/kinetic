@@ -18,7 +18,7 @@ update_packages_ceph:
 
 ceph_repo:
   pkgrepo.managed:
-    - humanname: Ceph Octopus
+    - humanname: ceph
     - name: ceph
     - baseurl: https://download.ceph.com/rpm-octopus/el8/$basearch
     - file: /etc/yum.repos.d/ceph.repo
