@@ -10,24 +10,18 @@ include:
     - prereq:
       - cmd: make_crush_bucket
 
-make_crush_bucket:
+crush_bucket:
   cmd.run:
-    - name: ceph osd crush add-bucket {{ grains['host'] }} host && touch /etc/ceph/bucket_done
+    - name: ceph osd crush add-bucket {{ grains['host'] }} host && ceph osd crush move {{ grains['host'] }} root=default && touch /etc/ceph/bucket_done
     - creates: /etc/ceph/bucket_done
     - require:
       - file: /etc/ceph/ceph.client.admin.keyring
-
-align_crush_bucket:
-  cmd.run:
-    - name: ceph osd crush move {{ grains['host'] }} root=default
-    - onchanges:
-      - cmd: make_crush_bucket
 
 remove_/etc/ceph/ceph.client.admin.keyring:
   file.absent:
     - name: /etc/ceph/ceph.client.admin.keyring
     - require:
-      - cmd: align_crush_bucket
+      - cmd: crush_bucket
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
