@@ -8,7 +8,7 @@ get_adminkey:
   file.managed:
     - name: /etc/ceph/ceph.client.admin.keyring
     - contents_pillar: ceph:ceph-client-admin-keyring
-    - mode: 600
+    - mode: 644
     - user: root
     - group: root
     - prereq:
