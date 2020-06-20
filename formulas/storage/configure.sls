@@ -14,8 +14,6 @@ crush_bucket:
   cmd.run:
     - name: ceph osd crush add-bucket {{ grains['host'] }} host && ceph osd crush move {{ grains['host'] }} root=default && touch /etc/ceph/bucket_done
     - creates: /etc/ceph/bucket_done
-    - require:
-      - file: /etc/ceph/ceph.client.admin.keyring
 
 remove_/etc/ceph/ceph.client.admin.keyring:
   file.absent:
