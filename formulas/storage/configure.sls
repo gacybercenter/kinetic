@@ -4,9 +4,13 @@ include:
   - /formulas/storage/install
   - /formulas/ceph/common/configure
 
-/etc/ceph/ceph.client.admin.keyring:
+get_adminkey:
   file.managed:
+    - name: /etc/ceph/ceph.client.admin.keyring
     - contents_pillar: ceph:ceph-client-admin-keyring
+    - mode: 600
+    - user: root
+    - group: root
     - prereq:
       - cmd: crush_bucket
 
@@ -17,7 +21,7 @@ crush_bucket:
     - require_in:
       - file: remove_/etc/ceph/ceph.client.admin.keyring
 
-remove_/etc/ceph/ceph.client.admin.keyring:
+wipe_adminkey:
   file.absent:
     - name: /etc/ceph/ceph.client.admin.keyring
 
