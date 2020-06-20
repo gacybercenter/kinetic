@@ -33,11 +33,11 @@ ceph_repo_noarch:
 
 ## temporary requirement for lack of python3-pecan availability in main repos
 ## remove this when python3-pecan arrives further downstream
-copr_ceph_el8:
-  pkgrepo.managed:
-    - name: ceph-el8-copr
-    - baseurl: https://download.copr.fedorainfracloud.org/results/ktdreyer/ceph-el8/epel-8-$basearch/
-    - gpgkey: https://download.copr.fedorainfracloud.org/results/ktdreyer/ceph-el8/pubkey.gpg
+# copr_ceph_el8:
+#   pkgrepo.managed:
+#     - name: ceph-el8-copr
+#     - baseurl: https://download.copr.fedorainfracloud.org/results/ktdreyer/ceph-el8/epel-8-$basearch/
+#     - gpgkey: https://download.copr.fedorainfracloud.org/results/ktdreyer/ceph-el8/pubkey.gpg
 
 update_packages_ceph:
   pkg.uptodate:
