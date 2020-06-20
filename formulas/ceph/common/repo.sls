@@ -18,7 +18,6 @@ update_packages_ceph:
 
 ceph_repo:
   pkgrepo.managed:
-    - humanname: ceph
     - name: ceph
     - baseurl: https://download.ceph.com/rpm-octopus/el8/$basearch
     - file: /etc/yum.repos.d/ceph.repo
@@ -27,7 +26,6 @@ ceph_repo:
 ## new requirement with octopus+el8
 ceph_repo_noarch:
   pkgrepo.managed:
-    - humanname: Ceph Octopus noarch
     - name: ceph_noarch
     - baseurl: https://download.ceph.com/rpm-octopus/el8/noarch
     - file: /etc/yum.repos.d/ceph_noarch.repo
@@ -37,7 +35,6 @@ ceph_repo_noarch:
 ## remove this when python3-pecan arrives further downstream
 copr_ceph_el8:
   pkgrepo.managed:
-    - humanname: el8 COPR for ceph
     - name: ceph-el8-copr
     - baseurl: https://download.copr.fedorainfracloud.org/results/ktdreyer/ceph-el8/epel-8-$basearch/
     - gpgkey: https://download.copr.fedorainfracloud.org/results/ktdreyer/ceph-el8/pubkey.gpg
