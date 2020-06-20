@@ -26,6 +26,10 @@ align_crush_bucket:
     - onchanges:
       - cmd: make_crush_bucket
 
+remove_/etc/ceph/ceph.client.admin.keyring:
+  file.absent:
+    - name: /etc/ceph/ceph.client.admin.keyring
+
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
