@@ -152,6 +152,7 @@ apply_install_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/{{ role }}/install
+    - timeout: 600
     - require:
       - wait_for_{{ type }}-{{ uuid }}_reboot
 
@@ -159,6 +160,7 @@ highstate_{{ type }}-{{ uuid }}:
   salt.state:
     - tgt: '{{ type }}-{{ uuid }}'
     - highstate: True
+    - timeout: 600    
     - require:
       - apply_install_{{ type }}-{{ uuid }}
 
