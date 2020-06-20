@@ -8,7 +8,7 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-client-admin-keyring
     - prereq:
-      - cmd: make_crush_bucket
+      - cmd: crush_bucket
 
 crush_bucket:
   cmd.run:
