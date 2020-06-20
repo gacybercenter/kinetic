@@ -12,11 +12,23 @@ get_adminkey:
     - user: root
     - group: root
     - prereq:
-      - cmd: crush_bucket
+      - cmd: add_crush_bucket
 
-crush_bucket:
+add_crush_bucket:
   cmd.run:
-    - name: ceph osd crush add-bucket {{ grains['host'] }} host && ceph osd crush move {{ grains['host'] }} root=default && touch /etc/ceph/bucket_done
+    - name: ceph osd crush add-bucket {{ grains['host'] }} host
+    - require_in:
+      - cmd: move_crush_bucket
+
+move_crush_bucket:
+  cmd.run:
+    - name: ceph osd crush move {{ grains['host'] }} root=default
+    - require_in:
+      - cmd: finish_crush_bucket
+
+finish_crush_bucket:
+  cmd.run:
+    - name: touch /etc/ceph/bucket_done
     - creates:
       - /etc/ceph/bucket_done
 
