@@ -20,7 +20,7 @@ add_crush_bucket:
     - require_in:
       - cmd: move_crush_bucket
     - creates:
-      - /etc/ceph_bucket_done      
+      - /etc/ceph_bucket_done
 
 move_crush_bucket:
   cmd.run:
@@ -28,7 +28,7 @@ move_crush_bucket:
     - require_in:
       - cmd: finish_crush_bucket
     - creates:
-      - /etc/ceph_bucket_done
+      - /etc/ceph/bucket_done
 
 finish_crush_bucket:
   file.managed:
