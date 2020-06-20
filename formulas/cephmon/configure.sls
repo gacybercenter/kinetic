@@ -110,28 +110,4 @@ ceph auth import -i /etc/ceph/ceph.client.{{ auth }}.keyring:
 #   cmd.run:
 #     - unless:
 #       - ceph fs get manila
-
-allow_pool_delete:
-  cmd.run:
-    - name: ceph tell mon.\* injectargs '--mon-allow-pool-delete=true'
-    - prereq:
-      - cmd: drop_dhm
-
-drop_dhm:
-  cmd.run:
-    - name: ceph osd pool rm device_health_metrics device_health_metrics --yes-i-really-really-mean-it
-    - onlyif:
-      - ceph osd pool get device_health_metrics size
-
-disable_monitoring:
-  cmd.run:
-    - name: ceph device monitoring off
-    - onchanges:
-      - cmd: drop_dhm
-
-disable_pool_delete:
-  cmd.run:
-    - name: ceph tell mon.\* injectargs '--mon-allow-pool-delete=false'
-    - onchanges:
-      - allow_pool_delete
 {% endif %}
