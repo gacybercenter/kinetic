@@ -123,6 +123,12 @@ drop_dhm:
     - onlyif:
       - ceph osd pool get device_health_metrics size
 
+disable_monitoring:
+  cmd.run:
+    - name: ceph device monitoring off
+    - onchanges:
+      - cmd: drop_dhm
+
 disable_pool_delete:
   cmd.run:
     - name: ceph tell mon.\* injectargs '--mon-allow-pool-delete=false'
