@@ -19,12 +19,16 @@ add_crush_bucket:
     - name: ceph osd crush add-bucket {{ grains['host'] }} host
     - require_in:
       - cmd: move_crush_bucket
+    - creates:
+      - /etc/ceph_bucket_done      
 
 move_crush_bucket:
   cmd.run:
     - name: ceph osd crush move {{ grains['host'] }} root=default
     - require_in:
       - cmd: finish_crush_bucket
+    - creates:
+      - /etc/ceph_bucket_done
 
 finish_crush_bucket:
   file.managed:
