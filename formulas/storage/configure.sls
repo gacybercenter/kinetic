@@ -27,10 +27,8 @@ move_crush_bucket:
       - cmd: finish_crush_bucket
 
 finish_crush_bucket:
-  cmd.run:
-    - name: touch /etc/ceph/bucket_done
-    - creates:
-      - /etc/ceph/bucket_done
+  file.managed:
+    - name: /etc/ceph/bucket_done
 
 wipe_adminkey:
   file.absent:
