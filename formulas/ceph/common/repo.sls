@@ -45,6 +45,6 @@ update_packages_ceph:
     - onchanges:
       - pkgrepo: ceph_repo
       - pkgrepo: ceph_repo_noarch
-      - pkgrepo: copr_ceph_el8
+      # - pkgrepo: copr_ceph_el8
 
 {% endif %}
