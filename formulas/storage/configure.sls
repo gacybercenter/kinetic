@@ -15,7 +15,7 @@ make_crush_bucket:
     - name: ceph osd crush add-bucket {{ grains['host'] }} host && touch /etc/ceph/bucket_done
     - creates: /etc/ceph/bucket_done
     - require:
-      file: /etc/ceph/ceph.client.admin.keyring
+      - file: /etc/ceph/ceph.client.admin.keyring
 
 align_crush_bucket:
   cmd.run:
