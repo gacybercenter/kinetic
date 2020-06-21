@@ -91,7 +91,7 @@ fs.file-max:
   file.managed:
     - source: salt://formulas/cephmon/files/limits.conf
 
-{% for auth in ['images', 'volumes', 'compute'] %}
+{% for auth in ['images', 'volumes', 'compute', 'manila'] %}
 ceph auth import -i /etc/ceph/ceph.client.{{ auth }}.keyring:
   cmd.run:
     - onchanges:
