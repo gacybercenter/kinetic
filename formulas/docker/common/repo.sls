@@ -25,7 +25,7 @@ docker_repo:
 
 update_packages_docker:
   module.run:
-    - pkg.upgrade
+    - pkg.upgrade:
       - setopt:'best=False'
     - onchanges:
       - docker_repo
