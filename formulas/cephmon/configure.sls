@@ -22,7 +22,7 @@ spawnzero_complete:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
 
-{% for client_keyring in ['admin', 'images', 'volumes', 'compute', 'manila'] %}
+{% for client_keyring in ['admin', 'images', 'volumes', 'compute'] %}
 /etc/ceph/ceph.client.{{ client_keyring }}.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-{{ client_keyring }}-keyring
@@ -91,7 +91,7 @@ fs.file-max:
   file.managed:
     - source: salt://formulas/cephmon/files/limits.conf
 
-{% for auth in ['images', 'volumes', 'compute', 'manila'] %}
+{% for auth in ['images', 'volumes', 'compute'] %}
 ceph auth import -i /etc/ceph/ceph.client.{{ auth }}.keyring:
   cmd.run:
     - onchanges:
