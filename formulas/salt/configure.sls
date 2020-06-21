@@ -158,7 +158,6 @@ api:
 {% set volumeskey = salt['generate.cephx_key']() %}
 {% set computekey = salt['generate.cephx_key']() %}
 {% set osdkey = salt['generate.cephx_key']() %}
-{% set manilakey = salt['generate.cephx_key']() %}
 
 /srv/dynamic_pillar/ceph.sls:
   file.managed:
