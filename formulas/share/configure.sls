@@ -92,6 +92,12 @@ wipe_adminkey:
   file.absent:
     - name: /etc/ceph/ceph.client.admin.keyring
 
+/etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
+  file.managed:
+    - mode: 640
+    - user: root
+    - group: manila
+
 manila_share_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
