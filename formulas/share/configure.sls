@@ -13,17 +13,36 @@ spawnzero_complete:
 
 {% endif %}
 
+get_adminkey:
+  file.managed:
+    - name: /etc/ceph/ceph.client.admin.keyring
+    - contents_pillar: ceph:ceph-client-admin-keyring
+    - mode: 600
+    - user: root
+    - group: root
+    - prereq:
+      - cmd: make_{{ grains['id'] }}_manilakey
+
+make_{{ grains['id'] }}_manilakey:
+  cmd.run:
+    - name: ceph auth get-or-create client.{{ grains['id'] }} mds 'allow *' osd 'allow rw' mon 'allow r, allow command "auth del", allow command "auth caps", allow command "auth get", allow command "auth get-or-create"' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
+    - creates:
+      - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
+
+wipe_adminkey:
+  file.absent:
+    - name: /etc/ceph/ceph.client.admin.keyring
+
+/etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
+  file.managed:
+    - mode: 640
+    - user: root
+    - group: manila
+
 /var/lib/manila/tmp:
   file.directory:
     - makedirs: true
     - user: manila
-    - group: manila
-
-/etc/ceph/ceph.client.manila.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-manila-keyring
-    - mode: 640
-    - user: root
     - group: manila
 
 /etc/manila/manila.conf:
@@ -71,32 +90,6 @@ spawnzero_complete:
           cephfs_ganesha_server_is_remote = False
           cephfs_ganesha_server_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         backend: cephfsnfs{{ grains['spawning'] }}
-
-get_adminkey:
-  file.managed:
-    - name: /etc/ceph/ceph.client.admin.keyring
-    - contents_pillar: ceph:ceph-client-admin-keyring
-    - mode: 600
-    - user: root
-    - group: root
-    - prereq:
-      - cmd: make_{{ grains['id'] }}_manilakey
-
-make_{{ grains['id'] }}_manilakey:
-  cmd.run:
-    - name: ceph auth get-or-create client.{{ grains['id'] }} mds 'allow *' osd 'allow rw' mon 'allow r, allow command "auth del", allow command "auth caps", allow command "auth get", allow command "auth get-or-create"' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
-    - creates:
-      - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
-
-wipe_adminkey:
-  file.absent:
-    - name: /etc/ceph/ceph.client.admin.keyring
-
-/etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
-  file.managed:
-    - mode: 640
-    - user: root
-    - group: manila
 
 manila_share_service:
   service.running:
