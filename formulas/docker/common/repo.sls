@@ -18,7 +18,6 @@ update_packages_docker:
 
 docker_repo:
   pkgrepo.managed:
-    - humanname: docker ce
     - name: docker
     - baseurl: https://download.docker.com/linux/centos/7/$basearch/stable/
     - file: /etc/yum.repos.d/docker.repo

@@ -18,7 +18,6 @@ update_packages_kata:
 
 kata_repo:
   pkgrepo.managed:
-    - humanname: kata containers
     - name: kata
     - baseurl: http://download.opensuse.org/repositories/home:/katacontainers:/releases:/$basearch:/master/CentOS_7/
     - file: /etc/yum.repos.d/kata.repo
