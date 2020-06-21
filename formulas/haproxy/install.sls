@@ -8,7 +8,11 @@ letsencrypt:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-certbot:
-  pkg.installed
+haproxy_packages:
+  pkg.installed:
+    - pkgs:
+      - certbot
+      - policycoreutils-python-utils
+    - reload_modules: True
 
 {% endif %}

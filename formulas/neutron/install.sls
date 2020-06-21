@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
     {% if pillar['neutron']['backend'] == "linuxbridge" %}
@@ -19,8 +19,7 @@ neutron_packages:
       - neutron-server
       - neutron-plugin-ml2
       - python3-openstackclient
-      - python3-networking-ovn
-      - python3-tornado      
+      - python3-tornado
 
   {% endif %}
 
@@ -32,7 +31,7 @@ neutron_packages:
     - pkgs:
       - openstack-neutron-ml2
       - openstack-neutron
-      - python2-openstackclient
+      - python3-openstackclient
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -41,8 +40,9 @@ neutron_packages:
     - pkgs:
       - openstack-neutron
       - openstack-neutron-ml2
-      - python2-openstackclient
-      - python2-networking-ovn
+      - python3-openstackclient
+      - libibverbs
+      - rdma-core
 
   {% endif %}
 {% endif %}

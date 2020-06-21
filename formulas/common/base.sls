@@ -1,16 +1,17 @@
 include:
   - formulas/common/syslog
 
+initial_module_sync:
+  saltutil.sync_all:
+    - refresh: True
+    - unless:
+      - salt-call saltutil.list_extmods | grep -q 'redfish\|generate\|fernet\|address'
+
 {% if opts.id not in ['salt', 'pxe'] %}
   {% set type = opts.id.split('-')[0] %}
 {% else %}
   {% set type = opts.id %}
 {% endif %}
-
-/etc/salt/minion.d/transport.conf:
-  file.managed:
-    - contents: |
-        transport: {{ pillar ['salt_transport'] }}
 
 type:
   grains.present:
@@ -32,21 +33,18 @@ ifwatch:
 {% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
-  {% if type not in ['cache','salt','pxe'] %}
-    {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+  {% if (type not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
+    {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last ()%}
+      {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 /etc/apt/apt.conf.d/02proxy:
   file.managed:
     - contents: |
-    {% for host in cache_addresses_dict %}
-        Acquire::http { Proxy "http://{{ cache_addresses_dict[host][0] }}:3142"; };
+        Acquire::http { Proxy "http://{{ address }}:3142"; };
+      {% endif %}
     {% endfor %}
   {% endif %}
 
   {% if salt['grains.get']('upgraded') != True %}
-
-install_networkd:
-  pkg.installed:
-    - name: systemd-networkd
 
 update_all:
   pkg.uptodate:
@@ -62,18 +60,20 @@ upgraded:
   {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
-  {% if type not in ['cache','salt','pxe'] %}
-    {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
+  {% if (type not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
+    {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last ()%}
+      {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 /etc/yum.conf:
   file.managed:
     - contents: |
         [main]
-        cachedir=/var/cache/yum/$basearch/$releasever
         gpgcheck=1
-        best=True
         installonly_limit=3
-    {% for host in cache_addresses_dict %}
-        proxy=http://{{ cache_addresses_dict[host][0] }}:3142
+        clean_requirements_on_remove=True
+        best=True
+        skip_if_unavailable=False
+        proxy=http://{{ address }}:3142
+      {% endif %}
     {% endfor %}
   {% endif %}
 
@@ -82,6 +82,9 @@ upgraded:
 install_networkd:
   pkg.installed:
     - name: systemd-networkd
+
+firewalld:
+  pkg.removed
 
 update_all:
   pkg.uptodate:
@@ -103,13 +106,6 @@ install_pip:
     - reload_modules: True
 
 pyroute2:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - require:
-      - install_pip
-    - reload_modules: True
-
-cryptography:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - require:

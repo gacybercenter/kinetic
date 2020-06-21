@@ -1,30 +1,42 @@
 include:
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/storage/install
-  - formulas/ceph/common/configure
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/storage/install
+  - /formulas/ceph/common/configure
 
-/etc/ceph/ceph.client.admin.keyring:
+get_adminkey:
   file.managed:
+    - name: /etc/ceph/ceph.client.admin.keyring
     - contents_pillar: ceph:ceph-client-admin-keyring
+    - mode: 644
+    - user: root
+    - group: root
     - prereq:
-      - cmd: make_crush_bucket
+      - cmd: add_crush_bucket
 
-make_crush_bucket:
+add_crush_bucket:
   cmd.run:
-    - name: ceph osd crush add-bucket {{ grains['host'] }} host && touch /etc/ceph/bucket_done
-    - require:
-      - sls: formulas/ceph/common/configure
-    - creates: /etc/ceph/bucket_done
+    - name: ceph osd crush add-bucket {{ grains['host'] }} host
+    - require_in:
+      - cmd: move_crush_bucket
+    - creates:
+      - /etc/ceph/bucket_done
 
-align_crush_bucket:
+move_crush_bucket:
   cmd.run:
     - name: ceph osd crush move {{ grains['host'] }} root=default
-    - require:
-      - sls: formulas/ceph/common/configure
-      - cmd: make_crush_bucket
-    - onchanges:
-      - cmd: make_crush_bucket
+    - require_in:
+      - cmd: finish_crush_bucket
+    - creates:
+      - /etc/ceph/bucket_done
+
+finish_crush_bucket:
+  file.managed:
+    - name: /etc/ceph/bucket_done
+
+wipe_adminkey:
+  file.absent:
+    - name: /etc/ceph/ceph.client.admin.keyring
 
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
@@ -55,7 +67,7 @@ db_pv_{{ device }}_{{ loop.index }}:
     - unless:
       - test -d /dev/db_vg
     - require:
-      - sls: formulas/storage/install
+      - sls: /formulas/storage/install
   {% endfor %}
 {% endfor %}
 
@@ -64,7 +76,7 @@ db_vg:
     - unless:
        - test -d /dev/db_vg
     - require:
-      - sls: formulas/storage/install
+      - sls: /formulas/storage/install
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
@@ -93,6 +105,6 @@ create_osd_{{ osd }}:
     - unless:
       - vgdisplay --verbose | grep -q {{ osd }}
     - require:
-      - sls: formulas/ceph/common/configure
+      - sls: /formulas/ceph/common/configure
       - lvm: db_lv_{{ loop.index0 }}
 {% endfor %}

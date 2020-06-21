@@ -36,7 +36,7 @@ create_efi_module:
 
 Disable default site:
   apache_site.disabled:
-    - name: default
+    - name: 000-default
 
 /etc/apache2/sites-available/wsgi.conf:
   file.managed:
@@ -61,36 +61,13 @@ wsgi_module:
   file.directory
 
 {% for type in pillar['hosts'] %}
+/var/www/html/configs/{{ type }}:
+  file.managed:
   {% if 'ubuntu' in pillar['hosts'][type]['os'] %}
-/var/www/html/preseed/{{ type }}.preseed:
-  file.managed:
     - source: salt://formulas/pxe/files/common.preseed
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        proxy: {{ pillar['hosts'][type]['proxy'] }}
-        root_password_crypted: {{ pillar['hosts'][type]['root_password_crypted'] }}
-        zone: {{ pillar['timezone'] }}
-        ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
-        disk: {{ pillar['hosts'][type]['disk'] }}
-        interface: {{ pillar['hosts'][type]['interface'] }}
-        master_record: {{ pillar['master_record'] }}
-        transport: {{ pillar['salt_transport'] }}
-    {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
-    - context:
-      {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-      {% if cache_addresses_dict == {} %}
-        proxy: ""
-      {% else %}
-        {% for host in cache_addresses_dict %}
-        proxy: http://{{ cache_addresses_dict[host][0] }}:3142
-        {% endfor %}
-      {% endif %}
-    {% endif %}
   {% elif 'centos' in pillar['hosts'][type]['os'] %}
-/var/www/html/kickstart/{{ type }}.kickstart:
-  file.managed:
     - source: salt://formulas/pxe/files/common.kickstart
+  {% endif %}
     - makedirs: True
     - template: jinja
     - defaults:
@@ -101,17 +78,17 @@ wsgi_module:
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
         master_record: {{ pillar['master_record'] }}
-        transport: {{ pillar['salt_transport'] }}
-    {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
+  {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
-      {% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-      {% if cache_addresses_dict == {} %}
+    {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
         proxy: ""
-      {% else %}
-        {% for host in cache_addresses_dict %}
-        proxy: http://{{ cache_addresses_dict[host][0] }}:3142
-        {% endfor %}
-      {% endif %}
+    {% else %}
+      ##pick a random cache and iterate through its addresses, choosing only the management address
+      {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last ()%}
+        {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+        proxy: http://{{ address }}:3142
+        {% endif %}
+      {% endfor %}
     {% endif %}
   {% endif %}
 {% endfor %}
@@ -123,7 +100,7 @@ apache2_service:
       - apache_module: wsgi_module
       - file: /etc/apache2/sites-available/wsgi.conf
       - apache_site: wsgi
-      - apache_site: default
+      - apache_site: 000-default
 
 salt-minion_mine_watch:
   cmd.run:

@@ -1,7 +1,7 @@
 include:
-  - formulas/etcd/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/etcd/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
@@ -36,9 +36,18 @@ etcd_conf:
         etcd_listen: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         cluster_token: {{ pillar['etcd']['etcd_cluster_token'] }}
 
+### I have no idea why I need to do it this way instead of including
+### the enabled: True key in service.running, but the etcd0 spawn0
+### refuses to be enabled after the completion of the orch run
+### when using an integrated enabled.  I have not encountered this on any
+### other service.  It works correctly consistently with this method
+etcd_service_enable:
+  service.enabled:
+    - name: etcd
+
 etcd_service:
   service.running:
     - name: etcd
-    - enable: true
+    - enable: True
     - watch:
       - file: etcd_conf

@@ -1,6 +1,6 @@
 include:
-  - formulas/openstack/common/repo
-  - formulas/ceph/common/repo
+  - /formulas/openstack/common/repo
+  - /formulas/ceph/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -20,10 +20,10 @@ volume_packages:
   pkg.installed:
     - pkgs:
       - openstack-cinder
-      - python2-openstackclient
-      - python-memcached
+      - python3-openstackclient
+      - python3-memcached
       - ceph-common
-      - python-rbd
-      - python-rados
+      - python3-rbd
+      - python3-rados
 
 {% endif %}

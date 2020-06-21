@@ -46,8 +46,6 @@ you will need to create your own tftp server and have it issue https://fixme[thi
 Your system will automatically compile a fresh copy of this for you from source if you do not wish to use the pre-compiled version.
 The freshly compiled version will be located at /var/www/html/ipxe.efi on your pxe server once it is fully highstated.
 6. DHCP clients can successfully register their leases in your local DNS resolver.
-7. All hosts can reach your pxe server on UDP 69 and TCP 80.
-Your tftp server must be able to reach your hosts on ANY UDP port as well.
 
 ## Recommendations
 
@@ -67,7 +65,7 @@ Large, simultaneous operations will almost certainly get you throttled upstream 
 On your configured Debian host, run:
 ```
 curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
-bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }} -k {{ key }} -t {{ transport }}
+bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }} -k {{ key }}
 ```
 
 where
@@ -75,25 +73,23 @@ where
 `{{ interface }}` = the name of the bridged management interface that you have configured on your debian host, e.g. mgmt.
 
 `{{ gitfs file root}}` = the repository from which you wish to source the kinetic static files.
+Append a comma followed by a branch name if you wish to use a branch other than master.
+Otherwise, master is assumed.
 
 `{{ pillar }}` = the repository from which you wish to source your site-specific configuration.
+Append a comma followed by a branch name if you wish to use a branch other than master.
+Otherwise, master is assumed.
 
 `{{ key }}` = the key that you will use to log in to your salt master and pxe server after they boot.
-
-`{{ transport }}` = the salt transport mechanism you would like to use.
-Note that this value *must* match the value in your configured pillar answer file.
-See https://docs.saltstack.com/en/latest/topics/transports/[transports] for more information.
-
 
 Example:
 
 ```
 curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
 bash -s -- -i mgmt \
--f https://github.com/GeorgiaCyber/kinetic.git \
--p https://github.com/GeorgiaCyber/kinetic-pillar-sample.git \
+-f https://github.com/GeorgiaCyber/kinetic.git,mybranch \
+-p https://github.com/GeorgiaCyber/kinetic-pillar.git,mybranch \
 -k "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKw+cBx9BBKcoXKLxMLVoGCD7znZqBjnMkaIipAikQJ"
--t "tcp"
 ```
 
 As the script completes, you should see a message stating that both pxe and salt have been created from their respective config.xml files by virsh.
@@ -133,9 +129,249 @@ salt:
 The next thing you will want to do is highstate your salt master so it can be fully configured and ready to orchestrate the rest of your environment:
 
 ```
-salt salt state.highstate
+salt-call state.highstate
 ```
 
-This command will likely end with an error stating ```Authentication error occurred```.  That's OK - we made changes to the master configuration
-that caused the master daemon to restart, so it couldn't return the results properly.  If you run an additional highstate, you will see that
-the configurations were successfully applied.
+NOTE: You can safely ignore deprecation warnings printed while this command executes.
+
+Depending on the size of your specified networks and speed of your salt-master, this command can take several minutes to execute.
+Here is an example output runtime, for reference:
+
+```
+Summary for local
+--------------
+Succeeded: 827 (changed=823)
+Failed:      0
+--------------
+Total states run:     827
+Total run time:   395.820 s
+```
+
+If you were to run an additional highstate, you would see that some of the states return as being already complete, and some do not.
+This is because when you run the initial salt-master highstate, you are creating several secrets unique to your environment that will then be loaded in to the pillar.
+There are other states in your environment (such as the ones that create your bash and powershell authentication convenience files) that rely on these pillar values to execute successfully.
+As the salt pillar cannot be refreshed during the middle of an individual salt state run, it is necessary to run a 2nd highstate on your salt master in order to fully prepare it for operation:
+
+```
+salt-call state.highstate
+```
+
+After this run, you will see a handful of changes in the return dictionary:
+
+```
+...
+----------
+          ID: /srv/dynamic_pillar/adminrc
+    Function: file.managed
+      Result: True
+     Comment: File /srv/dynamic_pillar/adminrc updated
+     Started: 16:38:45.877319
+    Duration: 80.886 ms
+     Changes:
+              ----------
+              diff:
+                  ---
+                  +++
+                  @@ -1,6 +1,6 @@
+                   #!/bin/bash
+                   export OS_USERNAME=admin
+                  -export OS_PASSWORD=TBD
+                  +export OS_PASSWORD=random_string
+                   export OS_USER_DOMAIN_NAME=Default
+                   export OS_PROJECT_NAME=admin
+                   export OS_PROJECT_DOMAIN_NAME=Default
+----------
+          ID: /srv/dynamic_pillar/adminrc.ps1
+    Function: file.managed
+      Result: True
+     Comment: File /srv/dynamic_pillar/adminrc.ps1 updated
+     Started: 16:38:45.958400
+    Duration: 13.049 ms
+     Changes:
+              ----------
+              diff:
+                  ---
+                  +++
+                  @@ -1,5 +1,5 @@
+                   $env:OS_USERNAME = "admin"
+                  -$env:OS_PASSWORD = "TBD"
+                  +$env:OS_PASSWORD = "random_string"
+                   $env:OS_USER_DOMAIN_NAME = "Default"
+                   $env:OS_PROJECT_NAME = "admin"
+                   $env:OS_PROJECT_DOMAIN_NAME = "Default"
+----------
+          ID: /etc/salt/master
+    Function: file.managed
+      Result: True
+     Comment: File /etc/salt/master is in the correct state
+     Started: 16:38:45.971714
+    Duration: 2.585 ms
+     Changes:
+----------
+          ID: salt-api_service
+    Function: service.running
+        Name: salt-api
+      Result: True
+     Comment: The service salt-api is already running
+     Started: 16:38:45.987873
+    Duration: 24.491 ms
+     Changes:
+----------
+          ID: salt-master_watch
+    Function: cmd.run
+        Name: salt-call service.restart salt-master
+      Result: True
+     Comment: State was not run because none of the onchanges reqs changed
+     Started: 16:38:46.019181
+    Duration: 0.003 ms
+     Changes:
+
+Summary for local
+--------------
+Succeeded: 825 (changed=3)
+Failed:      0
+--------------
+Total states run:     825
+Total run time:     9.068 s
+```
+
+At this point, your master is fully configured with your unique environmental information.
+The next step is to properly encrypt your bmc password so it can be safely stored on a publicly available repository.
+On your salt master, run:
+
+```
+echo -n mypass | gpg --homedir /etc/salt/gpgkeys/ --encrypt --armor --recipient kinetic@georgiacyber | sed 's/^/  /g'
+```
+
+Where 'mypass' is your specific bmc password.
+This will encrypt your bmc password using your unique pki setup that was generated when you ran your initial bootstrap script.
+To see the default parameters for this setup, see bootstrap/resources/key-generation.
+This command will return something similar to the below:
+
+```
+  -----BEGIN PGP MESSAGE-----
+
+  hF4DyVz5FsHlPcwSAQdAsheDK25osLvF9modvTbEbIyDLeikcxfgs/J90au4KS8w
+  okyQP6B39GGUv2msgPTDjgQd4RjEuEoLV6BVxkd55VtGjNk/SoeGYsdaDTUOieTX
+  0kEBhyT7twmzjTt273mQL3hiXIT/WS/FUZ0xLthaWESt9UJ/ufgSzJFXhLoSe+Vl
+  FHNzdk9d+Au14EQpQ6qlKKa7Gg==
+  =oSuH
+  -----END PGP MESSAGE-----
+```
+
+Take this string and place it in your pillar in the environment/bmc_password.sls file like so:
+
+```
+#!yaml|gpg
+
+bmc_password: |
+  -----BEGIN PGP MESSAGE-----
+
+  hF4DyVz5FsHlPcwSAQdAsheDK25osLvF9modvTbEbIyDLeikcxfgs/J90au4KS8w
+  okyQP6B39GGUv2msgPTDjgQd4RjEuEoLV6BVxkd55VtGjNk/SoeGYsdaDTUOieTX
+  0kEBhyT7twmzjTt273mQL3hiXIT/WS/FUZ0xLthaWESt9UJ/ufgSzJFXhLoSe+Vl
+  FHNzdk9d+Au14EQpQ6qlKKa7Gg==
+  =oSuH
+  -----END PGP MESSAGE-----
+```
+
+Once you push this change to your pillar gitfs repository, run the following on your salt-master:
+
+```
+salt-call saltutil.refresh_pillar
+```
+
+This will tell the salt-master to forcefully pull new pillar data and re-render all of its information.
+At this point, if you call for your bmc_password pillar item, you will get your actual password displayed:
+
+```
+root@salt:~# salt-call pillar.item bmc_password
+salt:
+    ----------
+    bmc_password:
+        mypass
+```
+
+If you don't get the plaintext version of your password, wait about a minute and then try `salt-call saltutil.refresh_pillar` and `salt-call pillar.item bmc_password` commands again.
+There is a refresh interval that you can miss on occasion if your changes are very fresh.
+
+At this point, you can run a highstate job on your pxe machine:
+
+```
+salt pxe state.highstate
+```
+
+NOTE: `salt-call` is not usable/applicable here because you are running a command on a remote minion, rather than the salt-master itself.
+You must use the `salt` command.
+
+Once again, this command will take several minutes to execute as it includes a few compilation tasks:
+
+```
+...
+----------
+          ID: apache2_service
+    Function: service.running
+        Name: apache2
+      Result: True
+     Comment: Service restarted
+     Started: 20:56:32.788566
+    Duration: 130.199 ms
+     Changes:
+              ----------
+              apache2:
+                  True
+----------
+          ID: salt-minion_mine_watch
+    Function: cmd.run
+        Name: salt-call service.restart salt-minion
+      Result: True
+     Comment: Command "salt-call service.restart salt-minion" run
+     Started: 20:56:32.920253
+    Duration: 10.932 ms
+     Changes:
+              ----------
+              pid:
+                  16536
+              retcode:
+                  None
+              stderr:
+              stdout:
+
+Summary for pxe
+-------------
+Succeeded: 33 (changed=29)
+Failed:     0
+-------------
+Total states run:     33
+Total run time:  405.475 s
+```
+
+As part of your pxe minions highstate process, it ran the custom ```redfish.gather_endpoints``` function, which scraped your out-of-band network specificed in your pillar for active BMCs.
+It cataloged and stored all detected BMCs in a special place called the salt mine so your kinetic deployment is always aware of the various types of physical hardware it needs to interface with.
+
+You can view the current BMC mine data by running:
+
+```
+salt-run mine.get pxe redfish.gather_endpoints
+```
+
+Which will return data that looks like this:
+
+```
+    00000000-0000-0000-0000-AC1F6BB6DF49:
+        10.100.0.33
+    00000000-0000-0000-0000-AC1F6BB6DF4E:
+        10.100.0.35
+    00000000-0000-0000-0000-AC1F6BB6DF4F:
+        10.100.0.32
+```
+
+The pairing of the SMBIOS UUID to the BMC IP address allows your kinetic deployment to easily identify and managed your hardware.
+At this point, your two foundational minions are fully configured and you are ready to being your kinetic deployment.
+To create your controllers, run:
+
+```
+salt-run state.orch orch.generate pillar='{"type":"controller"}'
+```
+
+This will provision all controllers that you have identified in your pillar.

@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -21,7 +21,7 @@ sahara_packages:
       - openstack-sahara-api
       - openstack-sahara-engine
       - openstack-sahara
-      - python2-saharaclient
-      - python2-openstackclient
+      - python3-saharaclient
+      - python3-openstackclient
 
 {% endif %}

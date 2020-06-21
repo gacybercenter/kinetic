@@ -1,7 +1,7 @@
 include:
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/placement/install
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/placement/install
 
 {% if grains['spawning'] == 0 %}
 

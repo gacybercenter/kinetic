@@ -1,0 +1,9 @@
+[Unit]
+Description = OpenStack Container Service CNI daemon
+
+[Service]
+ExecStart = /usr/local/bin/zun-cni-daemon
+User = zun
+
+[Install]
+WantedBy = multi-user.target

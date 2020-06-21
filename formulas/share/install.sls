@@ -1,6 +1,6 @@
 include:
-  - formulas/openstack/common/repo
-  - formulas/ceph/common/repo
+  - /formulas/openstack/common/repo
+  - /formulas/ceph/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -26,21 +26,24 @@ share_packages:
   pkg.installed:
     - pkgs:
       - openstack-manila-share
-      - python2-PyMySQL
-      - python2-openstackclient
-      - python2-manilaclient
-      - python-memcached
-      - centos-release-nfs-ganesha28
+      - python3-PyMySQL
+      - python3-openstackclient
+      - python3-manilaclient
+      - python3-memcached
+      - centos-release-nfs-ganesha30
       - ceph-common
-      - python-rbd
-      - python-rados
+      - python3-rbd
+      - python3-rados
     - reload_modules: true
 
-ganesha_packages::
+ganesha_packages:
   pkg.installed:
     - pkgs:
       - nfs-ganesha
       - nfs-ganesha-ceph
+      - nfs-ganesha-selinux
+      - nfs-ganesha-rados-urls
+      - nfs-ganesha-rados-grace
     - require:
       - pkg: share_packages
 

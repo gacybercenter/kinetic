@@ -83,32 +83,6 @@ remove_pending_{{ type }}-{{ uuid }}:
       - sync_all_{{ type }}-{{ uuid }}
 
 {% elif style == 'virtual' %}
-run_once_{{ type }}-{{ uuid }}:
-  salt.state:
-    - tgt: '{{ type }}-{{ uuid }}'
-    - sls:
-      - formulas/common/runonce
-    - require:
-      - sync_all_{{ type }}-{{ uuid }}
-
-run_once_reboot_{{ type }}-{{ uuid }}:
-  salt.function:
-    - tgt: '{{ type }}-{{ uuid }}'
-    - name: system.reboot
-    - kwarg:
-        at_time: 1
-    - require:
-      - run_once_{{ type }}-{{ uuid }}
-
-wait_for_run_once_reboot_{{ type }}-{{ uuid }}:
-  salt.wait_for_event:
-    - name: salt/minion/*/start
-    - id_list:
-      - {{ type }}-{{ uuid }}
-    - require:
-      - run_once_reboot_{{ type }}-{{ uuid }}
-    - timeout: 300
-
 set_spawning_{{ type }}-{{ uuid }}:
   salt.function:
     - name: grains.set
@@ -118,7 +92,7 @@ set_spawning_{{ type }}-{{ uuid }}:
     - kwarg:
           val: {{ spawning }}
     - require:
-      - wait_for_run_once_reboot_{{ type }}-{{ uuid }}
+      - sync_all_{{ type }}-{{ uuid }}
 {% endif %}
 
 apply_base_{{ type }}-{{ uuid }}:
@@ -178,6 +152,7 @@ apply_install_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/{{ role }}/install
+    - timeout: 600
     - require:
       - wait_for_{{ type }}-{{ uuid }}_reboot
 
@@ -185,6 +160,7 @@ highstate_{{ type }}-{{ uuid }}:
   salt.state:
     - tgt: '{{ type }}-{{ uuid }}'
     - highstate: True
+    - timeout: 600    
     - require:
       - apply_install_{{ type }}-{{ uuid }}
 

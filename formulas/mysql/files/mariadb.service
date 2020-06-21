@@ -1,0 +1,36 @@
+[Unit]
+Description=MariaDB 10.3 database server
+Documentation=man:mysqld(8)
+Documentation=https://mariadb.com/kb/en/library/systemd/
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+Alias=mysql.service
+Alias=mysqld.service
+
+[Service]
+Type=notify
+User=mysql
+Group=mysql
+LimitNOFILE=65535
+
+ExecStartPre=/usr/libexec/mysql-check-socket
+ExecStartPre=/usr/libexec/mysql-prepare-db-dir %n
+ExecStart=/usr/libexec/mysqld --basedir=/usr $MYSQLD_OPTS $_WSREP_NEW_CLUSTER
+ExecStartPost=/usr/libexec/mysql-check-upgrade
+PrivateNetwork=false
+
+KillMode=process
+KillSignal=SIGTERM
+
+SendSIGKILL=no
+
+Restart=on-abort
+RestartSec=5s
+
+UMask=007
+
+TimeoutSec=300
+
+PrivateTmp=true

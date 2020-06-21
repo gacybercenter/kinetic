@@ -1,18 +1,5 @@
 include:
-  - formulas/openstack/common/repo
-
-
-## Patch that works around https://github.com/GeorgiaCyber/kinetic/issues/51
-## Remove this when its officially merged
-
-{% if grains['saltversion'] == '3000' %}
-{% for patch in ["modules/mysql.py", "states/mysql_user.py"] %}
-{{ grains['saltpath'] }}/{{ patch }}:
-  file.managed:
-    - source: https://raw.githubusercontent.com/saltstack/salt/5bfd67c13ec75f912f3b57ac33bf42d38b6dc47d/salt/{{ patch }}
-    - skip_verify: True
-{% endfor %}
-{% endif %}
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -53,13 +40,8 @@ mariadb-server-galera:
 mariadb:
   pkg.installed
 
-python36-PyMySQL:
+python3-PyMySQL:
   pkg.installed:
     - reload_modules: True
-
-python36-mysql:
-  pkg.installed:
-    - reload_module: True
-
 
 {% endif %}

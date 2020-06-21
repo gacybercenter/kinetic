@@ -1,8 +1,8 @@
 include:
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/cephmon/install
-  - formulas/ceph/common/configure
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/cephmon/install
+  - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
 spawnzero_complete:
@@ -18,29 +18,15 @@ spawnzero_complete:
     - user: ceph
     - group: ceph
 
-/etc/ceph/ceph.client.admin.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-admin-keyring
-
-/etc/ceph/ceph.client.images.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-images-keyring
-
-/etc/ceph/ceph.client.volumes.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-volumes-keyring
-
-/etc/ceph/ceph.client.compute.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-compute-keyring
-
-/etc/ceph/ceph.client.manila.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-manila-keyring
-
 /var/lib/ceph/bootstrap-osd/ceph.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
+
+{% for client_keyring in ['admin', 'images', 'volumes', 'compute'] %}
+/etc/ceph/ceph.client.{{ client_keyring }}.keyring:
+  file.managed:
+    - contents_pillar: ceph:ceph-client-{{ client_keyring }}-keyring
+{% endfor %}
 
 /var/lib/ceph/mon/ceph-{{ grains['id'] }}:
   file.directory:
@@ -78,7 +64,7 @@ ceph-mon@{{ grains['id'] }}:
   service.running:
     - enable: true
     - watch:
-      - sls: formulas/ceph/common/configure
+      - sls: /formulas/ceph/common/configure
 
 /var/lib/ceph/mgr/ceph-{{ grains['id'] }}:
   file.directory:
@@ -95,6 +81,7 @@ ceph-mgr@{{ grains['id'] }}:
     - enable: true
     - watch:
       - cmd: ceph auth get-or-create mgr.{{ grains['id'] }} mon 'allow profile mgr' osd 'allow *' mds 'allow *' > /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring
+      - sls: /formulas/ceph/common/configure
 
 fs.file-max:
   sysctl.present:
@@ -104,23 +91,24 @@ fs.file-max:
   file.managed:
     - source: salt://formulas/cephmon/files/limits.conf
 
-ceph auth import -i /etc/ceph/ceph.client.images.keyring:
+{% for auth in ['images', 'volumes', 'compute'] %}
+ceph auth import -i /etc/ceph/ceph.client.{{ auth }}.keyring:
   cmd.run:
     - onchanges:
-      - /etc/ceph/ceph.client.images.keyring
+      - /etc/ceph/ceph.client.{{ auth }}.keyring
     - require:
       - service: ceph-mon@{{ grains['id'] }}
+{% endfor %}
 
-ceph auth import -i /etc/ceph/ceph.client.volumes.keyring:
+{% if grains['spawning'] == 0 %}
+  {% for pool in ['images', 'volumes', 'vms', 'fileshare_data', 'fileshare_metadata'] %}
+ceph osd pool create {{ pool }} 1:
   cmd.run:
-    - onchanges:
-      - /etc/ceph/ceph.client.volumes.keyring
-    - require:
-      - service: ceph-mon@{{ grains['id'] }}
-
-ceph auth import -i /etc/ceph/ceph.client.compute.keyring:
+    - unless:
+      - ceph osd pool get {{ pool }} size
+  {% endfor %}
+ceph fs new manila fileshare_metadata fileshare_data:
   cmd.run:
-    - onchanges:
-      - /etc/ceph/ceph.client.compute.keyring
-    - require:
-      - service: ceph-mon@{{ grains['id'] }}
+    - unless:
+      - ceph fs get manila
+{% endif %}

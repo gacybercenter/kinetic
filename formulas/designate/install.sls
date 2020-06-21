@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -34,16 +34,9 @@ designate_packages:
       - openstack-designate-producer
       - openstack-designate-worker
       - openstack-designate-central
-      - python-memcached
-      - python2-designateclient
-      - python2-openstackclient
-      - python2-pip
-    - reload_modules: True
-
-pymemcache:
-  pip.installed:
-    - bin_env: '/usr/bin/pip'    
-    - require:
-      - pkg: designate_packages
+      - python3-memcached
+      - python3-designateclient
+      - python3-openstackclient
+      - python3-pymemcache
 
 {% endif %}

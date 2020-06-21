@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -11,7 +11,7 @@ nova_packages:
       - nova-spiceproxy
       - nova-scheduler
       - python3-openstackclient
-      - spice-html5
+      - git
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -22,7 +22,7 @@ nova_packages:
       - openstack-nova-conductor
       - openstack-nova-spicehtml5proxy
       - openstack-nova-scheduler
-      - python2-openstackclient
-      - spice-html5
+      - python3-openstackclient
+      - git
 
 {% endif %}

@@ -1,7 +1,7 @@
 include:
-  - formulas/memcached/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/memcached/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
@@ -34,9 +34,27 @@ memcached_config:
 
 {% endif %}
 
+## This is necessary because the upstream mcd unit file has a race condition where the network interface
+## may not fully be up when src=dhcp prior to memcached starting when network.target is the prereq.
+## network-online.target ensure that there is an address available
+## ref: https://unix.stackexchange.com/questions/157529/how-to-force-network-target-to-wait-for-dhcp-with-systemd-networkd
+memcached_unit_file_update:
+  file.line:
+    - name: /usr/lib/systemd/system/memcached.service
+    - content: After=network-online.target
+    - match: After=network.target
+    - mode: replace
+
+systemctl daemon-reload:
+  cmd.run:
+    - onchanges:
+      - file: memcached_unit_file_update
+
 memcached_service_check:
   service.running:
     - name: memcached
     - enable: True
     - watch:
       - file: memcached_config
+    - require:
+      - file: memcached_unit_file_update

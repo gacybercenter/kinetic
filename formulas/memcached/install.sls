@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -8,7 +8,7 @@ python3-memcache:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-python-memcached:
+python3-memcached:
   pkg.installed
 
 {% endif %}

@@ -1,15 +1,15 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
-erlang-base-hipe:
-  pkg.installed
+#erlang-base-hipe:
+#  pkg.installed
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-erlang-hipe:
-  pkg.installed
+#erlang-hipe:
+#  pkg.installed
 
 {% endif %}
 

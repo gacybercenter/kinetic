@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -20,10 +20,10 @@ keystone_packages:
   pkg.installed:
     - pkgs:
       - openstack-keystone
-      - python2-ldap ## version agnostic
-      - python2-openstackclient ## version agnostic
+      - python3-ldap3 ## version agnostic
+      - python3-openstackclient ## version agnostic
       - openldap-clients
       - httpd
-      - mod_wsgi
+      - python3-mod_wsgi
 
 {% endif %}

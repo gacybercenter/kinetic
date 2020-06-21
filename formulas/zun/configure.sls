@@ -1,7 +1,7 @@
 include:
-  - formulas/zun/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/zun/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
@@ -18,6 +18,15 @@ zun-db-manage upgrade:
     - unless:
       - zun-db-manage version | grep -q e4385cf0e363
 
+make_kuryr_user:
+  cmd.script:
+    - source: salt://formulas/zun/files/mkuser_kuryr.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        kuryr_service_password: {{ pillar ['zun']['kuryr_service_password'] }}
+
 make_zun_service:
   cmd.script:
     - source: salt://formulas/zun/files/mkservice.sh
@@ -31,24 +40,6 @@ make_zun_service:
         zun_service_password: {{ pillar ['zun']['zun_service_password'] }}
 
 {% endif %}
-
-websocketproxy.py:
-  file.managed:
-{% if grains['os_family'] == 'Debian' %}
-    - name: /usr/local/lib/python3.6/dist-packages/zun/websocket/websocketproxy.py
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /usr/local/lib/python3.6/site-packages/zun/websocket/websocketproxy.py
-{% endif %}
-    - source: salt://formulas/zun/files/websocketproxy.py
-
-make_kuryr_user:
-  cmd.script:
-    - source: salt://formulas/zun/files/mkuser_kuryr.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        kuryr_service_password: {{ pillar ['zun']['kuryr_service_password'] }}
 
 /etc/zun/zun.conf:
   file.managed:
@@ -97,19 +88,19 @@ make_kuryr_user:
   file.managed:
     - source: salt://formulas/zun/files/api-paste.ini
     - requires:
-      - /formulas/zun/install
+      - sls: /formulas/zun/install
 
 /etc/systemd/system/zun-api.service:
   file.managed:
     - source: salt://formulas/zun/files/zun-api.service
     - requires:
-      - /formulas/zun/install
+      - sls: /formulas/zun/install
 
 /etc/systemd/system/zun-wsproxy.service:
   file.managed:
     - source: salt://formulas/zun/files/zun-wsproxy.service
     - requires:
-      - /formulas/zun/install
+      - sls: /formulas/zun/install
 
 zun_api_service:
   service.running:

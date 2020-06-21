@@ -7,6 +7,7 @@ controller_packages:
       - xfsprogs
       - haveged
       - python3-libvirt
+      - libguestfs-tools
     - reload_modules: true
 
 {% if grains['os_family'] == 'Debian' %}

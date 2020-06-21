@@ -1,7 +1,7 @@
 include:
-  - formulas/nova/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/nova/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
@@ -23,7 +23,7 @@ nova-manage api_db sync:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage api_db version | grep -q 67
+      - nova-manage api_db version | grep -q 72
 
 nova-manage cell_v2 map_cell0:
   cmd.run:
@@ -47,37 +47,7 @@ nova-manage db sync:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage db version | grep -q 402
-
-/etc/nova/flavors:
-  file.directory
-
-{% for flavor_name, args in pillar.get('flavors', {}).items() %}
-
-{{ flavor_name }}_flavor_creation:
-  cmd.script:
-    - source: salt://formulas/nova/files/flavors.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        vcpus: {{ args['vcpus'] }}
-        ram: {{ args['ram'] }}
-        disk: {{ args['disk'] }}
-        flavor_name: {{ flavor_name }}
-    - require:
-      - file: /etc/nova/nova.conf
-      - service: nova_api_service
-    - creates:
-      - /etc/nova/flavors/{{ flavor_name }}
-
-{% endfor %}
-
-make_nova_pool:
-  event.send:
-    - name: create/{{ grains['type'] }}/pool
-    - data:
-        pgs: {{ pillar['cephconf']['vms_pgs'] }}
+      - nova-manage db version | grep -q 407
 
 spawnzero_complete:
   event.send:
@@ -122,6 +92,11 @@ spawnzero_complete:
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
+
+spice-html5:
+  git.latest:
+    - name: https://github.com/freedesktop/spice-html5.git
+    - target: /usr/share/spice-html5
 
 nova_api_service:
   service.running:

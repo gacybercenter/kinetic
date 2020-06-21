@@ -18,15 +18,14 @@ update_packages_docker:
 
 docker_repo:
   pkgrepo.managed:
-    - humanname: docker ce
     - name: docker
     - baseurl: https://download.docker.com/linux/centos/7/$basearch/stable/
     - file: /etc/yum.repos.d/docker.repo
     - gpgkey: https://download.docker.com/linux/centos/gpg
 
 update_packages_docker:
-  pkg.uptodate:
-    - refresh: true
+  cmd.run:
+    - name: salt-call pkg.upgrade setopt='best=False'
     - onchanges:
       - docker_repo
 

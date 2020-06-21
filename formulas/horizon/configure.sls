@@ -1,7 +1,7 @@
 include:
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/horizon/install
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/horizon/install
 
 {% if grains['spawning'] == 0 %}
 
@@ -60,6 +60,14 @@ local_settings:
             ]
 {% endif %}
 
+### ref: https://bugs.launchpad.net/horizon/+bug/1880188
+swift_ceph_patch:
+  file.line:
+    - name: /usr/lib/python3.6/site-packages/swiftclient/client.py
+    - content: parsed = urlparse(urljoin(url, '/swift/info'))
+    - match: parsed = urlparse(urljoin(url, '/info'))
+    - mode: replace
+
 {% if grains['os_family'] == 'Debian' %}
 apache_conf:
   file.managed:
@@ -83,11 +91,6 @@ apache_conf:
 {% elif grains['os_family'] == 'RedHat' %}
         alias: dashboard
 {% endif %}
-
-serialConsole.js:
-  file.managed:
-    - name: /usr/share/openstack-dashboard/openstack_dashboard/static/js/angular/directives/serialConsole.js
-    - source: salt://formulas/horizon/files/serialConsole.js
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -120,27 +123,19 @@ install_theme:
 
 configure-collect-static:
   cmd.run:
-{% if grains['os_family'] == 'Debian' %}
     - name: python3 manage.py collectstatic --noinput
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: python2 manage.py collectstatic --noinput
-{% endif %}
     - cwd: /usr/share/openstack-dashboard/
     - require:
       - file: local_settings
       - file: apache_conf
     - onchanges:
       - git: install_theme
-      - file: serialConsole.js
       - file: local_settings
+      - sls: /formulas/horizon/install
 
 configure-compress-static:
   cmd.run:
-{% if grains['os_family'] == 'Debian' %}
     - name: python3 manage.py compress
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: python2 manage.py compress
-{% endif %}
     - cwd: /usr/share/openstack-dashboard/
     - onchanges:
       - cmd: configure-collect-static
@@ -155,15 +150,10 @@ apache2_service:
     - name: httpd
 {% endif %}
     - enable: true
-    - require:
-      - file: local_settings
-      - cmd: configure-compress-static
-      - file: apache_conf
-      - sls: formulas/horizon/install
     - watch:
       - file: local_settings
       - file: secret_key
       - file: apache_conf
       - git: install_theme
       - cmd: configure-compress-static
-      - file: serialConsole.js
+      - file: swift_ceph_patch

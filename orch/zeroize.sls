@@ -20,14 +20,7 @@
   {% if salt['pillar.get']('global', False) == True %}
     {% set api_host = target %}
   {% else %}
-    {% set api_host_uuid = salt.saltutil.runner('mine.get',tgt=target,fun='host_uuid') %}
-    {% for host, ids in salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints') | dictsort() %}
-      {% for id in ids %}
-        {% if api_host_uud == id %}
-          {% set api_host = ids[id] %}
-        {% endif %}
-      {% endfor %}
-    {% endfor %}
+    {% set api_host = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"][grains['uuid']] %}
   {% endif %}
 
 set_bootonce_host:
@@ -50,7 +43,6 @@ reset_host:
       - {{ api_user }}
       - {{ api_pass }}
 
-
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
 destroy_{{ target }}_domain:
@@ -66,6 +58,13 @@ wipe_{{ target }}_vms:
     - tgt: 'controller*'
     - arg:
       - ls /kvm/vms | grep {{ target }} | while read id;do rm -rf /kvm/vms/$id;done
+
+wipe_{{ target }}_logs:
+  salt.function:
+    - name: cmd.run
+    - tgt: 'controller*'
+    - arg:
+      - ls /var/log/libvirt | grep {{ target }} | while read id;do rm /var/log/libvirt/$id;done
 {% endif %}
 
 delete_{{ target }}_key:
@@ -76,3 +75,8 @@ delete_{{ target }}_key:
 {% else %}
     - match: {{ target }}
 {% endif %}
+
+expire_{{ target }}_dead_hosts:
+  salt.function:
+    - name: address.expire_dead_hosts
+    - tgt: salt

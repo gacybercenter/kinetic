@@ -1,6 +1,7 @@
 include:
-  - formulas/openstack/common/repo
-  - formulas/docker/common/repo
+  - /formulas/openstack/common/repo
+  - /formulas/docker/common/repo
+  - /formulas/kata/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
@@ -47,35 +48,45 @@ container_packages:
     - pkgs:
       - python3-pip
       - git
-      - python3-devel
+      - platform-python-devel
       - libffi-devel
       - gcc
       - openssl-devel
       - openstack-neutron-linuxbridge
-      - python36-PyMySQL
-      - docker-ce
+      - python3-PyMySQL
       - numactl
+      - python3-openstackclient
+      - gcc-c++
+      - kata-runtime
+      - kata-proxy
+      - kata-shim
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 container_packages:
   pkg.installed:
     - pkgs:
       - python3-pip
       - git
-      - python3-devel
+      - platform-python-devel
       - libffi-devel
       - gcc
       - openssl-devel
       - ovn-host
-      - python36-PyMySQL
-      - docker-ce
+      - python3-PyMySQL
       - libibverbs
       - numactl
+      - python3-openstackclient
+      - gcc-c++
+      - kata-runtime
+      - kata-proxy
+      - kata-shim      
+    - reload_modules: True
+
   {% endif %}
 
-python-openstackclient:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
+docker-ce:
+  pkg.installed:
+    - setopt:
+      - best=False
 
 {% endif %}
 
@@ -100,7 +111,7 @@ kuryr:
 kuryr_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
-    - branch: stable/train
+    - branch: stable/ussuri
     - target: /var/lib/kuryr
     - force_clone: true
 
@@ -148,13 +159,13 @@ zun:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/train
+    - branch: stable/ussuri
     - target: /var/lib/zun
     - force_clone: true
 
 zun_requirements:
   cmd.run:
-    - name: pip3 install --upgrade -r /var/lib/zun/requirements.txt
+    - name: pip3 install -r /var/lib/zun/requirements.txt
     - unless:
       - systemctl is-active zun-compute
     - require:

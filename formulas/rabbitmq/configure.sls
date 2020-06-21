@@ -1,7 +1,7 @@
 include:
-  - formulas/rabbitmq/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/rabbitmq/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
 
@@ -18,7 +18,20 @@ rmq_name_resolution_{{ server }}:
     - ip: {{ address[0] }}
     - names:
       - {{ server }}
+    - clean: true
 {% endfor %}
+
+rabbitmq_unit_file_update:
+  file.line:
+    - name: /usr/lib/systemd/system/rabbitmq-server.service
+    - content: After=network-online.target epmd@0.0.0.0.socket
+    - match: After=network.target epmd@0.0.0.0.socket
+    - mode: replace
+
+systemctl daemon-reload:
+  cmd.run:
+    - onchanges:
+      - file: rabbitmq_unit_file_update
 
 /var/lib/rabbitmq/.erlang.cookie:
   file.managed:
@@ -27,29 +40,14 @@ rmq_name_resolution_{{ server }}:
     - user: rabbitmq
     - group: rabbitmq
 
-/etc/rabbitmq/rabbit.conf:
-  file.managed:
-    - source: salt://formulas/rabbitmq/files/rabbitmq.conf
-
-/etc/rabbitmq/rabbit-env.conf:
-  file.managed:
-    - source: salt://formulas/rabbitmq/files/rabbitmq-env.conf
-
-rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin:
-  cmd.run:
-    - creates: /tmp/rabbit-hipe/ebin
-
-openstack_rmq:
-  rabbitmq_user.present:
-    - password: {{ pillar['rabbitmq']['rabbitmq_password'] }}
-    - name: openstack
-    - perms:
-      - '/':
-        - '.*'
-        - '.*'
-        - '.*'
+rabbitmq-server-service:
+  service.running:
+    - name: rabbitmq-server
+    - enable: true
+    - watch:
+      - /var/lib/rabbitmq/.erlang.cookie
     - require:
-      - service: rabbitmq-server-service
+      - /var/lib/rabbitmq/.erlang.cookie
 
 {% if grains['spawning'] != 0 %}
 join_cluster:
@@ -59,20 +57,10 @@ join_cluster:
     - host: {{ server }}
   {% endfor %}
     - retry:
-        attempts: 5
+        attempts: 3
         until: True
-        interval: 60
+        interval: 10
 {% endif %}
-
-rabbitmq-server-service:
-  service.running:
-    - name: rabbitmq-server
-    - enable: true
-    - watch:
-      - /etc/rabbitmq/rabbit.conf
-      - /etc/rabbitmq/rabbit-env.conf
-      - rabbitmqctl hipe_compile /tmp/rabbit-hipe/ebin
-      - /var/lib/rabbitmq/.erlang.cookie
 
 cluster_policy:
   rabbitmq_policy.present:
@@ -81,3 +69,34 @@ cluster_policy:
     - definition: '{"ha-mode": "all"}'
     - require:
       - service: rabbitmq-server-service
+
+### ref: https://github.com/saltstack/salt/issues/56258
+### will need to use cmd.run for this until the above is merged
+### in sodium
+###openstack_rmq:
+###  rabbitmq_user.present:
+###    - password: {{ pillar['rabbitmq']['rabbitmq_password'] }}
+###    - name: openstack
+###    - perms:
+###      - '/':
+###        - '.*'
+###        - '.*'
+###        - '.*'
+###    - require:
+###      - service: rabbitmq-server-service
+
+### legacy functions.  Remove this when the above works again
+rabbitmqctl add_user openstack {{ pillar['rabbitmq']['rabbitmq_password'] }}:
+  cmd.run:
+    - unless:
+      - rabbitmqctl list_users | grep -q openstack
+    - require:
+      - service: rabbitmq-server-service
+
+rabbitmqctl set_permissions openstack ".*" ".*" ".*":
+  cmd.run:
+    - unless:
+      - rabbitmqctl list_user_permissions openstack | grep -q '/'
+    - require:
+      - service: rabbitmq-server-service
+### /legacy functions

@@ -1,7 +1,7 @@
 include:
-  - formulas/mysql/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/mysql/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
   {% if pillar['virtual']['mysql']['count'] > 1 %}
@@ -71,7 +71,7 @@ openstack.conf:
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
     - require:
-      - sls: formulas/mysql/install
+      - sls: /formulas/mysql/install
 
 mariadb_service:
   service.running:
@@ -87,21 +87,6 @@ mariadb_service:
 {% endif %}
 
 {% if salt['grains.get']('cluster_established', False) == True %}
-
-  {% if grains['os_family'] == 'RedHat' %}
-set_unix_socket_root:
-  mysql_query.run:
-    - database: mysql
-    - query: "update mysql.user set plugin = 'unix_socket' where user = 'root';"
-    - output: "/root/.socket_assignment"
-    - require:
-      - service: mariadb_service
-    - unless:
-      - test -e /root/.socket_assignment
-    - require:
-      - service: mariadb_service
-  {% endif %}
-
   {% for service in pillar['openstack_services'] %}
     {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
       {% for address in addresses %}
@@ -148,10 +133,22 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
           {% endif %}
         {% endfor %}
       {% endfor %}
-
     {% endfor %}
   {% endfor %}
 {% endif %}
+
+fs.file-max:
+  sysctl.present:
+    - value: 65535
+
+/usr/lib/systemd/system/mariadb.service:
+  file.managed:
+    - source: salt://formulas/mysql/files/mariadb.service
+
+systemctl daemon-reload:
+  cmd.run:
+    - onchanges:
+      - file: /usr/lib/systemd/system/mariadb.service
 
 cluster_established_final:
   grains.present:

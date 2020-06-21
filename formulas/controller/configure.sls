@@ -1,7 +1,7 @@
 include:
-  - formulas/controller/install
-  - formulas/common/base
-  - formulas/common/networking
+  - /formulas/controller/install
+  - /formulas/common/base
+  - /formulas/common/networking
 
 {% set type = grains['type'] %}
 
@@ -119,36 +119,27 @@ libvirtd_service:
 {% endif %}
 
 {% for os, args in pillar.get('images', {}).items() %}
-extract_{{ args['name'] }}:
-  archive.extracted:
-    - name: /kvm/images
-    - source:
-{% if args['local_url'] == "pull_from_mine" %}
-{% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-{% for host in cache_addresses_dict %}
-      - http://{{ cache_addresses_dict[host][0] }}/images/{{ args['name'] }}
-{% endfor %}
-{% else %}
-      - {{ args['local_url'] }}
-{% endif %}
-
-{% if args['local_hash'] == "pull_from_mine" %}
-{% set cache_addresses_dict = salt['mine.get']('cache*','network.ip_addrs') %}
-{% for host in cache_addresses_dict %}
-    - source_hash: http://{{ cache_addresses_dict[host][0] }}/images/checksums
-{% endfor %}
-{% else %}
-    - source_hash: {{ args['local_hash'] }}
-{% endif %}
+create_{{ args['name'] }}:
+  cmd.run:
+    - name: virt-builder --update --selinux-relabel --install cloud-init  --uninstall firewalld --output {{ os }}.raw {{ args['name'] }}
+    - cwd: /kvm/images
+    - creates: /kvm/images/{{ os }}.raw
     - require:
       - file: /kvm/images
 
+sysprep_{{ args['name'] }}:
+  cmd.run:
+    - name: virt-sysprep -a {{ os }}.raw --truncate /etc/machine-id
+    - cwd: /kvm/images
+    - onchanges:
+      - cmd: create_{{ args['name'] }}
+
 /kvm/images/{{ os }}-latest:
   file.symlink:
-    - target: /kvm/images/{{ args['name'] }}
+    - target: /kvm/images/{{ os }}.raw
     - force: True
     - require:
-      - extract_{{ args['name'] }}
+      - cmd: sysprep_{{ args['name'] }}
 {% endfor %}
 
 haveged_service:

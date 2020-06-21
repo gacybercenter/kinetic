@@ -1,21 +1,11 @@
-build-essential:
-  pkg.installed
-
-python3-tornado:
-  pkg.installed
-
-apache2:
-  pkg.installed
-
-libapache2-mod-wsgi-py3:
-  pkg.installed
-
-git:
+pxe_packages:
   pkg.installed:
-    - reload_modules: True
-
-python3-pyinotify:
-  pkg.installed:
+    - pkgs:
+      - build-essential
+      - python3-tornado
+      - apache2
+      - libapache2-mod-wsgi-py3
+      - git
     - reload_modules: True
 
 redfish_pip:
@@ -29,10 +19,3 @@ pyghmi_pip:
     - name: pyghmi
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-salt-minion_inotify_watch:
-  cmd.run:
-    - name: 'salt-call service.restart salt-minion'
-    - bg: True
-    - onchanges:
-      - pkg: python3-pyinotify

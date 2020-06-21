@@ -1,6 +1,6 @@
 include:
   - /formulas/haproxy/install
-  - formulas/common/base
+  - /formulas/common/base
 
 {% if grains['spawning'] == 0 %}
 
@@ -16,6 +16,8 @@ haproxy_connect_any:
   selinux.boolean:
     - value: True
     - persist: True
+    - require:
+      - sls: /formulas/haproxy/install
 {% endif %}
 
 {% for domain in pillar['haproxy']['tls_domains'] %}
@@ -26,16 +28,12 @@ acme_{{ domain }}:
     - email: {{ pillar['haproxy']['tls_email'] }}
     - renew: 14
 
-cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem:
+create_master_pem_{{ domain }}:
   cmd.run:
-    - onchanges:
+    - name: cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem
+    - creates: /etc/letsencrypt/live/{{ domain }}/master.pem
+    - require:
       - acme: acme_{{ domain }}
-
-systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalone --agree-tos && cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem && systemctl start haproxy.service:
-  cron.present:
-    - dayweek: 0
-    - minute: {{ loop.index0 }}
-    - hour: 4
 
 {% endfor %}
 
@@ -59,11 +57,7 @@ systemctl stop haproxy.service && letsencrypt renew --non-interactive --standalo
 {% else %}
         syslog: 127.0.0.1:5514
 {% endif %}
-{% if grains['os_family'] == 'RedHat' %}
-        seamless_reload: ""
-{% else %}
         seamless_reload: stats socket /var/run/haproxy.sock mode 600 expose-fd listeners level user
-{% endif %}
         hostname: {{ grains['id'] }}
         management_ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}

@@ -1,6 +1,7 @@
 <domain type='kvm'>
   <name>{{ name }}</name>
   <memory unit='KiB'>{{ ram }}</memory>
+  <cpu mode='host-model'></cpu>
   <vcpu placement='static'>{{ cpu }}</vcpu>
   <os>
     <type>hvm</type>
@@ -30,7 +31,7 @@
     </disk>
     {{ networks }}
     <serial type="file">
-      <source path="/kvm/vms/{{ name }}/console.log"/>
+      <source path="/var/log/libvirt/{{ name }}.log"/>
     </serial>
     <rng model='virtio'>
       <backend model='random'>/dev/random</backend>

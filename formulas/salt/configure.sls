@@ -1,6 +1,16 @@
 include:
   - /formulas/salt/install
 
+/srv/salt:
+  file.directory:
+    - makedirs: true
+
+/srv/salt/addresses.db:
+  file.managed:
+    - replace: False
+    - require:
+      - file: /srv/salt
+
 addresses:
   sqlite3.table_present:
     - db: /srv/salt/addresses.db
@@ -8,6 +18,8 @@ addresses:
       - address TEXT UNIQUE
       - network TEXT
       - host TEXT
+    - require:
+      - file: /srv/salt/addresses.db
 
 {% for network in ['sfe', 'sbe', 'private'] %}
   {% for address in pillar['networking']['subnets'][network] | network_hosts %}
@@ -20,6 +32,8 @@ address_population_{{ address }}:
         address: {{ address }}
         network: {{ network }}
     - update: True
+    - require:
+      - sqlite3: addresses
   {% endfor %}
 {% endfor %}
 
@@ -34,27 +48,6 @@ api:
   user.present:
     - password: {{ salt['pillar.get']('api:user_password', 'TBD') }}
     - hash_password: True
-    - require:
-      - file: /srv/dynamic_pillar/api.sls
-
-/srv/salt:
-  file.directory:
-    - makedirs: true
-
-/srv/salt/addresses.db:
-  file.managed:
-    - require:
-      - file: /srv/salt
-
-mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
-  cmd.run:
-    - creates:
-      - /etc/salt/pki/master/minions/pxe
-
-/etc/salt/master.d/transport.conf:
-  file.managed:
-    - contents: |
-        transport: {{ pillar ['salt_transport'] }}
 
 /etc/salt/master.d/gitfs_pillar.conf:
   file.managed:
@@ -115,8 +108,8 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
             simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}
 {% elif service == 'keystone' %}
         extra_opts: |
-            fernet_primary: {{ salt['generate.fernet_key']() }}
-              fernet_secondary: {{ salt['generate.fernet_key']() }}
+            fernet_primary: {{ salt['fernet.make_key']() }}
+              fernet_secondary: {{ salt['fernet.make_key']() }}
 {% else %}
         extra_opts: ''
 {% endif %}
@@ -161,11 +154,10 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
           graylog_password: {{ graylog_password }}
           graylog_password_sha2: {{ graylog_password | sha256 }}
 
-{% set adminkey = salt['cephx.make_key']() %}
-{% set volumeskey = salt['cephx.make_key']() %}
-{% set computekey = salt['cephx.make_key']() %}
-{% set osdkey = salt['cephx.make_key']() %}
-{% set manilakey = salt['cephx.make_key']() %}
+{% set adminkey = salt['generate.cephx_key']() %}
+{% set volumeskey = salt['generate.cephx_key']() %}
+{% set computekey = salt['generate.cephx_key']() %}
+{% set osdkey = salt['generate.cephx_key']() %}
 
 /srv/dynamic_pillar/ceph.sls:
   file.managed:
@@ -175,7 +167,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
           fsid: {{ salt['random.get_str']('64') | uuid }}
           ceph-mon-keyring: |
             [mon.]
-                 key = {{ salt['cephx.make_key']() }}
+                 key = {{ salt['generate.cephx_key']() }}
                  caps mon = "allow *"
             [client.admin]
                  key = {{ adminkey }}
@@ -201,7 +193,7 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  caps mon = "profile bootstrap-osd"
           ceph-client-images-keyring: |
             [client.images]
-                 key = {{ salt['cephx.make_key']() }}
+                 key = {{ salt['generate.cephx_key']() }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
           ceph-client-volumes-keyring: |
@@ -214,12 +206,6 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
                  key = {{ computekey }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
-          ceph-client-manila-keyring: |
-            [client.manila]
-                 key = {{ manilakey }}
-                 caps mds = "allow *"
-                 caps mon = "allow r, allow command \"auth del\", allow command \"auth caps\", allow command \"auth get\", allow command \"auth get-or-create\""
-                 caps osd = "allow rw"
           ceph-client-compute-key: {{ computekey }}
           ceph-client-volumes-key: {{ volumeskey }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
@@ -242,6 +228,8 @@ mv /etc/salt/pki/master/minions_pre/pxe /etc/salt/pki/master/minions/pxe:
 /srv/dynamic_pillar/top.sls:
   file.managed:
     - source: salt://formulas/salt/files/top.sls
+    - require:
+      - file: /srv/dynamic_pillar/api.sls
 
 /srv/dynamic_pillar/adminrc:
   file.managed:
@@ -279,9 +267,11 @@ salt-api_service:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
 
-salt-master_service:
-  service.running:
-    - name: salt-master
-    - watch:
+salt-master_watch:
+  cmd.run:
+    - name: 'salt-call service.restart salt-master'
+    - bg: True
+    - onchanges:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
+    - order: last

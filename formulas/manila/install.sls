@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -18,8 +18,8 @@ manila_packages:
   pkg.installed:
     - pkgs:
       - openstack-manila
-      - python2-openstackclient
-      - python2-manilaclient
-      - python-memcached
+      - python3-openstackclient
+      - python3-manilaclient
+      - python3-memcached
 
 {% endif %}

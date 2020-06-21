@@ -1,5 +1,5 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -20,8 +20,8 @@ barbican_packages:
       - openstack-barbican-api
       - openstack-barbican-keystone-listener
       - openstack-barbican-worker
-      - python2-openstackclient
+      - python3-openstackclient
       - httpd
-      - mod_wsgi
+      - python3-mod_wsgi
 
 {% endif %}

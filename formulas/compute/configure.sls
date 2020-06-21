@@ -1,8 +1,8 @@
 include:
-  - formulas/compute/install
-  - formulas/common/base
-  - formulas/common/networking
-  - formulas/ceph/common/configure
+  - /formulas/compute/install
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/ceph/common/configure
 
 /etc/modprobe.d/kvm.conf:
   file.managed:
@@ -102,6 +102,11 @@ load_ceph_volumes_key:
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
+spice-html5:
+  git.latest:
+    - name: https://github.com/freedesktop/spice-html5.git
+    - target: /usr/share/spice-html5
+
 nova_compute_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
@@ -160,11 +165,6 @@ libvirtd_service:
         lock_path: /var/lib/neutron/tmp
 {% endif %}
 
-/etc/sudoers.d/neutron_sudoers:
-  file.managed:
-    - source: salt://formulas/compute/files/neutron_sudoers
-
-
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
@@ -179,28 +179,20 @@ neutron_linuxbridge_agent_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
-        public_interface: {{ interface }}
+{% for network in pillar['hosts'][grains['type']]['networks'] %}
+  {% if pillar['hosts'][grains['type']]['networks'][network]['network'] == 'public' %}
+        public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
   {% endif %}
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-networking-ovn-metadata-agent.ini:
+
+neutron-ovn-metadata-agent.ini:
   file.managed:
-    - source: salt://formulas/compute/files/networking_ovn_metadata_agent.ini
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
-{% elif grains['os_family'] == 'Debian' %}
-    - name: /etc/neutron/networking_ovn_metadata_agent.ini
-{% endif %}
+    - source: salt://formulas/compute/files/neutron_ovn_metadata_agent.ini
+    - name: /etc/neutron/neutron_ovn_metadata_agent.ini
     - template: jinja
     - defaults:
-{% if grains['os_family'] == 'RedHat' %}
-        ini_file: /etc/neutron/plugins/networking-ovn/networking-ovn-metadata-agent.ini
-{% elif grains['os_family'] == 'Debian' %}
-        ini_file: /etc/neutron/networking_ovn_metadata_agent.ini
-{% endif %}
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
         ovn_sb_connection: |-
@@ -223,7 +215,7 @@ openvswitch_service:
 {% endif %}
     - enable: true
     - watch:
-      - file: networking-ovn-metadata-agent.ini
+      - file: neutron-ovn-metadata-agent.ini
 
 set-ovn-remote:
   cmd.run:
@@ -294,11 +286,11 @@ ovsdb_listen:
     - unless:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
-{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+{% for network in pillar['hosts'][grains['type']]['networks'] %}
+  {% if pillar['hosts'][grains['type']]['networks'][network]['network'] == 'public' %}
 enable_bridge:
   cmd.run:
-    - name: ovs-vsctl --may-exist add-port br-provider {{ interface }}
+    - name: ovs-vsctl --may-exist add-port br-provider {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
     - require:
       - service: openvswitch_service
       - cmd: set_encap
@@ -306,7 +298,7 @@ enable_bridge:
       - cmd: make_bridge
       - cmd: map_bridge
     - unless:
-      - ovs-vsctl port-to-br {{ interface }} | grep -q "br-provider"
+      - ovs-vsctl port-to-br {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }} | grep -q "br-provider"
   {% endif %}
 {% endfor %}
 
@@ -323,16 +315,12 @@ ovn_controller_service:
       - cmd: set_encap
       - cmd: set_encap_ip
 
-# The below section is a workaround for the issue identified at: http://lists.openstack.org/pipermail/openstack-discuss/2019-August/008542.html
-# I am pretty sure the below is not ideal, but its better than running as root
-###
-
 ovn_metadata_service:
   service.running:
-    - name: networking-ovn-metadata-agent
+    - name: neutron-ovn-metadata-agent
     - enable: True
     - watch:
-      - file: networking-ovn-metadata-agent.ini
+      - file: neutron-ovn-metadata-agent.ini
     - require:
       - cmd: ovsdb_listen
 
