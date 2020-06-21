@@ -42,6 +42,8 @@ ganesha_packages:
       - nfs-ganesha
       - nfs-ganesha-ceph
       - nfs-ganesha-selinux
+      - nfs-ganesha-rados-urls
+      - nfs-ganesha-rados-grace
     - require:
       - pkg: share_packages
 
