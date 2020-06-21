@@ -207,12 +207,6 @@ api:
                  key = {{ computekey }}
                  caps mon = "allow r"
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
-          ceph-client-manila-keyring: |
-            [client.manila]
-                 key = {{ manilakey }}
-                 caps mds = "allow *"
-                 caps mon = "allow r, allow command \"auth del\", allow command \"auth caps\", allow command \"auth get\", allow command \"auth get-or-create\""
-                 caps osd = "allow rw"
           ceph-client-compute-key: {{ computekey }}
           ceph-client-volumes-key: {{ volumeskey }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
