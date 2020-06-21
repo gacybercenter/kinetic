@@ -18,6 +18,15 @@ zun-db-manage upgrade:
     - unless:
       - zun-db-manage version | grep -q e4385cf0e363
 
+make_kuryr_user:
+  cmd.script:
+    - source: salt://formulas/zun/files/mkuser_kuryr.sh
+    - template: jinja
+    - defaults:
+        admin_password: {{ pillar['openstack']['admin_password'] }}
+        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        kuryr_service_password: {{ pillar ['zun']['kuryr_service_password'] }}
+
 make_zun_service:
   cmd.script:
     - source: salt://formulas/zun/files/mkservice.sh
@@ -31,15 +40,6 @@ make_zun_service:
         zun_service_password: {{ pillar ['zun']['zun_service_password'] }}
 
 {% endif %}
-
-make_kuryr_user:
-  cmd.script:
-    - source: salt://formulas/zun/files/mkuser_kuryr.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        kuryr_service_password: {{ pillar ['zun']['kuryr_service_password'] }}
 
 /etc/zun/zun.conf:
   file.managed:
