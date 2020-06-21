@@ -72,6 +72,26 @@ spawnzero_complete:
           cephfs_ganesha_server_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         backend: cephfsnfs{{ grains['spawning'] }}
 
+get_adminkey:
+  file.managed:
+    - name: /etc/ceph/ceph.client.admin.keyring
+    - contents_pillar: ceph:ceph-client-admin-keyring
+    - mode: 600
+    - user: root
+    - group: root
+    - prereq:
+      - cmd: make_{{ grains['id'] }}_manilakey
+
+make_{{ grains['id'] }}_manilakey:
+  cmd.run:
+    - name: ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
+    - creates:
+      - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
+
+wipe_adminkey:
+  file.absent:
+    - name: /etc/ceph/ceph.client.admin.keyring
+
 manila_share_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
