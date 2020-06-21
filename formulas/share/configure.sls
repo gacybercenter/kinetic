@@ -84,7 +84,7 @@ get_adminkey:
 
 make_{{ grains['id'] }}_manilakey:
   cmd.run:
-    - name: ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
+    - name: ceph auth get-or-create client.{{ grains['id'] }} mds 'allow *' osd 'allow rw' mon 'allow r, allow command "auth del", allow command "auth caps", allow command "auth get", allow command "auth get-or-create"' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
     - creates:
       - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
 
