@@ -24,10 +24,9 @@ docker_repo:
     - gpgkey: https://download.docker.com/linux/centos/gpg
 
 update_packages_docker:
-  pkg.uptodate:
-    - refresh: true
-    - kwargs:
-        setopt='best=False'
+  module.run:
+    - pkg.upgrade
+      - setopt:'best=False'
     - onchanges:
       - docker_repo
 
