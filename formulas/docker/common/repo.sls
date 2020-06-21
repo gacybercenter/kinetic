@@ -25,7 +25,7 @@ docker_repo:
 
 update_packages_docker:
   cmd.run:
-    - name: 'salt-call pkg.upgrade setopt='best=False''
+    - name: salt-call pkg.upgrade setopt='best=False'
     - onchanges:
       - docker_repo
 
