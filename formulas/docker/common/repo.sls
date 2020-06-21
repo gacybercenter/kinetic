@@ -24,9 +24,8 @@ docker_repo:
     - gpgkey: https://download.docker.com/linux/centos/gpg
 
 update_packages_docker:
-  module.run:
-    - pkg.upgrade:
-      - setopt:'best=False'
+  cmd.run:
+    - name: 'salt-call pkg.upgrade setopt='best=False''
     - onchanges:
       - docker_repo
 
