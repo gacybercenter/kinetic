@@ -24,10 +24,8 @@ kata_repo:
     - gpgkey: http://download.opensuse.org/repositories/home:/katacontainers:/releases:/$basearch:/master/CentOS_7/repodata/repomd.xml.key
 
 update_packages_kata:
-  pkg.uptodate:
-    - refresh: true
-    - setopt:
-      - best=False    
+  cmd.run:
+    - name: salt-call pkg.upgrade setopt='best=False'
     - onchanges:
       - kata_repo
 
