@@ -26,6 +26,8 @@ kata_repo:
 update_packages_kata:
   pkg.uptodate:
     - refresh: true
+    - setopt:
+      - best=False    
     - onchanges:
       - kata_repo
 
