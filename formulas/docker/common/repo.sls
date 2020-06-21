@@ -26,7 +26,7 @@ docker_repo:
 update_packages_docker:
   pkg.uptodate:
     - refresh: true
-    - kwarg:
+    - kwargs:
         setopt:
           - best: False
     - onchanges:
