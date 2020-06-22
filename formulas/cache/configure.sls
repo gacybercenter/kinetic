@@ -33,7 +33,7 @@ container_manage_cgroup:
 
 {% if grains['os_family'] == 'RedHat' %}
   {% set build_cmd = 'buildah bud' %}
-  {% set docker_cmd = 'podman' %}
+  {% set docker_bin = 'podman' %}
 {% elif grains['os_family'] == 'Debian' %}
   {% set build_cmd = 'docker build' %}
   {% set docker_bin = 'docker' %}
