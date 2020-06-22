@@ -22,8 +22,7 @@ netplan.io:
   pkg.removed
 
 /etc/netplan:
-  file.directory:
-    - clean: True
+  file.absent
 
 # force_enable_networkd:
 #   cmd.run:
@@ -32,8 +31,7 @@ netplan.io:
 #       - pkg: netplan.io
 
 /run/systemd/network:
-  file.directory:
-    - clean: True
+  file.absent
 
 NetworkManager:
   service.disabled
