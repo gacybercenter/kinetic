@@ -21,6 +21,12 @@ ifwatch:
 netplan.io:
   pkg.removed
 
+netplan_networkd_enable:
+  service.enabled:
+    - name: systemd-networkd
+    - onchanges:
+      - pkg: netplan.io
+
 /etc/netplan:
   file.directory:
     - clean: True
