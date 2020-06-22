@@ -18,17 +18,17 @@ ifwatch:
 
 ### disable unneeded services and enable needed ones
 ###
-netplan.io:
-  pkg.removed
-
-netplan_enable_networkd:
-  service.enabled:
-    - name: systemd-networkd
-    - onchanges:
-      - pkg: netplan.io
-
-/etc/netplan:
-  file.absent
+# netplan.io:
+#   pkg.removed
+#
+# netplan_enable_networkd:
+#   service.enabled:
+#     - name: systemd-networkd
+#     - onchanges:
+#       - pkg: netplan.io
+#
+# /etc/netplan:
+#   file.absent
 
 NetworkManager:
   service.disabled
