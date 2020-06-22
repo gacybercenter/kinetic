@@ -22,14 +22,26 @@ curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http
   file.managed:
     - source: salt://formulas/cache/files/acng.dockerfile
 
+{% if grains['os_family'] == 'RedHat' %}
+
 container_manage_cgroup:
   selinux.boolean:
     - value: 1
     - persist: True
 
+{% endif %}
+
+{% if grains['os_family'] == 'RedHat' %}
+  {% set build_cmd == 'buildah bud' %}
+  {% set docker_cmd == 'podman' %}
+{% elif grains['os_family'] == 'Debian' %}
+  {% set build_cmd == 'docker build' %}
+  {% set docker_bin == 'docker' %}
+{% endif %}
+
 build acng container image:
   cmd.run:
-    - name: buildah bud -t acng acng.dockerfile
+    - name: {{ build_cmd }} -t acng acng.dockerfile
     - onchanges:
       - file: /root/acng.dockerfile
       - file: /root/acng.conf
@@ -38,11 +50,11 @@ build acng container image:
 ## podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng
 create acng container:
   cmd.run:
-    - name: podman create -d -p 3142:3142 --name apt-cacher-ng acng
+    - name: {{ docker_bin }} create -d -p 3142:3142 --name apt-cacher-ng acng
     - require:
       - cmd: build acng container image
     - unless:
-      - podman container ls -a | grep -q apt-cacher-ng
+      - {{ docker_bin }} container ls -a | grep -q apt-cacher-ng
 
 /etc/systemd/system/apt-cacher-ng-container.service:
   file.managed:
