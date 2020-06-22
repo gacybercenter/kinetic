@@ -53,7 +53,7 @@ update_all:
     - retry:
         attempts: 5
         until: True
-        interval: 30
+        interval: 60
 
 upgraded:
   grains.present:
