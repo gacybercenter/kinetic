@@ -10,51 +10,60 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 {% endif %}
 
-/root/acng.conf:
+apt-cacher-ng-conf:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/apt-cacher-ng/acng.conf
+{% elif ['os_family'] == 'RedHat' %}
+    - name: /root/acng.conf
+{% endif %}
     - source: salt://formulas/cache/files/acng.conf
 
-curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors:
+get_centos_mirros:
   cmd.run:
+{% if grains['os_family'] == 'Debian' %}
+    - name: curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/etc/apt-cacher-ng/centos_mirrors
+    - creates: /etc/apt-cacher-ng/centos_mirrors
+{% elif ['os_family'] == 'RedHat' %}
+    - name: curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors
     - creates: /root/centos_mirrors
+{% endif %}
 
-/root/Dockerfile:
+{% if ['os_family'] == 'Debian' %}
+
+apt-cacher-ng:
+  service.running:
+    - enable: True
+    - watch:
+      - file: /etc/apt-cacher-ng/acng.conf
+      - file: /etc/apt-cacher-ng/centos_mirros
+
+{% elif ['os_family'] == 'RedHat' %}
+/root/acng.dockerfile:
   file.managed:
     - source: salt://formulas/cache/files/acng.dockerfile
-
-{% if grains['os_family'] == 'RedHat' %}
 
 container_manage_cgroup:
   selinux.boolean:
     - value: 1
     - persist: True
 
-{% endif %}
-
-{% if grains['os_family'] == 'RedHat' %}
-  {% set build_cmd = 'buildah bud' %}
-  {% set docker_bin = 'podman' %}
-{% elif grains['os_family'] == 'Debian' %}
-  {% set build_cmd = 'docker build' %}
-  {% set docker_bin = 'docker' %}
-{% endif %}
-
 build acng container image:
   cmd.run:
-    - name: {{ build_cmd }} -t acng .
+    - name: buildah bud -t acng acng.dockerfile
     - onchanges:
-      - file: /root/Dockerfile
+      - file: /root/acng.dockerfile
       - file: /root/acng.conf
 
 ## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
 ## podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng
 create acng container:
   cmd.run:
-    - name: {{ docker_bin }} create -d -p 3142:3142 --name apt-cacher-ng acng
+    - name: podman create -d -p 3142:3142 --name apt-cacher-ng acng
     - require:
       - cmd: build acng container image
     - unless:
-      - {{ docker_bin }} container ls -a | grep -q apt-cacher-ng
+      - podman container ls -a | grep -q apt-cacher-ng
 
 /etc/systemd/system/apt-cacher-ng-container.service:
   file.managed:
@@ -70,3 +79,5 @@ apt-cacher-ng-container:
       - file: /etc/systemd/system/apt-cacher-ng-container.service
     - watch:
       - file: /etc/systemd/system/apt-cacher-ng-container.service
+
+{% endif %}
