@@ -37,6 +37,9 @@ systemd-resolved:
 
 systemd-networkd:
   service.enabled
+
+systemd-networkd.socket:
+  service.enabled
 ###
 
 ### Iterate through all networks
