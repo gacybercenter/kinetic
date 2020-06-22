@@ -18,6 +18,12 @@ ifwatch:
 
 ### disable unneeded services and enable needed ones
 ###
+netplan.io:
+  pkg.removed
+
+/etc/netplan:
+  file.absent
+
 NetworkManager:
   service.disabled
 
