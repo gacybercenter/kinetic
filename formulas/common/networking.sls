@@ -25,11 +25,11 @@ netplan.io:
   file.directory:
     - clean: True
 
-force_enable_networkd:
-  cmd.run:
-    - name: systemctl enable systemd-networkd && systemctl enable systemd-networkd.socket
-    - onchanges:
-      - pkg: netplan.io
+# force_enable_networkd:
+#   cmd.run:
+#     - name: systemctl enable systemd-networkd && systemctl enable systemd-networkd.socket
+#     - onchanges:
+#       - pkg: netplan.io
 
 /run/systemd/network:
   file.directory:
