@@ -25,6 +25,12 @@ netplan.io:
   file.directory:
     - clean: True
 
+force_enable_networkd:
+  cmd.run:
+    - name: systemctl enable systemd-networkd && systemctl enable systemd-networkd.socket
+    - onchanges:
+      - pkg: netplan.io
+
 /run/systemd/network:
   file.directory:
     - clean: True
@@ -36,14 +42,11 @@ systemd-resolved:
   service.enabled
 
 systemd-networkd:
-  service.enabled:
-    - watch:
-      - pkg: netplan.io
+  service.enabled
 
 systemd-networkd.socket:
-  service.enabled:
-    - watch:
-      - pkg: netplan.io
+  service.enabled
+
 ###
 
 ### Iterate through all networks
