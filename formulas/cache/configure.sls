@@ -18,7 +18,7 @@ curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http
   cmd.run:
     - creates: /root/centos_mirrors
 
-/root/acng.dockerfile:
+/root/Dockerfile:
   file.managed:
     - source: salt://formulas/cache/files/acng.dockerfile
 
@@ -41,7 +41,7 @@ container_manage_cgroup:
 
 build acng container image:
   cmd.run:
-    - name: {{ build_cmd }} -t acng acng.dockerfile .
+    - name: {{ build_cmd }} -t acng .
     - onchanges:
       - file: /root/acng.dockerfile
       - file: /root/acng.conf
