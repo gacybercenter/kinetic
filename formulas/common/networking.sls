@@ -38,13 +38,13 @@ force_enable_networkd:
 NetworkManager:
   service.disabled
 
+systemd-networkd.socket:
+  service.enabled
+
 systemd-resolved:
   service.enabled
 
 systemd-networkd:
-  service.enabled
-
-systemd-networkd.socket:
   service.enabled
 
 ###
