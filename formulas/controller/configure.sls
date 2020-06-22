@@ -122,7 +122,7 @@ libvirtd_service:
   {% if args['type'] == 'virt-builder' %}
 create_{{ args['name'] }}:
   cmd.run:
-    - name: virt-builder --output {{ os }}.raw {{ args['name'] }}
+    - name: virt-builder --update --selinux-relabel --install cloud-init  --uninstall firewalld --output {{ os }}.raw {{ args['name'] }}
     - cwd: /kvm/images
     - creates: /kvm/images/{{ os }}.raw
     - require:
@@ -147,7 +147,7 @@ set_format_{{ os }}:
 
 sysprep_{{ args['name'] }}:
   cmd.run:
-    - name: virt-sysprep -a {{ os }}.raw --update --selinux-relabel --install cloud-init  --uninstall firewalld --truncate /etc/machine-id
+    - name: virt-sysprep -a {{ os }}.raw --truncate /etc/machine-id
     - cwd: /kvm/images
     - onchanges:
       - create_{{ args['name'] }}
