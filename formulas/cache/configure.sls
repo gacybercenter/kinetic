@@ -32,11 +32,11 @@ container_manage_cgroup:
 {% endif %}
 
 {% if grains['os_family'] == 'RedHat' %}
-  {% set build_cmd == 'buildah bud' %}
-  {% set docker_cmd == 'podman' %}
+  {% set build_cmd = 'buildah bud' %}
+  {% set docker_cmd = 'podman' %}
 {% elif grains['os_family'] == 'Debian' %}
-  {% set build_cmd == 'docker build' %}
-  {% set docker_bin == 'docker' %}
+  {% set build_cmd = 'docker build' %}
+  {% set docker_bin = 'docker' %}
 {% endif %}
 
 build acng container image:
