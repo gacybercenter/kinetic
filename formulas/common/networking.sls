@@ -16,19 +16,18 @@ ifwatch:
 {% endfor %}
 ###
 
-### disable unneeded services and enable needed ones
-###
-# netplan.io:
-#   pkg.removed
-#
-# netplan_enable_networkd:
-#   service.enabled:
-#     - name: systemd-networkd
-#     - onchanges:
-#       - pkg: netplan.io
-#
-# /etc/netplan:
-#   file.absent
+## disable unneeded services and enable needed ones
+##
+netplan.io:
+  pkg.removed
+
+/etc/netplan:
+  file.directory:
+    - clean: True
+
+/run/systemd/network:
+  file.directory:
+    - clean: True
 
 NetworkManager:
   service.disabled
