@@ -36,8 +36,8 @@ apt-cacher-ng_service:
     - name: apt-cacher-ng
     - enable: True
     - watch:
-      - file: /etc/apt-cacher-ng/acng.conf
-      - file: /etc/apt-cacher-ng/centos_mirros
+      - file: apt-cacher-ng-conf
+      - file: get_centos_mirros
 
 {% elif grains['os_family'] == 'RedHat' %}
 
