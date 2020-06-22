@@ -150,7 +150,7 @@ sysprep_{{ args['name'] }}:
     - name: virt-sysprep -a {{ os }}.raw --truncate /etc/machine-id
     - cwd: /kvm/images
     - onchanges:
-      - cmd: create_{{ args['name'] }}
+      - create_{{ args['name'] }}
 
 /kvm/images/{{ os }}-latest:
   file.symlink:
