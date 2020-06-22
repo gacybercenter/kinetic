@@ -26,6 +26,7 @@
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
       <source file='/kvm/vms/{{ name }}/config.iso'/>
+      <target dev='sdb' bus='sata'/>
       <readonly/>
     </disk>
     {{ networks }}
