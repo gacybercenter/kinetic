@@ -21,12 +21,6 @@ ifwatch:
 netplan.io:
   pkg.removed
 
-netplan_networkd_enable:
-  service.enabled:
-    - name: systemd-networkd
-    - onchanges:
-      - pkg: netplan.io
-
 /etc/netplan:
   file.directory:
     - clean: True
@@ -42,10 +36,14 @@ systemd-resolved:
   service.enabled
 
 systemd-networkd:
-  service.enabled
+  service.enabled:
+    - watch:
+      - pkg: netplan.io
 
 systemd-networkd.socket:
-  service.enabled
+  service.enabled:
+    - watch:
+      - pkg: netplan.io
 ###
 
 ### Iterate through all networks
