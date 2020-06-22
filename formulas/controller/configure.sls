@@ -141,7 +141,7 @@ set_format_{{ os }}:
     - cwd: /kvm/images
     - name: qemu-img convert -O raw {{ os }}.original {{ os }}.raw
     - creates:
-      - /kvm/images/{{ os.raw }}
+      - /kvm/images/{{ os }}.raw
 
   {% endif %}
 
