@@ -3,7 +3,7 @@
 uca:
   pkgrepo.managed:
     - humanname: Ubuntu Cloud Archive - Ussuri
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/ussuri main
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/ussuri main
     - file: /etc/apt/sources.list.d/cloudarchive-ussuri.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
