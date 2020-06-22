@@ -50,10 +50,6 @@ update_all:
   pkg.uptodate:
     - refresh: true
     - dist_upgrade: True
-    - retry:
-        attempts: 5
-        until: True
-        interval: 60
 
 upgraded:
   grains.present:
@@ -93,10 +89,6 @@ firewalld:
 update_all:
   pkg.uptodate:
     - refresh: true
-    - retry:
-        attempts: 5
-        until: True
-        interval: 30
 
 upgraded:
   grains.present:
