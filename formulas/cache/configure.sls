@@ -41,7 +41,7 @@ container_manage_cgroup:
 
 build acng container image:
   cmd.run:
-    - name: {{ build_cmd }} -t acng acng.dockerfile
+    - name: {{ build_cmd }} -t acng .
     - onchanges:
       - file: /root/acng.dockerfile
       - file: /root/acng.conf
