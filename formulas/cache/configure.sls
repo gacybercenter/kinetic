@@ -43,7 +43,7 @@ build acng container image:
   cmd.run:
     - name: {{ build_cmd }} -t acng .
     - onchanges:
-      - file: /root/acng.dockerfile
+      - file: /root/Dockerfile
       - file: /root/acng.conf
 
 ## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
