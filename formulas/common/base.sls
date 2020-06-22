@@ -93,6 +93,10 @@ firewalld:
 update_all:
   pkg.uptodate:
     - refresh: true
+    - retry:
+        attempts: 5
+        until: True
+        interval: 30
 
 upgraded:
   grains.present:
