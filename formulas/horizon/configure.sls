@@ -63,7 +63,11 @@ local_settings:
 ### ref: https://bugs.launchpad.net/horizon/+bug/1880188
 swift_ceph_patch:
   file.line:
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/swiftclient/client.py
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/site-packages/swiftclient/client.py
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/swiftclient/client.py
+{% endif %}    
     - content: parsed = urlparse(urljoin(url, '/swift/info'))
     - match: parsed = urlparse(urljoin(url, '/info'))
     - mode: replace
