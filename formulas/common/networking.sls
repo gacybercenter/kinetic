@@ -42,7 +42,7 @@ systemd-resolved:
 ## resolution and systemd-resolved will resort to root-hints,
 ## potentially breaking various services.  This should resolve that problem
 ## which appears to happen mostly in ubuntu
-libnss_resolve:
+libnss-resolve:
   pkg.installed
 {% endif %}
 
