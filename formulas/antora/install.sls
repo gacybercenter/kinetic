@@ -3,7 +3,7 @@
 nodesource:
   pkgrepo.managed:
     - humanname: nodesoure node.js 12.x repo
-    - name: deb https://deb.nodesource.com/node_12.x bionic main
+    - name: deb https://deb.nodesource.com/node_12.x focal main
     - file: /etc/apt/sources.list.d/nodejs.12.list
     - key_url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
 
