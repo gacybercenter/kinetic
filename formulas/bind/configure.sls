@@ -13,10 +13,17 @@ spawnzero_complete:
 {% endif %}
 
 {% if grains['os_family'] == 'Debian' %}
+
 bind_apparmor_modification:
   file.managed:
     - name: /etc/apparmor.d/local/usr.sbin.named
     - source: salt://formulas/bind/files/usr.sbin.named
+
+apparmor_service:
+  service.running:
+    - watch:
+      - file: bind_apparmor_modification
+
 {% endif %}
 
 bind_conf:
