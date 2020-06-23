@@ -3,7 +3,7 @@
 mongodb_repo:
   pkgrepo.managed:
     - humanname: MongoDB 4.0 repo
-    - name: deb https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.0 multiverse
+    - name: deb https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse
     - file: /etc/apt/sources.list.d/mongodb.4.list
     - keyid: E52529D4
     - keyserver: keyserver.ubuntu.com
