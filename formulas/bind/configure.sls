@@ -21,6 +21,7 @@ bind_apparmor_modification:
 
 apparmor_service:
   service.running:
+    - name: apparmor
     - watch:
       - file: bind_apparmor_modification
 
