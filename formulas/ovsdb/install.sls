@@ -7,6 +7,7 @@ ovsdb_packages:
   pkg.installed:
     - pkgs:
       - ovn-central
+      - openvswitch-switch
 
 {% elif grains['os_family'] == 'RedHat' %}
 
