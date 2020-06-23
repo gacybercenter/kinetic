@@ -61,5 +61,7 @@ cinder_volume_service:
     - name: openstack-cinder-volume
 {% endif %}
     - enable: true
+    - require:
+      - file: /etc/cinder/cinder.conf
     - watch:
       - file: /etc/cinder/cinder.conf
