@@ -65,9 +65,9 @@ swift_ceph_patch:
   file.line:
 {% if grains['os_family'] == 'RedHat' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/site-packages/swiftclient/client.py
-{% elif grains['os_family'] == 'RedHat' %}
+{% elif grains['os_family'] == 'Debian' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/swiftclient/client.py
-{% endif %}    
+{% endif %}
     - content: parsed = urlparse(urljoin(url, '/swift/info'))
     - match: parsed = urlparse(urljoin(url, '/info'))
     - mode: replace
