@@ -54,14 +54,14 @@ spawnzero_complete:
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
 kill_cinder_volume:
-  service.dead:
+  cmd.run:
 {% if grains['os_family'] == 'Debian' %}
-    - name: cinder-volume
+    - name: systemctl stop cinder-volume.service
 {% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-cinder-volume
+    - name: systemctl stop openstack-cinder-volume.service
 {% endif %}
-    - onchanges:
-      - file: /etc/cinder/cinder.conf
+    - prereq:
+      - service: cinder_volume_service
 
 cinder_volume_service:
   service.running:
@@ -71,7 +71,5 @@ cinder_volume_service:
     - name: openstack-cinder-volume
 {% endif %}
     - enable: true
-    - require:
-      - file: /etc/cinder/cinder.conf
     - watch:
       - file: /etc/cinder/cinder.conf
