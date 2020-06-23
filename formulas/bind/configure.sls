@@ -15,7 +15,7 @@ spawnzero_complete:
 {% if grains['os_family'] == 'Debian' %}
 bind_apparmor_modification:
   file.managed:
-    - name: /etc/apparmor.d/local/usr.sbin/named
+    - name: /etc/apparmor.d/local/usr.sbin.named
     - source: salt://formulas/bind/files/usr.sbin.named
 {% endif %}
 
