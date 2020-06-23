@@ -39,7 +39,7 @@ NetworkManager:
     - target: /run/systemd/resolve/resolv.conf
 
 systemd-resolved:
-  service.disabled
+  service.enabled
 
 systemd-networkd.socket:
   service.enabled
