@@ -64,5 +64,6 @@ cinder_volume_service:
     - retry:
         attempts: 3
         interval: 10
+        splay: 5
     - watch:
       - file: /etc/cinder/cinder.conf
