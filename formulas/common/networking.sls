@@ -36,6 +36,16 @@ systemd-networkd.socket:
 systemd-resolved:
   service.enabled
 
+{% if grains['os_family'] == 'Debian' %}
+## Per https://bugs.launchpad.net/ubuntu/+source/systemd/+bug/1727237
+## Depending on your gateway service, you may get unreliable name
+## resolution and systemd-resolved will resort to root-hints,
+## potentially breaking various services.  This should resolve that problem
+## which appears to happen mostly in ubuntu
+libnss_resolve:
+  pkg.installed
+{% endif %}
+
 systemd-networkd:
   service.enabled
 
