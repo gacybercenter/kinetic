@@ -93,10 +93,12 @@ spawnzero_complete:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
+{% if grains['os_family'] == 'RedHat' %}
 spice-html5:
   git.latest:
     - name: https://github.com/freedesktop/spice-html5.git
     - target: /usr/share/spice-html5
+{% endif %}
 
 nova_api_service:
   service.running:
