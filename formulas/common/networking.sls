@@ -30,12 +30,6 @@ netplan.io:
 NetworkManager:
   service.disabled
 
-systemd-networkd.socket:
-  service.enabled
-
-systemd-resolved:
-  service.enabled
-
 {% if grains['os_family'] == 'Debian' %}
 ## Per https://bugs.launchpad.net/ubuntu/+source/systemd/+bug/1727237
 ## Depending on your gateway service, you may get unreliable name
@@ -46,9 +40,14 @@ libnss-resolve:
   pkg.installed
 {% endif %}
 
+systemd-networkd.socket:
+  service.enabled
+
 systemd-networkd:
   service.enabled
 
+systemd-resolved:
+  service.enabled
 ###
 
 ### Iterate through all networks
