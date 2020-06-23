@@ -30,9 +30,6 @@ netplan.io:
 NetworkManager:
   service.disabled
 
-systemd-resolved:
-  service.disabled
-
 ### The sub resolver is causing bizarre issues and
 ### intermittently returning publicly routable addresses
 ### for hosts statically defined on the DNS server
@@ -40,6 +37,9 @@ systemd-resolved:
 /etc/resolv.conf:
   file.symlink:
     - target: /run/systemd/resolve/resolv.conf
+
+systemd-resolved:
+  service.disabled
 
 systemd-networkd.socket:
   service.enabled
