@@ -53,16 +53,6 @@ spawnzero_complete:
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
-kill_cinder_volume:
-  cmd.run:
-{% if grains['os_family'] == 'Debian' %}
-    - name: systemctl stop cinder-volume.service
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: systemctl stop openstack-cinder-volume.service
-{% endif %}
-    - prereq:
-      - service: cinder_volume_service
-
 cinder_volume_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
@@ -71,5 +61,8 @@ cinder_volume_service:
     - name: openstack-cinder-volume
 {% endif %}
     - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
     - watch:
       - file: /etc/cinder/cinder.conf
