@@ -37,6 +37,7 @@ NetworkManager:
 /etc/resolv.conf:
   file.symlink:
     - target: /run/systemd/resolve/resolv.conf
+    - force: True
 
 systemd-resolved:
   service.enabled
