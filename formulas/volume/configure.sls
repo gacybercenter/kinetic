@@ -53,6 +53,16 @@ spawnzero_complete:
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
+kill_cinder_volume:
+  service.dead:
+{% if grains['os_family'] == 'Debian' %}
+    - name: cinder-volume
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-cinder-volume
+{% endif %}
+    - onchanges:
+      - file: /etc/cinder/cinder.conf
+
 cinder_volume_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
