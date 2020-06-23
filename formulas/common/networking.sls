@@ -33,6 +33,10 @@ NetworkManager:
 systemd-resolved:
   service.disabled
 
+### The sub resolver is causing bizarre issues and
+### intermittently returning publicly routable addresses
+### for hosts statically defined on the DNS server
+### This symlink points at the full resolver
 /etc/resolv.conf:
   file.symlink:
     - target: /run/systemd/resolve/resolv.conf
