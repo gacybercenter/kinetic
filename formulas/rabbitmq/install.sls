@@ -2,6 +2,6 @@ include:
   - /formulas/openstack/common/repo
 
 rabbitmq_packages:
-  - pkg.installed:
+  pkg.installed:
     - pkgs:
       - rabbitmq-server
