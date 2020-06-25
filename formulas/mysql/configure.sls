@@ -142,8 +142,10 @@ fs.file-max:
     - value: 65535
 
 /usr/lib/systemd/system/mariadb.service:
-  file.managed:
-    - source: salt://formulas/mysql/files/mariadb.service
+  file.line:
+    - content: LimitNOFILE=65535
+    - mode: ensure
+    - after: Group=mysql
 
 systemctl daemon-reload:
   cmd.run:
