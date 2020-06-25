@@ -7,7 +7,6 @@ mariadb_packages:
   pkg.installed:
     - pkgs:
       - mariadb-server
-      - galera-4
       - python3-pymysql
     - reload_modules: True
 
