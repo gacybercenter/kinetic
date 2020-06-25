@@ -24,6 +24,7 @@ bootstrap_mariadb_start:
     - creates: /etc/galera_init_done
     - require:
       - file: openstack.conf
+      - file: galera_recovery
 
 /etc/galera_init_done:
   file.managed:
@@ -44,6 +45,10 @@ spawnzero_complete:
     - name: {{ grains['type'] }}/spawnzero/complete
     - data: "{{ grains['type'] }} spawnzero is complete."
 {% endif %}
+
+/bin/galera_recovery:
+  file.managed:
+    - source: salt://formulas/mysql/files/galera_recovery
 
 openstack.conf:
   file.managed:
