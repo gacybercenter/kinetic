@@ -64,6 +64,11 @@ openstack.conf:
     - template: jinja
     - defaults:
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+{% if grains['os_family'] == 'Debian' %}
+        wsrep_provider: /usr/lib/libgalera_smm.so
+{% elif grains['os_family'] == 'RedHat' %}
+        wsrep_provider: /usr/lib64/libgalera_smm.so
+{% endif %}
         wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}
         wsrep_cluster_address: |-
           gcomm://
