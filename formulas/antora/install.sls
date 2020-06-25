@@ -23,6 +23,7 @@ antora_packages:
       - gnupg
       - nodejs
       - apache2
+      - npm
     - reload_modules: True
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -54,6 +55,8 @@ antora_packages:
 
 install_antora:
   npm.installed:
+    - require:
+      - pkg: antora_packages
     - pkgs:
       - "@antora/cli@2.3"
       - "@antora/site-generator-default@2.3"
