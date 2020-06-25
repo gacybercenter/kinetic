@@ -24,7 +24,7 @@ bootstrap_mariadb_start:
     - creates: /etc/galera_init_done
     - require:
       - file: openstack.conf
-      - file: galera_recovery
+      - file: /bin/galera_recovery
 
 /etc/galera_init_done:
   file.managed:
