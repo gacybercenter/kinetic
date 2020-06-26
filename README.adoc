@@ -3,7 +3,7 @@ image:https://cloud.drone.io/api/badges/GeorgiaCyber/kinetic/status.svg["Georgia
 # kinetic
 
 Kinetic is a deployment and maintenance tool for Cyber Ranges originally developed at the US Army Cyber School at Fort Gordon, Georgia.
-he core components are https://www.saltstack.com/[salt], https://www.openstack.org[openstack], and https://ceph.com/[ceph].
+The core components are https://www.saltstack.com/[salt], https://www.openstack.org[openstack], and https://ceph.com/[ceph].
 
 Kinetic is currently in the middle of being converted from a bespoke, single environment solution to a framework
 - it is not ready for production and pointing your environment at our master branch will break everything.
