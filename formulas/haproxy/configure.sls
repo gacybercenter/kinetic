@@ -15,7 +15,7 @@ spawnzero_complete:
 {% if salt['pillar.get']('danos:enabled', False) == True %}
 echo foo:
   cmd.run
-{% endif }
+{% endif %}
 
 {% if grains['os_family'] == 'RedHat' %}
 haproxy_connect_any:
