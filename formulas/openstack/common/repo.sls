@@ -1,10 +1,10 @@
 {% if grains['os_family'] == 'Debian' %}
-
+  {% if grains['oscodename'] != 'focal' %}
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Train
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main
-    - file: /etc/apt/sources.list.d/cloudarchive-train.list
+    - humanname: Ubuntu Cloud Archive - Ussuri
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/ussuri main
+    - file: /etc/apt/sources.list.d/cloudarchive-ussuri.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
 
@@ -14,6 +14,7 @@ update_packages_uca:
     - onchanges:
       - pkgrepo: uca
     - dist_upgrade: True
+  {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
 

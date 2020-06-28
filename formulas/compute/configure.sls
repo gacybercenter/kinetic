@@ -102,10 +102,13 @@ load_ceph_volumes_key:
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
+{% if grains['os_family'] == 'RedHat' %}
 spice-html5:
   git.latest:
     - name: https://github.com/freedesktop/spice-html5.git
     - target: /usr/share/spice-html5
+{% endif %}
+
 
 nova_compute_service:
   service.running:
@@ -279,6 +282,28 @@ map_bridge:
       - cmd: make_bridge
     - unless:
       - ovs-vsctl get open . external-ids:ovn-bridge-mappings | grep -q "provider:br-provider"
+
+ovs-vsctl set open . external_ids:ovn-remote-probe-interval=180000 :
+  cmd.run:
+    - require:
+      - service: openvswitch_service
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-remote-probe-interval | grep -q "180000"
+
+ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=60 :
+  cmd.run:
+    - require:
+      - service: openvswitch_service
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-openflow-probe-interval | grep -q "60"
 
 ovsdb_listen:
   cmd.run:

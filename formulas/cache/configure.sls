@@ -10,13 +10,36 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 {% endif %}
 
-/root/acng.conf:
+apt-cacher-ng-conf:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/apt-cacher-ng/acng.conf
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /root/acng.conf
+{% endif %}
     - source: salt://formulas/cache/files/acng.conf
 
-curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors:
+get_centos_mirros:
   cmd.run:
+{% if grains['os_family'] == 'Debian' %}
+    - name: curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/etc/apt-cacher-ng/centos_mirrors
+    - creates: /etc/apt-cacher-ng/centos_mirrors
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors
     - creates: /root/centos_mirrors
+{% endif %}
+
+{% if grains['os_family'] == 'Debian' %}
+
+apt-cacher-ng_service:
+  service.running:
+    - name: apt-cacher-ng
+    - enable: True
+    - watch:
+      - file: apt-cacher-ng-conf
+      - cmd: get_centos_mirros
+
+{% elif grains['os_family'] == 'RedHat' %}
 
 /root/acng.dockerfile:
   file.managed:
@@ -58,3 +81,5 @@ apt-cacher-ng-container:
       - file: /etc/systemd/system/apt-cacher-ng-container.service
     - watch:
       - file: /etc/systemd/system/apt-cacher-ng-container.service
+
+{% endif %}

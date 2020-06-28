@@ -93,10 +93,12 @@ spawnzero_complete:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
+{% if grains['os_family'] == 'RedHat' %}
 spice-html5:
   git.latest:
     - name: https://github.com/freedesktop/spice-html5.git
     - target: /usr/share/spice-html5
+{% endif %}
 
 nova_api_service:
   service.running:
@@ -106,6 +108,9 @@ nova_api_service:
     - name: openstack-nova-api
 {% endif %}
     - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
     - watch:
       - file: /etc/nova/nova.conf
 
@@ -117,6 +122,9 @@ nova_scheduler_service:
     - name: openstack-nova-scheduler
 {% endif %}
     - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
     - watch:
       - file: /etc/nova/nova.conf
 
@@ -128,6 +136,9 @@ nova_conductor_service:
     - name: openstack-nova-conductor
 {% endif %}
     - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
     - watch:
       - file: /etc/nova/nova.conf
 
@@ -139,5 +150,8 @@ nova-spiceproxy_service:
     - name: openstack-nova-spicehtml5proxy
 {% endif %}
     - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
     - watch:
       - file: /etc/nova/nova.conf

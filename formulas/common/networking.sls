@@ -16,16 +16,38 @@ ifwatch:
 {% endfor %}
 ###
 
-### disable unneeded services and enable needed ones
-###
+## disable unneeded services and enable needed ones
+##
+netplan.io:
+  pkg.removed
+
+/etc/netplan:
+  file.absent
+
+/run/systemd/network:
+  file.absent
+
 NetworkManager:
   service.disabled
+
+### The sub resolver is causing bizarre issues and
+### intermittently returning publicly routable addresses
+### for hosts statically defined on the DNS server
+### This symlink points at the full resolver
+/etc/resolv.conf:
+  file.symlink:
+    - target: /run/systemd/resolve/resolv.conf
+    - force: True
 
 systemd-resolved:
   service.enabled
 
+systemd-networkd.socket:
+  service.enabled
+
 systemd-networkd:
   service.enabled
+
 ###
 
 ### Iterate through all networks

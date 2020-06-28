@@ -11,7 +11,6 @@ nova_packages:
       - nova-spiceproxy
       - nova-scheduler
       - python3-openstackclient
-      - git
 
 {% elif grains['os_family'] == 'RedHat' %}
 

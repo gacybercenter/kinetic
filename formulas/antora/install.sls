@@ -3,7 +3,7 @@
 nodesource:
   pkgrepo.managed:
     - humanname: nodesoure node.js 12.x repo
-    - name: deb https://deb.nodesource.com/node_12.x bionic main
+    - name: deb https://deb.nodesource.com/node_12.x focal main
     - file: /etc/apt/sources.list.d/nodejs.12.list
     - key_url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
 
@@ -23,6 +23,7 @@ antora_packages:
       - gnupg
       - nodejs
       - apache2
+      - npm
     - reload_modules: True
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -54,6 +55,8 @@ antora_packages:
 
 install_antora:
   npm.installed:
+    - require:
+      - pkg: antora_packages
     - pkgs:
       - "@antora/cli@2.3"
       - "@antora/site-generator-default@2.3"

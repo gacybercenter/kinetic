@@ -99,6 +99,10 @@ manila_share_service:
     - name: openstack-manila-share
 {% endif %}
     - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
     - watch:
       - file: /etc/manila/manila.conf
 
@@ -110,5 +114,9 @@ nfs_ganesha_service:
     - name: nfs-ganesha
 {% endif %}
     - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5    
     - watch:
       - file: /etc/manila/manila.conf

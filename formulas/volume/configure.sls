@@ -53,6 +53,12 @@ spawnzero_complete:
         api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
+
+## Somehow, the cinder service is attempted to be started before cinder.conf
+## is fully configured, leading to a situation where it tries to run with a deafult
+## configuration, which does not work and dies when it tries to write to the nonexisten
+## sqlite database.  A single retry generally resolves the issue
+## This can be removed once universal retries are implemented
 cinder_volume_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
@@ -61,5 +67,9 @@ cinder_volume_service:
     - name: openstack-cinder-volume
 {% endif %}
     - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
     - watch:
       - file: /etc/cinder/cinder.conf

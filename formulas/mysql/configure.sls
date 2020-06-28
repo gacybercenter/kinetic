@@ -24,6 +24,7 @@ bootstrap_mariadb_start:
     - creates: /etc/galera_init_done
     - require:
       - file: openstack.conf
+      - file: /bin/galera_recovery
 
 /etc/galera_init_done:
   file.managed:
@@ -45,6 +46,10 @@ spawnzero_complete:
     - data: "{{ grains['type'] }} spawnzero is complete."
 {% endif %}
 
+/bin/galera_recovery:
+  file.managed:
+    - source: salt://formulas/mysql/files/galera_recovery
+
 openstack.conf:
   file.managed:
 {% if grains['os_family'] == 'Debian' %}
@@ -59,6 +64,11 @@ openstack.conf:
     - template: jinja
     - defaults:
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+{% if grains['os_family'] == 'Debian' %}
+        wsrep_provider: /usr/lib/libgalera_smm.so
+{% elif grains['os_family'] == 'RedHat' %}
+        wsrep_provider: /usr/lib64/libgalera_smm.so
+{% endif %}
         wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}
         wsrep_cluster_address: |-
           gcomm://
@@ -142,8 +152,10 @@ fs.file-max:
     - value: 65535
 
 /usr/lib/systemd/system/mariadb.service:
-  file.managed:
-    - source: salt://formulas/mysql/files/mariadb.service
+  file.line:
+    - content: LimitNOFILE=65535
+    - mode: ensure
+    - after: Group=mysql
 
 systemctl daemon-reload:
   cmd.run:

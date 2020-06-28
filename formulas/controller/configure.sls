@@ -119,6 +119,7 @@ libvirtd_service:
 {% endif %}
 
 {% for os, args in pillar.get('images', {}).items() %}
+  {% if args['type'] == 'virt-builder' %}
 create_{{ args['name'] }}:
   cmd.run:
     - name: virt-builder --update --selinux-relabel --install cloud-init  --uninstall firewalld --output {{ os }}.raw {{ args['name'] }}
@@ -127,12 +128,29 @@ create_{{ args['name'] }}:
     - require:
       - file: /kvm/images
 
+  {% elif args['type'] == 'url' %}
+
+create_{{ args['name'] }}:
+  file.managed:
+    - name: /kvm/images/{{ os }}.original
+    - source: {{ args['url'] }}
+    - skip_verify: True
+
+set_format_{{ os }}:
+  cmd.run:
+    - cwd: /kvm/images
+    - name: qemu-img convert -O raw {{ os }}.original {{ os }}.raw
+    - creates:
+      - /kvm/images/{{ os }}.raw
+
+  {% endif %}
+
 sysprep_{{ args['name'] }}:
   cmd.run:
     - name: virt-sysprep -a {{ os }}.raw --truncate /etc/machine-id
     - cwd: /kvm/images
     - onchanges:
-      - cmd: create_{{ args['name'] }}
+      - create_{{ args['name'] }}
 
 /kvm/images/{{ os }}-latest:
   file.symlink:

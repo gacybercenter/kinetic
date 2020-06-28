@@ -15,6 +15,9 @@ container_packages:
       - neutron-linuxbridge-agent
       - python3-tornado
       - python3-pymysql
+      - kata-runtime
+      - kata-proxy
+      - kata-shim      
 
 pymysql_sa:
   pip.installed:
@@ -33,6 +36,9 @@ container_packages:
       - ovn-host
       - python3-tornado
       - python3-pymysql
+      - kata-runtime
+      - kata-proxy
+      - kata-shim
 
 pymysql_sa:
   pip.installed:
@@ -78,7 +84,7 @@ container_packages:
       - gcc-c++
       - kata-runtime
       - kata-proxy
-      - kata-shim      
+      - kata-shim
     - reload_modules: True
 
   {% endif %}

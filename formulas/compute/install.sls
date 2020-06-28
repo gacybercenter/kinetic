@@ -27,7 +27,7 @@ compute_packages:
       - python3-rbd
       - python3-rados
       - ovn-host
-      - networking-ovn-metadata-agent
+      - neutron-ovn-metadata-agent
       - haproxy
 
   {% endif %}

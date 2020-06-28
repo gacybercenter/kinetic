@@ -1,17 +1,15 @@
-haproxy:
-  pkg.installed
-
-{% if grains['os_family'] == 'Debian' %}
-
-letsencrypt:
-  pkg.installed
-
-{% elif grains['os_family'] == 'RedHat' %}
 
 haproxy_packages:
   pkg.installed:
     - pkgs:
+      - haproxy
       - certbot
+
+{% if grains['os_family'] == 'RedHat' %}
+
+haproxy_packages_redhat:
+  pkg.installed:
+    - pkgs:
       - policycoreutils-python-utils
     - reload_modules: True
 
