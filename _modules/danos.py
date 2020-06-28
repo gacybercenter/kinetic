@@ -35,7 +35,8 @@ def get_full_configuration(host, username, password, **kwargs):
     url = "https://"+host+"/"+location+"/show"
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
     configuration = requests.post(url, headers=headers, verify=False)
-    ret["result"] = delete_session(host, username, password, location)
+    configuration = delete_session(host, username, password, location)
+    ret["result"] = configuration.text
     return ret
 
 def get_configuration(host, username, password, path, **kwargs):
