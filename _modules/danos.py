@@ -27,7 +27,7 @@ def delete_session(host, username, password, location):
     delete_session = requests.delete(url, headers=headers, verify=False)
     return delete_session.text
 
-def get_full_configuration(host, username, password):
+def get_full_configuration(host, username, password, **kwargs):
     auth_token = make_auth_token(username, password)
     location = make_session(host, username, password)
     url = "https://"+host+"/"+location+"/show"
@@ -36,7 +36,7 @@ def get_full_configuration(host, username, password):
     delete_session(host, username, password, location)
     return configuration.text
 
-def get_configuration(host, username, password, path):
+def get_configuration(host, username, password, path, **kwargs):
     auth_token = make_auth_token(username, password)
     location = make_session(host, username, password)
     url = "https://"+host+"/"+location+path

@@ -21,7 +21,7 @@ def set_resourcegroup(name,
 
     if kwargs["test"]:
         ret["result"] = True
-        ret["comment"] = "The connection will be tested"
+        ret["comment"] = "The resource group is alrady correctly configured"
     else:
         results = __salt__["danos.get_full_configuration"](host, username, password, **kwargs)
         ret["result"] = results["result"]
