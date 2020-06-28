@@ -32,5 +32,5 @@ def set_resourcegroup(name,
             ret["comment"] = "Description OK"
         else:
             ret["result"] = True
-            ret["comment"] = "Description Not OK"
+            ret["comment"] = description
     return ret
