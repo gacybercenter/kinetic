@@ -36,7 +36,8 @@ def get_full_configuration(host, username, password, **kwargs):
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
     configuration = requests.post(url, headers=headers, verify=False)
     delete_session(host, username, password, location)
-    ret["result"] = configuration.text
+    ret["result"] = True
+    ret["comment"] = configuration.text
     return ret
 
 def get_configuration(host, username, password, path, **kwargs):
