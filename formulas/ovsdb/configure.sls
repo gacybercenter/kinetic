@@ -134,9 +134,10 @@ ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
   cmd.run:
     - require:
       - service: ovn_northd_service
+      - service: openvswitch_service
     - retry:
         attempts: 3
         interval: 10
-        splay: 5      
+        splay: 5
     - unless:
       - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"
