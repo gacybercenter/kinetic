@@ -29,7 +29,6 @@ def delete_session(host, username, password, location):
 
 def get_full_configuration(host, username, password, **kwargs):
     ret = {"result": None, "comment": ""}
-
     auth_token = make_auth_token(username, password)
     location = make_session(host, username, password)
     url = "https://"+host+"/"+location+"/show"
@@ -41,6 +40,7 @@ def get_full_configuration(host, username, password, **kwargs):
     return ret
 
 def get_configuration(host, username, password, path, **kwargs):
+    ret = {"result": None, "comment": ""}
     auth_token = make_auth_token(username, password)
     location = make_session(host, username, password)
     url = "https://"+host+"/"+location+path
@@ -49,4 +49,4 @@ def get_configuration(host, username, password, path, **kwargs):
     delete_session(host, username, password, location)
     ret["result"] = True
     ret["comment"] = configuration.text
-    return json.loads(response.text)
+    return ret
