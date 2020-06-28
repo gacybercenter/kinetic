@@ -5,7 +5,7 @@ initial_module_sync:
   saltutil.sync_all:
     - refresh: True
     - unless:
-      - salt-call saltutil.list_extmods | grep -q 'redfish\|generate\|fernet\|address'
+      - salt-call saltutil.list_extmods | grep -q 'redfish\|generate\|fernet\|address\|danos'
 
 {% if opts.id not in ['salt', 'pxe'] %}
   {% set type = opts.id.split('-')[0] %}
