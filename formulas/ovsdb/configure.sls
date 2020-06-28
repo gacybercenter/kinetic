@@ -164,4 +164,4 @@ ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=60 :
         interval: 10
         splay: 5
     - unless:
-      - ovs-vsctl get open . external-ids:ovn-remote-probe-interval | grep -q "60"
+      - ovs-vsctl get open . external-ids:ovn-openflow-probe-interval | grep -q "60"
