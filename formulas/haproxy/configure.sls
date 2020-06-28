@@ -11,6 +11,12 @@ spawnzero_complete:
 
 {% endif %}
 
+### Gateway configuration
+{% if salt['pillar.get']('danos:enabled', False) == True %}
+echo foo:
+  cmd.run
+{% endif }
+
 {% if grains['os_family'] == 'RedHat' %}
 haproxy_connect_any:
   selinux.boolean:

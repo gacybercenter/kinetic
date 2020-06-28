@@ -100,11 +100,6 @@ apply_base_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/common/base
-    # - failhard: True
-    # - kwarg:
-    #       retry:
-    #         attempts: 3
-    #         interval: 10
 
 apply_networking_{{ type }}-{{ uuid }}:
   salt.state:
@@ -119,8 +114,6 @@ reboot_{{ type }}-{{ uuid }}:
   salt.function:
     - tgt: '{{ type }}-{{ uuid }}'
     - name: system.reboot
-    # - kwarg:
-    #     at_time: 1
     - require:
       - apply_networking_{{ type }}-{{ uuid }}
 
@@ -168,8 +161,6 @@ final_reboot_{{ type }}-{{ uuid }}:
   salt.function:
     - tgt: '{{ type }}-{{ uuid }}'
     - name: system.reboot
-    # - kwarg:
-    #     at_time: 1
     - require:
       - highstate_{{ type }}-{{ uuid }}
 
