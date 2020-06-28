@@ -108,7 +108,7 @@ openvswitch_service:
     - require:
       - service: ovn_northd_service
 
-ovn-nbctl --no-leader-only set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=60000:
+ovn-nbctl --no-leader-only set-connection ptcp:6641:0.0.0.0 -- set connection . inactivity_probe=180000:
   cmd.run:
     - require:
       - service: ovn_northd_service
@@ -119,7 +119,7 @@ ovn-nbctl --no-leader-only set-connection ptcp:6641:0.0.0.0 -- set connection . 
     - unless:
       - ovn-nbctl --no-leader-only get-connection | grep -q "ptcp:6641:0.0.0.0"
 
-ovn-sbctl --no-leader-only set-connection ptcp:6642:0.0.0.0 -- set connection . inactivity_probe=60000:
+ovn-sbctl --no-leader-only set-connection ptcp:6642:0.0.0.0 -- set connection . inactivity_probe=180000:
   cmd.run:
     - require:
       - service: ovn_northd_service
@@ -141,3 +141,27 @@ ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
         splay: 5
     - unless:
       - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"
+
+ovs-vsctl set open . external_ids:ovn-remote-probe-interval=180000 :
+  cmd.run:
+    - require:
+      - service: ovn_northd_service
+      - service: openvswitch_service
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-remote-probe-interval | grep -q "180000"
+
+ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=60 :
+  cmd.run:
+    - require:
+      - service: ovn_northd_service
+      - service: openvswitch_service
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-remote-probe-interval | grep -q "60"
