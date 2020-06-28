@@ -72,6 +72,22 @@ ovn_northd_opts:
         cluster_remote: ""
           {% endif %}
 
+{% if (grains['os_family'] == 'Debian') and (salt['grains.get']('production', False) == False) %}
+wipe_default_nb:
+  file.absent:
+    - name: /var/lib/ovn/ovnnb_db.db
+    - onchanges:
+      - file: ovn_northd_opts
+
+wipe_default_sb:
+  file.absent:
+    - name: /var/lib/ovn/ovnsb_db.db
+    - onchanges:
+      - file: ovn_northd_opts
+{% endif %}
+
+
+
 ovn_northd_service:
   service.running:
 {% if grains['os_family'] == 'RedHat' %}
