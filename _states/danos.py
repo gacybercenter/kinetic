@@ -23,7 +23,7 @@ def set_resourcegroup(name,
         ret["result"] = True
         ret["comment"] = "The resource group is alrady correctly configured"
     else:
-        results = __salt__["danos.get_full_configuration"](host, username, password, **kwargs)
+        result = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name, **kwargs)
         ret["result"] = results["result"]
         ret["comment"] = results["comment"]
 

@@ -45,6 +45,8 @@ def get_configuration(host, username, password, path, **kwargs):
     location = make_session(host, username, password)
     url = "https://"+host+"/"+location+path
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
-    response = requests.get(url, headers=headers, verify=False)
+    configuration = requests.get(url, headers=headers, verify=False)
     delete_session(host, username, password, location)
+    ret["result"] = True
+    ret["comment"] = configuration.text
     return json.loads(response.text)
