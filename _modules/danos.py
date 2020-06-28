@@ -28,13 +28,15 @@ def delete_session(host, username, password, location):
     return delete_session.text
 
 def get_full_configuration(host, username, password, **kwargs):
+    ret = {"result": None, "comment": ""}
+
     auth_token = make_auth_token(username, password)
     location = make_session(host, username, password)
     url = "https://"+host+"/"+location+"/show"
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
     configuration = requests.post(url, headers=headers, verify=False)
-    delete_session(host, username, password, location)
-    return configuration.text
+    ret["result"] = delete_session(host, username, password, location)
+    return ret
 
 def get_configuration(host, username, password, path, **kwargs):
     auth_token = make_auth_token(username, password)
