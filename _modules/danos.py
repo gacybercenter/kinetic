@@ -40,7 +40,7 @@ def get_full_configuration(host, username, password, **kwargs):
     return ret
 
 def get_configuration(host, username, password, path, **kwargs):
-    ret = {"result": None, "comment": ""}
+    ret = {"result": None, "comment": "", "configuration": ""}
     auth_token = make_auth_token(username, password)
     location = make_session(host, username, password)
     url = "https://"+host+"/"+location+path
@@ -48,5 +48,6 @@ def get_configuration(host, username, password, path, **kwargs):
     configuration = requests.get(url, headers=headers, verify=False)
     delete_session(host, username, password, location)
     ret["result"] = True
+    ret["configuration"] = configuration.text
     ret["comment"] = configuration.text
     return ret
