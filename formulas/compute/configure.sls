@@ -286,7 +286,6 @@ map_bridge:
 ovs-vsctl set open . external_ids:ovn-remote-probe-interval=180000 :
   cmd.run:
     - require:
-      - service: ovn_northd_service
       - service: openvswitch_service
     - retry:
         attempts: 3
@@ -298,7 +297,6 @@ ovs-vsctl set open . external_ids:ovn-remote-probe-interval=180000 :
 ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=60 :
   cmd.run:
     - require:
-      - service: ovn_northd_service
       - service: openvswitch_service
     - retry:
         attempts: 3

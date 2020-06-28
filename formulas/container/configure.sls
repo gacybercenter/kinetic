@@ -194,6 +194,28 @@ map_bridge:
     - unless:
       - ovs-vsctl get open . external-ids:ovn-bridge-mappings | grep -q "provider:br-provider"
 
+ovs-vsctl set open . external_ids:ovn-remote-probe-interval=180000 :
+  cmd.run:
+    - require:
+      - service: openvswitch_service
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-remote-probe-interval | grep -q "180000"
+
+ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=60 :
+  cmd.run:
+    - require:
+      - service: openvswitch_service
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - unless:
+      - ovs-vsctl get open . external-ids:ovn-openflow-probe-interval | grep -q "60"
+
 ovsdb_listen:
   cmd.run:
     - name: ovs-vsctl set-manager ptcp:6640:127.0.0.1
