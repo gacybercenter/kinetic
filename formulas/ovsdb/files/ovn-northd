@@ -4,4 +4,6 @@
 --db-sb-cluster-local-addr={{ self_ip }} \
 --ovn-northd-nb-db={{ nb_cluster }} \
 --ovn-northd-sb-db={{ sb_cluster }} \
+--db-nb-file=/var/lib/ovn/ovnnb_db_prod.db \
+--db-sb-file=/var/lib/ovn/ovnsb_db_prod.db \
 {{ cluster_remote }}"
