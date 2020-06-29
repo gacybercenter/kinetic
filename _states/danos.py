@@ -97,10 +97,10 @@ def set_resourcegroup(name,
 
 def set_statichostmapping(name,
                           address,
-                          aliases=None,
                           username,
                           password,
                           host,
+                          aliases=None,
                           **kwargs):
 
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
