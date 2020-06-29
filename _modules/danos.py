@@ -89,4 +89,4 @@ def set_configuration(host, username, password, path, location=None, **kwargs):
     if standalone == True:
         commit = commit_configuration(host, username, password, location)
         delete_session(host, username, password, location)
-    return commit.text
+    return set.text
