@@ -77,7 +77,7 @@ def set_resourcegroup(name,
             ret["result"] = True
             ret["comment"] = "The "+name+" resource group has been updated"
             ret["changes"] = {"group":name,
-                              "old description":json.loads(current_description)["children"][0]["name"],
+                              "old description":descr,
                               "new description":description,
                               "old members":set(memberlist),
                               "new members":set(values)}
