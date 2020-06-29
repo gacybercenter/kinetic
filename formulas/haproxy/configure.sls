@@ -60,6 +60,11 @@ acme_{{ domain }}:
     - name: {{ domain }}
     - email: {{ pillar['haproxy']['tls_email'] }}
     - renew: 14
+{% if salt['pillar.get']('danos:enabled', False) == True %}
+    - require:
+      - danos: set haproxy group
+      - danos: set haproxy static-mapping
+{% endif %}      
 
 create_master_pem_{{ domain }}:
   cmd.run:
