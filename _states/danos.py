@@ -40,7 +40,7 @@ def set_resourcegroup(name,
             ret["result"] = True
             ret["comment"] = "Resource groups are up to date"
         else:
-            ret["result"] = True
+            ret["result"] = None
             ret["comment"] = "Resource groups have required changes"
             ret["changes"] = {"foo":"bar"}
     else:
