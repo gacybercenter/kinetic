@@ -27,7 +27,24 @@ set haproxy group:
   {% else %}
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
+
+set haproxy static-mapping:
+  danos.set_statichostmapping:
+    - name: {{ pillar['haproxy']['dashboard_domain'] }}
+    - address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+    - aliases:
+      - {{ pillar['haproxy']['console_domain'] }}
+      - {{ pillar['haproxy']['docs_domain'] }}
+    - username: {{ pillar['danos']['username'] }}
+    - password: {{ pillar['danos_password'] }}
+  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
+    - host: {{ grains['ip4_gw'] }}
+  {% else %}
+    - host: {{ pillar['danos']['endpoint'] }}
+  {% endif %}      
 {% endif %}
+
+
 
 {% if grains['os_family'] == 'RedHat' %}
 haproxy_connect_any:
