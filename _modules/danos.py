@@ -47,3 +47,13 @@ def get_configuration(host, username, password, path, **kwargs):
     configuration = requests.get(url, headers=headers, verify=False)
     delete_session(host, username, password, location)
     return configuration.text
+
+def set_configuration(host, username, password, path, **kwargs):
+    auth_token = make_auth_token(username, password)
+    location = make_session(host, username, password)
+    url = "https://"+host+"/"+location+path
+    headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
+    drop_old_configuration = requests.put("https://"+host+"/"+location+"/delete"+path, headers=headers, verify=False)
+    write_new_configuration = requests.put(url, headers=headers, verify=False)
+    delete_session(host, username, password, location)
+    return configuration.text

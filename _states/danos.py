@@ -64,10 +64,12 @@ def set_resourcegroup(name,
         and
         set(memberlist) == set(values)):
 
-
             ret["result"] = True
             ret["comment"] = "The "+name+" resource group is up-to-date"
         else:
+
+
+
             ret["result"] = True
             ret["comment"] = "The "+name+" resource group has been updated"
             ret["changes"] = {"group":name,
