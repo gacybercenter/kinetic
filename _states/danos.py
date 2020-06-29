@@ -18,7 +18,7 @@ def set_resourcegroup(name,
     groupmap = {"address-group": "address",
                 "dscp-group": "dscp",
                 "port-group": "port",
-                "protocol-group:" "protocol"}
+                "protocol-group": "protocol"}
 
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 
