@@ -32,5 +32,5 @@ def set_resourcegroup(name,
             ret["comment"] = "Description OK"
         else:
             ret["result"] = True
-            ret["comment"] = json.loads(current_description["configuration"])["children"]
+            ret["comment"] = str(json.loads(current_description["configuration"])["children"])
     return ret
