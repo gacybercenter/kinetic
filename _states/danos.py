@@ -30,10 +30,10 @@ def set_resourcegroup(name,
         current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
 
         memberlist = []
-        for member in json.loads(current_members["configuration"])["children"]:
+        for member in json.loads(current_members)["children"]:
             memberlist.append(member["name"])
 
-        if (json.loads(current_description["configuration"])["children"][0]["name"] == description
+        if (json.loads(current_description)["children"][0]["name"] == description
         and
         set(memberlist) == set(values)):
 
@@ -43,7 +43,7 @@ def set_resourcegroup(name,
             ret["result"] = None
             ret["comment"] = "The "+name+" resource group has required changes"
             ret["changes"] = {"group":name,
-                              "current description":json.loads(current_description["configuration"])["children"][0]["name"],
+                              "current description":json.loads(current_description)["children"][0]["name"],
                               "target description":description,
                               "current members":set(memberlist),
                               "target members":set(values)}
@@ -52,10 +52,10 @@ def set_resourcegroup(name,
         current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
 
         memberlist = []
-        for member in json.loads(current_members["configuration"])["children"]:
+        for member in json.loads(current_members)["children"]:
             memberlist.append(member["name"])
 
-        if (json.loads(current_description["configuration"])["children"][0]["name"] == description
+        if (json.loads(current_description)["children"][0]["name"] == description
         and
         set(memberlist) == set(values)):
 
@@ -66,7 +66,7 @@ def set_resourcegroup(name,
             ret["result"] = True
             ret["comment"] = "The "+name+" resource group has been updated"
             ret["changes"] = {"group":name,
-                              "old description":json.loads(current_description["configuration"])["children"][0]["name"],
+                              "old description":json.loads(current_description)["children"][0]["name"],
                               "new description":description,
                               "old members":set(memberlist),
                               "new members":set(values)}
