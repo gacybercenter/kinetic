@@ -17,9 +17,14 @@ def set_resourcegroup(name,
 
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 
+    ### If test isn't specified, assume test=false
     if "test" not in kwargs:
         kwargs["test"] = __opts__.get("test", False)
 
+    ### If test is specified:
+    ### Get current description and members and compare to target description
+    ### and members.  If the same, return result=true and no changes.  If not
+    ### the same, return changes dict.
     if kwargs["test"]:
         current_description = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description', **kwargs)
         current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
@@ -29,7 +34,7 @@ def set_resourcegroup(name,
         # (json.loads(current_members["configuration"])["children"][0]["name"] == description)
 
             ret["result"] = True
-            ret["comment"] = str(json.loads(current_members["configuration"])["children"][0]["name"])
+            ret["comment"] = str(json.loads(current_members["configuration"])["children"])
     else:
         current_description = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description', **kwargs)
         current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
