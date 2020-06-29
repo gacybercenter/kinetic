@@ -80,7 +80,7 @@ def set_resourcegroup(name,
         ### Create session to be used throughout
             location = __salt__["danos.make_session"](host, username, password)
             __salt__["danos.delete_configuration"](host, username, password, '/resources/group/'+type+'/'+name, location, **kwargs)
-            __salt__["danos.set_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description/foo', location, **kwargs)
+            __salt__["danos.set_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description/'+quote(description), location, **kwargs)
             __salt__["danos.commit_configuration"](host, username, password, location)
             __salt__["danos.delete_session"](host, username, password, location)
 
