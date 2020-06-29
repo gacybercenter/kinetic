@@ -41,10 +41,8 @@ set haproxy static-mapping:
     - host: {{ grains['ip4_gw'] }}
   {% else %}
     - host: {{ pillar['danos']['endpoint'] }}
-  {% endif %}      
+  {% endif %}
 {% endif %}
-
-
 
 {% if grains['os_family'] == 'RedHat' %}
 haproxy_connect_any:
