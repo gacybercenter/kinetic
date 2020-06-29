@@ -58,8 +58,7 @@ def delete_configuration(host, username, password, path, location=None, **kwargs
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
     delete = requests.put(delete_url, headers=headers, verify=False)
     if standalone == True:
-        commit_url = "https://"+host+"/"+location+"/commit"
-        requests.post(commit_url, headers=headers, verify=False)
+        commit = commit_configuration(host, username, password, location)
         delete_session(host, username, password, location)
     return delete.text
 
@@ -77,15 +76,17 @@ def commit_configuration(host, username, password, location, **kwargs):
     commit = requests.post(url, headers=headers, verify=False)
     return commit.text
 
-def set_configuration(host, username, password, path, **kwargs):
+def set_configuration(host, username, password, path, location=None, **kwargs):
+    standalone = False
     auth_token = make_auth_token(username, password)
-    location = make_session(host, username, password)
+    if location is None:
+        standalone = True
+        location = make_session(host, username, password)
     config_url = "https://"+host+"/"+location+"/set"+path
-    commit_url = "https://"+host+"/"+location+"/commit"
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
-    delete = delete_configuration(host, username, password, path, location)
     set = requests.put(config_url, headers=headers, verify=False)
 #    compare = compare_configuration(host, username, password, location)
-    commit = commit_configuration(host, username, password, location)
-    delete_session(host, username, password, location)
+    if standalone == True:
+        commit = commit_configuration(host, username, password, location)
+        delete_session(host, username, password, location)
     return commit.text

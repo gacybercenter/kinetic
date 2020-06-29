@@ -35,12 +35,15 @@ def set_resourcegroup(name,
         current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/'+groupmap[type], **kwargs)
 
         memberlist = []
-        for member in json.loads(current_members)["children"]:
-            memberlist.append(member["name"])
+        if "children" in current_members:
+            for member in json.loads(current_members)["children"]:
+                memberlist.append(member["name"])
 
-        if (json.loads(current_description)["children"][0]["name"] == description
-        and
-        set(memberlist) == set(values)):
+        descr = ""
+        if "children" in current_description:
+            descr = json.loads(current_description)["children"][0]["name"]
+
+        if (descr == description and set(memberlist) == set(values)):
 
             ret["result"] = True
             ret["comment"] = "The "+name+" resource group is up-to-date"
@@ -48,7 +51,7 @@ def set_resourcegroup(name,
             ret["result"] = None
             ret["comment"] = "The "+name+" resource group has required changes"
             ret["changes"] = {"group":name,
-                              "current description":json.loads(current_description)["children"][0]["name"],
+                              "current description":descr,
                               "target description":description,
                               "current members":set(memberlist),
                               "target members":set(values)}
@@ -65,14 +68,19 @@ def set_resourcegroup(name,
         if "children" in current_description:
             descr = json.loads(current_description)["children"][0]["name"]
 
-        if (descr == description
-        and
-        set(memberlist) == set(values)):
 
+        if (descr == description and set(memberlist) == set(values)):
+        ### no changes needed
             ret["result"] = True
             ret["comment"] = "The "+name+" resource group is up-to-date"
+
         else:
-            __salt__["danos.delete_configuration"](host, username, password, '/resources/group/'+type+'/'+name, **kwargs)
+        ### Changes are needed
+        ### Create session to be used throughout
+            location = __salt__["danos.make_session"](host, username, password)
+            __salt__["danos.delete_configuration"](host, username, password, '/resources/group/'+type+'/'+name, location, **kwargs)
+            __salt__["danos.set_configuration"](host, username, password, '/resources/group/'+type+'/'+name, location **kwargs)
+            __salt__["danos.make_session"](host, username, password, location)
 
             ret["result"] = True
             ret["comment"] = "The "+name+" resource group has been updated"
