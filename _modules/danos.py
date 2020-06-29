@@ -63,6 +63,13 @@ def delete_configuration(host, username, password, path, location=None, **kwargs
         delete_session(host, username, password, location)
     return delete.text
 
+def compare_configuration(host, username, password, location, **kwargs):
+    auth_token = make_auth_token(username, password)
+    url = "https://"+host+"/"+location
+    headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
+    compare = requests.post("https://"+host+"/"+location+"/compare", headers=headers, verify=False)
+    return compare.text
+
 def set_configuration(host, username, password, path, **kwargs):
     auth_token = make_auth_token(username, password)
     location = make_session(host, username, password)
@@ -71,6 +78,7 @@ def set_configuration(host, username, password, path, **kwargs):
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
     delete_configuration(host, username, password, path, location)
     configuration = requests.put(config_url, headers=headers, verify=False)
+#    compare = compare_configuration(host, username, password, location)
     commit = requests.post(commit_url, headers=headers, verify=False)
     delete_session(host, username, password, location)
     return commit.text
