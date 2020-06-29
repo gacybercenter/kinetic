@@ -62,6 +62,8 @@ def delete_configuration(host, username, password, path, location=None, **kwargs
         delete_session(host, username, password, location)
     return delete.text
 
+### This function doesn't do anything and errors out.
+### See https://danosproject.atlassian.net/jira/servicedesk/projects/DAN/issues/DAN-125
 def compare_configuration(host, username, password, location, **kwargs):
     auth_token = make_auth_token(username, password)
     url = "https://"+host+"/"+location+"/compare"
@@ -82,9 +84,9 @@ def set_configuration(host, username, password, path, location=None, **kwargs):
     if location is None:
         standalone = True
         location = make_session(host, username, password)
-    config_url = "https://"+host+"/"+location+"/set"+path
+    url = "https://"+host+"/"+location+"/set"+path
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
-    set = requests.put(config_url, headers=headers, verify=False)
+    set = requests.put(url, headers=headers, verify=False)
 #   The below function call doesn't do anything because compare isn't implemented
 #   in the REST API.  See https://danosproject.atlassian.net/jira/servicedesk/projects/DAN/issues/DAN-125
 #    compare = compare_configuration(host, username, password, location)
