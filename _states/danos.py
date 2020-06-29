@@ -15,6 +15,11 @@ def set_resourcegroup(name,
                       host,
                       **kwargs):
 
+    groupmap = {"address-group": "address",
+                "dscp-group": "dscp",
+                "port-group": "port",
+                "protocol-group:" "protocol"}
+
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 
     ### If test isn't specified, assume test=false
@@ -27,7 +32,7 @@ def set_resourcegroup(name,
     ### the same, return changes dict.
     if kwargs["test"]:
         current_description = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description', **kwargs)
-        current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
+        current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/'+groupmap[type], **kwargs)
 
         memberlist = []
         for member in json.loads(current_members)["children"]:
