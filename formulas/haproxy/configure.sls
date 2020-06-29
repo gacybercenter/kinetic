@@ -13,8 +13,20 @@ spawnzero_complete:
 
 ### Gateway configuration
 {% if salt['pillar.get']('danos:enabled', False) == True %}
-echo foo:
-  cmd.run
+set haproxy group:
+  danos.set_resourcegroup:
+    - name: haproxy-group
+    - type: address-group
+    - description: list of current haproxy servers
+    - values:
+      -
+    - username: {{ pillar['danos']['username'] }}
+    - password: {{ pillar['danos_password'] }}
+  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
+    - host: {{ grains['ip4_gw'] }}
+  {% else %}
+    - host: {{ pillar['danos']['endpoint'] }}
+  {% endif %}
 {% endif %}
 
 {% if grains['os_family'] == 'RedHat' %}
