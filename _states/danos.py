@@ -63,7 +63,7 @@ def set_resourcegroup(name,
 
         descr = ""
         if "children" in current_description:
-            descr = current_description["children"][0]["name"]
+            descr = json.loads(current_description)["children"][0]["name"]
 
         if (descr == description
         and
