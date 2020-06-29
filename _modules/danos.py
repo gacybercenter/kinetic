@@ -65,16 +65,16 @@ def delete_configuration(host, username, password, path, location=None, **kwargs
 
 def compare_configuration(host, username, password, location, **kwargs):
     auth_token = make_auth_token(username, password)
-    url = "https://"+host+"/"+location
+    url = "https://"+host+"/"+location+"/compare"
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
-    compare = requests.post("https://"+host+"/"+location+"/compare", headers=headers, verify=False)
+    compare = requests.post(url, headers=headers, verify=False)
     return compare.text
 
 def commit_configuration(host, username, password, location, **kwargs):
     auth_token = make_auth_token(username, password)
     url = "https://"+host+"/"+location+"/commit"
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
-    commit = requests.post(commit_url, headers=headers, verify=False)
+    commit = requests.post(url, headers=headers, verify=False)
     return commit.text
 
 def set_configuration(host, username, password, path, **kwargs):
@@ -83,8 +83,8 @@ def set_configuration(host, username, password, path, **kwargs):
     config_url = "https://"+host+"/"+location+"/set"+path
     commit_url = "https://"+host+"/"+location+"/commit"
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
-    delete_configuration(host, username, password, path, location)
-    configuration = requests.put(config_url, headers=headers, verify=False)
+    delete = delete_configuration(host, username, password, path, location)
+    set = requests.put(config_url, headers=headers, verify=False)
 #    compare = compare_configuration(host, username, password, location)
     commit = commit_configuration(host, username, password, location)
     delete_session(host, username, password, location)
