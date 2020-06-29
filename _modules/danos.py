@@ -48,12 +48,24 @@ def get_configuration(host, username, password, path, **kwargs):
     delete_session(host, username, password, location)
     return configuration.text
 
+def delete_configuration(host, username, password, path, location, **kwargs):
+    auth_token = make_auth_token(username, password)
+    if location is None:
+        standalone = True
+        location = make_session(host, username, password)
+    url = "https://"+host+"/"+location+"/delete"+path
+    headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
+    configuration = requests.put(url, headers=headers, verify=False)
+    if standalone == True:
+            requests.post("https://"+host+"/"+location+"/commit")
+            delete_session(host, username, password, location)
+    return configuration.text
+
 def set_configuration(host, username, password, path, **kwargs):
     auth_token = make_auth_token(username, password)
     location = make_session(host, username, password)
     url = "https://"+host+"/"+location+path
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
-    drop_old_configuration = requests.put("https://"+host+"/"+location+"/delete"+path, headers=headers, verify=False)
-    write_new_configuration = requests.put(url, headers=headers, verify=False)
+    configuration = requests.put(url, headers=headers, verify=False)
     delete_session(host, username, password, location)
     return configuration.text
