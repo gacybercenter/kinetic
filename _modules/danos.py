@@ -85,6 +85,8 @@ def set_configuration(host, username, password, path, location=None, **kwargs):
     config_url = "https://"+host+"/"+location+"/set"+path
     headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
     set = requests.put(config_url, headers=headers, verify=False)
+#   The below function call doesn't do anything because compare isn't implemented
+#   in the REST API.  See https://danosproject.atlassian.net/jira/servicedesk/projects/DAN/issues/DAN-125
 #    compare = compare_configuration(host, username, password, location)
     if standalone == True:
         commit = commit_configuration(host, username, password, location)
