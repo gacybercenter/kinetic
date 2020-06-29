@@ -38,11 +38,11 @@ def set_resourcegroup(name,
         set(memberlist) == set(values)):
 
             ret["result"] = True
-            ret["comment"] = "Resource groups are up to date"
+            ret["comment"] = "The name resource group is up-to-date"
         else:
             ret["result"] = None
-            ret["comment"] = "Resource groups have required changes"
-            ret["changes"] = {"foo":"bar"}
+            ret["comment"] = "The name resource group has required changes"
+            ret["changes"] = {name:"bar"}
     else:
         current_description = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description', **kwargs)
         current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
