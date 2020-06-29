@@ -29,6 +29,10 @@ def set_resourcegroup(name,
         current_description = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description', **kwargs)
         current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
 
+        memberlist = []
+        for member in current_members:
+            memberlist.append(member["name"])
+            
         if (json.loads(current_description["configuration"])["children"][0]["name"] == description):
         # and
         # (json.loads(current_members["configuration"])["children"][0]["name"] == description)
