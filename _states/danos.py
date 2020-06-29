@@ -21,8 +21,15 @@ def set_resourcegroup(name,
         kwargs["test"] = __opts__.get("test", False)
 
     if kwargs["test"]:
+        current_description = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description', **kwargs)
+        current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
+
+        if (json.loads(current_description["configuration"])["children"][0]["name"] == description):
+        # and
+        # (json.loads(current_members["configuration"])["children"][0]["name"] == description)
+
         ret["result"] = True
-        ret["comment"] = "The resource group is alrady correctly configured"
+        ret["comment"] = str(json.loads(current_members["configuration"])["children"][0]["name"])
     else:
         current_description = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description', **kwargs)
         current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
