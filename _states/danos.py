@@ -33,9 +33,9 @@ def set_resourcegroup(name,
         for member in json.loads(current_members["configuration"])["children"]:
             memberlist.append(member["name"])
 
-        if (json.loads(current_description["configuration"])["children"][0]["name"] == description)
+        if (json.loads(current_description["configuration"])["children"][0]["name"] == description
         and
-        (set(memberlist) == set(values)):
+        set(memberlist) == set(values)):
 
             ret["result"] = True
             ret["comment"] = "Resources groups are up to date"
