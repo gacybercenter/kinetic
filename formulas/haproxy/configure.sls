@@ -19,7 +19,7 @@ set haproxy group:
     - type: address-group
     - description: list of current haproxy servers
     - values:
-      -
+      - {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - username: {{ pillar['danos']['username'] }}
     - password: {{ pillar['danos_password'] }}
   {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
