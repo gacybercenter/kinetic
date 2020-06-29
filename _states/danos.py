@@ -51,10 +51,23 @@ def set_resourcegroup(name,
         current_description = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description', **kwargs)
         current_members = __salt__["danos.get_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/address', **kwargs)
 
-        if json.loads(current_description["configuration"])["children"][0]["name"] == description:
+        memberlist = []
+        for member in json.loads(current_members["configuration"])["children"]:
+            memberlist.append(member["name"])
+
+        if (json.loads(current_description["configuration"])["children"][0]["name"] == description
+        and
+        set(memberlist) == set(values)):
+
+
             ret["result"] = True
-            ret["comment"] = "Description OK"
+            ret["comment"] = "The "+name+" resource group is up-to-date"
         else:
             ret["result"] = True
-            ret["comment"] = str(json.loads(current_description["configuration"])["children"])
+            ret["comment"] = "The "+name+" resource group has been updated"
+            ret["changes"] = {"group":name,
+                              "old description":json.loads(current_description["configuration"])["children"][0]["name"],
+                              "new description":description,
+                              "old members":set(memberlist),
+                              "new members":set(values)}
     return ret
