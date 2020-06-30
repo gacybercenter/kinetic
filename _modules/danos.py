@@ -72,6 +72,7 @@ def commit_configuration(host, username, password, location, **kwargs):
 
 def set_configuration(host, username, password, path, location=None, **kwargs):
     standalone = False
+    headers = make_auth_header(username, password)
     if location is None:
         standalone = True
         location = make_session(host, username, password)
