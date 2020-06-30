@@ -63,6 +63,11 @@ openstack.conf:
     - makedirs: True
     - template: jinja
     - defaults:
+{% if pillar['virtual']['mysql']['count'] > 1 %}
+        wsrep_on: ON
+{% else %}
+        wsrep_on: OFF
+{% endif %}
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 {% if grains['os_family'] == 'Debian' %}
         wsrep_provider: /usr/lib/libgalera_smm.so

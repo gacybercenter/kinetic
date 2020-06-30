@@ -11,6 +11,60 @@ spawnzero_complete:
 
 {% endif %}
 
+### Gateway configuration
+{% if salt['pillar.get']('danos:enabled', False) == True %}
+set haproxy group:
+  danos.set_resourcegroup:
+    - name: haproxy-group
+    - type: address-group
+    - description: list of current haproxy servers
+    - values:
+      - {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+    - username: {{ pillar['danos']['username'] }}
+    - password: {{ pillar['danos_password'] }}
+  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
+    - host: {{ grains['ip4_gw'] }}
+  {% else %}
+    - host: {{ pillar['danos']['endpoint'] }}
+  {% endif %}
+
+set nfs group:
+  danos.set_resourcegroup:
+    - name: manila-share-servers
+    - type: address-group
+    - description: list of current nfs-ganesha servers
+    - values:
+  {% for host, addresses in salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+    {%- for address in addresses -%}
+      {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+      - {{ address }}
+      {%- endif -%}
+    {%- endfor -%}
+  {% endfor %}
+    - username: {{ pillar['danos']['username'] }}
+    - password: {{ pillar['danos_password'] }}
+  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
+    - host: {{ grains['ip4_gw'] }}
+  {% else %}
+    - host: {{ pillar['danos']['endpoint'] }}
+  {% endif %}
+
+set haproxy static-mapping:
+  danos.set_statichostmapping:
+    - name: {{ pillar['haproxy']['dashboard_domain'] }}
+    - address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+    - aliases:
+      - {{ pillar['haproxy']['console_domain'] }}
+      - {{ pillar['haproxy']['docs_domain'] }}
+    - username: {{ pillar['danos']['username'] }}
+    - password: {{ pillar['danos_password'] }}
+  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
+    - host: {{ grains['ip4_gw'] }}
+  {% else %}
+    - host: {{ pillar['danos']['endpoint'] }}
+  {% endif %}
+{% endif %}
+
 {% if grains['os_family'] == 'RedHat' %}
 haproxy_connect_any:
   selinux.boolean:
@@ -27,6 +81,11 @@ acme_{{ domain }}:
     - name: {{ domain }}
     - email: {{ pillar['haproxy']['tls_email'] }}
     - renew: 14
+{% if salt['pillar.get']('danos:enabled', False) == True %}
+    - require:
+      - danos: set haproxy group
+      - danos: set haproxy static-mapping
+{% endif %}
 
 create_master_pem_{{ domain }}:
   cmd.run:
