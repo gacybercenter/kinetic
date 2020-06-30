@@ -28,6 +28,27 @@ set haproxy group:
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
 
+set nfs group:
+  danos.set_resourcegroup:
+    - name: manila-share-servers
+    - type: address-group
+    - description: list of current nfs-ganesha servers
+    - values:
+  {% for host, addresses in salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+    {%- for address in addresses -%}
+      {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+      - {{ address }}
+      {%- endif -%}
+    {%- endfor -%}
+  {% endfor %}
+    - username: {{ pillar['danos']['username'] }}
+    - password: {{ pillar['danos_password'] }}
+  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
+    - host: {{ grains['ip4_gw'] }}
+  {% else %}
+    - host: {{ pillar['danos']['endpoint'] }}
+  {% endif %}
+
 set haproxy static-mapping:
   danos.set_statichostmapping:
     - name: {{ pillar['haproxy']['dashboard_domain'] }}
@@ -64,7 +85,7 @@ acme_{{ domain }}:
     - require:
       - danos: set haproxy group
       - danos: set haproxy static-mapping
-{% endif %}      
+{% endif %}
 
 create_master_pem_{{ domain }}:
   cmd.run:
