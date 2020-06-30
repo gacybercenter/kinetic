@@ -23,7 +23,7 @@ pxe_setup:
 # target is the ip address of the bmc on the target host OR the hostname if zeroize
 # is going to be called independently
 # global lets the state know that all hosts are being rotated
-{% for uuid in pillar['hosts'][type]['uuids'] %}
+  {% for uuid in pillar['hosts'][type]['uuids'] %}
 zeroize_{{ uuid }}:
   salt.runner:
     - name: state.orchestrate
@@ -41,12 +41,12 @@ sleep_zeroize_{{ uuid }}:
     - tgt: 'salt'
     - arg:
       - sleep 1
-{% endfor %}
+  {% endfor %}
 
 # type is the type of host (compute, controller, etc.)
 # target is the mac address of the target host on what ipxe considers net0
 # global lets the state know that all hosts are being rotated
-{% for uuid in pillar['hosts'][type]['uuids'] %}
+  {% for uuid in pillar['hosts'][type]['uuids'] %}
 provision_{{ uuid }}:
   salt.runner:
     - name: state.orchestrate
@@ -64,7 +64,7 @@ sleep_provision_{{ uuid }}:
     - tgt: 'salt'
     - arg:
       - sleep 1
-{% endfor %}
+  {% endfor %}
 
 {% elif style == 'virtual' %}
 zeroize_{{ type }}:
@@ -84,19 +84,10 @@ sleep_{{ type }}:
     - arg:
       - sleep 1
 
-get_controllers_for_{{ type }}:
-  salt.function:
-    - name: cmd.shell
-    - tgt: 'salt'
-    - arg:
-      - while true ;
-        do if [ $(touch /tmp/{{ type }}_controllers ; cat /tmp/{{ type }}_controllers | wc -l) -lt {{ pillar['virtual'][type]['count'] }} ] ;
-        then salt-run manage.up tgt_type="grain" tgt="role:controller" | sed 's/^..//' | shuf >> /tmp/{{ type }}_controllers ;
-        else break ;
-        fi ;
-        done
-
-{% for host in range(pillar['virtual'][type]['count']) %}
+### Get a list of controllers and set a random offset so the assignments remain balanced
+  {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
+  {% set offset = range(controllers|length)|random %}
+  {% for host in range(pillar['virtual'][type]['count']) %}
 
 provision_{{ host }}:
   salt.runner:
@@ -104,7 +95,7 @@ provision_{{ host }}:
     - kwarg:
         mods: orch/provision
         pillar:
-          controller: __slot__:salt:cmd.run("sed '{{ loop.index }}q;d' /tmp/{{ type }}_controllers")
+          controller: {{ controllers[(loop.index0 + offset) % controllers|length] }}
           type: {{ type }}
           spawning: {{ loop.index0 }}
     - parallel: true
@@ -115,13 +106,5 @@ sleep_{{ host }}:
     - tgt: 'salt'
     - arg:
       - sleep 1
-{% endfor %}
-
-wipe_controllers_for_{{ type }}:
-  salt.function:
-    - name: cmd.run
-    - tgt: 'salt'
-    - arg:
-      - rm -f /tmp/{{ type }}_controllers
-
+  {% endfor %}
 {% endif %}
