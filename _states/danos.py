@@ -82,7 +82,7 @@ def set_resourcegroup(name,
             __salt__["danos.delete_configuration"](host, username, password, '/resources/group/'+type+'/'+name, location, **kwargs)
             __salt__["danos.set_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/description/'+quote(description), location, **kwargs)
             for value in values:
-                __salt__["danos.set_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/'+groupmap[type]+'/'+addr, location, **kwargs)
+                __salt__["danos.set_configuration"](host, username, password, '/resources/group/'+type+'/'+name+'/'+groupmap[type]+'/'+value, location, **kwargs)
             __salt__["danos.commit_configuration"](host, username, password, location)
             __salt__["danos.delete_session"](host, username, password, location)
 
