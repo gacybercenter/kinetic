@@ -1,7 +1,7 @@
 ## danos module - helper functions for danos state module
 ## could potentially be fleshed out and become formal fully-featured
 ## salt module
-import requests, urllib3, base64, json
+import requests, urllib3, base64
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
