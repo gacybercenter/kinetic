@@ -12,7 +12,7 @@ def __virtual__():
 
 def make_auth_header(username, password):
     token = base64.b64encode((username+':'+password).encode('utf-8'))
-    headers = {'Authorization': 'Basic '+auth_token.decode('utf-8')}
+    headers = {'Authorization': 'Basic '+token.decode('utf-8')}
     return headers
 
 def make_session(host, username, password):
