@@ -54,9 +54,10 @@ systemd-networkd:
 ### Management is always DHCP
 ### Public is left up, but unconfigured`
 ### Private, sfe, and sbe are assigned addresses from the sqlite db
-{% for network in pillar[srv][grains['type']]['networks'] %}
+## Check if interface is managed, if so, execute the state.  If not, exit
+{% for network in pillar[srv][grains['type']]['networks'] if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':managed', True) == True %}
 
-### There are three possible general configurations available:
+### There are four possible general configurations available:
 ### 1. Regular interface
 ### 2. Bonded interface
 ### 3. Bridged interface
@@ -122,40 +123,6 @@ systemd-networkd:
         Bridge={{ network }}_br
   {% endif %}
 
-  {% if network == 'management' %}
-
-/etc/systemd/network/{{ network }}.network:
-  file.managed:
-    - contents: |
-        [Match]
-    {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
-        Name={{ network }}_br
-    {% elif salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-        Name={{ network }}_bond
-    {% else %}
-        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
-    {% endif %}
-        [Network]
-        DHCP=yes
-
-  {% elif network =='public' %}
-
-/etc/systemd/network/{{ network }}.network:
-  file.managed:
-    - contents: |
-        [Match]
-    {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
-        Name={{ network }}_br
-    {% elif salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-        Name={{ network }}_bond
-    {% else %}
-        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
-    {% endif %}
-        [Network]
-        DHCP=no
-
-  {% else %}
-
 /etc/systemd/network/{{ network }}.network:
   file.managed:
     - replace: False
@@ -168,9 +135,15 @@ systemd-networkd:
     {% else %}
         Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
     {% endif %}
+  {% if network == 'management' %}
+        [Network]
+        DHCP=yes
+  {% elif network =='public' %}
+        [Network]
+        DHCP=no
+  {% else %}
         [Network]
         DHCP=no
         Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
-
   {% endif %}
 {% endfor %}
