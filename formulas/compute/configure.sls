@@ -8,6 +8,10 @@ include:
   file.managed:
     - source: salt://formulas/compute/files/kvm.conf
 
+/etc/frr/daemons:
+  file.managed:
+    - source: salt://formulas/frr/common/files/daemons
+
 /etc/ceph/ceph.client.compute.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-compute-keyring
