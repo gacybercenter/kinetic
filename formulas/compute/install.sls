@@ -16,7 +16,7 @@ compute_packages:
       - python3-rbd
       - python3-rados
       - frr
-      - frr-pythontools      
+      - frr-pythontools
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -49,6 +49,8 @@ compute_packages:
       - python3-rbd
       - python3-rados
       - conntrack-tools
+      - frr
+      - frr-pythontools
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 compute_packages:
@@ -63,6 +65,8 @@ compute_packages:
       - python3-rados
       - openstack-neutron-common
       - haproxy
+      - frr
+      - frr-pythontools      
 
   {% endif %}
 
