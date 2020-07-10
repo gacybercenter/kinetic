@@ -8,6 +8,10 @@ include:
   file.managed:
     - source: salt://formulas/compute/files/kvm.conf
 
+/etc/frr/daemons:
+  file.managed:
+    - source: salt://formulas/frr/common/files/daemons
+
 /etc/ceph/ceph.client.compute.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-compute-keyring
@@ -312,7 +316,7 @@ ovsdb_listen:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
 {% for network in pillar['hosts'][grains['type']]['networks'] %}
-  {% if pillar['hosts'][grains['type']]['networks'][network]['network'] == 'public' %}
+  {% if network == 'public' %}
 enable_bridge:
   cmd.run:
     - name: ovs-vsctl --may-exist add-port br-provider {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}

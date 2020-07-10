@@ -1,6 +1,7 @@
 include:
   - /formulas/openstack/common/repo
   - /formulas/ceph/common/repo
+  - /formulas/frr/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
@@ -14,6 +15,8 @@ compute_packages:
       - spice-html5
       - python3-rbd
       - python3-rados
+      - frr
+      - frr-pythontools
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -29,6 +32,8 @@ compute_packages:
       - ovn-host
       - neutron-ovn-metadata-agent
       - haproxy
+      - frr
+      - frr-pythontools
 
   {% endif %}
 
@@ -44,6 +49,8 @@ compute_packages:
       - python3-rbd
       - python3-rados
       - conntrack-tools
+      - frr
+      - frr-pythontools
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 compute_packages:
@@ -58,6 +65,8 @@ compute_packages:
       - python3-rados
       - openstack-neutron-common
       - haproxy
+      - frr
+      - frr-pythontools      
 
   {% endif %}
 
