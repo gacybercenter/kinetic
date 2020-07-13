@@ -9,10 +9,12 @@ pxe_setup:
     - highstate: true
 
 {% for type in pillar['hosts'] %}
+  {% for need in pillar['hosts'][type]['needs'] %}
 test_echo_{{ type }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
       - echo {{ type }}
+  {% endfor %}
 {% endfor %}
