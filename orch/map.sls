@@ -9,12 +9,12 @@
 #     - highstate: true
 
 {% for type in pillar['hosts'] %}
-  {% for need in salt['pillar.get']('hosts:'+type+':needs', {}) if need != {} %}
+  {% for nType, state in salt['pillar.get']('hosts:'+type+':needs', {}) if need != {} %}
 test_echo_{{ type }}_{{ need }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ type }} {{ need[need] }}
+      - echo {{ type }} {{ nType }} {{ state }}
   {% endfor %}
 {% endfor %}
