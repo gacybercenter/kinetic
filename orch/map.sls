@@ -13,7 +13,8 @@
 ## nState is the state that nType must have for the dependency to be satisfied
 {% for type in pillar['hosts'] %}
   {% for nState, nDict in salt['pillar.get']('hosts:'+type+':needs', {}).items() if nState != {} %}
-test_echo_{{ type }}_{{ nState }}_{{ nDict }}:
+  {% set foo = nDcit %}
+test_echo_{{ type }}_{{ nState }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
