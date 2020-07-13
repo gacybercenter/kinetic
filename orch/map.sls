@@ -9,14 +9,12 @@ pxe_setup:
     - highstate: true
 
 {% for type in pillar['hosts'] %}
-  {% for need in salt['pillar.get']('hosts:'+type+':needs', {}) %}
-  {% if need != {} %}
-test_echo_{{ need }}:
+  {% for need in salt['pillar.get']('hosts:'+type+':needs', {}) if need != {} %}
+test_echo_{{ type }}_{{ need }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
       - echo {{ type }} {{ need }}
-  {% endif %}
   {% endfor %}
 {% endfor %}
