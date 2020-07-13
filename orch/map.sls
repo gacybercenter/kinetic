@@ -8,17 +8,26 @@ pxe_setup:
     - tgt: 'pxe'
     - highstate: true
 
-{% for phase in pillar['map'] %}
-parallel_provision_{{ phase }}:
-  salt.parallel_runners:
-    - runners:
-  {% for type in pillar['map'][phase] %}
-        provision_{{ type }}:
-          - name: state.orchestrate
-          - kwarg:
-              mods: orch/generate
-              pillar:
-                type: {{ type }}
-                universal: True
+{% for type in pillar['hosts'] %}
+  {% for need in pillar['hosts'][type]['needs'] %}
+test_echo_{{ needs }}:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - arg:
+      - echo {{ need }} {{ needs }}
   {% endfor %}
 {% endfor %}
+
+
+# parallel_provision_{{ phase }}:
+#   salt.parallel_runners:
+#     - runners:
+#   {% for type in pillar['map'][phase] %}
+#         provision_{{ type }}:
+#           - name: state.orchestrate
+#           - kwarg:
+#               mods: orch/generate
+#               pillar:
+#                 type: {{ type }}
+#                 universal: True
