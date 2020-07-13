@@ -8,13 +8,16 @@
 #     - tgt: 'pxe'
 #     - highstate: true
 
+
+## nType is the endpoint type that the dependency is based on
+## nState is the state that nType must have for the dependency to be satisfied
 {% for type in pillar['hosts'] %}
-  {% for nType, state in salt['pillar.get']('hosts:'+type+':needs', {}).items() if nType != {} %}
-test_echo_{{ type }}_{{ nType }}_{{ state }}:
+  {% for nState, nDict in salt['pillar.get']('hosts:'+type+':needs', {}).items() if nState != {} %}
+test_echo_{{ type }}_{{ nType }}_{{ nDict }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ type }} {{ nType }} {{ state }}
+      - echo {{ type }} {{ nType }} {{ nDict }}
   {% endfor %}
 {% endfor %}
