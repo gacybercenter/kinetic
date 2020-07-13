@@ -21,6 +21,10 @@ addresses:
     - require:
       - file: /srv/salt/addresses.db
 
+/srv/thorium:
+  file.directory:
+    - makedirs: True
+
 {% for network in ['sfe', 'sbe', 'private'] %}
   {% for address in pillar['networking']['subnets'][network] | network_hosts %}
 address_population_{{ address }}:
