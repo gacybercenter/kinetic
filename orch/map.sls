@@ -15,6 +15,6 @@ test_echo_{{ type }}_{{ need }}:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ type }} {{ need }}
+      - echo {{ type }} {{ need[need] }}
   {% endfor %}
 {% endfor %}
