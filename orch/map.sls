@@ -10,11 +10,11 @@ pxe_setup:
 
 {% for type in pillar['hosts'] %}
   {% for need in pillar['hosts'][type]['needs'] %}
-test_echo_{{ needs }}:
+test_echo_{{ need }}:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ need }} {{ needs }}
+      - echo {{ type }} {{ need }}
   {% endfor %}
 {% endfor %}
