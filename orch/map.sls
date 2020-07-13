@@ -18,6 +18,6 @@ test_echo_{{ type }}_{{ nType }}_{{ nDict }}:
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ type }} {{ nType }} {{ nDict }}
+      - echo {{ type }} {{ nState }} {{ nDict }}
   {% endfor %}
 {% endfor %}
