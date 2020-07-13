@@ -21,10 +21,6 @@ addresses:
     - require:
       - file: /srv/salt/addresses.db
 
-/srv/thorium:
-  file.directory:
-    - makedirs: True
-
 {% for network in ['sfe', 'sbe', 'private'] %}
   {% for address in pillar['networking']['subnets'][network] | network_hosts %}
 address_population_{{ address }}:
@@ -40,6 +36,10 @@ address_population_{{ address }}:
       - sqlite3: addresses
   {% endfor %}
 {% endfor %}
+
+/srv/thorium:
+  file.directory:
+    - makedirs: True
 
 create_api_cert:
   cmd.run:
