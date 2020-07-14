@@ -18,4 +18,5 @@ create_{{ type }}_origin_runner:
     - name: test.sleep
     - kwarg:
         s_time: 1
+    - parallel: true
 {% endfor %}

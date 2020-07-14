@@ -56,6 +56,7 @@
     - name: test.sleep
     - kwarg:
         s_time: 1
+    - parallel: True
   {% endfor %}
 {% endfor %}
 
