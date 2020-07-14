@@ -20,10 +20,10 @@
   {% for nType in nDict %}
 {{ type }}_{{ phase }}_{{ nType }}_waiting_room_sleep:
   salt.runner:
-    - name: compare.string
+    - name: compare.phase
     - arg:
-      - foo
-      - bar
+      - targetPhase: foo
+      - currentPhase: bar
     - retry:
         interval: 30
         attempts: 2
