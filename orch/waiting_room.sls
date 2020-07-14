@@ -8,5 +8,5 @@
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ phase }} {{ needs[phase] }}
+      - echo {{ phase }} {{ needs[phase]['salt'] }}
 {% endfor %}
