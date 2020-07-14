@@ -46,17 +46,7 @@
         interval: 3
         attempts: 3
         splay: 5
+    - parallel: True
     {% endfor %}
   {% endfor %}
 {% endfor %}
-
-# {% for targetPhase, nDict in needs.items() %}
-#   {% for nType in nDict %}
-# {{ type }}_{{ targetPhase }}_{{ nType }}_waiting_room_sleep:
-#   salt.function:
-#     - name: cmd.run
-#     - tgt: salt
-#     - arg:
-#       - echo {{ targetPhase }} for {{ type }} requires that {{ nType }} reach {{ nDict[nType] }}
-#   {% endfor %}
-# {% endfor %}
