@@ -2,7 +2,7 @@
 {% set needs = pillar['needs'] %}
 
 ## Check the state of the deps for this service
-{% for phase in needs %}
+{% for phase in needs|dictsort %}
 {{ type }}_{{ phase }}_waiting_room_sleep:
   salt.function:
     - name: cmd.run
