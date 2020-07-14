@@ -14,9 +14,9 @@ create_{{ type }}_origin_runner:
     - parallel: true
 
 {{ type }}_origin_runner_delay:
-  salt.runner:
+  salt.function:
     - name: test.sleep
+    - tgt: salt
     - kwarg:
-        s_time: 1
-    - parallel: true
+        length: 1
 {% endfor %}

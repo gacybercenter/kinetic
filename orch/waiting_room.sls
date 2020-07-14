@@ -52,11 +52,11 @@
       - {{ type }}_signal_start
 
 {{ type }}_{{ targetPhase }}_{{ nType }}_phase_check_loop_delay:
-  salt.runner:
+  salt.function:
     - name: test.sleep
+    - tgt: salt
     - kwarg:
-        s_time: 1
-    - parallel: True
+        length: 1
   {% endfor %}
 {% endfor %}
 
