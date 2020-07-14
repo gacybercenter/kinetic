@@ -20,7 +20,7 @@
   {% for nType in nDict %}
 {{ type }}_{{ phase }}_{{ nType }}_waiting_room_sleep:
   salt.runner:
-    - name: compare.phase
+    - name: compare.string
     - kwarg:
         targetString: foo
         currentString: bar
