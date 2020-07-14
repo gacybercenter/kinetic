@@ -1,7 +1,7 @@
 {% set nType = pillar['nType'] %}
 {% set nDict = pillar['nDict'] %}
 
-{% for host, currentPhase in {{ salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase') %}
+{% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase') %}
 {{ host }}_phase_check:
   salt.runner:
     - name: compare.string
