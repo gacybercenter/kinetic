@@ -8,5 +8,5 @@
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ phase|dictsort }}
+      - echo "{{ phase }}"
 {% endfor %}
