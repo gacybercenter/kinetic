@@ -16,16 +16,17 @@
 ## nDict[nType]: The state needed for nType to satisfy that dependency.
 ## in the above example, it would be install for foo and configure for bar
 
-{% for phase, nDict in needs.items() %}
+{% for targetPhase, nDict in needs.items() %}
   {% for nType in nDict %}
-{{ type }}_{{ phase }}_{{ nType }}_waiting_room_sleep:
+    {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase') %}
+{{ type }}_{{ targetPhase }}_{{ nType }}_{{ host }}_phase_checker:
   salt.runner:
     - name: compare.string
     - kwarg:
-        targetString: foo
-        currentString: bar
+        targetString: {{ targetPhase }}
+        currentString: {{ currentPhase }}
     - retry:
-        interval: 10
+        interval: 3
         attempts: 3
         splay: 5
   {% endfor %}
