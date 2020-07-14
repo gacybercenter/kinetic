@@ -23,7 +23,7 @@
   salt.runner:
     - name: compare.string
     - kwarg:
-        targetString: {{ targetPhase }}
+        targetString: {{ nDict[nType] }}
         currentString: {{ currentPhase }}
     - retry:
         interval: 3
