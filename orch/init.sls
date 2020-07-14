@@ -2,7 +2,7 @@
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined later
 {% for type in pillar['hosts'] %}
-create_type_origin_runner:
+create_{{ type }}_origin_runner:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
