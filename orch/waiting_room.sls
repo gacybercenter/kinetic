@@ -51,11 +51,11 @@
     - require_in:
       - {{ type }}_signal_start
 
-{{ type }}_origin_runner_delay:
+{{ type }}_{{ targetPhase }}_{{ nType }}_phase_check_loop_delay:
   salt.runner:
     - name: test.sleep
     - kwarg:
-        s_time: 1      
+        s_time: 1
   {% endfor %}
 {% endfor %}
 
