@@ -9,6 +9,6 @@
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ type }} needs {{ nType }} to be {{ phase['nType'] }} to reach {{ phase }}
+      - echo {{ type }} needs {{ nType }} to be {{ needs[phase][nType] }} to reach {{ phase }}
   {% endfor %}
 {% endfor %}
