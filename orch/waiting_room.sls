@@ -25,8 +25,9 @@
       - foo
       - bar
     - retry:
-        interval: 2
-        attempts: 3
+        interval: 30
+        attempts: 2
+        splay: 5
   {% endfor %}
 {% endfor %}
 
