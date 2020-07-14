@@ -1,4 +1,4 @@
-{% for host, currentPhase in pillar['currentPhases'] %}
+{% for host, currentPhase in pillar['currentPhases']|dictsort %}
 {{ host }}_phase_check:
   salt.runner:
     - name: compare.string
