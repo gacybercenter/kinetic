@@ -50,6 +50,8 @@
     - parallel: True
     - require_in:
       - {{ type }}_signal_start
+    - onfail_in:
+      - {{ type }}_signal_nostart
 
 {{ type }}_{{ targetPhase }}_{{ nType }}_phase_check_loop_delay:
   salt.function:
@@ -60,9 +62,16 @@
   {% endfor %}
 {% endfor %}
 
+{{ type }}_signal_nostart:
+  salt.function:
+    - name: log.error
+    - tgt: salt
+    - arg:
+        - {{ type }} failed to start the orch routine!
+
 {{ type }}_signal_start:
   salt.function:
     - name: log.warning
     - tgt: salt
-    - arg:
-        - {{ type }} is starting the orch routine!
+    - kwarg:
+        message: {{ type }} is starting the orch routine!
