@@ -18,7 +18,7 @@
 
 {% for targetPhase, nDict in needs.items() %}
   {% for nType in nDict %}
-    {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase') %}
+    {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort() %}
 {{ type }}_{{ targetPhase }}_{{ nType }}_{{ host }}_phase_checker:
   salt.runner:
     - name: compare.string
