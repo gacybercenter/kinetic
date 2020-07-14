@@ -37,7 +37,7 @@ address_population_{{ address }}:
   {% endfor %}
 {% endfor %}
 
-/srv/thorium:
+/srv/runners:
   file.directory:
     - makedirs: True
 

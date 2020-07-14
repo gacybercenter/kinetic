@@ -18,6 +18,7 @@
 
 {% for phase, nDict in needs.items() %}
   {% for nType in nDict %}
+    {% for host, build_phase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase') %}
 {{ type }}_{{ phase }}_{{ nType }}_waiting_room_sleep:
   salt.function:
     - name: cmd.run
