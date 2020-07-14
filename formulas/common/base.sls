@@ -14,8 +14,7 @@ initial_module_sync:
 {% endif %}
 
 build_phase:
-  grains.present:
-    - value: noPhase
+  grains.exists
 
 type:
   grains.present:
