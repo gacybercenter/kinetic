@@ -62,6 +62,7 @@
   {% endfor %}
 {% endfor %}
 
+## dummy placeholder for some kind of secondary retry mechanism
 {{ type }}_signal_nostart:
   salt.function:
     - name: log.error
@@ -69,6 +70,7 @@
     - arg:
         - {{ type }} failed to start the orch routine!
 
+## dummy placeholder for actual calling of orch.generate
 {{ type }}_signal_start:
   salt.function:
     - name: log.info
