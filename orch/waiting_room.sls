@@ -62,7 +62,7 @@
 
 {{ type }}_signal_start:
   salt.function:
-    - name: cmd.run
+    - name: log.info
     - tgt: salt
-    - arg:
-      - echo {{ type }} is starting the orch routine!
+    - kwarg:
+        message: {{ type }} is starting the orch routine!
