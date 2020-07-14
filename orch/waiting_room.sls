@@ -62,7 +62,7 @@
 
 {{ type }}_signal_start:
   salt.function:
-    - name: log.info
+    - name: log.warning
     - tgt: salt
-    - kwarg:
-        message: {{ type }} is starting the orch routine!
+    - arg:
+        - {{ type }} is starting the orch routine!
