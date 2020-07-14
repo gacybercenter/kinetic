@@ -23,7 +23,7 @@
     - name: compare.string
     - arg:
       - foo
-      - foo
+      - bar
   {% endfor %}
 {% endfor %}
 
