@@ -49,10 +49,11 @@ salt.runner:
   - parallel: True
     {% endfor %}
   {% endfor %}
+{% endfor %}
+
 {{ type }}_signal_start:
   salt.function:
     - name: cmd.run
     - tgt: salt
     - arg:
       - echo {{ type }} is starting the orch routine!
-{% endfor %}
