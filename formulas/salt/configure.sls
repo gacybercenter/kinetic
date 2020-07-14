@@ -41,6 +41,10 @@ address_population_{{ address }}:
   file.directory:
     - makedirs: True
 
+/srv/runners/compare.py:
+  file.managed:
+    - source: salt://_runners/compare.py
+
 create_api_cert:
   cmd.run:
     - name: "salt-call --local tls.create_self_signed_cert"
