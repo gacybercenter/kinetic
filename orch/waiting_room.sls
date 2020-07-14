@@ -22,8 +22,8 @@
   salt.runner:
     - name: compare.phase
     - kwarg:
-        targetPhase: foo
-        currentPhase: bar
+        targetString: foo
+        currentString: bar
     - retry:
         interval: 30
         attempts: 2
