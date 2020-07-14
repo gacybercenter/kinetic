@@ -35,7 +35,7 @@
 
 {% for targetPhase, nDict in needs.items() %}
   {% for nType in nDict %}
-{{ type }}_{{ targetPhase }}_{{ nType }}_{{ host }}_phase_check_loop:
+{{ type }}_{{ targetPhase }}_{{ nType }}_phase_check_loop:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
