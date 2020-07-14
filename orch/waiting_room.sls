@@ -29,6 +29,7 @@
         interval: 3
         attempts: 3
         splay: 5
+    {% endfor %}
   {% endfor %}
 {% endfor %}
 
