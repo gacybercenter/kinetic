@@ -10,4 +10,5 @@
     - tgt: salt
     - arg:
       - echo {{ phase }} {{ nDict[nType] }}
+  {% endfor %}
 {% endfor %}
