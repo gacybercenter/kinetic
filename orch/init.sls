@@ -10,7 +10,7 @@ create_{{ type }}_origin_runner:
         mods: orch/waiting_room
         pillar:
           type: {{ type }}
-          needs: {{ salt['pillar.get']('hosts:'+type+':needs', {}).items() }}
+          needs: {{ salt['pillar.get']('hosts:'+type+':needs', {}) }}
     - parallel: true
 
 {{ type }}_origin_runner_delay:
