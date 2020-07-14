@@ -10,5 +10,5 @@ def string(targetString, currentString):
         ret = True
     else:
         __context__["retcode"] = 1
-        result = "Got "+currentString+" but looking for "+targetString
+        ret = "Got "+currentString+" but looking for "+targetString
     return ret
