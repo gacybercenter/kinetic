@@ -41,7 +41,7 @@
     - kwarg:
         mods: orch/phasecheck
         pillar:
-          currentPhases: {{ salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase',)|dictsort() }}
+          currentPhases: {{ salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort() }}
     - retry:
         interval: 3
         attempts: 3
