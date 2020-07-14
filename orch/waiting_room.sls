@@ -25,8 +25,8 @@
         targetString: foo
         currentString: bar
     - retry:
-        interval: 30
-        attempts: 2
+        interval: 10
+        attempts: 3
         splay: 5
   {% endfor %}
 {% endfor %}
