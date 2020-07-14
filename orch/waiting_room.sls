@@ -24,6 +24,9 @@
     - arg:
       - foo
       - bar
+    - retry:
+        interval: 2
+        attempts: 3
   {% endfor %}
 {% endfor %}
 
