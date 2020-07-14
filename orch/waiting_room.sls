@@ -1,5 +1,5 @@
 {% set type = pillar['type'] %}
-{% set needs = pillar['needs'] %}
+{% set needs = pillar['needs']|dictsort() %}
 
 ## Check the state of the deps for this service
 {% for phase in needs %}
@@ -8,5 +8,5 @@
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ phase }} {{ needs|dictsort() }}
+      - echo {{ phase }} {{ needs }}
 {% endfor %}
