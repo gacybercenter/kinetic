@@ -9,6 +9,6 @@
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ phase }} {{ nDict[nType] }}
+      - echo {{ phase }} for {{ type }} requires that {{ nType }} reach {{ nDict[nType] }}
   {% endfor %}
 {% endfor %}
