@@ -21,9 +21,9 @@
 {{ type }}_{{ phase }}_{{ nType }}_waiting_room_sleep:
   salt.runner:
     - name: compare.phase
-    - arg:
-      - targetPhase: foo
-      - currentPhase: bar
+    - kwarg:
+        targetPhase: foo
+        currentPhase: bar
     - retry:
         interval: 30
         attempts: 2
