@@ -16,30 +16,30 @@
 ## nDict[nType]: The state needed for nType to satisfy that dependency.
 ## in the above example, it would be install for foo and configure for bar
 
-{% for targetPhase, nDict in needs.items() %}
-  {% for nType in nDict %}
-    {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort() %}
-{{ type }}_{{ targetPhase }}_{{ nType }}_{{ host }}_phase_checker:
-  salt.runner:
-    - name: compare.string
-    - kwarg:
-        targetString: {{ nDict[nType] }}
-        currentString: {{ currentPhase }}
-    - retry:
-        interval: 3
-        attempts: 3
-        splay: 5
-    {% endfor %}
-  {% endfor %}
-{% endfor %}
-
-# {% for phase, nDict in needs.items() %}
+# {% for targetPhase, nDict in needs.items() %}
 #   {% for nType in nDict %}
-# {{ type }}_{{ phase }}_{{ nType }}_waiting_room_sleep:
-#   salt.function:
-#     - name: cmd.run
-#     - tgt: salt
-#     - arg:
-#       - echo {{ phase }} for {{ type }} requires that {{ nType }} reach {{ nDict[nType] }}
+#     {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort() %}
+# {{ type }}_{{ targetPhase }}_{{ nType }}_{{ host }}_phase_checker:
+#   salt.runner:
+#     - name: compare.string
+#     - kwarg:
+#         targetString: {{ nDict[nType] }}
+#         currentString: {{ currentPhase }}
+#     - retry:
+#         interval: 3
+#         attempts: 3
+#         splay: 5
+#     {% endfor %}
 #   {% endfor %}
 # {% endfor %}
+
+{% for targetPhase, nDict in needs.items() %}
+  {% for nType in nDict %}
+{{ type }}_{{ targetPhase }}_{{ nType }}_waiting_room_sleep:
+  salt.function:
+    - name: cmd.run
+    - tgt: salt
+    - arg:
+      - echo {{ targetPhase }} for {{ type }} requires that {{ nType }} reach {{ nDict[nType] }}
+  {% endfor %}
+{% endfor %}
