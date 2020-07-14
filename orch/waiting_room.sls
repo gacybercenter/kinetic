@@ -8,5 +8,5 @@
     - name: cmd.run
     - tgt: salt
     - arg:
-      - echo {{ type }} needs {{ need|dictsort }} to be to reach {{ phase }}
+      - echo {{ type }} needs {{ need }} to be to reach {{ phase }}
 {% endfor %}
