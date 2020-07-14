@@ -35,19 +35,18 @@
 
 {% for targetPhase, nDict in needs.items() %}
   {% for nType in nDict %}
-    {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase',)|dictsort() %}
 {{ type }}_{{ targetPhase }}_{{ nType }}_{{ host }}_phase_check_loop:
   salt.runner:
-    - name: compare.string
+    - name: state.orchestrate
     - kwarg:
-        targetString: {{ nDict[nType] }}
-        currentString: {{ currentPhase }}
+        mods: orch/phasecheck
+        pillar:
+          currentPhases: {{ salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase',)|dictsort() }}
     - retry:
         interval: 3
         attempts: 3
         splay: 5
     - parallel: True
-    {% endfor %}
   {% endfor %}
 {% endfor %}
 
