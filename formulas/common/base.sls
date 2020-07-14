@@ -13,6 +13,10 @@ initial_module_sync:
   {% set type = opts.id %}
 {% endif %}
 
+build_phase:
+  grains.present:
+    - value: noPhase
+
 type:
   grains.present:
     - value: {{ type }}
