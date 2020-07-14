@@ -49,7 +49,7 @@
         splay: 5
     - parallel: True
     - require_in:
-      {{ type }}_signal_start
+      - {{ type }}_signal_start
   {% endfor %}
 {% endfor %}
 
