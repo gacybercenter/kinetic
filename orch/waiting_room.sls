@@ -44,8 +44,8 @@
           nDict: {{ nDict }}
           nType: {{ nType }}
     - retry:
-        interval: 30
-        attempts: 5
+        interval: 3
+        attempts: 3
         splay: 5
     - parallel: True
     - require_in:
