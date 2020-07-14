@@ -11,4 +11,4 @@ def string(s1, s2):
     else:
         __context__["retcode"] = 1
         ret = False
-    return ret
+    return result
