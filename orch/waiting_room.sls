@@ -37,16 +37,16 @@
   {% for nType in nDict %}
     {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase',)|dictsort() %}
 {{ type }}_{{ targetPhase }}_{{ nType }}_{{ host }}_phase_check_loop:
-salt.runner:
-  - name: compare.string
-  - kwarg:
-      targetString: {{ nDict[nType] }}
-      currentString: {{ currentPhase }}
-  - retry:
-      interval: 3
-      attempts: 3
-      splay: 5
-  - parallel: True
+  salt.runner:
+    - name: compare.string
+    - kwarg:
+        targetString: {{ nDict[nType] }}
+        currentString: {{ currentPhase }}
+    - retry:
+        interval: 3
+        attempts: 3
+        splay: 5
+    - parallel: True
     {% endfor %}
   {% endfor %}
 {% endfor %}
