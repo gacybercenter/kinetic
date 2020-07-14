@@ -7,6 +7,8 @@ def string(s1, s2):
     much utility beyond comparing grains, etc.
     """
     if s1 == s2:
-        return True
+        ret = True
     else:
-        return False
+        __context__["retcode"] = 1
+        ret = False
+    return ret
