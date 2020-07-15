@@ -1,6 +1,6 @@
 {% set type = pillar['type'] %}
 
-{% for phase in ['configure'] %}
+{% for phase in ['base', 'networking', 'install', 'configure'] %}
 
 wait_for_start_authorization_{{ type }}-{{ phase }}:
   salt.wait_for_event:
