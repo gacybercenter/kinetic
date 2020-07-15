@@ -44,9 +44,9 @@
           nDict: {{ nDict }}
           nType: {{ nType }}
     - retry:
-        interval: 3
-        attempts: 3
-        splay: 5
+        interval: 1
+        attempts: 2
+        splay: 1
     - parallel: True
     - require_in:
       - {{ type }}_signal_start
