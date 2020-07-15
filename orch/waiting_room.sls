@@ -45,7 +45,7 @@
           type: {{ type }}
     - parallel: True
     - retry:
-        interval: 1
+        interval: 3
         attempts: 2
         splay: 1
 
