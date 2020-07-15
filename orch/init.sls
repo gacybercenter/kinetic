@@ -5,7 +5,7 @@
 {% for type in pillar['hosts'] %}
   {% for phase in ['base', 'networking', 'install', 'configure'] %}
 
-create_{{ type }}_origin_exec_runner:
+create_{{ type }}_{{ phase }}_origin_exec_runner:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
