@@ -7,7 +7,7 @@ def string(targetString, currentString):
     much utility beyond comparing grains, etc.
     """
     if targetString == currentString:
-        ret = __context__.keys()
+        ret = True
     else:
         __context__["retcode"] = 1
         ret = "Got "+currentString+" but looking for "+targetString
