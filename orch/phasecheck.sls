@@ -8,5 +8,4 @@
     - kwarg:
         targetString: {{ nDict[nType] }}
         currentString: {{ currentPhase }}
-    - parallel: True
 {% endfor %}
