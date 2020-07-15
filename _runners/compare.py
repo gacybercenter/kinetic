@@ -7,9 +7,8 @@ def string(targetString, currentString):
     much utility beyond comparing grains, etc.
     """
     if targetString == currentString:
-        ret = True
+        ret = __context__.keys()
     else:
         __context__["retcode"] = 1
-        __context__["errorinfo"] = "Something bad happened"
         ret = "Got "+currentString+" but looking for "+targetString
     return ret
