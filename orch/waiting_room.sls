@@ -46,15 +46,15 @@
     - parallel: True
     - retry:
         interval: 5
-        attempts: 2
-        splay: 5
+        attempts: 3
+        splay: 10
 
 {{ type }}_{{ targetPhase }}_phase_check_init_delay:
   salt.function:
     - name: test.sleep
     - tgt: salt
     - kwarg:
-        length: 2
+        length: 1
 
 {{ type }}_{{ targetPhase }}_signal_start:
   salt.function:
