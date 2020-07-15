@@ -34,32 +34,27 @@
 ## nDict[nType]: The state needed for nType to satisfy that dependency (base, networking, install, or configure).
 
 {% for targetPhase, nDict in needs.items() %}
-  {% for nType in nDict %}
-{{ type }}_{{ targetPhase }}_{{ nType }}_phase_check_loop:
+{{ type }}_{{ targetPhase }}_phase_check_init:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
         mods: orch/phasecheck
         pillar:
           nDict: {{ nDict }}
-          nType: {{ nType }}
+          targetPhase: {{ targetPhase }}
+          type: {{ type }}
+    - parallel: True
     - retry:
         interval: 1
         attempts: 2
         splay: 1
-    - parallel: True
-    - require_in:
-      - {{ type }}_signal_start
-    - onfail_in:
-      - {{ type }}_signal_nostart
 
-{{ type }}_{{ targetPhase }}_{{ nType }}_phase_check_loop_delay:
+{{ type }}_{{ targetPhase }}_phase_check_init_delay:
   salt.function:
     - name: test.sleep
     - tgt: salt
     - kwarg:
         length: 1
-  {% endfor %}
 {% endfor %}
 
 ## dummy placeholder for some kind of secondary retry mechanism
