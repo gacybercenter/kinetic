@@ -66,14 +66,14 @@
 
 {% endfor %}
 
-{% for phase in ['base', 'networking', 'install', 'configure'] %}
+{% for phase in ['configure'] %}
 
 wait_for_start_authorization_{{ type }}-{{ phase }}:
   salt.wait_for_event:
     - name: {{ type }}/{{ phase }}/auth/start
     - id_list:
       - salt
-    - timeout: 1200
+    - timeout: 30
 
 {{ type }}_{{ phase }}_exec:
   salt.runner:
