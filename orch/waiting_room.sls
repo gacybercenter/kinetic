@@ -57,10 +57,11 @@
     - tgt: salt
     - kwarg:
         length: 1
-{% endfor %}
 
 {{ type }}_{{ targetPhase }}_start_signal:
   salt.runner:
     - name: event.send
     - kwarg:
         tag: {{ type }}/{{ targetPhase }}/auth/Start
+        
+{% endfor %}
