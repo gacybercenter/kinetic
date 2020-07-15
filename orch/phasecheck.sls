@@ -3,7 +3,7 @@
 {% set type = pillar['type'] %}
 
 {% for nType in nDict %}
-{{ type }}_{{ nType }}_phase_check_loop:
+{{ type }}_{{ targetPhase}}_{{ nType }}_phase_check_loop:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
@@ -13,7 +13,7 @@
           nType: {{ nType }}
     - parallel: True
 
-{{ type }}_{{ targetPhase }}_phase_check_loop_delay:
+{{ type }}_{{ targetPhase }}_{{ nType }}_phase_check_loop_delay:
   salt.function:
     - name: test.sleep
     - tgt: salt
