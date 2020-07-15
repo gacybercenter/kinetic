@@ -14,3 +14,14 @@ cryptography_pip:
     - name: cryptography
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
+
+set_buildphase_install:
+  grains.present:
+    - name: build_phase
+    - value: install
+    - require:
+      - pip: cryptography_pip
+      - pkg: salt_pkgs
+    - onchanges:
+      - pip: cryptography_pip
+      - pkg: salt_pkgs
