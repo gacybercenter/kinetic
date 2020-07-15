@@ -6,7 +6,7 @@ wait_for_start_authorization_{{ type }}-{{ phase }}:
     - name: {{ type }}/{{ phase }}/auth/start
     - id_list:
       - {{ phase }}
-    - timeout: 7200
+    - timeout: 30
 
 {{ type }}_{{ phase }}_exec:
   salt.runner:
