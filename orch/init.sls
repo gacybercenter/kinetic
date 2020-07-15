@@ -7,10 +7,19 @@ create_{{ type }}_origin_runner:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
-        mods: orch/waiting_room
+        mods: orch/phasewait
         pillar:
           type: {{ type }}
           needs: {{ salt['pillar.get']('hosts:'+type+':needs', {}) }}
+    - parallel: true
+
+create_{{ type }}_origin_runner:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/waiting_room
+        pillar:
+          type: {{ type }}
     - parallel: true
 
 {{ type }}_origin_runner_delay:
