@@ -48,6 +48,8 @@
         interval: 0
         attempts: 1
         splay: 0
+    - require_in:
+      - {{ type }}_{{ targetPhase }}_start_signal
 
 {{ type }}_{{ targetPhase }}_phase_check_init_delay:
   salt.function:
@@ -57,18 +59,8 @@
         length: 1
 {% endfor %}
 
-## dummy placeholder for some kind of secondary retry mechanism
-{{ type }}_signal_nostart:
-  salt.function:
-    - name: log.error
-    - tgt: salt
-    - arg:
-        - {{ type }} failed to start the orch routine!
-
-## dummy placeholder for actual calling of orch.generate
-{{ type }}_signal_start:
-  salt.function:
-    - name: log.info
-    - tgt: salt
+{{ type }}_{{ targetPhase }}_start_signal:
+  salt.runner:
+    - name: event.send
     - kwarg:
-        message: {{ type }} is starting the orch routine!
+        tag: {{ type }}/{{ targetPhase }}/auth/Start
