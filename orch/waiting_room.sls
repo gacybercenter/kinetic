@@ -1,6 +1,5 @@
 {% set type = pillar['type'] %}
-
-{% for phase in ['base', 'networking', 'install', 'configure'] %}
+{% set phase = pillar['phase'] %}
 
 wait_for_start_authorization_{{ type }}-{{ phase }}:
   salt.wait_for_event:
@@ -14,5 +13,3 @@ wait_for_start_authorization_{{ type }}-{{ phase }}:
     - name: test.sleep
     - kwarg:
         s_time: 1
-
-{% endfor %}
