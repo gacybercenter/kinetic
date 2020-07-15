@@ -63,6 +63,7 @@
     - name: event.send
     - kwarg:
         tag: {{ type }}/{{ targetPhase }}/auth/start
+        data: '{"id": "{{ targetPhase }}"}'
 
 {% endfor %}
 
@@ -72,7 +73,7 @@ wait_for_start_authorization_{{ type }}-{{ phase }}:
   salt.wait_for_event:
     - name: {{ type }}/{{ phase }}/auth/start
     - id_list:
-      - salt
+      - {{ phase }}
     - timeout: 30
 
 {{ type }}_{{ phase }}_exec:
