@@ -55,29 +55,6 @@
     - tgt: salt
     - kwarg:
         length: 1
-
-{{ type }}_{{ targetPhase }}_signal_start:
-  salt.function:
-    - name: log.info
-    - tgt: salt
-    - kwarg:
-        message: {{ type }} is starting the {{ targetPhase}} phase!
-    - require:
-      - {{ type }}_{{ targetPhase }}_phase_check_init
-    - require_in:
-      - {{ type }}_signal_start
-
-{{ type }}_{{ targetPhase }}_signal_fail:
-  salt.function:
-    - name: log.error
-    - tgt: salt
-    - kwarg:
-        message: {{ type }} failed to start the {{ targetPhase}} phase!
-    - onfail:
-      - {{ type }}_{{ targetPhase }}_phase_check_init
-    - onfail_in:
-      - {{ type }}_signal_nostart
-
 {% endfor %}
 
 ## dummy placeholder for some kind of secondary retry mechanism
