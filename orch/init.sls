@@ -15,7 +15,7 @@ create_{{ type }}_{{ phase }}_origin_exec_runner:
           phase: {{ phase }}
     - parallel: true
 
-{{ type }}_origin_exec_runner_delay:
+{{ type }}_{{ phase }}_origin_exec_runner_delay:
   salt.function:
     - name: test.sleep
     - tgt: salt
