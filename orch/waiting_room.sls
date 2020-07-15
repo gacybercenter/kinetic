@@ -62,6 +62,16 @@
   salt.runner:
     - name: event.send
     - kwarg:
-        tag: {{ type }}/{{ targetPhase }}/auth/Start
-        
+        tag: {{ type }}/{{ targetPhase }}/auth/start
+
+{% endfor %}
+
+{% for phase in ['base', 'networking', 'install', 'configure'] %}
+
+{{ type }}_{{ phase }}_exec:
+  salt.runner:
+    - name: test.sleep
+    - kwarg:
+        s_time: 1
+
 {% endfor %}
