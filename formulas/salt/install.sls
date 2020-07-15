@@ -7,6 +7,7 @@ salt_pkgs:
       - sqlite3
       - haveged
       - curl
+      - python3-pygit2
     - reload_modules: True
 
 cryptography_pip:
