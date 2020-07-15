@@ -3,6 +3,7 @@
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
 ## in the waiting room
 {% for type in pillar['hosts'] %}
+
 create_{{ type }}_origin_phase_runner:
   salt.runner:
     - name: state.orchestrate
@@ -28,11 +29,5 @@ create_{{ type }}_origin_exec_runner:
         pillar:
           type: {{ type }}
     - parallel: true
-
-{{ type }}_origin_exec_runner_delay:
-  salt.function:
-    - name: test.sleep
-    - tgt: salt
-    - kwarg:
-        length: 1
+    
 {% endfor %}
