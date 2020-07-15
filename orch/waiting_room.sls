@@ -54,7 +54,7 @@
     - name: test.sleep
     - tgt: salt
     - kwarg:
-        length: 1
+        length: 2
 
 {{ type }}_{{ targetPhase }}_signal_start:
   salt.function:

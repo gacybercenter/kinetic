@@ -18,5 +18,5 @@
     - name: test.sleep
     - tgt: salt
     - kwarg:
-        length: 1
+        length: 2
 {% endfor %}
