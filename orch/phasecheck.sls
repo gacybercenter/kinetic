@@ -3,7 +3,7 @@
 {% set type = pillar['type'] %}
 
 {% for nType in nDict %}
-{{type }}_{{ ntype }}_phase_check_loop:
+{{ type }}_{{ nType }}_phase_check_loop:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
