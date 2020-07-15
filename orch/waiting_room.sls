@@ -81,7 +81,7 @@
 {% endfor %}
 
 ## dummy placeholder for some kind of secondary retry mechanism
-{{ type }}_{{ targetPhase }}_signal_nostart:
+{{ type }}_signal_nostart:
   salt.function:
     - name: log.error
     - tgt: salt
