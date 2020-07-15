@@ -50,7 +50,7 @@
         splay: 0
     - require_in:
       - {{ type }}_{{ targetPhase }}_start_signal
-    - fire_event: {{ type }}/{{ targetPhase }}/auth/start
+    - fire_event: WORKING
 
 {{ type }}_{{ targetPhase }}_phase_check_init_delay:
   salt.function:
