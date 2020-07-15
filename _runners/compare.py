@@ -10,5 +10,6 @@ def string(targetString, currentString):
         ret = True
     else:
         __context__["retcode"] = 1
+        __context__["errorinfo"] = "Something bad happened"
         ret = "Got "+currentString+" but looking for "+targetString
     return ret
