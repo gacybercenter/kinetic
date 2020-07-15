@@ -50,6 +50,7 @@
         splay: 0
     - require_in:
       - {{ type }}_{{ targetPhase }}_start_signal
+    - fire_event: {{ type }}/{{ targetPhase }}/auth/start
 
 {{ type }}_{{ targetPhase }}_phase_check_init_delay:
   salt.function:
@@ -58,15 +59,22 @@
     - kwarg:
         length: 1
 
-{{ type }}_{{ targetPhase }}_start_signal:
-  salt.runner:
-    - name: event.send
-    - kwarg:
-        tag: {{ type }}/{{ targetPhase }}/auth/start
+# {{ type }}_{{ targetPhase }}_start_signal:
+#   salt.runner:
+#     - name: event.send
+#     - kwarg:
+#         tag: {{ type }}/{{ targetPhase }}/auth/start
 
 {% endfor %}
 
 {% for phase in ['base', 'networking', 'install', 'configure'] %}
+
+wait_for_start_authorization_{{ type }}-{{ phase }}:
+  salt.wait_for_event:
+    - name: {{ type }}/{{ targetPhase }}/auth/start
+    - id_list:
+      - salt
+    - timeout: 1200
 
 {{ type }}_{{ phase }}_exec:
   salt.runner:
