@@ -63,7 +63,8 @@
     - name: event.send
     - kwarg:
         tag: {{ type }}/{{ targetPhase }}/auth/start
-        data: '{"id": "{{ targetPhase }}"}'
+        data:
+          id: {{ targetPhase }}
 
 {% endfor %}
 
