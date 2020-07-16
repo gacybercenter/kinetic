@@ -37,6 +37,18 @@ wait_for_start_authorization_{{ type }}-{{ phase }}:
       - wait_for_start_authorization_{{ type }}-{{ phase }}
 {% endfor %}
 
+{% if phase == 'configure ' %}
+
+orch_{{ type }}_{{ phase }}_exec_runner:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/generate
+        pillar:
+          type: {{ type }}
+
+{% endif %}
+
 {{ type }}_{{ phase }}_exec:
   salt.runner:
     - name: test.sleep
