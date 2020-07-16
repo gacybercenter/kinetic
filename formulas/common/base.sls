@@ -14,7 +14,11 @@ initial_module_sync:
 {% endif %}
 
 build_phase:
-  grains.exists
+  grains.present:
+    - value: base
+    - unless:
+      - fun: grains.has_value
+        key: build_phase
 
 type:
   grains.present:
