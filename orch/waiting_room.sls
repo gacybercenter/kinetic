@@ -46,6 +46,8 @@ orch_{{ type }}_{{ phase }}_exec_runner:
         mods: orch/generate
         pillar:
           type: {{ type }}
+    - require:
+      - wait_for_start_authorization_{{ type }}-configure
 
 {% endif %}
 
