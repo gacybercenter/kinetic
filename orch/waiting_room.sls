@@ -37,7 +37,7 @@ wait_for_start_authorization_{{ type }}-{{ phase }}:
       - wait_for_start_authorization_{{ type }}-{{ phase }}
 {% endfor %}
 
-{% if phase == 'configure ' %}
+{% if phase == 'configure' %}
 
 orch_{{ type }}_{{ phase }}_exec_runner:
   salt.runner:
