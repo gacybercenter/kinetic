@@ -7,11 +7,11 @@
 ### resolve all lower level dependencies if they themselves
 ### get resolved.  This prevents the need for manual definition
 ### of all phase dependencies
-{% if phase = configure %}
+{% if phase == 'configure' %}
   {% set children = ['install', 'networking', 'base'] %}
-{% elif phase = install %}
+{% elif phase == 'install' %}
   {% set children = ['networking', 'base'] %}
-{% elif phase = networking %}
+{% elif phase == 'networking' %}
   {% set children = ['base'] %}
 {% endif %}
 ### /gross
