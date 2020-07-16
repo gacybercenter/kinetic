@@ -13,6 +13,8 @@
   {% set children = ['networking', 'base'] %}
 {% elif phase == 'networking' %}
   {% set children = ['base'] %}
+{% else %}
+  {% set children = [] %}
 {% endif %}
 ### /gross
 
