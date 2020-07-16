@@ -37,9 +37,9 @@ wait_for_start_authorization_{{ type }}-{{ phase }}:
       - wait_for_start_authorization_{{ type }}-{{ phase }}
 {% endfor %}
 
-{% if phase == 'configure' %}
+{% if phase == 'base' %}
 
-orch_{{ type }}_{{ phase }}_exec_runner:
+orch_{{ type }}_init_exec_runner:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
@@ -47,7 +47,7 @@ orch_{{ type }}_{{ phase }}_exec_runner:
         pillar:
           type: {{ type }}
     - require:
-      - wait_for_start_authorization_{{ type }}-configure
+      - wait_for_start_authorization_{{ type }}-{{ phase }}
 
 {% endif %}
 
