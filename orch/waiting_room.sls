@@ -34,7 +34,7 @@ wait_for_start_authorization_{{ type }}-{{ phase }}:
         data:
           id: {{ child }}
     - require:
-      - wait_for_start_authorization_{{ type }}-{{ phase }}:
+      - wait_for_start_authorization_{{ type }}-{{ phase }}
 {% endfor %}
 
 {{ type }}_{{ phase }}_exec:
