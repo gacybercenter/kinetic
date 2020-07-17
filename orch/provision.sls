@@ -142,6 +142,13 @@ set_build_phase_networking_{{ type }}-{{ uuid }}:
     - require:
       - apply_networking_{{ type }}-{{ uuid }}
 
+set_build_phase_networking_mine_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: mine.update
+    - tgt: '{{ type }}-{{ uuid }}'
+    - require:
+      - set_build_phase_networking_{{ type }}-{{ uuid }
+
 reboot_{{ type }}-{{ uuid }}:
   salt.function:
     - tgt: '{{ type }}-{{ uuid }}'
@@ -208,6 +215,13 @@ set_build_phase_install_{{ type }}-{{ uuid }}:
     - require:
       - apply_install_{{ type }}-{{ uuid }}
 
+set_build_phase_install_mine_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: mine.update
+    - tgt: '{{ type }}-{{ uuid }}'
+    - require:
+      - set_build_phase_install_{{ type }}-{{ uuid }
+
 {% for nType in salt['pillar.get']('hosts:'+type+':needs:configure', {}) %}
 {{ type }}_configure_{{ nType }}_phase_check_loop:
   salt.runner:
@@ -258,6 +272,13 @@ set_build_phase_configure_{{ type }}-{{ uuid }}:
       - configure
     - require:
       - highstate_{{ type }}-{{ uuid }}
+
+set_build_phase_configure_mine_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: mine.update
+    - tgt: '{{ type }}-{{ uuid }}'
+    - require:
+      - set_build_phase_configure_{{ type }}-{{ uuid }
 
 set_production_{{ type }}-{{ uuid }}:
   salt.function:
