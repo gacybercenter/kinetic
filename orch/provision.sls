@@ -120,7 +120,7 @@ apply_base_{{ type }}-{{ uuid }}:
         attempts: 5
         splay: 10
     - require_in:
-      - apply_networking_{{ type }}-{{ uuid }}            
+      - apply_networking_{{ type }}-{{ uuid }}
 {% endfor %}
 
 apply_networking_{{ type }}-{{ uuid }}:
@@ -131,6 +131,16 @@ apply_networking_{{ type }}-{{ uuid }}:
     - failhard: True
     - require:
       - apply_base_{{ type }}-{{ uuid }}
+
+set_build_phase_networking_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: grains.setval
+    - tgt: '{{ type }}-{{ uuid }}'
+    - arg:
+      - build_phase
+      - networking
+    - require:
+      - apply_networking_{{ type }}-{{ uuid }}
 
 reboot_{{ type }}-{{ uuid }}:
   salt.function:
@@ -188,6 +198,16 @@ apply_install_{{ type }}-{{ uuid }}:
     - require:
       - wait_for_{{ type }}-{{ uuid }}_reboot
 
+set_build_phase_install_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: grains.setval
+    - tgt: '{{ type }}-{{ uuid }}'
+    - arg:
+      - build_phase
+      - install
+    - require:
+      - apply_install_{{ type }}-{{ uuid }}
+
 {% for nType in salt['pillar.get']('hosts:'+type+':needs:configure', {}) %}
 {{ type }}_configure_{{ nType }}_phase_check_loop:
   salt.runner:
@@ -228,6 +248,16 @@ wait_for_final_reboot_{{ type }}-{{ uuid }}:
     - require:
       - final_reboot_{{ type }}-{{ uuid }}
     - timeout: 600
+
+set_build_phase_configure_{{ type }}-{{ uuid }}:
+  salt.function:
+    - name: grains.setval
+    - tgt: '{{ type }}-{{ uuid }}'
+    - arg:
+      - build_phase
+      - configure
+    - require:
+      - highstate_{{ type }}-{{ uuid }}
 
 set_production_{{ type }}-{{ uuid }}:
   salt.function:
