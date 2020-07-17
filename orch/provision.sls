@@ -147,7 +147,7 @@ set_build_phase_networking_mine_{{ type }}-{{ uuid }}:
     - name: mine.update
     - tgt: '{{ type }}-{{ uuid }}'
     - require:
-      - set_build_phase_networking_{{ type }}-{{ uuid }
+      - set_build_phase_networking_{{ type }}-{{ uuid }}
 
 reboot_{{ type }}-{{ uuid }}:
   salt.function:
@@ -278,7 +278,7 @@ set_build_phase_configure_mine_{{ type }}-{{ uuid }}:
     - name: mine.update
     - tgt: '{{ type }}-{{ uuid }}'
     - require:
-      - set_build_phase_configure_{{ type }}-{{ uuid }
+      - set_build_phase_configure_{{ type }}-{{ uuid }}
 
 set_production_{{ type }}-{{ uuid }}:
   salt.function:
