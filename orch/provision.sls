@@ -101,6 +101,21 @@ apply_base_{{ type }}-{{ uuid }}:
     - sls:
       - formulas/common/base
 
+{% for nType in salt['pillar.get']('hosts:'+type+':needs:networking', {}) %}
+{{ type }}_networking_{{ nType }}_phase_check_loop:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/phaseloop
+        pillar:
+          nDict: {{ salt['pillar.get']('hosts:'+type+':needs:networking', {}) }}
+          nType: {{ nType }}
+    - retry:
+        interval: 30
+        attempts: 5
+        splay: 10
+{% endfor %}
+
 apply_networking_{{ type }}-{{ uuid }}:
   salt.state:
     - tgt: '{{ type }}-{{ uuid }}'
