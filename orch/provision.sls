@@ -119,6 +119,8 @@ apply_base_{{ type }}-{{ uuid }}:
         interval: 30
         attempts: 5
         splay: 10
+    - require_in:
+      - apply_networking_{{ type }}-{{ uuid }}            
 {% endfor %}
 
 apply_networking_{{ type }}-{{ uuid }}:
@@ -160,6 +162,23 @@ wait_for_spawning_0_{{ type }}-{{ uuid }}:
 
 {% endif %}
 
+{% for nType in salt['pillar.get']('hosts:'+type+':needs:install', {}) %}
+{{ type }}_install_{{ nType }}_phase_check_loop:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/phaseloop
+        pillar:
+          nDict: {{ salt['pillar.get']('hosts:'+type+':needs:install', {}) }}
+          nType: {{ nType }}
+    - retry:
+        interval: 30
+        attempts: 5
+        splay: 10
+    - require_in:
+      - apply_install_{{ type }}-{{ uuid }}
+{% endfor %}
+
 apply_install_{{ type }}-{{ uuid }}:
   salt.state:
     - tgt: '{{ type }}-{{ uuid }}'
@@ -168,6 +187,23 @@ apply_install_{{ type }}-{{ uuid }}:
     - timeout: 600
     - require:
       - wait_for_{{ type }}-{{ uuid }}_reboot
+
+{% for nType in salt['pillar.get']('hosts:'+type+':needs:configure', {}) %}
+{{ type }}_configure_{{ nType }}_phase_check_loop:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/phaseloop
+        pillar:
+          nDict: {{ salt['pillar.get']('hosts:'+type+':needs:configure', {}) }}
+          nType: {{ nType }}
+    - retry:
+        interval: 30
+        attempts: 5
+        splay: 10
+    - require_in:
+      - highstate_{{ type }}-{{ uuid }}
+{% endfor %}
 
 highstate_{{ type }}-{{ uuid }}:
   salt.state:
