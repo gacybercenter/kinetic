@@ -101,6 +101,11 @@ apply_base_{{ type }}-{{ uuid }}:
     - sls:
       - formulas/common/base
 
+### This loop will block until confirmation is received that all networking
+### deps have been met.  The logic is very similar to the initial dep check loop
+### adding an additional one here will ensure that the deps needed for the
+### next phase of the orch have been met, rather than just the bits needed to
+### start
 {% for nType in salt['pillar.get']('hosts:'+type+':needs:networking', {}) %}
 {{ type }}_networking_{{ nType }}_phase_check_loop:
   salt.runner:
