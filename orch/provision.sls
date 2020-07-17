@@ -220,7 +220,7 @@ set_build_phase_install_mine_{{ type }}-{{ uuid }}:
     - name: mine.update
     - tgt: '{{ type }}-{{ uuid }}'
     - require:
-      - set_build_phase_install_{{ type }}-{{ uuid }
+      - set_build_phase_install_{{ type }}-{{ uuid }}
 
 {% for nType in salt['pillar.get']('hosts:'+type+':needs:configure', {}) %}
 {{ type }}_configure_{{ nType }}_phase_check_loop:
