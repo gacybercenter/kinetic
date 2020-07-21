@@ -1,18 +1,10 @@
-### TODO - make pillar target align with grain value to avoid this
-{% if grains['virtual'] == 'physical' %}
-  {% set srv = 'hosts' %}
-{% else %}
-  {% set srv = 'virtual' %}
-{% endif %}
-
-
 ### Set custom ifwatch grain that contains list of interfaces that I want to monitor with the network
 ### beacon
 ifwatch:
   grains.present:
     - value:
-{% for interface in pillar[srv][grains['type']]['networks'] %}
-      - {{ pillar[srv][grains['type']]['networks'][interface]['interfaces'][0] }}
+{% for interface in pillar['hosts'][grains['type']]['networks'] %}
+      - {{ pillar['hosts'][grains['type']]['networks'][interface]['interfaces'][0] }}
 {% endfor %}
 ###
 
@@ -55,7 +47,7 @@ systemd-networkd:
 ### Public is left up, but unconfigured`
 ### Private, sfe, and sbe are assigned addresses from the sqlite db
 ## Check if interface is managed, if so, execute the state.  If not, exit
-{% for network in pillar[srv][grains['type']]['networks'] if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':managed', True) == True %}
+{% for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
 
 ### There are four possible general configurations available:
 ### 1. Regular interface
@@ -67,7 +59,7 @@ systemd-networkd:
 ### Test for number of physical interfaces listed.  If >1, it is a bond and a netdev
 ### for the bond should be created.  This is separate and a prereq for any
 ### other types of netdevs (e.g. bridge)
-  {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
 /etc/systemd/network/{{ network }}_bond.netdev:
   file.managed:
     - contents: |
@@ -81,7 +73,7 @@ systemd-networkd:
 
 ### For every physical interface that is supposed to be part of the bond,
 ### create a network file that associates it accordingly
-    {% for interface in salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') %}
+    {% for interface in salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') %}
 /etc/systemd/network/{{ interface }}_bond.network:
   file.managed:
     - contents: |
@@ -100,7 +92,7 @@ systemd-networkd:
 ### 3. a .network file configuring the bridge with address(es)
 ###
 ### 1. Create netdev
-  {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
+  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
 /etc/systemd/network/{{ network }}_br.netdev:
   file.managed:
     - contents: |
@@ -114,10 +106,10 @@ systemd-networkd:
   file.managed:
     - contents: |
         [Match]
-      {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+      {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
         Name={{ network }}_bond
       {% else %}
-        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
+        Name={{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
       {% endif %}
         [Network]
         Bridge={{ network }}_br
@@ -128,12 +120,12 @@ systemd-networkd:
     - replace: False
     - contents: |
         [Match]
-    {% if salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':bridge', False) == True %}
+    {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
         Name={{ network }}_br
-    {% elif salt['pillar.get'](srv+':'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+    {% elif salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
         Name={{ network }}_bond
     {% else %}
-        Name={{ pillar[srv][grains['type']]['networks'][network]['interfaces'][0] }}
+        Name={{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
     {% endif %}
   {% if network == 'management' %}
         [Network]

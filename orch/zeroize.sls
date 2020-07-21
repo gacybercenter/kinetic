@@ -11,7 +11,7 @@
   {% set type = target.split('-')[0] %}
 {% endif %}
 
-{% set style = pillar['types'][type] %}
+{% set style = pillar['types'][type]['style'] %}
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
