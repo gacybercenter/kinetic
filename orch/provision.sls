@@ -1,12 +1,12 @@
 {% set type = pillar['type'] %}
-{% if pillar['types'][type]['style'] == 'physical' %}
+{% if pillar['hosts'][type]['style'] == 'physical' %}
   {% set role = pillar['hosts'][type]['role'] %}
 {% else %}
   {% set role = type %}
 {% endif %}
 
 {% set target = pillar['target'] %}
-{% set style = pillar['types'][type]['style'] %}
+{% set style = pillar['hosts'][type]['style'] %}
 {% set controller = pillar['controller'] %}
 {% set uuid =  salt['random.get_str']('64') | uuid %}
 
