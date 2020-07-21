@@ -1,5 +1,5 @@
 {% set type = pillar['type'] %}
-{% set style = pillar['types'][type]['style'] %}
+{% set style = pillar['hosts'][type]['style'] %}
 
 {% if salt['pillar.get']('universal', False) == False %}
 master_setup:
