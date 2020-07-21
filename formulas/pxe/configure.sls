@@ -60,7 +60,7 @@ wsgi_module:
 /var/www/html/assignments:
   file.directory
 
-{% for type in pillar['hosts'] %}
+{% for type in pillar['hosts'] if pillar['hosts'][type]['style'] == 'physical '%}
 /var/www/html/configs/{{ type }}:
   file.managed:
   {% if 'ubuntu' in pillar['hosts'][type]['os'] %}
