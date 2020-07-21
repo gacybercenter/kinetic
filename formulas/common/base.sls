@@ -26,7 +26,7 @@ type:
 
 role:
   grains.present:
-{% if salt['pillar.get]('hosts:'+type+':style', "") == 'physical' %}
+{% if salt['pillar.get']('hosts:'+type+':style', '') == 'physical' %}
     - value: {{ pillar['hosts'][type]['role'] }}
 {% else %}
     - value: {{ type }}
