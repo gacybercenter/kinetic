@@ -45,9 +45,9 @@
           type: {{ type }}
     - parallel: True
     - retry:
-        interval: 3
-        attempts: 2
-        splay: 0
+        interval: 30
+        attempts: 10
+        splay: 10
     - require_in:
       - {{ type }}_{{ targetPhase }}_start_signal
 
