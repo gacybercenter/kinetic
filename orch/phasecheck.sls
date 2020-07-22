@@ -16,7 +16,7 @@
     - retry:
         interval: 30
         attempts: 60
-        splay: 10      
+        splay: 10
 
 {% endfor %}
 

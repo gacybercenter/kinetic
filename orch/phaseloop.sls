@@ -16,12 +16,13 @@ returner:
     - name: test.true_
     - tgt: salt
 
-{% else %}
+    {% else %}
 
 returner:
   salt.function:
     - name: test.false_
     - tgt: salt
-
+    
+    {% endif %}
   {% endfor %}
 {% endif %}
