@@ -5,10 +5,16 @@ from cgi import parse_qs, escape
 body = """\
 #!ipxe
 
-%(kernel)s
-%(initrd)s
+set try:int32 0
 
-boot || shell
+:retry_loop if iseq ${try} 4 && goto bootstrap_failure ||
+imgfree
+%(kernel)s || inc try && goto retry_loop
+%(initrd)s || inc try && goto retry_loop
+boot || inc try && goto retry_loop
+
+:bootstrap_failure
+poweroff
 """
 
 def application (environ, start_response):
