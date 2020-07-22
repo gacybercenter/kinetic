@@ -1,52 +1,22 @@
 {% set type = pillar['type'] %}
-{% set phase = pillar['phase'] %}
-
-
-### This is gross.  Find a way to do this better
-### Goal is for higher level phases to automatically
-### resolve all lower level dependencies if they themselves
-### get resolved.  This prevents the need for manual definition
-### of all phase dependencies
-{% if phase == 'configure' %}
-  {% set children = ['install', 'networking', 'base'] %}
-{% elif phase == 'install' %}
-  {% set children = ['networking', 'base'] %}
-{% elif phase == 'networking' %}
-  {% set children = ['base'] %}
-{% else %}
-  {% set children = [] %}
-{% endif %}
-### /gross
 
 ## This is the maximum amount of time an endpoint should wait for the start
 ## signal. It will need to be at least two hours (generally).  Less is
 ## fine for testing
-wait_for_start_authorization_{{ type }}-{{ phase }}:
+wait_for_start_authorization_{{ type }}:
   salt.wait_for_event:
-    - name: {{ type }}/{{ phase }}/auth/start
+    - name: {{ type }}/generation/auth/start
     - id_list:
-      - {{ phase }}
+      - {{ type }}
     - timeout: 1800
-
-{% for child in children %}
-{{ type }}_{{ child }}_start_signal:
-  salt.runner:
-    - name: event.send
-    - kwarg:
-        tag: {{ type }}/{{ child }}/auth/start
-        data:
-          id: {{ child }}
-    - require:
-      - wait_for_start_authorization_{{ type }}-{{ phase }}
-{% endfor %}
-
-{% if phase == 'base' %}
 
 {{ type }}_{{ phase }}_exec:
   salt.runner:
     - name: test.sleep
     - kwarg:
         s_time: 1
+    - require:
+      - wait_for_start_authorization_{{ type }}
 
 orch_{{ type }}_init_exec_runner:
   salt.runner:
@@ -56,6 +26,4 @@ orch_{{ type }}_init_exec_runner:
         pillar:
           type: {{ type }}
     - require:
-      - wait_for_start_authorization_{{ type }}-{{ phase }}
-
-{% endif %}
+      - wait_for_start_authorization_{{ type }}

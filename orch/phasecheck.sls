@@ -12,14 +12,14 @@
           nDict: {{ nDict }}
           nType: {{ nType }}
     - require_in:
-      - {{ type }}_{{ targetPhase }}_start_signal
+      - {{ type }}_generate_start_signal
 
 {% endfor %}
 
-{{ type }}_{{ targetPhase }}_start_signal:
+{{ type }}_generate_start_signal:
   salt.runner:
     - name: event.send
     - kwarg:
-        tag: {{ type }}/{{ targetPhase }}/auth/start
+        tag: {{ type }}/generate/auth/start
         data:
-          id: {{ targetPhase }}
+          id: {{ type }}
