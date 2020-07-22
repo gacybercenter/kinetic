@@ -11,7 +11,7 @@ wipe_init_keys:
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
 ## in the waiting room
-{% for type in pillar['hosts'] %}
+{% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':needs:configure:blocker', '') != 'configure' %}
   {% for phase in ['base', 'networking', 'install', 'configure'] %}
 
 create_{{ type }}_{{ phase }}_origin_exec_runner:

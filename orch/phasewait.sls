@@ -33,7 +33,7 @@
 ## nType: The need type.  In the above example, it would be qux, baz, foo, and bar, presented in their respective loops
 ## nDict[nType]: The state needed for nType to satisfy that dependency (base, networking, install, or configure).
 
-{% for targetPhase, nDict in needs.items() if needs['configure'] != {"blocker": "configure"} %}
+{% for targetPhase, nDict in needs.items() %}
 {{ type }}_{{ targetPhase }}_phase_check_init:
   salt.runner:
     - name: state.orchestrate
