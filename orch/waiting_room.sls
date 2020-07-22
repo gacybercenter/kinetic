@@ -10,7 +10,7 @@ wait_for_start_authorization_{{ type }}:
       - {{ type }}
     - timeout: 1800
 
-{{ type }}_{{ phase }}_exec:
+{{ type }}_exec_sleep_notify:
   salt.runner:
     - name: test.sleep
     - kwarg:
