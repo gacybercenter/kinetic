@@ -39,6 +39,12 @@ wait_for_start_authorization_{{ type }}-{{ phase }}:
 
 {% if phase == 'base' %}
 
+{{ type }}_{{ phase }}_exec:
+  salt.runner:
+    - name: test.sleep
+    - kwarg:
+        s_time: 1
+
 orch_{{ type }}_init_exec_runner:
   salt.runner:
     - name: state.orchestrate
@@ -50,9 +56,3 @@ orch_{{ type }}_init_exec_runner:
       - wait_for_start_authorization_{{ type }}-{{ phase }}
 
 {% endif %}
-
-{{ type }}_{{ phase }}_exec:
-  salt.runner:
-    - name: test.sleep
-    - kwarg:
-        s_time: 2
