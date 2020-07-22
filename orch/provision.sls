@@ -29,7 +29,7 @@ assign_uuid_to_{{ target }}:
       - {{ pillar['hosts'][type]['os'] }}
       - {{ pillar['hosts'][type]['interface'] }}
 
-{% if did_not_call_out == True %}
+
 ## Need to spawn a listeniner (http? tcp?) that will wait for
 ## generated physical endpoints to send it a signal once they have
 ## successfully pulled initrd and the kernel.  It's fairly common
@@ -37,7 +37,7 @@ assign_uuid_to_{{ target }}:
 ## are a large number.
 
 ## alternative option is building in a retry into ipxe (if supported)?
-{% endif %}
+
 
 {% elif style == 'virtual' %}
 {% set spawning = salt['pillar.get']('spawning', '0') %}
