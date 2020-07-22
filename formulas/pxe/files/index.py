@@ -7,7 +7,7 @@ body = """\
 
 set try:int32 0
 
-:retry_loop if iseq ${try} 4 && goto bootstrap_failure ||
+:retry_loop iseq ${try} 4 && goto bootstrap_failure ||
 imgfree
 %(kernel)s || sleep 5 && inc try && echo Failed to get kerel on try ${try}... && goto retry_loop
 %(initrd)s || sleep 5 && inc try && echo Failed to get initrd on try ${try}... && goto retry_loop
