@@ -33,6 +33,10 @@
 ## nType: The need type.  In the above example, it would be qux, baz, foo, and bar, presented in their respective loops
 ## nDict[nType]: The state needed for nType to satisfy that dependency (base, networking, install, or configure).
 
+## This loop will continuously re-check the state of the dependencies
+## It can probably be simplified significantly as a dependency check is also
+## built in to the generate function
+
 {% for targetPhase, nDict in needs.items() %}
 {{ type }}_{{ targetPhase }}_phase_check_init:
   salt.runner:
@@ -46,8 +50,8 @@
     - parallel: True
     - retry:
         interval: 30
-        attempts: 10
-        splay: 0
+        attempts: 60
+        splay: 10
 
 {{ type }}_{{ targetPhase }}_phase_check_init_delay:
   salt.function:

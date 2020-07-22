@@ -18,12 +18,15 @@
 {% endif %}
 ### /gross
 
+## This is the maximum amount of time an endpoint should wait for the start
+## signal. It will need to be at least two hours (generally).  Less is
+## fine for testing
 wait_for_start_authorization_{{ type }}-{{ phase }}:
   salt.wait_for_event:
     - name: {{ type }}/{{ phase }}/auth/start
     - id_list:
       - {{ phase }}
-    - timeout: 120
+    - timeout: 1800
 
 {% for child in children %}
 {{ type }}_{{ child }}_start_signal:
