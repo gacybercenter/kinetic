@@ -4,7 +4,7 @@ include:
   - /formulas/common/networking
 
 {% if grains['spawning'] == 0 %}
-  {% if pillar['virtual']['mysql']['count'] > 1 %}
+  {% if pillar['hosts']['mysql']['count'] > 1 %}
 
 /bin/galera_new_cluster:
   file.managed:
@@ -63,7 +63,7 @@ openstack.conf:
     - makedirs: True
     - template: jinja
     - defaults:
-{% if pillar['virtual']['mysql']['count'] > 1 %}
+{% if pillar['hosts']['mysql']['count'] > 1 %}
         wsrep_on: ON
 {% else %}
         wsrep_on: OFF
