@@ -47,7 +47,7 @@
     - retry:
         interval: 30
         attempts: 10
-        splay: 10
+        splay: 0
     - require_in:
       - {{ type }}_{{ targetPhase }}_start_signal
 
