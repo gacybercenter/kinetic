@@ -1,6 +1,8 @@
 
 ## if running a full environment init, you should wipe all keys to ensure that the
 ## mine is empty so phase checks don't pass on old data
+## They below will wipe everything that has a '-' in the minion_id, e.g.
+## everything except salt and pxe
 
 wipe_init_keys:
   salt.wheel:
