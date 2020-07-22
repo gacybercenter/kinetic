@@ -48,7 +48,7 @@
         interval: 0
         attempts: 1
         splay: 0
-    - fire_event: {{ type }}/{{ targetPhase }}/auth/start
+    - fire_event: True
 
 {{ type }}_{{ targetPhase }}_phase_check_init_delay:
   salt.function:
