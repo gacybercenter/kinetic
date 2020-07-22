@@ -45,11 +45,10 @@
           type: {{ type }}
     - parallel: True
     - retry:
-        interval: 30
-        attempts: 10
-        splay: 10
-    - require_in:
-      - {{ type }}_{{ targetPhase }}_start_signal
+        interval: 0
+        attempts: 1
+        splay: 0
+    - fire_event: {{ type }}/{{ targetPhase }}/auth/start
 
 {{ type }}_{{ targetPhase }}_phase_check_init_delay:
   salt.function:
@@ -58,12 +57,12 @@
     - kwarg:
         length: 1
 
-{{ type }}_{{ targetPhase }}_start_signal:
-  salt.runner:
-    - name: event.send
-    - kwarg:
-        tag: {{ type }}/{{ targetPhase }}/auth/start
-        data:
-          id: {{ targetPhase }}
+# {{ type }}_{{ targetPhase }}_start_signal:
+#   salt.runner:
+#     - name: event.send
+#     - kwarg:
+#         tag: {{ type }}/{{ targetPhase }}/auth/start
+#         data:
+#           id: {{ targetPhase }}
 
 {% endfor %}
