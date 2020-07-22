@@ -6,9 +6,10 @@
 
   {% do salt.log.warning("No endpoints of type "+nType+" are available for phase checks.  Will retry...") %}
 
-dummt_returner:
-  salt.runner:
-    - name: test.stream
+returner:
+  salt.function:
+    - name: test.false
+    - tgt: salt
 
 {% else %}
 
@@ -24,7 +25,7 @@ returner:
 
 returner:
   salt.function:
-    - name: test.true
+    - name: test.false
     - tgt: salt
 
     {% endif %}
