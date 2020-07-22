@@ -6,6 +6,11 @@
 
   {% do salt.log.warning("No endpoints of type "+nType+" are available for phase checks.  Will retry...") %}
 
+returner:
+  salt.function:
+    - name: test.false
+    - tgt: salt
+
 {% else %}
 
   {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort() %}
@@ -20,7 +25,7 @@ returner:
 
 returner:
   salt.function:
-    - name: test.false
+    - name: test.true
     - tgt: salt
 
     {% endif %}
