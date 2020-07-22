@@ -4,7 +4,7 @@
 
 {% if salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|length == 0 %}
 
-{{ host }}_phase_check:
+{{ nType }}_phase_check:
   salt.runner:
     - name: compare.string
     - kwarg:
