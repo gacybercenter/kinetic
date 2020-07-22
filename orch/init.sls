@@ -22,6 +22,13 @@ create_{{ type }}_origin_exec_runner:
           type: {{ type }}
     - parallel: true
 
+{{ type }}_origin_exec_runner_delay:
+  salt.function:
+    - name: test.sleep
+    - tgt: salt
+    - kwarg:
+        length: 1
+
 create_{{ type }}_origin_phase_runner:
   salt.runner:
     - name: state.orchestrate
@@ -32,7 +39,7 @@ create_{{ type }}_origin_phase_runner:
           needs: {{ salt['pillar.get']('hosts:'+type+':needs', {}) }}
     - parallel: true
 
-{{ type }}_origin_exec_runner_delay:
+{{ type }}_origin_phase_runner_delay:
   salt.function:
     - name: test.sleep
     - tgt: salt
