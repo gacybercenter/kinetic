@@ -5,7 +5,7 @@
 ## fine for testing
 wait_for_start_authorization_{{ type }}:
   salt.wait_for_event:
-    - name: {{ type }}/generation/auth/start
+    - name: {{ type }}/generate/auth/start
     - id_list:
       - {{ type }}
     - timeout: 1800
