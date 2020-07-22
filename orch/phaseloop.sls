@@ -2,7 +2,7 @@
 {% set nDict = pillar['nDict'] %}
 
 
-{% if salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort() == {} %}
+{% if salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort()|length == 0 %}
 
 {{ host }}_phase_check:
   salt.runner:
