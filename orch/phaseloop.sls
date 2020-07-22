@@ -7,5 +7,5 @@
     - name: compare.string
     - kwarg:
         targetString: {{ nDict[nType] }}
-        currentString: {{ currentPhase }}
+        currentString: {{ currentPhase|string }}
 {% endfor %}
