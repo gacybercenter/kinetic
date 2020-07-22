@@ -9,9 +9,9 @@ set try:int32 0
 
 :retry_loop if iseq ${try} 4 && goto bootstrap_failure ||
 imgfree
-%(kernel)s || inc try && goto retry_loop
-%(initrd)s || inc try && goto retry_loop
-boot || inc try && goto retry_loop
+%(kernel)s || sleep 5  && inc try && goto retry_loop
+%(initrd)s || sleep 5 && inc try && goto retry_loop
+boot || sleep 5 && inc try && goto retry_loop
 
 :bootstrap_failure
 poweroff
