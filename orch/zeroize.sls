@@ -67,6 +67,16 @@ wipe_{{ target }}_logs:
       - ls /var/log/libvirt | grep {{ target }} | while read id;do rm /var/log/libvirt/$id;done
 {% endif %}
 
+## reboots initiated by the BMC take a few seconds to take effect
+## This sleep ensures that the key is only removed after
+## the device has actually been rebooted
+{{ target }}_wheel_removal_delay:
+  salt.function:
+    - name: test.sleep
+    - tgt: salt
+    - kwarg:
+        length: 5
+
 delete_{{ target }}_key:
   salt.wheel:
     - name: key.delete
