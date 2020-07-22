@@ -48,10 +48,6 @@
           targetPhase: {{ targetPhase }}
           type: {{ type }}
     - parallel: True
-    - retry:
-        interval: 30
-        attempts: 60
-        splay: 10
 
 {{ type }}_{{ targetPhase }}_phase_check_init_delay:
   salt.function:
