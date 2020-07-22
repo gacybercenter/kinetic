@@ -118,7 +118,7 @@ then
   cp /kvm/images/debian10.raw /kvm/vms/pxe/disk0.raw
   qemu-img resize -f raw /kvm/vms/pxe/disk0.raw 8G
 fi
-curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/pxe/g; s/{{ interface }}/$interface/g; s/{{ ram }}/2048000/g; s/{{ cpu }}/1/g" > /kvm/vms/pxe/config.xml
+curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/pxe/g; s/{{ interface }}/$interface/g; s/{{ ram }}/4096000/g; s/{{ cpu }}/1/g" > /kvm/vms/pxe/config.xml
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/pxe/g" > /kvm/vms/pxe/data/meta-data
 curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-X -x python3 -i pxe/g;s/{{ key }}/$key/g" > /kvm/vms/pxe/data/user-data
 sed -i "s,{{ extra_commands }},echo No extra commands specified,g" /kvm/vms/pxe/data/user-data
