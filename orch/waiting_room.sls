@@ -55,4 +55,4 @@ orch_{{ type }}_init_exec_runner:
   salt.runner:
     - name: test.sleep
     - kwarg:
-        s_time: 1
+        s_time: 2
