@@ -1,4 +1,11 @@
 
+## if running a full environment init, you should wipe all keys to ensure that the
+## mine is empty so phase checks don't pass on old data
+
+wipe_init_keys:
+  salt.wheel:
+    - name: key.delete
+    - match: '*-*'
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
 ## in the waiting room
