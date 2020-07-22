@@ -14,7 +14,7 @@ imgfree
 boot || sleep 5 && inc try && echo Failed to boot on try ${try}... && goto retry_loop
 
 :bootstrap_failure
-poweroff
+shell
 """
 
 def application (environ, start_response):
