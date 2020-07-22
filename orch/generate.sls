@@ -87,7 +87,7 @@ sleep_{{ type }}:
 ### Get a list of controllers and set a random offset so the assignments remain balanced
   {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
   {% set offset = range(controllers|length)|random %}
-  {% for host in range(pillar['virtual'][type]['count']) %}
+  {% for host in range(pillar['hosts'][type]['count']) %}
 
 provision_{{ host }}:
   salt.runner:
