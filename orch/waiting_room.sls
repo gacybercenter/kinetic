@@ -23,7 +23,7 @@ wait_for_start_authorization_{{ type }}-{{ phase }}:
     - name: {{ type }}/{{ phase }}/auth/start
     - id_list:
       - {{ phase }}
-    - timeout: 1800
+    - timeout: 30
 
 {% for child in children %}
 {{ type }}_{{ child }}_start_signal:
