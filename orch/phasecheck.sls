@@ -13,10 +13,6 @@
           nType: {{ nType }}
     - require_in:
       - {{ type }}_generate_start_signal
-    - retry:
-        interval: 30
-        attempts: 60
-        splay: 10
 
 {% endfor %}
 
