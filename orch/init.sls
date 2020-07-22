@@ -32,7 +32,7 @@ create_{{ type }}_origin_phase_runner:
           needs: {{ salt['pillar.get']('hosts:'+type+':needs', {}) }}
     - parallel: true
 
-{{ type }}_{{ phase }}_origin_exec_runner_delay:
+{{ type }}_origin_exec_runner_delay:
   salt.function:
     - name: test.sleep
     - tgt: salt
