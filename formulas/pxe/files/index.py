@@ -8,9 +8,11 @@ body = """\
 set try:int32 0
 
 :retry_loop iseq ${try} 4 && goto bootstrap_failure ||
+## for some reason, the retcode on kernel and initrd is detected
+## as a failure no matter what.  Will only retry on a failed boot
 imgfree
-%(kernel)s || sleep 5 && inc try && echo Failed to get kerel on try ${try}... && goto retry_loop
-%(initrd)s || sleep 5 && inc try && echo Failed to get initrd on try ${try}... && goto retry_loop
+%(kernel)s ||
+%(initrd)s ||
 boot || sleep 5 && inc try && echo Failed to boot on try ${try}... && goto retry_loop
 
 :bootstrap_failure
