@@ -48,15 +48,12 @@
         interval: 30
         attempts: 10
         splay: 0
-    - require_in:
-      - {{ type }}_{{ targetPhase }}_start_signal
 
-{{ type }}_{{ targetPhase }}_start_signal:
-  salt.runner:
-    - name: event.send
+{{ type }}_{{ targetPhase }}_phase_check_init_delay:
+  salt.function:
+    - name: test.sleep
+    - tgt: salt
     - kwarg:
-        tag: {{ type }}/{{ targetPhase }}/auth/start
-        data:
-          id: {{ targetPhase }}
+        length: 1
 
 {% endfor %}

@@ -11,4 +11,15 @@
         pillar:
           nDict: {{ nDict }}
           nType: {{ nType }}
+    - require_in:
+      - {{ type }}_{{ targetPhase }}_start_signal
+
 {% endfor %}
+
+{{ type }}_{{ targetPhase }}_start_signal:
+  salt.runner:
+    - name: event.send
+    - kwarg:
+        tag: {{ type }}/{{ targetPhase }}/auth/start
+        data:
+          id: {{ targetPhase }}
