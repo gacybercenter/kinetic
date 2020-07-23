@@ -13,6 +13,13 @@ ifwatch:
 netplan.io:
   pkg.removed
 
+{% if grains['os_family'] == 'RedHat' %}
+install_networkd:
+  pkg.installed:
+    -pkgs:
+      - systemd-networkd
+{% endif %}
+
 /etc/netplan:
   file.absent
 

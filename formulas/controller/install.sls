@@ -1,3 +1,6 @@
+include:
+  - formulas/common/install
+
 controller_packages:
   pkg.installed:
     - pkgs:
