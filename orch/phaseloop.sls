@@ -4,12 +4,7 @@
 
 {% if salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|length == 0 %}
 
-returner:
-  salt.function:
-    - name: log.warning
-    - tgt: salt
-    - kwarg:
-        message: "blah blah"
+  {% do salt.log.warning("No endpoints of type "+nType+" are available for phase checks.  This error is not fatal, will retry...") %}
 
 {% else %}
 
