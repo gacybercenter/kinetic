@@ -6,6 +6,9 @@
 
   {% do salt.log.warning("No endpoints of type "+nType+" are available for phase checks.  This error is not fatal, will retry...") %}
 
+empty_nop:
+  test.nop
+
 {% else %}
 
   {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort() %}
