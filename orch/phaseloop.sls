@@ -8,9 +8,10 @@
 
 returner:
   salt.function:
-    - name: test.false
+    - name: test.retcode
     - tgt: salt
-
+    - kwarg:
+        code: 255
 {% else %}
 
   {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort() %}
