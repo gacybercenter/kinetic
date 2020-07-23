@@ -22,8 +22,8 @@ check_{{ nType }}_{{ host }}:
         targetString: {{ nDict['nType'] }}
         currentString: {{ currentPhase }}
     - retry:
-        interval: 1
-        times: 2
+        interval: 30
+        times: 60
         splay: 0
 
   {% endfor %}
