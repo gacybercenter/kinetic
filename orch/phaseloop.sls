@@ -4,10 +4,10 @@
 
 
 {% if salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|length == 0 %}
-  {% do salt.log.warning("No endpoints of type "+nType+" are available for checking dependencies of type "+type+".  This error is not fatal, will retry...") %}
+
 fail_tracker:
   test.fail_without_changes:
-    - comment: 'Retrying...'
+    - comment: 'No endpoints of type "+nType+" are available for checking dependencies of type "+type+".  This error is not fatal, will retry...'
 
 {% else %}
 
