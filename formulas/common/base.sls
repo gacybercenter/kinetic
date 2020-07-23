@@ -32,13 +32,6 @@ role:
     - value: {{ type }}
 {% endif %}
 
-{% if type in ['salt','pxe'] %}
-ifwatch:
-  grains.present:
-    - value:
-      - eth0
-{% endif %}
-
 {{ pillar['timezone'] }}:
   timezone.system:
     - utc: True
