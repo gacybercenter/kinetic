@@ -1,6 +1,6 @@
 {% set nType = pillar['nType'] %}
 {% set nDict = pillar['nDict'] %}
-{% set type = pillar ['type'] %}
+{% set type = salt['pillar.get']('type', '') %}
 
 
 {% if salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|length == 0 %}
