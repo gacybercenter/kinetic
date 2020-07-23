@@ -11,9 +11,9 @@ spawnzero_complete:
       - fun: grains.has_value
         key: spawnzero_complete
 
-mine.send:
+spawnzero_complete_mine:
   module.run:
-    - name: spawnzero_complete
+    - name: mine.send
     - mine_function: grains.item
     - args:
       - spawnzero_complete
