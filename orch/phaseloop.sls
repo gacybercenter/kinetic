@@ -1,10 +1,11 @@
 {% set nType = pillar['nType'] %}
 {% set nDict = pillar['nDict'] %}
+{% set type = pillar ['type'] %}
 
 
 {% if salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|length == 0 %}
 
-  {% do salt.log.warning("No endpoints of type "+nType+" are available for phase checks.  This error is not fatal, will retry...") %}
+  {% do salt.log.warning("No endpoints of type "+nType+" are available for checking dependencies of type "+type+".  This error is not fatal, will retry...") %}
 
 fail_tracker:
   test.fail_without_changes:

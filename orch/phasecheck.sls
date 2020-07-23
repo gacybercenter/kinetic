@@ -11,6 +11,7 @@
         pillar:
           nDict: {{ nDict }}
           nType: {{ nType }}
+          type: {{ type }}
     - retry:
         interval: 30
         attempts: 60
