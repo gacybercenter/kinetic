@@ -16,10 +16,6 @@ check_{{ nType }}_{{ host }}:
     - kwarg:
         targetString: {{ nDict[nType] }}
         currentString: {{ currentPhase }}
-    - retry:
-        interval: 30
-        times: 60
-        splay: 0
 
   {% endfor %}
 {% endif %}
