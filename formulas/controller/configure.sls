@@ -1,7 +1,5 @@
 include:
-  - /formulas/controller/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% set type = grains['type'] %}
 
