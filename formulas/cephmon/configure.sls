@@ -3,10 +3,14 @@ include:
   - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
+
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+    - unless:
+      - fun: grains.has_value
+        key: spawnzero_complete
+
 {% endif %}
 
 /tmp/ceph.mon.keyring:

@@ -174,20 +174,6 @@ wait_for_{{ type }}-{{ uuid }}_reboot:
       - reboot_{{ type }}-{{ uuid }}
     - timeout: 600
 
-{% if (salt['pillar.get']('spawning', '0')|int != 0) and (style == 'virtual') %}
-
-wait_for_spawning_0_{{ type }}-{{ uuid }}:
-  salt.wait_for_event:
-    - name: {{ type }}/spawnzero/complete
-    - id_list:
-      - {{ type }}/spawnzero/complete
-    - event_id: tag
-    - timeout: 600
-    - require:
-      - wait_for_{{ type }}-{{ uuid }}_reboot
-
-{% endif %}
-
 {% for nType in salt['pillar.get']('hosts:'+type+':needs:install', {}) %}
 {{ type }}_install_{{ nType }}_phase_check_loop:
   salt.runner:
@@ -249,6 +235,23 @@ set_build_phase_install_mine_{{ type }}-{{ uuid }}:
     - require_in:
       - highstate_{{ type }}-{{ uuid }}
 {% endfor %}
+
+{% if (salt['pillar.get']('spawning', '0')|int != 0) and (style == 'virtual') %}
+  {% for host, spawnzero_complete in salt.saltutil.runner('mine.get',tgt='G@role:'+type+' and G@spawning:0',tgt_type='compound',fun='spawnzero_complete')|dictsort() %}
+spawnzero_check_{{ type }}_{{ host }}:
+  salt.runner:
+    - name: compare.string
+    - kwarg:
+        targetString: True
+        currentString: {{ spawnzero_complete }}
+    - retry:
+        interval: 10
+        attempts: 30
+        splay: 5
+    - require_in:
+      - highstate_{{ type }}-{{ uuid }}
+  {% endfor %}
+{% endif %}
 
 highstate_{{ type }}-{{ uuid }}:
   salt.state:
