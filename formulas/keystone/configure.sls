@@ -23,9 +23,17 @@ initialize_keystone:
       - file: keystone_domain
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
 
 project_init:
   cmd.script:

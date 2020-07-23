@@ -25,9 +25,17 @@ heat-manage db_sync:
       - file: /etc/heat/heat.conf
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
 
 {% endif %}
 
