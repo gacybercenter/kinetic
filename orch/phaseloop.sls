@@ -6,9 +6,9 @@
 
   {% do salt.log.warning("No endpoints of type "+nType+" are available for phase checks.  This error is not fatal, will retry...") %}
 
-empty_nop:
-  test.show_notification:
-    - text: ffdsaf
+fail_tracker:
+  test.fail_without_changes:
+    - comment: 'Retrying...'
 
 {% else %}
 
