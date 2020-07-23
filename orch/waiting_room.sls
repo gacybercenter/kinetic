@@ -10,13 +10,7 @@ wait_for_start_authorization_{{ type }}:
       - {{ type }}
     - timeout: 7200
 
-{{ type }}_exec_sleep_notify:
-  salt.runner:
-    - name: test.sleep
-    - kwarg:
-        s_time: 1
-    - require:
-      - wait_for_start_authorization_{{ type }}
+{% do salt.log.info(type+" initialization routine is aboue to begin!") %}
 
 orch_{{ type }}_init_exec_runner:
   salt.runner:
