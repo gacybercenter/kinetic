@@ -245,9 +245,9 @@ spawnzero_check_{{ type }}_{{ host }}:
         targetString: True
         currentString: {{ spawnzero_complete }}
     - retry:
-        interval: 10
+        interval: 5
         attempts: 30
-        splay: 5
+        splay: 0
     - require_in:
       - highstate_{{ type }}-{{ uuid }}
   {% endfor %}
