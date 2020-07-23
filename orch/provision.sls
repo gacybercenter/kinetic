@@ -123,6 +123,7 @@ apply_base_{{ type }}-{{ uuid }}:
         pillar:
           nDict: {{ salt['pillar.get']('hosts:'+type+':needs:networking', {}) }}
           nType: {{ nType }}
+          type: {{ type }}
     - retry:
         interval: 30
         attempts: 10
@@ -196,6 +197,7 @@ wait_for_spawning_0_{{ type }}-{{ uuid }}:
         pillar:
           nDict: {{ salt['pillar.get']('hosts:'+type+':needs:install', {}) }}
           nType: {{ nType }}
+          type: {{ type }}          
     - retry:
         interval: 30
         attempts: 10
@@ -239,6 +241,7 @@ set_build_phase_install_mine_{{ type }}-{{ uuid }}:
         pillar:
           nDict: {{ salt['pillar.get']('hosts:'+type+':needs:configure', {}) }}
           nType: {{ nType }}
+          type: {{ type }}
     - retry:
         interval: 30
         attempts: 10
