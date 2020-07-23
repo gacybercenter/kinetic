@@ -7,7 +7,9 @@
   {% do salt.log.warning("No endpoints of type "+nType+" are available for phase checks.  This error is not fatal, will retry...") %}
 
 empty_nop:
-  test.nop
+  test.configurable_test_state:
+    - result: False
+    - comment: EEEEEEEE
 
 {% else %}
 
