@@ -8,7 +8,7 @@ wait_for_start_authorization_{{ type }}:
     - name: {{ type }}/generate/auth/start
     - id_list:
       - {{ type }}
-    - timeout: 1800
+    - timeout: 7200
 
 {{ type }}_exec_sleep_notify:
   salt.runner:

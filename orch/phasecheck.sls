@@ -14,7 +14,7 @@
           type: {{ type }}
     - retry:
         interval: 30
-        attempts: 60
+        attempts: 240
         splay: 10
     - require_in:
       - {{ type }}_generate_start_signal
