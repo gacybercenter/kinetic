@@ -27,7 +27,7 @@ set haproxy group:
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
 
-{% if salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain')|length != 0% }
+{% if salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain')|length != 0% %}
 set nfs group:
   danos.set_resourcegroup:
     - name: manila-share-servers
