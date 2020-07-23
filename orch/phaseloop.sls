@@ -4,14 +4,13 @@
 
 {% if salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|length == 0 %}
 
-  {% do salt.log.warning("No endpoints of type "+nType+" are available for phase checks.  Will retry...") %}
-
 returner:
   salt.function:
-    - name: test.retcode
+    - name: log.warning
     - tgt: salt
     - kwarg:
-        code: 255
+        message: "blah blah"
+
 {% else %}
 
   {% for host, currentPhase in salt.saltutil.runner('mine.get',tgt='role:'+nType,tgt_type='grain',fun='build_phase')|dictsort() %}
