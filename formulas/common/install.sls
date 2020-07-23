@@ -58,5 +58,5 @@ pyroute2:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - require:
-      - install_pip
+      - common_install
     - reload_modules: True
