@@ -17,6 +17,8 @@ spawnzero_complete:
         mine_function: grains.item
     - args:
       - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
 
 {% endif %}
 
