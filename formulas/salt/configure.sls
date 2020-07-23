@@ -1,5 +1,5 @@
 include:
-  - /formulas/salt/install
+  - /formulas/{{ grains['role'] }}/install
 
 /srv/salt:
   file.directory:

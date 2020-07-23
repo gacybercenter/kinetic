@@ -1,7 +1,5 @@
 include:
-  - /formulas/mysql/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
   {% if pillar['hosts']['mysql']['count'] > 1 %}

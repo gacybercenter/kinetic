@@ -1,7 +1,5 @@
 include:
-  - /formulas/glance/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
   - /formulas/ceph/common/configure
 
 /etc/ceph/ceph.client.images.keyring:

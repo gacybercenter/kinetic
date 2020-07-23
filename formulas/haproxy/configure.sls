@@ -1,6 +1,5 @@
 include:
-  - /formulas/haproxy/install
-  - /formulas/common/base
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 

@@ -1,4 +1,8 @@
-
+include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
+  
 haproxy_packages:
   pkg.installed:
     - pkgs:

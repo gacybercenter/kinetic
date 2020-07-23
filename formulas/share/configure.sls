@@ -1,7 +1,5 @@
 include:
-  - /formulas/share/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
   - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}
@@ -117,6 +115,6 @@ nfs_ganesha_service:
     - retry:
         attempts: 3
         interval: 10
-        splay: 5    
+        splay: 5
     - watch:
       - file: /etc/manila/manila.conf

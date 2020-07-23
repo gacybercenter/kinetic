@@ -1,7 +1,5 @@
 include:
-  - /formulas/container/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 /etc/zun/zun.conf:
   file.managed:

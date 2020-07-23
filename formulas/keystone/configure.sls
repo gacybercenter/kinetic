@@ -1,7 +1,5 @@
 include:
-  - /formulas/keystone/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['os_family'] == 'Debian' %}
   {% set webserver = 'apache2' %}

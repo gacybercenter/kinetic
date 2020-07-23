@@ -1,7 +1,5 @@
 include:
-  - /formulas/common/base
-  - /formulas/common/networking
-  - /formulas/cephmon/install
+  - /formulas/{{ grains['role'] }}/install
   - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}

@@ -1,7 +1,5 @@
 include:
-  - /formulas/common/base
-  - /formulas/common/networking
-  - /formulas/horizon/install
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 

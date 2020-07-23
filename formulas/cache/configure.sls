@@ -1,7 +1,5 @@
 include:
-  - /formulas/cache/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 spawnzero_complete:

@@ -1,7 +1,5 @@
 include:
-  - /formulas/compute/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
   - /formulas/ceph/common/configure
 
 /etc/modprobe.d/kvm.conf:

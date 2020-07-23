@@ -1,3 +1,8 @@
+include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
+
 {% if grains['os_family'] == 'Debian' %}
 
 cache_packages:

@@ -1,4 +1,7 @@
 include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
   - /formulas/openstack/common/repo
   - /formulas/ceph/common/repo
   - /formulas/frr/common/repo
@@ -66,7 +69,7 @@ compute_packages:
       - openstack-neutron-common
       - haproxy
       - frr
-      - frr-pythontools      
+      - frr-pythontools
 
   {% endif %}
 

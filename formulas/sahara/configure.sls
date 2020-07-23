@@ -1,7 +1,5 @@
 include:
-  - /formulas/sahara/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 

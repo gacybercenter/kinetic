@@ -1,5 +1,5 @@
 include:
-  - /formulas/rabbitmq/install
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 

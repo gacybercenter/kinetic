@@ -1,7 +1,5 @@
 include:
-  - /formulas/common/base
-  - /formulas/common/networking
-  - /formulas/storage/install
+  - /formulas/{{ grains['role'] }}/install
   - /formulas/ceph/common/configure
 
 get_adminkey:

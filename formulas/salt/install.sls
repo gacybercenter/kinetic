@@ -1,3 +1,7 @@
+include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
 
 salt_pkgs:
   pkg.installed:

@@ -1,7 +1,5 @@
 include:
-  - /formulas/volume/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
   - /formulas/ceph/common/configure
 
 {% if grains['spawning'] == 0 %}

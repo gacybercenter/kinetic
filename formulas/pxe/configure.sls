@@ -1,5 +1,5 @@
 include:
-  - /formulas/pxe/install
+  - /formulas/{{ grains['role'] }}/install
 
 /etc/salt/minion.d/mine_functions.conf:
   file.managed:

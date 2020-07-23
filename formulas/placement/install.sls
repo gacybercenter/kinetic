@@ -1,4 +1,7 @@
 include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
   - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
