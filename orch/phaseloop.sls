@@ -19,7 +19,7 @@ check_{{ nType }}_{{ host }}:
   salt.runner:
     - name: compare.string
     - kwarg:
-        targetString: {{ nDict['nType'] }}
+        targetString: {{ nDict[nType] }}
         currentString: {{ currentPhase }}
     - retry:
         interval: 30
