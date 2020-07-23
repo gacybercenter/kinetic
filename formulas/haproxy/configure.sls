@@ -27,6 +27,7 @@ set haproxy group:
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
 
+{% if salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain')|length != 0% }
 set nfs group:
   danos.set_resourcegroup:
     - name: manila-share-servers
@@ -34,10 +35,8 @@ set nfs group:
     - description: list of current nfs-ganesha servers
     - values:
   {% for host, addresses in salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {%- for address in addresses -%}
-      {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
       - {{ address }}
-      {%- endif -%}
     {%- endfor -%}
   {% endfor %}
     - username: {{ pillar['danos']['username'] }}
@@ -47,6 +46,7 @@ set nfs group:
   {% else %}
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
+{% endif %}
 
 set haproxy static-mapping:
   danos.set_statichostmapping:
