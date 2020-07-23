@@ -7,9 +7,6 @@ include:
 spawnzero_complete:
   grains.present:
     - value: True
-    - unless:
-      - fun: grains.has_value
-        key: spawnzero_complete
   module.run:
     - name: mine.send
     - m_name: spawnzero_complete
