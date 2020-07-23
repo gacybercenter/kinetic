@@ -10,12 +10,13 @@ spawnzero_complete:
     - unless:
       - fun: grains.has_value
         key: spawnzero_complete
-
-spawnzero_complete_mine:
   module.run:
     - name: mine.send
     - m_name: spawnzero_complete
-    - mine_function: grains.item
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
 
 {% endif %}
 
