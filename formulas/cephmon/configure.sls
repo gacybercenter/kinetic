@@ -15,9 +15,7 @@ spawnzero_complete_mine:
   module.run:
     - name: mine.send
     - m_name: spawnzero_complete
-    - m_mine_function: grains.item
-    - m_args:
-      - spawnzero_complete
+    - m_mine_function: grains.item spawnzero_complete
 
 {% endif %}
 
