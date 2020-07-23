@@ -8,7 +8,7 @@
 
 empty_nop:
   test.show_notification:
-    - test: ffdsaf
+    - text: ffdsaf
 
 {% else %}
 
