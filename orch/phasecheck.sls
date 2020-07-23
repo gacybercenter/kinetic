@@ -11,6 +11,10 @@
         pillar:
           nDict: {{ nDict }}
           nType: {{ nType }}
+    - retry:
+        interval: 30
+        times: 60
+        splay: 10
     - require_in:
       - {{ type }}_generate_start_signal
 
