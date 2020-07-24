@@ -28,7 +28,6 @@ antora_packages:
       - gnupg
       - nodejs
       - apache2
-      - npm
     - reload_modules: True
 
 {% elif grains['os_family'] == 'RedHat' %}
