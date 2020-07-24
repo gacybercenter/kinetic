@@ -44,9 +44,11 @@ role:
 {% endfor %}
 
 {% if opts.id not in ['salt', 'pxe'] %}
-{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:
-  host.only:
-    - hostnames:
+name_resolution_{{ server }}:
+  host.present:
+    - ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+    - names:
       - {{ grains['id'] }}
       - {{ grains['host'] }}
+    - clean: true
 {% endif %}
