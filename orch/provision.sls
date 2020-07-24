@@ -72,6 +72,7 @@ retry_physical_zeroize_{{ type }}-{{ uuid }}:
           type: {{ type }}
           target: {{ retry_ip }} ##this renders to an ip address
     - onfail:
+      - wait_for_provisioning_{{ type }}-{{ uuid }}
 {% endif %}
 
 accept_minion_{{ type }}-{{ uuid }}:
