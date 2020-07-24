@@ -55,6 +55,7 @@ provision_{{ uuid }}:
         pillar:
           type: {{ type }}
           target: {{ uuid }}
+          retry_ip: {{ salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"][uuid] }}
           global: True
     - parallel: true
 

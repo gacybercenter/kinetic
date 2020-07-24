@@ -5,23 +5,14 @@
 ## set local target variable based on pillar data.
 ## Set type either by calculating it based on target hostname, or use the type value itself
 {% set target = pillar['target'] %}
-{% if salt['pillar.get']('global', False) == True %}
-  {% set type = pillar['type'] %}
-{% else %}
-  {% set type = target.split('-')[0] %}
-{% endif %}
-
+{% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
-{% set api_pass = pillar['bmc_password'] %}
-{% set api_user = pillar['api_user'] %}
-  {% if salt['pillar.get']('global', False) == True %}
-    {% set api_host = target %}
-  {% else %}
-    {% set api_host = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"][grains['uuid']] %}
-  {% endif %}
+  {% set api_pass = pillar['bmc_password'] %}
+  {% set api_user = pillar['api_user'] %}
+  {% set api_host = target %}
 
 set_bootonce_host:
   salt.function:
@@ -80,11 +71,7 @@ wipe_{{ target }}_logs:
 delete_{{ target }}_key:
   salt.wheel:
     - name: key.delete
-{% if salt['pillar.get']('global', False) == True %}
     - match: '{{ type }}*'
-{% else %}
-    - match: {{ target }}
-{% endif %}
 
 expire_{{ target }}_dead_hosts:
   salt.function:

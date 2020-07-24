@@ -1,6 +1,7 @@
 {% set type = pillar['type'] %}
 {% if pillar['hosts'][type]['style'] == 'physical' %}
   {% set role = pillar['hosts'][type]['role'] %}
+  {% set retry_ip = pillar['retry_ip'] %}
 {% else %}
   {% set role = type %}
 {% endif %}
@@ -55,7 +56,23 @@ wait_for_provisioning_{{ type }}-{{ uuid }}:
     - name: salt/auth
     - id_list:
       - {{ type }}-{{ uuid }}
+{% if style == 'virtual' %}
+    - timeout: 180
+{% elif style == 'physical' %}
     - timeout: 1200
+{% endif %}
+
+{% if style == 'physical' %}
+retry_physical_zeroize_{{ type }}-{{ uuid }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/zeroize
+        pillar:
+          type: {{ type }}
+          target: {{ retry_ip}} ##this renders to an ip address
+          global: False
+{% endif %}
 
 accept_minion_{{ type }}-{{ uuid }}:
   salt.wheel:
