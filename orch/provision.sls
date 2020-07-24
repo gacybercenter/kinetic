@@ -108,6 +108,13 @@ apply_base_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/common/base
+    - timeout: 600
+    - retry:
+        interval: 10
+        attempts: 2
+        splay: 0
+    - require:
+      - sync_all_{{ type }}-{{ uuid }}
 
 ### This loop will block until confirmation is received that all networking
 ### deps have been met.  The logic is very similar to the initial dep check loop
@@ -137,7 +144,11 @@ apply_networking_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - sls:
       - formulas/common/networking
-    - failhard: True
+    - timeout: 600
+    - retry:
+        interval: 10
+        attempts: 2
+        splay: 0
     - require:
       - apply_base_{{ type }}-{{ uuid }}
 
@@ -198,6 +209,10 @@ apply_install_{{ type }}-{{ uuid }}:
     - sls:
       - formulas/{{ role }}/install
     - timeout: 600
+    - retry:
+        interval: 10
+        attempts: 2
+        splay: 0
     - require:
       - wait_for_{{ type }}-{{ uuid }}_reboot
 
@@ -258,6 +273,10 @@ highstate_{{ type }}-{{ uuid }}:
     - tgt: '{{ type }}-{{ uuid }}'
     - highstate: True
     - timeout: 600
+    - retry:
+        interval: 10
+        attempts: 2
+        splay: 0
     - require:
       - apply_install_{{ type }}-{{ uuid }}
 
