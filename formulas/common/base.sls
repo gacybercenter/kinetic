@@ -44,7 +44,7 @@ role:
 {% endfor %}
 
 {% if opts.id not in ['salt', 'pxe'] %}
-name_resolution_{{ server }}:
+hosts_name_resolution:
   host.present:
     - ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - names:
