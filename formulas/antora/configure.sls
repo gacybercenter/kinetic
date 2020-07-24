@@ -16,6 +16,11 @@ spawnzero_complete:
       - grains: spawnzero_complete
 {% endif %}
 
+docs_source:
+  git.latest:
+    - name: {{ pillar['antora_docs_repo'] }}
+    - target: /root/src/
+
 /root/site.yml:
   file.managed:
     - source: salt://formulas/antora/files/site.yml
@@ -26,8 +31,8 @@ spawnzero_complete:
 
 antora generate --fetch /root/site.yml:
   cmd.run:
-    - require:
-      - /root/site.yml
+    - onchanges:
+      - git: docs_source
 
 apache2_service:
   service.running:
