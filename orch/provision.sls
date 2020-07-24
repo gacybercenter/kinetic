@@ -70,7 +70,7 @@ retry_physical_zeroize_{{ type }}-{{ uuid }}:
         mods: orch/zeroize
         pillar:
           type: {{ type }}
-          target: {{ retry_ip }} ##this renders to an ip address
+          target: {{ retry_ip }} ##this is the bmc address passed in from generate
     - onfail:
       - wait_for_provisioning_{{ type }}-{{ uuid }}
 {% endif %}
