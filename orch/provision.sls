@@ -59,7 +59,7 @@ wait_for_provisioning_{{ type }}-{{ uuid }}:
 {% if style == 'virtual' %}
     - timeout: 180
 {% elif style == 'physical' %}
-    - timeout: 1200
+    - timeout: 900
 {% endif %}
 
 {% if style == 'physical' %}
@@ -70,8 +70,8 @@ retry_physical_zeroize_{{ type }}-{{ uuid }}:
         mods: orch/zeroize
         pillar:
           type: {{ type }}
-          target: {{ retry_ip}} ##this renders to an ip address
-          global: False
+          target: {{ retry_ip }} ##this renders to an ip address
+    - onfail:
 {% endif %}
 
 accept_minion_{{ type }}-{{ uuid }}:
