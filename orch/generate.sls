@@ -35,7 +35,7 @@ zeroize_{{ type }}_{{ uuid }}:
           provision: True
     - parallel: true
 
-sleep_zeroize_{{ uuid }}:
+sleep_zeroize_{{ type }}_{{ uuid }}}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
@@ -61,7 +61,7 @@ zeroize_{{ type }}_{{ uuid }}:
           controller: {{ controllers[(loop.index0 + offset) % controllers|length] }}
     - parallel: True
 
-sleep_{{ type }}:
+sleep_zeroize_{{ type }}_{{ uuid }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
