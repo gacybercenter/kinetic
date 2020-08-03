@@ -67,5 +67,5 @@ sleep_{{ type }}:
     - tgt: 'salt'
     - arg:
       - sleep 1
-
+  {% endfor %}
 {% endif %}
