@@ -9,7 +9,6 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set uuid =  salt['random.get_str']('64') | uuid %}
 
-
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
   {% set api_pass = pillar['bmc_password'] %}
@@ -110,6 +109,8 @@ expire_{{ target }}_dead_hosts:
     - name: address.expire_dead_hosts
     - tgt: salt
 
+## There should be some kind of retry mechanism here if this event never fires
+## to deal with transient problems.  Re-exec zeroize for the given target?
 wait_for_provisioning_{{ type }}-{{ uuid }}:
   salt.wait_for_event:
     - name: salt/auth
