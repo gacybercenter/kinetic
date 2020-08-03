@@ -48,7 +48,7 @@ sleep_zeroize_{{ type }}_{{ uuid }}}:
   {% set offset = range(controllers|length)|random %}
   {% for host in range(pillar['hosts'][type]['count']) %}
 
-zeroize_{{ type }}_{{ uuid }}:
+zeroize_{{ type }}_{{ host }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
@@ -61,7 +61,7 @@ zeroize_{{ type }}_{{ uuid }}:
           controller: {{ controllers[(loop.index0 + offset) % controllers|length] }}
     - parallel: True
 
-sleep_zeroize_{{ type }}_{{ uuid }}:
+sleep_zeroize_{{ type }}_{{ host }}:
   salt.function:
     - name: cmd.run
     - tgt: 'salt'
