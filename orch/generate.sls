@@ -24,7 +24,7 @@ pxe_setup:
 # is going to be called independently
 # global lets the state know that all hosts are being rotated
   {% for uuid in pillar['hosts'][type]['uuids'] %}
-zeroize_{{ uuid }}:
+zeroize_{{ type }}_{{ uuid }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
@@ -48,7 +48,7 @@ sleep_zeroize_{{ uuid }}:
   {% set offset = range(controllers|length)|random %}
   {% for host in range(pillar['hosts'][type]['count']) %}
 
-zeroize_{{ type }}:
+zeroize_{{ type }}_{{ uuid }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
