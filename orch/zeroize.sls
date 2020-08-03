@@ -150,7 +150,7 @@ remove_pending_{{ type }}-{{ uuid }}:
     - name: file.remove
     - tgt: 'pxe'
     - arg:
-      - /var/www/html/assignments/{{ target }}
+      - /var/www/html/assignments/{{ phys_uuid }}
     - require:
       - sync_all_{{ type }}-{{ uuid }}
 
