@@ -4,6 +4,11 @@
 ## They below will wipe everything that has a '-' in the minion_id, e.g.
 ## everything except salt and pxe
 
+init_poweroff:
+  salt.function:
+    - name: system.poweroff
+    - tgt: '*-*'
+
 wipe_init_keys:
   salt.wheel:
     - name: key.delete
