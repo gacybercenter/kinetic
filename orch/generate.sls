@@ -32,7 +32,7 @@ zeroize_{{ uuid }}:
         pillar:
           type: {{ type }}
           target: {{ salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"][uuid] }} ##this renders to an ip address
-          global: True
+          provision: True
     - parallel: true
 
 sleep_zeroize_{{ uuid }}:
@@ -43,31 +43,11 @@ sleep_zeroize_{{ uuid }}:
       - sleep 1
   {% endfor %}
 
-# type is the type of host (compute, controller, etc.)
-# target is the mac address of the target host on what ipxe considers net0
-# global lets the state know that all hosts are being rotated
-  {% for uuid in pillar['hosts'][type]['uuids'] %}
-provision_{{ uuid }}:
-  salt.runner:
-    - name: state.orchestrate
-    - kwarg:
-        mods: orch/provision
-        pillar:
-          type: {{ type }}
-          target: {{ uuid }}
-          retry_ip: {{ salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"][uuid] }}
-          global: True
-    - parallel: true
-
-sleep_provision_{{ uuid }}:
-  salt.function:
-    - name: cmd.run
-    - tgt: 'salt'
-    - arg:
-      - sleep 1
-  {% endfor %}
-
 {% elif style == 'virtual' %}
+  {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
+  {% set offset = range(controllers|length)|random %}
+  {% for host in range(pillar['hosts'][type]['count']) %}
+
 zeroize_{{ type }}:
   salt.runner:
     - name: state.orchestrate
@@ -76,7 +56,10 @@ zeroize_{{ type }}:
         pillar:
           type: {{ type }}
           target: {{ type }}
-          global: True
+          provision: True
+          spawning: {{ loop.index0 }}
+          controller: {{ controllers[(loop.index0 + offset) % controllers|length] }}
+    - parallel: True
 
 sleep_{{ type }}:
   salt.function:
@@ -85,27 +68,4 @@ sleep_{{ type }}:
     - arg:
       - sleep 1
 
-### Get a list of controllers and set a random offset so the assignments remain balanced
-  {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
-  {% set offset = range(controllers|length)|random %}
-  {% for host in range(pillar['hosts'][type]['count']) %}
-
-provision_{{ host }}:
-  salt.runner:
-    - name: state.orchestrate
-    - kwarg:
-        mods: orch/provision
-        pillar:
-          controller: {{ controllers[(loop.index0 + offset) % controllers|length] }}
-          type: {{ type }}
-          spawning: {{ loop.index0 }}
-    - parallel: true
-
-sleep_{{ host }}:
-  salt.function:
-    - name: cmd.run
-    - tgt: 'salt'
-    - arg:
-      - sleep 1
-  {% endfor %}
 {% endif %}
