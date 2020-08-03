@@ -15,6 +15,7 @@
   {% set api_pass = pillar['bmc_password'] %}
   {% set api_user = pillar['api_user'] %}
   {% set api_host = target %}
+  {% set phys_uuid = pillar['phys_uuid'] %}
 
 set_bootonce_host:
   salt.function:
@@ -36,12 +37,12 @@ reset_host:
       - {{ api_user }}
       - {{ api_pass }}
 
-assign_uuid_to_{{ target }}:
+assign_uuid_to_{{ phys_uuid }}:
   salt.function:
     - name: file.write
     - tgt: 'pxe'
     - arg:
-      - /var/www/html/assignments/{{ target }}
+      - /var/www/html/assignments/{{ phys_uuid }}
       - {{ type }}
       - {{ type }}-{{ uuid }}
       - {{ pillar['hosts'][type]['os'] }}

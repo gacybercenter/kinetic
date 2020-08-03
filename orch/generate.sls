@@ -33,6 +33,7 @@ zeroize_{{ type }}_{{ uuid }}:
           type: {{ type }}
           target: {{ salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"][uuid] }} ##this renders to an ip address
           provision: True
+          phys_uuid: {{ uuid }}
     - parallel: true
 
 sleep_zeroize_{{ type }}_{{ uuid }}}:
