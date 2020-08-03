@@ -1,3 +1,5 @@
+## This routine is called on a fresh minion whose key was just accepted.
+
 {% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
 {% set uuid =  pillar['uuid'] %}
@@ -8,20 +10,6 @@
   {% set role = type %}
 {% endif %}
 
-## There is an inotify beacon sitting on the pxe server
-## that watches our custom function write the issued hostnames
-## to a directory.  Once the required amount of hostnames have
-## been issued, thie mine data of all the hostnames is used
-## to watch the provisioning process.  We allow 30 minutes to
-## install the operating system.  This is probably excessive.
-
-## Need to spawn a listeniner (http? tcp?) that will wait for
-## generated physical endpoints to send it a signal once they have
-## successfully pulled initrd and the kernel.  It's fairly common
-## for several physical hosts to fail kernel retrieval when there
-## are a large number.
-
-## alternative option is building in a retry into ipxe (if supported)?
 
 apply_base_{{ type }}-{{ uuid }}:
   salt.state:
@@ -235,6 +223,8 @@ set_production_{{ type }}-{{ uuid }}:
   salt.function:
     - name: grains.setval
     - tgt: '{{ type }}-{{ uuid }}'
+    - require:
+      - highstate_{{ type }}-{{ uuid }}    
     - arg:
       - production
       - True
