@@ -177,4 +177,4 @@ provision_{{ uuid }}:
           type: {{ type }}
           uuid: {{ uuid }}
 
-{% endif $}
+{% endif %}
