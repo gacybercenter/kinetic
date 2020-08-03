@@ -25,6 +25,11 @@ rmq_name_resolution_{{ server }}:
     - names:
       - {{ server }}
     - clean: true
+    - require_in:
+      - service: rabbitmq-server-service
+  {% if grains['spawning'] != 0 %}
+      - rabbitmq_cluster: join_cluster
+  {% endif %}
 {% endfor %}
 
 rabbitmq_unit_file_update:
@@ -53,7 +58,8 @@ rabbitmq-server-service:
     - watch:
       - /var/lib/rabbitmq/.erlang.cookie
     - require:
-      - /var/lib/rabbitmq/.erlang.cookie
+      - file: /var/lib/rabbitmq/.erlang.cookie
+      - sls: /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] != 0 %}
 join_cluster:
