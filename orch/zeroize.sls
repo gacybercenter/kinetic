@@ -7,8 +7,8 @@
 {% set target = pillar['target'] %}
 {% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
-{% set controller = pillar['controller'] %}
 {% set uuid =  salt['random.get_str']('64') | uuid %}
+
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
@@ -49,26 +49,31 @@ assign_uuid_to_{{ target }}:
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
-{% set spawning = salt['pillar.get']('spawning', 0) %}
+  {% set controller = pillar['controller'] %}
+  {% set spawning = salt['pillar.get']('spawning', 0) %}
   {% if spawning|int == 0 %}
+
 destroy_{{ target }}_domain:
   salt.function:
     - name: cmd.run
-    - tgt: 'controller*'
+    - tgt: 'role:controller'
+    - tgt_type: grain
     - arg:
       - virsh list | grep {{ target }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
 
 wipe_{{ target }}_vms:
   salt.function:
     - name: cmd.run
-    - tgt: 'controller*'
+    - tgt: 'role:controller'
+    - tgt_type: grain
     - arg:
       - ls /kvm/vms | grep {{ target }} | while read id;do rm -rf /kvm/vms/$id;done
 
 wipe_{{ target }}_logs:
   salt.function:
     - name: cmd.run
-    - tgt: 'controller*'
+    - tgt: 'role:controller'
+    - tgt_type: grain
     - arg:
       - ls /var/log/libvirt | grep {{ target }} | while read id;do rm /var/log/libvirt/$id;done
   {% endif %}
