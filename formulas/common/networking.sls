@@ -20,6 +20,10 @@ ifwatch:
 netplan.io:
   pkg.removed
 
+install_pyroute2:
+  pkg.installed:
+    - name: python3-pyroute2
+
   {% if grains['os_family'] == 'RedHat' %}
 install_networkd:
   pkg.installed:
