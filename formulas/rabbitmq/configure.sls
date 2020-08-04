@@ -18,10 +18,6 @@ spawnzero_complete:
 
 {% endif %}
 
-update_mine_pre_rmq:
-  module.run:
-    - name: mine.update
-
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
 rmq_name_resolution_{{ server }}:
   host.present:
@@ -29,13 +25,6 @@ rmq_name_resolution_{{ server }}:
     - names:
       - {{ server }}
     - clean: true
-    - require:
-      - module: update_mine_pre_rmq
-    - require_in:
-      - service: rabbitmq-server-service
-  {% if grains['spawning'] != 0 %}
-      - rabbitmq_cluster: join_cluster
-  {% endif %}
 {% endfor %}
 
 rabbitmq_unit_file_update:
