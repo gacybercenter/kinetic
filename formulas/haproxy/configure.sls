@@ -81,12 +81,13 @@ haproxy_connect_any:
       - sls: /formulas/haproxy/install
 {% endif %}
 
-{% for domain in pillar['haproxy']['tls_domains'] %}
-
-acme_{{ domain }}:
+acme_certs:
   acme.cert:
-    - name: {{ domain }}
-    - email: {{ pillar['haproxy']['tls_email'] }}
+    - name: {{ pillar['haproxy']['dashboard_domain'] }}
+    - aliases:
+      - {{ pillar['haproxy']['console_domain'] }}
+      - {{ pillar['haproxy']['docs_domain'] }}
+    - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
 {% if salt['pillar.get']('danos:enabled', False) == True %}
     - require:
@@ -94,14 +95,12 @@ acme_{{ domain }}:
       - danos: set haproxy static-mapping
 {% endif %}
 
-create_master_pem_{{ domain }}:
+create_master_pem:
   cmd.run:
-    - name: cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem
-    - creates: /etc/letsencrypt/live/{{ domain }}/master.pem
+    - name: cat /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/fullchain.pem /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/privkey.pem > /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
+    - creates: /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
     - require:
-      - acme: acme_{{ domain }}
-
-{% endfor %}
+      - acme: acme_certs
 
 /etc/haproxy/haproxy.cfg:
   file.managed:
