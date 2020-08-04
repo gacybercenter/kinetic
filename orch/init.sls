@@ -17,7 +17,7 @@ init_sleep:
     - name: test.sleep
     - tgt: salt
     - kwarg:
-        length: 10
+        length: 30
 
 wipe_init_keys:
   salt.wheel:
