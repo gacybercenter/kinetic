@@ -9,6 +9,16 @@ init_poweroff:
     - name: system.poweroff
     - tgt: '*-*'
 
+## This gives hosts that were givena shutdown order the ability to shut down
+## There have been cases where a zeroize reset command was issued before a
+## successful shutdown
+init_sleep:
+  salt.function:
+    - name: test.sleep
+    - tgt: salt
+    - kwarg:
+        length: 10
+
 wipe_init_keys:
   salt.wheel:
     - name: key.delete
