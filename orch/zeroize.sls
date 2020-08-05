@@ -4,24 +4,26 @@
 
 ## set local target variable based on pillar data.
 ## Set type either by calculating it based on target hostname, or use the type value itself
-{% set target = pillar['target'] %}
 {% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
-{% set uuid =  salt['random.get_str']('64') | uuid %}
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
   {% set api_pass = pillar['bmc_password'] %}
   {% set api_user = pillar['api_user'] %}
-  {% set api_host = target %}
-  {% set phys_uuid = pillar['phys_uuid'] %}
+  {% set targets = {} %}
+  {% for id in pillar['hosts'][type]['uuids'] %}
+    {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64')|uuid) %}
+    {% set targets = targets|set_dict_key_value(id+':api_host', salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"][id]) %}
+  {% endfor %}
 
+{% for id in targets %}
 set_bootonce_host:
   salt.function:
     - name: redfish.set_bootonce
     - tgt: pxe
     - arg:
-      - {{ api_host }}
+      - {{ targets[id]['api_host'] }}
       - {{ api_user }}
       - {{ api_pass }}
       - UEFI
@@ -32,7 +34,7 @@ reset_host:
     - name: redfish.reset_host
     - tgt: pxe
     - arg:
-      - {{ api_host }}
+      - {{ targets[id]['api_host'] }}
       - {{ api_user }}
       - {{ api_pass }}
 
@@ -41,11 +43,12 @@ assign_uuid_to_{{ phys_uuid }}:
     - name: file.write
     - tgt: 'pxe'
     - arg:
-      - /var/www/html/assignments/{{ phys_uuid }}
+      - /var/www/html/assignments/{{ id }}
       - {{ type }}
-      - {{ type }}-{{ uuid }}
+      - {{ type }}-{{ targets[id]['uuid'] }}
       - {{ pillar['hosts'][type]['os'] }}
       - {{ pillar['hosts'][type]['interface'] }}
+  {% endfor %}
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
@@ -78,13 +81,13 @@ wipe_{{ target }}_logs:
       - ls /var/log/libvirt | grep {{ target }} | while read id;do rm /var/log/libvirt/$id;done
   {% endif %}
 
-prepare_vm_{{ type }}-{{ uuid }}:
+prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
     - tgt: {{ controller }}
     - sls:
       - orch/states/virtual_prep
     - pillar:
-        hostname: {{ type }}-{{ uuid }}
+        hostname: {{ type }}-{{ targets[id]['uuid'] }}
     - concurrent: true
 
 {% endif %}
@@ -92,7 +95,7 @@ prepare_vm_{{ type }}-{{ uuid }}:
 ## reboots initiated by the BMC take a few seconds to take effect
 ## This sleep ensures that the key is only removed after
 ## the device has actually been rebooted
-{{ target }}_wheel_removal_delay:
+{{ type }}_wheel_removal_delay:
   salt.function:
     - name: test.sleep
     - tgt: salt
@@ -111,61 +114,76 @@ expire_{{ target }}_dead_hosts:
 
 ## There should be some kind of retry mechanism here if this event never fires
 ## to deal with transient problems.  Re-exec zeroize for the given target?
-wait_for_provisioning_{{ type }}-{{ uuid }}:
+wait_for_provisioning_{{ type }}:
   salt.wait_for_event:
     - name: salt/auth
     - id_list:
-      - {{ type }}-{{ uuid }}
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
 {% if style == 'virtual' %}
     - timeout: 180
 {% elif style == 'physical' %}
     - timeout: 1200
 {% endif %}
 
-accept_minion_{{ type }}-{{ uuid }}:
-  salt.wheel:
-    - name: key.accept
-    - match: {{ type }}-{{ uuid }}
-    - require:
-      - wait_for_provisioning_{{ type }}-{{ uuid }}
 
-wait_for_minion_first_start_{{ type }}-{{ uuid }}:
+accept_minion_{{ type }}:
+  salt.wheel:
+    - name: key.accept_dict
+    - match:
+        minions:
+{% for id in targets %}
+          - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - require:
+      - wait_for_provisioning_{{ type }}-{{ targets[id]['uuid'] }}
+
+wait_for_minion_first_start_{{ type }}:
   salt.wait_for_event:
-    - name: salt/minion/{{ type }}-{{ uuid }}/start
+    - name: salt/minion/*/start
     - id_list:
-      - {{ type }}-{{ uuid }}
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
     - timeout: 60
     - require:
-      - accept_minion_{{ type }}-{{ uuid }}
+      - accept_minion_{{ type }}
 
-sync_all_{{ type }}-{{ uuid }}:
+sync_all_{{ type }}:
   salt.function:
     - name: saltutil.sync_all
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: List
     - require:
-      - wait_for_minion_first_start_{{ type }}-{{ uuid }}
+      - wait_for_minion_first_start_{{ type }}
 
 {% if style == 'physical' %}
-remove_pending_{{ type }}-{{ uuid }}:
+  {% for id in targets %}
+remove_pending_{{ type }}-{{ id }}:
   salt.function:
     - name: file.remove
     - tgt: 'pxe'
     - arg:
-      - /var/www/html/assignments/{{ phys_uuid }}
+      - /var/www/html/assignments/{{ id }}
     - require:
-      - sync_all_{{ type }}-{{ uuid }}
+      - sync_all_{{ type }}
+  {% endfor %}      
 
 {% elif style == 'virtual' %}
-set_spawning_{{ type }}-{{ uuid }}:
+set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.function:
     - name: grains.set
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt: '{{ type }}-{{ targets[id]['uuid'] }}'
     - arg:
       - spawning
     - kwarg:
           val: {{ spawning }}
     - require:
-      - sync_all_{{ type }}-{{ uuid }}
+      - sync_all_{{ type }}-{{ targets[id]['uuid'] }}
 {% endif %}
 
 {% if salt['pillar.get']('provision', False) == True %}
