@@ -197,7 +197,7 @@ set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
     - arg:
       - spawning
     - kwarg:
-          val: {{ spawning }}
+          val: {{ targets[id]['spawning'] }}
     - require:
       - sync_all_{{ type }}
   {% endfor %}
