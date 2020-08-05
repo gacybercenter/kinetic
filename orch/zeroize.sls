@@ -16,7 +16,7 @@
 
 ## create and endpoints dictionary of all physical uuids
   {% set endpoints = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"] %}
-  
+
 ## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
 ## as well as its ransomized 'uuid'.
   {% set targets = {} %}
@@ -60,7 +60,9 @@ assign_uuid_to_{{ id }}:
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
-  {% set controller = pillar['controller'] %}
+  {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
+  {% set offset = range(controllers|length)|random %}
+  {% for host in range(pillar['hosts'][type]['count']) %}
   {% set spawning = salt['pillar.get']('spawning', 0) %}
   {% if spawning|int == 0 %}
 
