@@ -18,7 +18,7 @@
   {% endfor %}
 
 {% for id in targets %}
-set_bootonce_host:
+set_bootonce_host_{{ id }}:
   salt.function:
     - name: redfish.set_bootonce
     - tgt: pxe
@@ -29,7 +29,7 @@ set_bootonce_host:
       - UEFI
       - Pxe
 
-reset_host:
+reset_host_{{ id }}:
   salt.function:
     - name: redfish.reset_host
     - tgt: pxe
