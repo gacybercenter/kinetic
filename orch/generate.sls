@@ -37,7 +37,6 @@ pxe_setup:
   {% endfor %}
 {% endif %}
 
-
 # type is the type of host (compute, controller, etc.)
 # provision determines whether or not zeroize will just create a blank minion,
 # or fully configure it
