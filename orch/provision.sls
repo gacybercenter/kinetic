@@ -190,23 +190,6 @@ set_build_phase_install_mine_{{ type }}:
       - highstate_{{ type }}
 {% endfor %}
 
-{% if (salt['pillar.get']('spawning', '0')|int != 0) and (style == 'virtual') %}
-  {% for host, spawnzero_complete in salt.saltutil.runner('mine.get',tgt='G@role:'+type+' and G@spawning:0',tgt_type='compound',fun='spawnzero_complete')|dictsort() %}
-spawnzero_check_{{ type }}_{{ host }}:
-  salt.runner:
-    - name: compare.string
-    - kwarg:
-        targetString: True
-        currentString: {{ spawnzero_complete }}
-    - retry:
-        interval: 5
-        attempts: 30
-        splay: 0
-    - require_in:
-      - highstate_{{ type }}
-  {% endfor %}
-{% endif %}
-
 highstate_{{ type }}:
   salt.state:
     - tgt:
