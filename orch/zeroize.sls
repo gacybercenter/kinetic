@@ -6,26 +6,7 @@
 ## Set type either by calculating it based on target hostname, or use the type value itself
 {% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
-
-## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
-## as well as its ransomized 'uuid'.
-{% set targets = {} %}
-{% if style == 'physical' %}
-## create and endpoints dictionary of all physical uuids
-  {% set endpoints = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"] %}
-  {% for id in pillar['hosts'][type]['uuids'] %}
-    {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
-    {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64')|uuid) %}
-  {% endfor %}
-{% elif style == 'virtual' %}
-  {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
-  {% set offset = range(controllers|length)|random %}
-  {% for id in range(pillar['hosts'][type]['count']) %}
-    {% set targets = targets|set_dict_key_value(id|string+':spawning', loop.index0) %}
-    {% set targets = targets|set_dict_key_value(id|string+':controller', controllers[(loop.index0 + offset) % controllers|length]) %}
-    {% set targets = targets|set_dict_key_value(id|string+':uuid', salt['random.get_str']('64')|uuid) %}
-  {% endfor %}
-{% endif %}
+{% set targets = pillar['targets'] %}
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
@@ -201,17 +182,4 @@ set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
     - require:
       - sync_all_{{ type }}
   {% endfor %}
-{% endif %}
-
-{% if salt['pillar.get']('provision', False) == True %}
-
-provision_{{ type }}:
-  salt.runner:
-    - name: state.orchestrate
-    - kwarg:
-        mods: orch/provision
-        pillar:
-          type: {{ type }}
-          targets: {{ targets }}
-
 {% endif %}
