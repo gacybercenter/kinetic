@@ -14,6 +14,15 @@ spawnzero_complete:
       - spawnzero_complete
     - onchanges:
       - grains: spawnzero_complete
+
+{% else %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - kwargs:
+        type: {{ grains['type'] }}
+
 {% endif %}
 
 apt-cacher-ng-conf:
