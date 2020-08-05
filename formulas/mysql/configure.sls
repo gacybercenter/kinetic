@@ -50,7 +50,7 @@ spawnzero_complete:
       - spawnzero_complete
     - onchanges:
       - grains: spawnzero_complete
-      
+
 {% else %}
 
 check_spawnzero_status:
@@ -60,6 +60,10 @@ check_spawnzero_status:
     - retry:
         attempts: 10
         interval: 30
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {% endif %}
 
