@@ -69,9 +69,9 @@ assign_uuid_to_{{ id }}:
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
-  {% for id in targets if targets[id]['spawning']|int == 0 %}
-
-destroy_{{ target }}_domain:
+  {% for id in targets %}
+    {% if targets[id]['spawning']|int == 0 %}
+destroy_{{ type }}_domain:
   salt.function:
     - name: cmd.run
     - tgt: 'role:controller'
@@ -79,7 +79,7 @@ destroy_{{ target }}_domain:
     - arg:
       - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
 
-wipe_{{ target }}_vms:
+wipe_{{ type }}_vms:
   salt.function:
     - name: cmd.run
     - tgt: 'role:controller'
@@ -87,16 +87,15 @@ wipe_{{ target }}_vms:
     - arg:
       - ls /kvm/vms | grep {{ type }} | while read id;do rm -rf /kvm/vms/$id;done
 
-wipe_{{ target }}_logs:
+wipe_{{ type }}_logs:
   salt.function:
     - name: cmd.run
     - tgt: 'role:controller'
     - tgt_type: grain
     - arg:
       - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id;done
-  {% endfor %}
+    {% endif %}
 
-  {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
     - tgt: {{ targets[id]['controller'] }}
