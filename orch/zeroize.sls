@@ -25,7 +25,7 @@
     {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
   {% endfor %}
 
-{% for id in targets %}
+  {% for id in targets %}
 set_bootonce_host_{{ id }}:
   salt.function:
     - name: redfish.set_bootonce
@@ -62,9 +62,10 @@ assign_uuid_to_{{ id }}:
 {% elif style == 'virtual' %}
   {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
   {% set offset = range(controllers|length)|random %}
+
   {% for host in range(pillar['hosts'][type]['count']) %}
-  {% set spawning = salt['pillar.get']('spawning', 0) %}
-  {% if spawning|int == 0 %}
+    {% set spawning = loop.index0 %}
+    {% if spawning|int == 0 %}
 
 destroy_{{ target }}_domain:
   salt.function:
@@ -89,17 +90,17 @@ wipe_{{ target }}_logs:
     - tgt_type: grain
     - arg:
       - ls /var/log/libvirt | grep {{ target }} | while read id;do rm /var/log/libvirt/$id;done
-  {% endif %}
+    {% endif %}
 
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
-    - tgt: {{ controller }}
+    - tgt: {{ targets[id]['controller'] }}
     - sls:
       - orch/states/virtual_prep
     - pillar:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
     - concurrent: true
-
+  {% endfor %}
 {% endif %}
 
 ## reboots initiated by the BMC take a few seconds to take effect
