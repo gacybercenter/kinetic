@@ -112,6 +112,17 @@ wait_for_{{ type }}_reboot:
       - reboot_{{ type }}
     - timeout: 600
 
+force_network_mine_refresh_{{ type }}:
+  salt.function:
+    - name: mine.update
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
+    - require:
+      - wait_for_{{ type }}_reboot
+
 {% for nType in salt['pillar.get']('hosts:'+type+':needs:install', {}) %}
 {{ type }}_install_{{ nType }}_phase_check_loop:
   salt.runner:
