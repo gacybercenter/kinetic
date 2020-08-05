@@ -14,12 +14,15 @@
   {% set api_pass = pillar['bmc_password'] %}
   {% set api_user = pillar['api_user'] %}
 
+## create and endpoints dictionary of all physical uuids
+  {% set endpoints = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"] %}
+  
 ## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
 ## as well as its ransomized 'uuid'.
   {% set targets = {} %}
   {% for id in pillar['hosts'][type]['uuids'] %}
     {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64')|uuid) %}
-    {% set targets = targets|set_dict_key_value(id+':api_host', salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"][id]) %}
+    {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
   {% endfor %}
 
 {% for id in targets %}
