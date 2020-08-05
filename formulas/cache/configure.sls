@@ -20,8 +20,10 @@ spawnzero_complete:
 check_spawnzero_status:
   module.run:
     - name: spawnzero.check
-    - kwargs:
-        type: {{ grains['type'] }}
+    - type: {{ grains['type'] }}
+    - retry:
+        attempts: 10
+        interval: 30
 
 {% endif %}
 
