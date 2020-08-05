@@ -9,8 +9,13 @@
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
+
+## Pull the current bmc configuration data from the pillar
   {% set api_pass = pillar['bmc_password'] %}
   {% set api_user = pillar['api_user'] %}
+
+## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
+## as well as its ransomized 'uuid'.
   {% set targets = {} %}
   {% for id in pillar['hosts'][type]['uuids'] %}
     {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64')|uuid) %}
@@ -131,7 +136,7 @@ accept_minion_{{ type }}:
   salt.wheel:
     - name: key.accept_dict
     - match:
-        minions:
+        minions_pre:
 {% for id in targets %}
           - {{ type }}-{{ targets[id]['uuid'] }}
 {% endfor %}
