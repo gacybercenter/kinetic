@@ -7,23 +7,30 @@
 {% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
 
+## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
+## as well as its ransomized 'uuid'.
+{% set targets = {} %}
+{% if style == 'physical' %}
+## create and endpoints dictionary of all physical uuids
+  {% set endpoints = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"] %}
+  {% for id in pillar['hosts'][type]['uuids'] %}
+    {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
+{% elif style == 'virtual' %}
+  {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
+  {% set offset = range(controllers|length)|random %}
+  {% for id in range(pillar['hosts'][type]['count'] %}
+    {% set targets = targets|set_dict_key_value(id+':spawning', loop.index0) %}
+    {% set targets = targets|set_dict_key_value(id+':controller', controllers[(loop.index0 + offset) % controllers|length]) %}
+{% endif %}
+    {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64')|uuid) %}
+  {% endfor %}
+
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
 
 ## Pull the current bmc configuration data from the pillar
   {% set api_pass = pillar['bmc_password'] %}
   {% set api_user = pillar['api_user'] %}
-
-## create and endpoints dictionary of all physical uuids
-  {% set endpoints = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"] %}
-
-## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
-## as well as its ransomized 'uuid'.
-  {% set targets = {} %}
-  {% for id in pillar['hosts'][type]['uuids'] %}
-    {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64')|uuid) %}
-    {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
-  {% endfor %}
 
   {% for id in targets %}
 set_bootonce_host_{{ id }}:
@@ -60,12 +67,7 @@ assign_uuid_to_{{ id }}:
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
-  {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
-  {% set offset = range(controllers|length)|random %}
-
-  {% for host in range(pillar['hosts'][type]['count']) %}
-    {% set spawning = loop.index0 %}
-    {% if spawning|int == 0 %}
+  {% if targets[id]['spawning']|int == 0 %}
 
 destroy_{{ target }}_domain:
   salt.function:
@@ -73,7 +75,7 @@ destroy_{{ target }}_domain:
     - tgt: 'role:controller'
     - tgt_type: grain
     - arg:
-      - virsh list | grep {{ target }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
+      - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
 
 wipe_{{ target }}_vms:
   salt.function:
@@ -81,7 +83,7 @@ wipe_{{ target }}_vms:
     - tgt: 'role:controller'
     - tgt_type: grain
     - arg:
-      - ls /kvm/vms | grep {{ target }} | while read id;do rm -rf /kvm/vms/$id;done
+      - ls /kvm/vms | grep {{ type }} | while read id;do rm -rf /kvm/vms/$id;done
 
 wipe_{{ target }}_logs:
   salt.function:
@@ -89,9 +91,10 @@ wipe_{{ target }}_logs:
     - tgt: 'role:controller'
     - tgt_type: grain
     - arg:
-      - ls /var/log/libvirt | grep {{ target }} | while read id;do rm /var/log/libvirt/$id;done
-    {% endif %}
+      - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id;done
+  {% endif %}
 
+  {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
     - tgt: {{ targets[id]['controller'] }}
