@@ -127,7 +127,6 @@ wait_for_provisioning_{{ type }}:
     - timeout: 1200
 {% endif %}
 
-
 accept_minion_{{ type }}:
   salt.wheel:
     - name: key.accept_dict
@@ -137,7 +136,7 @@ accept_minion_{{ type }}:
           - {{ type }}-{{ targets[id]['uuid'] }}
 {% endfor %}
     - require:
-      - wait_for_provisioning_{{ type }}-{{ targets[id]['uuid'] }}
+      - wait_for_provisioning_{{ type }}
 
 wait_for_minion_first_start_{{ type }}:
   salt.wait_for_event:
