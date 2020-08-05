@@ -38,7 +38,7 @@ reset_host:
       - {{ api_user }}
       - {{ api_pass }}
 
-assign_uuid_to_{{ phys_uuid }}:
+assign_uuid_to_{{ id }}:
   salt.function:
     - name: file.write
     - tgt: 'pxe'
@@ -171,7 +171,7 @@ remove_pending_{{ type }}-{{ id }}:
       - /var/www/html/assignments/{{ id }}
     - require:
       - sync_all_{{ type }}
-  {% endfor %}      
+  {% endfor %}
 
 {% elif style == 'virtual' %}
 set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
