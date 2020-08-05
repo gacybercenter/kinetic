@@ -94,6 +94,7 @@ wipe_{{ type }}_logs:
     - tgt_type: grain
     - arg:
       - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id;done
+
     {% endif %}
 
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
@@ -188,6 +189,7 @@ remove_pending_{{ type }}-{{ id }}:
   {% endfor %}
 
 {% elif style == 'virtual' %}
+  {% for id in targets %}
 set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.function:
     - name: grains.set
@@ -197,7 +199,8 @@ set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
     - kwarg:
           val: {{ spawning }}
     - require:
-      - sync_all_{{ type }}-{{ targets[id]['uuid'] }}
+      - sync_all_{{ type }}
+  {% endfor %}
 {% endif %}
 
 {% if salt['pillar.get']('provision', False) == True %}
