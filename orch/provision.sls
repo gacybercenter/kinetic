@@ -2,7 +2,7 @@
 
 {% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
-{% set uuid =  pillar['uuid'] %}
+{% set targets =  pillar['targets'] %}
 
 {% if pillar['hosts'][type]['style'] == 'physical' %}
   {% set role = pillar['hosts'][type]['role'] %}
@@ -10,10 +10,13 @@
   {% set role = type %}
 {% endif %}
 
-
-apply_base_{{ type }}-{{ uuid }}:
+apply_base_{{ type }}:
   salt.state:
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - sls:
       - formulas/common/base
     - timeout: 600
@@ -42,12 +45,16 @@ apply_base_{{ type }}-{{ uuid }}:
         attempts: 240
         splay: 10
     - require_in:
-      - apply_networking_{{ type }}-{{ uuid }}
+      - apply_networking_{{ type }}
 {% endfor %}
 
-apply_networking_{{ type }}-{{ uuid }}:
+apply_networking_{{ type }}:
   salt.state:
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - sls:
       - formulas/common/networking
     - timeout: 600
@@ -56,39 +63,53 @@ apply_networking_{{ type }}-{{ uuid }}:
         attempts: 2
         splay: 0
     - require:
-      - apply_base_{{ type }}-{{ uuid }}
+      - apply_base_{{ type }}
 
-set_build_phase_networking_{{ type }}-{{ uuid }}:
+set_build_phase_networking_{{ type }}:
   salt.function:
     - name: grains.setval
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - arg:
       - build_phase
       - networking
     - require:
-      - apply_networking_{{ type }}-{{ uuid }}
+      - apply_networking_{{ type }}
 
-set_build_phase_networking_mine_{{ type }}-{{ uuid }}:
+set_build_phase_networking_mine_{{ type }}:
   salt.function:
     - name: mine.update
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - require:
-      - set_build_phase_networking_{{ type }}-{{ uuid }}
+      - set_build_phase_networking_{{ type }}
 
-reboot_{{ type }}-{{ uuid }}:
+reboot_{{ type }}:
   salt.function:
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - name: system.reboot
     - require:
-      - apply_networking_{{ type }}-{{ uuid }}
+      - apply_networking_{{ type }}
 
-wait_for_{{ type }}-{{ uuid }}_reboot:
+wait_for_{{ type }}_reboot:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
-      - {{ type }}-{{ uuid }}
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
     - require:
-      - reboot_{{ type }}-{{ uuid }}
+      - reboot_{{ type }}
     - timeout: 600
 
 {% for nType in salt['pillar.get']('hosts:'+type+':needs:install', {}) %}
@@ -106,12 +127,16 @@ wait_for_{{ type }}-{{ uuid }}_reboot:
         attempts: 240
         splay: 10
     - require_in:
-      - apply_install_{{ type }}-{{ uuid }}
+      - apply_install_{{ type }}
 {% endfor %}
 
-apply_install_{{ type }}-{{ uuid }}:
+apply_install_{{ type }}:
   salt.state:
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - sls:
       - formulas/{{ role }}/install
     - timeout: 600
@@ -120,24 +145,32 @@ apply_install_{{ type }}-{{ uuid }}:
         attempts: 2
         splay: 0
     - require:
-      - wait_for_{{ type }}-{{ uuid }}_reboot
+      - wait_for_{{ type }}_reboot
 
-set_build_phase_install_{{ type }}-{{ uuid }}:
+set_build_phase_install_{{ type }}:
   salt.function:
     - name: grains.setval
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - arg:
       - build_phase
       - install
     - require:
-      - apply_install_{{ type }}-{{ uuid }}
+      - apply_install_{{ type }}
 
-set_build_phase_install_mine_{{ type }}-{{ uuid }}:
+set_build_phase_install_mine_{{ type }}:
   salt.function:
     - name: mine.update
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - require:
-      - set_build_phase_install_{{ type }}-{{ uuid }}
+      - set_build_phase_install_{{ type }}
 
 {% for nType in salt['pillar.get']('hosts:'+type+':needs:configure', {}) %}
 {{ type }}_configure_{{ nType }}_phase_check_loop:
@@ -154,7 +187,7 @@ set_build_phase_install_mine_{{ type }}-{{ uuid }}:
         attempts: 240
         splay: 10
     - require_in:
-      - highstate_{{ type }}-{{ uuid }}
+      - highstate_{{ type }}
 {% endfor %}
 
 {% if (salt['pillar.get']('spawning', '0')|int != 0) and (style == 'virtual') %}
@@ -170,13 +203,17 @@ spawnzero_check_{{ type }}_{{ host }}:
         attempts: 30
         splay: 0
     - require_in:
-      - highstate_{{ type }}-{{ uuid }}
+      - highstate_{{ type }}
   {% endfor %}
 {% endif %}
 
-highstate_{{ type }}-{{ uuid }}:
+highstate_{{ type }}:
   salt.state:
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - highstate: True
     - timeout: 600
     - retry:
@@ -184,47 +221,65 @@ highstate_{{ type }}-{{ uuid }}:
         attempts: 2
         splay: 0
     - require:
-      - apply_install_{{ type }}-{{ uuid }}
+      - apply_install_{{ type }}
 
-final_reboot_{{ type }}-{{ uuid }}:
+final_reboot_{{ type }}:
   salt.function:
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - name: system.reboot
     - require:
-      - highstate_{{ type }}-{{ uuid }}
+      - highstate_{{ type }}
 
-wait_for_final_reboot_{{ type }}-{{ uuid }}:
+wait_for_final_reboot_{{ type }}:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
-      - {{ type }}-{{ uuid }}
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
     - require:
-      - final_reboot_{{ type }}-{{ uuid }}
+      - final_reboot_{{ type }}
     - timeout: 600
 
-set_build_phase_configure_{{ type }}-{{ uuid }}:
+set_build_phase_configure_{{ type }}:
   salt.function:
     - name: grains.setval
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - arg:
       - build_phase
       - configure
     - require:
-      - highstate_{{ type }}-{{ uuid }}
+      - highstate_{{ type }}
 
-set_build_phase_configure_mine_{{ type }}-{{ uuid }}:
+set_build_phase_configure_mine_{{ type }}:
   salt.function:
     - name: mine.update
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - require:
-      - set_build_phase_configure_{{ type }}-{{ uuid }}
+      - set_build_phase_configure_{{ type }}
 
-set_production_{{ type }}-{{ uuid }}:
+set_production_{{ type }}:
   salt.function:
     - name: grains.setval
-    - tgt: '{{ type }}-{{ uuid }}'
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
     - require:
-      - highstate_{{ type }}-{{ uuid }}    
+      - highstate_{{ type }}
     - arg:
       - production
       - True

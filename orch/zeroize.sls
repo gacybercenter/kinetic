@@ -198,13 +198,13 @@ set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
 
 {% if salt['pillar.get']('provision', False) == True %}
 
-provision_{{ uuid }}:
+provision_{{ type }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
         mods: orch/provision
         pillar:
           type: {{ type }}
-          uuid: {{ uuid }}
+          targets: {{ targets }}
 
 {% endif %}
