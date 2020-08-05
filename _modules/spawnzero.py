@@ -1,3 +1,5 @@
+import salt
+
 __virtualname__ = 'compare'
 
 def __virtual__():
