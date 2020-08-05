@@ -50,7 +50,19 @@ spawnzero_complete:
       - spawnzero_complete
     - onchanges:
       - grains: spawnzero_complete
+      
+{% else %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - type: {{ grains['type'] }}
+    - retry:
+        attempts: 10
+        interval: 30
+
 {% endif %}
+
 
 /bin/galera_recovery:
   file.managed:
