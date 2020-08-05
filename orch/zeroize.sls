@@ -20,7 +20,7 @@
 {% elif style == 'virtual' %}
   {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
   {% set offset = range(controllers|length)|random %}
-  {% for id in range(pillar['hosts'][type]['count']) %}
+  {% for id|string in range(pillar['hosts'][type]['count']) %}
     {% set targets = targets|set_dict_key_value(id+':spawning', loop.index0) %}
     {% set targets = targets|set_dict_key_value(id+':controller', controllers[(loop.index0 + offset) % controllers|length]) %}
     {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64')|uuid) %}
