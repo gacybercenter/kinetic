@@ -102,12 +102,12 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
     - kwarg:
         length: 5
 
-delete_{{ target }}_key:
+delete_{{ type }}_key:
   salt.wheel:
     - name: key.delete
     - match: '{{ type }}*'
 
-expire_{{ target }}_dead_hosts:
+expire_{{ type }}_dead_hosts:
   salt.function:
     - name: address.expire_dead_hosts
     - tgt: salt
