@@ -166,7 +166,7 @@ sync_all_{{ type }}:
 {% for id in targets %}
       - {{ type }}-{{ targets[id]['uuid'] }}
 {% endfor %}
-    - tgt_type: List
+    - tgt_type: list
     - require:
       - wait_for_minion_first_start_{{ type }}
 
