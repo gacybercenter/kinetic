@@ -58,3 +58,5 @@ provision_{{ type }}:
         pillar:
           type: {{ type }}
           targets: {{ targets }}
+    - require:
+      - zeroize_{{ type }}          
