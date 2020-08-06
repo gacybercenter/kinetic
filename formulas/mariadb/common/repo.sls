@@ -16,7 +16,7 @@ mariadb_maxscale_repo:
 
 mariadb_tools_repo:
   pkgrepo.managed:
-    - humanname: mariadb10.5
+    - humanname: mariadb_tools
     - name: deb http://downloads.mariadb.com/Tools/ubuntu focal main
     - file: /etc/apt/sources.list.d/mariadb_tools.list
     - key_url: https://downloads.mariadb.com/Tools/MariaDB-Enterprise-GPG-KEY
