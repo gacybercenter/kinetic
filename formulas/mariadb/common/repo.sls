@@ -5,21 +5,21 @@ mariadb_repo:
     - humanname: mariadb10.5
     - name: deb http://downloads.mariadb.com/MariaDB/mariadb-10.5/repo/ubuntu focal main
     - file: /etc/apt/sources.list.d/mariadb.list
-    - key_url: https://downloads.mariadb.com/MariaDB/MariaDB-Server-GPG-KEY
+    - key_url: https://downloads.mariadb.com/MariaDB/mariadb-keyring-2019.gpg
 
 mariadb_maxscale_repo:
   pkgrepo.managed:
     - humanname: mariadb_maxscale
     - name: deb http://downloads.mariadb.com/MaxScale/2.4/ubuntu focal main
     - file: /etc/apt/sources.list.d/mariadb_maxscale.list
-    - key_url: https://downloads.mariadb.com/MaxScale/MariaDB-MaxScale-GPG-KEY
+    - key_url: https://downloads.mariadb.com/MariaDB/mariadb-keyring-2019.gpg
 
 mariadb_tools_repo:
   pkgrepo.managed:
     - humanname: mariadb_tools
     - name: deb http://downloads.mariadb.com/Tools/ubuntu focal main
     - file: /etc/apt/sources.list.d/mariadb_tools.list
-    - key_url: https://downloads.mariadb.com/Tools/MariaDB-Enterprise-GPG-KEY
+    - key_url: https://downloads.mariadb.com/MariaDB/mariadb-keyring-2019.gpg
 
 update_packages_mariadb:
   pkg.uptodate:
