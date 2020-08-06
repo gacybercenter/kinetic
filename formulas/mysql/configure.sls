@@ -31,13 +31,13 @@ bootstrap_mariadb_start:
 
 ### See https://github.com/GeorgiaCyber/kinetic/issues/83
 ### Once implemented, this can go away.
-master_reboot_pause:
-  module.run:
-    - name: test.sleep
-    - length: 120
-    - onchanges:
-      - grains: cluster_established_final
-    - order: last
+# master_reboot_pause:
+#   module.run:
+#     - name: test.sleep
+#     - length: 120
+#     - onchanges:
+#       - grains: cluster_established_final
+#     - order: last
   {% endif %}
 
 spawnzero_complete:
