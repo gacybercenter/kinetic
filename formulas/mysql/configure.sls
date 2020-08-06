@@ -29,6 +29,8 @@ bootstrap_mariadb_start:
     - require:
       - cmd: bootstrap_mariadb_start
 
+### See https://github.com/GeorgiaCyber/kinetic/issues/83
+### Once implemented, this can go away.
 master_reboot_pause:
   module.run:
     - name: test.sleep
