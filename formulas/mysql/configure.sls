@@ -28,6 +28,8 @@ bootstrap_mariadb_start:
   file.managed:
     - require:
       - cmd: bootstrap_mariadb_start
+    - require_in:
+      - spawnzero_complete
 
   {% endif %}
 
@@ -59,7 +61,6 @@ check_spawnzero_status:
         value: configure
 
 {% endif %}
-
 
 /bin/galera_recovery:
   file.managed:
@@ -111,7 +112,7 @@ mariadb_service:
         attempts: 5
         until: True
         interval: 60
-{% if salt['grains.get']('production', False) == True %}
+{% if salt['grains.get']('spawning', 0) != 0 %}
         watch:
           - file: openstack.conf
 {% endif %}
