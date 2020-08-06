@@ -32,7 +32,7 @@ bootstrap_mariadb_start:
 master_reboot_pause:
   module.run:
     - name: test.sleep
-    - length: 300
+    - length: 120
     - onchanges:
       - grains: cluster_established_final
     - order: last
