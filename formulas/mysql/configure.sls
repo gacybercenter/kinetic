@@ -75,10 +75,10 @@ check_spawnzero_status:
 openstack.conf:
   file.managed:
 {% if grains['os_family'] == 'Debian' %}
-{% set sock = "/var/run/mysqld/mysqld.sock" %}
+  {% set sock = "/var/run/mysqld/mysqld.sock" %}
     - name: /etc/mysql/mariadb.conf.d/99-openstack.cnf
 {% elif grains['os_family'] == 'RedHat' %}
-{% set sock = "/var/lib/mysql/mysql.sock" %}
+  {% set sock = "/var/lib/mysql/mysql.sock" %}
     - name: /etc/my.cnf.d/openstack.cnf
 {% endif %}
     - source: salt://formulas/mysql/files/openstack.conf
