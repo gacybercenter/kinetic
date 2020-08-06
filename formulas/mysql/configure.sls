@@ -29,6 +29,19 @@ bootstrap_mariadb_start:
     - require:
       - cmd: bootstrap_mariadb_start
 
+spawnzero_complete:
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
+
 master_reboot_pause:
   module.run:
     - name: test.sleep
