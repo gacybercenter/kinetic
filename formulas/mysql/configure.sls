@@ -48,6 +48,12 @@ spawnzero_complete:
 
 {% else %}
 
+  {% if grains['build_phase'] == 'install' % }
+kill_mariadb_for_bootstrap:
+  service.dead:
+    - name: mariadb
+  {% endif %}
+
 check_spawnzero_status:
   module.run:
     - name: spawnzero.check
@@ -61,6 +67,21 @@ check_spawnzero_status:
         value: configure
 
 {% endif %}
+
+fs.file-max:
+  sysctl.present:
+    - value: 65535
+
+/usr/lib/systemd/system/mariadb.service:
+  file.line:
+    - content: LimitNOFILE=65535
+    - mode: ensure
+    - after: Group=mysql
+
+systemctl daemon-reload:
+  cmd.run:
+    - onchanges:
+      - file: /usr/lib/systemd/system/mariadb.service
 
 /bin/galera_recovery:
   file.managed:
@@ -112,16 +133,10 @@ mariadb_service:
         attempts: 5
         until: True
         interval: 60
-{% if salt['grains.get']('spawning', 0) != 0 %}
-        watch:
-          - file: openstack.conf
-{% endif %}
 
-{% if salt['grains.get']('cluster_established', False) == True %}
-  {% for service in pillar['openstack_services'] %}
-    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-      {% for address in addresses %}
-        {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+{% for service in pillar['openstack_services'] %}
+  {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+    {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
 create_{{ service }}_user_{{ address }}:
   mysql_user.present:
@@ -132,11 +147,10 @@ create_{{ service }}_user_{{ address }}:
     - require:
       - service: mariadb_service
 
-        {% endif %}
-      {% endfor %}
     {% endfor %}
+  {% endfor %}
 
-    {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
+  {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
 create_{{ db }}_db:
   mysql_database.present:
@@ -145,9 +159,8 @@ create_{{ db }}_db:
     - require:
       - service: mariadb_service
 
-      {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        {% for address in addresses %}
-          {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
 grant_{{ service }}_privs_{{ db }}_{{ address }}:
    mysql_grants.present:
@@ -161,31 +174,7 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
       - mysql_user: create_{{ service }}_user_{{ address }}
       - mysql_database: create_{{ db }}_db
 
-          {% endif %}
-        {% endfor %}
       {% endfor %}
     {% endfor %}
   {% endfor %}
-{% endif %}
-
-fs.file-max:
-  sysctl.present:
-    - value: 65535
-
-/usr/lib/systemd/system/mariadb.service:
-  file.line:
-    - content: LimitNOFILE=65535
-    - mode: ensure
-    - after: Group=mysql
-
-systemctl daemon-reload:
-  cmd.run:
-    - onchanges:
-      - file: /usr/lib/systemd/system/mariadb.service
-
-cluster_established_final:
-  grains.present:
-    - name: cluster_established
-    - value: True
-    - require:
-      - service: mariadb_service
+{% endfor %}
