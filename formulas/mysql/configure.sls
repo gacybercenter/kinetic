@@ -178,11 +178,11 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
 
 ## This is necessary because pc.recovery does not work if a mariadbd
 ## has a clean shutdown
-force_recovery:
-  cmd.run:
-    - name: killall -11 mariadbd
-    - onlyif:
-      - fun: grains.equals
-        key: build_phase
-        value: install
-    - order: last
+# force_recovery:
+#   cmd.run:
+#     - name: killall -11 mariadbd
+#     - onlyif:
+#       - fun: grains.equals
+#         key: build_phase
+#         value: install
+#     - order: last
