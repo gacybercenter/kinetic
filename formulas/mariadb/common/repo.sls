@@ -13,7 +13,7 @@ mariadb_maxscale_repo:
     - humanname: mariadb_maxscale
     - name: deb http://downloads.mariadb.com/MaxScale/2.4/ubuntu focal main
     - file: /etc/apt/sources.list.d/mariadb_maxscale.list
-    - keyid: F1656F24C74CD1D8
+    - keyid: 135659e928c12247
     - keyserver: keyserver.ubuntu.com
 
 mariadb_tools_repo:
@@ -21,7 +21,7 @@ mariadb_tools_repo:
     - humanname: mariadb_tools
     - name: deb http://downloads.mariadb.com/Tools/ubuntu focal main
     - file: /etc/apt/sources.list.d/mariadb_tools.list
-    - keyid: F1656F24C74CD1D8
+    - keyid: ce1a3dd5e3c94f49
     - keyserver: keyserver.ubuntu.com
 
 update_packages_mariadb:
