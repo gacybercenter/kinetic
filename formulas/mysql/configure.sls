@@ -176,8 +176,9 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
 {% endfor %}
 
 {% if grains['build_phase'] == 'install' %}
-## This is necessary because pc.recovery does not work if a mariadbd
-## has a clean shutdown
+## This is necessary because pc.recovery does not work if mariadbd
+## has a clean shutdown.  Making the file immutable ensures that the state
+## necessary to perform an automatic recovery is still there
 force_recovery:
   module.run:
     - name: file.chattr
