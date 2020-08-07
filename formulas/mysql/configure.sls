@@ -196,5 +196,5 @@ force_recovery_removal:
     - kwargs:
         attributes: i
         operator: remove
-    - order: last
+    - order: first
 {% endif %}
