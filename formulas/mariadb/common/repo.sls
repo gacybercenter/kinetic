@@ -63,6 +63,5 @@ update_packages_mariadb:
       - mariadb_tools_repo
       - mariadb_maxscale_repo
       - mariadb_repo
-    - dist_upgrade: True
 
 {% endif %}
