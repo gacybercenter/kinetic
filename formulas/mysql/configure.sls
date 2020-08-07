@@ -186,10 +186,10 @@ force_recovery:
     - kwargs:
         attributes: i
         operator: add
-    - order: last
 
 {% else %}
 
+{% set attr_check = salt['file.lsattr'](path='/var/lib/mysql/gvwstate.dat') %}
 force_recovery_removal:
   module.run:
     - name: file.chattr
@@ -198,5 +198,6 @@ force_recovery_removal:
     - kwargs:
         attributes: i
         operator: remove
-    - order: first
+    - onlyif:
+      - lsattr -l /var/lib/mysql/gvwstate.dat | grep -q Immutable
 {% endif %}
