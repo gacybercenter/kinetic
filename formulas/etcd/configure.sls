@@ -42,6 +42,13 @@ etcd_conf:
         etcd_listen: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         cluster_token: {{ pillar['etcd']['etcd_cluster_token'] }}
 
+etcd_unit_file_update:
+  file.line:
+    - name: /usr/lib/systemd/system/etcd.service
+    - content: After=network-online.target
+    - match: After=network.target
+    - mode: replace
+
 ### I have no idea why I need to do it this way instead of including
 ### the enabled: True key in service.running, but the etcd0 spawn0
 ### refuses to be enabled after the completion of the orch run
