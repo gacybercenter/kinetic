@@ -135,7 +135,7 @@ systemd-networkd:
 
 /etc/systemd/network/{{ network }}.network:
   file.managed:
-    - replace: False
+    - replace: True
     - contents: |
         [Match]
       {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
