@@ -217,27 +217,27 @@ highstate_{{ type }}:
     - require:
       - apply_install_{{ type }}
 
-# final_reboot_{{ type }}:
-#   salt.function:
-#     - tgt:
-# {% for id in targets %}
-#       - {{ type }}-{{ targets[id]['uuid'] }}
-# {% endfor %}
-#     - tgt_type: list
-#     - name: system.reboot
-#     - require:
-#       - highstate_{{ type }}
-#
-# wait_for_final_reboot_{{ type }}:
-#   salt.wait_for_event:
-#     - name: salt/minion/*/start
-#     - id_list:
-# {% for id in targets %}
-#       - {{ type }}-{{ targets[id]['uuid'] }}
-# {% endfor %}
-#     - require:
-#       - final_reboot_{{ type }}
-#     - timeout: 600
+final_reboot_{{ type }}:
+  salt.function:
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
+    - name: system.reboot
+    - require:
+      - highstate_{{ type }}
+
+wait_for_final_reboot_{{ type }}:
+  salt.wait_for_event:
+    - name: salt/minion/*/start
+    - id_list:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - require:
+      - final_reboot_{{ type }}
+    - timeout: 600
 
 set_build_phase_configure_{{ type }}:
   salt.function:
