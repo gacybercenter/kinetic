@@ -48,7 +48,7 @@ spawnzero_complete:
 
 {% else %}
 
-  {% if grains['build_phase'] == 'install' % }
+  {% if grains['build_phase'] == 'install' %}
 kill_mariadb_for_bootstrap:
   service.dead:
     - name: mariadb
