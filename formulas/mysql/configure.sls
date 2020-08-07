@@ -181,7 +181,8 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
 force_recovery:
   module.run:
     - name: file.chattr
-    - files: /var/lib/mysql/gvwstate.dat
+    - files:
+      - /var/lib/mysql/gvwstate.dat
     - kwargs:
         attributes: i
         operator: add
@@ -192,7 +193,8 @@ force_recovery:
 force_recovery_removal:
   module.run:
     - name: file.chattr
-    - files: /var/lib/mysql/gvwstate.dat
+    - files:
+      - /var/lib/mysql/gvwstate.dat
     - kwargs:
         attributes: i
         operator: remove
