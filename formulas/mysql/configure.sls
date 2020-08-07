@@ -122,8 +122,6 @@ openstack.conf:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-    - require:
-      - sls: /formulas/mysql/install
 
 mariadb_service:
   service.running:
