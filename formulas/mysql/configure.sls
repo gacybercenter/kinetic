@@ -129,7 +129,7 @@ mariadb_service:
     - enable: true
     - retry:
         attempts: 5
-        interval: 10
+        interval: 60
 
 {% for service in pillar['openstack_services'] if grains['spawning'] == 0 %}
   {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -186,5 +186,5 @@ force_recovery:
     - onlyif:
       - fun: grains.equals
         key: build_phase
-        value: configure
+        value: install
     - order: last
