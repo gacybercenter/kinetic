@@ -50,7 +50,6 @@ assign_uuid_to_{{ id }}:
 
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
-  {% for id in targets if targets[id]['spawning']|int == 0 %}
 
 destroy_{{ type }}_domain:
   salt.function:
@@ -79,8 +78,6 @@ wipe_{{ type }}_logs:
       - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id;done
     - require:
       - wipe_{{ type }}_vms
-
-  {% endfor %}
 
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
