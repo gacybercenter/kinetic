@@ -46,7 +46,7 @@ mariadb_maxscale_repo:
   pkgrepo.managed:
     - name: mariadb_maxscale
     - file: /etc/yum.repos.d/mariadb_maxscale.repo
-    - baseurl: http://downloads.mariadb.com/MariaDB/MaxScale/2.4/centos/$releasever/$basearch
+    - baseurl: http://downloads.mariadb.com/MaxScale/2.4/centos/$releasever/$basearch
     - gpgkey: https://downloads.mariadb.com/MaxScale/MariaDB-MaxScale-GPG-KEY
 
 mariadb_tools_repo:
