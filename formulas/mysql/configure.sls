@@ -129,7 +129,7 @@ mariadb_service:
     - enable: true
     - retry:
         attempts: 5
-        interval: 60
+        interval: 10
 
 {% for service in pillar['openstack_services'] if grains['spawning'] == 0 %}
   {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
@@ -176,13 +176,26 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
   {% endfor %}
 {% endfor %}
 
+{% if grains['build_phase'] == 'install' %}
 ## This is necessary because pc.recovery does not work if a mariadbd
 ## has a clean shutdown
-# force_recovery:
-#   cmd.run:
-#     - name: killall -11 mariadbd
-#     - onlyif:
-#       - fun: grains.equals
-#         key: build_phase
-#         value: install
-#     - order: last
+force_recovery:
+  module.run:
+    - name: file.chattr
+    - files: /var/lib/mysql/gvwstate.dat
+    - kwargs:
+        attributes: i
+        operator: add
+    - order: last
+
+{% else %}
+
+force_recovery_removal:
+  module.run:
+    - name: file.chattr
+    - files: /var/lib/mysql/gvwstate.dat
+    - kwargs:
+        attributes: i
+        operator: remove
+    - order: last
+{% endif %}
