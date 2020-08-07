@@ -12,7 +12,7 @@ __virtualname__ = 'address'
 def __virtual__():
     return __virtualname__
 
-def login(database = '/srv/salt/addresses.db'):
+def login(database = '/srv/addresses/addresses.db'):
     connection = sqlite3.connect(database)
     return connection
 
