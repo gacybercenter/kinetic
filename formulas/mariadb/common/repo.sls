@@ -35,26 +35,34 @@ update_packages_mariadb:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-ceph_repo:
+mariadb_repo:
   pkgrepo.managed:
-    - name: ceph
-    - baseurl: https://download.ceph.com/rpm-octopus/el8/$basearch
-    - file: /etc/yum.repos.d/ceph.repo
-    - gpgkey: https://download.ceph.com/keys/release.asc
+    - name: mariadb
+    - file: /etc/yum.repos.d/mariadb.repo
+    - baseurl: http://downloads.mariadb.com/MariaDB/mariadb-10.5/yum/rhel/$releasever/$basearch
+    - gpgkey: https://downloads.mariadb.com/MariaDB/MariaDB-Server-GPG-KEY
 
-## new requirement with octopus+el8
-ceph_repo_noarch:
+mariadb_maxscale_repo:
   pkgrepo.managed:
-    - name: ceph_noarch
-    - baseurl: https://download.ceph.com/rpm-octopus/el8/noarch
-    - file: /etc/yum.repos.d/ceph_noarch.repo
-    - gpgkey: https://download.ceph.com/keys/release.asc
+    - name: mariadb_maxscale
+    - file: /etc/yum.repos.d/mariadb_maxscale.repo
+    - baseurl: http://downloads.mariadb.com/MariaDB/MaxScale/2.4/centos/$releasever/$basearch
+    - gpgkey: https://downloads.mariadb.com/MaxScale/MariaDB-MaxScale-GPG-KEY
 
-update_packages_ceph:
+mariadb_tools_repo:
+  pkgrepo.managed:
+    - name: mariadb_tools
+    - file: /etc/yum.repos.d/mariadb_tools.repo
+    - baseurl: http://downloads.mariadb.com/Tools/yum/rhel/$releasever/$basearch
+    - gpgkey: https://downloads.mariadb.com/Tools/MariaDB-Enterprise-GPG-KEY
+
+update_packages_mariadb:
   pkg.uptodate:
     - refresh: true
     - onchanges:
-      - pkgrepo: ceph_repo
-      - pkgrepo: ceph_repo_noarch
+      - mariadb_tools_repo
+      - mariadb_maxscale_repo
+      - mariadb_repo
+    - dist_upgrade: True
 
 {% endif %}
