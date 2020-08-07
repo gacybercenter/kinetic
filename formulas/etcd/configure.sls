@@ -54,15 +54,6 @@ systemctl daemon-reload:
     - onchanges:
       - file: etcd_unit_file_update
 
-### I have no idea why I need to do it this way instead of including
-### the enabled: True key in service.running, but the etcd0 spawn0
-### refuses to be enabled after the completion of the orch run
-### when using an integrated enabled.  I have not encountered this on any
-### other service.  It works correctly consistently with this method
-# etcd_service_enable:
-#   service.enabled:
-#     - name: etcd
-
 etcd_service:
   service.running:
     - name: etcd
