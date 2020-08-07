@@ -55,6 +55,21 @@ project_init:
         until: True
         delay: 60
 
+{% else %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - type: {{ grains['type'] }}
+    - retry:
+        attempts: 10
+        interval: 30
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
+
+
 {% endif %}
 
 /var/lib/keystone/keystone.db:
