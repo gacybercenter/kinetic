@@ -127,6 +127,8 @@ mariadb_service:
   service.running:
     - name: mariadb
     - enable: true
+    - require:
+      - file: openstack.conf
 
 {% for service in pillar['openstack_services'] if grains['spawning'] == 0 %}
   {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
