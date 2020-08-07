@@ -189,7 +189,6 @@ force_recovery:
 
 {% else %}
 
-{% set attr_check = salt['file.lsattr'](path='/var/lib/mysql/gvwstate.dat') %}
 force_recovery_removal:
   module.run:
     - name: file.chattr
