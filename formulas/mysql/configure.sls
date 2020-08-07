@@ -175,3 +175,15 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
     {% endfor %}
   {% endfor %}
 {% endfor %}
+
+## This is necessary because pc.recovery does not work if a mariadbd
+## has a clean shutdown
+force_recovery:
+  module.run:
+    - name: ps.pkill
+    - pattern: mariadbd
+    - signal: 11
+    - onlyif:
+      - fun: grains.equals
+        key: build_phase
+        value: install
