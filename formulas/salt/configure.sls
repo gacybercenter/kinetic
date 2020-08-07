@@ -5,27 +5,26 @@ include:
   file.directory:
     - makedirs: true
 
-/srv/salt/addresses.db:
+/srv/addresses/addresses.db:
   file.managed:
     - replace: False
-    - require:
-      - file: /srv/salt
+    - makedirs: True
 
 addresses:
   sqlite3.table_present:
-    - db: /srv/salt/addresses.db
+    - db: /srv/addresses/addresses.db
     - schema:
       - address TEXT UNIQUE
       - network TEXT
       - host TEXT
     - require:
-      - file: /srv/salt/addresses.db
+      - file: /srv/addresses/addresses.db
 
 {% for network in ['sfe', 'sbe', 'private'] %}
   {% for address in pillar['networking']['subnets'][network] | network_hosts %}
 address_population_{{ address }}:
   sqlite3.row_present:
-    - db: /srv/salt/addresses.db
+    - db: /srv/addresses/addresses.db
     - table: addresses
     - where_sql: address='{{ address }}'
     - data:
