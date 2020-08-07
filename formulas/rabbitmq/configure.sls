@@ -30,20 +30,6 @@ check_spawnzero_status:
         key: build_phase
         value: configure
 
-{% else %}
-
-check_spawnzero_status:
-  module.run:
-    - name: spawnzero.check
-    - type: {{ grains['type'] }}
-    - retry:
-        attempts: 10
-        interval: 30
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
-
 {% endif %}
 
 {% for server, address in salt['mine.get']('type:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
