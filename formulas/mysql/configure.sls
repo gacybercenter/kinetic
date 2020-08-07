@@ -186,4 +186,5 @@ force_recovery:
     - onlyif:
       - fun: grains.equals
         key: build_phase
-        value: install
+        value: configure
+    - order: last
