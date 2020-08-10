@@ -35,7 +35,7 @@ role:
 ## debugging purposes
 current_address:
   file.append:
-    - name: /etc/address_history
+    - name: /root/address_history
     - text: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 
 {{ pillar['timezone'] }}:
