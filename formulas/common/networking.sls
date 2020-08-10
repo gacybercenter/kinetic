@@ -150,7 +150,7 @@ systemd-networkd:
         DHCP=yes
         KeepConfiguration=dhcp-on-stop
         [DHCPv4]
-        SendRelease=False
+        SendRelease=false
     {% elif network =='public' %}
         [Network]
         DHCP=no
