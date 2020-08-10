@@ -148,6 +148,7 @@ systemd-networkd:
     {% if network == 'management' %}
         [Network]
         DHCP=yes
+        KeepConfiguration=dhcp-on-stop
     {% elif network =='public' %}
         [Network]
         DHCP=no
