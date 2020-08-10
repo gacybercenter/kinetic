@@ -35,8 +35,15 @@ role:
 ## debugging purposes
 current_address:
   file.append:
-    - name: /root/address_history
+    - name: /etc/address_history
     - text: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+
+copy_lease:
+  file.copy:
+    - name: /root/leases/{{ salt['random.get_str']('3') }}
+    - makedirs: True
+    - source: /run/systemd/netif/leases/2
+###
 
 {{ pillar['timezone'] }}:
   timezone.system:
