@@ -2,7 +2,7 @@
 
 {% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
-{% set targets =  pillar['targets'] %}
+{% set targets = pillar['targets'] %}
 
 {% if pillar['hosts'][type]['style'] == 'physical' %}
   {% set role = pillar['hosts'][type]['role'] %}
