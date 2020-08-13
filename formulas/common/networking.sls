@@ -27,7 +27,7 @@ install_pyroute2:
   {% if grains['os_family'] == 'RedHat' %}
 install_networkd:
   pkg.installed:
-    -pkgs:
+    - pkgs:
       - systemd-networkd
   {% endif %}
 
