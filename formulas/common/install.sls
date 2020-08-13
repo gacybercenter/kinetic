@@ -4,8 +4,8 @@
   {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
 
 set_package_proxy:
-  file.managed:
     {% if grains['os_family'] == 'Debian' %}
+  file.managed:
     - name: /etc/apt/apt.conf.d/02proxy
     - contents: |
         Acquire::http { Proxy "http://{{ address }}:3142"; };
