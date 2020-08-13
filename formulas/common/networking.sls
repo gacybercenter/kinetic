@@ -40,6 +40,7 @@ install_networkd:
 NetworkManager:
   service.disabled
 
+  {% if grains['os_family'] == 'Debian' %}
 ### The sub resolver is causing bizarre issues and
 ### intermittently returning publicly routable addresses
 ### for hosts statically defined on the DNS server
@@ -48,6 +49,7 @@ NetworkManager:
   file.symlink:
     - target: /run/systemd/resolve/resolv.conf
     - force: True
+  {% endif %}
 
 systemd-resolved:
   service.enabled
