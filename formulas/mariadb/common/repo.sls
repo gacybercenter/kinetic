@@ -41,6 +41,7 @@ mariadb_repo:
     - file: /etc/yum.repos.d/mariadb.repo
     - baseurl: http://downloads.mariadb.com/MariaDB/mariadb-10.5/yum/centos/$releasever/$basearch
     - gpgkey: https://downloads.mariadb.com/MariaDB/MariaDB-Server-GPG-KEY
+    - module_hotfixes: 1
 
 mariadb_maxscale_repo:
   pkgrepo.managed:
