@@ -1,4 +1,3 @@
-
 def check_all(type, needs):
     """
     Check whether or not dependencies are
@@ -8,17 +7,38 @@ def check_all(type, needs):
     the orch routine.  Use chceck_one to ensure
     that individual per-phase dependencies are met.
     """
-    ret = "type"+string(needs)
+    ret = {"ready": True, "type": type, "comment": []}
+    for phase in needs:
+      for dep in needs[phase]:
+        currentStatus = __salt__['mine.get'](tgt='role:'+dep,tgt_type='grain',fun='build_phase')
+        if len(currentStatus) == 0:
+          __context__["retcode"] = 1
+          ret["comment"].append("No endpoints of type "+dep+" available for assessment")
+          ret["ready"] = False
+          break
+        for endpoint in currentStatus:
+          if currentStatus[endpoint] != needs[phase][dep]:
+            __context__["retcode"] = 1
+            ret["comment"].append(endpoint+" is "+currentStatus[endpoint]+" but needs to be "+needs[phase][dep])
+            ret["ready"] = False
     return ret
 
-def check_one(type, phase):
+def check_one(type, needs):
     """
     Check whether or not dependencies are
     satisfied for a specific type and phase.
     """
-    if str(targetString) == str(currentString):
-        ret = True
-    else:
+    ret = {"ready": True, "type": type, "comment": []}
+    for dep in needs:
+      currentStatus = __salt__['mine.get'](tgt='role:'+dep,tgt_type='grain',fun='build_phase')
+      if len(currentStatus) == 0:
         __context__["retcode"] = 1
-        ret = "Got "+str(currentString)+" but looking for "+str(targetString)
+        ret["comment"].append("No endpoints of type "+dep+" available for assessment")
+        ret["ready"] = False
+        break
+      for endpoint in currentStatus:
+        if currentStatus[endpoint] != needs[dep]:
+          __context__["retcode"] = 1
+          ret["comment"].append(endpoint+" is "+currentStatus[endpoint]+" but needs to be "+needs[dep])
+          ret["ready"] = False
     return ret
