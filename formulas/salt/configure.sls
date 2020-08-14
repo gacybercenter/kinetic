@@ -44,6 +44,10 @@ address_population_{{ address }}:
   file.managed:
     - source: salt://_runners/compare.py
 
+/srv/runners/needs.py:
+  file.managed:
+    - source: salt://_runners/needs.py    
+
 create_api_cert:
   cmd.run:
     - name: "salt-call --local tls.create_self_signed_cert"
