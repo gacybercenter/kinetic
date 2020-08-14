@@ -175,7 +175,8 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
   {% endfor %}
 {% endfor %}
 
-{% if grains['build_phase'] == 'install' %}
+{% if pillar['hosts']['mysql']['count'] > 1 %}
+  {% if grains['build_phase'] == 'install' %}
 ## This is necessary because pc.recovery does not work if mariadbd
 ## has a clean shutdown.  Making the file immutable ensures that the state
 ## necessary to perform an automatic recovery is still there
@@ -188,7 +189,7 @@ force_recovery:
         attributes: i
         operator: add
 
-{% else %}
+  {% else %}
 
 force_recovery_removal:
   module.run:
@@ -200,4 +201,5 @@ force_recovery_removal:
         operator: remove
     - onlyif:
       - lsattr -l /var/lib/mysql/gvwstate.dat | grep -q Immutable
+  {% endif %}
 {% endif %}
