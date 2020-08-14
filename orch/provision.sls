@@ -30,23 +30,20 @@ apply_base_{{ type }}:
 ### adding an additional one here will ensure that the deps needed for the
 ### next phase of the orch have been met, rather than just the bits needed to
 ### start
-{% for nType in salt['pillar.get']('hosts:'+type+':needs:networking', {}) %}
-{{ type }}_networking_{{ nType }}_phase_check_loop:
+{% if salt['pillar.get']('hosts:'+type+':needs:networking', {}) != {} %}
+{{ type }}_networking_phase_check_loop::
   salt.runner:
-    - name: state.orchestrate
+    - name: needs.check_one
     - kwarg:
-        mods: orch/phaseloop
-        pillar:
-          nDict: {{ salt['pillar.get']('hosts:'+type+':needs:networking', {}) }}
-          nType: {{ nType }}
-          type: {{ type }}
+        needs: {{ salt['pillar.get']('hosts:'+type+':needs:networking', {}) }}
+        type: {{ type }}
     - retry:
         interval: 30
         attempts: 240
         splay: 10
     - require_in:
       - apply_networking_{{ type }}
-{% endfor %}
+{% endif %}
 
 apply_networking_{{ type }}:
   salt.state:
@@ -123,23 +120,20 @@ force_network_mine_refresh_{{ type }}:
     - require:
       - wait_for_{{ type }}_reboot
 
-{% for nType in salt['pillar.get']('hosts:'+type+':needs:install', {}) %}
-{{ type }}_install_{{ nType }}_phase_check_loop:
+{% if salt['pillar.get']('hosts:'+type+':needs:install', {}) != {} %}
+{{ type }}_install_phase_check_loop:
   salt.runner:
-    - name: state.orchestrate
+    - name: needs.check_one
     - kwarg:
-        mods: orch/phaseloop
-        pillar:
-          nDict: {{ salt['pillar.get']('hosts:'+type+':needs:install', {}) }}
-          nType: {{ nType }}
-          type: {{ type }}
+        needs: {{ salt['pillar.get']('hosts:'+type+':needs:install', {}) }}
+        type: {{ type }}
     - retry:
         interval: 30
         attempts: 240
         splay: 10
     - require_in:
       - apply_install_{{ type }}
-{% endfor %}
+{% endif %}
 
 apply_install_{{ type }}:
   salt.state:
@@ -183,23 +177,20 @@ set_build_phase_install_mine_{{ type }}:
     - require:
       - set_build_phase_install_{{ type }}
 
-{% for nType in salt['pillar.get']('hosts:'+type+':needs:configure', {}) %}
-{{ type }}_configure_{{ nType }}_phase_check_loop:
+{% if salt['pillar.get']('hosts:'+type+':needs:configure', {}) != {} %}
+{{ type }}_configure_phase_check_loop:
   salt.runner:
-    - name: state.orchestrate
+    - name: needs.check_one
     - kwarg:
-        mods: orch/phaseloop
-        pillar:
-          nDict: {{ salt['pillar.get']('hosts:'+type+':needs:configure', {}) }}
-          nType: {{ nType }}
-          type: {{ type }}
+        needs: {{ salt['pillar.get']('hosts:'+type+':needs:configure', {}) }}
+        type: {{ type }}
     - retry:
         interval: 30
         attempts: 240
         splay: 10
     - require_in:
       - highstate_{{ type }}
-{% endfor %}
+{% endif %}
 
 highstate_{{ type }}:
   salt.state:
