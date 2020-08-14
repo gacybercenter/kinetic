@@ -41,10 +41,8 @@
   salt.runner:
     - name: needs.check_all
     - kwarg:
-        mods: orch/phasecheck
-        pillar:
-          needs: {{ needs }}
-          type: {{ type }}
+        needs: {{ needs }}
+        type: {{ type }}
     - retry:
         interval: 30
         attempts: 240
