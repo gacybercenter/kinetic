@@ -46,6 +46,9 @@
           needs: {{ needs }}
           type: {{ type }}
     - retry:
+        interval: 30
+        attempts: 240
+        splay: 10
 
 {{ type }}_generate_start_signal:
   salt.runner:
