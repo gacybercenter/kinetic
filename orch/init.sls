@@ -28,27 +28,11 @@ wipe_init_keys:
 ## in the waiting room
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
 
-create_{{ type }}_origin_exec_runner:
+create_{{ type }}_exec_runner:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
         mods: orch/waiting_room
-        pillar:
-          type: {{ type }}
-    - parallel: true
-
-{{ type }}_origin_exec_runner_delay:
-  salt.function:
-    - name: test.sleep
-    - tgt: salt
-    - kwarg:
-        length: 1
-
-create_{{ type }}_origin_phase_runner:
-  salt.runner:
-    - name: state.orchestrate
-    - kwarg:
-        mods: orch/phasewait
         pillar:
           type: {{ type }}
           needs: {{ salt['pillar.get']('hosts:'+type+':needs', {}) }}

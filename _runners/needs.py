@@ -20,6 +20,7 @@ def check_all(type, needs):
             __context__["retcode"] = 1
             ret["comment"].append(endpoint+" is "+currentStatus[endpoint]+" but needs to be "+needs[phase][dep])
           else:
+            __context__["retcode"] = 0              
             ret["ready"] = True
             ret["comment"] = type+" orchestration routine may begin"
             return ret
