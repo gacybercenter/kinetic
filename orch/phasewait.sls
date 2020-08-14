@@ -37,23 +37,22 @@
 ## It can probably be simplified significantly as a dependency check is also
 ## built in to the generate function
 
-{% for targetPhase, nDict in needs.items() %}
-{{ type }}_{{ targetPhase }}_phase_check_init:
+{{ type }}_phase_check_init:
   salt.runner:
-    - name: state.orchestrate
+    - name: needs.check_all
     - kwarg:
         mods: orch/phasecheck
         pillar:
-          nDict: {{ nDict }}
-          targetPhase: {{ targetPhase }}
+          needs: {{ needs }}
           type: {{ type }}
-    - parallel: True
+    - retry:
 
-{{ type }}_{{ targetPhase }}_phase_check_init_delay:
-  salt.function:
-    - name: test.sleep
-    - tgt: salt
+{{ type }}_generate_start_signal:
+  salt.runner:
+    - name: event.send
     - kwarg:
-        length: 1
-
-{% endfor %}
+        tag: {{ type }}/generate/auth/start
+        data:
+          id: {{ type }}
+    - require:
+      - {{ type }}_phase_check_init
