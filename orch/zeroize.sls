@@ -57,7 +57,7 @@ destroy_{{ type }}_domain:
     - tgt: 'role:controller'
     - tgt_type: grain
     - arg:
-      - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
+      - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id && sleep 5;done
 
 wipe_{{ type }}_vms:
   salt.function:
@@ -65,7 +65,7 @@ wipe_{{ type }}_vms:
     - tgt: 'role:controller'
     - tgt_type: grain
     - arg:
-      - ls /kvm/vms | grep {{ type }} | while read id;do rm -rf /kvm/vms/$id;done
+      - ls /kvm/vms | grep {{ type }} | while read id;do rm -rf /kvm/vms/$id && sleep 5;done
     - require:
       - destroy_{{ type }}_domain
 
@@ -75,21 +75,9 @@ wipe_{{ type }}_logs:
     - tgt: 'role:controller'
     - tgt_type: grain
     - arg:
-      - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id;done
+      - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id && sleep 5;done
     - require:
       - wipe_{{ type }}_vms
-
-## I am encountering scenarios where controllers
-## haven't finished wiping old data before trying
-## to create new data - I think that the shell
-## is returning too early.  This should fix it
-## temporarily while I find a way to not use shell scripts
-{{ type }}_vm_removal_delay:
-  salt.function:
-    - name: test.sleep
-    - tgt: salt
-    - kwarg:
-        length: 5
 
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
