@@ -59,34 +59,6 @@ wipe_{{ type }}_domains:
     - pillar:
         type: {{ type }}
 
-# destroy_{{ type }}_domain:
-#   salt.function:
-#     - name: cmd.run
-#     - tgt: 'role:controller'
-#     - tgt_type: grain
-#     - arg:
-#       - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id && sleep 5;done
-#
-# wipe_{{ type }}_vms:
-#   salt.function:
-#     - name: cmd.run
-#     - tgt: 'role:controller'
-#     - tgt_type: grain
-#     - arg:
-#       - ls /kvm/vms | grep {{ type }} | while read id;do rm -rf /kvm/vms/$id && sleep 5;done
-#     - require:
-#       - destroy_{{ type }}_domain
-#
-# wipe_{{ type }}_logs:
-#   salt.function:
-#     - name: cmd.run
-#     - tgt: 'role:controller'
-#     - tgt_type: grain
-#     - arg:
-#       - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id && sleep 5;done
-#     - require:
-#       - wipe_{{ type }}_vms
-
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
@@ -97,7 +69,7 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
     - concurrent: true
     - require:
-      - wipe_{{ type }}_logs
+      - wipe_{{ type }}_domains
   {% endfor %}
 {% endif %}
 
