@@ -9,7 +9,7 @@ stop_{{ domain }}:
       - report_success
 {% endfor %}
 
-{% for domain in salt['file.readdir']() if type in domain %}
+{% for domain in salt['file.readdir']('/kvm/vms') if type in domain %}
 remove_{{ domain }}:
   file.absent:
     - name: /kvm/vms/{{ domain }}
