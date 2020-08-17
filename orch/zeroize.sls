@@ -51,33 +51,41 @@ assign_uuid_to_{{ id }}:
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
 
-destroy_{{ type }}_domain:
-  salt.function:
-    - name: cmd.run
+wipe_{{ type }}_domains:
+  salt.state:
     - tgt: 'role:controller'
-    - tgt_type: grain
-    - arg:
-      - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id && sleep 5;done
+    - sls:
+      - orch/states/virtual_zero
+    - pillar:
+        type: {{ type }}
 
-wipe_{{ type }}_vms:
-  salt.function:
-    - name: cmd.run
-    - tgt: 'role:controller'
-    - tgt_type: grain
-    - arg:
-      - ls /kvm/vms | grep {{ type }} | while read id;do rm -rf /kvm/vms/$id && sleep 5;done
-    - require:
-      - destroy_{{ type }}_domain
-
-wipe_{{ type }}_logs:
-  salt.function:
-    - name: cmd.run
-    - tgt: 'role:controller'
-    - tgt_type: grain
-    - arg:
-      - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id && sleep 5;done
-    - require:
-      - wipe_{{ type }}_vms
+# destroy_{{ type }}_domain:
+#   salt.function:
+#     - name: cmd.run
+#     - tgt: 'role:controller'
+#     - tgt_type: grain
+#     - arg:
+#       - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id && sleep 5;done
+#
+# wipe_{{ type }}_vms:
+#   salt.function:
+#     - name: cmd.run
+#     - tgt: 'role:controller'
+#     - tgt_type: grain
+#     - arg:
+#       - ls /kvm/vms | grep {{ type }} | while read id;do rm -rf /kvm/vms/$id && sleep 5;done
+#     - require:
+#       - destroy_{{ type }}_domain
+#
+# wipe_{{ type }}_logs:
+#   salt.function:
+#     - name: cmd.run
+#     - tgt: 'role:controller'
+#     - tgt_type: grain
+#     - arg:
+#       - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id && sleep 5;done
+#     - require:
+#       - wipe_{{ type }}_vms
 
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
