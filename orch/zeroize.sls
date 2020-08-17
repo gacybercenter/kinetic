@@ -48,6 +48,16 @@ assign_uuid_to_{{ id }}:
       - {{ pillar['hosts'][type]['interface'] }}
   {% endfor %}
 
+## reboots initiated by the BMC take a few seconds to take effect
+## This sleep ensures that the key is only removed after
+## the device has actually been rebooted
+{{ type }}_wheel_removal_delay:
+  salt.function:
+    - name: test.sleep
+    - tgt: salt
+    - kwarg:
+        length: 5
+
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
 
@@ -73,16 +83,6 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
       - wipe_{{ type }}_domains
   {% endfor %}
 {% endif %}
-
-## reboots initiated by the BMC take a few seconds to take effect
-## This sleep ensures that the key is only removed after
-## the device has actually been rebooted
-{{ type }}_wheel_removal_delay:
-  salt.function:
-    - name: test.sleep
-    - tgt: salt
-    - kwarg:
-        length: 5
 
 delete_{{ type }}_key:
   salt.wheel:
