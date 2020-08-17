@@ -54,6 +54,7 @@ assign_uuid_to_{{ id }}:
 wipe_{{ type }}_domains:
   salt.state:
     - tgt: 'role:controller'
+    - tgt_type: grain
     - sls:
       - orch/states/virtual_zero
     - pillar:
