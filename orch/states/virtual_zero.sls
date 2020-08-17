@@ -6,6 +6,7 @@ stop_{{ domain }}:
     - name: {{ domain }}
     - require_in:
       - remove_{{ domain }}
+      - remove_{{ domain }}_logs      
       - report_success
 {% endfor %}
 
