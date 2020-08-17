@@ -13,7 +13,7 @@
     - retry:
         interval: 30
         attempts: 240
-        splay: 10
+        splay: 60
 
 {% do salt.log.info(type+" initialization routine is aboue to begin!") %}
 

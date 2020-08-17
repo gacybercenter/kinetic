@@ -79,6 +79,18 @@ wipe_{{ type }}_logs:
     - require:
       - wipe_{{ type }}_vms
 
+## I am encountering scenarios where controllers
+## haven't finished wiping old data before trying
+## to create new data - I think that the shell
+## is returning too early.  This should fix it
+## temporarily while I find a way to not use shell scripts
+{{ type }}_vm_removal_delay:
+  salt.function:
+    - name: test.sleep
+    - tgt: salt
+    - kwarg:
+        length: 5
+
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
