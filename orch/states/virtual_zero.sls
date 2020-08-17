@@ -2,7 +2,7 @@
 
 {% for domain in salt['virt.list_domains']() if type in domain %}
 stop_{{ domain }}:
-  virt.stopped:
+  virt.powered_off:
     - name: {{ domain }}
     - require_in:
       - remove_{{ domain }}
