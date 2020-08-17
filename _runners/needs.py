@@ -13,16 +13,19 @@ def check_all(type, needs):
       for dep in needs[phase]:
         currentStatus = __salt__['mine.get'](tgt='role:'+dep,tgt_type='grain',fun='build_phase')
         if len(currentStatus) == 0:
+          __context__["retcode"] = 1
           phaseOK = False
           ret["ready"] = False
           ret["comment"].append("No endpoints of type "+dep+" available for assessment")
           break
         for endpoint in currentStatus:
           if currentStatus[endpoint] != needs[phase][dep]:
+            __context__["retcode"] = 1
             phaseOK = False
             ret["ready"] = False
             ret["comment"].append(endpoint+" is "+currentStatus[endpoint]+" but needs to be "+needs[phase][dep])
       if phaseOK == True:
+        __context__["retcode"] = 0          
         ret["ready"] = True
         ret["comment"] = type+" orchestration routine may proceed"
         return ret
