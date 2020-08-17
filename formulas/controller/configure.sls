@@ -109,6 +109,12 @@ fs:
     - require:
       - /kvm
 
+/kvm/vms:
+  file.directory:
+    - makedirs: True
+    - require:
+      - /kvm
+
 {% if grains['os_family'] == 'RedHat' %}
 libvirtd_service:
   service.running:
