@@ -1,6 +1,7 @@
 {% set type = pillar['type'] %}
 
-{% for domain in salt['virt.list_domains']() if type in domain %}
+{% if salt['virt.list_domains']() | length != 0 %}
+  {% for domain in salt['virt.list_domains']() if type in domain %}
 
 stop_{{ domain }}:
   virt.stopped:
@@ -18,4 +19,5 @@ remove_{{ domain }}_logs:
     - require:
       - virt: stop_{{ domain }}
 
-{% endfor %}
+  {% endfor %}
+{% endif %}
