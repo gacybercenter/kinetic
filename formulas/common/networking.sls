@@ -49,7 +49,7 @@ systemd-networkd.socket:
 systemd-networkd:
   service.enabled
 
-### The sub resolver is causing bizarre issues and
+### The stub resolver is causing bizarre issues and
 ### intermittently returning publicly routable addresses
 ### for hosts statically defined on the DNS server
 ### This symlink points at the full resolver
