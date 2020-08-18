@@ -232,7 +232,6 @@ modify_ovs_script:
     - require:
       - cmd: ovsdb_listen
 
-
 {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
 enable_bridge:
   cmd.run:
