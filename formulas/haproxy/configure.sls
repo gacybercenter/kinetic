@@ -49,14 +49,14 @@ set haproxy group:
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
 
-{% if salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain')|length != 0 %}
+{% if salt['mine.get']('G@role:share and G@build_phase:configure', 'network.ip_addrs', tgt_type='compound')|length != 0 %}
 set nfs group:
   danos.set_resourcegroup:
     - name: manila-share-servers
     - type: address-group
     - description: list of current nfs-ganesha servers
     - values:
-  {% for host, addresses in salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+  {% for host, addresses in salt['mine.get']('G@role:share and G@build_phase:configure', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
     {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
       - {{ address }}
     {%- endfor -%}
