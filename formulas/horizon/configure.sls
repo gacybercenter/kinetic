@@ -84,7 +84,7 @@ local_settings:
 swift_ceph_patch:
   file.line:
 {% if grains['os_family'] == 'RedHat' %}
-    - name: {{ grains['pythonpath'][5] }}/swiftclient/client.py
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}{{ grains['pythonversion'][1] }}/site-packages/swiftclient/client.py
 {% elif grains['os_family'] == 'Debian' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/swiftclient/client.py
 {% endif %}
