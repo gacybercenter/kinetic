@@ -58,8 +58,6 @@ systemd-networkd:
     - target: /run/systemd/resolve/resolv.conf
     - force: True
 
-###
-
 ### Iterate through all networks
 ### Management is always DHCP
 ### Public is left up, but unconfigured`
