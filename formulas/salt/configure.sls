@@ -40,9 +40,9 @@ address_population_{{ address }}:
   file.directory:
     - makedirs: True
 
-/srv/runners/compare.py:
+/srv/runners/needs.py:
   file.managed:
-    - source: salt://_runners/compare.py
+    - source: salt://_runners/needs.py
 
 create_api_cert:
   cmd.run:

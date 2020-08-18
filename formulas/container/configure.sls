@@ -112,10 +112,8 @@ neutron_linuxbridge_agent_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for network in pillar['hosts'][grains['type']]['networks'] %}
-  {% if pillar['hosts'][grains['type']]['networks'][network]['network'] == 'public' %}
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
-  {% endif %}
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
@@ -234,8 +232,8 @@ modify_ovs_script:
     - require:
       - cmd: ovsdb_listen
 
-{% for network in pillar['hosts'][grains['type']]['networks'] %}
-  {% if network == 'public' %}
+
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
 enable_bridge:
   cmd.run:
     - name: ovs-vsctl --may-exist add-port br-provider {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
@@ -247,7 +245,6 @@ enable_bridge:
       - cmd: map_bridge
     - unless:
       - ovs-vsctl port-to-br {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }} | grep -q "br-provider"
-  {% endif %}
 {% endfor %}
 
 ovn_controller_service:

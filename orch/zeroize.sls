@@ -48,37 +48,29 @@ assign_uuid_to_{{ id }}:
       - {{ pillar['hosts'][type]['interface'] }}
   {% endfor %}
 
+## reboots initiated by the BMC take a few seconds to take effect
+## This sleep ensures that the key is only removed after
+## the device has actually been rebooted
+{{ type }}_wheel_removal_delay:
+  salt.function:
+    - name: test.sleep
+    - tgt: salt
+    - kwarg:
+        length: 5
+
 ## Follow this codepath if host is virtual
 {% elif style == 'virtual' %}
 
-destroy_{{ type }}_domain:
-  salt.function:
-    - name: cmd.run
+wipe_{{ type }}_domains:
+  salt.state:
     - tgt: 'role:controller'
     - tgt_type: grain
-    - arg:
-      - virsh list | grep {{ type }} | cut -d" " -f 2 | while read id;do virsh destroy $id;done
-
-wipe_{{ type }}_vms:
-  salt.function:
-    - name: cmd.run
-    - tgt: 'role:controller'
-    - tgt_type: grain
-    - arg:
-      - ls /kvm/vms | grep {{ type }} | while read id;do rm -rf /kvm/vms/$id;done
-    - require:
-      - destroy_{{ type }}_domain
-
-wipe_{{ type }}_logs:
-  salt.function:
-    - name: cmd.run
-    - tgt: 'role:controller'
-    - tgt_type: grain
-    - arg:
-      - ls /var/log/libvirt | grep {{ type }} | while read id;do rm /var/log/libvirt/$id;done
-    - require:
-      - wipe_{{ type }}_vms
-
+    - sls:
+      - orch/states/virtual_zero
+    - pillar:
+        type: {{ type }}
+    - concurrent: true
+    
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
@@ -89,19 +81,9 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
     - concurrent: true
     - require:
-      - wipe_{{ type }}_logs
+      - wipe_{{ type }}_domains
   {% endfor %}
 {% endif %}
-
-## reboots initiated by the BMC take a few seconds to take effect
-## This sleep ensures that the key is only removed after
-## the device has actually been rebooted
-{{ type }}_wheel_removal_delay:
-  salt.function:
-    - name: test.sleep
-    - tgt: salt
-    - kwarg:
-        length: 5
 
 delete_{{ type }}_key:
   salt.wheel:

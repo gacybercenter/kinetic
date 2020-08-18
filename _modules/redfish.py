@@ -67,7 +67,10 @@ def set_bootonce(host, username, password, mode, target):
                                      "BootSourceOverrideEnabled" : "Once"
                                     }
                                   })
-    session.logout()
+    try:
+        session.logout()
+    except:
+        print("Redfish logout failed.  This is probably a bug in your particular redfish implementation and can likely be ignored.")
     if response.status != 200:
         cmd = pyghmi.ipmi.command.Command(bmc=host, userid=username, password=password, keepalive=False)
         cmd.set_bootdev(bootdev="network", uefiboot=True)

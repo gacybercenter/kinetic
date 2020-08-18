@@ -49,14 +49,14 @@ set haproxy group:
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
 
-{% if salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain')|length != 0 %}
+{% if salt['mine.get']('G@role:share and G@build_phase:configure', 'network.ip_addrs', tgt_type='compound')|length != 0 %}
 set nfs group:
   danos.set_resourcegroup:
     - name: manila-share-servers
     - type: address-group
     - description: list of current nfs-ganesha servers
     - values:
-  {% for host, addresses in salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+  {% for host, addresses in salt['mine.get']('G@role:share and G@build_phase:configure', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
     {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
       - {{ address }}
     {%- endfor -%}
@@ -101,8 +101,13 @@ acme_certs:
     - aliases:
       - {{ pillar['haproxy']['console_domain'] }}
       - {{ pillar['haproxy']['docs_domain'] }}
+## this is just to temporarily work around the duplicate rate limit.  It does nothing
+      - placement.gacyberrange.org
     - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
+{% if salt['pillar.get']('development:test_certs', False) == True %}
+    - test_cert: True
+{% endif %}
 {% if salt['pillar.get']('danos:enabled', False) == True %}
     - require:
       - danos: set haproxy group
@@ -122,11 +127,9 @@ create_master_pem:
     - template: jinja
 {% if salt['pillar.get']('syslog_url', False) == False %}
   {% for host, addresses in salt['mine.get']('role:graylog', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {% for address in addresses %}
-      {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
     - context:
         syslog: {{ address }}:5514
-      {% endif %}
     {% endfor %}
   {% endfor %}
 {% endif %}
