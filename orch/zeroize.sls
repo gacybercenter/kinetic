@@ -69,7 +69,8 @@ wipe_{{ type }}_domains:
       - orch/states/virtual_zero
     - pillar:
         type: {{ type }}
-
+    - concurrent: true
+    
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
