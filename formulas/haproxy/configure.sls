@@ -103,6 +103,7 @@ acme_certs:
       - {{ pillar['haproxy']['docs_domain'] }}
     - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
+    - test_cert: True
 {% if salt['pillar.get']('danos:enabled', False) == True %}
     - require:
       - danos: set haproxy group
