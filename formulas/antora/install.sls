@@ -52,6 +52,7 @@ antora_packages:
       - gnupg2
       - nodejs
       - httpd
+      - git
     - reload_modules: True
 
 {% endif %}
