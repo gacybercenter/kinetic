@@ -21,14 +21,14 @@ frr_repo:
     - name: frr
     - baseurl: https://rpm.frrouting.org/repo/el8/frr
     - file: /etc/yum.repos.d/frr.repo
-    - gpgkey: salt://formulas/frr/common/files/frr_rpm.gpg
+    - gpgkey: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x7ab8ac624cba356cb6216d48f66b5a9140673a87
 
 frr_extras_repo:
   pkgrepo.managed:
     - name: frr_extras
     - baseurl: https://rpm.frrouting.org/repo/el8/extras
     - file: /etc/yum.repos.d/frr_extas.repo
-    - gpgkey: salt://formulas/frr/common/files/frr_rpm.gpg
+    - gpgkey: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x7ab8ac624cba356cb6216d48f66b5a9140673a87
 
 update_packages_frr:
   pkg.uptodate:
