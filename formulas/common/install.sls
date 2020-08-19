@@ -10,7 +10,6 @@ set_package_proxy:
     - contents: |
         Acquire::http { Proxy "http://{{ address }}:3142"; };
     {% elif grains['os_family'] == 'RedHat' %}
-  file.managed:
     - name: /etc/yum.configure
     - contents: |
         [main]
