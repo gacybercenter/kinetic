@@ -102,7 +102,7 @@ acme_certs:
       - {{ pillar['haproxy']['console_domain'] }}
       - {{ pillar['haproxy']['docs_domain'] }}
 ## this is just to temporarily work around the duplicate rate limit.  It does nothing
-      - placement.gacyberrange.org
+      - gacyberrange.org
     - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
 {% if salt['pillar.get']('development:test_certs', False) == True %}
