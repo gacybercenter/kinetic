@@ -39,7 +39,7 @@ mariadb_repo:
   pkgrepo.managed:
     - name: mariadb
     - file: /etc/yum.repos.d/mariadb.repo
-    - baseurl: http://downloads.mariadb.com/MariaDB/mariadb-10.5/yum/centos/$releasever/$basearch
+    - baseurl: https://downloads.mariadb.com/MariaDB/mariadb-10.5/yum/centos/$releasever/$basearch
     - gpgkey: https://downloads.mariadb.com/MariaDB/MariaDB-Server-GPG-KEY
     - module_hotfixes: 1
 
@@ -47,14 +47,14 @@ mariadb_maxscale_repo:
   pkgrepo.managed:
     - name: mariadb_maxscale
     - file: /etc/yum.repos.d/mariadb_maxscale.repo
-    - baseurl: http://downloads.mariadb.com/MaxScale/2.4/centos/$releasever/$basearch
+    - baseurl: https://downloads.mariadb.com/MaxScale/2.4/centos/$releasever/$basearch
     - gpgkey: https://downloads.mariadb.com/MaxScale/MariaDB-MaxScale-GPG-KEY
 
 mariadb_tools_repo:
   pkgrepo.managed:
     - name: mariadb_tools
     - file: /etc/yum.repos.d/mariadb_tools.repo
-    - baseurl: http://downloads.mariadb.com/Tools/centos/$releasever/$basearch
+    - baseurl: https://downloads.mariadb.com/Tools/centos/$releasever/$basearch
     - gpgkey: https://downloads.mariadb.com/Tools/MariaDB-Enterprise-GPG-KEY
 
 update_packages_mariadb:
