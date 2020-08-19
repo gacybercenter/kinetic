@@ -34,7 +34,6 @@ antora_packages:
 
 nodesource:
   pkgrepo.managed:
-    - humanname: nodesoure node.js 12.x repo
     - name: nodesource
     - baseurl: https://rpm.nodesource.com/pub_12.x/el/8/x86_64/
     - file: /etc/yum.repos.d/nodesource.repo
