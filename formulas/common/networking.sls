@@ -53,10 +53,15 @@ systemd-networkd:
 ### intermittently returning publicly routable addresses
 ### for hosts statically defined on the DNS server
 ### This symlink points at the full resolver
+### You should only do this with versions of systemd
+### 241 or greater
+
+{% if grains['systemd']['version'] >= 241 %}
 /etc/resolv.conf:
   file.symlink:
     - target: /run/systemd/resolve/resolv.conf
     - force: True
+{% endif %}
 
 ### Iterate through all networks
 ### Management is always DHCP
