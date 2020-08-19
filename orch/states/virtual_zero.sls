@@ -1,16 +1,16 @@
 {% set type = pillar['type'] %}
 
-{% for domain in salt['virt.list_domains']() if type in domain %}
+{% for domain in salt['virt.list_domains']() if type == domain.split('-')[0] %}
 stop_{{ domain }}:
   virt.powered_off:
     - name: {{ domain }}
     - require_in:
       - remove_{{ domain }}
-      - remove_{{ domain }}_logs      
+      - remove_{{ domain }}_logs
       - report_success
 {% endfor %}
 
-{% for domain in salt['file.readdir']('/kvm/vms') if type in domain %}
+{% for domain in salt['file.readdir']('/kvm/vms') if type == domain.split('-')[0] %}
 remove_{{ domain }}:
   file.absent:
     - name: /kvm/vms/{{ domain }}
