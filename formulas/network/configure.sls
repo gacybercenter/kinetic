@@ -112,10 +112,8 @@ fs.inotify.max_user_instances:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
-  {% if network == 'public' %}
-        public_interface: {{ interface }}
-  {% endif %}
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+        public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
 {% endfor %}
 
 /etc/neutron/l3_agent.ini:
