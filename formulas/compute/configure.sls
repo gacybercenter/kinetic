@@ -184,8 +184,8 @@ neutron_linuxbridge_agent_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for network in pillar['hosts'][grains['type']]['networks'] %}
-  {% if pillar['hosts'][grains['type']]['networks'][network]['network'] == 'public' %}
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+  {% network == 'public' %}
         public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
   {% endif %}
 {% endfor %}
