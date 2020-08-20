@@ -57,7 +57,7 @@ set nfs group:
     - description: list of current nfs-ganesha servers
     - values:
   {% for host, addresses in salt['mine.get']('G@role:share and G@build_phase:configure', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
-    {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+    {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
       - {{ address }}
     {%- endfor -%}
   {% endfor %}
