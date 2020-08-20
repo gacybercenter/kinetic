@@ -372,7 +372,9 @@ At this point, your two foundational minions are fully configured and you are re
 To create your controllers, run:
 
 ```
-salt-run state.orch orch.generate pillar='{"type":"controller"}'
+salt-run state.orch orch | tee $(date "+%F-%T").log
 ```
 
-This will provision all controllers that you have identified in your pillar.
+This will kick off the full provisioning routine.
+If you have enabled https://www.danosproject.org/[danos] support in your pillar (and have DANOS appropriately configured), no further action is required and once this routine completes, you will have a functional environment.
+If not, you must manually update your gateway with the proper port-forwarding information once your haproxy endpoint gets issued its address.
