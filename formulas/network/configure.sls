@@ -113,7 +113,7 @@ fs.inotify.max_user_instances:
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
 {% for interface in pillar['hosts'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['hosts'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
+  {% if network == 'public' %}
         public_interface: {{ interface }}
   {% endif %}
 {% endfor %}

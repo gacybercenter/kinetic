@@ -25,7 +25,7 @@ network_packages:
       - openstack-neutron
       - openstack-neutron-ml2
       - openstack-neutron-linuxbridge
-      - ebtables
+      - iptables-ebtables
       - python3-openstackclient
 
 {% endif %}
