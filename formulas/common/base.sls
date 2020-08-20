@@ -9,12 +9,6 @@ initial_module_sync:
 
 {% if opts.id not in ['salt', 'pxe'] %}
   {% set type = opts.id.split('-')[0] %}
-## debugging purposes - safe to remove
-current_address:
-  file.append:
-    - name: /root/address_history
-    - text: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-###
 {% else %}
   {% set type = opts.id %}
 {% endif %}

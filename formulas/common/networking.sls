@@ -6,8 +6,8 @@ ifwatch:
 {% if grains['type'] in ['salt','pxe'] %}
       - eth0
 {% else %}
-  {% for interface in pillar['hosts'][grains['type']]['networks'] %}
-      - {{ pillar['hosts'][grains['type']]['networks'][interface]['interfaces'][0] }}
+  {% for network in pillar['hosts'][grains['type']]['networks'] %}
+      - {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
   {% endfor %}
 {% endif %}
 ###
