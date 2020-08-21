@@ -50,6 +50,13 @@ get_centos_mirros:
     - creates: /root/centos_mirrors
 {% endif %}
 
+{% if (grains['selinux']['enabled'] == True) and (grains['selinux']['enforced'] == 'Enforcing')  %}
+container_manage_cgroup:
+  selinux.boolean:
+    - value: 1
+    - persist: True
+{% endif %}
+
 {% if grains['os_family'] == 'Debian' %}
 
 apt-cacher-ng_service:
@@ -65,11 +72,6 @@ apt-cacher-ng_service:
 /root/acng.dockerfile:
   file.managed:
     - source: salt://formulas/cache/files/acng.dockerfile
-
-container_manage_cgroup:
-  selinux.boolean:
-    - value: 1
-    - persist: True
 
 build acng container image:
   cmd.run:
