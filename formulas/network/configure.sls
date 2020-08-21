@@ -106,6 +106,17 @@ fs.inotify.max_user_instances:
   file.managed:
     - source: salt://formulas/neutron/files/neutron_sudoers
 
+{% if (grains['selinux']['enabled'] == True) and (grains['selinux']['enforced'] == 'Enforcing')  %}
+## this used to be a default but was changed to a boolean here:
+## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
+os_neutron_dac_override:
+  selinux.boolean:
+    - value: on
+    - persist: True
+    - watch_in:
+      - service: neutron_linuxbridge_agent_service
+{% endif %}
+
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
     - source: salt://formulas/network/files/linuxbridge_agent.ini
