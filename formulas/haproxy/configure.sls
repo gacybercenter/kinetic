@@ -86,7 +86,7 @@ set haproxy static-mapping:
   {% endif %}
 {% endif %}
 
-{% if grains['os_family'] == 'RedHat' %}
+{% if (grains['selinux']['enabled'] == True) and (grains['selinux']['enforced'] == 'Enforcing')  %}
 haproxy_connect_any:
   selinux.boolean:
     - value: True
