@@ -126,6 +126,15 @@ os_neutron_dac_override:
     - persist: True
     - watch_in:
       - service: neutron_linuxbridge_agent_service
+
+## ref: https://github.com/redhat-openstack/openstack-selinux/commit/9460342f3e5a7214bd05b9cfa73a1896478d8785
+os_dnsmasq_dac_override:
+  selinux.boolean:
+    - value: on
+    - persist: True
+    - watch_in:
+      - service: neutron_dhcp_agent_service
+
 {% endif %}
 
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
