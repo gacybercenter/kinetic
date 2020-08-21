@@ -170,6 +170,15 @@ libvirtd_service:
         lock_path: /var/lib/neutron/tmp
 {% endif %}
 
+{% if grains['os_family'] == 'RedHat' %}
+## this used to be a default but was changed to a boolean here:
+## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
+os_neutron_dac_override:
+  selinux.boolean:
+    - value: on
+    - persist: True
+{% endif %}
+
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
