@@ -177,6 +177,8 @@ os_neutron_dac_override:
   selinux.boolean:
     - value: on
     - persist: True
+    - watch_in:
+      - service: neutron_linuxbridge_agent_service
 {% endif %}
 
 neutron_linuxbridge_agent_service:
