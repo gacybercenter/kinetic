@@ -114,7 +114,7 @@ arp_protect_fix:
 {% elif grains['os_family'] == 'Debian' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
 {% endif %}
-    - source: salt://formulas/compute/files/arp_protect.py
+    - source: salt://formulas/network/files/arp_protect.py
 ###
 
 {% if (grains['selinux']['enabled'] == True) and (grains['selinux']['enforced'] == 'Enforcing')  %}
