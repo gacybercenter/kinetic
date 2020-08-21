@@ -134,7 +134,6 @@ os_dnsmasq_dac_override:
     - persist: True
     - watch_in:
       - service: neutron_dhcp_agent_service
-
 {% endif %}
 
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
