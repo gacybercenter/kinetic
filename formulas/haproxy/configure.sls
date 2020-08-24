@@ -86,7 +86,7 @@ set haproxy static-mapping:
   {% endif %}
 {% endif %}
 
-{% if (grains['selinux']['enabled'] == True) and (grains['selinux']['enforced'] == 'Enforcing')  %}
+{% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 haproxy_connect_any:
   selinux.boolean:
     - value: True
