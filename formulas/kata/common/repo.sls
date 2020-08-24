@@ -5,7 +5,7 @@ kata_repo:
     - humanname: kata containers
     - name: deb https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04/ /
     - file: /etc/apt/sources.list.d/kata.list
-    - key_url: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04/Release.key
+    - key_url: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04/Release.gpg
 
 update_packages_kata:
   pkg.uptodate:
