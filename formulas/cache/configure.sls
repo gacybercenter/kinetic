@@ -50,7 +50,7 @@ get_centos_mirros:
     - creates: /root/centos_mirrors
 {% endif %}
 
-{% if (salt[grains.get]('selinux:enabled', False) == True) and salt[grains.get]('selinux:enforced', 'Permissive') == 'Enforcing')  %}
+{% if (salt[grains.get]('selinux:enabled', False) == True) and (salt[grains.get]('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 container_manage_cgroup:
   selinux.boolean:
     - value: 1
