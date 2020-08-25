@@ -133,17 +133,6 @@ wait_for_minion_first_start_{{ type }}:
     - require:
       - accept_minion_{{ type }}
 
-sync_all_{{ type }}:
-  salt.function:
-    - name: saltutil.sync_all
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - require:
-      - wait_for_minion_first_start_{{ type }}
-
 {% if style == 'physical' %}
   {% for id in targets %}
 remove_pending_{{ type }}-{{ id }}:
@@ -153,7 +142,7 @@ remove_pending_{{ type }}-{{ id }}:
     - arg:
       - /var/www/html/assignments/{{ id }}
     - require:
-      - sync_all_{{ type }}
+      - wait_for_minion_first_start_{{ type }}
   {% endfor %}
 
 {% elif style == 'virtual' %}
@@ -167,7 +156,7 @@ set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
     - kwarg:
           val: {{ targets[id]['spawning'] }}
     - require:
-      - sync_all_{{ type }}
+      - wait_for_minion_first_start_{{ type }}
     - retry:
         interval: 5
         attempts: 3
