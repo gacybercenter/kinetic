@@ -1,5 +1,3 @@
 Defaults:neutron !requiretty
 
-neutron ALL = (root) NOPASSWD: /usr/bin/privsep-helper *
-neutron ALL = (root) NOPASSWD: /usr/bin/privsep-helper
 neutron ALL = (root) NOPASSWD: /usr/bin/neutron-rootwrap /etc/neutron/rootwrap.conf *,/usr/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf
