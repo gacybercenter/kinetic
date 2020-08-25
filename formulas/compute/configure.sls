@@ -111,6 +111,9 @@ spice-html5:
     - target: /usr/share/spice-html5
 {% endif %}
 
+/etc/sudoers.d/neutron_sudoers:
+  file.managed:
+    - source: salt://formulas/compute/files/neutron_sudoers
 
 nova_compute_service:
   service.running:
