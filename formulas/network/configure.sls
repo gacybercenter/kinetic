@@ -106,7 +106,6 @@ fs.inotify.max_user_instances:
   file.managed:
     - source: salt://formulas/network/files/neutron_sudoers
 
-{% if grains['os_family'] == 'RedHat' %}
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
 arp_protect_fix:
   file.managed:
@@ -116,7 +115,6 @@ arp_protect_fix:
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
 {% endif %}
     - source: salt://formulas/network/files/arp_protect.py
-{% endif %}
 ###
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
