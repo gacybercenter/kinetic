@@ -104,7 +104,7 @@ fs.inotify.max_user_instances:
 
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
-    - source: salt://formulas/neutron/files/neutron_sudoers
+    - source: salt://formulas/network/files/neutron_sudoers
 
 {% if grains['os_family'] == 'RedHat' %}
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
