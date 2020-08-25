@@ -71,10 +71,6 @@ wipe_{{ type }}_domains:
     - pillar:
         type: {{ type }}
     - concurrent: True
-    - retry:
-        interval: 10
-        attempts: 30
-        splay: 10
 
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
@@ -172,5 +168,8 @@ set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
           val: {{ targets[id]['spawning'] }}
     - require:
       - sync_all_{{ type }}
+    - retry:
+        interval: 5
+        attempts: 3
   {% endfor %}
 {% endif %}
