@@ -4,8 +4,9 @@ include:
 initial_module_sync:
   saltutil.sync_all:
     - refresh: True
-    - onchanges_in:
-      - grains: build_phase
+    - unless:
+      - fun: grains.has_value
+        key: build_phase
 
 {% if opts.id not in ['salt', 'pxe'] %}
   {% set type = opts.id.split('-')[0] %}
