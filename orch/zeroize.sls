@@ -46,7 +46,7 @@ assign_uuid_to_{{ id }}:
       - {{ type }}-{{ targets[id]['uuid'] }}
       - {{ pillar['hosts'][type]['os'] }}
       - {{ pillar['hosts'][type]['interface'] }}
-      - {{ targets[id]['api_host'] }}      
+      - {{ targets[id]['api_host'] }}
   {% endfor %}
 
 ## reboots initiated by the BMC take a few seconds to take effect
@@ -70,7 +70,10 @@ wipe_{{ type }}_domains:
       - orch/states/virtual_zero
     - pillar:
         type: {{ type }}
-    - concurrent: true
+    - retry:
+        interval: 5
+        attempts: 20 
+        splay: 5
 
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
