@@ -172,9 +172,6 @@ neutron_linuxbridge_agent_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-      - file: /etc/neutron/l3_agent.ini
-      - file: /etc/neutron/dhcp_agent.ini
-      - file: /etc/neutron/metadata_agent.ini
 
 neutron_dhcp_agent_service:
   service.running:
@@ -182,11 +179,7 @@ neutron_dhcp_agent_service:
     - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-      - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
-      - file: /etc/neutron/metadata_agent.ini
 
 neutron_metadata_agent_service:
   service.running:
@@ -194,10 +187,6 @@ neutron_metadata_agent_service:
     - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-      - file: /etc/neutron/l3_agent.ini
-      - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
 
 neutron_l3_agent_service:
@@ -206,8 +195,4 @@ neutron_l3_agent_service:
     - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
       - file: /etc/neutron/l3_agent.ini
-      - file: /etc/neutron/dhcp_agent.ini
-      - file: /etc/neutron/metadata_agent.ini
