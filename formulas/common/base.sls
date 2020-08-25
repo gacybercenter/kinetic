@@ -1,18 +1,18 @@
 include:
   - formulas/common/syslog
 
+{% if opts.id not in ['salt', 'pxe'] %}
+  {% set type = opts.id.split('-')[0] %}
+{% else %}
+  {% set type = opts.id %}
+{% endif %}
+
 initial_module_sync:
   saltutil.sync_all:
     - refresh: True
     - unless:
       - fun: grains.has_value
         key: build_phase
-
-{% if opts.id not in ['salt', 'pxe'] %}
-  {% set type = opts.id.split('-')[0] %}
-{% else %}
-  {% set type = opts.id %}
-{% endif %}
 
 build_phase:
   grains.present:
