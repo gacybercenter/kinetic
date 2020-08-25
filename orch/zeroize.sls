@@ -70,10 +70,11 @@ wipe_{{ type }}_domains:
       - orch/states/virtual_zero
     - pillar:
         type: {{ type }}
+    - concurrent: True
     - retry:
-        interval: 5
-        attempts: 20 
-        splay: 5
+        interval: 10
+        attempts: 30
+        splay: 10
 
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
