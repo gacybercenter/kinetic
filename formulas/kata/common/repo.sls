@@ -5,10 +5,10 @@ kata_repo:
     - humanname: kata containers
     - name: deb https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04/ /
     - file: /etc/apt/sources.list.d/kata.list
-    - key_url: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04/Release.key
+    - key_url: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/openSUSE_Tumbleweed/repodata/repomd.xml.asc
 ### Currently impacted by https://github.com/kata-containers/kata-containers/issues/545
 ### Delete this before merging to master, ok for testing
-    - gpgcheck: 0
+###    - gpgcheck: 0
 
 update_packages_kata:
   pkg.uptodate:
