@@ -1,14 +1,14 @@
 {% if grains['os_family'] == 'Debian' %}
 
+## Even though its referencing the 16.04 key, its the same one.
+## See https://github.com/kata-containers/kata-containers/issues/545 for rationale
+## This can be safely changed to the 20.04 key for correctness once available
 kata_repo:
   pkgrepo.managed:
     - humanname: kata containers
     - name: deb https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04/ /
     - file: /etc/apt/sources.list.d/kata.list
     - key_url: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_16.04/Release.key
-### Currently impacted by https://github.com/kata-containers/kata-containers/issues/545
-### Delete this before merging to master, ok for testing
-###    - gpgcheck: 0
 
 update_packages_kata:
   pkg.uptodate:
