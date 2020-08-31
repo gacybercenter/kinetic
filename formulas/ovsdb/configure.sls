@@ -149,21 +149,21 @@ ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
       - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"
 
 ### This is gross.  Should write an ovs-appctl module to handle things like this
-set_election_timer_p1:
-  cmd.run:
-    - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 2000
-    - prereq:
-      - cmd: set_election_timer_p2
-    - onlyif:
-      - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"
-
-set_election_timer_p2:
-  cmd.run:
-    - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 4000
-    - prereq:
-      - cmd: set_election_timer_final
-    - onlyif:
-      - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"
+# set_election_timer_p1:
+#   cmd.run:
+#     - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 2000
+#     - prereq:
+#       - cmd: set_election_timer_p2
+#     - onlyif:
+#       - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"
+#
+# set_election_timer_p2:
+#   cmd.run:
+#     - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 4000
+#     - prereq:
+#       - cmd: set_election_timer_final
+#     - onlyif:
+#       - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"
 
 set_election_timer_final:
   cmd.run:
