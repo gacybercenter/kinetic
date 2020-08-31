@@ -147,3 +147,24 @@ ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
         splay: 5
     - unless:
       - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"
+
+### This is gross.  Should write an ovs-appctl module to handle things like this
+set_election_timer_p1:
+  cmd.run:
+    - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 2000
+    - prereq:
+      - cmd: set_election_timer_p2
+
+set_election_timer_p1:
+  cmd.run:
+    - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 4000
+    - prereq:
+      - cmd: set_election_timer_final
+
+set_election_timer_final:
+  cmd.run:
+    - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 5000
+    - onlyif:
+      - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"
+    - unless:
+      - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Election timer: 5000"
