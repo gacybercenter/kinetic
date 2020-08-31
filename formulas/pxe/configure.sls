@@ -102,6 +102,11 @@ apache2_service:
       - apache_site: wsgi
       - apache_site: 000-default
 
+build_phase_final:
+  grains.present:
+    - name: build_phase
+    - value: configure
+
 salt-minion_mine_watch:
   cmd.run:
     - name: 'salt-call service.restart salt-minion'
