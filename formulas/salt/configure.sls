@@ -274,8 +274,9 @@ salt-api_service:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
 
-build_phase:
+build_phase_final:
   grains.present:
+    - name: build_phase
     - value: configure
 
 salt-master_watch:
