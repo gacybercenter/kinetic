@@ -149,7 +149,6 @@ ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
       - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"
 
 ## This is gross.  Should write an ovs-appctl module to handle things like this
-
 set_election_timer_final:
   cmd.run:
     - name: >
