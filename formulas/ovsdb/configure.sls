@@ -169,4 +169,4 @@ set_election_timer_final:
   cmd.run:
     - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 5000
     - onlyif:
-      - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"
+      - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader" && ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Election timer: 1000"
