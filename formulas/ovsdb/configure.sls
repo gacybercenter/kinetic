@@ -154,7 +154,7 @@ set_election_timer_p1:
     - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 2000
     - prereq:
       - cmd: set_election_timer_p2
-    - unless:
+    - onlyif:
       - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"
 
 set_election_timer_p2:
@@ -162,7 +162,7 @@ set_election_timer_p2:
     - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 4000
     - prereq:
       - cmd: set_election_timer_final
-    - unless:
+    - onlyif:
       - ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"
 
 set_election_timer_final:
