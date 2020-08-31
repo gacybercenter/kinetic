@@ -155,7 +155,7 @@ set_election_timer_p1:
     - prereq:
       - cmd: set_election_timer_p2
 
-set_election_timer_p1:
+set_election_timer_p2:
   cmd.run:
     - name: ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 4000
     - prereq:
