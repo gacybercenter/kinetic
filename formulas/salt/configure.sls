@@ -274,6 +274,10 @@ salt-api_service:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
 
+build_phase:
+  grains.present:
+    - value: configure
+
 salt-master_watch:
   cmd.run:
     - name: 'salt-call service.restart salt-master'
