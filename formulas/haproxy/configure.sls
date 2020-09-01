@@ -1,13 +1,34 @@
 include:
-  - /formulas/haproxy/install
-  - /formulas/common/base
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
+
+{% else %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - type: {{ grains['type'] }}
+    - retry:
+        attempts: 10
+        interval: 30
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {% endif %}
 
@@ -28,25 +49,25 @@ set haproxy group:
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
 
+  {% if salt['mine.get']('G@role:share and G@build_phase:configure', 'network.ip_addrs', tgt_type='compound')|length != 0 %}
 set nfs group:
   danos.set_resourcegroup:
     - name: manila-share-servers
     - type: address-group
     - description: list of current nfs-ganesha servers
     - values:
-  {% for host, addresses in salt['mine.get']('role:share', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {%- for address in addresses -%}
-      {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {% for host, addresses in salt['mine.get']('G@role:share and G@build_phase:configure', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
+      {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
       - {{ address }}
-      {%- endif -%}
-    {%- endfor -%}
-  {% endfor %}
+      {%- endfor -%}
+    {% endfor %}
     - username: {{ pillar['danos']['username'] }}
     - password: {{ pillar['danos_password'] }}
-  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
+    {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
     - host: {{ grains['ip4_gw'] }}
-  {% else %}
+    {% else %}
     - host: {{ pillar['danos']['endpoint'] }}
+    {% endif %}
   {% endif %}
 
 set haproxy static-mapping:
@@ -65,7 +86,7 @@ set haproxy static-mapping:
   {% endif %}
 {% endif %}
 
-{% if grains['os_family'] == 'RedHat' %}
+{% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 haproxy_connect_any:
   selinux.boolean:
     - value: True
@@ -74,27 +95,29 @@ haproxy_connect_any:
       - sls: /formulas/haproxy/install
 {% endif %}
 
-{% for domain in pillar['haproxy']['tls_domains'] %}
-
-acme_{{ domain }}:
+acme_certs:
   acme.cert:
-    - name: {{ domain }}
-    - email: {{ pillar['haproxy']['tls_email'] }}
+    - name: {{ pillar['haproxy']['dashboard_domain'] }}
+    - aliases:
+      - {{ pillar['haproxy']['console_domain'] }}
+      - {{ pillar['haproxy']['docs_domain'] }}
+    - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
+{% if salt['pillar.get']('development:test_certs', False) == True %}
+    - test_cert: True
+{% endif %}
 {% if salt['pillar.get']('danos:enabled', False) == True %}
     - require:
       - danos: set haproxy group
       - danos: set haproxy static-mapping
 {% endif %}
 
-create_master_pem_{{ domain }}:
+create_master_pem:
   cmd.run:
-    - name: cat /etc/letsencrypt/live/{{ domain }}/fullchain.pem /etc/letsencrypt/live/{{ domain }}/privkey.pem > /etc/letsencrypt/live/{{ domain }}/master.pem
-    - creates: /etc/letsencrypt/live/{{ domain }}/master.pem
+    - name: cat /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/fullchain.pem /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/privkey.pem > /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
+    - creates: /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
     - require:
-      - acme: acme_{{ domain }}
-
-{% endfor %}
+      - acme: acme_certs
 
 /etc/haproxy/haproxy.cfg:
   file.managed:
@@ -102,11 +125,9 @@ create_master_pem_{{ domain }}:
     - template: jinja
 {% if salt['pillar.get']('syslog_url', False) == False %}
   {% for host, addresses in salt['mine.get']('role:graylog', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {% for address in addresses %}
-      {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
     - context:
         syslog: {{ address }}:5514
-      {% endif %}
     {% endfor %}
   {% endfor %}
 {% endif %}

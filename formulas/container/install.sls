@@ -1,4 +1,7 @@
 include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
   - /formulas/openstack/common/repo
   - /formulas/docker/common/repo
   - /formulas/kata/common/repo
@@ -17,7 +20,7 @@ container_packages:
       - python3-pymysql
       - kata-runtime
       - kata-proxy
-      - kata-shim      
+      - kata-shim
 
 pymysql_sa:
   pip.installed:

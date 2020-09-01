@@ -1,5 +1,8 @@
 include:
-  - formulas/openstack/common/repo
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
+  - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -14,5 +17,5 @@ etcd_packages:
   pkg.installed:
     - pkgs:
       - etcd
-      
+
 {% endif %}

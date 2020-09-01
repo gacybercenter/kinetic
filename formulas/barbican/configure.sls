@@ -1,7 +1,5 @@
 include:
-  - /formulas/barbican/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 
@@ -24,9 +22,17 @@ barbican-manage db upgrade:
       - file: /etc/barbican/barbican.conf
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
 
 {% endif %}
 

@@ -1,5 +1,8 @@
 include:
-  - /formulas/openstack/common/repo
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
+  - /formulas/mariadb/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -15,8 +18,7 @@ mariadb_packages:
 mariadb_packages:
   pkg.installed:
     - pkgs:
-      - mariadb-server-galera
-      - mariadb
+      - MariaDB-server
       - python3-PyMySQL
     - reload_modules: True
 

@@ -8,10 +8,10 @@
     - template: jinja
     - defaults:
         name: {{ hostname }}
-        ram: {{ pillar['virtual'][type]['ram'] }}
-        cpu: {{ pillar['virtual'][type]['cpu'] }}
+        ram: {{ pillar['hosts'][type]['ram'] }}
+        cpu: {{ pillar['hosts'][type]['cpu'] }}
         networks: |
-        {% for network in pillar['virtual'][type]['networks']|sort() %}
+        {% for network in pillar['hosts'][type]['networks']|sort() %}
           <interface type='bridge'>
             <source bridge='{{ network }}_br'/>
             <target dev='vnet{{ loop.index0 }}'/>
@@ -28,9 +28,9 @@
 
 /kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:
-    - source: /kvm/images/{{ pillar['virtual'][type]['os'] }}-latest
+    - source: /kvm/images/{{ pillar['hosts'][type]['os'] }}-latest
 
-qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['virtual'][type]['disk'] }}:
+qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type]['disk'] }}:
   cmd.run:
     - onchanges:
       - /kvm/vms/{{ hostname }}/disk0.raw

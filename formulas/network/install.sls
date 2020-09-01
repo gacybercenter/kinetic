@@ -1,4 +1,7 @@
 include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
   - /formulas/openstack/common/repo
 
 {% if grains['os_family'] == 'Debian' %}
@@ -22,7 +25,7 @@ network_packages:
       - openstack-neutron
       - openstack-neutron-ml2
       - openstack-neutron-linuxbridge
-      - ebtables
+      - iptables-ebtables
       - python3-openstackclient
 
 {% endif %}

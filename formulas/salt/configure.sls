@@ -1,31 +1,30 @@
 include:
-  - /formulas/salt/install
+  - /formulas/{{ grains['role'] }}/install
 
 /srv/salt:
   file.directory:
     - makedirs: true
 
-/srv/salt/addresses.db:
+/srv/addresses/addresses.db:
   file.managed:
     - replace: False
-    - require:
-      - file: /srv/salt
+    - makedirs: True
 
 addresses:
   sqlite3.table_present:
-    - db: /srv/salt/addresses.db
+    - db: /srv/addresses/addresses.db
     - schema:
       - address TEXT UNIQUE
       - network TEXT
       - host TEXT
     - require:
-      - file: /srv/salt/addresses.db
+      - file: /srv/addresses/addresses.db
 
 {% for network in ['sfe', 'sbe', 'private'] %}
   {% for address in pillar['networking']['subnets'][network] | network_hosts %}
 address_population_{{ address }}:
   sqlite3.row_present:
-    - db: /srv/salt/addresses.db
+    - db: /srv/addresses/addresses.db
     - table: addresses
     - where_sql: address='{{ address }}'
     - data:
@@ -36,6 +35,14 @@ address_population_{{ address }}:
       - sqlite3: addresses
   {% endfor %}
 {% endfor %}
+
+/srv/runners:
+  file.directory:
+    - makedirs: True
+
+/srv/runners/needs.py:
+  file.managed:
+    - source: salt://_runners/needs.py
 
 create_api_cert:
   cmd.run:
@@ -266,6 +273,11 @@ salt-api_service:
     - watch:
       - file: /etc/salt/master
       - file: /etc/salt/master.d/*
+
+build_phase_final:
+  grains.present:
+    - name: build_phase
+    - value: configure
 
 salt-master_watch:
   cmd.run:

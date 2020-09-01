@@ -1,14 +1,34 @@
 include:
-  - /formulas/ovsdb/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
+
+{% else %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - type: {{ grains['type'] }}
+    - retry:
+        attempts: 10
+        interval: 30
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {% endif %}
 
@@ -127,3 +147,17 @@ ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw":
         splay: 5
     - unless:
       - ovs-vsctl get open . external-ids:ovn-cms-options | grep -q "enable-chassis-as-gw"
+
+## This is gross.  Should write an ovs-appctl module to handle things like this
+## Note that extra quotes are required around the state alterations because of ':'
+## yaml parsing weirdness
+set_southbound_election_timer_final:
+  cmd.run:
+    - name: >
+        ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 2000 &&
+        ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 4000 &&
+        ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound 5000
+    - unless:
+      - 'ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Election timer: 5000"'
+    - onlyif:
+      - 'ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"'

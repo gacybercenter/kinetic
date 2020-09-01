@@ -1,4 +1,7 @@
 include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
   - /formulas/ceph/common/repo
 
 install_ceph:

@@ -1,3 +1,8 @@
+include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
+
 {% if grains['os_family'] == 'Debian' %}
 
 nodesource:
@@ -23,14 +28,12 @@ antora_packages:
       - gnupg
       - nodejs
       - apache2
-      - npm
     - reload_modules: True
 
 {% elif grains['os_family'] == 'RedHat' %}
 
 nodesource:
   pkgrepo.managed:
-    - humanname: nodesoure node.js 12.x repo
     - name: nodesource
     - baseurl: https://rpm.nodesource.com/pub_12.x/el/8/x86_64/
     - file: /etc/yum.repos.d/nodesource.repo
@@ -49,14 +52,19 @@ antora_packages:
       - gnupg2
       - nodejs
       - httpd
+      - git
     - reload_modules: True
 
 {% endif %}
 
+### state.npm does an explicit match of versions, so minor updates from antora (e.g. 2.3.3) will
+### not match 2.3, and salt will keep trying to install the same package over and over again.
+### This is harmless, but ugly.  For now, drop versioning and always run latest.
+### https://github.com/saltstack/salt/blob/master/salt/states/npm.py#L161
 install_antora:
   npm.installed:
     - require:
       - pkg: antora_packages
     - pkgs:
-      - "@antora/cli@2.3"
-      - "@antora/site-generator-default@2.3"
+      - "@antora/cli"
+      - "@antora/site-generator-default"

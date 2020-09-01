@@ -1,14 +1,34 @@
 include:
-  - /formulas/common/base
-  - /formulas/common/networking
-  - /formulas/horizon/install
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
+
+{% else %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - type: {{ grains['type'] }}
+    - retry:
+        attempts: 10
+        interval: 30
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {% endif %}
 
@@ -64,7 +84,7 @@ local_settings:
 swift_ceph_patch:
   file.line:
 {% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/site-packages/swiftclient/client.py
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/swiftclient/client.py
 {% elif grains['os_family'] == 'Debian' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/swiftclient/client.py
 {% endif %}

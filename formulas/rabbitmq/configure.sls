@@ -1,12 +1,34 @@
 include:
-  - /formulas/rabbitmq/install
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
+
+{% else %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - type: {{ grains['type'] }}
+    - retry:
+        attempts: 10
+        interval: 30
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {% endif %}
 
@@ -45,7 +67,7 @@ rabbitmq-server-service:
     - watch:
       - /var/lib/rabbitmq/.erlang.cookie
     - require:
-      - /var/lib/rabbitmq/.erlang.cookie
+      - file: /var/lib/rabbitmq/.erlang.cookie
 
 {% if grains['spawning'] != 0 %}
 join_cluster:
@@ -68,33 +90,14 @@ cluster_policy:
     - require:
       - service: rabbitmq-server-service
 
-### ref: https://github.com/saltstack/salt/issues/56258
-### will need to use cmd.run for this until the above is merged
-### in sodium
-###openstack_rmq:
-###  rabbitmq_user.present:
-###    - password: {{ pillar['rabbitmq']['rabbitmq_password'] }}
-###    - name: openstack
-###    - perms:
-###      - '/':
-###        - '.*'
-###        - '.*'
-###        - '.*'
-###    - require:
-###      - service: rabbitmq-server-service
-
-### legacy functions.  Remove this when the above works again
-rabbitmqctl add_user openstack {{ pillar['rabbitmq']['rabbitmq_password'] }}:
-  cmd.run:
-    - unless:
-      - rabbitmqctl list_users | grep -q openstack
-    - require:
-      - service: rabbitmq-server-service
-
-rabbitmqctl set_permissions openstack ".*" ".*" ".*":
-  cmd.run:
-    - unless:
-      - rabbitmqctl list_user_permissions openstack | grep -q '/'
-    - require:
-      - service: rabbitmq-server-service
-### /legacy functions
+openstack_rmq:
+ rabbitmq_user.present:
+   - password: {{ pillar['rabbitmq']['rabbitmq_password'] }}
+   - name: openstack
+   - perms:
+     - '/':
+       - '.*'
+       - '.*'
+       - '.*'
+   - require:
+     - service: rabbitmq-server-service

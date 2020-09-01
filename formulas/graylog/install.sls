@@ -1,3 +1,8 @@
+include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
+
 {% if grains['os_family'] == 'Debian' %}
 
 mongodb_repo:
@@ -47,7 +52,6 @@ update_packages_graylog:
 
 mongodb_repo:
   pkgrepo.managed:
-    - humanname: MongoDB 4.0 repo
     - name: mongodb
     - baseurl: https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.0/x86_64/
     - file: /etc/yum.repos.d/mongodb.repo
@@ -61,7 +65,6 @@ update_packages_mongo:
 
 elasticsearch_repo:
   pkgrepo.managed:
-    - humanname: Elastic Search 6
     - name: elastic-6
     - baseurl: https://artifacts.elastic.co/packages/oss-6.x/yum
     - file: /etc/yum.repos.d/elastic-6.repo
@@ -75,7 +78,6 @@ update_packages_elastic:
 
 graylog_repo:
   pkgrepo.managed:
-    - humanname: Graylog
     - name: graylog
     - baseurl: https://packages.graylog2.org/repo/el/stable/3.3/$basearch/
     - file: /etc/yum.repos.d/graylog.repo

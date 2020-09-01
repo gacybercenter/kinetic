@@ -5,10 +5,18 @@ from cgi import parse_qs, escape
 body = """\
 #!ipxe
 
-%(kernel)s
-%(initrd)s
+set try:int32 0
 
-boot || shell
+:retry_loop iseq ${try} 4 && goto bootstrap_failure ||
+## for some reason, the retcode on kernel and initrd is detected
+## as a failure no matter what.  Will only retry on a failed boot
+imgfree
+%(kernel)s ||
+%(initrd)s ||
+boot || sleep 5 && inc try && echo Failed to boot on try ${try}... && goto retry_loop
+
+:bootstrap_failure
+shell
 """
 
 def application (environ, start_response):

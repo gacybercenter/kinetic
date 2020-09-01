@@ -1,14 +1,25 @@
 include:
-  - /formulas/antora/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
 {% endif %}
+
+docs_source:
+  git.latest:
+    - name: {{ pillar['antora_docs_repo'] }}
+    - target: /root/src/
 
 /root/site.yml:
   file.managed:
@@ -20,8 +31,8 @@ spawnzero_complete:
 
 antora generate --fetch /root/site.yml:
   cmd.run:
-    - require:
-      - /root/site.yml
+    - onchanges:
+      - git: docs_source
 
 apache2_service:
   service.running:

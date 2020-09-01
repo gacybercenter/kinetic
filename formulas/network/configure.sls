@@ -1,14 +1,34 @@
 include:
-  - /formulas/network/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
+
+{% else %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - type: {{ grains['type'] }}
+    - retry:
+        attempts: 10
+        interval: 30
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {% endif %}
 
@@ -84,7 +104,37 @@ fs.inotify.max_user_instances:
 
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
-    - source: salt://formulas/neutron/files/neutron_sudoers
+    - source: salt://formulas/network/files/neutron_sudoers
+
+### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
+arp_protect_fix:
+  file.managed:
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+{% elif grains['os_family'] == 'Debian' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+{% endif %}
+    - source: salt://formulas/network/files/arp_protect.py
+###
+
+{% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
+## this used to be a default but was changed to a boolean here:
+## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
+os_neutron_dac_override:
+  selinux.boolean:
+    - value: on
+    - persist: True
+    - watch_in:
+      - service: neutron_linuxbridge_agent_service
+
+## ref: https://github.com/redhat-openstack/openstack-selinux/commit/9460342f3e5a7214bd05b9cfa73a1896478d8785
+os_dnsmasq_dac_override:
+  selinux.boolean:
+    - value: on
+    - persist: True
+    - watch_in:
+      - service: neutron_dhcp_agent_service
+{% endif %}
 
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
@@ -92,10 +142,8 @@ fs.inotify.max_user_instances:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for interface in pillar['virtual'][grains['type']]['networks']['interfaces'] %}
-  {% if pillar['virtual'][grains['type']]['networks']['interfaces'][interface]['network'] == 'public' %}
-        public_interface: {{ interface }}
-  {% endif %}
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+        public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
 {% endfor %}
 
 /etc/neutron/l3_agent.ini:
@@ -122,9 +170,6 @@ neutron_linuxbridge_agent_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-      - file: /etc/neutron/l3_agent.ini
-      - file: /etc/neutron/dhcp_agent.ini
-      - file: /etc/neutron/metadata_agent.ini
 
 neutron_dhcp_agent_service:
   service.running:
@@ -132,11 +177,7 @@ neutron_dhcp_agent_service:
     - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-      - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/dhcp_agent.ini
-      - file: /etc/neutron/metadata_agent.ini
 
 neutron_metadata_agent_service:
   service.running:
@@ -144,10 +185,6 @@ neutron_metadata_agent_service:
     - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-      - file: /etc/neutron/l3_agent.ini
-      - file: /etc/neutron/dhcp_agent.ini
       - file: /etc/neutron/metadata_agent.ini
 
 neutron_l3_agent_service:
@@ -156,8 +193,4 @@ neutron_l3_agent_service:
     - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
       - file: /etc/neutron/l3_agent.ini
-      - file: /etc/neutron/dhcp_agent.ini
-      - file: /etc/neutron/metadata_agent.ini

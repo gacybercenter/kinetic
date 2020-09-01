@@ -1,7 +1,5 @@
 include:
-  - /formulas/keystone/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['os_family'] == 'Debian' %}
   {% set webserver = 'apache2' %}
@@ -25,9 +23,17 @@ initialize_keystone:
       - file: keystone_domain
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
 
 project_init:
   cmd.script:
@@ -48,6 +54,21 @@ project_init:
         attempts: 10
         until: True
         delay: 60
+
+{% else %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - type: {{ grains['type'] }}
+    - retry:
+        attempts: 10
+        interval: 30
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
+
 
 {% endif %}
 

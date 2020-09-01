@@ -1,10 +1,8 @@
 include:
-  - /formulas/mysql/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
-  {% if pillar['virtual']['mysql']['count'] > 1 %}
+  {% if pillar['hosts']['mysql']['count'] > 1 %}
 
 /bin/galera_new_cluster:
   file.managed:
@@ -30,126 +28,44 @@ bootstrap_mariadb_start:
   file.managed:
     - require:
       - cmd: bootstrap_mariadb_start
+    - require_in:
+      - spawnzero_complete
 
-master_reboot_pause:
-  module.run:
-    - name: test.sleep
-    - length: 300
-    - onchanges:
-      - grains: cluster_established_final
-    - order: last
   {% endif %}
 
 spawnzero_complete:
-  event.send:
-    - name: {{ grains['type'] }}/spawnzero/complete
-    - data: "{{ grains['type'] }} spawnzero is complete."
-{% endif %}
+  grains.present:
+    - value: True
+  module.run:
+    - name: mine.send
+    - m_name: spawnzero_complete
+    - kwargs:
+        mine_function: grains.item
+    - args:
+      - spawnzero_complete
+    - onchanges:
+      - grains: spawnzero_complete
 
-/bin/galera_recovery:
-  file.managed:
-    - source: salt://formulas/mysql/files/galera_recovery
-
-openstack.conf:
-  file.managed:
-{% if grains['os_family'] == 'Debian' %}
-{% set sock = "/var/run/mysqld/mysqld.sock" %}
-    - name: /etc/mysql/mariadb.conf.d/99-openstack.cnf
-{% elif grains['os_family'] == 'RedHat' %}
-{% set sock = "/var/lib/mysql/mysql.sock" %}
-    - name: /etc/my.cnf.d/openstack.cnf
-{% endif %}
-    - source: salt://formulas/mysql/files/openstack.conf
-    - makedirs: True
-    - template: jinja
-    - defaults:
-{% if pillar['virtual']['mysql']['count'] > 1 %}
-        wsrep_on: ON
 {% else %}
-        wsrep_on: OFF
-{% endif %}
-        ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-{% if grains['os_family'] == 'Debian' %}
-        wsrep_provider: /usr/lib/libgalera_smm.so
-{% elif grains['os_family'] == 'RedHat' %}
-        wsrep_provider: /usr/lib64/libgalera_smm.so
-{% endif %}
-        wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}
-        wsrep_cluster_address: |-
-          gcomm://
-          {%- for host, addresses in salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-                {{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-    - require:
-      - sls: /formulas/mysql/install
 
-mariadb_service:
-  service.running:
+  {% if grains['build_phase'] == 'install' %}
+kill_mariadb_for_bootstrap:
+  service.dead:
     - name: mariadb
-    - enable: true
+  {% endif %}
+
+check_spawnzero_status:
+  module.run:
+    - name: spawnzero.check
+    - type: {{ grains['type'] }}
     - retry:
-        attempts: 5
-        until: True
-        interval: 60
-{% if salt['grains.get']('production', False) == True %}
-        watch:
-          - file: openstack.conf
-{% endif %}
+        attempts: 10
+        interval: 30
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
-{% if salt['grains.get']('cluster_established', False) == True %}
-  {% for service in pillar['openstack_services'] %}
-    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-      {% for address in addresses %}
-        {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-
-create_{{ service }}_user_{{ address }}:
-  mysql_user.present:
-    - name: {{ service }}
-    - password: {{ pillar [service][service + '_mysql_password'] }}
-    - host: {{ address }}
-    - connection_unix_socket: {{ sock }}
-    - require:
-      - service: mariadb_service
-
-        {% endif %}
-      {% endfor %}
-    {% endfor %}
-
-    {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
-
-create_{{ db }}_db:
-  mysql_database.present:
-    - name: {{ db }}
-    - connection_unix_socket: {{ sock }}
-    - require:
-      - service: mariadb_service
-
-      {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        {% for address in addresses %}
-          {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-
-grant_{{ service }}_privs_{{ db }}_{{ address }}:
-   mysql_grants.present:
-    - grant: all privileges
-    - database: {{ db }}.*
-    - user: {{ service }}
-    - host: {{ address }}
-    - connection_unix_socket: {{ sock }}
-    - require:
-      - service: mariadb_service
-      - mysql_user: create_{{ service }}_user_{{ address }}
-      - mysql_database: create_{{ db }}_db
-
-          {% endif %}
-        {% endfor %}
-      {% endfor %}
-    {% endfor %}
-  {% endfor %}
 {% endif %}
 
 fs.file-max:
@@ -167,9 +83,123 @@ systemctl daemon-reload:
     - onchanges:
       - file: /usr/lib/systemd/system/mariadb.service
 
-cluster_established_final:
-  grains.present:
-    - name: cluster_established
-    - value: True
+/bin/galera_recovery:
+  file.managed:
+    - source: salt://formulas/mysql/files/galera_recovery
+
+openstack.conf:
+  file.managed:
+{% if grains['os_family'] == 'Debian' %}
+  {% set sock = "/var/run/mysqld/mysqld.sock" %}
+    - name: /etc/mysql/mariadb.conf.d/99-openstack.cnf
+{% elif grains['os_family'] == 'RedHat' %}
+  {% set sock = "/var/lib/mysql/mysql.sock" %}
+    - name: /etc/my.cnf.d/openstack.cnf
+{% endif %}
+    - source: salt://formulas/mysql/files/openstack.conf
+    - makedirs: True
+    - template: jinja
+    - defaults:
+{% if pillar['hosts']['mysql']['count'] > 1 %}
+        wsrep_on: ON
+{% else %}
+        wsrep_on: OFF
+{% endif %}
+        ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+{% if grains['os_family'] == 'Debian' %}
+        wsrep_provider: /usr/lib/libgalera_smm.so
+{% elif grains['os_family'] == 'RedHat' %}
+        wsrep_provider: /usr/lib64/galera-4/libgalera_smm.so
+{% endif %}
+        wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}
+        wsrep_cluster_address: |-
+          gcomm://
+          {%- for host, addresses in salt['mine.get']('role:mysql', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+                {{ address }}
+              {%- endif -%}
+            {%- endfor -%}
+            {% if loop.index < loop.length %},{% endif %}
+          {%- endfor %}
+
+mariadb_service:
+  service.running:
+    - name: mariadb
+    - enable: true
+    - require:
+      - file: openstack.conf
+
+{% for service in pillar['openstack_services'] if grains['spawning'] == 0 %}
+  {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+    {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+
+create_{{ service }}_user_{{ address }}:
+  mysql_user.present:
+    - name: {{ service }}
+    - password: {{ pillar [service][service + '_mysql_password'] }}
+    - host: {{ address }}
+    - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
+
+    {% endfor %}
+  {% endfor %}
+
+  {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
+
+create_{{ db }}_db:
+  mysql_database.present:
+    - name: {{ db }}
+    - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
+
+    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+
+grant_{{ service }}_privs_{{ db }}_{{ address }}:
+   mysql_grants.present:
+    - grant: all privileges
+    - database: {{ db }}.*
+    - user: {{ service }}
+    - host: {{ address }}
+    - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
+      - mysql_user: create_{{ service }}_user_{{ address }}
+      - mysql_database: create_{{ db }}_db
+
+      {% endfor %}
+    {% endfor %}
+  {% endfor %}
+{% endfor %}
+
+{% if pillar['hosts']['mysql']['count'] > 1 %}
+  {% if grains['build_phase'] == 'install' %}
+## This is necessary because pc.recovery does not work if mariadbd
+## has a clean shutdown.  Making the file immutable ensures that the state
+## necessary to perform an automatic recovery is still there
+force_recovery:
+  module.run:
+    - name: file.chattr
+    - files:
+      - /var/lib/mysql/gvwstate.dat
+    - kwargs:
+        attributes: i
+        operator: add
+
+  {% else %}
+
+force_recovery_removal:
+  module.run:
+    - name: file.chattr
+    - files:
+      - /var/lib/mysql/gvwstate.dat
+    - kwargs:
+        attributes: i
+        operator: remove
+    - onlyif:
+      - lsattr -l /var/lib/mysql/gvwstate.dat | grep -q Immutable
+  {% endif %}
+{% endif %}

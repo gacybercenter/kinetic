@@ -1,7 +1,5 @@
 include:
-  - /formulas/compute/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
   - /formulas/ceph/common/configure
 
 /etc/modprobe.d/kvm.conf:
@@ -113,6 +111,9 @@ spice-html5:
     - target: /usr/share/spice-html5
 {% endif %}
 
+/etc/sudoers.d/neutron_sudoers:
+  file.managed:
+    - source: salt://formulas/compute/files/neutron_sudoers
 
 nova_compute_service:
   service.running:
@@ -172,6 +173,28 @@ libvirtd_service:
         lock_path: /var/lib/neutron/tmp
 {% endif %}
 
+### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
+arp_protect_fix:
+  file.managed:
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+{% elif grains['os_family'] == 'Debian' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+{% endif %}
+    - source: salt://formulas/compute/files/arp_protect.py
+###
+
+{% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
+## this used to be a default but was changed to a boolean here:
+## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
+os_neutron_dac_override:
+  selinux.boolean:
+    - value: on
+    - persist: True
+    - watch_in:
+      - service: neutron_linuxbridge_agent_service
+{% endif %}
+
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
@@ -186,10 +209,8 @@ neutron_linuxbridge_agent_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for network in pillar['hosts'][grains['type']]['networks'] %}
-  {% if pillar['hosts'][grains['type']]['networks'][network]['network'] == 'public' %}
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
-  {% endif %}
 {% endfor %}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
@@ -298,7 +319,7 @@ ovs-vsctl set open . external_ids:ovn-remote-probe-interval=180000 :
     - unless:
       - ovs-vsctl get open . external-ids:ovn-remote-probe-interval | grep -q "180000"
 
-ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=60 :
+ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=180 :
   cmd.run:
     - require:
       - service: openvswitch_service
@@ -307,7 +328,7 @@ ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=60 :
         interval: 10
         splay: 5
     - unless:
-      - ovs-vsctl get open . external-ids:ovn-openflow-probe-interval | grep -q "60"
+      - ovs-vsctl get open . external-ids:ovn-openflow-probe-interval | grep -q "180"
 
 ovsdb_listen:
   cmd.run:

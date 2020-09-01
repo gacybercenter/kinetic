@@ -1,3 +1,8 @@
+include:
+  - /formulas/common/base
+  - /formulas/common/networking
+  - /formulas/common/install
+
 controller_packages:
   pkg.installed:
     - pkgs:

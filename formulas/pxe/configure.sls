@@ -1,5 +1,5 @@
 include:
-  - /formulas/pxe/install
+  - /formulas/{{ grains['role'] }}/install
 
 /etc/salt/minion.d/mine_functions.conf:
   file.managed:
@@ -60,7 +60,7 @@ wsgi_module:
 /var/www/html/assignments:
   file.directory
 
-{% for type in pillar['hosts'] %}
+{% for type in pillar['hosts'] if pillar['hosts'][type]['style'] == 'physical' %}
 /var/www/html/configs/{{ type }}:
   file.managed:
   {% if 'ubuntu' in pillar['hosts'][type]['os'] %}
@@ -101,6 +101,11 @@ apache2_service:
       - file: /etc/apache2/sites-available/wsgi.conf
       - apache_site: wsgi
       - apache_site: 000-default
+
+build_phase_final:
+  grains.present:
+    - name: build_phase
+    - value: configure
 
 salt-minion_mine_watch:
   cmd.run:

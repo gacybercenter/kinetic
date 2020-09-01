@@ -1,7 +1,5 @@
 include:
-  - /formulas/controller/install
-  - /formulas/common/base
-  - /formulas/common/networking
+  - /formulas/{{ grains['role'] }}/install
 
 {% set type = grains['type'] %}
 
@@ -111,6 +109,12 @@ fs:
     - require:
       - /kvm
 
+/kvm/vms:
+  file.directory:
+    - makedirs: True
+    - require:
+      - /kvm
+
 {% if grains['os_family'] == 'RedHat' %}
 libvirtd_service:
   service.running:
@@ -122,7 +126,7 @@ libvirtd_service:
   {% if args['type'] == 'virt-builder' %}
 create_{{ args['name'] }}:
   cmd.run:
-    - name: virt-builder --update --selinux-relabel --install cloud-init  --uninstall firewalld --output {{ os }}.raw {{ args['name'] }}
+    - name: virt-builder --smp 4 -m 4096 --selinux-relabel --install cloud-init  --uninstall firewalld --output {{ os }}.raw {{ args['name'] }}
     - cwd: /kvm/images
     - creates: /kvm/images/{{ os }}.raw
     - require:
