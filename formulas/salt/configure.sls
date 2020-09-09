@@ -267,11 +267,9 @@ api:
     - template: jinja
     - defaults:
 {% if pillar['neutron']['backend'] == 'networking-ovn' %}
-      ovsdb: |
-          ovsdb: configure
-{%- else %}
-      ovsdb: >-
-        {% raw %}{% endraw %}
+      ovsdb: ovsdb: configure
+{% else %}
+      ovsdb: ""
 {% endif %}
 
 /etc/salt/master:
