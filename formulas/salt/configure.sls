@@ -269,7 +269,7 @@ api:
 {% if pillar['neutron']['backend'] == 'networking-ovn' %}
       ovsdb: |
           ovsdb: configure
-{% else %}
+{%- else %}
       ovsdb: >-
 {% endif %}
 
