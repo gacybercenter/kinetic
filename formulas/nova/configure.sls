@@ -80,7 +80,7 @@ create_{{ flavor }}:
         attempts: 3
         interval: 10
     - unless:
-      - test-f /root/{{ flavor }}
+      - test -f /root/{{ flavor }}
 {% endfor %}
 
 {% else %}
