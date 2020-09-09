@@ -63,7 +63,7 @@ api:
           - git:
             - {{ pillar['gitfs_pillar_configuration']['branch'] }} {{ pillar['gitfs_pillar_configuration']['url'] }}:
               - env: base
-        ext_pillar_first: true
+        ext_pillar_first: False
         pillar_gitfs_ssl_verify: True
 
 /etc/salt/master.d/gitfs_remotes.conf:
@@ -260,6 +260,17 @@ api:
         $env:OS_PROJECT_DOMAIN_NAME = "Default"
         $env:OS_AUTH_URL = "{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}"
         $env:OS_IDENTITY_API_VERSION = "3"
+
+/srv/dynamic_pillar/deps.sls:
+  file.managed:
+    - source: salt://formulas/salt/files/deps.sls
+    - template: jinja
+    - defaults:
+{% if pillar['neutron']['backend'] == 'networking-ovn' %}
+      ovsdb: "ovsdb: configure"
+{% else %}
+      ovsdb: ""
+{% endif %}
 
 /etc/salt/master:
   file.managed:
