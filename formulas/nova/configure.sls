@@ -60,6 +60,9 @@ spawnzero_complete:
     - onchanges:
       - grains: spawnzero_complete
 
+## This is lightning fast but I'm not sure how I feel about writing directly to the database
+## outside the context of the API.  Should probably changes to the flavor_present state
+## once the openstack-ng modules are done in salt
 {% for flavor, attribs in pillar['flavors'].items() %}
 create_{{ flavor }}:
   mysql_query.run:
@@ -68,7 +71,7 @@ create_{{ flavor }}:
     - connection_user: nova
     - connection_host: {{ pillar['haproxy']['dashboard_domain'] }}
     - query: "INSERT INTO nova_api.flavors(name,memory_mb,vcpus,swap,flavorid,rxtx_factor,root_gb,ephemeral_gb,disabled,is_public) VALUES ('{{ flavor }}',{{ attribs['ram'] }},{{ attribs['vcpus'] }},0,'{{ salt['random.get_str']('64')|uuid }}',1,{{ attribs['disk'] }},0,0,1);"
-    - output: "/root/flavors"
+    - output: "/root/{{ flavor }}"
     - require:
       - service: nova_api_service
       - service: nova_scheduler_service
