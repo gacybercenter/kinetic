@@ -63,7 +63,7 @@ spawnzero_complete:
 ## This is lightning fast but I'm not sure how I feel about writing directly to the database
 ## outside the context of the API.  Should probably change to the flavor_present state
 ## once the openstack-ng modules are done in salt
-{% for flavor, attribs in pillar['flavors'].items() if salt['mysql.query']('nova_api', "select * from flavors where name='{{ flavor }}'", connection_host='{{ pillar['haproxy']['dashboard_domain'] }}',connection_user='nova',connection_pass='{{ pillar['nova']['nova_mysql_password'] }}')['rows returned'] == 0 %}
+{% for flavor, attribs in pillar['flavors'].items() if salt['mysql.query']('nova_api', "select * from flavors where name='{{ flavor }}'", connection_host='pillar['haproxy']['dashboard_domain']',connection_user='nova',connection_pass='pillar['nova']['nova_mysql_password']')['rows returned'] == 0 %}
 create_{{ flavor }}:
   mysql_query.run:
     - database: nova
