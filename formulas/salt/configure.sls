@@ -261,6 +261,16 @@ api:
         $env:OS_AUTH_URL = "{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}"
         $env:OS_IDENTITY_API_VERSION = "3"
 
+/srv/dynamic_pillar/deps.sls:
+  file.managed:
+    - source: salt://formulas/salt/files/deps.sls
+    - template: jinja
+    - defaults:
+      {% if pillar['neutron']['backends'] == 'networking-ovn' %}
+      ovsdb: "ovsdb: configure"
+      {% else %}
+      ovsdb: ""
+
 /etc/salt/master:
   file.managed:
     - contents: ''
