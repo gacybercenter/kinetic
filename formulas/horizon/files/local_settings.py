@@ -32,6 +32,7 @@ OPENSTACK_CINDER_FEATURES = {
     'enable_backup': False,
 }
 OPENSTACK_NEUTRON_NETWORK = {
+    'default_dns_nameservers': ["{{ default_dns_nameservers }}"],
     'enable_router': True,
     'enable_quotas': True,
     'enable_ipv6': True,
@@ -61,7 +62,7 @@ API_RESULT_PAGE_SIZE = 20
 SWIFT_FILE_TRANSFER_CHUNK_SIZE = 512 * 1024
 INSTANCE_LOG_LENGTH = 35
 DROPDOWN_MAX_ITEMS = 30
-TIME_ZONE = "America/New_York"
+TIME_ZONE = "{{ timezone }}"
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -293,4 +294,5 @@ OPENSTACK_KEYSTONE_DEFAULT_ROLE = "user"
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 DESIGNATE = { 'records_use_fips': True }
+SESSION_TIMEOUT = {{ session_timeout }}
 {{ theming }}

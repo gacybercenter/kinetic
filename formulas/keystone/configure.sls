@@ -43,7 +43,7 @@ project_init:
         admin_password: {{ pillar['openstack']['admin_password'] }}
         internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
-        keystone_domain: {{ pillar['keystone_ldap_configuration']['keystone_domain'] }}
+        keystone_domain: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
 {% if grains['os_family'] == 'Debian' %}
         webserver: apache2
 {% elif grains['os_family'] == 'RedHat' %}
@@ -92,10 +92,11 @@ check_spawnzero_status:
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
+        token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_domain:
   file.managed:
-    - name: /etc/keystone/domains/keystone.{{ pillar['keystone_ldap_configuration']['keystone_domain'] }}.conf
+    - name: /etc/keystone/domains/keystone.{{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}.conf
     - source: salt://formulas/keystone/files/keystone-ldap.conf
     - makedirs: True
     - template: jinja
@@ -106,8 +107,8 @@ keystone_domain:
         ldap_suffix: 'suffix = {{ pillar ['common_ldap_configuration']['base_dn'] }}'
         user_tree_dn: 'user_tree_dn = {{ pillar ['common_ldap_configuration']['user_dn'] }}'
         group_tree_dn: 'group_tree_dn = {{ pillar ['common_ldap_configuration']['group_dn'] }}'
-        user_filter: 'user_filter = {{ pillar ['keystone_ldap_configuration']['user_filter'] }}'
-        group_filter: 'group_filter = {{ pillar ['keystone_ldap_configuration']['group_filter'] }}'
+        user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
+        group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
 
