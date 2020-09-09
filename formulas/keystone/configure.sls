@@ -92,7 +92,7 @@ check_spawnzero_status:
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
-        expiration: {{ pillar['keystone']['expiration'] }}
+        token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_domain:
   file.managed:
@@ -107,8 +107,8 @@ keystone_domain:
         ldap_suffix: 'suffix = {{ pillar ['common_ldap_configuration']['base_dn'] }}'
         user_tree_dn: 'user_tree_dn = {{ pillar ['common_ldap_configuration']['user_dn'] }}'
         group_tree_dn: 'group_tree_dn = {{ pillar ['common_ldap_configuration']['group_dn'] }}'
-        user_filter: 'user_filter = {{ pillar ['keystone_ldap_configuration']['user_filter'] }}'
-        group_filter: 'group_filter = {{ pillar ['keystone_ldap_configuration']['group_filter'] }}'
+        user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
+        group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
 
