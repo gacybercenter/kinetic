@@ -66,6 +66,7 @@ local_settings:
         allowed_hosts: [{{ pillar['haproxy']['dashboard_domain'] }}]
         tiemzone: {{ pillar['timezone'] }}
         session_timeout: {{ pillar['horizon']['session_timeout'] }}
+        default_dns_nameservers: {{ pillar['networking']['addresses']['float_dns'] }}
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
         theming: |
             DEFAULT_THEME = '{{ pillar['horizon']['theme']['name'] }}'

@@ -32,6 +32,7 @@ OPENSTACK_CINDER_FEATURES = {
     'enable_backup': False,
 }
 OPENSTACK_NEUTRON_NETWORK = {
+    'default_dns_nameservers': ["{{ default_dns_nameservers }}"],
     'enable_router': True,
     'enable_quotas': True,
     'enable_ipv6': True,
