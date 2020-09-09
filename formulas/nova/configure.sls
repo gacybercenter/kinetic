@@ -61,7 +61,7 @@ spawnzero_complete:
       - grains: spawnzero_complete
 
 ## This is lightning fast but I'm not sure how I feel about writing directly to the database
-## outside the context of the API.  Should probably changes to the flavor_present state
+## outside the context of the API.  Should probably change to the flavor_present state
 ## once the openstack-ng modules are done in salt
 {% for flavor, attribs in pillar['flavors'].items() %}
 create_{{ flavor }}:
