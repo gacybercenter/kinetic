@@ -266,10 +266,11 @@ api:
     - source: salt://formulas/salt/files/deps.sls
     - template: jinja
     - defaults:
-      {% if pillar['neutron']['backends'] == 'networking-ovn' %}
+{% if pillar['neutron']['backends'] == 'networking-ovn' %}
       ovsdb: "ovsdb: configure"
-      {% else %}
+{% else %}
       ovsdb: ""
+{% endif %}
 
 /etc/salt/master:
   file.managed:
