@@ -223,13 +223,6 @@ hosts:
         cache: configure
       configure:
         controller: configure
-  network:
-    needs:
-      install:
-        cache: configure
-      configure:
-        controller: configure
-        neutron: configure
   ovsdb:
     needs:
       install:
