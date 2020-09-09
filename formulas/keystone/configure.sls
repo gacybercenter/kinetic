@@ -96,7 +96,7 @@ check_spawnzero_status:
 
 keystone_domain:
   file.managed:
-    - name: /etc/keystone/domains/keystone.{{ pillar['keystone_ldap_configuration']['keystone_domain'] }}.conf
+    - name: /etc/keystone/domains/keystone.{{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}.conf
     - source: salt://formulas/keystone/files/keystone-ldap.conf
     - makedirs: True
     - template: jinja
