@@ -1,6 +1,7 @@
 base:
   '*':
-    - api    
+    - api
+    - deps
   'salt':
     - openstack
   'compute*':
