@@ -112,7 +112,7 @@ check_spawnzero_status:
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
-        token_ttl: {{ pillar }}
+        token_ttl: {{ pillar['nova']['token_ttl'] }}
 
 {% if grains['os_family'] == 'RedHat' %}
 spice-html5:
