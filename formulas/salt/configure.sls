@@ -270,7 +270,7 @@ api:
       ovsdb: |
           ovsdb: configure
 {% else %}
-      ovsdb: |-
+      ovsdb: >-
         ""
 {% endif %}
 
