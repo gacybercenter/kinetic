@@ -66,9 +66,9 @@ create_{{ flavor }}:
     - database: nova
     - connection_pass: {{ pillar['nova']['nova_mysql_password'] }}
     - connection_user: nova
-    - connection_host: dashboard.gacyberrange.org
+    - connection_host: {{ pillar['haproxy']['dashboard_domain'] }}
     - query: "INSERT INTO nova_api.flavors(name,memory_mb,vcpus,swap,flavorid,rxtx_factor,root_gb,ephemeral_gb,disabled,is_public) VALUES ('{{ flavor }}',{{ attribs['ram'] }},{{ attribs['vcpus'] }},0,'{{ salt['random.get_str']('64')|uuid }}',1,{{ attribs['disk'] }},0,0,1);"
-    - output: "/tmp/query"
+    - output: "/root/flavors"
     - require:
       - service: nova_api_service
       - service: nova_scheduler_service
@@ -76,6 +76,8 @@ create_{{ flavor }}:
     - retry:
         attempts: 3
         interval: 10
+    - creates:
+      - /root/flavors
 {% endfor %}
 
 {% else %}
