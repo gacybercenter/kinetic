@@ -269,7 +269,7 @@ api:
 {% if pillar['neutron']['backend'] == 'networking-ovn' %}
       ovsdb: "ovsdb: configure"
 {% else %}
-      ovsdb: {% raw -%}{% endraw -%}
+      ovsdb: {% raw -%}{%- endraw -%}
 {% endif %}
 
 /etc/salt/master:
