@@ -92,6 +92,7 @@ check_spawnzero_status:
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
         public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
+        expiration: {{ pillar['keystone']['expiration'] }}
 
 keystone_domain:
   file.managed:
