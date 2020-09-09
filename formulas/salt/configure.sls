@@ -79,7 +79,7 @@ api:
             - saltenv:
               - base:
                 - ref: {{ pillar['gitfs_other_configurations'][remote]['branch'] }}
-{% endfor %}                
+{% endfor %}
         gitfs_saltenv_whitelist:
           - base
 
@@ -88,9 +88,6 @@ api:
   file.managed:
     - contents_pillar: master-config:{{ directive }}
 {% endfor %}
-
-{% for remote, config in pillar.get('gitfs_other_configurations', {}).items() %}
-
 
 /srv/dynamic_pillar:
   file.directory
