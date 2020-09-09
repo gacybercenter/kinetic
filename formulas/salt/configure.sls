@@ -61,7 +61,7 @@ api:
     - contents: |
         ext_pillar:
           - git:
-            - {{ pillar['gitfs_pillar_configuration']['branch'] }} {{ pillar['gitfs_pillar_configuration']['url'] }}:
+            - {{ pillar['kinetic_pillar_configuration']['branch'] }} {{ pillar['kinetic_pillar_configuration']['url'] }}:
               - env: base
         ext_pillar_first: False
         pillar_gitfs_ssl_verify: True
@@ -70,10 +70,10 @@ api:
   file.managed:
     - contents: |
         gitfs_remotes:
-          - {{ pillar['gitfs_remote_configuration']['url'] }}:
+          - {{ pillar['kinetic_remote_configuration']['url'] }}:
             - saltenv:
               - base:
-                - ref: {{ pillar['gitfs_remote_configuration']['branch'] }}
+                - ref: {{ pillar['kinetic_remote_configuration']['branch'] }}
 {% for remote, config in pillar.get('gitfs_other_configurations', {}).items() %}
           - {{ pillar['gitfs_other_configurations'][remote]['url'] }}
             - saltenv:
