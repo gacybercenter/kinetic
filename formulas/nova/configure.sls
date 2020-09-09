@@ -79,8 +79,8 @@ create_{{ flavor }}:
     - retry:
         attempts: 3
         interval: 10
-    - creates:
-      - /root/flavors
+    - unless:
+      - test-f /root/{{ flavor }}
 {% endfor %}
 
 {% else %}
