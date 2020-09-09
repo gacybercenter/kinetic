@@ -267,7 +267,7 @@ api:
     - template: jinja
     - defaults:
 {% if pillar['neutron']['backend'] == 'networking-ovn' %}
-      ovsdb: ovsdb: configure
+      ovsdb: "ovsdb: configure"
 {% else %}
       ovsdb: ""
 {% endif %}
