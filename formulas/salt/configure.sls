@@ -271,7 +271,6 @@ api:
           ovsdb: configure
 {% else %}
       ovsdb: >-
-        ""
 {% endif %}
 
 /etc/salt/master:
