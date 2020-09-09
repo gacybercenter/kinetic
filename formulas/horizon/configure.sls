@@ -64,6 +64,8 @@ local_settings:
           {%- endfor %}
         keystone_url: {{ pillar['endpoints']['internal'] }}
         allowed_hosts: [{{ pillar['haproxy']['dashboard_domain'] }}]
+        tiemzone: {{ pillar['timezone'] }}
+        session_timeout: {{ pillar['horizon']['session_timeout'] }}
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
         theming: |
             DEFAULT_THEME = '{{ pillar['horizon']['theme']['name'] }}'
