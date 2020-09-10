@@ -76,6 +76,7 @@ create_{{ flavor }}:
       - service: nova_api_service
       - service: nova_scheduler_service
       - service: nova_conductor_service
+      - service: nova_spiceproxy_service
     - retry:
         attempts: 3
         interval: 10
@@ -184,7 +185,7 @@ nova_conductor_service:
     - watch:
       - file: /etc/nova/nova.conf
 
-nova-spiceproxy_service:
+nova_spiceproxy_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
     - name: nova-spiceproxy
