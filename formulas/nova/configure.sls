@@ -53,6 +53,11 @@ update_cells:
     - onchanges:
       - file: /etc/nova/nova.conf
       - file: /etc/neutron/neutron.conf
+    - watch_in:
+      - service: nova_api_service
+      - service: nova_scheduler_service
+      - service: nova_conductor_service
+      - service: nova_spiceproxy_service
 
 spawnzero_complete:
   grains.present:
@@ -163,7 +168,6 @@ nova_api_service:
         interval: 10
     - watch:
       - file: /etc/nova/nova.conf
-      - cmd: update_cells
 
 nova_scheduler_service:
   service.running:
@@ -178,7 +182,6 @@ nova_scheduler_service:
         interval: 10
     - watch:
       - file: /etc/nova/nova.conf
-      - cmd: update_cells
 
 nova_conductor_service:
   service.running:
@@ -193,7 +196,6 @@ nova_conductor_service:
         interval: 10
     - watch:
       - file: /etc/nova/nova.conf
-      - cmd: update_cells
 
 nova_spiceproxy_service:
   service.running:
@@ -208,4 +210,3 @@ nova_spiceproxy_service:
         interval: 10
     - watch:
       - file: /etc/nova/nova.conf
-      - cmd: update_cells      
