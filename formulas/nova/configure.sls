@@ -52,7 +52,6 @@ update_cells:
     - name: nova-manage cell_v2 list_cells | grep cell1 | cut -d" " -f4 | while read uuid;do nova-manage cell_v2 update_cell --cell_uuid $uuid;done
     - onchanges:
       - file: /etc/nova/nova.conf
-      - file: /etc/neutron/neutron.conf
     - watch_in:
       - service: nova_api_service
       - service: nova_scheduler_service
