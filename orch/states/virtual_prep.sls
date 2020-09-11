@@ -11,13 +11,13 @@
         ram: {{ pillar['hosts'][type]['ram'] }}
         cpu: {{ pillar['hosts'][type]['cpu'] }}
         networks: |
-        {% for network in pillar['hosts'][type]['networks']|sort() %}
+        {% for network, attribs in pillar['hosts'][type]['networks'].items() %}
+        {% set slot = attribs['interfaces'][0].split('ens')[1] %}
           <interface type='bridge'>
             <source bridge='{{ network }}_br'/>
-            <target dev='vnet{{ loop.index0 }}'/>
             <model type='virtio'/>
-            <alias name='net{{ loop.index0 }}'/>
             <mac address='{{ salt['generate.mac']('52:54:00') }}'/>
+            <address type='pci' domain='0x0000' bus='0x00' slot='0x{{ slot }}' function='0x0'/>
           </interface>
         {% endfor %}
         {% if grains['os_family'] == 'Debian' %}
@@ -51,7 +51,6 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
     - defaults:
         hostname: {{ hostname }}
         master_record: {{ pillar['master_record'] }}
-        transport: {{ pillar['salt_transport'] }}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:
