@@ -11,13 +11,13 @@
         ram: {{ pillar['hosts'][type]['ram'] }}
         cpu: {{ pillar['hosts'][type]['cpu'] }}
         networks: |
-        {% for network in pillar['hosts'][type]['networks']|sort() %}
+        {% for network, attribs in pillar['hosts'][type]['networks'] %}
+        {% set slot = attribs['interfaces'][0].split['ens'][1] %}
           <interface type='bridge'>
             <source bridge='{{ network }}_br'/>
-            <target dev='vnet{{ loop.index0 }}'/>
             <model type='virtio'/>
-            <alias name='net{{ loop.index0 }}'/>
             <mac address='{{ salt['generate.mac']('52:54:00') }}'/>
+            <address type='pci' domain='0x0000' bus='0x00' slot='0x{{ slot }}' function='0x0'/>
           </interface>
         {% endfor %}
         {% if grains['os_family'] == 'Debian' %}
