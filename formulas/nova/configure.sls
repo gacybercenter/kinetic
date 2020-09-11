@@ -47,6 +47,17 @@ nova-manage db sync:
     - unless:
       - nova-manage db version | grep -q 407
 
+update_cells:
+  cmd.run:
+    - name: nova-manage cell_v2 list_cells | grep cell1 | cut -d" " -f4 | while read uuid;do nova-manage cell_v2 update_cell --cell_uuid $uuid;done
+    - onchanges:
+      - file: /etc/nova/nova.conf
+    - watch_in:
+      - service: nova_api_service
+      - service: nova_scheduler_service
+      - service: nova_conductor_service
+      - service: nova_spiceproxy_service
+
 spawnzero_complete:
   grains.present:
     - value: True
