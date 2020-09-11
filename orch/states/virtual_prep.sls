@@ -11,7 +11,7 @@
         ram: {{ pillar['hosts'][type]['ram'] }}
         cpu: {{ pillar['hosts'][type]['cpu'] }}
         networks: |
-        {% for network, attribs in pillar['hosts'][type]['networks'] %}
+        {% for network, attribs in pillar['hosts'][type]['networks'].items() %}
         {% set slot = attribs['interfaces'][0].split['ens'][1] %}
           <interface type='bridge'>
             <source bridge='{{ network }}_br'/>
