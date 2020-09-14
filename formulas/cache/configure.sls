@@ -101,7 +101,7 @@ build acng container image:
       - file: /root/acng.dockerfile
       - file: /root/acng.conf
       - file: /root/security.conf
-      - file: /root/curl.conf
+      - file: /root/curl
 
 ## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
 ## podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng
