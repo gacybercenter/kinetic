@@ -6,7 +6,7 @@ FROM debian:latest
 RUN apt update
 RUN apt upgrade -y
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt install apt-cacher-ng curl -y
+RUN apt install apt-cacher-ng -y
 
 ADD acng.conf /etc/apt-cacher-ng/acng.conf
 ADD security.conf /etc/apt-cacher-ng/security.conf

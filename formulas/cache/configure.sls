@@ -52,11 +52,8 @@ security-conf:
 
 curl-conf:
   file.managed:
-{% if grains['os_family'] == 'Debian' %}
     - name: /etc/apt-cacher-ng/curl
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /root/curl
-{% endif %}
+    - makedirs: True
     - contents: |
         user = acng:{{ pillar['cache']['maintenance_password'] }}
 
@@ -101,7 +98,6 @@ build acng container image:
       - file: /root/acng.dockerfile
       - file: /root/acng.conf
       - file: /root/security.conf
-      - file: /root/curl
 
 ## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
 ## podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng
