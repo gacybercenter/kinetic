@@ -40,6 +40,16 @@ apt-cacher-ng-conf:
 {% endif %}
     - source: salt://formulas/cache/files/acng.conf
 
+security-conf:
+  file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/apt-cacher-ng/security.conf
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /root/security.conf
+{% endif %}
+    - contents: |
+        AdminAuth: acng:{{ pillar['cache']['maintenance_password'] }}
+
 get_centos_mirros:
   cmd.run:
 {% if grains['os_family'] == 'Debian' %}
@@ -65,6 +75,7 @@ apt-cacher-ng_service:
     - enable: True
     - watch:
       - file: apt-cacher-ng-conf
+      - file: security-conf
       - cmd: get_centos_mirros
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -79,6 +90,7 @@ build acng container image:
     - onchanges:
       - file: /root/acng.dockerfile
       - file: /root/acng.conf
+      - file: /root/security.conf
 
 ## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
 ## podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng

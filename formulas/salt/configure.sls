@@ -238,6 +238,13 @@ api:
         api:
           user_password: {{ salt['random.get_str']('64') }}
 
+/srv/dynamic_pillar/cache.sls:
+  file.managed:
+    - replace: false
+    - contents: |
+        cache:
+          maintenance_password: {{ salt['random.get_str']('64') }}
+
 /srv/dynamic_pillar/top.sls:
   file.managed:
     - source: salt://formulas/salt/files/top.sls
