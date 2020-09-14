@@ -3,4 +3,4 @@ acng_maintenance:
     - tgt: {{ data['id'] }}
     - args:
       - fun: cmd.run
-      - name: 'curl -s --user acng:{{ salt['pillar.get']('cache:maintenance_password') }}  "http://localhost:3142/acng-report.html?byPath=bP&byChecksum=bS&truncNow=tN&incomAsDamaged=iad&purgeNow=pN&doExpire=Start+Scan+and%2For+Expiration&calcSize=cs&asNeeded=an#bottom" > /dev/null'
+      - name: 'curl -s --user acng:{{ salt['pillar.get']('cache:maintenance_password'), 'foo' }} "http://localhost:3142/acng-report.html?byPath=bP&byChecksum=bS&truncNow=tN&incomAsDamaged=iad&purgeNow=pN&doExpire=Start+Scan+and%2For+Expiration&calcSize=cs&asNeeded=an#bottom" > /dev/null'
