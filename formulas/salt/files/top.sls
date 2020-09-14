@@ -4,6 +4,8 @@ base:
     - deps
   'salt':
     - openstack
+  'cache*':
+    - cache
   'compute*':
     - ceph
     - nova
