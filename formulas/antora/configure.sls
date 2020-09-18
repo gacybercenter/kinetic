@@ -18,7 +18,7 @@ spawnzero_complete:
 
 docs_source:
   git.latest:
-    - name: {{ pillar['antora_docs_repo'] }}
+    - name: {{ pillar ['antora']['repo_url'] }}
     - target: /root/src/
 
 /root/site.yml:
@@ -26,9 +26,9 @@ docs_source:
     - source: salt://formulas/antora/files/site.yml
     - template: jinja
     - defaults:
-        antora_docs_repo: {{ pillar['antora_docs_repo'] }}
+        antora_docs_repo: {{ pillar ['antora']['repo_url'] }}
         docs_domain: {{ pillar['haproxy']['docs_domain'] }}
-        antora_theme_url: {{ pillar['antora_theme_url'] }}
+        antora_theme_url: {{ pillar ['antora']['theme_url'] }}
 
 antora generate --fetch /root/site.yml:
   cmd.run:
