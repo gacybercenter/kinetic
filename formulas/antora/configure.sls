@@ -28,6 +28,7 @@ docs_source:
     - defaults:
         antora_docs_repo: {{ pillar['antora_docs_repo'] }}
         docs_domain: {{ pillar['haproxy']['docs_domain'] }}
+        antora_theme_url: {{ pillar['antora_theme_url'] }}
 
 antora generate --fetch /root/site.yml:
   cmd.run:
