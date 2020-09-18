@@ -34,6 +34,7 @@ antora generate --fetch /root/site.yml:
   cmd.run:
     - onchanges:
       - git: docs_source
+      - file: /root/site.yml
 
 apache2_service:
   service.running:
