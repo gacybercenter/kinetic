@@ -47,6 +47,8 @@ wipe_cache:
 generate_site:
   cmd.run:
     - name: antora generate --fetch --clean /root/site.yml
+    - require:
+      - file: wipe_cache
     - onchanges:
       - git: docs_source
       - file: /root/site.yml
