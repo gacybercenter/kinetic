@@ -292,3 +292,10 @@ hosts:
         cache: configure
       configure:
         controller: configure
+  teleport:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+        haproxy: configure
