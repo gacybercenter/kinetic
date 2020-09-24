@@ -40,7 +40,7 @@ antora generate --fetch /root/site.yml:
     - onchanges:
       - git: docs_source
       - file: /root/site.yml
-      - file: /root/theme.zip
+      - file: theme_source
 
 apache2_service:
   service.running:
