@@ -24,7 +24,7 @@ docs_source:
 theme_source:
   file.managed:
     - name: /root/theme.zip
-    - source: {{ pillar ['antora']['repo_url'] }}
+    - source: {{ pillar ['antora']['theme_url'] }}
 
 /root/site.yml:
   file.managed:
