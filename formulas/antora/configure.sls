@@ -40,10 +40,11 @@ wipe_cache:
   file.absent:
     - name: /root/.cache/antora
     - prereq:
-      - cmd: antora generate --fetch --clean /root/site.yml
+      - cmd: generate_site
 
-antora generate --fetch --clean /root/site.yml:
+generate_site:
   cmd.run:
+    - name: antora generate --fetch --clean /root/site.yml
     - onchanges:
       - git: docs_source
       - file: /root/site.yml
