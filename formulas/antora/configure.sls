@@ -27,7 +27,7 @@ theme_source:
     - source: {{ pillar ['antora']['theme_url'] }}
 #    - source_hash: {{ pillar ['antora']['theme_hash_url'] }}
     - skip_verify: True
-    
+
 /root/site.yml:
   file.managed:
     - source: salt://formulas/antora/files/site.yml
@@ -37,7 +37,7 @@ theme_source:
         docs_domain: {{ pillar['haproxy']['docs_domain'] }}
         antora_theme_url: {{ pillar ['antora']['theme_url'] }}
 
-antora generate --fetch /root/site.yml:
+antora generate --fetch --clean /root/site.yml:
   cmd.run:
     - onchanges:
       - git: docs_source
