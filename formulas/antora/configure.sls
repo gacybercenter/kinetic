@@ -25,8 +25,9 @@ theme_source:
   file.managed:
     - name: /root/theme.zip
     - source: {{ pillar ['antora']['theme_url'] }}
-    - source_hash: {{ pillar ['antora']['theme_hash_url'] }}
-
+#    - source_hash: {{ pillar ['antora']['theme_hash_url'] }}
+    - skip_verify: True
+    
 /root/site.yml:
   file.managed:
     - source: salt://formulas/antora/files/site.yml
