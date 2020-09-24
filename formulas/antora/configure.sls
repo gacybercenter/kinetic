@@ -25,8 +25,7 @@ theme_source:
   file.managed:
     - name: /root/theme.zip
     - source: {{ pillar ['antora']['theme_url'] }}
-#    - source_hash: {{ pillar ['antora']['theme_hash_url'] }}
-    - skip_verify: True
+    - source_hash: {{ pillar ['antora']['theme_hash_url'] }}
 
 /root/site.yml:
   file.managed:
