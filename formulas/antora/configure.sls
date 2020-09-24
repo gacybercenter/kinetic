@@ -36,6 +36,12 @@ theme_source:
         docs_domain: {{ pillar['haproxy']['docs_domain'] }}
         antora_theme_url: {{ pillar ['antora']['theme_url'] }}
 
+wipe_cache:
+  file.absent:
+    - name: /root/.cache/antora
+    - prereq:
+      - cmd: antora generate --fetch --clean /root/site.yml
+
 antora generate --fetch --clean /root/site.yml:
   cmd.run:
     - onchanges:
