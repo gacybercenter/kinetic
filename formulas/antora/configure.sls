@@ -21,6 +21,11 @@ docs_source:
     - name: {{ pillar ['antora']['repo_url'] }}
     - target: /root/src/
 
+theme_source:
+  file.managed:
+    - name: /root/theme.zip
+    - source: {{ pillar ['antora']['repo_url'] }}
+
 /root/site.yml:
   file.managed:
     - source: salt://formulas/antora/files/site.yml
@@ -35,6 +40,7 @@ antora generate --fetch /root/site.yml:
     - onchanges:
       - git: docs_source
       - file: /root/site.yml
+      - file: /root/theme.zip
 
 apache2_service:
   service.running:
