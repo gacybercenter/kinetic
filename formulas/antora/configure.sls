@@ -39,8 +39,10 @@ theme_source:
 wipe_cache:
   file.absent:
     - name: /root/.cache/antora
-    - prereq:
-      - cmd: generate_site
+    - onchanges:
+      - git: docs_source
+      - file: /root/site.yml
+      - file: theme_source
 
 generate_site:
   cmd.run:
