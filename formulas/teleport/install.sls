@@ -33,7 +33,7 @@ teleport_packages:
 guacamole-server:
   archive.extracted:
     - name: /root/guacamole-server
-    - source: https://apache.org/dyn/closer.cgi?action=download&filename=guacamole/1.2.0/source/guacamole-server-1.2.0.tar.gz
+    - source: https://mirrors.sonic.net/apache/guacamole/1.2.0/source/guacamole-server-1.2.0.tar.gz
 
 {% elif grains['os_family'] == 'RedHat' %}
 
