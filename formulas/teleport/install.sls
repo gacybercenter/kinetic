@@ -49,6 +49,21 @@ download_guacamole_client:
     - source: https://downloads.apache.org/guacamole/1.2.0/binary/guacamole-1.2.0.war
     - source_hash: https://downloads.apache.org/guacamole/1.2.0/binary/guacamole-1.2.0.war.sha256
 
+/etc/guacamole/extensions:
+  file.directory:
+    - makedirs: True
+
+guacamole-quickconnect:
+  archive.extracted:
+    - name: /root/guacamole-quickconnect
+    - source: https://downloads.apache.org/guacamole/1.2.0/binary/guacamole-auth-quickconnect-1.2.0.tar.gz
+    - source_hash: https://www.apache.org/dist/guacamole/1.2.0/binary/guacamole-auth-quickconnect-1.2.0.tar.gz.sha256
+
+install-quickconnect-extension:
+  file.copy:
+    - name: /etc/guacamole/extensions/
+    - source: /root/guacamole-auth-quickconnect-1.2.0/guacamole-auth-quickconnect-1.2.0.jar
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 teleport_packages:

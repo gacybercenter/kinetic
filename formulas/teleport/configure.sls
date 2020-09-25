@@ -32,6 +32,12 @@ check_spawnzero_status:
 
 {% endif %}
 
+/etc/guacamole/guacamole.properties:
+  file.managed:
+    - contents: |
+        guacd-hostname: localhost
+        guacd-port:     4822
+
 guacd_service:
   service.running:
     - enable: True
