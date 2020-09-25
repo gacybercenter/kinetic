@@ -281,11 +281,11 @@ update_certificate_store:
     - user: keystone
     - group: keystone
 
-policy_remove:
+json_policy_remove:
   file.absent:
     - name: /etc/keystone/policy.json
 
-policy_apply:
+yaml_policy_apply:
   file.managed:
     - name: /etc/keystone/policy.yaml
 {% if salt['pillar.get']('policies:keystone', '') != '' %}
@@ -302,4 +302,5 @@ wsgi_service:
     - watch:
       - file: /etc/keystone/keystone.conf
       - file: webserver_conf
-      
+      - file: policy_remove
+      - file: policy_apply
