@@ -285,11 +285,12 @@ policy_remove:
   file.absent:
     - name: /etc/keystone/policy.json
 
+{% if salt['pillar.get']('policies:keystone', '') != '' %}
 policy_apply:
   file.managed:
     - name: /etc/keystone/policy.yaml
-    - contents: |
-        {{ salt['pillar.get']('policies:keystone', '')|yaml_encode }}
+    - contents_pillar: policies:keystone
+{% endif %}
 
 wsgi_service:
   service.running:
