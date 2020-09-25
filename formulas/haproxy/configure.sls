@@ -101,6 +101,8 @@ acme_certs:
     - aliases:
       - {{ pillar['haproxy']['console_domain'] }}
       - {{ pillar['haproxy']['docs_domain'] }}
+      - {{ pillar['haproxy']['guacamole_domain'] }}
+      - {{ pillar['haproxy']['webssh2_domain'] }}      
     - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
 {% if salt['pillar.get']('development:test_certs', False) == True %}
@@ -143,6 +145,8 @@ create_master_pem:
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         console_domain:  {{ pillar['haproxy']['console_domain'] }}
         docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
+        guacamole_domain:  {{ pillar['haproxy']['docs_domain'] }}
+        webssh2_domain:  {{ pillar['haproxy']['docs_domain'] }}
         keystone_hosts: |
           {%- for host, addresses in salt['mine.get']('type:keystone', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
             {%- for address in addresses -%}
@@ -315,6 +319,22 @@ create_master_pem:
             {%- for address in addresses -%}
               {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
           server {{ host }} {{ address }}:3306 check inter 2000 rise 2 fall 5 backup
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %}
+        guacamole_hosts: |
+          {%- for host, addresses in salt['mine.get']('type:guacamole', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+          server {{ host }} {{ address }}:8080 check inter 2000 rise 2 fall 5
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %}
+        webssh2_hosts: |
+          {%- for host, addresses in salt['mine.get']('type:webssh2', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+            {%- for address in addresses -%}
+              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+          server {{ host }} {{ address }}:2222 check inter 2000 rise 2 fall 5
               {%- endif -%}
             {%- endfor -%}
           {%- endfor %}
