@@ -102,7 +102,6 @@ mk_public_network:
         ovn_sb_connection: ""
         ovn_l3_scheduler: ""
         ovn_native_dhcp: ""
-        ovn_l3_mode: ""
         ovn_metadata_enabled: ""
         enable_distributed_floating_ip:  ""
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
@@ -114,7 +113,6 @@ mk_public_network:
         ovn_sb_connection: {{ constructor.ovn_sb_connection_constructor() }}
         ovn_l3_scheduler: leastloaded
         ovn_native_dhcp: True
-        ovn_l3_mode: True
         ovn_metadata_enabled: True
         enable_distributed_floating_ip: True
 {% endif %}
