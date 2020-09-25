@@ -42,8 +42,12 @@ guacd_service:
   service.running:
     - enable: True
     - name: guacd
+    - watch:
+      - file: /etc/guacamole/guacamole.properties
 
 tomcat_service:
   service.running:
     - enable: True
     - name: tomcat9
+    - watch:
+      - file: /etc/guacamole/guacamole.properties
