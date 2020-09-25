@@ -283,9 +283,11 @@ update_certificate_store:
 
 policy_apply:
   file.managed:
-    - name: /etc/keystone/policy.json
+    - name: /etc/keystone/policy.yaml
     - contents_pillar: policies:keystone
-    
+  file.absent:
+    - name: /etc/keystone/policy.json
+
 wsgi_service:
   service.running:
     - name: {{ webserver }}
