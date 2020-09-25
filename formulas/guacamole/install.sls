@@ -62,7 +62,7 @@ guacamole-quickconnect:
 install-quickconnect-extension:
   file.copy:
     - name: /etc/guacamole/extensions/
-    - source: /root/guacamole-quickconnect/guacamole-auth-quickconnect-1.2.0.jar
+    - source: /root/guacamole-quickconnect/guacamole-auth-quickconnect-1.2.0/guacamole-auth-quickconnect-1.2.0.jar
 
 {% elif grains['os_family'] == 'RedHat' %}
 
