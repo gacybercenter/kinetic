@@ -7,8 +7,33 @@ include:
 
 teleport_packages:
   pkg.installed:
-    - sources:
-      - teleport: https://get.gravitational.com/teleport_4.3.5_amd64.deb
+    - pkgs:
+      - libcairo2-dev
+      - libjpeg-turbo8-dev
+      - libpng12-dev
+      - libtool-bin
+      - libossp-uuid-dev
+      - libvncclient1
+      - freerdp2-dev
+      - freerdp2-wayland
+      - libavcodec-dev
+      - libavformat-dev
+      - libavutil-dev
+      - libswscale-dev
+      - libpango1.0-dev
+      - libssh2-1-dev
+      - libtelnet-dev
+      - libvncserver-dev
+      - libwebsockets-dev
+      - libpulse-dev
+      - libssl-dev
+      - libvorbis-dev
+      - libwebp-dev
+
+guacamole-server:
+  archive.extracted:
+    - name: /root/guacamole-server
+    - source: https://apache.org/dyn/closer.cgi?action=download&filename=guacamole/1.2.0/source/guacamole-server-1.2.0.tar.gz
 
 {% elif grains['os_family'] == 'RedHat' %}
 
