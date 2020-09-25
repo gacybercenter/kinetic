@@ -281,12 +281,15 @@ update_certificate_store:
     - user: keystone
     - group: keystone
 
+policy_remove:
+  file.absent:
+    - name: /etc/keystone/policy.json
+
 policy_apply:
   file.managed:
     - name: /etc/keystone/policy.yaml
     - contents_pillar: policies:keystone
-  file.absent:
-    - name: /etc/keystone/policy.json
+
 
 wsgi_service:
   service.running:
