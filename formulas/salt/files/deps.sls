@@ -292,7 +292,7 @@ hosts:
         cache: configure
       configure:
         controller: configure
-  teleport:
+  guacamole:
     needs:
       install:
         cache: configure

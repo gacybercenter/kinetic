@@ -5,7 +5,7 @@ include:
 
 {% if grains['os_family'] == 'Debian' %}
 
-teleport_packages:
+guacamole_packages:
   pkg.installed:
     - pkgs:
       - libcairo2-dev
@@ -66,7 +66,7 @@ install-quickconnect-extension:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
-teleport_packages:
+guacamole_packages:
   pkg.installed:
     - sources:
       - teleport: https://get.gravitational.com/teleport-4.3.5-1.x86_64.rpm
