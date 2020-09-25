@@ -302,5 +302,5 @@ wsgi_service:
     - watch:
       - file: /etc/keystone/keystone.conf
       - file: webserver_conf
-      - file: policy_remove
-      - file: policy_apply
+      - file: json_policy_remove
+      - file: yaml_policy_apply
