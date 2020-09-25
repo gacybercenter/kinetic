@@ -299,3 +299,10 @@ hosts:
       configure:
         controller: configure
         haproxy: configure
+  webssh2:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+        haproxy: configure
