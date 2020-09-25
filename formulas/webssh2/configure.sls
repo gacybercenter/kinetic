@@ -40,3 +40,13 @@ check_spawnzero_status:
         allowed_subnets: {{ pillar['networking']['subnets']['public'] }}
         session_name: {{ pillar['webssh2']['session_name'] }}
         session_secret: {{ pillar['webssh2']['session_secret'] }}
+
+/etc/systemd/system/webssh2.service:
+  file.managed:
+    - source: salt://formulas/webssh2/files/webssh2.service
+    - mode: 644
+
+webssh2_service:
+  - service.running:
+    - enable: True
+    - name: webssh2
