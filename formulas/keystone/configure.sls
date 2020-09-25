@@ -281,6 +281,11 @@ update_certificate_store:
     - user: keystone
     - group: keystone
 
+policy_apply:
+  file.managed:
+    - name: /etc/keystone/policy.json
+    - contents_pillar: policies:keystone
+    
 wsgi_service:
   service.running:
     - name: {{ webserver }}
