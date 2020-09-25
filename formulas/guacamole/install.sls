@@ -39,7 +39,8 @@ guacamole-server:
 
 install_guacamole_server:
   cmd.run:
-    - name: /root/guacamole-server/guacamole-server-1.2.0/configure --with-systemd-dir=/etc/systemd/system && make && make install && ldconfig
+    - name: configure --with-systemd-dir=/etc/systemd/system && make && make install && ldconfig
+    - cwd: /root/guacamole-server/guacamole-server-1.2.0/
     - creates:
       - /usr/local/sbin/guacd
 
