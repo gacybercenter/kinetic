@@ -288,8 +288,8 @@ policy_remove:
 policy_apply:
   file.managed:
     - name: /etc/keystone/policy.yaml
-    - contents_pillar: policies:keystone
-
+    - contents: |
+        {{ salt['pillar.get']('policies:keystone', '') }}
 
 wsgi_service:
   service.running:
