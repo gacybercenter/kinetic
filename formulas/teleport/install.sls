@@ -10,7 +10,7 @@ teleport_packages:
     - pkgs:
       - libcairo2-dev
       - libjpeg-turbo8-dev
-      - libpng12-dev
+      - libpng-dev
       - libtool-bin
       - libossp-uuid-dev
       - libvncclient1
