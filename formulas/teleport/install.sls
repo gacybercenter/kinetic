@@ -29,12 +29,25 @@ teleport_packages:
       - libssl-dev
       - libvorbis-dev
       - libwebp-dev
+      - tomcat9
 
 guacamole-server:
   archive.extracted:
     - name: /root/guacamole-server
     - source: https://downloads.apache.org/guacamole/1.2.0/source/guacamole-server-1.2.0.tar.gz
     - source_hash: https://www.apache.org/dist/guacamole/1.2.0/source/guacamole-server-1.2.0.tar.gz.sha256
+
+install_guacamole_server:
+  cmd.run:
+    - name: /root/guacamole-server/guacamole-server-1.2.0/configure --with-systemd-dir=/etc/systemd/system && make && make install && ldconfig
+    - creates:
+      - /usr/local/sbin/guacd
+
+download_guacamole_client:
+  file.managed:
+    - name: /var/lib/tomcat/webapps/guacamole.war
+    - source: https://downloads.apache.org/guacamole/1.2.0/binary/guacamole-1.2.0.war
+    - source_hash: https://downloads.apache.org/guacamole/1.2.0/binary/guacamole-1.2.0.war.sha256
 
 {% elif grains['os_family'] == 'RedHat' %}
 
