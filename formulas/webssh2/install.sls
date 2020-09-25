@@ -23,14 +23,20 @@ webssh2_packages:
   pkg.installed:
     - pkgs:
       - nodejs
-      - apache2
     - reload_modules: True
 
-webssh_source:
+webssh2_source:
   git.latest:
     - name: https://github.com/billchurch/webssh2.git
     - target: /var/www/html/
     - rev: 0.3.0
+
+install_webssh2:
+  cmd.run:
+    - name: npm install --production && npm audit fix
+    - cwd: /var/www/html/app
+    - creates:
+      - /var/www/html/app/node_modules
 
 {% elif grains['os_family'] == 'RedHat' %}
 
