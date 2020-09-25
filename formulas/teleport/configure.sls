@@ -38,6 +38,14 @@ check_spawnzero_status:
         guacd-hostname: localhost
         guacd-port:     4822
 
+/etc/guacamole/user-mapping.xml:
+  file.managed:
+    - contents: |
+        <user-mapping>
+          <authorize username="foo" password="bar">
+          </authorize>
+        </user-mapping>
+        
 guacd_service:
   service.running:
     - enable: True
