@@ -31,9 +31,10 @@ webssh2_packages:
     - makedirs: True
 
 webssh_source:
-  archive.extracted:
-    - name: /var/www/html/webssh2
-    - source: https://github.com/billchurch/webssh2/archive/0.3.0.tar.gz
+  git.latest:
+    - name: https://github.com/billchurch/webssh2.git
+    - target: /var/www/html/
+    - rev: 0.3.0
 
 {% elif grains['os_family'] == 'RedHat' %}
 
