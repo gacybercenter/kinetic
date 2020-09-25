@@ -289,7 +289,7 @@ policy_apply:
   file.managed:
     - name: /etc/keystone/policy.yaml
     - contents: |
-        {{ salt['pillar.get']('policies:keystone', '') }}|yaml_encode
+        {{ salt['pillar.get']('policies:keystone', '')|yaml_encode }}
 
 wsgi_service:
   service.running:
