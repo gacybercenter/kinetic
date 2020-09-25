@@ -45,7 +45,7 @@ install_guacamole_server:
 
 download_guacamole_client:
   file.managed:
-    - name: /var/lib/tomcat/webapps/guacamole.war
+    - name: /var/lib/tomcat9/webapps/guacamole.war
     - source: https://downloads.apache.org/guacamole/1.2.0/binary/guacamole-1.2.0.war
     - source_hash: https://downloads.apache.org/guacamole/1.2.0/binary/guacamole-1.2.0.war.sha256
 
