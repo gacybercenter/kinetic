@@ -290,6 +290,8 @@ yaml_policy_apply:
   file.managed:
     - name: /etc/keystone/policy.yaml
     - contents_pillar: policies:keystone
+    - require_in:
+      - service: wsgi_service
 {% endif %}
 
 wsgi_service:
@@ -301,4 +303,3 @@ wsgi_service:
       - file: /etc/keystone/keystone.conf
       - file: webserver_conf
       - file: json_policy_remove
-      - file: yaml_policy_apply
