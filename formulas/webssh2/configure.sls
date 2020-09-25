@@ -50,3 +50,5 @@ webssh2_service:
   service.running:
     - enable: True
     - name: webssh2
+    - watch:
+      - file: /var/www/html/app/config.json
