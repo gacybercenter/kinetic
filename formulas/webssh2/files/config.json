@@ -26,7 +26,7 @@
     "bellStyle": "sound"
   },
   "header": {
-    "text": null,
+    "text": "Kinetic, Powered by webssh2",
     "background": "green"
   },
   "session": {
