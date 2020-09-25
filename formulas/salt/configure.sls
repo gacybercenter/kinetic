@@ -245,6 +245,14 @@ api:
         cache:
           maintenance_password: {{ salt['random.get_str']('64') }}
 
+/srv/dynamic_pillar/webssh2.sls:
+  file.managed:
+    - replace: false
+    - contents: |
+        webssh2:
+          session_name: {{ salt['random.get_str']('64') }}
+          session_secret: {{ salt['random.get_str']('64') }}          
+
 /srv/dynamic_pillar/top.sls:
   file.managed:
     - source: salt://formulas/salt/files/top.sls

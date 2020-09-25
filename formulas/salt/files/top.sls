@@ -134,3 +134,5 @@ base:
     - neutron
   'horizon*':
     - horizon
+  'webssh2*':
+    - webssh2
