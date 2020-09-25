@@ -35,8 +35,8 @@ check_spawnzero_status:
 /var/www/html/app/config.json:
   file.managed:
     - source: salt://formulas/webssh2/files/config.json
-    - template: jinja2
+    - template: jinja
     - defaults:
         allowed_subnets: {{ pillar['networking']['subnets']['public'] }}
         session_name: {{ pillar['webssh2']['session_name'] }}
-        session_secret: {{ pillar['webssh2']['session_secret'] }}        
+        session_secret: {{ pillar['webssh2']['session_secret'] }}
