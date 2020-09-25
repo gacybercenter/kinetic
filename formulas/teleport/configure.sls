@@ -31,3 +31,13 @@ check_spawnzero_status:
         value: configure
 
 {% endif %}
+
+guacd_service:
+  service.running:
+    - enable: True
+    - name: guacd
+
+tomcat_service:
+  service.running:
+    - enable: True
+    - name: tomcat9
