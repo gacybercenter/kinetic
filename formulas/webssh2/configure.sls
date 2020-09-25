@@ -47,6 +47,6 @@ check_spawnzero_status:
     - mode: 644
 
 webssh2_service:
-  - service.running:
+  service.running:
     - enable: True
     - name: webssh2
