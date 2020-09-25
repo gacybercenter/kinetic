@@ -102,7 +102,7 @@ acme_certs:
       - {{ pillar['haproxy']['console_domain'] }}
       - {{ pillar['haproxy']['docs_domain'] }}
       - {{ pillar['haproxy']['guacamole_domain'] }}
-      - {{ pillar['haproxy']['webssh2_domain'] }}      
+      - {{ pillar['haproxy']['webssh2_domain'] }}
     - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
 {% if salt['pillar.get']('development:test_certs', False) == True %}
@@ -145,8 +145,8 @@ create_master_pem:
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         console_domain:  {{ pillar['haproxy']['console_domain'] }}
         docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
-        guacamole_domain:  {{ pillar['haproxy']['docs_domain'] }}
-        webssh2_domain:  {{ pillar['haproxy']['docs_domain'] }}
+        guacamole_domain:  {{ pillar['haproxy']['guacamole_domain'] }}
+        webssh2_domain:  {{ pillar['haproxy']['webssh2_domain'] }}
         keystone_hosts: |
           {%- for host, addresses in salt['mine.get']('type:keystone', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
             {%- for address in addresses -%}
