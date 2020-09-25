@@ -26,10 +26,6 @@ webssh2_packages:
       - apache2
     - reload_modules: True
 
-/var/www/html:
-  file.directory:
-    - makedirs: True
-
 webssh_source:
   git.latest:
     - name: https://github.com/billchurch/webssh2.git
