@@ -154,6 +154,13 @@ spice-html5:
     - target: /usr/share/spice-html5
 {% endif %}
 
+{% if grains['os_family'] == 'Debian' %}
+spice-html5:
+  git.latest:
+    - name: https://gitlab.com/gacybercenter/spice-html5.git
+    - target: /usr/share/spice-html5
+{% endif %}
+
 nova_api_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
