@@ -1,10 +1,6 @@
 {% if opts.id not in ['salt', 'pxe'] %}
   {% set type = opts.id.split('-')[0] %}
-  {% if pillar['hosts'][type]['style'] == 'physical' %}
-    {% set role = pillar['hosts'][type]['role'] %}
-  {% else %}
-    {% set role = type %}
-  {% endif %}
+    {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 {% else %}
   {% set type = opts.id %}
   {% set role = type %}
