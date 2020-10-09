@@ -2,7 +2,7 @@ include:
   - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
-  {% from "/formulas/common/macros/spawn.sls" import spawnzero_complete with context %}
+  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
     {{ spawnzero_complete() }}
 {% endif %}
 
