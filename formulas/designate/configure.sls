@@ -44,18 +44,8 @@ make_designate_service:
     - onchanges:
       - file: /etc/designate/tlds.conf
 
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
+    {{ spawnzero_complete() }}
 
 {% else %}
 

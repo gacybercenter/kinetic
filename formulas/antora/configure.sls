@@ -2,8 +2,15 @@ include:
   - /formulas/{{ grains['role'] }}/install
 
 {% if grains['spawning'] == 0 %}
+
   {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
     {{ spawnzero_complete() }}
+
+{% else %}
+
+  {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
+    {{ check_spawnzero_status(grains['type']) }}
+
 {% endif %}
 
 docs_source:

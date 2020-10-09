@@ -58,18 +58,8 @@ update_cells:
       - service: nova_conductor_service
       - service: nova_spiceproxy_service
 
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
+    {{ spawnzero_complete() }}
 
 ## This is lightning fast but I'm not sure how I feel about writing directly to the database
 ## outside the context of the API.  Should probably change to the flavor_present state
