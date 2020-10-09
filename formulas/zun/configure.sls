@@ -32,18 +32,8 @@ make_zun_service:
         zun_admin_endpoint: {{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['zun']['configuration']['admin_endpoint']['path'] }}
         zun_service_password: {{ pillar ['zun']['zun_service_password'] }}
 
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
+    {{ spawnzero_complete() }}
 
 {% else %}
 

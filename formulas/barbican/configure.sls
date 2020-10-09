@@ -21,18 +21,13 @@ barbican-manage db upgrade:
     - require:
       - file: /etc/barbican/barbican.conf
 
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
+    {{ spawnzero_complete() }}
+
+{% else %}
+
+  {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
+    {{ check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 

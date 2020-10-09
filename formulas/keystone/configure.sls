@@ -22,18 +22,8 @@ initialize_keystone:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain
 
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
+    {{ spawnzero_complete() }}
 
 project_init:
   cmd.script:
@@ -68,7 +58,6 @@ check_spawnzero_status:
       - fun: grains.equals
         key: build_phase
         value: configure
-
 
 {% endif %}
 

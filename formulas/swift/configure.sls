@@ -16,18 +16,8 @@ make_swift_service:
         swift_internal_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['path'] }}
         swift_admin_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['path'] }}
 
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
+    {{ spawnzero_complete() }}
 
 {% else %}
 
