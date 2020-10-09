@@ -33,11 +33,6 @@ check_spawnzero_status:
 
 {% endif %}
 
-ceph_user_exists:
-  user.present:
-    - name: ceph
-    - home: /etc/ceph
-
 /etc/sudoers.d/ceph:
   file.managed:
     - contents:
