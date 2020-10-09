@@ -1,11 +1,8 @@
 include:
   - formulas/common/syslog
 
-{% if opts.id not in ['salt', 'pxe'] %}
-  {% set type = opts.id.split('-')[0] %}
-{% else %}
-  {% set type = opts.id %}
-{% endif %}
+{% set type = opts.id.split('-')[0] %}
+{% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 
 initial_module_sync:
   saltutil.sync_all:
@@ -27,11 +24,7 @@ type:
 
 role:
   grains.present:
-{% if salt['pillar.get']('hosts:'+type+':style', '') == 'physical' %}
-    - value: {{ pillar['hosts'][type]['role'] }}
-{% else %}
-    - value: {{ type }}
-{% endif %}
+    - value: {{ role }}
 
 {{ pillar['timezone'] }}:
   timezone.system:
