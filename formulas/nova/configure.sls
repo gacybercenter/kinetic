@@ -128,19 +128,11 @@ create_{{ flavor }}:
         console_domain: {{ pillar['haproxy']['console_domain'] }}
         token_ttl: {{ pillar['nova']['token_ttl'] }}
 
-{% if grains['os_family'] == 'RedHat' %}
-spice-html5:
-  git.latest:
-    - name: https://github.com/freedesktop/spice-html5.git
-    - target: /usr/share/spice-html5
-{% endif %}
-
-{% if grains['os_family'] == 'Debian' %}
 spice-html5:
   git.latest:
     - name: https://gitlab.com/gacybercenter/spice-html5.git
     - target: /usr/share/spice-html5
-{% endif %}
+    - force_clone: True
 
 nova_api_service:
   service.running:
