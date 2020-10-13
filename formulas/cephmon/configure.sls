@@ -109,6 +109,12 @@ ceph osd pool create {{ pool }} 1:
   cmd.run:
     - unless:
       - ceph osd pool get {{ pool }} size
+    {% if pool in [images, vms, volumes] %}
+ceph osd pool application enable {{ pool }} rbd:
+  cmd.run:
+    - unless:
+      - ceph osd pool application get {{ pool }} | grep -q rbd
+    {% endif %}
   {% endfor %}
 ceph fs new manila fileshare_metadata fileshare_data:
   cmd.run:
