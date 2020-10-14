@@ -8,7 +8,7 @@ include:
 
 /etc/frr/daemons:
   file.managed:
-    - source: salt://formulas/frr/common/files/daemons
+    - source: salt://formulas/common/frr/files/daemons
 
 /etc/ceph/ceph.client.compute.keyring:
   file.managed:
