@@ -1,6 +1,6 @@
 /etc/ceph/ceph.conf:
   file.managed:
-    - source: salt://formulas/ceph/common/files/ceph.conf
+    - source: salt://formulas/common/ceph/files/ceph.conf
     - template: jinja
     - makedirs: True
     - defaults:

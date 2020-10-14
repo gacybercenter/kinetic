@@ -1,6 +1,6 @@
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/ceph/common/configure
+  - /formulas/common/ceph/configure
 
 get_adminkey:
   file.managed:
@@ -103,6 +103,6 @@ create_osd_{{ osd }}:
     - unless:
       - vgdisplay --verbose | grep -q {{ osd }}
     - require:
-      - sls: /formulas/ceph/common/configure
+      - sls: /formulas/common/ceph/configure
       - lvm: db_lv_{{ loop.index0 }}
 {% endfor %}

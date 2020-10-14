@@ -1,6 +1,6 @@
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/ceph/common/configure
+  - /formulas/common/ceph/configure
 
 {% if grains['spawning'] == 0 %}
 
@@ -50,4 +50,4 @@ ceph-mds@{{ grains['id'] }}:
   service.running:
     - enable: true
     - watch:
-      - sls: /formulas/ceph/common/configure
+      - sls: /formulas/common/ceph/configure

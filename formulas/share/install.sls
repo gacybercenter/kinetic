@@ -3,7 +3,7 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/openstack/common/repo
-  - /formulas/ceph/common/repo
+  - /formulas/common/ceph/repo
 
 {% if grains['os_family'] == 'Debian' %}
 

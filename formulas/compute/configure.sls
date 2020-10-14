@@ -1,6 +1,6 @@
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/ceph/common/configure
+  - /formulas/common/ceph/configure
 
 /etc/modprobe.d/kvm.conf:
   file.managed:

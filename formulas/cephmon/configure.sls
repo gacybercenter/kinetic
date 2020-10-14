@@ -1,6 +1,6 @@
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/ceph/common/configure
+  - /formulas/common/ceph/configure
 
 {% if grains['spawning'] == 0 %}
 
@@ -67,7 +67,7 @@ ceph-mon@{{ grains['id'] }}:
   service.running:
     - enable: true
     - watch:
-      - sls: /formulas/ceph/common/configure
+      - sls: /formulas/common/ceph/configure
 
 /var/lib/ceph/mgr/ceph-{{ grains['id'] }}:
   file.directory:
@@ -84,7 +84,7 @@ ceph-mgr@{{ grains['id'] }}:
     - enable: true
     - watch:
       - cmd: ceph auth get-or-create mgr.{{ grains['id'] }} mon 'allow profile mgr' osd 'allow *' mds 'allow *' > /var/lib/ceph/mgr/ceph-{{ grains['id'] }}/keyring
-      - sls: /formulas/ceph/common/configure
+      - sls: /formulas/common/ceph/configure
 
 fs.file-max:
   sysctl.present:
