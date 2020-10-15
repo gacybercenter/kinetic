@@ -11,7 +11,7 @@ include:
   {% set service_conf = pillar['openstack_services']['keystone']['configuration'] %}
 
 test_script:
-  cmd.script:
+  cmd.run:
     - name: |
         echo foo
         echo bar
