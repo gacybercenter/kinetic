@@ -32,12 +32,12 @@ keystone_project_init:
   keystone_project.present:
     - name: service
     - domain: default
-    - description: service project
+    - description: Service Project
 
 keystone_role_init:
   keystone_role.present:
     - name: user
-    
+
 keystone_user_init:
   keystone_user.present:
     - name: keystone
@@ -45,7 +45,7 @@ keystone_user_init:
     - password: {{ pillar ['keystone']['keystone_service_password'] }}
 
 keystone_role_grant:
-  keystone_role.grant:
+  keystone_role.present:
     - name: user
     - project: service
     - role: admin
