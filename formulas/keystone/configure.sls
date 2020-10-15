@@ -45,8 +45,8 @@ keystone_user_init:
     - password: {{ pillar ['keystone']['keystone_service_password'] }}
 
 keystone_role_grant:
-  keystone_role.present:
-    - role: admin
+  keystone_role_grant.present:
+    - name: admin
     - project: service
     - user: keystone
 
