@@ -8,7 +8,7 @@ include:
 {% endif %}
 
 {% if grains['spawning'] == 0 %}
-  {% set service_conf = pillar['openstack_services']['keystone']['configuration'] %}
+  {% set service_conf = pillar['openstack_services']['keystone']['configuration']['endpoints'] %}
 
 test_script:
   cmd.run:
