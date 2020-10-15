@@ -16,7 +16,7 @@ test_script:
         keystone-manage db_sync
         keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
         keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
-        keystone-manage bootstrap --bootstrap-password {{ admin_password }} \
+        keystone-manage bootstrap --bootstrap-password {{ pillar['openstack']['admin_password'] }} \
   {% for endpoint, attribs in service_conf.items() %}
         --bootstrap-{{ endpoint }}-url {{ attribs['protocol'] }} \
   {% endfor %}
