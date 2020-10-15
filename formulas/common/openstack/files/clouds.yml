@@ -1,0 +1,13 @@
+### This template is used by shade/openstacksdk for openstack-ng salt modules
+
+clouds:
+  kinetic:
+    region_name: RegionOne
+    identity_api_version: 3
+    auth:
+      username: admin
+      password: {{ password }}
+      auth_url: {{ auth_url }}
+      user_domain_name: default
+      project_name: admin
+      project_domain_name: default

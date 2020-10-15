@@ -52,6 +52,15 @@ project_init:
 
 {% endif %}
 
+/etc/openstack/clouds.yaml:
+  file.managed:
+    - source: salt://formulas/common/openstack/files/clouds.yaml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        password: {{ pillar['openstack']['admin_password'] }}
+        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
+
 /var/lib/keystone/keystone.db:
   file.absent
 

@@ -30,3 +30,8 @@ keystone_packages:
       - python3-mod_wsgi
 
 {% endif %}
+
+shade:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
