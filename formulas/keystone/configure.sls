@@ -8,6 +8,13 @@ include:
 {% endif %}
 
 {% if grains['spawning'] == 0 %}
+  {% set service_conf = pillar['openstack_services']['keystone']['configuration'] %}
+
+test_script:
+  cmd.script:
+    - name: |
+        echo foo
+        echo bar
 
 initialize_keystone:
   cmd.script:
@@ -34,11 +41,7 @@ project_init:
         internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
         keystone_domain: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
-{% if grains['os_family'] == 'Debian' %}
-        webserver: apache2
-{% elif grains['os_family'] == 'RedHat' %}
-        webserver: httpd
-{% endif %}
+        webserver: {{ webserver }}
     - order: last
     - retry:
         attempts: 10
@@ -181,10 +184,6 @@ wsgi_service:
     - enable: True
     - init_delay: 10
     - watch:
-      - file: /etc/keystone/keystone.conf
-      - file: keystone_domain
-      - file: webserver_conf
-    - require:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain
       - file: webserver_conf
