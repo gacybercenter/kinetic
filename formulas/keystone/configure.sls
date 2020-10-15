@@ -13,8 +13,14 @@ include:
 test_script:
   cmd.run:
     - name: |
-        echo foo
-        echo bar
+        keystone-manage db_sync
+        keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
+        keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
+        keystone-manage bootstrap --bootstrap-password {{ admin_password }} \
+  {% for endpoint, attribs in service_conf.items() %}
+        --bootstrap-{{ endpoint }}-url {{ attribs['protocol'] }} \
+  {% endfor %}
+        --bootstrap-region-id RegionOne
 
 initialize_keystone:
   cmd.script:
