@@ -10,7 +10,7 @@ include:
 {% if grains['spawning'] == 0 %}
   {% set service_conf = pillar['openstack_services']['keystone']['configuration']['endpoints'] %}
 
-test_script:
+init_keystone:
   cmd.run:
     - name: |
         keystone-manage db_sync
