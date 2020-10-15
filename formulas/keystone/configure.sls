@@ -39,21 +39,21 @@ test_script:
   {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
     {{ spawnzero_complete() }}
 
-project_init:
-  cmd.script:
-    - source: salt://formulas/keystone/files/project_init.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
-        keystone_domain: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
-        webserver: {{ webserver }}
-    - order: last
-    - retry:
-        attempts: 10
-        until: True
-        delay: 60
+# project_init:
+#   cmd.script:
+#     - source: salt://formulas/keystone/files/project_init.sh
+#     - template: jinja
+#     - defaults:
+#         admin_password: {{ pillar['openstack']['admin_password'] }}
+#         internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+#         keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
+#         keystone_domain: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
+#         webserver: {{ webserver }}
+#     - order: last
+#     - retry:
+#         attempts: 10
+#         until: True
+#         delay: 60
 
 {% else %}
 
