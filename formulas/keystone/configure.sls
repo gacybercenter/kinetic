@@ -46,9 +46,9 @@ keystone_user_init:
 
 keystone_role_grant:
   keystone_role.present:
-    - name: user
+    - name: admin
     - project: service
-    - role: admin
+    - user: keystone
 
 {% else %}
 
