@@ -28,15 +28,16 @@ init_keystone:
   {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
     {{ spawnzero_complete() }}
 
-keystone_project_init:
+service_project_init:
   keystone_project.present:
     - name: service
     - domain: default
     - description: Service Project
 
-keystone_role_init:
+user_role_init:
   keystone_role.present:
     - name: user
+
 
 keystone_user_init:
   keystone_user.present:
