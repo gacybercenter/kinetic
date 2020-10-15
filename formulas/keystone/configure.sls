@@ -28,17 +28,23 @@ init_keystone:
   {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
     {{ spawnzero_complete() }}
 
-project_init:
+keystone_project_init:
   keystone_project.present:
     - name: service
     - domain: default
     - description: service project
+
+keystone_role_init:
   keystone_role.present:
     - name: user
+    
+keystone_user_init:
   keystone_user.present:
     - name: keystone
     - domain: default
     - password: {{ pillar ['keystone']['keystone_service_password'] }}
+
+keystone_role_grant:
   keystone_role.grant:
     - name: user
     - project: service
