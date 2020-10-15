@@ -29,20 +29,20 @@ init_keystone:
     {{ spawnzero_complete() }}
 
 project_init:
-  cmd.script:
-    - source: salt://formulas/keystone/files/project_init.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['internal']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['internal']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['internal']['path'] }}
-        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
-        keystone_domain: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
-        webserver: {{ webserver }}
-    - order: last
-    - retry:
-        attempts: 10
-        until: True
-        delay: 60
+  keystone_project.present:
+    - name: service
+    - domain: default
+    - description: service project
+  keystone_role.present:
+    - name: user
+  keystone_user.present:
+    - name: keystone
+    - domain: default
+    - password: {{ pillar ['keystone']['keystone_service_password'] }}
+  keystone_role.grant:
+    - name: user
+    - project: service
+    - role: admin
 
 {% else %}
 
