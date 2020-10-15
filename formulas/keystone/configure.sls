@@ -19,7 +19,7 @@ test_script:
         keystone-manage bootstrap --bootstrap-password {{ pillar['openstack']['admin_password'] }} \
   {% for endpoint, attribs in service_conf.items() %}
         --bootstrap-{{ endpoint }}-url {{ attribs['protocol'] }} \
-  {% endfor %}
+  {% endfor -%}
         --bootstrap-region-id RegionOne
     - require:
       - file: /etc/keystone/keystone.conf
