@@ -52,9 +52,9 @@ project_init:
 
 {% endif %}
 
-/etc/openstack/clouds.yaml:
+/etc/openstack/clouds.yml:
   file.managed:
-    - source: salt://formulas/common/openstack/files/clouds.yaml
+    - source: salt://formulas/common/openstack/files/clouds.yml
     - makedirs: True
     - template: jinja
     - defaults:
