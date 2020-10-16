@@ -72,14 +72,14 @@ echo {{ service }}:
 
 {% endif %}
 
-# /etc/openstack/clouds.yml:
-#   file.managed:
-#     - source: salt://formulas/common/openstack/files/clouds.yml
-#     - makedirs: True
-#     - template: jinja
-#     - defaults:
-#         password: {{ pillar['openstack']['admin_password'] }}
-#         auth_url: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
+/etc/openstack/clouds.yml:
+  file.managed:
+    - source: salt://formulas/common/openstack/files/clouds.yml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        password: {{ pillar['openstack']['admin_password'] }}
+        auth_url: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
 
 /var/lib/keystone/keystone.db:
   file.absent
@@ -100,7 +100,7 @@ echo {{ service }}:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-        public_endpoint: {{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public'] }}{{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}
+        public_endpoint: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_domain:
@@ -119,7 +119,7 @@ keystone_domain:
         user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
         group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
-        public_endpoint: {{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public'] }}{{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}{{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['path'] }}
+        public_endpoint: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
 
 {% if grains['os_family'] == 'Debian' %}
 
