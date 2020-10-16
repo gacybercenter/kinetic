@@ -42,17 +42,21 @@ user_role_init:
   keystone_role.present:
     - name: user
 
-keystone_user_init:
-  keystone_user.present:
-    - name: keystone
-    - domain: default
-    - password: {{ pillar ['keystone']['keystone_service_password'] }}
+{% for service in pillar['openstack_services'] %}
 
-keystone_role_grant:
+{{ service }}_user_init:
+  keystone_user.present:
+    - name: {{ service }}
+    - domain: default
+    - password: {{ pillar [service][service+'_service_password'] }}
+
+{{ service }}_user_role_grant:
   keystone_role_grant.present:
     - name: admin
     - project: service
-    - user: keystone
+    - user: {{ service }}
+
+{% endfor %}
 
 {% for service in pillar['openstack_services'] %}
 echo {{ service }}:
