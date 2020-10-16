@@ -50,14 +50,12 @@ user_role_init:
     - name: {{ project }}
     - domain: default
     - password: {{ pillar [project][project+'_service_password'] }}
-    - parallel: True
 
 {{ project }}_user_role_grant:
   keystone_role_grant.present:
     - name: admin
     - project: service
     - user: {{ project }}
-    - parallel: True
     - require:
       - keystone_user: {{ project }}_user_init
 
@@ -68,7 +66,6 @@ user_role_init:
     - name: {{ service }}
     - type: {{ attribs['type'] }}
     - description: {{ attribs['description'] }}
-    - parallel: True
 
     {% for endpoint, params in attribs['endpoints'].items() %}
 
@@ -78,7 +75,6 @@ user_role_init:
     - url: {{ constructor.endpoint_url_constructor(project, service, endpoint) }}
     - region: RegionOne
     - service_name: {{ service }}
-    - parallel: True
     - require:
       - keystone_service: {{ service }}_service_create
 
