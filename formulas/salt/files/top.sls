@@ -46,6 +46,19 @@ base:
     - graylog
   'keystone*':
     - keystone
+    - barbican
+    - magnum
+    - sahara
+    - glance
+    - nova
+    - placement
+    - neutron
+    - heat
+    - cinder
+    - manila
+    - designate
+    - swift
+    - zun
     - openstack
   'barbican*':
     - barbican
