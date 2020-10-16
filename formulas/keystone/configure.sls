@@ -74,7 +74,7 @@ user_role_init:
     - template: jinja
     - defaults:
         password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
+        auth_url: {{ constructor.endpoint_url_constructor('keystone', 'v3', 'public') }}
 
 /var/lib/keystone/keystone.db:
   file.absent
@@ -95,7 +95,7 @@ user_role_init:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-        public_endpoint: {{ base_endpoint_url_constructor('keystone', 'v3', 'public') }}
+        public_endpoint: {{ constructor.base_endpoint_url_constructor('keystone', 'v3', 'public') }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_domain:
@@ -114,7 +114,7 @@ keystone_domain:
         user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
         group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
-        public_endpoint: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
+        public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'v3', 'public') }}
 
 {% if grains['os_family'] == 'Debian' %}
 
