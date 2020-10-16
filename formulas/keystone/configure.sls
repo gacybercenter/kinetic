@@ -185,7 +185,7 @@ create_magnum_admin_user:
     - source: salt://formulas/keystone/files/keystone.conf
     - template: jinja
     - defaults:
-        sql_connection_string: {{ constructor.mysql_url_constructor('keystone') }}
+        sql_connection_string: {{ constructor.mysql_url_constructor('keystone', 'keystone') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
         public_endpoint: {{ constructor.base_endpoint_url_constructor('keystone', 'keystone', 'public') }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
