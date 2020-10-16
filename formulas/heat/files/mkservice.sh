@@ -23,6 +23,9 @@ openstack endpoint create --region RegionOne orchestration admin {{ heat_admin_e
 openstack endpoint create --region RegionOne cloudformation public {{ heat_public_endpoint_cfn }}
 openstack endpoint create --region RegionOne cloudformation internal {{ heat_internal_endpoint_cfn }}
 openstack endpoint create --region RegionOne cloudformation admin {{ heat_admin_endpoint_cfn }}
+
+
+## heat-specific changes
 openstack domain create --description "Stack projects and users" heat
 openstack user create --domain heat --password {{ heat_service_password }} heat_domain_admin
 openstack role add --domain heat --user-domain heat --user heat_domain_admin admin
