@@ -29,20 +29,11 @@ barbican-manage db upgrade:
     - source: salt://formulas/barbican/files/barbican.conf
     - template: jinja
     - defaults:
-        transport_url: {{ constructor.rmq_url_constructor() }}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
         sql_connection_string: 'sql_connection = mysql+pymysql://barbican:{{ pillar['barbican']['barbican_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/barbican'
         www_authenticate_uri: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
         auth_url: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'internal') }}
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['barbican']['barbican_service_password'] }}
         kek: kek = '{{ pillar['barbican']['simplecrypto_key'] }}'
 
