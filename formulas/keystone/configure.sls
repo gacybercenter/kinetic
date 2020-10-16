@@ -66,6 +66,8 @@ user_role_init:
     - type: {{ attribs['type'] }}
     - description: {{ attribs['description'] }}
 
+  {% endfor %}
+
 {% endfor %}
 
 {% else %}
