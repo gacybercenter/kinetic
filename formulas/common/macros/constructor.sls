@@ -45,6 +45,6 @@ rabbit://
 ### This macro creates sql cluster connection strings
 {% macro mysql_url_constructor(user, database) -%}
 
-connection = 'mysql+pymysql://{{ user }}:{{ pillar[user][user+'_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/{{ database }}'
+connection = mysql+pymysql://{{ user }}:{{ pillar[user][user+'_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/{{ database }}
 
 {%- endmacro -%}
