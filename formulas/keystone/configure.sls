@@ -50,12 +50,16 @@ user_role_init:
     - name: {{ project }}
     - domain: default
     - password: {{ pillar [project][project+'_service_password'] }}
+    - parallel: True
 
 {{ project }}_user_role_grant:
   keystone_role_grant.present:
     - name: admin
     - project: service
     - user: {{ project }}
+    - parallel: True
+    - require:
+      - keystone_user: {{ project }}_user_init
 
   {% for service, attribs in pillar['openstack_services'][project]['configuration']['services'].items() %}
 
