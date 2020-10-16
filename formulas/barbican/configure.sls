@@ -1,6 +1,9 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
 {% if grains['spawning'] == 0 %}
 
 barbican-manage db upgrade:
@@ -8,14 +11,16 @@ barbican-manage db upgrade:
     - runas: barbican
     - require:
       - file: /etc/barbican/barbican.conf
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
-  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
-    {{ spawnzero_complete() }}
+{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
-  {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
-    {{ check_spawnzero_status(grains['type']) }}
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
@@ -35,8 +40,8 @@ barbican-manage db upgrade:
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
         sql_connection_string: 'sql_connection = mysql+pymysql://barbican:{{ pillar['barbican']['barbican_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/barbican'
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
+        auth_url: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'internal') }}
         memcached_servers: |-
           {{ ""|indent(10) }}
           {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
