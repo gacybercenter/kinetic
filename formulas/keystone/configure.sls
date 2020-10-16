@@ -26,7 +26,6 @@ init_keystone:
         --bootstrap-region-id RegionOne
     - require:
       - file: /etc/keystone/keystone.conf
-      - file: keystone_domain
     - unless:
       - fun: grains.equals
         key: build_phase
@@ -105,6 +104,7 @@ keystone_domain:
         public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
     - require_in:
       - service: wsgi_service
+      - cmd: init_keystone
 
 {% endif %}
 
