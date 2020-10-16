@@ -1,6 +1,7 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
 {% if grains['os_family'] == 'Debian' %}
@@ -31,8 +32,7 @@ init_keystone:
         key: build_phase
         value: configure
 
-  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
-    {{ spawnzero_complete() }}
+{{ spawn.spawnzero_complete() }}
 
 service_project_init:
   keystone_project.present:
@@ -58,12 +58,15 @@ user_role_init:
     - project: service
     - user: {{ service }}
 
+{{ service }}_service_create:
+  keystone_service.present:
+    - name: {{ service }}
+
 {% endfor %}
 
 {% else %}
 
-  {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
-    {{ check_spawnzero_status(grains['type']) }}
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
