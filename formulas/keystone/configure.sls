@@ -24,7 +24,11 @@ init_keystone:
     - require:
       - file: /etc/keystone/keystone.conf
       - file: keystone_domain
-
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
+        
   {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
     {{ spawnzero_complete() }}
 
