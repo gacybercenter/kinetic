@@ -79,6 +79,32 @@ user_role_init:
   {% endfor %}
 {% endfor %}
 
+##LDAP-specific changes
+{% if salt['pillar.get']('keystone:ldap_enabled', False) == True %}
+create_ldap_domain:
+  keystone_domain.present:
+    - name: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
+    - description: "LDAP Domain"
+
+keystone_domain:
+  file.managed:
+    - name: /etc/keystone/domains/keystone.{{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}.conf
+    - source: salt://formulas/keystone/files/keystone-ldap.conf
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        ldap_url: 'url = ldap://{{ pillar ['common_ldap_configuration']['address'] }}'
+        ldap_user: 'user = {{ pillar ['common_ldap_configuration']['bind_user'] }}'
+        ldap_password: 'password = {{ pillar ['bind_password'] }}'
+        ldap_suffix: 'suffix = {{ pillar ['common_ldap_configuration']['base_dn'] }}'
+        user_tree_dn: 'user_tree_dn = {{ pillar ['common_ldap_configuration']['user_dn'] }}'
+        group_tree_dn: 'group_tree_dn = {{ pillar ['common_ldap_configuration']['group_dn'] }}'
+        user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
+        group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
+        sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
+        public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
+{% endif %}
+
 ## barbican-specific changes
 creator_role_init:
   keystone_role.present:
@@ -165,24 +191,6 @@ create_magnum_admin_user:
           {%- endfor %}
         public_endpoint: {{ constructor.base_endpoint_url_constructor('keystone', 'keystone', 'public') }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
-
-keystone_domain:
-  file.managed:
-    - name: /etc/keystone/domains/keystone.{{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}.conf
-    - source: salt://formulas/keystone/files/keystone-ldap.conf
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        ldap_url: 'url = ldap://{{ pillar ['common_ldap_configuration']['address'] }}'
-        ldap_user: 'user = {{ pillar ['common_ldap_configuration']['bind_user'] }}'
-        ldap_password: 'password = {{ pillar ['bind_password'] }}'
-        ldap_suffix: 'suffix = {{ pillar ['common_ldap_configuration']['base_dn'] }}'
-        user_tree_dn: 'user_tree_dn = {{ pillar ['common_ldap_configuration']['user_dn'] }}'
-        group_tree_dn: 'group_tree_dn = {{ pillar ['common_ldap_configuration']['group_dn'] }}'
-        user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
-        group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
-        sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
-        public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
 
 keystone_site_configuration:
   file.managed:
