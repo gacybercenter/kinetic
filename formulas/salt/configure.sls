@@ -251,7 +251,7 @@ api:
     - contents: |
         webssh2:
           session_name: {{ salt['random.get_str']('64') }}
-          session_secret: {{ salt['random.get_str']('64') }}          
+          session_secret: {{ salt['random.get_str']('64') }}
 
 /srv/dynamic_pillar/top.sls:
   file.managed:
@@ -268,7 +268,7 @@ api:
         export OS_USER_DOMAIN_NAME=Default
         export OS_PROJECT_NAME=admin
         export OS_PROJECT_DOMAIN_NAME=Default
-        export OS_AUTH_URL={{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        export OS_AUTH_URL={{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['path'] }}
         export OS_IDENTITY_API_VERSION=3
 
 /srv/dynamic_pillar/adminrc.ps1:
@@ -279,7 +279,7 @@ api:
         $env:OS_USER_DOMAIN_NAME = "Default"
         $env:OS_PROJECT_NAME = "admin"
         $env:OS_PROJECT_DOMAIN_NAME = "Default"
-        $env:OS_AUTH_URL = "{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}"
+        $env:OS_AUTH_URL = "{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['path'] }}"
         $env:OS_IDENTITY_API_VERSION = "3"
 
 /srv/dynamic_pillar/deps.sls:
