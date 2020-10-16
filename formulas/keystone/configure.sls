@@ -184,59 +184,49 @@ keystone_domain:
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
         public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
 
-{% if grains['os_family'] == 'Debian' %}
-
-/etc/apache2/sites-available/keystone.conf:
+keystone_site_configuration:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /etc/apache2/sites-available/keystone.conf
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/httpd/conf.d/keystone.conf
+{% endif %}
     - source: salt://formulas/keystone/files/apache-keystone.conf
     - template: jinja
     - defaults:
-        webserver: apache2
+        webserver: {{ webserver }}
 
 webserver_conf:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
     - name: /etc/apache2/apache2.conf
     - source: salt://formulas/keystone/files/apache2.conf
-    - template: jinja
-    - defaults:
-        ServerName: ServerName {{ grains['id'] }}
-
-/usr/local/share/ca-certificates/ldap_ca.crt:
-  file.managed:
-    - contents_pillar: ldap_ca
-
-update-ca-certificates:
-  cmd.run:
-    - onchanges:
-      - file: /usr/local/share/ca-certificates/ldap_ca.crt
-
 {% elif grains['os_family'] == 'RedHat' %}
-
-/etc/httpd/conf.d/keystone.conf:
-  file.managed:
-    - source: salt://formulas/keystone/files/apache-keystone.conf
-    - template: jinja
-    - defaults:
-        webserver: httpd
-
-webserver_conf:
-  file.managed:
     - name: /etc/httpd/conf/httpd.conf
     - source: salt://formulas/keystone/files/httpd.conf
+{% endif %}
     - template: jinja
     - defaults:
         ServerName: ServerName {{ grains['id'] }}
 
-/etc/pki/ca-trust/source/anchors/ldap_ca.crt:
+cert_bundle:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /usr/local/share/ca-certificates/ldap_ca.crt
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/pki/ca-trust/source/anchors/ldap_ca.crt
+{% endif %}
     - contents_pillar: ldap_ca
 
-update-ca-trust extract:
+update_certificate_store:
   cmd.run:
-    - onchanges:
-      - file: /etc/pki/ca-trust/source/anchors/ldap_ca.crt
-
+{% if grains['os_family'] == 'Debian' %}
+    - name: update-ca-certificates
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: update-ca-trust extract
 {% endif %}
+    - onchanges:
+      - file: cert_bundle
 
 /etc/keystone/ldap_ca.crt:
   file.managed:
