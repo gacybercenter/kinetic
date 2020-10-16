@@ -60,11 +60,6 @@ user_role_init:
 
 {% endfor %}
 
-{% for service in pillar['openstack_services'] %}
-echo {{ service }}:
-  cmd.run
-{% endfor %}
-
 {% else %}
 
   {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
