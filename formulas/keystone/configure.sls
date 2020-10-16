@@ -79,6 +79,56 @@ user_role_init:
   {% endfor %}
 {% endfor %}
 
+## barbican-specific changes
+creator_role_init:
+  keystone_role.present:
+    - name: creator
+
+creator_role_assignment:
+  keystone_role_grant.present:
+    - name: creator
+    - project: service
+    - user: barbican
+
+## heat-specific configurations
+create_heat_domain:
+  keystone_domain.present:
+    - name: heat
+    - description: "Heat stack projects and users"
+
+create_heat_admin_user:
+  keystone_user.present:
+    - name: heat_domain_admin
+    - domain: heat
+    - password: {{ pillar ['heat']['heat_service_password'] }}
+
+heat_domain_admin_role_assignment:
+  keystone_role_grant.present:
+    - name: admin
+    - domain: heat
+    - user_domain: heat
+    - user: heat_domain_admin
+
+heat_stack_owner_role_init:
+  keystone_role.present:
+    - name: heat_stack_owner
+
+heat_stack_user_role_init:
+  keystone_role.present:
+    - name: heat_stack_user
+
+## magnum-specific configurations
+create_magnum_domain:
+  keystone_domain.present:
+    - name: magnum
+    - description: "Owns users and projects created by magnum"
+
+create_magnum_admin_user:
+  keystone_user.present:
+    - name: magnum_domain_admin
+    - domain: magnum
+    - password: {{ pillar ['magnum']['magnum_service_password'] }}
+
 {% else %}
 
 {{ spawn.check_spawnzero_status(grains['type']) }}
