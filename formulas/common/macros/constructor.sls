@@ -1,3 +1,6 @@
+
+
+### This macro is used to create openstack endpoint URLs
 {% macro endpoint_url_constructor(project, service, endpoint) -%}
 
 {%- set service_configuration = pillar['openstack_services'][project]['configuration']['services'][service]['endpoints'][endpoint] -%}
@@ -5,6 +8,8 @@
 
 {%- endmacro -%}
 
+### This macro is used to created openstack base endpoint URLs.
+### Basically the same as endpoint_url_constructor, except it has no path suffix
 {% macro base_endpoint_url_constructor(project, service, endpoint) -%}
 
 {%- set service_configuration = pillar['openstack_services'][project]['configuration']['services'][service]['endpoints'][endpoint] -%}
@@ -12,6 +17,7 @@
 
 {%- endmacro -%}
 
+### This macro creates rmq url strings
 {% macro rmq_url_constructor() -%}
 
 rabbit://
