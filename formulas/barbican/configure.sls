@@ -29,16 +29,7 @@ barbican-manage db upgrade:
     - source: salt://formulas/barbican/files/barbican.conf
     - template: jinja
     - defaults:
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rmq_url_constructor }}
         sql_connection_string: 'sql_connection = mysql+pymysql://barbican:{{ pillar['barbican']['barbican_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/barbican'
         www_authenticate_uri: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
         auth_url: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'internal') }}
