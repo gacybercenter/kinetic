@@ -98,7 +98,7 @@ echo {{ service }}:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['endpoints']['api_version']['v3']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}
+        public_endpoint: {{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public'] }}{{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_domain:
