@@ -8,7 +8,7 @@ include:
 {% endif %}
 
 {% if grains['spawning'] == 0 %}
-  {% set service_conf = pillar['openstack_services']['keystone']['configuration']['endpoints'] %}
+  {% set keystone_conf = pillar['openstack_services']['keystone']['configuration']['api_version']['v3'] %}
 
 init_keystone:
   cmd.run:
@@ -17,7 +17,7 @@ init_keystone:
         keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
         keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
         keystone-manage bootstrap --bootstrap-password {{ pillar['openstack']['admin_password'] }} \
-  {%- for endpoint, attribs in service_conf.items() %}
+  {%- for endpoint, attribs in keystone_conf.items() %}
         --bootstrap-{{ endpoint }}-url {{ attribs['protocol'] }}{{ pillar['endpoints'][endpoint] }}{{ attribs['port'] }}{{ attribs['path'] }} \
   {%- endfor %}
         --bootstrap-region-id RegionOne
