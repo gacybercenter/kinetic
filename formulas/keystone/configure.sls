@@ -77,7 +77,7 @@ echo {{ service }}:
     - template: jinja
     - defaults:
         password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['endpoints']['api_version']['v3']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['api_version']['v3']['endpoints']['api_version']['v3']['public']['path'] }}
+        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['path'] }}
 
 /var/lib/keystone/keystone.db:
   file.absent
