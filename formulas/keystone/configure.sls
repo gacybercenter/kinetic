@@ -77,7 +77,7 @@ echo {{ service }}:
     - template: jinja
     - defaults:
         password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['public']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['public']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['public']['path'] }}
+        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['endpoints']['api_version']['v3']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['api_version']['v3']['endpoints']['api_version']['v3']['public']['path'] }}
 
 /var/lib/keystone/keystone.db:
   file.absent
@@ -98,7 +98,7 @@ echo {{ service }}:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['public']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['public']['port'] }}
+        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['endpoints']['api_version']['v3']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_domain:
@@ -117,7 +117,7 @@ keystone_domain:
         user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
         group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
-        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['public']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['public']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['public']['path'] }}
+        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['endpoints']['api_version']['v3']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['path'] }}
 
 {% if grains['os_family'] == 'Debian' %}
 
