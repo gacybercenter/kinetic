@@ -1,7 +1,7 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
-{% import 'formulas/common/macros/constructor.sls' with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
 {% if grains['os_family'] == 'Debian' %}
   {% set webserver = 'apache2' %}
