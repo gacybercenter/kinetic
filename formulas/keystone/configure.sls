@@ -68,6 +68,7 @@ user_role_init:
     - name: {{ service }}
     - type: {{ attribs['type'] }}
     - description: {{ attribs['description'] }}
+    - parallel: True
 
     {% for endpoint, params in attribs['endpoints'].items() %}
 
@@ -77,6 +78,9 @@ user_role_init:
     - url: {{ constructor.endpoint_url_constructor(project, service, endpoint) }}
     - region: RegionOne
     - service_name: {{ service }}
+    - parallel: True
+    - require:
+      - keystone_service: {{ service }}_service_create
 
     {% endfor %}
   {% endfor %}
