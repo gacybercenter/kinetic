@@ -79,7 +79,8 @@ echo {{ service }}:
     - template: jinja
     - defaults:
         password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
+        auth_url: >
+            {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
 
 /var/lib/keystone/keystone.db:
   file.absent
@@ -100,7 +101,8 @@ echo {{ service }}:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-        public_endpoint: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
+        public_endpoint: >
+            {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_domain:
