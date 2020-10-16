@@ -58,7 +58,7 @@ user_role_init:
     - project: service
     - user: {{ project }}
 
-  {% for service, attribs in pillar['openstack_services'][project]['services'].items() %}
+  {% for service, attribs in pillar['openstack_services'][project]['configuration']['services'].items() %}
 
 {{ service }}_service_create:
   keystone_service.present:
