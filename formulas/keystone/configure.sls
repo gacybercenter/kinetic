@@ -100,7 +100,7 @@ echo {{ service }}:
             {%- endfor -%}
             {% if loop.index < loop.length %},{% endif %}
           {%- endfor %}
-        public_endpoint: foo
+        public_endpoint: {{ base_endpoint_url_constructor('keystone', 'v3', 'public') }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_domain:
@@ -119,7 +119,7 @@ keystone_domain:
         user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
         group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
-        public_endpoint: foo
+        public_endpoint: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
 
 {% if grains['os_family'] == 'Debian' %}
 
