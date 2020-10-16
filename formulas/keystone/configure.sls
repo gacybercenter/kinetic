@@ -119,7 +119,8 @@ keystone_domain:
         user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
         group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
-        public_endpoint: {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
+        public_endpoint: >
+            {{ endpoint_url_constructor('keystone', 'v3', 'public') }}
 
 {% if grains['os_family'] == 'Debian' %}
 
