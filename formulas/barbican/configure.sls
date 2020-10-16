@@ -29,7 +29,7 @@ barbican-manage db upgrade:
     - source: salt://formulas/barbican/files/barbican.conf
     - template: jinja
     - defaults:
-        transport_url: {{ constructor.rmq_url_constructor }}
+        transport_url: {{ constructor.rmq_url_constructor() }}
         sql_connection_string: 'sql_connection = mysql+pymysql://barbican:{{ pillar['barbican']['barbican_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/barbican'
         www_authenticate_uri: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
         auth_url: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'internal') }}
