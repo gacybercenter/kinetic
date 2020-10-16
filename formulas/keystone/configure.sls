@@ -1,7 +1,7 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
-{% from 'formulas/common/macros/constructor.sls' import endpoint_url_constructor with context %}
+{% import 'formulas/common/macros/constructor.sls' with context %}
 
 {% if grains['os_family'] == 'Debian' %}
   {% set webserver = 'apache2' %}
