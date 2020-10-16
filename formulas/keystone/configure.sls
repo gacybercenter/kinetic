@@ -103,6 +103,9 @@ keystone_domain:
         group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
         sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
         public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
+    - require_in:
+      - service: wsgi_service
+
 {% endif %}
 
 ## barbican-specific changes
@@ -263,5 +266,4 @@ wsgi_service:
     - init_delay: 10
     - watch:
       - file: /etc/keystone/keystone.conf
-      - file: keystone_domain
       - file: webserver_conf
