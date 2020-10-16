@@ -1,3 +1,4 @@
 {% macro endpoint_url_constructor(service, api_version, endpoint) -%}
-{{ pillar['openstack_services'][service]['configuration']['endpoints']['api_version'][api_version][endpoint]['protocol'] }}{{ pillar['endpoints'][endpoint] }}{{ pillar['openstack_services'][service]['configuration']['endpoints']['api_version'][api_version][endpoint]['port'] }}{{ pillar['openstack_services'][service]['configuration']['endpoints']['api_version'][api_version][endpoint]['path'] }}
+{% set service_configuration = pillar['openstack_services'][service]['configuration']['endpoints'][api_version][endpoint] %}
+{{ service_configuration['protocol'] }}{{ service_configuration['port'] }}{{ service_configuration['path'] }}
 {%- endmacro -%}
