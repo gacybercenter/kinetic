@@ -66,7 +66,7 @@ user_role_init:
     - type: {{ attribs['type'] }}
     - description: {{ attribs['description'] }}
 
-  {% for endpoint, params in attribs['endpoints'].items() %}
+    {% for endpoint, params in attribs['endpoints'].items() %}
 
 {{ service }}_{{ endpoint }}_endpoint_create:
   keystone_endpoint.present:
@@ -75,8 +75,8 @@ user_role_init:
     - region: RegionOne
     - service_name: {{ service }}
 
+    {% endfor %}
   {% endfor %}
-
 {% endfor %}
 
 {% else %}
