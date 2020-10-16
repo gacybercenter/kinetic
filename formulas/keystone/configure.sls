@@ -1,6 +1,8 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% from 'formulas/common/macros/constructor.sls' import endpoint_url_constructor with context %}
+
 {% if grains['os_family'] == 'Debian' %}
   {% set webserver = 'apache2' %}
 {% elif grains['os_family'] == 'RedHat' %}
@@ -77,7 +79,7 @@ echo {{ service }}:
     - template: jinja
     - defaults:
         password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: {{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['protocol'] }}{{ pillar['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['public']['path'] }}
+        auth_url: {{ endpoint_url_constructor(keystone, v3, public) }}
 
 /var/lib/keystone/keystone.db:
   file.absent
