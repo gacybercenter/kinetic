@@ -28,7 +28,7 @@ init_keystone:
       - fun: grains.equals
         key: build_phase
         value: configure
-        
+
   {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
     {{ spawnzero_complete() }}
 
@@ -42,7 +42,6 @@ user_role_init:
   keystone_role.present:
     - name: user
 
-
 keystone_user_init:
   keystone_user.present:
     - name: keystone
@@ -54,6 +53,11 @@ keystone_role_grant:
     - name: admin
     - project: service
     - user: keystone
+
+{% for service in pillar['openstack_services'] %}
+echo {{ service }}:
+  cmd.run
+{% endfor %}
 
 {% else %}
 
