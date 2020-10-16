@@ -66,6 +66,15 @@ user_role_init:
     - type: {{ attribs['type'] }}
     - description: {{ attribs['description'] }}
 
+  {% for endpoint, params in attribs['endpoints'].items() %}
+
+{{ service }}_{{ endpoint }}_endpoint_create:
+  keystone_endpoint.present:
+    - name: {{ endpoint }}
+    - url: {{ constructor.endpoint_url_constructor(project, service, endpoint) }}
+    - region: RegionOne
+    - service_name: {{ service }}
+
   {% endfor %}
 
 {% endfor %}
