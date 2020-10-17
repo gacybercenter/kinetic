@@ -211,21 +211,19 @@ enable_bridge:
       - cmd: map_bridge
     - unless:
       - ovs-vsctl port-to-br {{ public_interface }} | grep -q "br-provider"
-{% endfor %}
 
 ovn_controller_service:
   service.running:
-{% if grains['os_family'] == 'RedHat' %}
+  {% if grains['os_family'] == 'RedHat' %}
     - name: ovn-controller
-{% elif grains['os_family'] == 'Debian' %}
+  {% elif grains['os_family'] == 'Debian' %}
     - name: ovn-host
-{% endif %}
+  {% endif %}
     - enable: true
     - require:
       - service: openvswitch_service
       - cmd: set_encap
       - cmd: set_encap_ip
-
 {% endif %}
 
 /etc/sudoers.d/zun_sudoers:
