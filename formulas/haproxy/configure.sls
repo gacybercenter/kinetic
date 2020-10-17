@@ -129,9 +129,8 @@ create_master_pem:
         docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
         guacamole_domain:  {{ pillar['haproxy']['guacamole_domain'] }}
         webssh2_domain:  {{ pillar['haproxy']['webssh2_domain'] }}
-        keystone_hosts: |-
-            {{ constructor.haproxy_listener_constructor(role='keystone', port='5000') }}
-        glance_api_hosts: |-
+        keystone_hosts: {{ constructor.haproxy_listener_constructor(role='keystone', port='5000') }}
+{#        glance_api_hosts: |-
             {{ constructor.haproxy_listener_constructor(role='glance', port=pillar['openstack_services']['glance']['configuration']['services']['glance']['endpoints']['public']['port']) }}
         nova_compute_api_hosts: |-
             {{ constructor.haproxy_listener_constructor(role='nova', port=pillar['openstack_services']['nova']['configuration']['services']['nova']['endpoints']['public']['port']) }}
@@ -188,7 +187,7 @@ create_master_pem:
             {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080') }}
         webssh2_hosts: |+
             {{ constructor.haproxy_listener_constructor(role='webssh2', port='2222') }}
-
+#}
 haproxy_service_watch:
   service.running:
     - name: haproxy
