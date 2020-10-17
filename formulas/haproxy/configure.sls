@@ -131,11 +131,11 @@ create_master_pem:
         keystone_hosts: {{ haproxy_listener_constructor(role='keystone', port=pillar['openstack_services']['keystone']['configuration']['services']['keystone']['port']) }}
         glance_api_hosts: {{ haproxy_listener_constructor(role='glance', port=pillar['openstack_services']['glance']['configuration']['services']['glance']['port']) }}
         nova_compute_api_hosts: {{ haproxy_listener_constructor(role='nova', port=pillar['openstack_services']['nova']['configuration']['services']['nova']['port']) }}
-        nova_metadata_api_hosts: {{ haproxy_listener_constructor(role='nova', port='8775' }}
+        nova_metadata_api_hosts: {{ haproxy_listener_constructor(role='nova', port='8775') }}
         placement_api_hosts: {{ haproxy_listener_constructor(role='placement', port=pillar['openstack_services']['placement']['configuration']['services']['placement']['port']) }}
-        nova_spiceproxy_hosts: {{ haproxy_listener_constructor(role='nova', port='6082' }}
-        dashboard_hosts: {{ haproxy_listener_constructor(role='horizon', port='80' }}
-        docs_hosts: {{ haproxy_listener_constructor(role='antora', port='80' }}
+        nova_spiceproxy_hosts: {{ haproxy_listener_constructor(role='nova', port='6082') }}
+        dashboard_hosts: {{ haproxy_listener_constructor(role='horizon', port='80') }}
+        docs_hosts: {{ haproxy_listener_constructor(role='antora', port='80') }}
         neutron_api_hosts: {{ haproxy_listener_constructor(role='neutron', port=pillar['openstack_services']['placement']['configuration']['services']['placement']['port']) }}
         heat_api_hosts: |
           {%- for host, addresses in salt['mine.get']('type:heat', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
