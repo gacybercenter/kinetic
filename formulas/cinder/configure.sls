@@ -30,7 +30,7 @@ cinder-manage db sync:
     - template: jinja
     - defaults:
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        sql_connection_string: {{ constructor.mysql_url_constructor('barbican', 'barbican') }}
+        sql_connection_string: {{ constructor.mysql_url_constructor('cinder', 'cinder') }}
         www_authenticate_uri: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
         auth_url: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
