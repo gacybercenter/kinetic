@@ -276,12 +276,12 @@ ovsdb_listen:
     - unless:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
-  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
+  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:public:bridge', False) == True %}
     {% set public_interface = 'public_br' %}
-  {% elif salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+  {% elif salt['pillar.get']('hosts:'+grains['type']+':networks:public:interfaces') | length > 1 %}
     {% set public_interface = 'public_bond' %}
   {% else %}
-    {% set public_interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
+    {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
   {% endif %}
 
 enable_bridge:
