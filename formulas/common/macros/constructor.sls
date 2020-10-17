@@ -94,7 +94,7 @@ etcd://
 {%- for number in [1,2,3] %}
 server {{ number }} {{ number }}{{ port }} check inter 2000 rise 2 fall 5\n
 F
-{%- endfor -%}
+{% endfor -%}
 
 {%- endmacro -%}
 
