@@ -276,9 +276,17 @@ ovsdb_listen:
     - unless:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
+  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
+    {% set public_interface = 'public_br' %}
+  {% elif salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+    {% set public_interface = 'public_bond' %}
+  {% else %}
+    {% set public_interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
+  {% endif %}
+
 enable_bridge:
   cmd.run:
-    - name: ovs-vsctl --may-exist add-port br-provider {{ pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] }}
+    - name: ovs-vsctl --may-exist add-port br-provider {{ public_interface }}
     - require:
       - service: openvswitch_service
       - cmd: set_encap
@@ -286,7 +294,7 @@ enable_bridge:
       - cmd: make_bridge
       - cmd: map_bridge
     - unless:
-      - ovs-vsctl port-to-br {{ pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] }} | grep -q "br-provider"
+      - ovs-vsctl port-to-br {{ public_interface }} | grep -q "br-provider"
 
 ovn_controller_service:
   service.running:
