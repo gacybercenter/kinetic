@@ -204,28 +204,11 @@ openvswitch_service:
 
 set-ovn-remote:
   cmd.run:
-    - name: |-
-        ovs-vsctl set open . external-ids:ovn-remote=
-        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        tcp:{{ address }}:6642
-            {%- endif -%}
-          {%- endfor -%}
-          {% if loop.index < loop.length %},{% endif %}
-        {%- endfor %}
+    - name: ovs-vsctl set open . external-ids:ovn-remote={{ constructor.ovn_sb_connection_constructor() }}
     - require:
       - service: openvswitch_service
     - unless:
-      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "
-        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        tcp:{{ address }}:6642
-            {%- endif -%}
-          {%- endfor -%}
-          {% if loop.index < loop.length %},{% endif %}
-        {%- endfor %}"
+      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "{{ constructor.ovn_sb_connection_constructor() }}"
 
 set_encap:
   cmd.run:
