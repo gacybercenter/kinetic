@@ -76,7 +76,6 @@ etcd://
 
 {%- endmacro -%}
 
-
 ## This macro returns an IP for a spawnzero for a given type on a given network
 {%- macro spawnzero_ip_constructor(type, network) -%}
 
@@ -89,6 +88,6 @@ etcd://
 {%- endmacro -%}
 
 ## This macro returns an haproxy listenter entry
-{% macro haproxy_listener_constructor(role, port) %}
+{%- macro haproxy_listener_constructor(role, port) -%}
 foo
-{% endmacro %}
+{%- endmacro -%}
