@@ -35,7 +35,7 @@ barbican-manage db upgrade:
         auth_url: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['barbican']['barbican_service_password'] }}
-        kek: kek = '{{ pillar['barbican']['simplecrypto_key'] }}'
+        kek: {{ pillar['barbican']['simplecrypto_key'] }}
 
 {% if grains['os_family'] == 'RedHat' %}
 /etc/httpd/conf.d/wsgi-barbican.conf:
