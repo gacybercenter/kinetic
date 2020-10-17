@@ -75,7 +75,7 @@ etcd://
   {% if loop.index < loop.length %},{% endif %}
 {%- endfor %}
 
-{%- endmacro -%}
+{%- endmacro %}
 
 ## this macro resturns the IP for spawnzero of a given type on a give network
 {% macro spawnzero_ip_constructor(type, network) -%}
