@@ -1,15 +1,15 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+
 {% if grains['spawning'] == 0 %}
 
-  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
-    {{ spawnzero_complete() }}
+{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
-  {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
-    {{ check_spawnzero_status(grains['type']) }}
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
@@ -128,14 +128,7 @@ create_master_pem:
         docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
         guacamole_domain:  {{ pillar['haproxy']['guacamole_domain'] }}
         webssh2_domain:  {{ pillar['haproxy']['webssh2_domain'] }}
-        keystone_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:keystone', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}{{ pillar['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
+        keystone_hosts: {{ haproxy_listener_constructor(role='keystone', port=pillar['openstack_services']['keystone']['configuration']['services']['keystone']['port']) }}
         glance_api_hosts: |
           {%- for host, addresses in salt['mine.get']('type:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
             {%- for address in addresses -%}
