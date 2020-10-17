@@ -129,43 +129,7 @@ create_master_pem:
         docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
         guacamole_domain:  {{ pillar['haproxy']['guacamole_domain'] }}
         webssh2_domain:  {{ pillar['haproxy']['webssh2_domain'] }}
-        # keystone_hosts: {{ constructor.haproxy_listener_constructor(role='keystone', port=pillar['openstack_services']['keystone']['configuration']['services']['keystone']['endpoints']['public']['port']) }}
-        # glance_api_hosts: {{ constructor.haproxy_listener_constructor(role='glance', port=pillar['openstack_services']['glance']['configuration']['services']['glance']['endpoints']['public']['port']) }}
-        # nova_compute_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port=pillar['openstack_services']['nova']['configuration']['services']['nova']['endpoints']['public']['port']) }}
-        # nova_metadata_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='8775') }}
-        # placement_api_hosts: {{ constructor.haproxy_listener_constructor(role='placement', port=pillar['openstack_services']['placement']['configuration']['services']['placement']['endpoints']['public']['port']) }}
-        # nova_spiceproxy_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='6082') }}
-        # dashboard_hosts: {{ constructor.haproxy_listener_constructor(role='horizon', port='80') }}
-        # docs_hosts: {{ constructor.haproxy_listener_constructor(role='antora', port='80') }}
-        # neutron_api_hosts: {{ constructor.haproxy_listener_constructor(role='neutron', port=pillar['openstack_services']['neutron']['configuration']['services']['neutron']['endpoints']['public']['port']) }}
-        # heat_api_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port=pillar['openstack_services']['heat']['configuration']['services']['heat']['endpoints']['public']['port']) }}
-        # heat_api_cfn_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port=pillar['openstack_services']['heat']['configuration']['services']['heat-cfn']['endpoints']['public']['port']) }}
-        # cinder_api_hosts: {{ constructor.haproxy_listener_constructor(role='cinder', port=pillar['openstack_services']['cinder']['configuration']['services']['cinderv3']['endpoints']['public']['port']) }}
-        # designate_api_hosts: {{ constructor.haproxy_listener_constructor(role='designate', port=pillar['openstack_services']['designate']['configuration']['services']['designate']['endpoints']['public']['port']) }}
-        # swift_hosts: {{ constructor.haproxy_listener_constructor(role='swift', port=pillar['openstack_services']['swift']['configuration']['services']['swift']['endpoints']['public']['port']) }}
-        # zun_api_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port=pillar['openstack_services']['zun']['configuration']['services']['zun']['endpoints']['public']['port']) }}
-        # zun_wsproxy_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port='6784') }}
-        # barbican_hosts: {{ constructor.haproxy_listener_constructor(role='barbican', port=pillar['openstack_services']['barbican']['configuration']['services']['barbican']['endpoints']['public']['port']) }}
-        # magnum_hosts: {{ constructor.haproxy_listener_constructor(role='magnum', port=pillar['openstack_services']['magnum']['configuration']['services']['magnum']['endpoints']['public']['port']) }}
-        # sahara_hosts: {{ constructor.haproxy_listener_constructor(role='sahara', port=pillar['openstack_services']['sahara']['configuration']['services']['sahara']['endpoints']['public']['port']) }}
-        # manila_hosts: {{ constructor.haproxy_listener_constructor(role='manila', port=pillar['openstack_services']['manila']['configuration']['services']['manilav2']['endpoints']['public']['port']) }}
-        # mysql_hosts: |-
-        #   {%- for host, addresses in salt['mine.get']('G@type:mysql and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
-        #     {%- for address in addresses -%}
-        #       {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-        #   server {{ host }} {{ address }}:3306 check inter 2000 rise 2 fall 5
-        #       {%- endif -%}
-        #     {%- endfor -%}
-        #   {%- endfor %}
-        #   {%- for host, addresses in salt['mine.get']('G@type:mysql and not G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
-        #     {%- for address in addresses -%}
-        #       {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-        #   server {{ host }} {{ address }}:3306 check inter 2000 rise 2 fall 5 backup
-        #       {%- endif -%}
-        #     {%- endfor -%}
-        #   {%- endfor %}
-        # guacamole_hosts: {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080') }}
-        # webssh2_hosts: {{ constructor.haproxy_listener_constructor(role='webssh2', port='2222') }}
+
 
 haproxy_service_watch:
   service.running:
