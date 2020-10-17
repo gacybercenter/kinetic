@@ -66,7 +66,7 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
         memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['designate']['designate_service_password'] }}
         listen_api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:9001
-        designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
+        designate_public_endpoint: {{ constructor.endpoint_url_constructor(project='designate', service='designate', endpoint='public') }}
         coordination_server: {{ constructor.memcached_url_constructor() }}
 
 ## Trying to write yaml in yaml via salt with correct indentation is basically impossible when using
