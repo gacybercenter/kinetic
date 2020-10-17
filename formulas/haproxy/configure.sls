@@ -137,95 +137,18 @@ create_master_pem:
         nova_spiceproxy_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='6082') }}
         dashboard_hosts: {{ constructor.haproxy_listener_constructor(role='horizon', port='80') }}
         docs_hosts: {{ constructor.haproxy_listener_constructor(role='antora', port='80') }}
-        neutron_api_hosts: {{ constructor.haproxy_listener_constructor(role='neutron', port=pillar['openstack_services']['placement']['configuration']['services']['placement']['endpoints']['public']['port']) }}
-        heat_api_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:heat', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}{{ pillar['openstack_services']['heat']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        heat_api_cfn_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:heat', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}{{ pillar['openstack_services']['heat']['configuration']['public_endpoint_cfn']['port'] }} check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        cinder_api_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:cinder', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}{{ pillar['openstack_services']['cinder']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        designate_api_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:designate', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}{{ pillar['openstack_services']['designate']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        swift_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:swift', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}{{ pillar['openstack_services']['swift']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        zun_api_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}{{ pillar['openstack_services']['zun']['configuration']['public_endpoint']['port'] }} check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        zun_wsproxy_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:zun', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}:6784 check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        barbican_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:barbican', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}:9311 check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        magnum_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:magnum', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}:9511 check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        sahara_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:sahara', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}:8386 check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        manila_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:manila', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}:8786 check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
+        neutron_api_hosts: {{ constructor.haproxy_listener_constructor(role='neutron', port=pillar['openstack_services']['neutron']['configuration']['services']['neutron']['endpoints']['public']['port']) }}
+        heat_api_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port=pillar['openstack_services']['heat']['configuration']['services']['heat']['endpoints']['public']['port']) }}
+        heat_api_cfn_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port=pillar['openstack_services']['heat']['configuration']['services']['heat-cfn']['endpoints']['public']['port']) }}
+        cinder_api_hosts: {{ constructor.haproxy_listener_constructor(role='cinder', port=pillar['openstack_services']['cinder']['configuration']['services']['cinderv3']['endpoints']['public']['port']) }}
+        designate_api_hosts: {{ constructor.haproxy_listener_constructor(role='designate', port=pillar['openstack_services']['designate']['configuration']['services']['designate']['endpoints']['public']['port']) }}
+        swift_hosts: {{ constructor.haproxy_listener_constructor(role='swift', port=pillar['openstack_services']['swift']['configuration']['services']['swift']['endpoints']['public']['port']) }}
+        zun_api_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port=pillar['openstack_services']['zun']['configuration']['services']['zun']['endpoints']['public']['port']) }}
+        zun_wsproxy_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port='6784' }}
+        barbican_hosts: {{ constructor.haproxy_listener_constructor(role='barbican', port=pillar['openstack_services']['barbican']['configuration']['services']['barbican']['endpoints']['public']['port']) }}
+        magnum_hosts: {{ constructor.haproxy_listener_constructor(role='magnum', port=pillar['openstack_services']['magnum']['configuration']['services']['magnum']['endpoints']['public']['port']) }}
+        sahara_hosts: {{ constructor.haproxy_listener_constructor(role='sahara', port=pillar['openstack_services']['sahara']['configuration']['services']['sahara']['endpoints']['public']['port']) }}
+        manila_hosts: {{ constructor.haproxy_listener_constructor(role='manila', port=pillar['openstack_services']['manila']['configuration']['services']['manilav2']['endpoints']['public']['port']) }}
         mysql_hosts: |-
           {%- for host, addresses in salt['mine.get']('G@type:mysql and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
             {%- for address in addresses -%}
@@ -241,22 +164,8 @@ create_master_pem:
               {%- endif -%}
             {%- endfor -%}
           {%- endfor %}
-        guacamole_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:guacamole', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}:8080 check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
-        webssh2_hosts: |
-          {%- for host, addresses in salt['mine.get']('type:webssh2', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-          server {{ host }} {{ address }}:2222 check inter 2000 rise 2 fall 5
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor %}
+        guacamole_hosts: {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080' }}
+        webssh2_hosts: {{ constructor.haproxy_listener_constructor(role='webssh2', port='2222' }}
 
 haproxy_service_watch:
   service.running:
