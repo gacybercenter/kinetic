@@ -21,10 +21,6 @@ include:
         www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
-        auth_strategy: auth_strategy = keystone
-        auth_type: auth_type = password
-        auth_version: auth_version = v3
-        auth_protocol: auth_protocol = http
         password: {{ pillar['zun']['zun_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
