@@ -82,7 +82,7 @@ load_ceph_volumes_key:
         memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['nova']['nova_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-        api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
+        api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='internal') }}
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
