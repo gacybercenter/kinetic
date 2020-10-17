@@ -60,7 +60,7 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
     - template: jinja
     - defaults:
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        sql_connection_string: {{ constructor.mysql_url_constructor(user='cinder', database='cinder') }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='designate', database='designate') }}
         www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
