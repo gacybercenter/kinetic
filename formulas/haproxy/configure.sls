@@ -167,7 +167,7 @@ create_master_pem:
             {{ constructor.haproxy_listener_constructor(role='magnum', port=pillar['openstack_services']['magnum']['configuration']['services']['magnum']['endpoints']['public']['port']) }}
         sahara_hosts: |
             {{ constructor.haproxy_listener_constructor(role='sahara', port=pillar['openstack_services']['sahara']['configuration']['services']['sahara']['endpoints']['public']['port']) }}
-        manila_hosts: |
+        manila_hosts: |+
             {{ constructor.haproxy_listener_constructor(role='manila', port=pillar['openstack_services']['manila']['configuration']['services']['manilav2']['endpoints']['public']['port']) }}
         mysql_hosts: |-
           {%- for host, addresses in salt['mine.get']('G@type:mysql and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
