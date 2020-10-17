@@ -144,7 +144,7 @@ create_master_pem:
         designate_api_hosts: {{ constructor.haproxy_listener_constructor(role='designate', port=pillar['openstack_services']['designate']['configuration']['services']['designate']['endpoints']['public']['port']) }}
         swift_hosts: {{ constructor.haproxy_listener_constructor(role='swift', port=pillar['openstack_services']['swift']['configuration']['services']['swift']['endpoints']['public']['port']) }}
         zun_api_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port=pillar['openstack_services']['zun']['configuration']['services']['zun']['endpoints']['public']['port']) }}
-        zun_wsproxy_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port='6784' }}
+        zun_wsproxy_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port='6784') }}
         barbican_hosts: {{ constructor.haproxy_listener_constructor(role='barbican', port=pillar['openstack_services']['barbican']['configuration']['services']['barbican']['endpoints']['public']['port']) }}
         magnum_hosts: {{ constructor.haproxy_listener_constructor(role='magnum', port=pillar['openstack_services']['magnum']['configuration']['services']['magnum']['endpoints']['public']['port']) }}
         sahara_hosts: {{ constructor.haproxy_listener_constructor(role='sahara', port=pillar['openstack_services']['sahara']['configuration']['services']['sahara']['endpoints']['public']['port']) }}
@@ -164,8 +164,8 @@ create_master_pem:
               {%- endif -%}
             {%- endfor -%}
           {%- endfor %}
-        guacamole_hosts: {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080' }}
-        webssh2_hosts: {{ constructor.haproxy_listener_constructor(role='webssh2', port='2222' }}
+        guacamole_hosts: {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080') }}
+        webssh2_hosts: {{ constructor.haproxy_listener_constructor(role='webssh2', port='2222') }}
 
 haproxy_service_watch:
   service.running:
