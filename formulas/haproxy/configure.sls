@@ -129,8 +129,8 @@ create_master_pem:
         docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
         guacamole_domain:  {{ pillar['haproxy']['guacamole_domain'] }}
         webssh2_domain:  {{ pillar['haproxy']['webssh2_domain'] }}
-{#      keystone_hosts: {{ constructor.haproxy_listener_constructor(role='keystone', port=pillar['openstack_services']['keystone']['configuration']['services']['keystone']['endpoints']['public']['port']) }}
-        glance_api_hosts: {{ constructor.haproxy_listener_constructor(role='glance', port=pillar['openstack_services']['glance']['configuration']['services']['glance']['endpoints']['public']['port']) }}
+        keystone_hosts: {{ constructor.haproxy_listener_constructor(role='keystone', port=pillar['openstack_services']['keystone']['configuration']['services']['keystone']['endpoints']['public']['port']) }}
+{#         glance_api_hosts: {{ constructor.haproxy_listener_constructor(role='glance', port=pillar['openstack_services']['glance']['configuration']['services']['glance']['endpoints']['public']['port']) }}
         nova_compute_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port=pillar['openstack_services']['nova']['configuration']['services']['nova']['endpoints']['public']['port']) }}
         nova_metadata_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='8775') }}
         placement_api_hosts: {{ constructor.haproxy_listener_constructor(role='placement', port=pillar['openstack_services']['placement']['configuration']['services']['placement']['endpoints']['public']['port']) }}
