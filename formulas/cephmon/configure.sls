@@ -14,7 +14,7 @@ include:
 
 {% endif %}
 
-/tmp/ceph.mon.keyring:
+/etc/ceph/ceph.mon.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-mon-keyring
     - mode: 600
@@ -39,23 +39,23 @@ include:
       - user
       - group
 
-monmaptool --create --clobber --fsid {{ pillar['ceph']['fsid'] }} /tmp/monmap:
+monmaptool --create --clobber --fsid {{ pillar['ceph']['fsid'] }} /etc/ceph/monmap:
   cmd.run:
     - creates:
-      - /tmp/monmap
+      - /etc/ceph/monmap
 
 {% for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
   {%- for address in addresses -%}
     {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['sfe']) %}
-monmaptool --addv {{ host }} [v1:{{ address }}:6789,v2:{{ address }}:3300] /tmp/monmap:
+monmaptool --addv {{ host }} [v1:{{ address }}:6789,v2:{{ address }}:3300] /etc/ceph/monmap:
   cmd.run:
     - unless:
-      - monmaptool --print /tmp/monmap | grep -q {{ host }}
+      - monmaptool --print /ceph/ceph/monmap | grep -q {{ host }}
     {%- endif -%}
   {%- endfor -%}
 {% endfor %}
 
-ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring && touch /var/lib/ceph/mon/ceph-{{ grains['id'] }}/done:
+ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /etc/ceph/monmap --keyring /etc/ceph/ceph.mon.keyring && touch /var/lib/ceph/mon/ceph-{{ grains['id'] }}/done:
   cmd.run:
     - runas: ceph
     - requires:
