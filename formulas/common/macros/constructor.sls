@@ -62,3 +62,15 @@ tcp:{{ address }}:6642
 {%- endfor %}
 
 {%- endmacro -%}
+
+{%- macro etcd_connection_constructor() -%}
+
+etcd://
+{%- for host, addresses in salt['mine.get']('role:etcd', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+  {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+    {{ address }}:2379
+  {%- endfor -%}
+  {% if loop.index < loop.length %},{% endif %}
+{%- endfor %}
+
+{%- endmacro -%}

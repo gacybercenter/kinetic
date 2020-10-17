@@ -4,6 +4,16 @@ include:
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
+### Calculate public interface - this is referenced a few times
+### Potential to make 'interface calculator' macro
+{% if salt['pillar.get']('hosts:'+grains['type']+':networks:public:bridge', False) == True %}
+  {% set public_interface = 'public_br' %}
+{% elif salt['pillar.get']('hosts:'+grains['type']+':networks:public:interfaces') | length > 1 %}
+  {% set public_interface = 'public_bond' %}
+{% else %}
+  {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
+{% endif %}
+
 /etc/modprobe.d/kvm.conf:
   file.managed:
     - source: salt://formulas/compute/files/kvm.conf
@@ -175,9 +185,7 @@ neutron_linuxbridge_agent_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-  {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
-        public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
-  {% endfor %}
+        public_interface: {{ public_interface }}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -275,14 +283,6 @@ ovsdb_listen:
     - name: ovs-vsctl set-manager ptcp:6640:127.0.0.1
     - unless:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
-
-  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:public:bridge', False) == True %}
-    {% set public_interface = 'public_br' %}
-  {% elif salt['pillar.get']('hosts:'+grains['type']+':networks:public:interfaces') | length > 1 %}
-    {% set public_interface = 'public_bond' %}
-  {% else %}
-    {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
-  {% endif %}
 
 enable_bridge:
   cmd.run:

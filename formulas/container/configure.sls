@@ -1,61 +1,44 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
+{% if salt['pillar.get']('hosts:'+grains['type']+':networks:public:bridge', False) == True %}
+  {% set public_interface = 'public_br' %}
+{% elif salt['pillar.get']('hosts:'+grains['type']+':networks:public:interfaces') | length > 1 %}
+  {% set public_interface = 'public_bond' %}
+{% else %}
+  {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
+{% endif %}
+
 /etc/zun/zun.conf:
   file.managed:
     - source: salt://formulas/container/files/zun.conf
     - template: jinja
     - defaults:
-        sql_connection_string: 'connection = mysql+pymysql://zun:{{ pillar['zun']['zun_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/zun'
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='zun', database='zun') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         auth_strategy: auth_strategy = keystone
         auth_type: auth_type = password
         auth_version: auth_version = v3
         auth_protocol: auth_protocol = http
         password: {{ pillar['zun']['zun_service_password'] }}
-        my_ip: my_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
-        docker_ip: docker_remote_api_host = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        docker_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 
 /etc/kuryr/kuryr.conf:
   file.managed:
     - source: salt://formulas/container/files/kuryr.conf
     - template: jinja
     - defaults:
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         password: {{ pillar ['zun']['kuryr_service_password'] }}
-        memcached_servers: |
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
 
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
 
@@ -65,34 +48,16 @@ include:
     - makedirs: true
     - template: jinja
     - defaults:
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['neutron']['neutron_service_password'] }}
-{% if grains['os_family'] == 'Debian' %}
+  {% if grains['os_family'] == 'Debian' %}
         lock_path: /var/lock/neutron
-{% elif grains['os_family'] == 'RedHat' %}
+  {% elif grains['os_family'] == 'RedHat' %}
         lock_path: /var/lib/neutron/tmp
-{% endif %}
+  {% endif %}
 
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
@@ -134,9 +99,7 @@ neutron_linuxbridge_agent_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
-        public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
-{% endfor %}
+        public_interface: {{ public_interface }}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -151,28 +114,11 @@ openvswitch_service:
 
 set-ovn-remote:
   cmd.run:
-    - name: |-
-        ovs-vsctl set open . external-ids:ovn-remote=
-        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        tcp:{{ address }}:6642
-            {%- endif -%}
-          {%- endfor -%}
-          {% if loop.index < loop.length %},{% endif %}
-        {%- endfor %}
+    - name: ovs-vsctl set open . external-ids:ovn-remote={{ constructor.ovn_sb_connection_constructor() }}
     - require:
       - service: openvswitch_service
     - unless:
-      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "
-        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        tcp:{{ address }}:6642
-            {%- endif -%}
-          {%- endfor -%}
-          {% if loop.index < loop.length %},{% endif %}
-        {%- endfor %}"
+      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "{{ constructor.ovn_sb_connection_constructor() }}"
 
 set_encap:
   cmd.run:
@@ -254,10 +200,9 @@ modify_ovs_script:
     - require:
       - cmd: ovsdb_listen
 
-{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
 enable_bridge:
   cmd.run:
-    - name: ovs-vsctl --may-exist add-port br-provider {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
+    - name: ovs-vsctl --may-exist add-port br-provider {{ public_interface }}
     - require:
       - service: openvswitch_service
       - cmd: set_encap
@@ -265,7 +210,7 @@ enable_bridge:
       - cmd: make_bridge
       - cmd: map_bridge
     - unless:
-      - ovs-vsctl port-to-br {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }} | grep -q "br-provider"
+      - ovs-vsctl port-to-br {{ public_interface }} | grep -q "br-provider"
 {% endfor %}
 
 ovn_controller_service:
@@ -307,16 +252,7 @@ ovn_controller_service:
     - makedirs: True
     - template: jinja
     - defaults:
-        etcd_cluster: |
-          etcd://
-          {%- for host, addresses in salt['mine.get']('role:etcd', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-                {{ address }}:2379
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        etcd_cluster: {{ constructor.etcd_connection_constructor() }}
     - requires:
       - /formulas/container/install
 
