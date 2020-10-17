@@ -51,3 +51,14 @@ rabbit://
 mysql+pymysql://{{ user }}:{{ pillar[user][user+'_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/{{ database }}
 
 {%- endmacro -%}
+
+{%- macro ovn_sb_connection_constructor() -%}
+
+{%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+  {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+tcp:{{ address }}:6642
+  {%- endfor -%}
+  {% if loop.index < loop.length %},{% endif %}
+{%- endfor %}
+
+{%- endmacro -%}
