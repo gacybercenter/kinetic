@@ -31,12 +31,12 @@ cinder-manage db sync:
     - defaults:
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
         sql_connection_string: {{ constructor.mysql_url_constructor(user='cinder', database='cinder') }}
-        www_authenticate_uri: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
-        auth_url: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'internal') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['cinder']['cinder_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-        api_servers: {{ constructor.endpoint_url_constructor('glance', 'glance', 'public') }}
+        api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='public') }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
 cinder_api_service:

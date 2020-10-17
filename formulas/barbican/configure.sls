@@ -30,9 +30,9 @@ barbican-manage db upgrade:
     - template: jinja
     - defaults:
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        sql_connection_string: {{ constructor.mysql_url_constructor('barbican', 'barbican') }}
-        www_authenticate_uri: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
-        auth_url: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'internal') }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='barbican', database='barbican') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['barbican']['barbican_service_password'] }}
         kek: {{ pillar['barbican']['simplecrypto_key'] }}

@@ -1,6 +1,9 @@
 
 
 ### This macro is used to create openstack endpoint URLs
+### project means the openstack project, e.g. keystone
+### service means the service as defined in the service catalog, e.g. cinderv2, etc.
+### endpoint means the endpoint type, e.g. public, internal, or admin
 {% macro endpoint_url_constructor(project, service, endpoint) -%}
 
 {%- set service_configuration = pillar['openstack_services'][project]['configuration']['services'][service]['endpoints'][endpoint] -%}
