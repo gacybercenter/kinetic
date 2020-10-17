@@ -63,6 +63,8 @@ tcp:{{ address }}:6642
 
 {%- endmacro -%}
 
+
+##this macro makes an etcd cluster string
 {%- macro etcd_connection_constructor() -%}
 
 etcd://
@@ -72,5 +74,12 @@ etcd://
   {%- endfor -%}
   {% if loop.index < loop.length %},{% endif %}
 {%- endfor %}
+
+{%- endmacro -%}
+
+## this macro resturns the IP for spawnzero of a given type on a give network
+{%- macro spawnzero_ip_constructor(type, network) -%}
+
+{% salt['mine.get']('G@role:'+type+' and G@spawning:0', 'network.ip_addrs', tgt_type='compound')[0] %}
 
 {%- endmacro -%}
