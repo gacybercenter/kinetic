@@ -63,7 +63,6 @@ tcp:{{ address }}:6642
 
 {%- endmacro -%}
 
-
 ##this macro makes an etcd cluster string
 {%- macro etcd_connection_constructor() -%}
 
@@ -82,4 +81,4 @@ etcd://
 
 {% salt['mine.get']('G@role:'+type+' and G@spawning:0', 'network.ip_addrs', tgt_type='compound')[0] %}
 
-{%- endmacro -%}
+{%- endmacro %}
