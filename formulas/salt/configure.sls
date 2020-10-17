@@ -1,6 +1,8 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
 /srv/salt:
   file.directory:
     - makedirs: true
@@ -268,7 +270,7 @@ api:
         export OS_USER_DOMAIN_NAME=Default
         export OS_PROJECT_NAME=admin
         export OS_PROJECT_DOMAIN_NAME=Default
-        export OS_AUTH_URL={{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['path'] }}
+        export OS_AUTH_URL={{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         export OS_IDENTITY_API_VERSION=3
 
 /srv/dynamic_pillar/adminrc.ps1:
@@ -279,7 +281,7 @@ api:
         $env:OS_USER_DOMAIN_NAME = "Default"
         $env:OS_PROJECT_NAME = "admin"
         $env:OS_PROJECT_DOMAIN_NAME = "Default"
-        $env:OS_AUTH_URL = "{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['endpoints']['api_version']['v3']['internal']['path'] }}"
+        $env:OS_AUTH_URL = "{{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}"
         $env:OS_IDENTITY_API_VERSION = "3"
 
 /srv/dynamic_pillar/deps.sls:
