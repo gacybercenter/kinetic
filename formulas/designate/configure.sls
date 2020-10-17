@@ -67,7 +67,7 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
         password: {{ pillar['designate']['designate_service_password'] }}
         listen_api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:9001
         designate_public_endpoint: {{ constructor.endpoint_url_constructor(project='designate', service='designate', endpoint='public') }}
-        coordination_server: {{ constructor.spawnzero_ip_constructor(type='memcached', network='management') }}
+        coordination_server: {{ constructor.spawnzero_ip_constructor(type='memcached', network='management') }}:11211
 
 ## Trying to write yaml in yaml via salt with correct indentation is basically impossible when using
 ## file.managed with the source directive.  Using contents is ugly, but it works.
