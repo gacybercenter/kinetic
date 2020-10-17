@@ -186,7 +186,7 @@ create_master_pem:
           {%- endfor %}
         guacamole_hosts: |
             {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080') }}
-        webssh2_hosts: |
+        webssh2_hosts: |+
             {{ constructor.haproxy_listener_constructor(role='webssh2', port='2222') }}
 
 haproxy_service_watch:
