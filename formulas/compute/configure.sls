@@ -2,6 +2,8 @@ include:
   - /formulas/{{ grains['role'] }}/install
   - /formulas/common/ceph/configure
 
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
 /etc/modprobe.d/kvm.conf:
   file.managed:
     - source: salt://formulas/compute/files/kvm.conf
@@ -187,7 +189,7 @@ neutron-ovn-metadata-agent.ini:
     - defaults:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
-        ovn_sb_connection: {{ constructor.ovn_sb_connection_constructor() }} 
+        ovn_sb_connection: {{ constructor.ovn_sb_connection_constructor() }}
 
 openvswitch_service:
   service.running:
