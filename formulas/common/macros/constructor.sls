@@ -91,8 +91,9 @@ etcd://
 ## This macro returns an haproxy listenter entry
 {%- macro haproxy_listener_constructor(role, port) -%}
 
+{% for number in [1,2,3] %}
 server {{ port }} {{ port }}:{{ port }} check inter 2000 rise 2 fall 5
-
+{% endfor %}
 {%- endmacro -%}
 
 {# {% for host, addresses in salt['mine.get']('role:'+role, 'network.ip_addrs', tgt_type='grain') | dictsort() %}
