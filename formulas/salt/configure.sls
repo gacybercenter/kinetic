@@ -295,6 +295,10 @@ api:
       ovsdb: ""
 {% endif %}
 
+/srv/dynamic_pillar/openstack_services.sls:
+  file.managed:
+    - source: salt://formulas/salt/files/openstack_services.sls
+
 /etc/salt/master:
   file.managed:
     - contents: ''

@@ -2,6 +2,7 @@ base:
   '*':
     - api
     - deps
+    - openstack_services
   'salt':
     - openstack
   'cache*':
