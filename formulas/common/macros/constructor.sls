@@ -89,7 +89,8 @@ etcd://
 {%- endmacro -%}
 
 ## This macro returns an haproxy listenter entry
-## it has horrible indentation because of the nature of yaml_encode - it treats spaces as literals
+## it has horrible indentation because of the nature of yaml_encode - it treats spaces as literals if the space
+## is contained inside of a statement (e.g. before an endfor on a newline)
 {%- macro haproxy_listener_constructor(role, port) -%}
 
 {%- if port is not match(':(.*)') -%}
