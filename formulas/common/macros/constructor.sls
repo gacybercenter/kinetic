@@ -92,9 +92,9 @@ etcd://
 ## it has horrible indentation because of the nature of yaml_encode - it treats spaces as literals
 {%- macro haproxy_listener_constructor(role, port) -%}
 
-{% if port is not match(':(.*)') %}
+{%- if port is not match(':(.*)') -%}
 {% set port = [":",port]| join %}
-{% endif %}
+{%- endif -%}
 
 {%- if role == 'mysql' -%}
 {% for host, addresses in salt['mine.get']('G@type:mysql and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
