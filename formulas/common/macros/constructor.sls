@@ -93,7 +93,7 @@ etcd://
 {%- macro haproxy_listener_constructor(role, port) -%}
 
 {%- if port is not match(':(.*)') -%}
-{% set port = [":",port]| join %}
+  {% set port = [":",port]| join %}
 {%- endif -%}
 
 {%- if role == 'mysql' -%}
