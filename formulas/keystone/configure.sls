@@ -96,14 +96,14 @@ keystone_domain:
     - makedirs: True
     - template: jinja
     - defaults:
-        ldap_url: 'url = ldap://{{ pillar ['common_ldap_configuration']['address'] }}'
-        ldap_user: 'user = {{ pillar ['common_ldap_configuration']['bind_user'] }}'
-        ldap_password: 'password = {{ pillar ['bind_password'] }}'
-        ldap_suffix: 'suffix = {{ pillar ['common_ldap_configuration']['base_dn'] }}'
-        user_tree_dn: 'user_tree_dn = {{ pillar ['common_ldap_configuration']['user_dn'] }}'
-        group_tree_dn: 'group_tree_dn = {{ pillar ['common_ldap_configuration']['group_dn'] }}'
-        user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
-        group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
+        ldap_url: {{ pillar ['common_ldap_configuration']['address'] }}
+        ldap_user: {{ pillar ['common_ldap_configuration']['bind_user'] }}
+        ldap_password: {{ pillar ['bind_password'] }}
+        ldap_suffix: {{ pillar ['common_ldap_configuration']['base_dn'] }}
+        user_tree_dn: {{ pillar ['common_ldap_configuration']['user_dn'] }}
+        group_tree_dn: {{ pillar ['common_ldap_configuration']['group_dn'] }}
+        user_filter: {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}
+        group_filter: {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}
         sql_connection_string: {{ constructor.mysql_url_constructor('keystone', 'keystone') }}
         public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
     - require_in:
