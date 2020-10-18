@@ -133,7 +133,7 @@ create_master_pem:
         glance_api_hosts: {{ constructor.haproxy_listener_constructor(role='glance', port='9292')|yaml_encode }}
         nova_compute_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='8774')|yaml_encode }}
         nova_metadata_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='8775')|yaml_encode }}
-        placement_api_hosts: {{ constructor.haproxy_listener_constructor(role='placement', port='8778'|yaml_encode }}
+        placement_api_hosts: {{ constructor.haproxy_listener_constructor(role='placement', port='8778')|yaml_encode }}
         nova_spiceproxy_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='6082')|yaml_encode }}
         dashboard_hosts: {{ constructor.haproxy_listener_constructor(role='horizon', port='80')|yaml_encode }}
         docs_hosts:  {{ constructor.haproxy_listener_constructor(role='antora', port='80')|yaml_encode }}
