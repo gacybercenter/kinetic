@@ -38,8 +38,10 @@ rabbit://
 
 {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
   {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-    {%- if grains['role'] == 'horizon' -%}
+    {%- if grains['role'] == 'horizo2n' -%}
       {% set address = ["'","address:11211","'"]|join|yaml_encode %}
+    {%- else -%}
+      {% set address = address+":11211" %}
     {%- endif -%}
 {{ address }}
   {%- endfor -%}
