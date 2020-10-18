@@ -105,7 +105,7 @@ api:
     - template: jinja
     - replace: false
     - require:
-      - file: openstack_services
+      - file: /srv/dynamic_pillar/openstack_services.sls
     - defaults:
         service: {{ service }}
         mysql_password: {{ salt['random.get_str']('64') }}
