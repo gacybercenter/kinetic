@@ -130,25 +130,25 @@ create_master_pem:
         guacamole_domain:  {{ pillar['haproxy']['guacamole_domain'] }}
         webssh2_domain:  {{ pillar['haproxy']['webssh2_domain'] }}
         keystone_hosts: {{ constructor.haproxy_listener_constructor(role='keystone', port='5000')|yaml_encode }}
-        glance_api_hosts: {{ constructor.haproxy_listener_constructor(role='glance', port=pillar['openstack_services']['glance']['configuration']['services']['glance']['endpoints']['public']['port'])|yaml_encode }}
-        nova_compute_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port=pillar['openstack_services']['nova']['configuration']['services']['nova']['endpoints']['public']['port'])|yaml_encode }}
+        glance_api_hosts: {{ constructor.haproxy_listener_constructor(role='glance', port='9292'|yaml_encode }}
+        nova_compute_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='8774'|yaml_encode }}
         nova_metadata_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='8775')|yaml_encode }}
-        placement_api_hosts: {{ constructor.haproxy_listener_constructor(role='placement', port=pillar['openstack_services']['placement']['configuration']['services']['placement']['endpoints']['public']['port'])|yaml_encode }}
+        placement_api_hosts: {{ constructor.haproxy_listener_constructor(role='placement', port='8778'|yaml_encode }}
         nova_spiceproxy_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='6082')|yaml_encode }}
         dashboard_hosts: {{ constructor.haproxy_listener_constructor(role='horizon', port='80')|yaml_encode }}
         docs_hosts:  {{ constructor.haproxy_listener_constructor(role='antora', port='80')|yaml_encode }}
-        neutron_api_hosts: {{ constructor.haproxy_listener_constructor(role='neutron', port=pillar['openstack_services']['neutron']['configuration']['services']['neutron']['endpoints']['public']['port'])|yaml_encode }}
-        heat_api_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port=pillar['openstack_services']['heat']['configuration']['services']['heat']['endpoints']['public']['port'])|yaml_encode }}
-        heat_api_cfn_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port=pillar['openstack_services']['heat']['configuration']['services']['heat-cfn']['endpoints']['public']['port'])|yaml_encode }}
-        cinder_api_hosts: {{ constructor.haproxy_listener_constructor(role='cinder', port=pillar['openstack_services']['cinder']['configuration']['services']['cinderv3']['endpoints']['public']['port'])|yaml_encode }}
-        designate_api_hosts: {{ constructor.haproxy_listener_constructor(role='designate', port=pillar['openstack_services']['designate']['configuration']['services']['designate']['endpoints']['public']['port'])|yaml_encode }}
-        swift_hosts: {{ constructor.haproxy_listener_constructor(role='swift', port=pillar['openstack_services']['swift']['configuration']['services']['swift']['endpoints']['public']['port'])|yaml_encode }}
-        zun_api_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port=pillar['openstack_services']['zun']['configuration']['services']['zun']['endpoints']['public']['port'])|yaml_encode }}
+        neutron_api_hosts: {{ constructor.haproxy_listener_constructor(role='neutron', port='9696'|yaml_encode }}
+        heat_api_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port='8004'|yaml_encode }}
+        heat_api_cfn_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port='8000'|yaml_encode }}
+        cinder_api_hosts: {{ constructor.haproxy_listener_constructor(role='cinder', port='8776'|yaml_encode }}
+        designate_api_hosts: {{ constructor.haproxy_listener_constructor(role='designate', port='9001'|yaml_encode }}
+        swift_hosts: {{ constructor.haproxy_listener_constructor(role='swift', port='7480'|yaml_encode }}
+        zun_api_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port='9517'|yaml_encode }}
         zun_wsproxy_hosts: {{ constructor.haproxy_listener_constructor(role='zun', port='6784')|yaml_encode }}
-        barbican_hosts: {{ constructor.haproxy_listener_constructor(role='barbican', port=pillar['openstack_services']['barbican']['configuration']['services']['barbican']['endpoints']['public']['port'])|yaml_encode }}
-        magnum_hosts: {{ constructor.haproxy_listener_constructor(role='magnum', port=pillar['openstack_services']['magnum']['configuration']['services']['magnum']['endpoints']['public']['port'])|yaml_encode }}
-        sahara_hosts: {{ constructor.haproxy_listener_constructor(role='sahara', port=pillar['openstack_services']['sahara']['configuration']['services']['sahara']['endpoints']['public']['port'])|yaml_encode }}
-        manila_hosts: {{ constructor.haproxy_listener_constructor(role='manila', port=pillar['openstack_services']['manila']['configuration']['services']['manilav2']['endpoints']['public']['port'])|yaml_encode }}
+        barbican_hosts: {{ constructor.haproxy_listener_constructor(role='barbican', port='9311'|yaml_encode }}
+        magnum_hosts: {{ constructor.haproxy_listener_constructor(role='magnum', port='9511'|yaml_encode }}
+        sahara_hosts: {{ constructor.haproxy_listener_constructor(role='sahara', port='8386'|yaml_encode }}
+        manila_hosts: {{ constructor.haproxy_listener_constructor(role='manila', port='8786'|yaml_encode }}
         mysql_hosts: {{ constructor.haproxy_listener_constructor(role='mysql', port='3306')|yaml_encode }}
         guacamole_hosts: {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080')|yaml_encode }}
         webssh2_hosts: {{ constructor.haproxy_listener_constructor(role='webssh2', port='2222')|yaml_encode }}
