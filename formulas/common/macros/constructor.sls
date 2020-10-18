@@ -44,7 +44,7 @@ rabbit://
 '{{ address }}:11211'
     {%- else -%}
 {{ address }}:11211
-    {%- endif -%}
+    {% endif -%}
   {%- endfor -%}
   {% if loop.index < loop.length %},{% endif %}
 {%- endfor %}
