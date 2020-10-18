@@ -6,7 +6,7 @@
 ### endpoint means the endpoint type, e.g. public, internal, or admin
 {% macro endpoint_url_constructor(project, service, endpoint) -%}
 
-{%- set service_configuration = pillar['openstack_services'][project]['configuration']['services'][service]['endpoints'][endpoint] -%}
+{%- set service_configuration = salt['pillar.get']('openstack_services:'+project+':configuration:services:'+service+':endpoints:'+endpoint, {}) -%}
 {{ service_configuration['protocol'] }}{{ pillar['endpoints'][endpoint] }}{{ service_configuration['port'] }}{{ service_configuration['path'] }}
 
 {%- endmacro -%}
@@ -15,7 +15,7 @@
 ### Basically the same as endpoint_url_constructor, except it has no path suffix
 {% macro base_endpoint_url_constructor(project, service, endpoint) -%}
 
-{%- set service_configuration = pillar['openstack_services'][project]['configuration']['services'][service]['endpoints'][endpoint] -%}
+{%- set service_configuration = salt['pillar.get']('openstack_services:'+project+':configuration:services:'+service+':endpoints:'+endpoint, {}) -%}
 {{ service_configuration['protocol'] }}{{ pillar['endpoints'][endpoint] }}{{ service_configuration['port'] }}
 
 {%- endmacro -%}
