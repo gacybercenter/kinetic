@@ -94,12 +94,18 @@ api:
 /srv/dynamic_pillar:
   file.directory
 
-{% for service in pillar['openstack_services'] %}
+/srv/dynamic_pillar/openstack_services.sls:
+  file.managed:
+    - source: salt://formulas/salt/files/openstack_services.sls
+
+{% for service in salt['pillar.get']('openstack_services', {}) %}
 /srv/dynamic_pillar/{{ service }}.sls:
   file.managed:
     - source: salt://formulas/salt/files/openstack_service_template.sls
     - template: jinja
     - replace: false
+    - require:
+      - file: openstack_services
     - defaults:
         service: {{ service }}
         mysql_password: {{ salt['random.get_str']('64') }}
@@ -294,10 +300,6 @@ api:
 {% else %}
       ovsdb: ""
 {% endif %}
-
-/srv/dynamic_pillar/openstack_services.sls:
-  file.managed:
-    - source: salt://formulas/salt/files/openstack_services.sls
 
 /etc/salt/master:
   file.managed:
