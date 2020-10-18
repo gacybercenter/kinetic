@@ -41,7 +41,7 @@ rabbit://
     {%- if grains['role'] == 'horizon' -%}
       {% set address = "'"+address+":11211'" %}
     {%- endif -%}
-{{ address }}:11211
+{{ address }}
   {%- endfor -%}
   {% if loop.index < loop.length %},{% endif %}
 {%- endfor %}
