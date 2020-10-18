@@ -36,21 +36,12 @@ rabbit://
 ### This macro creates memcached cluster strings
 {% macro memcached_url_constructor() -%}
 
-{%- if grains['role'] == 'horizon' -%}
-  {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-    {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-'{{ address }}:11211'
-    {%- endfor -%}
-    {% if loop.index < loop.length %},{% endif %}
-  {%- endfor -%}
-{%- else -%}
-  {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-    {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+{%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+  {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
 {{ address }}:11211
-    {%- endfor -%}
-    {% if loop.index < loop.length %},{% endif %}
   {%- endfor -%}
-{%- endif -%}
+  {% if loop.index < loop.length %},{% endif %}
+{%- endfor %}
 
 {%- endmacro -%}
 
