@@ -36,11 +36,9 @@ rabbit://
 ### This macro creates memcached cluster strings
 {% macro memcached_url_constructor() -%}
 
-
-
 {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
   {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-    {%- if grains['role'] == 'horizon' -%}
+    {% if grains['role'] == 'horizon' %}
 '{{ address }}:11211'
     {%- else -%}
 {{ address }}:11211
