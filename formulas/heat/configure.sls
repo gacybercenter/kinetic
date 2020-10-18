@@ -11,6 +11,10 @@ heat-manage db_sync:
     - runas: heat
     - require:
       - file: /etc/heat/heat.conf
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {{ spawn.spawnzero_complete() }}
 
