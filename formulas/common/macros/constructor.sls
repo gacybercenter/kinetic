@@ -49,7 +49,7 @@ rabbit://
 {{ address }}:11211
   {%- endfor -%}
   {% if loop.index < loop.length %},{% endif %}
-{%- endfor %}
+{%- endfor -%}
 {%- endif -%}
 
 {%- endmacro -%}
