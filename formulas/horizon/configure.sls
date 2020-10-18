@@ -30,7 +30,7 @@ local_settings:
         webroot: dashboard
 {% endif %}
         secret_key: /var/lib/openstack-dashboard/secret_key
-        memcached_servers: {{ constructor.memcached_url_constructor() }}
+        memcached_servers: {{ constructor.memcached_url_constructor()|yaml_encode }}
         keystone_url: {{ pillar['endpoints']['internal'] }}
         allowed_hosts: [{{ pillar['haproxy']['dashboard_domain'] }}]
         timezone: {{ pillar['timezone'] }}
