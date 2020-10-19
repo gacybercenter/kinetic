@@ -17,7 +17,6 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
         key: build_phase
         value: configure
 
-
 mk_public_network:
   cmd.script:
     - source: salt://formulas/neutron/files/mkpublic.sh
