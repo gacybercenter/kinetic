@@ -57,7 +57,6 @@ mysql+pymysql://{{ user }}:{{ pillar[user][user+'_mysql_password'] }}@{{ pillar[
 
 {%- endmacro -%}
 
-
 ## this macro creates an ovn sb cluster connection string
 {%- macro ovn_sb_connection_constructor() -%}
 
@@ -82,7 +81,6 @@ tcp:{{ address }}:6641
 
 {%- endmacro -%}
 
-
 ## This macro creates an ovn cluster remote string for use in ovn-northd clustered configurations
 {%- macro ovn_cluster_remote_constructor() -%}
 
@@ -106,7 +104,6 @@ etcd://
 {%- endfor %}
 
 {%- endmacro -%}
-
 
 ## This macro returns an IP for a spawnzero for a given type on a given network
 {%- macro spawnzero_ip_constructor(type, network) -%}
