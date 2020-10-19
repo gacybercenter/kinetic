@@ -1,6 +1,9 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
 {% if grains['spawning'] == 0 %}
 
 zun-db-manage upgrade:
@@ -36,7 +39,7 @@ zun-db-manage upgrade:
         auth_version: auth_version = v3
         auth_protocol: auth_protocol = https
         password: {{ pillar['zun']['zun_service_password'] }}
-        api: host_ip = {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         wsproxy_host: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
 
