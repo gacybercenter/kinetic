@@ -1,15 +1,15 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+
 {% if grains['spawning'] == 0 %}
 
-  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
-    {{ spawnzero_complete() }}
+{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
-  {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
-    {{ check_spawnzero_status(grains['type']) }}
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
@@ -29,26 +29,8 @@ ovn_northd_opts:
         opts_name: OVN_CTL_OPTS
         {% endif %}
         self_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-        nb_cluster: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          tcp:{{ address }}:6641
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        sb_cluster: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          tcp:{{ address }}:6642
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        nb_cluster: {{ constructor.ovn_nb_connection_constructor() }}
+        sb_cluster: {{ constructor.ovn_sb_connection_constructor() }}
           {% if grains['spawning'] != 0 %}
         cluster_remote: |-
           --db-nb-cluster-remote-addr=
