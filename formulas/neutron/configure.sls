@@ -24,7 +24,7 @@ mk_public_network:
     - template: jinja
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        keystone_internal_endpoint: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         start: {{ pillar['networking']['addresses']['float_start'] }}
         end: {{ pillar['networking']['addresses']['float_end'] }}
         dns: {{ pillar['networking']['addresses']['float_dns'] }}
