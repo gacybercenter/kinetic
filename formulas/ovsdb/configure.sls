@@ -2,6 +2,7 @@ include:
   - /formulas/{{ grains['role'] }}/install
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
 {% if grains['spawning'] == 0 %}
 
