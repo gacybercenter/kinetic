@@ -162,6 +162,19 @@ create_magnum_admin_user:
     - domain: magnum
     - password: {{ pillar ['magnum']['magnum_service_password'] }}
 
+## zun-specific configurations
+kuryr_user_init:
+  keystone_user.present:
+    - name: {{ project }}
+    - domain: default
+    - password: {{ pillar ['zun']['kuryr_service_password'] }}
+
+kuryr_user_role_grant:
+  keystone_role_grant.present:
+    - name: admin
+    - project: service
+    - user: kuryr
+
 {% else %}
 
 {{ spawn.check_spawnzero_status(grains['type']) }}
