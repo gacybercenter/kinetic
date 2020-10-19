@@ -12,7 +12,9 @@ nova-manage api_db sync:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage api_db version | grep -q 72
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 nova-manage cell_v2 map_cell0:
   cmd.run:
@@ -20,7 +22,9 @@ nova-manage cell_v2 map_cell0:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage cell_v2 list_cells | grep -q cell0
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 nova-manage cell_v2 create_cell --name=cell1 --verbose:
   cmd.run:
@@ -28,7 +32,9 @@ nova-manage cell_v2 create_cell --name=cell1 --verbose:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage cell_v2 list_cells | grep -q cell1
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 nova-manage db sync:
   cmd.run:
@@ -36,7 +42,9 @@ nova-manage db sync:
     - require:
       - file: /etc/nova/nova.conf
     - unless:
-      - nova-manage db version | grep -q 407
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 update_cells:
   cmd.run:
