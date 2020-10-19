@@ -13,6 +13,8 @@ include:
 
 {% endif %}
 
+{% if grains['os_family'] == 'Debian' %}
+
 memcached_config:
   file.managed:
     - name: /etc/memcached.conf
