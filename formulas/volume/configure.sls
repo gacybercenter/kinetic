@@ -34,7 +34,7 @@ include:
         memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['cinder']['cinder_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-        api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
+        api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='internal') }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
 
 
