@@ -82,6 +82,8 @@ tcp:{{ address }}:6641
 
 {%- endmacro -%}
 
+
+## This macro creates an ovn cluster remote string for use in ovn-northd clustered configurations
 {%- macro ovn_cluster_remote_constructor() -%}
 
 {%- for host, addresses in salt['mine.get']('G@role:ovsdb and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
