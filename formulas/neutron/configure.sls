@@ -60,7 +60,7 @@ mk_public_network:
         service_plugins: neutron.services.ovn_l3.plugin.OVNL3RouterPlugin
 {% endif %}
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        sql_connection_string: {{ constructor.mysql_url_constructor(user='magnum', database='magnum') }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='neutron', database='neutron') }}
         www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
