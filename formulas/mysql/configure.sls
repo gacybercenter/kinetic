@@ -1,6 +1,8 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+
 {% if grains['spawning'] == 0 %}
   {% if pillar['hosts']['mysql']['count'] > 1 %}
 
@@ -33,8 +35,7 @@ bootstrap_mariadb_start:
 
   {% endif %}
 
-  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
-    {{ spawnzero_complete() }}
+{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
@@ -44,8 +45,7 @@ kill_mariadb_for_bootstrap:
     - name: mariadb
   {% endif %}
 
-  {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
-    {{ check_spawnzero_status(grains['type']) }}
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 

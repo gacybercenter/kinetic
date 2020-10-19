@@ -57,11 +57,25 @@ mysql+pymysql://{{ user }}:{{ pillar[user][user+'_mysql_password'] }}@{{ pillar[
 
 {%- endmacro -%}
 
+
+## this macro creates an ovn sb cluster connection string
 {%- macro ovn_sb_connection_constructor() -%}
 
 {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
   {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
 tcp:{{ address }}:6642
+  {%- endfor -%}
+  {% if loop.index < loop.length %},{% endif %}
+{%- endfor %}
+
+{%- endmacro -%}
+
+## this macro creates an ovn nb cluster connection string
+{%- macro ovn_nb_connection_constructor() -%}
+
+{%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+  {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+tcp:{{ address }}:6641
   {%- endfor -%}
   {% if loop.index < loop.length %},{% endif %}
 {%- endfor %}
