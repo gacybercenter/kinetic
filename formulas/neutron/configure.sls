@@ -99,11 +99,11 @@ mk_public_network:
         extension_drivers: port_security
         ovn_nb_connection: {{ constructor.ovn_nb_connection_constructor() }}
         ovn_sb_connection: {{ constructor.ovn_sb_connection_constructor() }}
-        ovn_l3_scheduler: ovn_l3_scheduler = leastloaded
-        ovn_native_dhcp: ovn_native_dhcp = True
-        ovn_l3_mode: ovn_l3_mode = True
-        ovn_metadata_enabled: ovn_metadata_enabled = True
-        enable_distributed_floating_ip:  enable_distributed_floating_ip = True
+        ovn_l3_scheduler: leastloaded
+        ovn_native_dhcp: True
+        ovn_l3_mode: True
+        ovn_metadata_enabled: True
+        enable_distributed_floating_ip: True
 {% endif %}
         vni_ranges: 1:65536
 
