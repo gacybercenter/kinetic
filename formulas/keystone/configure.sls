@@ -165,7 +165,7 @@ create_magnum_admin_user:
 ## zun-specific configurations
 kuryr_user_init:
   keystone_user.present:
-    - name: {{ project }}
+    - name: kuryr
     - domain: default
     - password: {{ pillar ['zun']['kuryr_service_password'] }}
 
