@@ -2,27 +2,15 @@ include:
   - /formulas/{{ grains['role'] }}/install
   - /formulas/common/ceph/configure
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+
 {% if grains['spawning'] == 0 %}
 
-make_swift_service:
-  cmd.script:
-    - source: salt://formulas/swift/files/mkservice.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        swift_service_password: {{ pillar ['swift']['swift_service_password'] }}
-        swift_public_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['swift']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['public_endpoint']['path'] }}
-        swift_internal_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['internal_endpoint']['path'] }}
-        swift_admin_endpoint: {{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['swift']['configuration']['admin_endpoint']['path'] }}
-
-  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
-    {{ spawnzero_complete() }}
+{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
-  {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
-    {{ check_spawnzero_status(grains['type']) }}
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 

@@ -2,15 +2,15 @@ include:
   - /formulas/{{ grains['role'] }}/install
   - /formulas/common/ceph/configure
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+
 {% if grains['spawning'] == 0 %}
 
-  {% from 'formulas/common/macros/spawn.sls' import spawnzero_complete with context %}
-    {{ spawnzero_complete() }}
+{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
-  {% from 'formulas/common/macros/spawn.sls' import check_spawnzero_status with context %}
-    {{ check_spawnzero_status(grains['type']) }}
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
@@ -51,29 +51,11 @@ wipe_adminkey:
     - source: salt://formulas/share/files/manila.conf
     - template: jinja
     - defaults:
-        sql_connection_string: 'connection = mysql+pymysql://manila:{{ pillar['manila']['manila_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/manila'
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='manila', database='manila') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         shares: |-
