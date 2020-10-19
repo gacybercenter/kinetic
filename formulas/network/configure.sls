@@ -29,7 +29,7 @@ include:
         password: {{ pillar['neutron']['neutron_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         nova_password: {{ pillar['nova']['nova_service_password'] }}
-        designate_url: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}
+        designate_url: {{ constructor.endpoint_url_constructor(project='designate', service='designate', endpoint='public') }}
         designate_password: {{ pillar['designate']['designate_service_password'] }}
 {% if grains['os_family'] == 'Debian' %}
         lock_path: /var/lock/neutron
