@@ -35,7 +35,7 @@ ovn_northd_opts:
         {% if grains['spawning'] != 0 %}
         cluster_remote: |-
             --db-nb-cluster-remote-addr={{ constructor.ovn_cluster_remote_constructor() }} \
-            --db-sb-cluster-remote-addr={{ constructor.ovn_cluster_remote_constructor() }}"
+            --db-sb-cluster-remote-addr={{ constructor.ovn_cluster_remote_constructor() }}
         {% elif grains['spawning'] == 0 %}
         cluster_remote: ""
         {% endif %}
