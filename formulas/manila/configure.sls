@@ -54,7 +54,7 @@ make_nfs_share_type:
     - template: jinja
     - defaults:
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        sql_connection_string: {{ constructor.mysql_url_constructor(user='magnum', database='magnum') }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='manila', database='manila') }}
         www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
