@@ -37,7 +37,7 @@ heat-manage db_sync:
         password: {{ pillar['heat']['heat_service_password'] }}
         clients_keystone_auth_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         ec2_authtoken_auth_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
-        heat_metadata_server_url: {{ constructor.base_endpoint_url_constructor(project='heat', service='heat-cfn', endpoint='internal') }}
+        heat_metadata_server_url: {{ constructor.endpoint_url_constructor(project='heat', service='heat-cfn', endpoint='internal', base=True) }}
         heat_waitcondition_server_url: {{ constructor.endpoint_url_constructor(project='heat', service='heat-cfn', endpoint='internal') }}/waitcondition
 
 heat_api_service:

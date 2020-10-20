@@ -200,7 +200,7 @@ kuryr_user_role_grant:
     - defaults:
         sql_connection_string: {{ constructor.mysql_url_constructor('keystone', 'keystone') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
-        public_endpoint: {{ constructor.base_endpoint_url_constructor('keystone', 'keystone', 'public') }}
+        public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_site_configuration:

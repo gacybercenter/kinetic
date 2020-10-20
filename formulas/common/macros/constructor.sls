@@ -16,15 +16,6 @@
 
 {%- endmacro -%}
 
-### This macro is used to created openstack base endpoint URLs.
-### Basically the same as endpoint_url_constructor, except it has no path suffix
-{% macro base_endpoint_url_constructor(project, service, endpoint) -%}
-
-{%- set service_configuration = salt['pillar.get']('openstack_services:'+project+':configuration:services:'+service+':endpoints:'+endpoint, {"protocol":"TBD","port":"TBD","path":"TBD"}) -%}
-{{ service_configuration['protocol'] }}{{ pillar['endpoints'][endpoint] }}{{ service_configuration['port'] }}
-
-{%- endmacro -%}
-
 ### This macro creates rmq url strings
 {% macro rabbitmq_url_constructor() -%}
 
