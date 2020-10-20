@@ -87,6 +87,7 @@ base:
     - rabbitmq
     - nova
     - designate
+    - openstack
   'network*':
     - neutron
     - rabbitmq
@@ -107,6 +108,7 @@ base:
   'manila*':
     - manila
     - rabbitmq
+    - openstack
   'share*':
     - manila
     - rabbitmq
