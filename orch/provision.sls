@@ -1,5 +1,7 @@
 ## This routine is called on a fresh minion whose key was just accepted.
 
+{% import 'formulas/common/macros/orchestration.sls' as orchestration with context %}
+
 {% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
@@ -25,25 +27,8 @@ apply_base_{{ type }}:
         attempts: 2
         splay: 0
 
-### This loop will block until confirmation is received that all networking
-### deps have been met.  The logic is very similar to the initial dep check loop
-### adding an additional one here will ensure that the deps needed for the
-### next phase of the orch have been met, rather than just the bits needed to
-### start
-{% if salt['pillar.get']('hosts:'+type+':needs:networking', {}) != {} %}
-{{ type }}_networking_phase_check_loop::
-  salt.runner:
-    - name: needs.check_one
-    - kwarg:
-        needs: {{ salt['pillar.get']('hosts:'+type+':needs:networking', {}) }}
-        type: {{ type }}
-    - retry:
-        interval: 30
-        attempts: 240
-        splay: 10
-    - require_in:
-      - apply_networking_{{ type }}
-{% endif %}
+### This macro renders to a block if there are unmet dependencies
+{{ orchestration.needs_check_one(type=type, phase='networking')}}
 
 apply_networking_{{ type }}:
   salt.state:
