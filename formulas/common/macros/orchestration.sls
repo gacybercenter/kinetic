@@ -8,7 +8,7 @@
 
 {%- macro needs_check_one(type, phase) -%}
 
-{% if salt['pillar.get']('hosts:'+type+':needs:+'phase, {}) != {} %}
+{% if salt['pillar.get']('hosts:'+type+':needs:'+phase, {}) != {} %}
 {{ type }}_{{ phase }}_phase_check_loop::
   salt.runner:
     - name: needs.check_one
