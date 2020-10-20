@@ -4,10 +4,15 @@
 ### project means the openstack project, e.g. keystone
 ### service means the service as defined in the service catalog, e.g. cinderv2, etc.
 ### endpoint means the endpoint type, e.g. public, internal, or admin
-{% macro endpoint_url_constructor(project, service, endpoint) -%}
+{% macro endpoint_url_constructor(project, service, endpoint, base=False) -%}
 
+{%- if base == False -%}
 {%- set service_configuration = salt['pillar.get']('openstack_services:'+project+':configuration:services:'+service+':endpoints:'+endpoint, {"protocol":"TBD","port":"TBD","path":"TBD"}) -%}
 {{ service_configuration['protocol'] }}{{ pillar['endpoints'][endpoint] }}{{ service_configuration['port'] }}{{ service_configuration['path'] }}
+{%- else -%}
+{%- set service_configuration = salt['pillar.get']('openstack_services:'+project+':configuration:services:'+service+':endpoints:'+endpoint, {"protocol":"TBD","port":"TBD","path":"TBD"}) -%}
+{{ service_configuration['protocol'] }}{{ pillar['endpoints'][endpoint] }}{{ service_configuration['port'] }}
+{%- endif -%}
 
 {%- endmacro -%}
 
