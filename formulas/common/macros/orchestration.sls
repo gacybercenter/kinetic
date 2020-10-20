@@ -13,7 +13,7 @@
   salt.runner:
     - name: needs.check_one
     - kwarg:
-        needs: {{ salt['pillar.get']('hosts:'+type+':needs:+'phase, {}) }}
+        needs: {{ salt['pillar.get']('hosts:'+type+':needs:'+phase, {}) }}
         type: {{ type }}
     - retry:
         interval: 30
