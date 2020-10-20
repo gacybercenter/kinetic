@@ -105,20 +105,8 @@ force_network_mine_refresh_{{ type }}:
     - require:
       - wait_for_{{ type }}_reboot
 
-{% if salt['pillar.get']('hosts:'+type+':needs:install', {}) != {} %}
-{{ type }}_install_phase_check_loop:
-  salt.runner:
-    - name: needs.check_one
-    - kwarg:
-        needs: {{ salt['pillar.get']('hosts:'+type+':needs:install', {}) }}
-        type: {{ type }}
-    - retry:
-        interval: 30
-        attempts: 240
-        splay: 10
-    - require_in:
-      - apply_install_{{ type }}
-{% endif %}
+### This macro renders to a block if there are unmet dependencies
+{{ orchestration.needs_check_one(type=type, phase='install')}}
 
 apply_install_{{ type }}:
   salt.state:
@@ -162,20 +150,8 @@ set_build_phase_install_mine_{{ type }}:
     - require:
       - set_build_phase_install_{{ type }}
 
-{% if salt['pillar.get']('hosts:'+type+':needs:configure', {}) != {} %}
-{{ type }}_configure_phase_check_loop:
-  salt.runner:
-    - name: needs.check_one
-    - kwarg:
-        needs: {{ salt['pillar.get']('hosts:'+type+':needs:configure', {}) }}
-        type: {{ type }}
-    - retry:
-        interval: 30
-        attempts: 240
-        splay: 10
-    - require_in:
-      - highstate_{{ type }}
-{% endif %}
+### This macro renders to a block if there are unmet dependencies
+{{ orchestration.needs_check_one(type=type, phase='configure')}}
 
 highstate_{{ type }}:
   salt.state:
