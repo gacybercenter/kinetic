@@ -188,7 +188,7 @@ kuryr_user_role_grant:
     - template: jinja
     - defaults:
         password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
 
 /var/lib/keystone/keystone.db:
   file.absent
@@ -198,9 +198,9 @@ kuryr_user_role_grant:
     - source: salt://formulas/keystone/files/keystone.conf
     - template: jinja
     - defaults:
-        sql_connection_string: {{ constructor.mysql_url_constructor('keystone', 'keystone') }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='keystone', database='keystone') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
-        public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public', base=True) }}
+        public_endpoint: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public', base=True) }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
 keystone_site_configuration:
