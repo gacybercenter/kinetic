@@ -29,7 +29,7 @@
           [client.{{ host }}]
           host = {{ host }}
           keyring = /etc/ceph/ceph.client.{{ host }}.keyring
-          rgw_keystone_url = {{ constructor.base_endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+          rgw_keystone_url = {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal', base=True) }}
           rgw keystone api version = 3
           rgw keystone admin user = keystone
           rgw keystone admin password = {{ pillar ['keystone']['keystone_service_password'] }}
