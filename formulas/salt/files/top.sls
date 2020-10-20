@@ -13,18 +13,18 @@ base:
     - neutron
     - rabbitmq
     - placement
-    - keystone
+    - swift
   'storage*':
     - ceph
-    - keystone
+    - swift
   'cephmon*':
     - ceph
-    - keystone
+    - swift
   'etcd*':
     - etcd
   'mds*':
     - ceph
-    - keystone
+    - swift
   'mysql*':
     - mysql
     - keystone
@@ -72,7 +72,7 @@ base:
     - rabbitmq
   'glance*':
     - glance
-    - keystone
+    - swift
     - ceph
   'nova*':
     - nova
@@ -98,12 +98,11 @@ base:
   'cinder*':
     - cinder
     - rabbitmq
-    - keystone
     - ceph
   'volume*':
     - cinder
     - rabbitmq
-    - keystone
+    - swift
     - ceph
   'manila*':
     - manila
@@ -111,7 +110,7 @@ base:
   'share*':
     - manila
     - rabbitmq
-    - keystone
+    - swift
     - ceph
   'designate*':
     - designate
@@ -121,7 +120,6 @@ base:
   'swift*':
     - swift
     - ceph
-    - keystone
   'zun*':
     - zun
     - rabbitmq
