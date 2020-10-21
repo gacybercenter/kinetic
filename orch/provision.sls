@@ -71,7 +71,7 @@ apply_install_{{ type }}:
         attempts: 2
         splay: 0
     - require:
-      - wait_for_{{ type }}_reboot
+      - wait_for_{{ type }}_{{ networking }}_reboot
 
 ## This macro updates the build_phase grain and forces a mine update
 {{ orchestration.build_phase_update(type=type, targets=targets, phase='install')}}
