@@ -25,7 +25,6 @@
 
 {%- endmacro -%}
 
-
 ## This macro updates the phase grain and pushes it to the
 ## mine
 {%- macro build_phase_update(type, targets, phase) -%}
@@ -57,6 +56,7 @@ set_build_phase_{{ phase }}_mine_{{ type }}:
 
 {%- endmacro -%}
 
+## This macro executes a reboot-and-wait routine
 {%- macro reboot_and_wait(type, targets, phase) -%}
 
 reboot_{{ type }}_{{ phase }}:
