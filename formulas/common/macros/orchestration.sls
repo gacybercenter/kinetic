@@ -24,3 +24,61 @@
 {% endif %}
 
 {%- endmacro -%}
+
+
+## This macro updates the phase grain and pushes it to the
+## mine
+{%- macro build_phase_update(type, targets, phase) -%}
+
+set_build_phase_{{ phase }}_{{ type }}:
+  salt.function:
+    - name: grains.setval
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
+    - arg:
+      - build_phase
+      - {{ phase }}
+    - require:
+      - apply_{{ phase }}_{{ type }}
+
+set_build_phase_{{ phase }}_mine_{{ type }}:
+  salt.function:
+    - name: mine.update
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
+    - require:
+      - set_build_phase_{{ phase }}_{{ type }}
+
+{%- endmacro -%}
+
+{%- macro reboot_and_wait(type, targets, phase) -%}
+
+reboot_{{ type }}_{{ phase }}:
+  salt.function:
+    - tgt:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - tgt_type: list
+    - name: system.reboot
+    - require:
+      - apply_{{ phase }}_{{ type }}
+
+wait_for_{{ type }}_{{ phase }}_reboot:
+  salt.wait_for_event:
+    - name: salt/minion/*/start
+    - id_list:
+{% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+{% endfor %}
+    - require:
+      - reboot_{{ type }}_{{ phase }}
+    - timeout: 600
+
+{%- endmacro -%}

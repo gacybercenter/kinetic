@@ -47,63 +47,11 @@ apply_networking_{{ type }}:
     - require:
       - apply_base_{{ type }}
 
-set_build_phase_networking_{{ type }}:
-  salt.function:
-    - name: grains.setval
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - arg:
-      - build_phase
-      - networking
-    - require:
-      - apply_networking_{{ type }}
+## This macro updates the build_phase grain and forces a mine update
+{{ orchestration.reboot_and_wait(type=type, targets=targets, phase='networking')}}
 
-set_build_phase_networking_mine_{{ type }}:
-  salt.function:
-    - name: mine.update
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - require:
-      - set_build_phase_networking_{{ type }}
-
-reboot_{{ type }}:
-  salt.function:
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - name: system.reboot
-    - require:
-      - apply_networking_{{ type }}
-
-wait_for_{{ type }}_reboot:
-  salt.wait_for_event:
-    - name: salt/minion/*/start
-    - id_list:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - require:
-      - reboot_{{ type }}
-    - timeout: 600
-
-force_network_mine_refresh_{{ type }}:
-  salt.function:
-    - name: mine.update
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - require:
-      - wait_for_{{ type }}_reboot
+## This macro updates the build_phase grain and forces a mine update
+{{ orchestration.build_phase_update(type=type, targets=targets, phase='networking')}}
 
 ### This macro renders to a block if there are unmet dependencies
 {{ orchestration.needs_check_one(type=type, phase='install')}}
@@ -125,35 +73,13 @@ apply_install_{{ type }}:
     - require:
       - wait_for_{{ type }}_reboot
 
-set_build_phase_install_{{ type }}:
-  salt.function:
-    - name: grains.setval
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - arg:
-      - build_phase
-      - install
-    - require:
-      - apply_install_{{ type }}
-
-set_build_phase_install_mine_{{ type }}:
-  salt.function:
-    - name: mine.update
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - require:
-      - set_build_phase_install_{{ type }}
+## This macro updates the build_phase grain and forces a mine update
+{{ orchestration.build_phase_update(type=type, targets=targets, phase='install')}}
 
 ### This macro renders to a block if there are unmet dependencies
 {{ orchestration.needs_check_one(type=type, phase='configure')}}
 
-highstate_{{ type }}:
+apply_configure_{{ type }}:
   salt.state:
     - tgt:
 {% for id in targets %}
@@ -169,49 +95,8 @@ highstate_{{ type }}:
     - require:
       - apply_install_{{ type }}
 
-final_reboot_{{ type }}:
-  salt.function:
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - name: system.reboot
-    - require:
-      - highstate_{{ type }}
+## this macro executes a reboot and wait loop
+{{ orchestration.reboot_and_wait(type=type, targets=targets, phase='configure')}}
 
-wait_for_final_reboot_{{ type }}:
-  salt.wait_for_event:
-    - name: salt/minion/*/start
-    - id_list:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - require:
-      - final_reboot_{{ type }}
-    - timeout: 600
-
-set_build_phase_configure_{{ type }}:
-  salt.function:
-    - name: grains.setval
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - arg:
-      - build_phase
-      - configure
-    - require:
-      - highstate_{{ type }}
-
-set_build_phase_configure_mine_{{ type }}:
-  salt.function:
-    - name: mine.update
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - tgt_type: list
-    - require:
-      - set_build_phase_configure_{{ type }}
+## This macro updates the build_phase grain and forces a mine update
+{{ orchestration.build_phase_update(type=type, targets=targets, phase='configure')}}
