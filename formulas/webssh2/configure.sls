@@ -13,6 +13,9 @@ include:
 
 {% endif %}
 
+webssh2:
+  user.present
+
 /var/www/html/app/config.json:
   file.managed:
     - source: salt://formulas/webssh2/files/config.json
