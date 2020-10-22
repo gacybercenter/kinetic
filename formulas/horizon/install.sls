@@ -17,6 +17,7 @@ horizon_packages:
       - openstack-dashboard
       - python3-sahara-dashboard
       - python3-manila-ui
+      - python3-cffi
       - git
       - build-essential
       - python3-dev
