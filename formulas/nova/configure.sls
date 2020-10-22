@@ -66,7 +66,6 @@ update_cells:
 ## mysql query will fail.  This needs to be more intelligent.  Temp workaround is to
 ## only create flavors at very beginning, and not pick up pillar changes later in lifecycle
 {% for flavor, attribs in pillar['flavors'].items() %}
-{#if salt['mysql.query']('nova_api', "select * from flavors where name='"+flavor+"'", connection_host=pillar['haproxy']['dashboard_domain'],connection_user='nova',connection_pass=pillar['nova']['nova_mysql_password'])['rows returned'] == 0 %}#}
 create_{{ flavor }}:
   mysql_query.run:
     - database: nova_api
