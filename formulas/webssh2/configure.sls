@@ -14,7 +14,9 @@ include:
 {% endif %}
 
 webssh2:
-  user.present
+  user.present:
+    - home: /var/www/html/app
+    - shell: /bin/false
 
 /var/www/html/app/config.json:
   file.managed:
