@@ -2,10 +2,11 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/openstack/common/repo
+  - /formulas/common/openstack/repo
 
 {% if grains['os_family'] == 'Debian' %}
     {% if pillar['neutron']['backend'] == "linuxbridge" %}
+    
 neutron_packages:
   pkg.installed:
     - pkgs:

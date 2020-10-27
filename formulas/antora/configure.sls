@@ -1,19 +1,16 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+
 {% if grains['spawning'] == 0 %}
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+
+{{ spawn.spawnzero_complete() }}
+
+{% else %}
+
+{{ spawn.check_spawnzero_status(grains['type']) }}
+
 {% endif %}
 
 docs_source:

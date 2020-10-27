@@ -1,34 +1,16 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
 {% if grains['spawning'] == 0 %}
 
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
-check_spawnzero_status:
-  module.run:
-    - name: spawnzero.check
-    - type: {{ grains['type'] }}
-    - retry:
-        attempts: 10
-        interval: 30
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
@@ -47,21 +29,8 @@ local_settings:
 {% elif grains['os_family'] == 'RedHat' %}
         webroot: dashboard
 {% endif %}
-{% if grains['os_family'] == 'Debian' %}
         secret_key: /var/lib/openstack-dashboard/secret_key
-{% elif grains['os_family'] == 'RedHat' %}
-        secret_key: /var/lib/openstack-dashboard/secret_key
-{% endif %}
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          '{{ address }}:11211'
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        memcached_servers: {{ constructor.memcached_url_constructor()|yaml_encode }}
         keystone_url: {{ pillar['endpoints']['internal'] }}
         allowed_hosts: [{{ pillar['haproxy']['dashboard_domain'] }}]
         timezone: {{ pillar['timezone'] }}
@@ -119,26 +88,18 @@ apache_conf:
         alias: dashboard
 {% endif %}
 
-{% if grains['os_family'] == 'Debian' %}
-
 secret_key:
   file.managed:
     - name: /var/lib/openstack-dashboard/secret_key
+{% if grains['os_family'] == 'Debian' %}
     - user: horizon
     - group: horizon
-    - mode: 600
-    - contents_pillar: horizon:horizon_secret_key
 {% elif grains['os_family'] == 'RedHat' %}
-
-secret_key:
-  file.managed:
-    - name: /var/lib/openstack-dashboard/secret_key
     - user: apache
     - group: apache
+{% endif %}
     - mode: 600
     - contents_pillar: horizon:horizon_secret_key
-
-{% endif %}
 
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}
 install_theme:

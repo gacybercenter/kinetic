@@ -1,75 +1,52 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
 {% if grains['spawning'] == 0 %}
 
-make_designate_service:
-  cmd.script:
-    - source: salt://formulas/designate/files/mkservice.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
-        designate_service_password: {{ pillar ['designate']['designate_service_password'] }}
-
-/bin/sh -c "designate-manage database sync" designate:
+designate-manage database sync:
   cmd.run:
+    - runas: designate
     - require:
       - file: /etc/designate/designate.conf
-    - onchanges:
-      - file: /etc/designate/designate.conf
-
-/bin/sh -c "designate-manage pool update" designate:
-  cmd.run:
-    - require:
-      - file: /etc/designate/pools.yaml
-      - service: designate_api_service
-      - service: designate_central_service
-      - service: designate_mdns_service
-      - service: designate_worker_service
-      - service: designate_producer_service
-    - onchanges:
-      - file: /etc/designate/pools.yaml
-
-/bin/sh -c "designate-manage tlds import --input_file /etc/designate/tlds.conf" designate:
-  cmd.run:
-    - require:
-      - file: /etc/designate/tlds.conf
-      - service: designate_api_service
-      - service: designate_central_service
-      - service: designate_mdns_service
-      - service: designate_worker_service
-      - service: designate_producer_service
-    - onchanges:
-      - file: /etc/designate/tlds.conf
-
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
-
-{% else %}
-
-check_spawnzero_status:
-  module.run:
-    - name: spawnzero.check
-    - type: {{ grains['type'] }}
-    - retry:
-        attempts: 10
-        interval: 30
     - unless:
       - fun: grains.equals
         key: build_phase
         value: configure
+
+designate-manage pool update:
+  cmd.run:
+    - runas: designate
+    - require:
+      - file: /etc/designate/pools.yaml
+      - service: designate_api_service
+      - service: designate_central_service
+      - service: designate_mdns_service
+      - service: designate_worker_service
+      - service: designate_producer_service
+    - onchanges:
+      - file: /etc/designate/pools.yaml
+
+designate-manage tlds import --input_file /etc/designate/tlds.conf:
+  cmd.run:
+    - runas: designate
+    - require:
+      - file: /etc/designate/tlds.conf
+      - service: designate_api_service
+      - service: designate_central_service
+      - service: designate_mdns_service
+      - service: designate_worker_service
+      - service: designate_producer_service
+    - onchanges:
+      - file: /etc/designate/tlds.conf
+
+{{ spawn.spawnzero_complete() }}
+
+{% else %}
+
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
@@ -82,42 +59,15 @@ check_spawnzero_status:
     - source: salt://formulas/designate/files/designate.conf
     - template: jinja
     - defaults:
-        sql_connection_string: 'connection = mysql+pymysql://designate:{{ pillar['designate']['designate_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/designate'
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='designate', database='designate') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['designate']['designate_service_password'] }}
         listen_api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:9001
-        designate_public_endpoint: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['path'] }}
-        coordination_server: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('G@role:memcached and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        designate_public_endpoint: {{ constructor.endpoint_url_constructor(project='designate', service='designate', endpoint='public') }}
+        coordination_server: {{ constructor.spawnzero_ip_constructor(type='memcached', network='management') }}:11211
 
 ## Trying to write yaml in yaml via salt with correct indentation is basically impossible when using
 ## file.managed with the source directive.  Using contents is ugly, but it works.

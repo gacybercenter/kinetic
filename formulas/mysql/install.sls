@@ -2,7 +2,7 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/mariadb/common/repo
+  - /formulas/common/mariadb/repo
 
 {% if grains['os_family'] == 'Debian' %}
 

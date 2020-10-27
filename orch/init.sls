@@ -27,6 +27,11 @@ wipe_init_keys:
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
 ## in the waiting room
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
+  {% if pillar['hosts'][type]['style'] == 'physical' %}
+    {% set role = pillar['hosts'][type]['role'] %}
+  {% else %}
+    {% set role = type %}
+  {% endif %}
 
 create_{{ type }}_exec_runner:
   salt.runner:
@@ -35,7 +40,7 @@ create_{{ type }}_exec_runner:
         mods: orch/waiting_room
         pillar:
           type: {{ type }}
-          needs: {{ salt['pillar.get']('hosts:'+type+':needs', {}) }}
+          needs: {{ salt['pillar.get']('hosts:'+role+':needs', {}) }}
     - parallel: true
 
 {{ type }}_origin_phase_runner_delay:

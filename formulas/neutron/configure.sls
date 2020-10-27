@@ -1,19 +1,10 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
-{% if grains['spawning'] == 0 %}
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
-make_neutron_service:
-  cmd.script:
-    - source: salt://formulas/neutron/files/mkservice.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        neutron_internal_endpoint: {{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['internal_endpoint']['path'] }}
-        neutron_public_endpoint: {{ pillar ['openstack_services']['neutron']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['neutron']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['public_endpoint']['path'] }}
-        neutron_admin_endpoint: {{ pillar ['openstack_services']['neutron']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['neutron']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['neutron']['configuration']['admin_endpoint']['path'] }}
-        neutron_service_password: {{ pillar ['neutron']['neutron_service_password'] }}
+{% if grains['spawning'] == 0 %}
 
 neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head:
   cmd.run:
@@ -21,6 +12,10 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
     - require:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 mk_public_network:
   cmd.script:
@@ -28,7 +23,7 @@ mk_public_network:
     - template: jinja
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        keystone_internal_endpoint: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         start: {{ pillar['networking']['addresses']['float_start'] }}
         end: {{ pillar['networking']['addresses']['float_end'] }}
         dns: {{ pillar['networking']['addresses']['float_dns'] }}
@@ -39,33 +34,16 @@ mk_public_network:
     - retry:
         attempts: 3
         interval: 10
-
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
-
-{% else %}
-
-check_spawnzero_status:
-  module.run:
-    - name: spawnzero.check
-    - type: {{ grains['type'] }}
-    - retry:
-        attempts: 10
-        interval: 30
     - unless:
       - fun: grains.equals
         key: build_phase
         value: configure
+
+{{ spawn.spawnzero_complete() }}
+
+{% else %}
+
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
@@ -80,33 +58,15 @@ check_spawnzero_status:
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
         service_plugins: neutron.services.ovn_l3.plugin.OVNL3RouterPlugin
 {% endif %}
-        sql_connection_string: 'connection = mysql+pymysql://neutron:{{ pillar['neutron']['neutron_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/neutron'
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='neutron', database='neutron') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['neutron']['neutron_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         nova_password: {{ pillar['nova']['nova_service_password'] }}
-        designate_url: {{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['designate']['configuration']['public_endpoint']['port'] }}
+        designate_url: {{ constructor.endpoint_url_constructor(project='designate', service='designate', endpoint='public', base=True) }}
         designate_password: {{ pillar['designate']['designate_service_password'] }}
 {% if grains['os_family'] == 'Debian' %}
         lock_path: /var/lock/neutron
@@ -136,31 +96,13 @@ check_spawnzero_status:
         tenant_network_types: geneve
         mechanism_drivers: ovn
         extension_drivers: port_security
-        ovn_nb_connection: |-
-          ovn_nb_connection =
-          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          tcp:{{ address }}:6641
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        ovn_sb_connection: |-
-          ovn_sb_connection =
-          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          tcp:{{ address }}:6642
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        ovn_l3_scheduler: ovn_l3_scheduler = leastloaded
-        ovn_native_dhcp: ovn_native_dhcp = True
-        ovn_l3_mode: ovn_l3_mode = True
-        ovn_metadata_enabled: ovn_metadata_enabled = True
-        enable_distributed_floating_ip:  enable_distributed_floating_ip = True
+        ovn_nb_connection: {{ constructor.ovn_nb_connection_constructor() }}
+        ovn_sb_connection: {{ constructor.ovn_sb_connection_constructor() }}
+        ovn_l3_scheduler: leastloaded
+        ovn_native_dhcp: True
+        ovn_l3_mode: True
+        ovn_metadata_enabled: True
+        enable_distributed_floating_ip: True
 {% endif %}
         vni_ranges: 1:65536
 

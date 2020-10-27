@@ -1,83 +1,40 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
-{% if grains['spawning'] == 0 %}
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
-make_magnum_service:
-  cmd.script:
-    - source: salt://formulas/magnum/files/mkservice.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        magnum_internal_endpoint: {{ pillar ['openstack_services']['magnum']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['magnum']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['magnum']['configuration']['internal_endpoint']['path'] }}
-        magnum_public_endpoint: {{ pillar ['openstack_services']['magnum']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['magnum']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['magnum']['configuration']['public_endpoint']['path'] }}
-        magnum_admin_endpoint: {{ pillar ['openstack_services']['magnum']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['magnum']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['magnum']['configuration']['admin_endpoint']['path'] }}
-        magnum_service_password: {{ pillar ['magnum']['magnum_service_password'] }}
+{% if grains['spawning'] == 0 %}
 
 magnum-db-manage upgrade:
   cmd.run:
     - runas: magnum
     - require:
       - file: /etc/magnum/magnum.conf
-
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
-
-{% else %}
-
-check_spawnzero_status:
-  module.run:
-    - name: spawnzero.check
-    - type: {{ grains['type'] }}
-    - retry:
-        attempts: 10
-        interval: 30
     - unless:
       - fun: grains.equals
         key: build_phase
         value: configure
 
+{{ spawn.spawnzero_complete() }}
+
+{% else %}
+
+{{ spawn.check_spawnzero_status(grains['type']) }}
+
 {% endif %}
+
 
 /etc/magnum/magnum.conf:
   file.managed:
     - source: salt://formulas/magnum/files/magnum.conf
     - template: jinja
     - defaults:
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        connection: mysql+pymysql://magnum:{{ pillar['magnum']['magnum_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/magnum
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='magnum', database='magnum') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['magnum']['magnum_service_password'] }}
         host: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 

@@ -1,6 +1,8 @@
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
 /etc/ceph/ceph.conf:
   file.managed:
-    - source: salt://formulas/ceph/common/files/ceph.conf
+    - source: salt://formulas/common/ceph/files/ceph.conf
     - template: jinja
     - makedirs: True
     - defaults:
@@ -27,10 +29,10 @@
           [client.{{ host }}]
           host = {{ host }}
           keyring = /etc/ceph/ceph.client.{{ host }}.keyring
-          rgw_keystone_url = {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}
+          rgw_keystone_url = {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal', base=True) }}
           rgw keystone api version = 3
-          rgw keystone admin user = keystone
-          rgw keystone admin password = {{ pillar ['keystone']['keystone_service_password'] }}
+          rgw keystone admin user = swift
+          rgw keystone admin password = {{ pillar ['swift']['swift_service_password'] }}
           rgw keystone admin project = service
           rgw keystone admin domain = default
           rgw keystone accepted roles = admin,user

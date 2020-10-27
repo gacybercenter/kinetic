@@ -1,6 +1,18 @@
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/ceph/common/configure
+  - /formulas/common/ceph/configure
+
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
+### Calculate public interface - this is referenced a few times
+### Potential to make 'interface calculator' macro
+{% if salt['pillar.get']('hosts:'+grains['type']+':networks:public:bridge', False) == True %}
+  {% set public_interface = 'public_br' %}
+{% elif salt['pillar.get']('hosts:'+grains['type']+':networks:public:interfaces') | length > 1 %}
+  {% set public_interface = 'public_bond' %}
+{% else %}
+  {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
+{% endif %}
 
 /etc/modprobe.d/kvm.conf:
   file.managed:
@@ -8,7 +20,7 @@ include:
 
 /etc/frr/daemons:
   file.managed:
-    - source: salt://formulas/frr/common/files/daemons
+    - source: salt://formulas/common/frr/files/daemons
 
 /etc/ceph/ceph.client.compute.keyring:
   file.managed:
@@ -74,31 +86,13 @@ load_ceph_volumes_key:
     - source: salt://formulas/compute/files/nova.conf
     - template: jinja
     - defaults:
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['nova']['nova_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-        api_servers: {{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['glance']['configuration']['internal_endpoint']['path'] }}
+        api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='internal') }}
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
@@ -144,47 +138,29 @@ libvirtd_service:
     - source: salt://formulas/compute/files/neutron.conf
     - template: jinja
     - defaults:
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['neutron']['neutron_service_password'] }}
-{% if grains['os_family'] == 'Debian' %}
+  {% if grains['os_family'] == 'Debian' %}
         lock_path: /var/lock/neutron
-{% elif grains['os_family'] == 'RedHat' %}
+  {% elif grains['os_family'] == 'RedHat' %}
         lock_path: /var/lib/neutron/tmp
-{% endif %}
+  {% endif %}
 
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
 arp_protect_fix:
   file.managed:
-{% if grains['os_family'] == 'RedHat' %}
+  {% if grains['os_family'] == 'RedHat' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-{% elif grains['os_family'] == 'Debian' %}
+  {% elif grains['os_family'] == 'Debian' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-{% endif %}
+  {% endif %}
     - source: salt://formulas/compute/files/arp_protect.py
 ###
 
-{% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
+  {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 ## this used to be a default but was changed to a boolean here:
 ## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
 os_neutron_dac_override:
@@ -193,7 +169,7 @@ os_neutron_dac_override:
     - persist: True
     - watch_in:
       - service: neutron_linuxbridge_agent_service
-{% endif %}
+  {% endif %}
 
 neutron_linuxbridge_agent_service:
   service.running:
@@ -209,9 +185,7 @@ neutron_linuxbridge_agent_service:
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
-        public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
-{% endfor %}
+        public_interface: {{ public_interface }}
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -223,52 +197,26 @@ neutron-ovn-metadata-agent.ini:
     - defaults:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
-        ovn_sb_connection: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          tcp:{{ address }}:6642
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        ovn_sb_connection: {{ constructor.ovn_sb_connection_constructor() }}
 
 openvswitch_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
+  {% if grains['os_family'] == 'Debian' %}
     - name: openvswitch-switch
-{% elif grains['os_family'] == 'RedHat' %}
+  {% elif grains['os_family'] == 'RedHat' %}
     - name: openvswitch
-{% endif %}
+  {% endif %}
     - enable: true
     - watch:
       - file: neutron-ovn-metadata-agent.ini
 
 set-ovn-remote:
   cmd.run:
-    - name: |-
-        ovs-vsctl set open . external-ids:ovn-remote=
-        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        tcp:{{ address }}:6642
-            {%- endif -%}
-          {%- endfor -%}
-          {% if loop.index < loop.length %},{% endif %}
-        {%- endfor %}
+    - name: ovs-vsctl set open . external-ids:ovn-remote={{ constructor.ovn_sb_connection_constructor() }}
     - require:
       - service: openvswitch_service
     - unless:
-      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "
-        {%- for host, addresses in salt['mine.get']('role:ovsdb', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-          {%- for address in addresses -%}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-        tcp:{{ address }}:6642
-            {%- endif -%}
-          {%- endfor -%}
-          {% if loop.index < loop.length %},{% endif %}
-        {%- endfor %}"
+      - ovs-vsctl get open . external-ids:ovn-remote | grep -q "{{ constructor.ovn_sb_connection_constructor() }}"
 
 set_encap:
   cmd.run:
@@ -336,11 +284,9 @@ ovsdb_listen:
     - unless:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
-{% for network in pillar['hosts'][grains['type']]['networks'] %}
-  {% if network == 'public' %}
 enable_bridge:
   cmd.run:
-    - name: ovs-vsctl --may-exist add-port br-provider {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
+    - name: ovs-vsctl --may-exist add-port br-provider {{ public_interface }}
     - require:
       - service: openvswitch_service
       - cmd: set_encap
@@ -348,17 +294,15 @@ enable_bridge:
       - cmd: make_bridge
       - cmd: map_bridge
     - unless:
-      - ovs-vsctl port-to-br {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }} | grep -q "br-provider"
-  {% endif %}
-{% endfor %}
+      - ovs-vsctl port-to-br {{ public_interface }} | grep -q "br-provider"
 
 ovn_controller_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
+  {% if grains['os_family'] == 'Debian' %}
     - name: ovn-host
-{% elif grains['os_family'] == 'RedHat' %}
+  {% elif grains['os_family'] == 'RedHat' %}
     - name: ovn-controller
-{% endif %}
+  {% endif %}
     - enable: true
     - require:
       - service: openvswitch_service

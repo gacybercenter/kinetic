@@ -2,7 +2,7 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/openstack/common/repo
+  - /formulas/common/openstack/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -30,3 +30,8 @@ keystone_packages:
       - python3-mod_wsgi
 
 {% endif %}
+
+shade:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true

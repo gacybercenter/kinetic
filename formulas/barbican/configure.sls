@@ -1,38 +1,26 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
-{% if grains['spawning'] == 0 %}
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
-make_barbican_service:
-  cmd.script:
-    - source: salt://formulas/barbican/files/mkservice.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        barbican_internal_endpoint: {{ pillar ['openstack_services']['barbican']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['barbican']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['barbican']['configuration']['internal_endpoint']['path'] }}
-        barbican_public_endpoint: {{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['barbican']['configuration']['public_endpoint']['path'] }}
-        barbican_admin_endpoint: {{ pillar ['openstack_services']['barbican']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['barbican']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['barbican']['configuration']['admin_endpoint']['path'] }}
-        barbican_service_password: {{ pillar ['barbican']['barbican_service_password'] }}
+{% if grains['spawning'] == 0 %}
 
 barbican-manage db upgrade:
   cmd.run:
     - runas: barbican
     - require:
       - file: /etc/barbican/barbican.conf
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+{{ spawn.spawnzero_complete() }}
+
+{% else %}
+
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
@@ -41,31 +29,13 @@ spawnzero_complete:
     - source: salt://formulas/barbican/files/barbican.conf
     - template: jinja
     - defaults:
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        sql_connection_string: 'sql_connection = mysql+pymysql://barbican:{{ pillar['barbican']['barbican_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/barbican'
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='barbican', database='barbican') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['barbican']['barbican_service_password'] }}
-        kek: kek = '{{ pillar['barbican']['simplecrypto_key'] }}'
+        kek: {{ pillar['barbican']['simplecrypto_key'] }}
 
 {% if grains['os_family'] == 'RedHat' %}
 /etc/httpd/conf.d/wsgi-barbican.conf:

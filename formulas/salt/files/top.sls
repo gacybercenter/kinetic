@@ -2,6 +2,7 @@ base:
   '*':
     - api
     - deps
+    - openstack_services
   'salt':
     - openstack
   'cache*':
@@ -12,18 +13,18 @@ base:
     - neutron
     - rabbitmq
     - placement
-    - keystone
+    - swift
   'storage*':
     - ceph
-    - keystone
+    - swift
   'cephmon*':
     - ceph
-    - keystone
+    - swift
   'etcd*':
     - etcd
   'mds*':
     - ceph
-    - keystone
+    - swift
   'mysql*':
     - mysql
     - keystone
@@ -46,91 +47,89 @@ base:
     - graylog
   'keystone*':
     - keystone
+    - barbican
+    - magnum
+    - sahara
+    - glance
+    - nova
+    - placement
+    - neutron
+    - heat
+    - cinder
+    - manila
+    - designate
+    - swift
+    - zun
     - openstack
   'barbican*':
     - barbican
-    - openstack
     - rabbitmq
   'magnum*':
     - magnum
-    - openstack
     - rabbitmq
   'sahara*':
     - sahara
-    - openstack
     - rabbitmq
   'glance*':
     - glance
-    - openstack
-    - keystone
+    - swift
     - ceph
   'nova*':
     - nova
-    - openstack
     - rabbitmq
     - placement
     - neutron
   'placement*':
     - placement
-    - openstack
     - rabbitmq
   'neutron*':
     - neutron
-    - openstack
     - rabbitmq
     - nova
     - designate
+    - openstack
   'network*':
     - neutron
-    - openstack
     - rabbitmq
     - nova
     - designate
   'heat*':
     - heat
-    - openstack
     - rabbitmq
   'cinder*':
     - cinder
-    - openstack
     - rabbitmq
-    - keystone
     - ceph
   'volume*':
     - cinder
-    - openstack
     - rabbitmq
-    - keystone
+    - swift
     - ceph
   'manila*':
     - manila
-    - openstack
     - rabbitmq
+    - openstack
   'share*':
     - manila
-    - openstack
     - rabbitmq
-    - keystone
+    - swift
     - ceph
   'designate*':
     - designate
-    - openstack
     - rabbitmq
   'bind*':
     - designate
   'swift*':
     - swift
-    - openstack
     - ceph
-    - keystone
   'zun*':
     - zun
-    - openstack
     - rabbitmq
   'container*':
     - zun
-    - openstack
     - rabbitmq
     - neutron
   'horizon*':
     - horizon
+  'webssh2*':
+    - webssh2

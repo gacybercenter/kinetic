@@ -1,0 +1,14 @@
+[Unit]
+Description=webssh2 unit file
+Documentation=https://github.com/billchurch/webssh2
+After=network-online.target
+
+[Service]
+Type=simple
+User=webssh2
+WorkingDirectory=/var/www/html/app
+ExecStart=npm start
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

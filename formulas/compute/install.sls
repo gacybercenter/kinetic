@@ -2,9 +2,9 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/openstack/common/repo
-  - /formulas/ceph/common/repo
-  - /formulas/frr/common/repo
+  - /formulas/common/openstack/repo
+  - /formulas/common/ceph/repo
+  - /formulas/common/frr/repo
 
 {% if grains['os_family'] == 'Debian' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}

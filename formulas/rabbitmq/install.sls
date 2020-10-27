@@ -2,7 +2,7 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/openstack/common/repo
+  - /formulas/common/openstack/repo
 
 rabbitmq_packages:
   pkg.installed:

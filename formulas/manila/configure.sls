@@ -1,28 +1,20 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
-{% if grains['spawning'] == 0 %}
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
-make_manila_service:
-  cmd.script:
-    - source: salt://formulas/manila/files/mkservice.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        manila_internal_endpoint_v1: {{ pillar ['openstack_services']['manila']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['manila']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['manila']['configuration']['internal_endpoint']['v1_path'] }}
-        manila_public_endpoint_v1: {{ pillar ['openstack_services']['manila']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['manila']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['manila']['configuration']['public_endpoint']['v1_path'] }}
-        manila_admin_endpoint_v1: {{ pillar ['openstack_services']['manila']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['manila']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['manila']['configuration']['admin_endpoint']['v1_path'] }}
-        manila_internal_endpoint_v2: {{ pillar ['openstack_services']['manila']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['manila']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['manila']['configuration']['internal_endpoint']['v2_path'] }}
-        manila_public_endpoint_v2: {{ pillar ['openstack_services']['manila']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['manila']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['manila']['configuration']['public_endpoint']['v2_path'] }}
-        manila_admin_endpoint_v2: {{ pillar ['openstack_services']['manila']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['manila']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['manila']['configuration']['admin_endpoint']['v2_path'] }}
-        manila_service_password: {{ pillar ['manila']['manila_service_password'] }}
+{% if grains['spawning'] == 0 %}
 
 manila-manage db sync:
   cmd.run:
     - runas: manila
     - require:
       - file: /etc/manila/manila.conf
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 make_nfs_share_type:
   cmd.script:
@@ -30,40 +22,23 @@ make_nfs_share_type:
     - template: jinja
     - defaults:
         admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
+        keystone_internal_endpoint: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
     - require:
       - service: manila_api_service
       - service: manila_scheduler_service
     - retry:
         attempts: 3
         interval: 10
-
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
-
-{% else %}
-
-check_spawnzero_status:
-  module.run:
-    - name: spawnzero.check
-    - type: {{ grains['type'] }}
-    - retry:
-        attempts: 10
-        interval: 30
     - unless:
       - fun: grains.equals
         key: build_phase
         value: configure
+
+{{ spawn.spawnzero_complete() }}
+
+{% else %}
+
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
 
@@ -78,29 +53,11 @@ check_spawnzero_status:
     - source: salt://formulas/manila/files/manila.conf
     - template: jinja
     - defaults:
-        sql_connection_string: 'connection = mysql+pymysql://manila:{{ pillar['manila']['manila_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/manila'
-        transport_url: |-
-          rabbit://
-          {%- for host, addresses in salt['mine.get']('role:rabbitmq', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          openstack:{{ pillar['rabbitmq']['rabbitmq_password'] }}@{{ address }}
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        www_authenticate_uri: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        auth_url: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='manila', database='manila') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['manila']['manila_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
 

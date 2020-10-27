@@ -1,42 +1,18 @@
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/ceph/common/configure
+  - /formulas/common/ceph/configure
+
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 
 {% if grains['spawning'] == 0 %}
 
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
+{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
-check_spawnzero_status:
-  module.run:
-    - name: spawnzero.check
-    - type: {{ grains['type'] }}
-    - retry:
-        attempts: 10
-        interval: 30
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
+{{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
-
-ceph_user_exists:
-  user.present:
-    - name: ceph
-    - home: /etc/ceph
 
 /etc/sudoers.d/ceph:
   file.managed:
@@ -74,4 +50,4 @@ ceph-mds@{{ grains['id'] }}:
   service.running:
     - enable: true
     - watch:
-      - sls: /formulas/ceph/common/configure
+      - sls: /formulas/common/ceph/configure

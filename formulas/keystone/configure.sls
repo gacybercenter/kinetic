@@ -1,6 +1,9 @@
 include:
   - /formulas/{{ grains['role'] }}/install
 
+{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+
 {% if grains['os_family'] == 'Debian' %}
   {% set webserver = 'apache2' %}
 {% elif grains['os_family'] == 'RedHat' %}
@@ -8,69 +11,184 @@ include:
 {% endif %}
 
 {% if grains['spawning'] == 0 %}
+  {% set keystone_conf = pillar['openstack_services']['keystone']['configuration']['services']['keystone']['endpoints'] %}
 
-initialize_keystone:
-  cmd.script:
-    - source: salt://formulas/keystone/files/initialize.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-        admin_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['protocol'] }}{{ pillar['endpoints']['admin'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['admin_endpoint']['path'] }}
+init_keystone:
+  cmd.run:
+    - name: |
+        keystone-manage db_sync
+        keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
+        keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
+        keystone-manage bootstrap --bootstrap-password {{ pillar['openstack']['admin_password'] }} \
+  {%- for endpoint, attribs in keystone_conf.items() %}
+        --bootstrap-{{ endpoint }}-url {{ attribs['protocol'] }}{{ pillar['endpoints'][endpoint] }}{{ attribs['port'] }}{{ attribs['path'] }} \
+  {%- endfor %}
+        --bootstrap-region-id RegionOne
     - require:
       - file: /etc/keystone/keystone.conf
-      - file: keystone_domain
-
-spawnzero_complete:
-  grains.present:
-    - value: True
-  module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
-    - onchanges:
-      - grains: spawnzero_complete
-
-project_init:
-  cmd.script:
-    - source: salt://formulas/keystone/files/project_init.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        internal_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['protocol'] }}{{ pillar['endpoints']['internal'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['internal_endpoint']['path'] }}
-        keystone_service_password: {{ pillar ['keystone']['keystone_service_password'] }}
-        keystone_domain: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
-{% if grains['os_family'] == 'Debian' %}
-        webserver: apache2
-{% elif grains['os_family'] == 'RedHat' %}
-        webserver: httpd
-{% endif %}
-    - order: last
-    - retry:
-        attempts: 10
-        until: True
-        delay: 60
-
-{% else %}
-
-check_spawnzero_status:
-  module.run:
-    - name: spawnzero.check
-    - type: {{ grains['type'] }}
-    - retry:
-        attempts: 10
-        interval: 30
     - unless:
       - fun: grains.equals
         key: build_phase
         value: configure
 
+{{ spawn.spawnzero_complete() }}
+
+service_project_init:
+  keystone_project.present:
+    - name: service
+    - domain: default
+    - description: Service Project
+
+user_role_init:
+  keystone_role.present:
+    - name: user
+
+{% for project in pillar['openstack_services'] %}
+
+{{ project }}_user_init:
+  keystone_user.present:
+    - name: {{ project }}
+    - domain: default
+    - password: {{ pillar [project][project+'_service_password'] }}
+
+{{ project }}_user_role_grant:
+  keystone_role_grant.present:
+    - name: admin
+    - project: service
+    - user: {{ project }}
+    - require:
+      - keystone_user: {{ project }}_user_init
+
+  {% for service, attribs in pillar['openstack_services'][project]['configuration']['services'].items() %}
+
+{{ service }}_service_create:
+  keystone_service.present:
+    - name: {{ service }}
+    - type: {{ attribs['type'] }}
+    - description: {{ attribs['description'] }}
+
+    {% for endpoint, params in attribs['endpoints'].items() %}
+
+{{ service }}_{{ endpoint }}_endpoint_create:
+  keystone_endpoint.present:
+    - name: {{ endpoint }}
+    - url: {{ constructor.endpoint_url_constructor(project, service, endpoint) }}
+    - region: RegionOne
+    - service_name: {{ service }}
+    - require:
+      - keystone_service: {{ service }}_service_create
+
+    {% endfor %}
+  {% endfor %}
+{% endfor %}
+
+##LDAP-specific changes
+{% if salt['pillar.get']('keystone:ldap_enabled', False) == True %}
+create_ldap_domain:
+  keystone_domain.present:
+    - name: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
+    - description: "LDAP Domain"
+
+keystone_domain:
+  file.managed:
+    - name: /etc/keystone/domains/keystone.{{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}.conf
+    - source: salt://formulas/keystone/files/keystone-ldap.conf
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        ldap_url: {{ pillar ['common_ldap_configuration']['address'] }}
+        ldap_user: {{ pillar ['common_ldap_configuration']['bind_user'] }}
+        ldap_password: {{ pillar ['bind_password'] }}
+        ldap_suffix: {{ pillar ['common_ldap_configuration']['base_dn'] }}
+        user_tree_dn: {{ pillar ['common_ldap_configuration']['user_dn'] }}
+        group_tree_dn: {{ pillar ['common_ldap_configuration']['group_dn'] }}
+        user_filter: {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}
+        group_filter: {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}
+        sql_connection_string: {{ constructor.mysql_url_constructor('keystone', 'keystone') }}
+        public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
+    - require_in:
+      - service: wsgi_service
+      - cmd: init_keystone
 
 {% endif %}
+
+## barbican-specific changes
+creator_role_init:
+  keystone_role.present:
+    - name: creator
+
+creator_role_assignment:
+  keystone_role_grant.present:
+    - name: creator
+    - project: service
+    - user: barbican
+
+## heat-specific configurations
+create_heat_domain:
+  keystone_domain.present:
+    - name: heat
+    - description: "Heat stack projects and users"
+
+create_heat_admin_user:
+  keystone_user.present:
+    - name: heat_domain_admin
+    - domain: heat
+    - password: {{ pillar ['heat']['heat_service_password'] }}
+
+heat_domain_admin_role_assignment:
+  keystone_role_grant.present:
+    - name: admin
+    - domain: heat
+    - user_domain: heat
+    - user: heat_domain_admin
+
+heat_stack_owner_role_init:
+  keystone_role.present:
+    - name: heat_stack_owner
+
+heat_stack_user_role_init:
+  keystone_role.present:
+    - name: heat_stack_user
+
+## magnum-specific configurations
+create_magnum_domain:
+  keystone_domain.present:
+    - name: magnum
+    - description: "Owns users and projects created by magnum"
+
+create_magnum_admin_user:
+  keystone_user.present:
+    - name: magnum_domain_admin
+    - domain: magnum
+    - password: {{ pillar ['magnum']['magnum_service_password'] }}
+
+## zun-specific configurations
+kuryr_user_init:
+  keystone_user.present:
+    - name: kuryr
+    - domain: default
+    - password: {{ pillar ['zun']['kuryr_service_password'] }}
+
+kuryr_user_role_grant:
+  keystone_role_grant.present:
+    - name: admin
+    - project: service
+    - user: kuryr
+
+{% else %}
+
+{{ spawn.check_spawnzero_status(grains['type']) }}
+
+{% endif %}
+
+/etc/openstack/clouds.yml:
+  file.managed:
+    - source: salt://formulas/common/openstack/files/clouds.yml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        password: {{ pillar['openstack']['admin_password'] }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
 
 /var/lib/keystone/keystone.db:
   file.absent
@@ -80,91 +198,54 @@ check_spawnzero_status:
     - source: salt://formulas/keystone/files/keystone.conf
     - template: jinja
     - defaults:
-        sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
-        memcached_servers: |-
-          {{ ""|indent(10) }}
-          {%- for host, addresses in salt['mine.get']('role:memcached', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
-            {%- for address in addresses -%}
-              {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-          {{ address }}:11211
-              {%- endif -%}
-            {%- endfor -%}
-            {% if loop.index < loop.length %},{% endif %}
-          {%- endfor %}
-        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='keystone', database='keystone') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
+        public_endpoint: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public', base=True) }}
         token_expiration: {{ pillar['keystone']['token_expiration'] }}
 
-keystone_domain:
+keystone_site_configuration:
   file.managed:
-    - name: /etc/keystone/domains/keystone.{{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}.conf
-    - source: salt://formulas/keystone/files/keystone-ldap.conf
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        ldap_url: 'url = ldap://{{ pillar ['common_ldap_configuration']['address'] }}'
-        ldap_user: 'user = {{ pillar ['common_ldap_configuration']['bind_user'] }}'
-        ldap_password: 'password = {{ pillar ['bind_password'] }}'
-        ldap_suffix: 'suffix = {{ pillar ['common_ldap_configuration']['base_dn'] }}'
-        user_tree_dn: 'user_tree_dn = {{ pillar ['common_ldap_configuration']['user_dn'] }}'
-        group_tree_dn: 'group_tree_dn = {{ pillar ['common_ldap_configuration']['group_dn'] }}'
-        user_filter: 'user_filter = {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}'
-        group_filter: 'group_filter = {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}'
-        sql_connection_string: 'connection = mysql+pymysql://keystone:{{ pillar['keystone']['keystone_mysql_password'] }}@{{ pillar['haproxy']['dashboard_domain'] }}/keystone'
-        public_endpoint: {{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['protocol'] }}{{ pillar['endpoints']['public'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['port'] }}{{ pillar ['openstack_services']['keystone']['configuration']['public_endpoint']['path'] }}
-
 {% if grains['os_family'] == 'Debian' %}
-
-/etc/apache2/sites-available/keystone.conf:
-  file.managed:
+    - name: /etc/apache2/sites-available/keystone.conf
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/httpd/conf.d/keystone.conf
+{% endif %}
     - source: salt://formulas/keystone/files/apache-keystone.conf
     - template: jinja
     - defaults:
-        webserver: apache2
+        webserver: {{ webserver }}
 
 webserver_conf:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
     - name: /etc/apache2/apache2.conf
     - source: salt://formulas/keystone/files/apache2.conf
-    - template: jinja
-    - defaults:
-        ServerName: ServerName {{ grains['id'] }}
-
-/usr/local/share/ca-certificates/ldap_ca.crt:
-  file.managed:
-    - contents_pillar: ldap_ca
-
-update-ca-certificates:
-  cmd.run:
-    - onchanges:
-      - file: /usr/local/share/ca-certificates/ldap_ca.crt
-
 {% elif grains['os_family'] == 'RedHat' %}
-
-/etc/httpd/conf.d/keystone.conf:
-  file.managed:
-    - source: salt://formulas/keystone/files/apache-keystone.conf
-    - template: jinja
-    - defaults:
-        webserver: httpd
-
-webserver_conf:
-  file.managed:
     - name: /etc/httpd/conf/httpd.conf
     - source: salt://formulas/keystone/files/httpd.conf
+{% endif %}
     - template: jinja
     - defaults:
         ServerName: ServerName {{ grains['id'] }}
 
-/etc/pki/ca-trust/source/anchors/ldap_ca.crt:
+cert_bundle:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
+    - name: /usr/local/share/ca-certificates/ldap_ca.crt
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /etc/pki/ca-trust/source/anchors/ldap_ca.crt
+{% endif %}
     - contents_pillar: ldap_ca
 
-update-ca-trust extract:
+update_certificate_store:
   cmd.run:
-    - onchanges:
-      - file: /etc/pki/ca-trust/source/anchors/ldap_ca.crt
-
+{% if grains['os_family'] == 'Debian' %}
+    - name: update-ca-certificates
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: update-ca-trust extract
 {% endif %}
+    - onchanges:
+      - file: cert_bundle
 
 /etc/keystone/ldap_ca.crt:
   file.managed:
@@ -193,9 +274,4 @@ wsgi_service:
     - init_delay: 10
     - watch:
       - file: /etc/keystone/keystone.conf
-      - file: keystone_domain
-      - file: webserver_conf
-    - require:
-      - file: /etc/keystone/keystone.conf
-      - file: keystone_domain
       - file: webserver_conf
