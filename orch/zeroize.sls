@@ -1,3 +1,17 @@
+## Copyright 2019 Augusta University
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+
 ## This is a collapsed zeroize state that needs to check for two things:
 ## Is this state called globally?  If so, nuke everything.  If not, nuke the one thing
 ## Is this device physical, virtual, container, or something else?  The code path depends on this answer
