@@ -36,7 +36,7 @@ https://github.com/ipxe/ipxe.git:
     - source: salt://formulas/pxe/files/kinetic.ipxe
     - template: jinja
     - defaults:
-        pxe_record: {{ pillar['pxe_record'] }}
+        pxe_record: {{ pillar['pxe']['record'] }}
 
 create_efi_module:
   cmd.run:
@@ -69,7 +69,7 @@ wsgi_module:
     - source: salt://formulas/pxe/files/index.py
     - template: jinja
     - defaults:
-        pxe_record: {{ pillar['pxe_record'] }}
+        pxe_record: {{ pillar['pxe']['record'] }}
 
 /var/www/html/assignments:
   file.directory
@@ -91,7 +91,7 @@ wsgi_module:
         ntp_server: {{ pillar['hosts'][type]['ntp_server'] }}
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
-        master_record: {{ pillar['master_record'] }}
+        master_record: {{ pillar['salt']['record'] }}
   {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
     {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}

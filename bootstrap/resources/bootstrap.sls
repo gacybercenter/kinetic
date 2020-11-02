@@ -63,8 +63,8 @@ update_packages_bootstrap:
   file.directory:
     - makedirs: True
 
-### <hack> the kmod state doesn't correctly parse arguments like the kmod module
-### does. Shoule open a PR to fix it, but this works for now
+## <hack> the kmod state doesn't correctly parse arguments like the kmod module
+## does. Shoule open a PR to fix it, but this works for now
 /etc/modules-load.d/nested_kvm.conf:
   file.managed:
     - contents: |
@@ -83,4 +83,102 @@ load_kvm:
 {% endif %}
     - onchanges:
       - file: /etc/modules-load.d/nested_kvm.conf
-### </hack>
+## </hack>
+
+## images
+debian_base_image:
+  file.managed:
+    - name: /kvm/images/debian10.raw
+    - source: https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.raw
+    - source_hash: https://cdimage.debian.org/cdimage/openstack/current-10/SHA512SUMS
+
+{% for host in ['salt, pxe'] %}
+/kvm/vms/{{ hostname }}/config.xml:
+  file.managed:
+    - source: salt://formulas/controller/files/common.xml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        name: {{ hostname }}
+        ram: {{ pillar['hosts'][type]['ram'] }}
+        cpu: {{ pillar['hosts'][type]['cpu'] }}
+        networks: |
+        {% for network, attribs in pillar['hosts'][type]['networks'].items() %}
+        {% set slot = attribs['interfaces'][0].split('ens')[1] %}
+          <interface type='bridge'>
+            <source bridge='{{ network }}_br'/>
+            <model type='virtio'/>
+            <mac address='{{ salt['generate.mac']('52:54:00') }}'/>
+            <address type='pci' domain='0x0000' bus='0x00' slot='0x{{ slot }}' function='0x0'/>
+          </interface>
+        {% endfor %}
+        {% if grains['os_family'] == 'Debian' %}
+        seclabel: <seclabel type='dynamic' model='apparmor' relabel='yes'/>
+        {% elif grains['os_family'] == 'RedHat' %}
+        seclabel: <seclabel type='dynamic' model='selinux' relabel='yes'/>
+        {% endif %}
+
+/kvm/vms/{{ hostname }}/disk0.raw:
+  file.copy:
+    - source: /kvm/images/{{ pillar['hosts'][type]['os'] }}-latest
+
+qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type]['disk'] }}:
+  cmd.run:
+    - onchanges:
+      - /kvm/vms/{{ hostname }}/disk0.raw
+
+/kvm/vms/{{ hostname }}/data/meta-data:
+  file.managed:
+    - source: salt://formulas/controller/files/common.metadata
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        hostname: {{ hostname }}
+
+/kvm/vms/{{ hostname }}/data/user-data:
+  file.managed:
+    - source: salt://formulas/controller/files/common.userdata
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        hostname: {{ hostname }}
+        master_record: {{ pillar['salt']['record'] }}
+
+genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
+  cmd.run:
+    - onchanges:
+      - /kvm/vms/{{ hostname }}/data/meta-data
+      - /kvm/vms/{{ hostname }}/data/user-data
+
+virsh create /kvm/vms/{{ hostname }}/config.xml:
+  cmd.run:
+    - onchanges:
+      - /kvm/vms/{{ hostname }}/config.xml
+
+
+
+
+salt_image:
+  file.copy:
+    - source: /kvm/images/debian10.raw
+    - target: /kvm/vms/salt/disk0.raw
+
+salt_image_resize:
+  cmd.run:
+    - name: qemu-img resize -f raw /kvm/vms/salt/disk0.raw 16G
+    - onchanges:
+      - file: salt_image
+
+/kvm/vms/salt/config.xml:
+  file.managed:
+
+pxe_image:
+  file.copy:
+    - source: /kvm/images/debian10.raw
+    - target: /kvm/vms/pxe/disk0.raw
+
+pxe_image_resize:
+  cmd.run:
+    - name: qemu-img resize -f raw /kvm/vms/pxe/disk0.raw 16G
+    - onchanges:
+      - file: pxe_image
