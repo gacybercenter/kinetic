@@ -123,11 +123,13 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
 
 /kvm/vms/{{ hostname }}/data/user-data:
   file.managed:
-    - source: salt://bootstrap/resources/common.metadata
+    - source: salt://bootstrap/resources/common.userdata
     - makedirs: True
     - template: jinja
     - defaults:
-        hostname: {{ hostname }}
+        key: ff
+        opts: tset
+        extra_commands: test
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:
