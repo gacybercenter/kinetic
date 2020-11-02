@@ -92,44 +92,30 @@ debian_base_image:
     - source: https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.raw
     - source_hash: https://cdimage.debian.org/cdimage/openstack/current-10/SHA512SUMS
 
-{% for host in ['salt, pxe'] %}
+{% for hostname in ['salt, pxe'] %}
 /kvm/vms/{{ hostname }}/config.xml:
   file.managed:
-    - source: salt://formulas/controller/files/common.xml
+    - source: salt://bootstrap/resources/common.xml
     - makedirs: True
     - template: jinja
     - defaults:
-        name: {{ hostname }}
-        ram: {{ pillar['hosts'][type]['ram'] }}
-        cpu: {{ pillar['hosts'][type]['cpu'] }}
-        networks: |
-        {% for network, attribs in pillar['hosts'][type]['networks'].items() %}
-        {% set slot = attribs['interfaces'][0].split('ens')[1] %}
-          <interface type='bridge'>
-            <source bridge='{{ network }}_br'/>
-            <model type='virtio'/>
-            <mac address='{{ salt['generate.mac']('52:54:00') }}'/>
-            <address type='pci' domain='0x0000' bus='0x00' slot='0x{{ slot }}' function='0x0'/>
-          </interface>
-        {% endfor %}
-        {% if grains['os_family'] == 'Debian' %}
-        seclabel: <seclabel type='dynamic' model='apparmor' relabel='yes'/>
-        {% elif grains['os_family'] == 'RedHat' %}
-        seclabel: <seclabel type='dynamic' model='selinux' relabel='yes'/>
-        {% endif %}
+        name: {{ host }}
+        ram: {{ pillar[hostname]['conf']['ram'] }}
+        cpu: {{ pillar[hostname]['conf']['cpu'] }}
+        interface: {{ pillar[hostname]['conf']['interface'] }}
 
 /kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:
-    - source: /kvm/images/{{ pillar['hosts'][type]['os'] }}-latest
+    - source: /kvm/images/debian10.raw
 
-qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type]['disk'] }}:
+qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['conf']['disk'] }}:
   cmd.run:
     - onchanges:
       - /kvm/vms/{{ hostname }}/disk0.raw
 
 /kvm/vms/{{ hostname }}/data/meta-data:
   file.managed:
-    - source: salt://formulas/controller/files/common.metadata
+    - source: salt://formulas/bootstrap/resources/common.metadata
     - makedirs: True
     - template: jinja
     - defaults:
@@ -137,12 +123,20 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
 
 /kvm/vms/{{ hostname }}/data/user-data:
   file.managed:
-    - source: salt://formulas/controller/files/common.userdata
+    - source: salt://formulas/bootstrap/resources/common.userdata
     - makedirs: True
     - template: jinja
     - defaults:
-        hostname: {{ hostname }}
-        master_record: {{ pillar['salt']['record'] }}
+{% for key, encoding in pillar['authorized_keys'].items() if loop.index0 == 0 %}
+        key: {{ key }}
+{% endfor %}
+{% if hostname = 'pxe' %}
+        opts: -X -x python3 -i pxe
+        extra_commands: echo no extra commands specified
+{% elif hostname = 'salt' %}
+        opts: -M -x python3 -X -i salt -J \'{ \"default_top\": \"base\", \"fileserver_backend\": [ \"git\" ], \"ext_pillar\": [ { \"git\": [ { \"$pillar_branch $pillar\": [ { \"env\": \"base\" } ] } ] } ], \"ext_pillar_first\": true, \"gitfs_remotes\": [ { \"$fileroot\": [ { \"saltenv\": [ { \"base\": [ { \"ref\": \"$fileroot_branch\" } ] } ] } ] } ], \"gitfs_saltenv_whitelist\": [ \"base\" ] }\'
+        extra_commands: mkdir -p /etc/salt/gpgkeys;chmod 0700 /etc/salt/gpgkeys;curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/key-generation | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg"
+{% endif %}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:
@@ -154,31 +148,3 @@ virsh create /kvm/vms/{{ hostname }}/config.xml:
   cmd.run:
     - onchanges:
       - /kvm/vms/{{ hostname }}/config.xml
-
-
-
-
-salt_image:
-  file.copy:
-    - source: /kvm/images/debian10.raw
-    - target: /kvm/vms/salt/disk0.raw
-
-salt_image_resize:
-  cmd.run:
-    - name: qemu-img resize -f raw /kvm/vms/salt/disk0.raw 16G
-    - onchanges:
-      - file: salt_image
-
-/kvm/vms/salt/config.xml:
-  file.managed:
-
-pxe_image:
-  file.copy:
-    - source: /kvm/images/debian10.raw
-    - target: /kvm/vms/pxe/disk0.raw
-
-pxe_image_resize:
-  cmd.run:
-    - name: qemu-img resize -f raw /kvm/vms/pxe/disk0.raw 16G
-    - onchanges:
-      - file: pxe_image
