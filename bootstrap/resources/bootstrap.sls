@@ -127,8 +127,8 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
     - makedirs: True
     - template: jinja
     - defaults:
-        key: ff
-        opts: tset
+        ssh_key: ff
+        salt_opts: tset
         extra_commands: test
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
