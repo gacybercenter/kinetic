@@ -121,14 +121,19 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
     - defaults:
         hostname: {{ hostname }}
 
+## note that when referencing a special loop variable, it is not available
+## for evaluation until after the for statement is closed, e.g. you may not
+## have a nested if statement that references it
 /kvm/vms/{{ hostname }}/data/user-data:
   file.managed:
     - source: salt://bootstrap/resources/common.userdata
     - makedirs: True
     - template: jinja
     - defaults:
-{% for key, encoding in pillar['authorized_keys'].items() if loop.index0 == 0 %}
-        ssh_key: {{ key }}
+{% for key, encoding in pillar['authorized_keys'].items() %}
+  {% if loop.index0 == 0 %}
+        ssh_key: {{ key }} {{ loop.index0 }}
+  {% endif %}
 {% endfor %}
 {% if hostname == 'pxe' %}
         salt_opts: -X -x python3 -i pxe
