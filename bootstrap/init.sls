@@ -137,7 +137,9 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
 {% endfor %}
 {% if hostname == 'pxe' %}
         salt_opts: -X -x python3 -i pxe
-        extra_commands: echo no extra commands specified
+        extra_commands: |
+            salt-call --local grains.setval type pxe
+            salt-call --local grains.setval role pxe
 {% elif hostname == 'salt' %}
         salt_opts: |
             -M -x python3 -X -i salt -J '{ "default_top": "base", "fileserver_backend": [ "git" ], "ext_pillar": [ { "git": [ { "{{ pillar['kinetic_pillar_configuration']['branch'] }} {{ pillar['kinetic_pillar_configuration']['url'] }}": [ { "env": "base" } ] } ] } ], "ext_pillar_first": true, "gitfs_remotes": [ { "{{ pillar['kinetic_remote_configuration']['url'] }}": [ { "saltenv": [ { "base": [ { "ref": "{{ pillar['kinetic_remote_configuration']['branch'] }}" } ] } ] } ] } ], "gitfs_saltenv_whitelist": [ "base" ] }'
@@ -157,7 +159,10 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
             EOF
             mkdir -p /etc/salt/gpgkeys
             chmod 0700 /etc/salt/gpgkeys
-            cat /root/keygen.conf | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg
+            cat /root/keygen.conf | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch
+            gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg
+            salt-call --local grains.setval type salt
+            salt-call --local grains.setval role salt
 {% endif %}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:

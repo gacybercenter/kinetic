@@ -13,7 +13,7 @@
 ## limitations under the License.
 
 include:
-  - /formulas/{{ salt['grains.get']('role', opts.id.split('-')[0]) }}/install
+  - /formulas/{{ grains['role'] }}/install
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 

@@ -13,7 +13,7 @@
 ## limitations under the License.
 
 include:
-  - /formulas/{{ salt['grains.get']('role', opts.id.split('-')[0]) }}/install
+  - /formulas/{{ grains['role'] }}/install
 
 /etc/salt/minion.d/mine_functions.conf:
   file.managed:
