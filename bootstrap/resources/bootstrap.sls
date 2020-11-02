@@ -130,10 +130,10 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
 {% for key, encoding in pillar['authorized_keys'].items() if loop.index0 == 0 %}
         key: {{ key }}
 {% endfor %}
-{% if hostname = 'pxe' %}
+{% if hostname == 'pxe' %}
         opts: -X -x python3 -i pxe
         extra_commands: echo no extra commands specified
-{% elif hostname = 'salt' %}
+{% elif hostname == 'salt' %}
         opts: -M -x python3 -X -i salt -J \'{ \"default_top\": \"base\", \"fileserver_backend\": [ \"git\" ], \"ext_pillar\": [ { \"git\": [ { \"$pillar_branch $pillar\": [ { \"env\": \"base\" } ] } ] } ], \"ext_pillar_first\": true, \"gitfs_remotes\": [ { \"$fileroot\": [ { \"saltenv\": [ { \"base\": [ { \"ref\": \"$fileroot_branch\" } ] } ] } ] } ], \"gitfs_saltenv_whitelist\": [ \"base\" ] }\'
         extra_commands: mkdir -p /etc/salt/gpgkeys;chmod 0700 /etc/salt/gpgkeys;curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/key-generation | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg"
 {% endif %}
