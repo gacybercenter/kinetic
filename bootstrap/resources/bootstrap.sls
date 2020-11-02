@@ -148,3 +148,4 @@ virsh create /kvm/vms/{{ hostname }}/config.xml:
   cmd.run:
     - onchanges:
       - /kvm/vms/{{ hostname }}/config.xml
+{% endfor %}
