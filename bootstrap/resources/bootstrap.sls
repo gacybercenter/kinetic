@@ -1,0 +1,86 @@
+## Copyright 2020 Augusta University
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+
+bootstrap_packages:
+  pkg.installed:
+    - pkgs:
+      - qemu-kvm
+      - genisoimage
+      - python3-libvirt
+      - libguestfs-tools
+    - reload_modules: true
+    - onchanges_in:
+      - pkg: update_packages_bootstrap
+
+{% if grains['os_family'] == 'Debian' %}
+
+bootstrap_packages_deb:
+  pkg.installed:
+    - pkgs:
+      - libvirt-clients
+      - libvirt-daemon-system
+      - qemu-utils
+    - reload_modules: true
+    - onchanges_in:
+      - pkg: update_packages_bootstrap
+
+{% elif grains['os_family'] == 'RedHat' %}
+
+bootstrap_packages_rpm:
+  pkg.installed:
+    - pkgs:
+      - libvirt-client
+      - libvirt-daemon-kvm
+    - reload_modules: true
+    - onchanges_in:
+      - pkg: update_packages_bootstrap
+    - onchanges_in:
+      - pkg: update_packages_bootstrap
+
+{% endif %}
+
+update_packages_bootstrap:
+  pkg.uptodate:
+    - refresh: rue
+    - dist_upgrade: True
+
+/kvm/images:
+  file.directory:
+    - makedirs: True
+
+/kvm/vms:
+  file.directory:
+    - makedirs: True
+
+### <hack> the kmod state doesn't correctly parse arguments like the kmod module
+### does. Shoule open a PR to fix it, but this works for now
+/etc/modules-load.d/nested_kvm.conf:
+  file.managed:
+    - contents: |
+{% if "AMD" in grains['cpu_model'] %}
+        kvm_amd nested=1
+{% elif "Intel" in grains['cpu_model'] %}
+        kvm_intel nested=1
+{% endif %}
+
+load_kvm:
+  cmd.run:
+{% if "AMD" in grains['cpu_model'] %}
+    - name: rmmod kvm_amd ; modprobe kvm_amd nested=1
+{% elif "Intel" in grains['cpu_model'] %}
+    - name: rmmod kvm_intel ; modprobe kvm_intel nested=1
+{% endif %}
+    - onchanges:
+      - file: /etc/modules-load.d/nested_kvm.conf
+### </hack>

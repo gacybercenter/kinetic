@@ -54,12 +54,32 @@ curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
 
 ## configure masterless minion
 echo "file_client: local" > /etc/salt/minion.d/file_client.cfg
+echo "fileserver_backend: [roots, git]" > /etc/salt/minion.d/fileserver_backend.cfg
+
 echo "pillar_roots: {base:{[/srv/pillar]}}" > /etc/salt/minion.d/pillar_roots.cfg
 echo "base: {'*': [answers]}" > /srv/pillar/top.sls
 
+## pull down specified answer file
 curl -L -o /srv/pillar/answers.sls $answers
 
+## set up bootstrap.sls execution
+cat << EOF > /srv/salt/initialize.sls
+/etc/salt/minion.d/gitfs_remotes.cfg:
+  file.managed:
+    - contents: |
+    /etc/salt/master.d/gitfs_remotes.conf:
+      file.managed:
+        - contents: |
+            gitfs_remotes:
+              - {{ pillar['kinetic_remote_configuration']['url'] }}:
+                - saltenv:
+                  - base:
+                    - ref: {{ pillar['kinetic_remote_configuration']['branch'] }}
+EOF
 
+salt-call --local state.apply initialize
+salt-call --local service.restart salt-minion
+salt-call --local state.apply formulas/bootstrap/resources/bootstrap
 
 # ## Packages
 # apt-get update
