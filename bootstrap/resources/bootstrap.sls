@@ -92,7 +92,7 @@ debian_base_image:
     - source: https://cdimage.debian.org/cdimage/openstack/current-10/debian-10-openstack-amd64.raw
     - source_hash: https://cdimage.debian.org/cdimage/openstack/current-10/SHA512SUMS
 
-{% for hostname in ['salt, pxe'] %}
+{% for hostname in ['salt', 'pxe'] %}
 /kvm/vms/{{ hostname }}/config.xml:
   file.managed:
     - source: salt://bootstrap/resources/common.xml
