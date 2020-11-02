@@ -141,7 +141,23 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
 {% elif hostname == 'salt' %}
         salt_opts: |
             -M -x python3 -X -i salt -J '{ "default_top": "base", "fileserver_backend": [ "git" ], "ext_pillar": [ { "git": [ { "{{ pillar['kinetic_pillar_configuration']['url'] }} {{ pillar['kinetic_pillar_configuration']['branch'] }}": [ { "env": "base" } ] } ] } ], "ext_pillar_first": true, "gitfs_remotes": [ { "{{ pillar['kinetic_remote_configuration']['url'] }}": [ { "saltenv": [ { "base": [ { "ref": "{{ pillar['kinetic_remote_configuration']['branch'] }}" } ] } ] } ] } ], "gitfs_saltenv_whitelist": [ "base" ] }'
-        extra_commands: mkdir -p /etc/salt/gpgkeys;chmod 0700 /etc/salt/gpgkeys;curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/key-generation | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg
+        extra_commands: |
+            cat << EOF > /root/keygen.conf
+            Key-Type: eddsa
+            Key-Curve: Ed25519
+            Key-Usage: sign
+            Subkey-Type: ecdh
+            Subkey-Curve: Curve25519
+            Subkey-Usage: encrypt
+            Name-Real: kinetic
+            Name-Email: kinetic@georgiacyber
+            Expire-Date: 0
+            %no-protection
+            %commit
+            EOF
+            mkdir -p /etc/salt/gpgkeys
+            chmod 0700 /etc/salt/gpgkeys
+            cat /root/keygen.conf | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg
 {% endif %}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:

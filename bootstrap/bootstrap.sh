@@ -74,24 +74,4 @@ cat << EOF > /srv/salt/initialize.sls
 EOF
 
 salt-call --local state.apply initialize
-salt-call --local state.apply bootstrap/resources/bootstrap
-
-# curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/salt/g; s/{{ interface }}/$interface/g; s/{{ ram }}/8192000/g; s/{{ cpu }}/6/g" > /kvm/vms/salt/config.xml
-# curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/salt/g" > /kvm/vms/salt/data/meta-data
-# curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s%{{ opts }}%-M -x python3 -X -i salt -J \'{ \"default_top\": \"base\", \"fileserver_backend\": [ \"git\" ], \"ext_pillar\": [ { \"git\": [ { \"$pillar_branch $pillar\": [ { \"env\": \"base\" } ] } ] } ], \"ext_pillar_first\": true, \"gitfs_remotes\": [ { \"$fileroot\": [ { \"saltenv\": [ { \"base\": [ { \"ref\": \"$fileroot_branch\" } ] } ] } ] } ], \"gitfs_saltenv_whitelist\": [ \"base\" ] }\'%g;s%{{ key }}%$key%g" > /kvm/vms/salt/data/user-data
-# sed -i "s,{{ extra_commands }},mkdir -p /etc/salt/gpgkeys;chmod 0700 /etc/salt/gpgkeys;curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/key-generation | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg,g" /kvm/vms/salt/data/user-data
-# genisoimage -o /kvm/vms/salt/config.iso -V cidata -r -J /kvm/vms/salt/data/meta-data /kvm/vms/salt/data/user-data
-# virsh create /kvm/vms/salt/config.xml
-#
-# ##pxe
-# if [ ! -f /kvm/vms/pxe/disk0.raw ]
-# then
-#   cp /kvm/images/debian10.raw /kvm/vms/pxe/disk0.raw
-#   qemu-img resize -f raw /kvm/vms/pxe/disk0.raw 8G
-# fi
-# curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.xml | sed "s/{{ name }}/pxe/g; s/{{ interface }}/$interface/g; s/{{ ram }}/2048000/g; s/{{ cpu }}/1/g" > /kvm/vms/pxe/config.xml
-# curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.metadata | sed "s/{{ name }}/pxe/g" > /kvm/vms/pxe/data/meta-data
-# curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/common.userdata | sed "s/{{ opts }}/-X -x python3 -i pxe/g;s/{{ key }}/$key/g" > /kvm/vms/pxe/data/user-data
-# sed -i "s,{{ extra_commands }},echo No extra commands specified,g" /kvm/vms/pxe/data/user-data
-# genisoimage -o /kvm/vms/pxe/config.iso -V cidata -r -J /kvm/vms/pxe/data/meta-data /kvm/vms/pxe/data/user-data
-# virsh create /kvm/vms/pxe/config.xml
+salt-call --local state.apply bootstrap
