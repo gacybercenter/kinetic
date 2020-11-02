@@ -67,19 +67,16 @@ cat << EOF > /srv/salt/initialize.sls
 /etc/salt/minion.d/gitfs_remotes.cfg:
   file.managed:
     - contents: |
-    /etc/salt/master.d/gitfs_remotes.conf:
-      file.managed:
-        - contents: |
-            gitfs_remotes:
-              - {{ pillar['kinetic_remote_configuration']['url'] }}:
-                - saltenv:
-                  - base:
-                    - ref: {{ pillar['kinetic_remote_configuration']['branch'] }}
+        gitfs_remotes:
+          - {{ pillar['kinetic_remote_configuration']['url'] }}:
+            - saltenv:
+              - base:
+                - ref: {{ pillar['kinetic_remote_configuration']['branch'] }}
 EOF
 
 salt-call --local state.apply initialize
 salt-call --local service.restart salt-minion
-salt-call --local state.apply formulas/bootstrap/resources/bootstrap
+salt-call --local state.apply bootstrap/resources/bootstrap
 
 # ## Packages
 # apt-get update
