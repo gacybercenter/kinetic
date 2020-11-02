@@ -127,9 +127,17 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
     - makedirs: True
     - template: jinja
     - defaults:
-        ssh_key: ff
-        salt_opts: tset
-        extra_commands: test
+{% for key, encoding in pillar['authorized_keys'].items() if loop.index0 == 0 %}
+        ssh_key: {{ key }}
+{% endfor %}
+{% if hostname == 'pxe' %}
+        salt_opts: -X -x python3 -i pxe
+        extra_commands: echo no extra commands specified
+{% elif hostname == 'salt' %}
+        salt_opts: |
+            -M -x python3 -X -i salt -J '{ "default_top": "base", "fileserver_backend": [ "git" ], "ext_pillar": [ { "git": [ { "myurl": [ { "env": "base" } ] } ] } ], "ext_pillar_first": true, "gitfs_remotes": [ { "$fileroot": [ { "saltenv": [ { "base": [ { "ref": "$fileroot_branch" } ] } ] } ] } ], "gitfs_saltenv_whitelist": [ "base" ] }'
+        extra_commands: mkdir -p /etc/salt/gpgkeys;chmod 0700 /etc/salt/gpgkeys;curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/key-generation | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg
+{% endif %}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:
