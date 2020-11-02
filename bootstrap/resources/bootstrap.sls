@@ -128,13 +128,8 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
     - template: jinja
     - defaults:
         key: ff
-{% if hostname == 'pxe' %}
         opts: -X -x python3 -i pxe
         extra_commands: echo no extra commands specified
-{% elif hostname == 'salt' %}
-        opts: -X -x python3 -i pxe
-        extra_commands: echo no extra commands specified
-{% endif %}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:
