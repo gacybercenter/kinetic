@@ -128,7 +128,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
     - template: jinja
     - defaults:
 {% for key, encoding in pillar['authorized_keys'].items() if loop.index0 == 0 %}
-        key: { key }}
+        key: {{ key }}
 {% endfor %}
 {% if hostname == 'pxe' %}
         opts: -X -x python3 -i pxe
