@@ -52,7 +52,7 @@ bootstrap_packages_rpm:
 
 update_packages_bootstrap:
   pkg.uptodate:
-    - refresh: rue
+    - refresh: True
     - dist_upgrade: True
 
 /kvm/images:
