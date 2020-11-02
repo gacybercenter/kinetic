@@ -121,22 +121,21 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
     - defaults:
         hostname: {{ hostname }}
 
-/kvm/vms/{{ hostname }}/data/user-data:
-  file.managed:
-    - source: salt://bootstrap/resources/common.userdata
-    - makedirs: True
-    - template: jinja
-    - defaults:
-{% for key, encoding in pillar['authorized_keys'].items() if loop.index0 == 0 %}
-        key: {{ encoding }} {{ key }}
-{% endfor %}
-{% if hostname == 'pxe' %}
-        opts: -X -x python3 -i pxe
-        extra_commands: echo no extra commands specified
-{% elif hostname == 'salt' %}
-        opts: |
-            "-M -x python3 -X -i salt "
-        extra_commands: mkdir -p /etc/salt/gpgkeys;chmod 0700 /etc/salt/gpgkeys;curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/key-generation | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg
+# /kvm/vms/{{ hostname }}/data/user-data:
+#   file.managed:
+#     - source: salt://bootstrap/resources/common.userdata
+#     - makedirs: True
+#     - template: jinja
+#     - defaults:
+# {% for key, encoding in pillar['authorized_keys'].items() if loop.index0 == 0 %}
+#         key: {{ encoding }} {{ key }}
+# {% endfor %}
+# {% if hostname == 'pxe' %}
+#         opts: -X -x python3 -i pxe
+#         extra_commands: echo no extra commands specified
+# {% elif hostname == 'salt' %}
+#         opts: M -x python3 -X -i salt
+#         extra_commands: mkdir -p /etc/salt/gpgkeys;chmod 0700 /etc/salt/gpgkeys;curl -s https://raw.githubusercontent.com/GeorgiaCyber/kinetic/master/bootstrap/resources/key-generation | gpg --expert --full-gen-key --homedir /etc/salt/gpgkeys/ --batch;gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg
 {% endif %}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
