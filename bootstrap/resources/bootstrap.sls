@@ -99,7 +99,7 @@ debian_base_image:
     - makedirs: True
     - template: jinja
     - defaults:
-        name: {{ hostname }}
+        hostname: {{ hostname }}
         ram: {{ pillar[hostname]['conf']['ram'] }}
         cpu: {{ pillar[hostname]['conf']['cpu'] }}
         interface: {{ pillar[hostname]['conf']['interface'] }}
