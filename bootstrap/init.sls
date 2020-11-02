@@ -132,7 +132,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
     - defaults:
 {% for key, encoding in pillar['authorized_keys'].items() %}
   {% if loop.index0 == 0 %}
-        ssh_key: {{ encoding['encoding'] }} {{ key }}
+        ssh_key: ssh-{{ encoding['encoding'] }} {{ key }}
   {% endif %}
 {% endfor %}
 {% if hostname == 'pxe' %}
