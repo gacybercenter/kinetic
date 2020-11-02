@@ -53,10 +53,9 @@ curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
 /bin/sh /tmp/bootstrap_salt.sh
 
 ## configure masterless minion
-echo "file_client: local" > /etc/salt/minion.d/file_client.cfg
-echo "fileserver_backend: [roots, git]" > /etc/salt/minion.d/fileserver_backend.cfg
-
-echo "pillar_roots: {base:{[/srv/pillar]}}" > /etc/salt/minion.d/pillar_roots.cfg
+echo "file_client: local" > /etc/salt/minion.d/file_client.conf
+echo "fileserver_backend: [roots, git]" > /etc/salt/minion.d/fileserver_backend.conf
+echo "pillar_roots: { base: [/srv/pillar] }" > /etc/salt/minion.d/pillar_roots.conf
 echo "base: {'*': [answers]}" > /srv/pillar/top.sls
 
 ## pull down specified answer file
