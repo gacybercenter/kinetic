@@ -63,7 +63,7 @@ curl -L -o /srv/pillar/answers.sls $answers
 
 ## set up bootstrap.sls execution
 cat << EOF > /srv/salt/initialize.sls
-/etc/salt/minion.d/gitfs_remotes.cfg:
+/etc/salt/minion.d/gitfs_remotes.conf:
   file.managed:
     - contents: |
         gitfs_remotes:
@@ -74,7 +74,6 @@ cat << EOF > /srv/salt/initialize.sls
 EOF
 
 salt-call --local state.apply initialize
-salt-call --local service.restart salt-minion
 salt-call --local state.apply bootstrap/resources/bootstrap
 
 # ## Packages
