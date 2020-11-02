@@ -95,7 +95,7 @@ debian_base_image:
 {% for hostname in ['salt', 'pxe'] %}
 /kvm/vms/{{ hostname }}/config.xml:
   file.managed:
-    - source: salt://bootstrap/resources/common.xml
+    - source: salt://bootstrap/files/common.xml
     - makedirs: True
     - template: jinja
     - defaults:
@@ -115,7 +115,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
 
 /kvm/vms/{{ hostname }}/data/meta-data:
   file.managed:
-    - source: salt://bootstrap/resources/common.metadata
+    - source: salt://bootstrap/files/common.metadata
     - makedirs: True
     - template: jinja
     - defaults:
@@ -126,7 +126,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
 ## have a nested if statement that references it
 /kvm/vms/{{ hostname }}/data/user-data:
   file.managed:
-    - source: salt://bootstrap/resources/common.userdata
+    - source: salt://bootstrap/files/common.userdata
     - makedirs: True
     - template: jinja
     - defaults:
