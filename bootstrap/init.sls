@@ -136,7 +136,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
   {% endif %}
 {% endfor %}
 {% if hostname == 'pxe' %}
-        salt_opts: -X -x python3 -i pxe
+        salt_opts: -x python3 -X -i pxe
         extra_commands: |
             salt-call --local grains.setval type pxe
             salt-call --local grains.setval role pxe
