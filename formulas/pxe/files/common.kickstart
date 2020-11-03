@@ -65,7 +65,7 @@ echo "logvol swap --vgname vg0 --fstype swap --size=8192 --name lv1" >> /tmp/par
 %post
 #!/bin/bash
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;
-/bin/sh /tmp/bootstrap_salt.sh -X -x python3 -i $(hostname) -A {{ master_record }}
+/bin/sh /tmp/bootstrap_salt.sh -X -x python3 -i $(hostname) -A {{ master_record }} {{ salt_version }}
 ### The below is a hack to work around https://github.com/saltstack/salt/issues/55316
 sed -i -e '/^ExecStart=/a ExecStartPre=\/bin\/sleep 10' -e '/^After=network.target/a Wants=network-online.target' /usr/lib/systemd/system/salt-minion.service
 %end

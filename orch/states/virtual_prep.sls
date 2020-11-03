@@ -65,6 +65,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
     - defaults:
         hostname: {{ hostname }}
         master_record: {{ pillar['salt']['record'] }}
+        salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:

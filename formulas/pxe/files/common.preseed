@@ -104,4 +104,4 @@ d-i finish-install/reboot_in_progress             note
 
 d-i preseed/late_command                          string                                                                                   \
     in-target curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;                                                           \
-    in-target /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ master_record }}
+    in-target /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ master_record }} {{ salt_version }}

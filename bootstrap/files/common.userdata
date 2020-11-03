@@ -4,6 +4,6 @@ mkdir -p /root/.ssh/
 echo {{ ssh_key }} > /root/.ssh/authorized_keys
 apt-get install -y curl haveged
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
-/bin/sh /tmp/bootstrap_salt.sh {{ salt_opts }}
+/bin/sh /tmp/bootstrap_salt.sh {{ salt_opts }} {{ salt_version }}
 {{ extra_commands }}
 reboot

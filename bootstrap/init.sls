@@ -137,12 +137,14 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
 {% endfor %}
 {% if hostname == 'pxe' %}
         salt_opts: -x python3 -X -i pxe
+        salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
         extra_commands: |
             salt-call --local grains.setval type pxe
             salt-call --local grains.setval role pxe
 {% elif hostname == 'salt' %}
         salt_opts: |
             -M -x python3 -X -i salt -J '{ "default_top": "base", "fileserver_backend": [ "git" ], "ext_pillar": [ { "git": [ { "{{ pillar['kinetic_pillar_configuration']['branch'] }} {{ pillar['kinetic_pillar_configuration']['url'] }}": [ { "env": "base" } ] } ] } ], "ext_pillar_first": true, "gitfs_remotes": [ { "{{ pillar['kinetic_remote_configuration']['url'] }}": [ { "saltenv": [ { "base": [ { "ref": "{{ pillar['kinetic_remote_configuration']['branch'] }}" } ] } ] } ] } ], "gitfs_saltenv_whitelist": [ "base" ] }'
+        salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
         extra_commands: |
             cat << EOF > /root/keygen.conf
             Key-Type: eddsa
