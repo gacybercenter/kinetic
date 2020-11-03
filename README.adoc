@@ -3,106 +3,114 @@ image:https://cloud.drone.io/api/badges/GeorgiaCyber/kinetic/status.svg["Georgia
 # kinetic
 
 Kinetic is a deployment and maintenance tool for Cyber Ranges originally developed at the US Army Cyber School at Fort Gordon, Georgia.
+A Cyber Range as envisioned by the https://www.gacybercenter.org/[Georgia Cyber Center] is a private cloud that brings significant capabilities to bear beyond clouds that are focused on enterprise information technology.
+Instead of delivering enterprise IT services, a kinetic Cyber Range is focused on providing an environment to hack on, in, and with https://youtu.be/5Ofjr_-rsOg?t=1860[operational technology] (OT).
+By delivering the ability to provide emulation and/or virtualization at scale for numerous microarchitectures *without needing to invest in any physical hardware beyond traditional amd64 servers*, kinetic lets OT security researchers focus on hacking rather than configuring individual instances of qemu and trying to figure out the correct magical configuration to get a given ISA to run.
+Kinetic delivers the ability to rapidly scale-out OT-oriented workloads using cloud-native tooling and processes with minimal overhead.
 The core components are https://www.saltstack.com/[salt], https://www.openstack.org[openstack], and https://ceph.com/[ceph].
+It also integrates other projects such as https://www.graylog.org/[graylog], https://github.com/billchurch/webssh2[webssh2], https://wiki.debian.org/AptCacherNg[apt-cacher-ng], and https://antora.org/[antora], with many more integrations to come.
 
-Kinetic is currently in the middle of being converted from a bespoke, single environment solution to a framework
-- it is not ready for production and pointing your environment at our master branch will break everything.
+Kinetic is currently in the middle of being converted from a bespoke, single environment solution to a framework - it is not ready for production and pointing your environment at our master branch will break everything.
 The creation of the version 1.0 tag will indicate that kinetic is production ready.
+We expect this to happen in January of 2021.
 
-Kinetic is designed to make the deployment and maintenance of cyber ranges easy and code-driven.
+Kinetic is designed to make the deployment and maintenance of OT-focused cyber ranges easy and code-driven.
 Every piece of the infrastructure is 100% reproducible and zero touch after your initial out-of-the-box hardware config (UEFI, etc.).
-You configure your local pillar appropriately, start the salt orchestrate runner, and you're done.
+You set the configuration data for your local environment, start the salt orchestration runner, and you're done.
 
-The various heat templates that power scenarios all use a standard naming convention.
+The various heat templates that power the scenarios that ship with kinetic all use a standard naming convention.
 Sticking to this naming convention (instances, networks, images, etc.) mean that templates can be shared across organizations.
 
 ## Prerequisites
 
 There are two critical repositories that are required for a successful kinetic deployment:
 
-1. A repository containing the kinetic codebase that is used as a https://docs.saltstack.com/en/latest/topics/tutorials/gitfs.html[gitfs fileserver for salt] (usually just pointing at a release/tag/branch on this github repository)
+1. A repository containing the kinetic codebase that is used as a https://docs.saltstack.com/en/latest/topics/tutorials/gitfs.html[gitfs fileserver for salt] (usually just pointing at a branch/tag/sha on this github repository)
 2. A repository containing your site-specific configuration information that is used as a https://docs.saltstack.com/en/latest/ref/pillar/all/salt.pillar.git_pillar.html#git-pillar-configuration[gitfs pillar for salt].
-(This can be stored anywhere. https://docs.saltstack.com/en/latest/ref/renderers/all/salt.renderers.gpg.html[Secrets should be encrypted using the salt pillar gpg renderer]
+This can be stored anywhere.
+Secrets should be encrypted using the salt pillar https://docs.saltstack.com/en/latest/ref/renderers/all/salt.renderers.gpg.html[gpg renderer]
 
 Additionally, you need to ensure that:
 
-1. All hosts (compute, controller, storage, container) have their firmare AND option ROMs in UEFI-only mode.
+1. All hosts (compute, controller, storage, container) have their firmware AND option ROMs in UEFI-only mode.
 2. You have designed your subnetting scheme to support all required networks (public, private, management, storage frontend, storage backend, out-of-band)
   * controller - management, storage frontend, private, public
   * compute - management, storage frontend, private, public
   * storage - management, storage frontend, storage backend
   * container - management, storage frontend, private, public
-3. You have a fresh installation of Debian Buster on a machine that has at least 8G of RAM.
-This machine needs to have https://www.cyberciti.biz/faq/how-to-configuring-bridging-in-debian-linux/[bridging] configured already.
-You will have to pass the bridge interface name to `bootstrap.sh.`
-This host will run your salt master as well as your pxe server.
-This is the host on which you will run `bootstrap.sh`.
+3. You have a fresh installation of a https://get.saltstack.com/rs/304-PHQ-615/images/SaltStack-Supported-Operating-Systems.pdf[an operating system that has salt-master support] on a machine that has at least 8G of RAM.
+This machine needs to have bridging configured already and https://docs.saltstack.com/en/latest/topics/tutorials/gitfs.html#installing-dependencies[gitfs dependencies] installed.
+Pygit2 is preferred.
+This is the host on which you will run `bootstrap.sh` and will run your salt master as well as your pxe server.
 Both the salt master and pxe server will run in separate kvm virtual machines.
-4. All hosts can reach your salt master on TCP 4505/4506.
-There is no need for the master to be able to reach the hosts on their management interface.
+4. All hosts can reach your salt master on TCP 4505/4506 and TCP 8000.
+TCP 8000 is required for salt-api.
+
+NOTE: There is no need for the master to be able to reach any of its minions on any port or address.
+
 5. Your dhcp server is issuing ipxe.efi as the efi 64 bit boot filename and next-server is set to pxe
 6. DHCP clients can successfully register their leases in your local DNS resolver.
 
-NOTE: If your dhcp server does not support issuing hostname as next-server,
-you will need to create your own tftp server and have it issue https://fixme[this] file.
-Your system will automatically compile a fresh copy of this for you from source if you do not wish to use the pre-compiled version.
+NOTE: If your dhcp server does not support issuing a hostname as next-server, you will need to create your own tftp server and have it issue a special ipxe chainload file.
+Your system will automatically compile a fresh copy of this for you from source.
 The freshly compiled version will be located at /var/www/html/ipxe.efi on your pxe server once it is fully highstated.
+See formulas/pxe/files/kinetic.ipxe in this repository for the source.
 
 ## Recommendations
 
 Kinetic is desiged to be used on larger environments that have multiples of the same type of hardware performing the same purpose,
 e.g. your purchasing department bought 50 compute nodes, 50 storage nodes, and 6 controller nodes at the same time, so they all have the same configuration amongst themselves.
-That's not to say that it *can't* be used with hardware that you find randomly and slap together, its just going to be a pain.
+That's not to say that it *can't* be used with hardware that you find randomly and slap together, it will just require configuration additional hardware types in your environment files.
 
 Kinetic is currently *not* designed to provide upgrade paths.
 When new major releases come out upstream, you roll your entire infrastructure.
-If you follow the kinetic commandments, this will not matter to you and will make your life much easier in the long run.
+Kinetic events should typically be ephemeral and short lived, and the environment itself should be viewed as scratch space.
+For example, of the terabytes of data that get generated during the fuzzing process, only a very small amount of it is useful.
+This information should be extracted and stored on the enterprise storage system of your choice and protected appropriately.
 
 While the cache is optional, it is *highly* recommended that you use it.
 Large, simultaneous operations will almost certainly get you throttled upstream as you download and install packages.
 
 ## Quick Start
 
-On your configured Debian host, run:
+On your configured foundational host, run:
 ```
-curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
-bash -s -- -i {{ interface }} -f {{ gitfs file root}} -p {{ pillar }} -k {{ key }}
+curl {{ bootstrap }} |
+sudo bash -s -- -a {{ answers }}
 ```
 
 where
 
-`{{ interface }}` = the name of the bridged management interface that you have configured on your debian host, e.g. mgmt.
+`{{ bootstrap }}` = The raw URL to the bootstrap script that you intend to use for your deployment.
+Take note of the tag/branch/sha that you intend on using as it *must* be compatible with the branch/tag/sha of your answers file.
 
-`{{ gitfs file root}}` = the repository from which you wish to source the kinetic static files.
-Append a comma followed by a branch name if you wish to use a branch other than master.
-Otherwise, master is assumed.
-
-`{{ pillar }}` = the repository from which you wish to source your site-specific configuration.
-Append a comma followed by a branch name if you wish to use a branch other than master.
-Otherwise, master is assumed.
-
-`{{ key }}` = the key that you will use to log in to your salt master and pxe server after they boot.
+`{{ answers }}` = The raw URL to the answers.sls file that you intend to use for your deployment.
+This file should be of the same version tag as your kinetic deployment to ensure that you have all of the correct options.
+E.g. if you are executing bootstrap.sh from the foo release of kinetic, your pillar repository should use the available
+options from the foo release of kinetic-pillar.
 
 Example:
 
 ```
 curl https://raw.githubusercontent.com/georgiacyber/kinetic/master/bootstrap/bootstrap.sh |
-bash -s -- -i mgmt \
--f https://github.com/GeorgiaCyber/kinetic.git,mybranch \
--p https://github.com/GeorgiaCyber/kinetic-pillar.git,mybranch \
--k "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKw+cBx9BBKcoXKLxMLVoGCD7znZqBjnMkaIipAikQJ"
+sudo bash -s -- -a https://raw.githubusercontent.com/GeorgiaCyber/kinetic-pillar/master/environment/answers.sls
 ```
 
 As the script completes, you should see a message stating that both pxe and salt have been created from their respective config.xml files by virsh.
 You can track their bootstrap process with ```tail /kvm/vms/*/console.log```.
 Once you see a message on both hosts that cloud-init has finished with the NoCloud datasource,
-you can log in to both with the corresponding private key to the public key you specific in your bootstrap script as the root user.
+you can log in to both with the corresponding private key to the public key that was specified in your answers.sls file.
 
 Log in to salt first:
 
 `ssh root@salt`
 
 Once you're in the salt master, check for the presences of 2 as-yet unaccepted keys:
+
+NOTE: If your dhcp server does not support/allow dynamically registering hostnames in a corresponding DNS server, you will not see the pxe key.
+You will need to create a static A record in your DNS server that lets both `salt` and `pxe` resolve to the correct respective addresses before continuing.
+Once you complete this task and re-start the `salt-minion` service on the pxe server, you may continue with the below.
+
 ```
 root@salt:~# salt-key
 Accepted Keys:
@@ -133,7 +141,7 @@ The next thing you will want to do is highstate your salt master so it can be fu
 salt-call state.highstate
 ```
 
-NOTE: You can safely ignore deprecation warnings printed while this command executes.
+NOTE: You can safely ignore any deprecation warnings printed while this command executes.
 
 Depending on the size of your specified networks and speed of your salt-master, this command can take several minutes to execute.
 Here is an example output runtime, for reference:
@@ -149,7 +157,7 @@ Total run time:   395.820 s
 ```
 
 If you were to run an additional highstate, you would see that some of the states return as being already complete, and some do not.
-This is because when you run the initial salt-master highstate, you are creating several secrets unique to your environment that will then be loaded in to the pillar.
+This is because when you run the initial salt-master highstate, you are creating several secrets unique to your environment that will then be loaded in to the https://docs.saltstack.com/en/latest/topics/tutorials/pillar.html[pillar].
 There are other states in your environment (such as the ones that create your bash and powershell authentication convenience files) that rely on these pillar values to execute successfully.
 As the salt pillar cannot be refreshed during the middle of an individual salt state run, it is necessary to run a 2nd highstate on your salt master in order to fully prepare it for operation:
 
