@@ -54,9 +54,36 @@ install_webssh2:
 
 {% elif grains['os_family'] == 'RedHat' %}
 
+nodesource:
+  pkgrepo.managed:
+    - name: nodesource
+    - baseurl: https://rpm.nodesource.com/pub_12.x/el/8/x86_64/
+    - file: /etc/yum.repos.d/nodesource.repo
+    - gpgkey: https://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
+
+update_packages_nodesource:
+  pkg.uptodate:
+    - refresh: true
+    - onchanges:
+      - pkgrepo: nodesource
+
 webssh2_packages:
   pkg.installed:
-    - sources:
-      - teleport: https://get.gravitational.com/teleport-4.3.5-1.x86_64.rpm
+    - pkgs:
+      - nodejs
+    - reload_modules: True
+
+webssh2_source:
+  git.latest:
+    - name: https://github.com/billchurch/webssh2.git
+    - target: /var/www/html/
+    - rev: 0.3.0
+
+install_webssh2:
+  cmd.run:
+    - name: npm install --production && npm audit fix
+    - cwd: /var/www/html/app
+    - creates:
+      - /var/www/html/app/node_modules
 
 {% endif %}

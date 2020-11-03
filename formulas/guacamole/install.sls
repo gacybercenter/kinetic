@@ -45,6 +45,40 @@ guacamole_packages:
       - libwebp-dev
       - tomcat9
 
+{% elif grains['os_family'] == 'RedHat' %}
+
+CentOS-PowerTools:
+  pkgrepo.managed:
+    - humanname: CentOS-PowerTools
+    - name: CentOS-PowerTools
+    - mirrorlist: http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=PowerTools&infra=$infra
+    - file: /etc/yum.repos.d/CentOS-PowerTools.repo
+    - gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+
+guacamole_packages:
+  pkg.installed:
+    - pkgs:
+      - epel-release
+      - cairo-devel
+      - libjpeg-turbo-devel
+      - libpng-devel
+      - libtool
+      - uuid-devel
+      - libvncserver-devel
+      - freerdp-devel
+      - ffmpeg-devel
+      - pango-devel
+      - libssh2-devel
+      - libtelnet-devel
+      - libwebsockets-devel
+      - pulseaudio-libs-devel
+      - openssl-devel
+      - libvorbis-devel
+      - libwebp-devel
+      - tomcat
+
+{% endif %}
+
 guacamole-server:
   archive.extracted:
     - name: /root/guacamole-server
@@ -78,12 +112,3 @@ install-quickconnect-extension:
   file.copy:
     - name: /etc/guacamole/extensions/guacamole-auth-quickconnect-1.2.0.jar
     - source: /root/guacamole-quickconnect/guacamole-auth-quickconnect-1.2.0/guacamole-auth-quickconnect-1.2.0.jar
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-guacamole_packages:
-  pkg.installed:
-    - sources:
-      - teleport: https://get.gravitational.com/teleport-4.3.5-1.x86_64.rpm
-
-{% endif %}
