@@ -105,11 +105,11 @@ Log in to salt first:
 
 `ssh root@salt`
 
-Once you're in the salt master, check for the presences of 2 as-yet unaccepted keys:
-
-NOTE: If your dhcp server does not support/allow dynamically registering hostnames in a corresponding DNS server, you will not see the pxe key.
+NOTE: If your dhcp server does not support/allow dynamically registering hostnames in a corresponding DNS server, you will not be able to ssh to the `salt` hostname and pxe will not have yet registered with salt either.
 You will need to create a static A record in your DNS server that lets both `salt` and `pxe` resolve to the correct respective addresses before continuing.
 Once you complete this task and re-start the `salt-minion` service on the pxe server, you may continue with the below.
+
+Once you're in the salt master, check for the presences of 2 as-yet unaccepted keys:
 
 ```
 root@salt:~# salt-key
