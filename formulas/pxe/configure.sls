@@ -92,6 +92,7 @@ wsgi_module:
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
         master_record: {{ pillar['salt']['record'] }}
+        salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}        
   {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
     - context:
     {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
