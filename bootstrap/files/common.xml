@@ -1,5 +1,5 @@
 <domain type='kvm'>
-  <name>{{ name }}</name>
+  <name>{{ hostname }}</name>
   <memory unit='KiB'>{{ ram }}</memory>
   <cpu mode='host-model'></cpu>
   <vcpu placement='static'>{{ cpu }}</vcpu>
@@ -19,14 +19,14 @@
     <graphics type='vnc' autoport='yes' />
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw' cache='none' io='native'/>
-      <source file='/kvm/vms/{{ name }}/disk0.raw'/>
+      <source file='/kvm/vms/{{ hostname }}/disk0.raw'/>
       <backingStore/>
       <target dev='vda' bus='virtio'/>
       <alias name='virtio-disk0'/>
     </disk>
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
-      <source file='/kvm/vms/{{ name }}/config.iso'/>
+      <source file='/kvm/vms/{{ hostname }}/config.iso'/>
       <target dev='vdb' bus='virtio'/>
       <readonly/>
     </disk>
@@ -36,7 +36,7 @@
       <model type='virtio'/>
     </interface>
     <serial type="file">
-      <source path="/kvm/vms/{{ name }}/console.log"/>
+      <source path="/kvm/vms/{{ hostname }}/console.log"/>
     </serial>
     <rng model='virtio'>
       <backend model='random'>/dev/random</backend>

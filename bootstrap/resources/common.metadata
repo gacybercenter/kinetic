@@ -1,2 +1,0 @@
-instance-id: {{ name }}
-local-hostname: {{ name }}
