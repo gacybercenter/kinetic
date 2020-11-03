@@ -53,7 +53,7 @@ NOTE: There is no need for the master to be able to reach any of its minions on 
 
 NOTE: If your dhcp server does not support issuing a hostname as next-server, you will need to create your own tftp server and have it issue a special ipxe chainload file.
 Your system will automatically compile a fresh copy of this for you from source.
-The freshly compiled version will be located at /var/www/html/ipxe.efi on your pxe server once it is fully highstated.
+The freshly compiled version will be located at /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi on your pxe server once it is fully highstated.
 See formulas/pxe/files/kinetic.ipxe in this repository for the source.
 
 ## Recommendations
