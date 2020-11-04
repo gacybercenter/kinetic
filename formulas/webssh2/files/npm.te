@@ -1,8 +1,8 @@
 module npm 1.0;
 
 require {
-    type init_t;
-    class process execmem;
+     type init_t;
+     class process execmem;
 }
 
 #============= init_t ==============
