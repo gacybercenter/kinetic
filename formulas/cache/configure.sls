@@ -48,7 +48,11 @@ security-conf:
 
 curl-conf:
   file.managed:
+{% if grains['os_family'] == 'Debian' %}
     - name: /etc/apt-cacher-ng/curl
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: /root/curl
+{% endif %}
     - makedirs: True
     - contents: |
         user = acng:{{ pillar['cache']['maintenance_password'] }}
