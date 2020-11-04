@@ -36,12 +36,14 @@ include:
 create npm selinux module:
   cmd.run:
     - name: checkmodule -M -m -o npm.mod npm.te
-    - creates: npm.mod
+    - creates:
+      - /root/npm.mod
 
 create npm selinux package:
   cmd.run:
     - name: semodule_package -o npm.pp -m npm.mod
-    - creates: npm.pp
+    - creates:
+      - /root/npm.pp
 
 install npm module:
   selinux.module_install:
