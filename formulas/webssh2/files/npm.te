@@ -1,11 +1,17 @@
 module npm 1.0;
 
 require {
-     type init_t;
-     class process execmem;
+    type user_home_t;
+    type init_t;
+    type var_t;
+    class process execmem;
+    class file { create open read };
+    class dir create;
 }
 
 #============= init_t ==============
 allow init_t self:process execmem;
 allow init_t user_home_t:dir create;
+allow init_t user_home_t:file create;
 allow init_t var_t:file read;
+allow init_t var_t:file open;
