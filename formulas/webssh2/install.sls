@@ -49,6 +49,10 @@ webssh2_packages:
     - pkgs:
       - nodejs
       - git
+{% if grains['os_family'] == 'RedHat' %}
+      - policycoreutils-python-utils
+      - policycoreutils
+{% endif %}      
     - reload_modules: True
 
 webssh2_source:
