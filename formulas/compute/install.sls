@@ -74,7 +74,7 @@ compute_packages:
   pkg.installed:
     - pkgs:
       - openstack-nova-compute
-      - ovn-host
+      - rdo-ovn-host
       - openstack-neutron-ovn-metadata-agent
       - python3-tornado
       - ceph-common
