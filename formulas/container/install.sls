@@ -93,7 +93,7 @@ container_packages:
       - libffi-devel
       - gcc
       - openssl-devel
-      - ovn-host
+      - rdo-ovn-host
       - python3-PyMySQL
       - libibverbs
       - numactl
