@@ -31,7 +31,7 @@ ovsdb_packages:
 ovsdb_packages:
   pkg.installed:
     - pkgs:
-      - ovn-central
+      - rdo-ovn-central
       - libibverbs
       - rdma-core
 {% endif %}
