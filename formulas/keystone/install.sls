@@ -48,4 +48,4 @@ keystone_packages:
 shade:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
+    - reload_modules: True
