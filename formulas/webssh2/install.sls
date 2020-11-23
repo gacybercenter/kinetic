@@ -26,6 +26,17 @@ nodesource:
     - file: /etc/apt/sources.list.d/nodejs.12.list
     - key_url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
 
+{% elif grains['os_family'] == 'RedHat' %}
+
+nodesource:
+  pkgrepo.managed:
+    - name: nodesource
+    - baseurl: https://rpm.nodesource.com/pub_12.x/el/8/x86_64/
+    - file: /etc/yum.repos.d/nodesource.repo
+    - gpgkey: https://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
+
+{% endif %}
+
 update_packages_node:
   pkg.uptodate:
     - refresh: true
@@ -37,6 +48,11 @@ webssh2_packages:
   pkg.installed:
     - pkgs:
       - nodejs
+      - git
+{% if grains['os_family'] == 'RedHat' %}
+      - policycoreutils-python-utils
+      - policycoreutils
+{% endif %}      
     - reload_modules: True
 
 webssh2_source:
@@ -51,12 +67,3 @@ install_webssh2:
     - cwd: /var/www/html/app
     - creates:
       - /var/www/html/app/node_modules
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-webssh2_packages:
-  pkg.installed:
-    - sources:
-      - teleport: https://get.gravitational.com/teleport-4.3.5-1.x86_64.rpm
-
-{% endif %}

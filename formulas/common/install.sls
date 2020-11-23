@@ -34,10 +34,19 @@ set_package_proxy:
         skip_if_unavailable=False
         proxy=http://{{ address }}:3142
     {% endif %}
+    {% if salt['network']['connect'](host=salt['grains.get']('cache_target', '127.0.0.1'), port="3142")['result'] == True %}
+    - replace: False
+    {% endif %}
     - onlyif:
       - fun: network.connect
         host: {{ address }}
         port: 3142
+
+cache_target:
+  grains.present:
+    - value: {{ address }}
+    - onchanges:
+      - file: set_package_proxy
   {% endfor %}
 {% endif %}
 

@@ -36,9 +36,9 @@ update_packages_kata:
 kata_repo:
   pkgrepo.managed:
     - name: kata
-    - baseurl: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/$basearch:/master/CentOS_8/
+    - baseurl: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/stable-1.11/CentOS_7/
     - file: /etc/yum.repos.d/kata.repo
-    - gpgkey: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/$basearch:/master/CentOS_8/repodata/repomd.xml.key
+    - gpgkey: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/stable-1.11/CentOS_7/repodata/repomd.xml.key
 
 update_packages_kata:
   cmd.run:

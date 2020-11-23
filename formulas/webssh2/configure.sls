@@ -27,6 +27,32 @@ include:
 
 {% endif %}
 
+{% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
+
+/root/npm.te:
+  file.managed:
+    - source: salt://formulas/webssh2/files/npm.te
+
+create npm selinux module:
+  cmd.run:
+    - name: checkmodule -M -m -o npm.mod npm.te
+    - creates:
+      - /root/npm.mod
+
+create npm selinux package:
+  cmd.run:
+    - name: semodule_package -o npm.pp -m npm.mod
+    - creates:
+      - /root/npm.pp
+
+install npm module:
+  selinux.module_install:
+    - name: /root/npm.pp
+    - require:
+      - cmd: create npm selinux package
+
+{% endif %}
+
 webssh2:
   user.present:
     - shell: /bin/false

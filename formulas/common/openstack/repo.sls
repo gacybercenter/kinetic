@@ -13,12 +13,12 @@
 ## limitations under the License.
 
 {% if grains['os_family'] == 'Debian' %}
-  {% if grains['oscodename'] != 'focal' %}
+
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Ussuri
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/ussuri main
-    - file: /etc/apt/sources.list.d/cloudarchive-ussuri.list
+    - humanname: Ubuntu Cloud Archive - Victoria
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/victoria main
+    - file: /etc/apt/sources.list.d/cloudarchive-victoria.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
 
@@ -28,7 +28,6 @@ update_packages_uca:
     - onchanges:
       - pkgrepo: uca
     - dist_upgrade: True
-  {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -44,7 +43,7 @@ CentOS-PowerTools:
 
 rdo:
   pkg.installed:
-    - name: centos-release-openstack-ussuri
+    - name: centos-release-openstack-victoria
 
 update_packages_rdo:
   pkg.uptodate:
