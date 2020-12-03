@@ -281,18 +281,20 @@ update_certificate_store:
     - user: keystone
     - group: keystone
 
-json_policy_remove:
-  file.absent:
-    - name: /etc/keystone/policy.json
-
-{% if salt['pillar.get']('policies:keystone', '') != '' %}
-yaml_policy_apply:
-  file.managed:
-    - name: /etc/keystone/policy.yaml
-    - contents_pillar: policies:keystone
-    - require_in:
-      - service: wsgi_service
-{% endif %}
+# json_policy_remove:
+#   file.absent:
+#     - name: /etc/keystone/policy.json
+#     - watch_in:
+#       - service: wsgi_service
+# 
+# {% if salt['pillar.get']('policies:keystone', '') != '' %}
+# yaml_policy_apply:
+#   file.managed:
+#     - name: /etc/keystone/policy.yaml
+#     - contents_pillar: policies:keystone
+#     - require_in:
+#       - service: wsgi_service
+# {% endif %}
 
 wsgi_service:
   service.running:
@@ -302,4 +304,3 @@ wsgi_service:
     - watch:
       - file: /etc/keystone/keystone.conf
       - file: webserver_conf
-      - file: json_policy_remove
