@@ -74,3 +74,44 @@ glance_api_service:
     - enable: true
     - watch:
       - file: /etc/glance/glance-api.conf
+
+download_image_bakery:
+ cmd.run:
+     - name: curl https://gitlab.com/gacybercenter/image-bakery/-/raw/master/image_bake.py -o /tmp/image_bake.py
+     - creates: /tmp/image_bake.py
+
+/etc/openstack/clouds.yml:
+  file.managed:
+    - source: salt://formulas/common/openstack/files/clouds.yml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        password: {{ pillar['openstack']['admin_password'] }}
+        auth_url: https://dashboard.gacyberrange.org:5000/v3
+
+{% for os, args in pillar.get('images', {}).items() %}
+/tmp/{{ args['image_name'] }}.yaml:
+  file.managed:
+    - template: jinja
+    - contents: |
+        image_name: {{ args.get('image_name', '') }}
+        method: {{ args.get('method', '') }}
+        image_url: {{ args.get('image_url', '') }}
+        image_size: {{ args.get('size', '')}}
+        conversion: {{ args.get('conversion', '') }}
+        input_format: {{ args.get('input_format', '') }}
+        output_format: {{ args.get('output_format', '') }}
+        packages: {{ args.get('packages', '') }}
+        customization: |
+            {{ args.get('customization', '') | indent(12) }}
+
+create_image_{{ args['image_name'] }}:
+  cmd.run:
+    - name: 'python3 /tmp/image_bake.py -t /tmp/{{ args['image_name']}}.yaml -o /tmp/images'
+
+upload_image_{{ args['image_name'] }}:
+  glance_image.present:
+    - name: {{ args.get('image_name') }}
+    - filename: '/tmp/images/{{ args.get('image_name') }}'
+    - image_format: {{ args.get('output_format') }}
+{% endfor %}

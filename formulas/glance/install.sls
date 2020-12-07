@@ -41,3 +41,8 @@ glance_packages:
       - python3-openstackclient
 
 {% endif %}
+
+pip_packages:
+  pip.installed:
+    - pkgs:
+      - tqdm
