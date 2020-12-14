@@ -87,7 +87,7 @@ download_image_bakery:
     - template: jinja
     - defaults:
         password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: https://dashboard.gacyberrange.org:5000/v3
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
 
 {% for os, args in pillar.get('images', {}).items() %}
 /tmp/{{ args['image_name'] }}.yaml:

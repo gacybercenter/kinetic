@@ -42,7 +42,7 @@ glance_packages:
 
 {% endif %}
 
-pip_packages:
+tqdm:
   pip.installed:
-    - pkgs:
-      - tqdm
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
