@@ -46,3 +46,8 @@ tqdm:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
+
+image_bakery_latest:
+  git.latest:
+    - name: https://github.com/GeorgiaCyber/image-bakery.git
+    - target: /tmp/image_bakery
