@@ -102,28 +102,6 @@ create_ldap_domain:
   keystone_domain.present:
     - name: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
     - description: "LDAP Domain"
-
-keystone_domain:
-  file.managed:
-    - name: /etc/keystone/domains/keystone.{{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}.conf
-    - source: salt://formulas/keystone/files/keystone-ldap.conf
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        ldap_url: {{ pillar ['common_ldap_configuration']['address'] }}
-        ldap_user: {{ pillar ['common_ldap_configuration']['bind_user'] }}
-        ldap_password: {{ pillar ['bind_password'] }}
-        ldap_suffix: {{ pillar ['common_ldap_configuration']['base_dn'] }}
-        user_tree_dn: {{ pillar ['common_ldap_configuration']['user_dn'] }}
-        group_tree_dn: {{ pillar ['common_ldap_configuration']['group_dn'] }}
-        user_filter: {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}
-        group_filter: {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}
-        sql_connection_string: {{ constructor.mysql_url_constructor('keystone', 'keystone') }}
-        public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
-    - require_in:
-      - service: wsgi_service
-      - cmd: init_keystone
-
 {% endif %}
 
 ## barbican-specific changes
@@ -193,6 +171,29 @@ kuryr_user_role_grant:
 
 {{ spawn.check_spawnzero_status(grains['type']) }}
 
+{% endif %}
+
+##LDAP-specific changes
+{% if salt['pillar.get']('keystone:ldap_enabled', False) == True %}
+keystone_domain:
+  file.managed:
+    - name: /etc/keystone/domains/keystone.{{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}.conf
+    - source: salt://formulas/keystone/files/keystone-ldap.conf
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        ldap_url: {{ pillar ['common_ldap_configuration']['address'] }}
+        ldap_user: {{ pillar ['common_ldap_configuration']['bind_user'] }}
+        ldap_password: {{ pillar ['bind_password'] }}
+        ldap_suffix: {{ pillar ['common_ldap_configuration']['base_dn'] }}
+        user_tree_dn: {{ pillar ['common_ldap_configuration']['user_dn'] }}
+        group_tree_dn: {{ pillar ['common_ldap_configuration']['group_dn'] }}
+        user_filter: {{ pillar ['keystone']['ldap_configuration']['user_filter'] }}
+        group_filter: {{ pillar ['keystone']['ldap_configuration']['group_filter'] }}
+        sql_connection_string: {{ constructor.mysql_url_constructor('keystone', 'keystone') }}
+        public_endpoint: {{ constructor.endpoint_url_constructor('keystone', 'keystone', 'public') }}
+    - require_in:
+      - service: wsgi_service
 {% endif %}
 
 /etc/openstack/clouds.yml:
