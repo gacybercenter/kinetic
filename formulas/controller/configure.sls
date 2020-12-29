@@ -140,7 +140,7 @@ libvirtd_service:
   {% if args['type'] == 'virt-builder' %}
 create_{{ args['name'] }}:
   cmd.run:
-    - name: virt-builder --smp 4 -m 4096 --selinux-relabel --install cloud-init  --uninstall firewalld --output {{ os }}.raw {{ args['name'] }}
+    - name: virt-builder --smp 4 -m 4096 --selinux-relabel --install cloud-init,cloud-utils-growpart --uninstall firewalld --output {{ os }}.raw {{ args['name'] }}
     - cwd: /kvm/images
     - creates: /kvm/images/{{ os }}.raw
     - require:
