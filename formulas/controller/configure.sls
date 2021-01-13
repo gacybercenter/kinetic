@@ -136,46 +136,31 @@ libvirtd_service:
     - enable: true
 {% endif %}
 
-{% for os, args in pillar.get('images', {}).items() %}
-  {% if args['type'] == 'virt-builder' %}
-create_{{ args['name'] }}:
-  cmd.run:
-    - name: virt-builder --smp 4 -m 4096 --selinux-relabel --install cloud-init  --uninstall firewalld --output {{ os }}.raw {{ args['name'] }}
-    - cwd: /kvm/images
-    - creates: /kvm/images/{{ os }}.raw
-    - require:
-      - file: /kvm/images
-
-  {% elif args['type'] == 'url' %}
-
-create_{{ args['name'] }}:
+{% for os, args in pillar.get('controller_images', {}).items() %}
+/kvm/controller_templates/{{ args['image_name'] }}.yaml:
   file.managed:
-    - name: /kvm/images/{{ os }}.original
-    - source: {{ args['url'] }}
-    - skip_verify: True
+    - template: jinja
+    - contents: |
+        image_name: {{ args.get('image_name', '') }}
+        method: {{ args.get('method', '') }}
+        image_url: {{ args.get('image_url', '') }}
+        image_size: {{ args.get('size', '')}}
+        conversion: {{ args.get('conversion', '') }}
+        input_format: {{ args.get('input_format', '') }}
+        output_format: {{ args.get('output_format', '') }}
+        packages: {{ args.get('packages', '') }}
+        customization: |
+            {{ args.get('customization', '') | indent(12) }}
 
-set_format_{{ os }}:
+create_controller_image_{{ args['image_name'] }}:
   cmd.run:
-    - cwd: /kvm/images
-    - name: qemu-img convert -O raw {{ os }}.original {{ os }}.raw
-    - creates:
-      - /kvm/images/{{ os }}.raw
+    - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/controller_templates/{{ args['image_name']}}.yaml -o /kvm/controller_images'
+    - onchanges: [ /kvm/controller_templates/{{ args['image_name'] }}.yaml ]
 
-  {% endif %}
-
-sysprep_{{ args['name'] }}:
-  cmd.run:
-    - name: virt-sysprep -a {{ os }}.raw --truncate /etc/machine-id
-    - cwd: /kvm/images
-    - onchanges:
-      - create_{{ args['name'] }}
-
-/kvm/images/{{ os }}-latest:
+/kvm/controller_images/{{ os }}-latest:
   file.symlink:
-    - target: /kvm/images/{{ os }}.raw
+    - target: /kvm/controller_images/{{ os }}
     - force: True
-    - require:
-      - cmd: sysprep_{{ args['name'] }}
 {% endfor %}
 
 haveged_service:
