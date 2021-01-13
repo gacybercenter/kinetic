@@ -136,5 +136,4 @@ upload_glance_image_{{ args['image_name'] }}:
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
     - filename: '/kvm/glance_images/{{ args.get('image_name') }}'
     - image_format: {{ args.get('output_format') }}
-
 {% endfor %}
