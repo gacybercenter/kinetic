@@ -84,8 +84,33 @@ glance_api_service:
         password: {{ pillar['openstack']['admin_password'] }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
 
-{% for os, args in pillar.get('images', {}).items() %}
-/tmp/{{ args['image_name'] }}.yaml:
+{% if not salt['file.directory_exists' ]('/kvm') %}
+kvm_dir:
+  file.directory:
+    - name: /kvm
+{% endif %}
+
+{% if not salt['file.directory_exists' ]('/kvm/glance_images') %}
+/kvm/glance_images:
+  file.directory:
+    - makedirs: True
+{% endif %}
+
+{% if not salt['file.directory_exists' ]('/kvm/glance_templates') %}
+/kvm/glance_templates:
+  file.directory:
+    - makedirs: True
+{% endif %}
+
+{% if grains['os_family'] == 'RedHat' %}
+libvirtd_service:
+  service.running:
+    - name: libvirtd
+    - enable: true
+{% endif %}
+
+{% for os, args in pillar.get('glance_images', {}).items() %}
+/kvm/glance_templates/{{ args['image_name'] }}.yaml:
   file.managed:
     - template: jinja
     - contents: |
@@ -100,16 +125,16 @@ glance_api_service:
         customization: |
             {{ args.get('customization', '') | indent(12) }}
 
-create_image_{{ args['image_name'] }}:
+create_glance_image_{{ args['image_name'] }}:
   cmd.run:
-    - name: 'python3 /tmp/image_bakery/image_bake.py -t /tmp/{{ args['image_name']}}.yaml -o /tmp/images'
-    - onchanges: [ /tmp/{{ args['image_name'] }}.yaml ]
+    - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/glance_templates/{{ args['image_name']}}.yaml -o /kvm/glance_images'
+    - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
 
-upload_image_{{ args['image_name'] }}:
+upload_glance_image_{{ args['image_name'] }}:
   glance_image.present:
     - name: {{ args.get('image_name') }}
-    - onchanges: [ /tmp/{{ args['image_name'] }}.yaml ]
-    - filename: '/tmp/images/{{ args.get('image_name') }}'
+    - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
+    - filename: '/kvm/glance_images/{{ args.get('image_name') }}'
     - image_format: {{ args.get('output_format') }}
 
 {% endfor %}
