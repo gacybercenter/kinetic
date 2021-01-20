@@ -28,6 +28,7 @@ glance_packages:
       - python3-rbd
       - python3-rados
       - python3-openstackclient
+      - libguestfs-tools
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -39,6 +40,7 @@ glance_packages:
       - python3-rbd
       - python3-rados
       - python3-openstackclient
+      - libguestfs-tools
 
 {% endif %}
 
@@ -46,6 +48,11 @@ tqdm:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
+
+shade:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
 
 image_bakery_latest:
   git.latest:
