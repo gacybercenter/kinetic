@@ -84,23 +84,17 @@ glance_api_service:
         password: {{ pillar['openstack']['admin_password'] }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
 
-{% if not salt['file.directory_exists' ]('/kvm') %}
 kvm_dir:
   file.directory:
     - name: /kvm
-{% endif %}
 
-{% if not salt['file.directory_exists' ]('/kvm/glance_images') %}
 /kvm/glance_images:
   file.directory:
     - makedirs: True
-{% endif %}
 
-{% if not salt['file.directory_exists' ]('/kvm/glance_templates') %}
 /kvm/glance_templates:
   file.directory:
     - makedirs: True
-{% endif %}
 
 {% if grains['os_family'] == 'RedHat' %}
 libvirtd_service:
