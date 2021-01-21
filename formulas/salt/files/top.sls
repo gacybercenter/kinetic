@@ -88,6 +88,7 @@ base:
     - glance
     - swift
     - ceph
+    - openstack
   'nova*':
     - nova
     - rabbitmq
