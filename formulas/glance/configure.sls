@@ -75,59 +75,9 @@ glance_api_service:
     - watch:
       - file: /etc/glance/glance-api.conf
 
-/etc/openstack/clouds.yml:
-  file.managed:
-    - source: salt://formulas/common/openstack/files/clouds.yml
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-
-kvm_dir:
-  file.directory:
-    - name: /kvm
-
-/kvm/glance_images:
-  file.directory:
-    - makedirs: True
-
-/kvm/glance_templates:
-  file.directory:
-    - makedirs: True
-
 {% if grains['os_family'] == 'RedHat' %}
 libvirtd_service:
   service.running:
     - name: libvirtd
     - enable: true
 {% endif %}
-
-{% for os, args in pillar.get('glance_images', {}).items() %}
-/kvm/glance_templates/{{ args['image_name'] }}.yaml:
-  file.managed:
-    - template: jinja
-    - contents: |
-        image_name: {{ args.get('image_name', '') }}
-        method: {{ args.get('method', '') }}
-        image_url: {{ args.get('image_url', '') }}
-        image_size: {{ args.get('size', '')}}
-        conversion: {{ args.get('conversion', '') }}
-        input_format: {{ args.get('input_format', '') }}
-        output_format: {{ args.get('output_format', '') }}
-        packages: {{ args.get('packages', '') }}
-        customization: |
-            {{ args.get('customization', '') | indent(12) }}
-
-create_glance_image_{{ args['image_name'] }}:
-  cmd.run:
-    - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/glance_templates/{{ args['image_name']}}.yaml -o /kvm/glance_images'
-    - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
-
-upload_glance_image_{{ args['image_name'] }}:
-  glance_image.present:
-    - name: {{ args.get('image_name') }}
-    - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
-    - filename: '/kvm/glance_images/{{ args.get('image_name') }}'
-    - image_format: {{ args.get('output_format') }}
-{% endfor %}
