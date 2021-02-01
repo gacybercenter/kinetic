@@ -194,7 +194,7 @@ haveged_service:
     - name: haveged
     - enable: true
 
-{% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | length != 0 % | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
+{% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
 
   {% for os, args in pillar.get('glance_images', {}).items() %}
 /kvm/glance_templates/{{ args['image_name'] }}.yaml:
@@ -223,7 +223,7 @@ upload_glance_image_{{ args['image_name'] }}:
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
     - filename: '/kvm/glance_images/{{ args.get('image_name') }}'
     - image_format: {{ args.get('output_format') }}
-    {% if salt['network']['connect'](host= {{ address }} ), port="9292")['result'] == True %}
+    {% if salt['network']['connect'](host='{{ address }}' ), port="9292")['result'] == True %}
     {% endif %}
     - onlyif:
       - fun: network.connect
