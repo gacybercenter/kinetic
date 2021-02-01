@@ -37,7 +37,6 @@ controller_packages_deb:
       - libvirt-clients
       - libvirt-daemon-system
       - qemu-utils
-      - python3-openstackclient
       - libguestfs-tools
     - reload_modules: true
 
@@ -48,7 +47,6 @@ controller_packages_rpm:
     - pkgs:
       - libvirt-client
       - libvirt-daemon-kvm
-      - python3-openstackclient
       - libguestfs-tools
     - reload_modules: true
 
