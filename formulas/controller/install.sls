@@ -38,6 +38,7 @@ controller_packages_deb:
       - libvirt-daemon-system
       - qemu-utils
       - libguestfs-tools
+      - git
     - reload_modules: true
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -48,6 +49,7 @@ controller_packages_rpm:
       - libvirt-client
       - libvirt-daemon-kvm
       - libguestfs-tools
+      - git
     - reload_modules: true
 
 {% endif %}
