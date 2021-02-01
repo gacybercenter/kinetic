@@ -194,11 +194,13 @@ haveged_service:
     - name: haveged
     - enable: true
 
-{% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
+{% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
 
-{% set glance_target = '{{ address[0] }}' %}
+{% set glance_target = '{{ address }}' %}
 {% if address == glance_target %}
 
+echo {{ address }}:
+  cmd.run
 
   {% for os, args in pillar.get('glance_images', {}).items() %}
 /kvm/glance_templates/{{ args['image_name'] }}.yaml:
