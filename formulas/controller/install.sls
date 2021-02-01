@@ -37,6 +37,8 @@ controller_packages_deb:
       - libvirt-clients
       - libvirt-daemon-system
       - qemu-utils
+      - python3-openstackclient
+      - libguestfs-tools
     - reload_modules: true
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -46,6 +48,23 @@ controller_packages_rpm:
     - pkgs:
       - libvirt-client
       - libvirt-daemon-kvm
+      - python3-openstackclient
+      - libguestfs-tools
     - reload_modules: true
 
 {% endif %}
+
+tqdm:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+shade:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
+
+image_bakery_latest:
+  git.latest:
+    - name: https://github.com/GeorgiaCyber/image-bakery.git
+    - target: /tmp/image_bakery
