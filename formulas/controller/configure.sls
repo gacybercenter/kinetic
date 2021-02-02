@@ -189,55 +189,51 @@ create_controller_image_{{ args['image_name'] }}:
     - force: True
 {% endfor %}
 
-## {% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
-##   {% for os, args in pillar.get('glance_images', {}).items() %}
-## echo {{ os }}:
-##   cmd.run
-
-##echo {{ address }}:
-##  cmd.run
-
-##  {% endfor %}
-##{% endfor %}
-
 haveged_service:
   service.running:
     - name: haveged
     - enable: true
 
+{% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
+echo {{ address }}:
+  cmd.run
 
+{% for os, args in pillar.get('glance_images', {}).items() %}
+echo {{ os }}:
+  cmd.run
+  
+/kvm/glance_templates/{{ args['image_name'] }}.yaml:
+  file.managed:
+    - template: jinja
+    - contents: |
+        image_name: {{ args.get('image_name', '') }}
+        method: {{ args.get('method', '') }}
+        image_url: {{ args.get('image_url', '') }}
+        image_size: {{ args.get('size', '') }}
+        conversion: {{ args.get('conversion', '') }}
+        input_format: {{ args.get('input_format', '') }}
+        output_format: {{ args.get('output_format', '') }}
+        packages: {{ args.get('packages', '') }}
+        customization: |
+            {{ args.get('customization', '') | indent(12) }}
 
-##/kvm/glance_templates/{{ args['image_name'] }}.yaml:
-##  file.managed:
-##    - template: jinja
-##   - contents: |
-##        image_name: {{ args.get('image_name', '') }}
-##        method: {{ args.get('method', '') }}
-##        image_url: {{ args.get('image_url', '') }}
-##        image_size: {{ args.get('size', '') }}
-##        conversion: {{ args.get('conversion', '') }}
-##        input_format: {{ args.get('input_format', '') }}
-##        output_format: {{ args.get('output_format', '') }}
-##        packages: {{ args.get('packages', '') }}
-##        customization: |
-##            {{ args.get('customization', '') | indent(12) }}
+create_glance_image_{{ args['image_name'] }}:
+  cmd.run:
+    - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/glance_templates/{{ args['image_name']}}.yaml -o /kvm/glance_images'
+    - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
 
-##create_glance_image_{{ args['image_name'] }}:
-##  cmd.run:
-##    - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/glance_templates/{{ args['image_name']}}.yaml -o /kvm/glance_images'
-##    - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
+upload_glance_image_{{ args['image_name'] }}:
+  glance_image.present:
+    - name: {{ args.get('image_name') }}
+    - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
+    - filename: '/kvm/glance_images/{{ args.get('image_name') }}'
+    - image_format: {{ args.get('output_format') }}
+    {% if salt['network']['connect'](host='{{ address }}', port="9292")['result'] == True %}
+    {% endif %}
+    - onlyif:
+      - fun: network.connect
+        host: {{ address }}
+        port: 9292
 
-##upload_glance_image_{{ args['image_name'] }}:
-##  glance_image.present:
-##    - name: {{ args.get('image_name') }}
-##    - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
-##    - filename: '/kvm/glance_images/{{ args.get('image_name') }}'
-##    - image_format: {{ args.get('output_format') }}
-##    {% if salt['network']['connect'](host='{{ address }}', port="9292")['result'] == True %}
-##    {% endif %}
-##    - onlyif:
-##      - fun: network.connect
-##        host: {{ address }}
-##        port: 9292
-
-
+{% endfor %}
+{% endfor %}
