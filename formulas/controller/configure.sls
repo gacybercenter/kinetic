@@ -189,11 +189,6 @@ create_controller_image_{{ args['image_name'] }}:
     - force: True
 {% endfor %}
 
-haveged_service:
-  service.running:
-    - name: haveged
-    - enable: true
-
 {% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
 {% for os, args in pillar.get('glance_images', {}).items() %}
 echo {{ os }}:
@@ -202,8 +197,16 @@ echo {{ os }}:
 echo {{ address }}:
   cmd.run
 
+{% endfor %}
+{% endfor %}
 
-  
+haveged_service:
+  service.running:
+    - name: haveged
+    - enable: true
+
+
+
 ##/kvm/glance_templates/{{ args['image_name'] }}.yaml:
 ##  file.managed:
 ##    - template: jinja
@@ -237,5 +240,4 @@ echo {{ address }}:
 ##        host: {{ address }}
 ##        port: 9292
 
-{% endfor %}
-##{% endfor %}
+
