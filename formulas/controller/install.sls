@@ -76,11 +76,11 @@ image_bakery_latest:
     - name: https://github.com/GeorgiaCyber/image-bakery.git
     - target: /tmp/image_bakery
 
-/etc/openstack/clouds.yml:
-  file.managed:
-    - source: salt://formulas/common/openstack/files/clouds.yml
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+##/etc/openstack/clouds.yml:
+##  file.managed:
+##    - source: salt://formulas/common/openstack/files/clouds.yml
+##    - makedirs: True
+##    - template: jinja
+##    - defaults:
+##        password: {{ pillar['openstack']['admin_password'] }}
+##        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
