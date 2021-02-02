@@ -199,7 +199,7 @@ haveged_service:
 echo {{ address }}:
   cmd.run
 
-  {% for os, args in pillar.get('glance_images', {}).items() %}
+{% for os, args in pillar.get('glance_images', {}).items() %}
 
 echo {{ os }}:
   cmd.run
@@ -237,5 +237,5 @@ upload_glance_image_{{ args['image_name'] }}:
         host: {{ address }}
         port: 9292
 
-  {% endfor %}
+{% endfor %}
 {% endfor %}
