@@ -57,7 +57,7 @@ controller_packages_rpm:
 tqdm:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - reload_modules: true
 
 shade:
   pip.installed:
