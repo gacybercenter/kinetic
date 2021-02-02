@@ -194,10 +194,11 @@ haveged_service:
     - name: haveged
     - enable: true
 
-{% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
+{% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
 
-echo {{ address }}:
-  cmd.run
+{% set glance_target = '{{ address[0] }}' %}
+{% if address[0] == glance_target %}
+
 
   {% for os, args in pillar.get('glance_images', {}).items() %}
 /kvm/glance_templates/{{ args['image_name'] }}.yaml:
@@ -226,12 +227,13 @@ upload_glance_image_{{ args['image_name'] }}:
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
     - filename: '/kvm/glance_images/{{ args.get('image_name') }}'
     - image_format: {{ args.get('output_format') }}
-    {% if salt['network']['connect'](host='{{ address }}', port="9292")['result'] == True %}
+    {% if salt['network']['connect'](host='{{ address[0] }}'), port="9292")['result'] == True %}
     {% endif %}
     - onlyif:
       - fun: network.connect
-        host: {{ address }}
+        host: {{ address[0] }}
         port: 9292
 
   {% endfor %}
+{% endif %}
 {% endfor %}
