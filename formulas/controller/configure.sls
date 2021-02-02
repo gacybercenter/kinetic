@@ -200,6 +200,10 @@ echo {{ address }}:
   cmd.run
 
   {% for os, args in pillar.get('glance_images', {}).items() %}
+
+echo {{ os }}:
+  cmd.run
+  
 /kvm/glance_templates/{{ args['image_name'] }}.yaml:
   file.managed:
     - template: jinja
