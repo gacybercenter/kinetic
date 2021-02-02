@@ -29,6 +29,7 @@ controller_packages:
       - haveged
       - python3-libvirt
       - libguestfs-tools
+      - python3-openstackclient
     - reload_modules: true
 
 {% if grains['os_family'] == 'Debian' %}
@@ -36,11 +37,13 @@ controller_packages:
 controller_packages_deb:
   pkg.installed:
     - pkgs:
+      - openstack-glance
       - libvirt-clients
       - libvirt-daemon-system
       - qemu-utils
       - libguestfs-tools
       - git
+      - python3-openstackclient
     - reload_modules: true
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -48,6 +51,7 @@ controller_packages_deb:
 controller_packages_rpm:
   pkg.installed:
     - pkgs:
+      - openstack-glance
       - libvirt-client
       - libvirt-daemon-kvm
       - libguestfs-tools
