@@ -200,7 +200,6 @@ haveged_service:
 ##  cmd.run
 
 {% for os, args in pillar.get('glance_images', {}).items() %}
-
 echo {{ os }}:
   cmd.run
   
