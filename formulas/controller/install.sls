@@ -18,6 +18,7 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
+  - /formulas/common/openstack/repo
 
 controller_packages:
   pkg.installed:
@@ -75,7 +76,7 @@ image_bakery_latest:
     - name: https://github.com/GeorgiaCyber/image-bakery.git
     - target: /tmp/image_bakery
 
-  /etc/openstack/clouds.yml:
+/etc/openstack/clouds.yml:
   file.managed:
     - source: salt://formulas/common/openstack/files/clouds.yml
     - makedirs: True
