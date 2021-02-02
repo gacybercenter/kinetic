@@ -196,7 +196,7 @@ haveged_service:
 
 {% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
 
-echo {{ address[0] }}:
+echo {{ address[1] }}:
   cmd.run
 
 {% set glance_target = '{{ address[0] }}' %}
