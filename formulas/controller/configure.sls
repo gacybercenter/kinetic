@@ -187,6 +187,10 @@ create_controller_image_{{ args['image_name'] }}:
   file.symlink:
     - target: /kvm/controller_images/{{ os }}
     - force: True
+
+echo {{ os }}:
+  cmd.run
+
 {% endfor %}
 
 haveged_service:
