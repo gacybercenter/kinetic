@@ -234,5 +234,4 @@ upload_glance_image_{{ args['image_name'] }}:
         port: 9292
 
   {% endfor %}
-{% endif %}
 {% endfor %}
