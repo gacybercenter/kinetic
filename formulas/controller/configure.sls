@@ -187,10 +187,6 @@ create_controller_image_{{ args['image_name'] }}:
   file.symlink:
     - target: /kvm/controller_images/{{ os }}
     - force: True
-
-echo {{ os }}:
-  cmd.run
-
 {% endfor %}
 
 haveged_service:
@@ -198,15 +194,13 @@ haveged_service:
     - name: haveged
     - enable: true
 
+{% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
 {% for os, args in pillar.get('glance_images', {}).items() %}
 echo {{ os }}:
   cmd.run
 
-
-## {% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
-
-##echo {{ address }}:
-##  cmd.run
+echo {{ address }}:
+  cmd.run
 
 
   
