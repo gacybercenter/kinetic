@@ -75,3 +75,10 @@ image_bakery_latest:
   git.latest:
     - name: https://github.com/GeorgiaCyber/image-bakery.git
     - target: /tmp/image_bakery
+
+Restart Salt Minion:
+  cmd.run:
+    - name: 'salt-call service.restart salt-minion'
+    - bg: True
+    - onchanges:
+      - pip: shade
