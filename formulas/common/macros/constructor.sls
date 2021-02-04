@@ -136,12 +136,7 @@ etcd://
 {%- endif -%}
 
 {%- if role == 'mysql' -%}
-  {% for host, addresses in salt['mine.get']('G@type:mysql and G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
-    {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
-server {{ host }} {{ address }}{{ port }} check inter 2000 rise 2 fall 5
-{% endfor -%}
-  {%- endfor -%}
-  {% for host, addresses in salt['mine.get']('G@type:mysql and not G@spawning:0', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
+  {% for host, addresses in salt['mine.get']('G@type:mysql', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
     {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
 server {{ host }} {{ address }}{{ port }} check inter 2000 rise 2 fall 5 backup
 {% endfor -%}
