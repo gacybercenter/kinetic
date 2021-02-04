@@ -28,6 +28,8 @@ base:
     - rabbitmq
     - placement
     - swift
+  'controller*':
+    - openstack
   'storage*':
     - ceph
     - swift
