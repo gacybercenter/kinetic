@@ -218,9 +218,6 @@ create_glance_image_{{ args['image_name'] }}:
     - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/glance_templates/{{ args['image_name']}}.yaml -o /kvm/glance_images'
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
 
-echo {{ address }}:
-  cmd.run
-
 upload_glance_image_{{ args['image_name'] }}:
   glance_image.present:
     - name: {{ args.get('image_name') }}
