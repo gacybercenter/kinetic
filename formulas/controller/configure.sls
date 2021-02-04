@@ -162,15 +162,6 @@ libvirtd_service:
     - enable: true
 {% endif %}
 
-/etc/openstack/clouds.yml:
-  file.managed:
-    - source: salt://formulas/common/openstack/files/clouds.yml
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        password: {{ pillar['openstack']['admin_password'] }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-
 {% for os, args in pillar.get('controller_images', {}).items() %}
 /kvm/controller_templates/{{ args['image_name'] }}.yaml:
   file.managed:
@@ -227,13 +218,18 @@ create_glance_image_{{ args['image_name'] }}:
     - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/glance_templates/{{ args['image_name']}}.yaml -o /kvm/glance_images'
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
 
+echo {{ address }}:
+  cmd.run
+
 upload_glance_image_{{ args['image_name'] }}:
   glance_image.present:
     - name: {{ args.get('image_name') }}
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
     - filename: '/kvm/glance_images/{{ args.get('image_name') }}'
     - image_format: {{ args.get('output_format') }}
-    - visibility: public
+    - disk_Format: {{ }}
+    {% if salt['network']['connect'](host='{{ address }}', port="9292")['result'] == True %}
+    {% endif %}
     - onlyif:
       - fun: network.connect
         host: {{ address }}
