@@ -218,7 +218,6 @@ create_glance_image_{{ args['image_name'] }}:
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
 {% endfor %}
 
-{% if salt['network']['connect'](host='{{ address }}', port="9292")['result'] == True %}
 {% for os, args in pillar.get('glance_images', {}).items() %}
 upload_glance_image_{{ args['image_name'] }}:
   glance_image.present:
@@ -231,7 +230,6 @@ upload_glance_image_{{ args['image_name'] }}:
       - fun: network.connect
         host: {{ address }}
         port: 9292
-{% endif %}
 {% endfor %}
 
 {% endfor %}
