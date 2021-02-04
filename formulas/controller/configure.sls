@@ -217,6 +217,7 @@ create_glance_image_{{ args['image_name'] }}:
     - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/glance_templates/{{ args['image_name']}}.yaml -o /kvm/glance_images'
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
 {% endfor %}
+{% endfor %}
 
 {% for os, args in pillar.get('glance_images', {}).items() %}
 upload_glance_image_{{ args['image_name'] }}:
@@ -230,6 +231,4 @@ upload_glance_image_{{ args['image_name'] }}:
       - fun: network.connect
         host: {{ address }}
         port: 9292
-{% endfor %}
-
 {% endfor %}
