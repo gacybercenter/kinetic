@@ -1,6 +1,6 @@
 [Unit]
-Description=MariaDB 10.3 database server
-Documentation=man:mysqld(8)
+Description=MariaDB 10.5.8 database server
+Documentation=man:mariadbd(8)
 Documentation=https://mariadb.com/kb/en/library/systemd/
 After=network.target
 
@@ -13,15 +13,19 @@ Alias=mysqld.service
 Type=notify
 User=mysql
 Group=mysql
-LimitNOFILE=65535
-
-ExecStartPre=/usr/libexec/mysql-check-socket
-ExecStartPre=/usr/libexec/mysql-prepare-db-dir %n
-ExecStart=/usr/libexec/mysqld --basedir=/usr $MYSQLD_OPTS $_WSREP_NEW_CLUSTER
-ExecStartPost=/usr/libexec/mysql-check-upgrade
-PrivateNetwork=false
-
-KillMode=process
+CapabilityBoundingSet=CAP_IPC_LOCK CAP_DAC_OVERRIDE CAP_AUDIT_WRITE
+PrivateDevices=false
+ProtectSystem=full
+ProtectHome=true
+PermissionsStartOnly=true
+ExecStartPre=/usr/bin/install -m 755 -o mysql -g root -d /var/run/mysqld
+ExecStartPre=/bin/sh -c "systemctl unset-environment _WSREP_START_POSITION"
+ExecStartPre=/bin/sh -c "[ ! -e /usr/bin/galera_recovery ] && VAR= || \
+ VAR=`cd /usr/bin/..; /usr/bin/galera_recovery`; [ $? -eq 0 ] \
+ && systemctl set-environment _WSREP_START_POSITION=$VAR || exit 1"
+ExecStart=/usr/sbin/mariadbd $MYSQLD_OPTS $_WSREP_NEW_CLUSTER $_WSREP_START_POSITION
+ExecStartPost=/bin/sh -c "systemctl unset-environment _WSREP_START_POSITION"
+ExecStartPost=/etc/mysql/debian-start
 KillSignal=SIGTERM
 
 SendSIGKILL=no
@@ -30,7 +34,7 @@ Restart=on-abort
 RestartSec=5s
 
 UMask=007
-
-TimeoutSec=300
-
+TimeoutStartSec=900
+TimeoutStopSec=900
+LimitNOFILE=102400
 PrivateTmp=true
