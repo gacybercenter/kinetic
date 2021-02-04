@@ -197,7 +197,6 @@ haveged_service:
 {% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
 
 {% for os, args in pillar.get('glance_images', {}).items() %}
-  
 /kvm/glance_templates/{{ args['image_name'] }}.yaml:
   file.managed:
     - template: jinja
@@ -217,7 +216,10 @@ create_glance_image_{{ args['image_name'] }}:
   cmd.run:
     - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/glance_templates/{{ args['image_name']}}.yaml -o /kvm/glance_images'
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
+{% endfor %}
 
+{% if salt['network']['connect'](host='{{ address }}', port="9292")['result'] == True %}
+{% for os, args in pillar.get('glance_images', {}).items() %}
 upload_glance_image_{{ args['image_name'] }}:
   glance_image.present:
     - name: {{ args.get('image_name') }}
@@ -225,12 +227,11 @@ upload_glance_image_{{ args['image_name'] }}:
     - filename: '/kvm/glance_images/{{ args.get('image_name') }}'
     - image_format: {{ args.get('output_format') }}
     - disk_format: raw
-    {% if salt['network']['connect'](host='{{ address }}', port="9292")['result'] == True %}
-    {% endif %}
     - onlyif:
       - fun: network.connect
         host: {{ address }}
         port: 9292
-
+{% endif %}
 {% endfor %}
+
 {% endfor %}
