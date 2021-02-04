@@ -162,6 +162,15 @@ libvirtd_service:
     - enable: true
 {% endif %}
 
+/etc/openstack/clouds.yml:
+  file.managed:
+    - source: salt://formulas/common/openstack/files/clouds.yml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        password: {{ pillar['openstack']['admin_password'] }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+
 {% for os, args in pillar.get('controller_images', {}).items() %}
 /kvm/controller_templates/{{ args['image_name'] }}.yaml:
   file.managed:
