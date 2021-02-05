@@ -195,7 +195,6 @@ haveged_service:
     - enable: true
 
 {% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
-
 {% for os, args in pillar.get('glance_images', {}).items() %}
 /kvm/glance_templates/{{ args['image_name'] }}.yaml:
   file.managed:
@@ -222,6 +221,10 @@ create_glance_image_{{ args['image_name'] }}:
 
 {% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
 {% for os, args in pillar.get('glance_images', {}).items() %}
+
+echo {{ address }}:
+  cmd.run
+
 upload_glance_image_{{ args['image_name'] }}:
   glance_image.present:
     - name: {{ args.get('image_name') }}
