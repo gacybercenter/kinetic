@@ -215,16 +215,6 @@ create_glance_image_{{ args['image_name'] }}:
   cmd.run:
     - name: 'python3 /tmp/image_bakery/image_bake.py -t /kvm/glance_templates/{{ args['image_name']}}.yaml -o /kvm/glance_images'
     - onchanges: [ /kvm/glance_templates/{{ args['image_name'] }}.yaml ]
-{% endfor %}
-{% endfor %}
-
-
-{% for address in salt['mine.get']('role:glance', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management'])%}
-
-echo {{ address }}:
-  cmd.run
-
-{% for os, args in pillar.get('glance_images', {}).items() %}
 
 upload_glance_image_{{ args['image_name'] }}:
   glance_image.present:
@@ -237,5 +227,6 @@ upload_glance_image_{{ args['image_name'] }}:
       - fun: network.connect
         host: {{ address }}
         port: 9292
+
 {% endfor %}
 {% endfor %}
