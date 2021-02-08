@@ -19,6 +19,7 @@ include:
   - /formulas/common/openstack/repo
 
 {% if grains['os_family'] == 'Debian' %}
+    {% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 network_packages:
   pkg.installed:
@@ -30,6 +31,21 @@ network_packages:
       - neutron-metadata-agent
       - python3-openstackclient
       - python3-tornado
+
+    {% elif pillar['neutron']['backend'] == "openvswitch" %}
+
+network_packages:
+  pkg.installed:
+    - pkgs:
+      - neutron-plugin-ml2
+      - neutron-openvswitch-agent
+      - neutron-l3-agent
+      - neutron-dhcp-agent
+      - neutron-metadata-agent
+      - python3-openstackclient
+      - python3-tornado
+
+    {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
 

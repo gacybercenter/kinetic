@@ -29,6 +29,16 @@ neutron_packages:
       - python3-openstackclient
       - python3-tornado
 
+  {% elif pillar['neutron']['backend'] == "openvswitch" %}
+
+neutron_packages:
+  pkg.installed:
+    - pkgs:
+      - neutron-server
+      - neutron-plugin-ml2
+      - python3-openstackclient
+      - python3-tornado
+
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
 neutron_packages:
@@ -44,6 +54,14 @@ neutron_packages:
 {% elif grains['os_family'] == 'RedHat' %}
 
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
+neutron_packages:
+  pkg.installed:
+    - pkgs:
+      - openstack-neutron-ml2
+      - openstack-neutron
+      - python3-openstackclient
+
+  {% elif pillar['neutron']['backend'] == "openvswitch" %}
 neutron_packages:
   pkg.installed:
     - pkgs:

@@ -69,6 +69,8 @@ mk_public_network:
         core_plugin: neutron.plugins.ml2.plugin.Ml2Plugin
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
         service_plugins: router
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+        service_plugins: router
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
         service_plugins: neutron.services.ovn_l3.plugin.OVNL3RouterPlugin
 {% endif %}
@@ -105,6 +107,18 @@ mk_public_network:
         ovn_l3_mode: ""
         ovn_metadata_enabled: ""
         enable_distributed_floating_ip:  ""
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+        type_drivers: flat,vlan,vxlan
+        tenant_network_types: vxlan
+        mechanism_drivers: openvswitch,l2population
+        extension_drivers: port_security,qos,dns_domain_ports
+        ovn_nb_connection: ""
+        ovn_sb_connection: ""
+        ovn_l3_scheduler: ""
+        ovn_native_dhcp: ""
+        ovn_l3_mode: ""
+        ovn_metadata_enabled: ""
+        enable_distributed_floating_ip:  ""
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
         type_drivers: local,flat,vlan,geneve
         tenant_network_types: geneve
@@ -116,7 +130,7 @@ mk_public_network:
         ovn_native_dhcp: True
         ovn_l3_mode: True
         ovn_metadata_enabled: True
-        enable_distributed_floating_ip: True
+        enable_distributed_floating_ip: False
 {% endif %}
         vni_ranges: 1:65536
 

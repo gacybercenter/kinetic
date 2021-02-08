@@ -35,6 +35,20 @@ compute_packages:
       - frr
       - frr-pythontools
 
+  {% elif pillar['neutron']['backend'] == "openvswitch" %}
+compute_packages:
+  pkg.installed:
+    - pkgs:
+      - nova-compute
+      - neutron-openvswitch-agent
+      - python3-tornado
+      - ceph-common
+      - spice-html5
+      - python3-rbd
+      - python3-rados
+#      - frr
+#      - frr-pythontools
+
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
 compute_packages:
@@ -68,6 +82,20 @@ compute_packages:
       - conntrack-tools
       - frr
       - frr-pythontools
+
+  {% elif pillar['neutron']['backend'] == "openvswitch" %}
+compute_packages:
+  pkg.installed:
+    - pkgs:
+      - openstack-nova-compute
+      - openstack-openvswitch-agent
+      - python3-tornado
+      - ceph-common
+      - python3-rbd
+      - python3-rados
+      - openstack-neutron-common
+#      - frr
+#      - frr-pythontools
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 compute_packages:

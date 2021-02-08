@@ -146,7 +146,6 @@ libvirtd_service:
       - cmd: load_ceph_volumes_key
 {% endif %}
 
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
 /etc/neutron/neutron.conf:
   file.managed:
     - source: salt://formulas/compute/files/neutron.conf
@@ -162,6 +161,8 @@ libvirtd_service:
   {% elif grains['os_family'] == 'RedHat' %}
         lock_path: /var/lib/neutron/tmp
   {% endif %}
+
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
 arp_protect_fix:
@@ -200,6 +201,43 @@ neutron_linuxbridge_agent_service:
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
+
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+
+/etc/neutron/plugins/ml2/openvswitch_agent.ini:
+  file.managed:
+    - source: salt://formulas/compute/files/openvswitch_agent.ini
+    - template: jinja
+    - defaults:
+        vxlan_udp_port: 4789
+        l2_population: True
+        arp_responder: True
+        enable_distributed_routing: False
+        drop_flows_on_start: False
+        extensions: qos
+        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+        bridge_mappings: public_br
+{% endfor %}
+
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+create_bridge:
+  openvswitch_bridge.present:
+    - name: public_br
+
+create_port:
+  openvswitch_port.present:
+    - name: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
+    - bridge: public_br
+{% endfor %}
+
+neutron_openvswitch_agent_service:
+  service.running:
+    - name: neutron-openvswitch-agent
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/openvswitch_agent.ini
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 

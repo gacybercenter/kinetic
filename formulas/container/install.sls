@@ -36,10 +36,21 @@ container_packages:
       - kata-proxy
       - kata-shim
 
-pymysql_sa:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
+  {% elif pillar['neutron']['backend'] == "openvswitch" %}
+container_packages:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+      - git
+      - python3-openstackclient
+      - docker-ce
+      - neutron-openvswitch-agent
+      - python3-tornado
+      - python3-pymysql
+      - kata-runtime
+      - kata-proxy
+      - kata-shim
+      - numactl
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -57,11 +68,6 @@ container_packages:
       - kata-proxy
       - kata-shim
 
-pymysql_sa:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
-
     {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -76,6 +82,24 @@ container_packages:
       - gcc
       - openssl-devel
       - openstack-neutron-linuxbridge
+      - python3-PyMySQL
+      - numactl
+      - python3-openstackclient
+      - gcc-c++
+      - kata-runtime
+      - kata-proxy
+      - kata-shim
+  {% elif pillar['neutron']['backend'] == "openvswitch" %}
+container_packages:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+      - git
+      - platform-python-devel
+      - libffi-devel
+      - gcc
+      - openssl-devel
+      - openstack-neutron-openvswitch
       - python3-PyMySQL
       - numactl
       - python3-openstackclient

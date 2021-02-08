@@ -56,6 +56,7 @@ include:
     - source: salt://formulas/network/files/ml2_conf.ini
     - template: jinja
     - defaults:
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
         type_drivers: flat,vlan,vxlan
         tenant_network_types: vxlan
         mechanism_drivers: linuxbridge,l2population
@@ -67,6 +68,19 @@ include:
         ovn_l3_mode: ""
         ovn_metadata_enabled: ""
         enable_distributed_floating_ip:  ""
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+        type_drivers: flat,vlan,vxlan
+        tenant_network_types: vxlan
+        mechanism_drivers: openvswitch,l2population
+        extension_drivers: port_security,qos,dns_domain_ports
+        ovn_nb_connection: ""
+        ovn_sb_connection: ""
+        ovn_l3_scheduler: ""
+        ovn_native_dhcp: ""
+        ovn_l3_mode: ""
+        ovn_metadata_enabled: ""
+        enable_distributed_floating_ip:  ""
+{% endif %}
         vni_ranges: 1:65536
 
 {% if grains['os_family'] == 'RedHat' %}
@@ -114,6 +128,7 @@ os_dnsmasq_dac_override:
       - service: neutron_dhcp_agent_service
 {% endif %}
 
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 /etc/neutron/plugins/ml2/linuxbridge_agent.ini:
   file.managed:
     - source: salt://formulas/network/files/linuxbridge_agent.ini
@@ -123,14 +138,57 @@ os_dnsmasq_dac_override:
 {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
 {% endfor %}
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+/etc/neutron/plugins/ml2/openvswitch_agent.ini:
+  file.managed:
+    - source: salt://formulas/network/files/openvswitch_agent.ini
+    - template: jinja
+    - defaults:
+        vxlan_udp_port: 4789
+        l2_population: True
+        arp_responder: True
+        enable_distributed_routing: False
+        drop_flows_on_start: False
+        extensions: qos
+        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+        bridge_mappings: public_br
+{% endfor %}
+
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+create_bridge:
+  openvswitch_bridge.present:
+    - name: public_br
+
+create_port:
+  openvswitch_port.present:
+    - name: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
+    - bridge: public_br
+{% endfor %}
+
+{% endif %}
 
 /etc/neutron/l3_agent.ini:
   file.managed:
     - source: salt://formulas/network/files/l3_agent.ini
+    - template: jinja
+    - defaults:
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
+        interface_driver: linuxbridge
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+        interface_driver: openvswitch
+{% endif %}
 
 /etc/neutron/dhcp_agent.ini:
   file.managed:
     - source: salt://formulas/network/files/dhcp_agent.ini
+    - template: jinja
+    - defaults:
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
+        interface_driver: linuxbridge
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+        interface_driver: openvswitch
+{% endif %}
 
 /etc/neutron/metadata_agent.ini:
   file.managed:
@@ -140,6 +198,7 @@ os_dnsmasq_dac_override:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
 
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
@@ -148,6 +207,17 @@ neutron_linuxbridge_agent_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+neutron_openvswitch_agent_service:
+  service.running:
+    - name: neutron-openvswitch-agent
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/plugins/ml2/openvswitch_agent.ini
+{% endif %}
 
 neutron_dhcp_agent_service:
   service.running:
