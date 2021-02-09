@@ -137,6 +137,11 @@ docker-ce:
 
 {% endif %}
 
+pymysql_sa:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
+
 kuryr:
   group.present:
     - system: True
