@@ -18,6 +18,14 @@ include:
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
+{% if salt['pillar.get']('hosts:'+grains['type']+':networks:public:bridge', False) == True %}
+  {% set public_interface = 'public_br' %}
+{% elif salt['pillar.get']('hosts:'+grains['type']+':networks:public:interfaces') | length > 1 %}
+  {% set public_interface = 'public_bond' %}
+{% else %}
+  {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
+{% endif %}
+
 {% if grains['spawning'] == 0 %}
 
 {{ spawn.spawnzero_complete() }}
@@ -136,7 +144,7 @@ os_dnsmasq_dac_override:
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
 {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
-        public_interface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
+        public_interface: {{ public_interface }}
 {% endfor %}
 {% elif pillar['neutron']['backend'] == "openvswitch" %}
 /etc/neutron/plugins/ml2/openvswitch_agent.ini:
@@ -162,7 +170,7 @@ create_bridge:
 
 create_port:
   openvswitch_port.present:
-    - name: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
+    - name: {{ public_interface }}
     - bridge: public_br
 {% endfor %}
 
