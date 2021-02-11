@@ -217,18 +217,18 @@ neutron_linuxbridge_agent_service:
         extensions: qos
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
 {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
-        bridge_mappings: public_br
+        bridge_mappings: {{ public_interface }}
 {% endfor %}
 
 {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
 create_bridge:
   openvswitch_bridge.present:
-    - name: public_br
+    - name: {{ public_interface }}
 
 create_port:
   openvswitch_port.present:
     - name: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
-    - bridge: public_br
+    - bridge: {{ public_interface }}
 {% endfor %}
 
 neutron_openvswitch_agent_service:
