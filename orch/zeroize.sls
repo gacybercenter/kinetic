@@ -120,7 +120,7 @@ wait_for_provisioning_{{ type }}:
       - {{ type }}-{{ targets[id]['uuid'] }}
 {% endfor %}
 {% if style == 'virtual' %}
-    - timeout: 180
+    - timeout: 240
 {% elif style == 'physical' %}
     - timeout: 1200
 {% endif %}
