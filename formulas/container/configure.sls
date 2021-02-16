@@ -50,8 +50,6 @@ include:
         password: {{ pillar ['zun']['kuryr_service_password'] }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
 
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
-
 /etc/neutron/neutron.conf:
   file.managed:
     - source: salt://formulas/container/files/neutron.conf
@@ -72,6 +70,21 @@ include:
 /etc/sudoers.d/neutron_sudoers:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
+
+## fix for disabling md5 on fips systems per
+## https://opendev.org/openstack/oslo.utils/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76
+oslo_md5_fix:
+  file.managed:
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/oslo_utils/secretutils.py
+{% elif grains['os_family'] == 'Debian' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/oslo_utils/secretutils.py
+{% endif %}
+    - source: https://opendev.org/openstack/oslo.utils/raw/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76/oslo_utils/secretutils.py
+    - skip_verify: True
+##
+
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
 arp_protect_fix:
@@ -110,6 +123,43 @@ neutron_linuxbridge_agent_service:
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
+
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+
+/etc/neutron/plugins/ml2/openvswitch_agent.ini:
+  file.managed:
+    - source: salt://formulas/compute/files/openvswitch_agent.ini
+    - template: jinja
+    - defaults:
+        vxlan_udp_port: 4789
+        l2_population: True
+        arp_responder: True
+        enable_distributed_routing: False
+        drop_flows_on_start: False
+        extensions: qos
+        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+        bridge_mappings: public_br
+{% endfor %}
+
+{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+create_bridge:
+  openvswitch_bridge.present:
+    - name: public_br
+
+create_port:
+  openvswitch_port.present:
+    - name: {{ public_interface }}
+    - bridge: public_br
+{% endfor %}
+
+neutron_openvswitch_agent_service:
+  service.running:
+    - name: neutron-openvswitch-agent
+    - enable: true
+    - watch:
+      - file: /etc/neutron/neutron.conf
+      - file: /etc/neutron/plugins/ml2/openvswitch_agent.ini
 
 {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
