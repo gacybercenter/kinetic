@@ -70,4 +70,5 @@ network_packages:
       - iptables-ebtables
       - python3-openstackclient
 
+  {% endif %}
 {% endif %}
