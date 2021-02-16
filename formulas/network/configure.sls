@@ -106,7 +106,9 @@ fs.inotify.max_user_instances:
   file.managed:
     - source: salt://formulas/network/files/neutron_sudoers
 
+
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 arp_protect_fix:
   file.managed:
 {% if grains['os_family'] == 'RedHat' %}
@@ -115,6 +117,7 @@ arp_protect_fix:
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
 {% endif %}
     - source: salt://formulas/network/files/arp_protect.py
+{% endif %}
 ###
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
@@ -150,6 +153,7 @@ os_dnsmasq_dac_override:
 {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         public_interface: {{ public_interface }}
 {% endfor %}
+
 {% elif pillar['neutron']['backend'] == "openvswitch" %}
 /etc/neutron/plugins/ml2/openvswitch_agent.ini:
   file.managed:
@@ -163,11 +167,11 @@ os_dnsmasq_dac_override:
         drop_flows_on_start: False
         extensions: qos
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+  {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         bridge_mappings: public_br
-{% endfor %}
+  {% endfor %}
 
-{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+  {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
 create_bridge:
   openvswitch_bridge.present:
     - name: public_br
@@ -181,8 +185,7 @@ create_port:
     - require:
       - openvswitch_bridge: create_bridge
       - service: neutron_openvswitch_agent_service
-      
-{% endfor %}
+  {% endfor %}
 
 {% endif %}
 
