@@ -46,8 +46,8 @@ compute_packages:
       - spice-html5
       - python3-rbd
       - python3-rados
-#      - frr
-#      - frr-pythontools
+      - frr
+      - frr-pythontools
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -94,8 +94,8 @@ compute_packages:
       - python3-rbd
       - python3-rados
       - openstack-neutron-common
-#      - frr
-#      - frr-pythontools
+      - frr
+      - frr-pythontools
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 compute_packages:
