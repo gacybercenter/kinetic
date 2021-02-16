@@ -71,6 +71,19 @@ include:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
 
+## fix for disabling md5 on fips systems per
+## https://opendev.org/openstack/oslo.utils/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76
+oslo_md5_fix:
+  file.managed:
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/oslo_utils/secretutils.py
+{% elif grains['os_family'] == 'Debian' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/oslo_utils/secretutils.py
+{% endif %}
+    - source: https://opendev.org/openstack/oslo.utils/raw/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76/oslo_utils/secretutils.py
+    - skip_verify: True
+##
+
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
@@ -94,13 +107,6 @@ os_neutron_dac_override:
     - watch_in:
       - service: neutron_linuxbridge_agent_service
 {% endif %}
-
-## fix for disabling md5 on fips systems per
-## https://opendev.org/openstack/oslo.utils/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76
-/usr/lib/python3/dist-packages/oslo_utils/secretutils.py:
-  file.managed:
-    - source: https://opendev.org/openstack/oslo.utils/raw/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76/oslo_utils/secretutils.py
-    - skip_verify: True
 
 neutron_linuxbridge_agent_service:
   service.running:
