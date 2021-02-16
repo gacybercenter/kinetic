@@ -72,6 +72,7 @@ container_packages:
 
 {% elif grains['os_family'] == 'RedHat' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
+
 container_packages:
   pkg.installed:
     - pkgs:
@@ -89,7 +90,9 @@ container_packages:
       - kata-runtime
       - kata-proxy
       - kata-shim
+
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
+
 container_packages:
   pkg.installed:
     - pkgs:
@@ -107,7 +110,9 @@ container_packages:
       - kata-runtime
       - kata-proxy
       - kata-shim
+
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+
 container_packages:
   pkg.installed:
     - pkgs:
