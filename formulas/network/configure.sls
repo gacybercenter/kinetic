@@ -171,11 +171,17 @@ os_dnsmasq_dac_override:
 create_bridge:
   openvswitch_bridge.present:
     - name: public_br
+    - require:
+      - service: neutron_openvswitch_agent_service
 
 create_port:
   openvswitch_port.present:
     - name: {{ public_interface }}
     - bridge: public_br
+    - require:
+      - openvswitch_bridge: create_bridge
+      - service: neutron_openvswitch_agent_service
+      
 {% endfor %}
 
 {% endif %}
