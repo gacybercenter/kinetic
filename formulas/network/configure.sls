@@ -125,7 +125,11 @@ os_neutron_dac_override:
     - value: on
     - persist: True
     - watch_in:
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
       - service: neutron_linuxbridge_agent_service
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
+      - service: neutron_openvswitch_agent_service
+{% endif %}
 
 ## ref: https://github.com/redhat-openstack/openstack-selinux/commit/9460342f3e5a7214bd05b9cfa73a1896478d8785
 os_dnsmasq_dac_override:
