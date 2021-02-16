@@ -121,7 +121,6 @@ driver_patch:
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/driver.py
 {% endif %}
     - source: salt://formulas/nova/files/driver.py
-{% endif %}
 
 config_patch:
   file.managed:
@@ -131,7 +130,6 @@ config_patch:
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/config.py
 {% endif %}
     - source: salt://formulas/nova/files/config.py
-{% endif %}
 ### /multiarch patches
 
 {% if grains['os_family'] == 'RedHat' %}
