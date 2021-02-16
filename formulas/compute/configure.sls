@@ -112,6 +112,31 @@ load_ceph_volumes_key:
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
+### temporary patches for multiarch
+driver_patch:
+  file.managed:
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/driver.py
+{% elif grains['os_family'] == 'Debian' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/driver.py
+{% endif %}
+    - source: salt://formulas/compute/files/driver.py
+
+config_patch:
+  file.managed:
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/config.py
+{% elif grains['os_family'] == 'Debian' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/config.py
+{% endif %}
+    - source: salt://formulas/compute/files/config.py
+
+nova_compute_patch:
+  file.managed:
+    - name: /etc/nova/nova-compute.conf
+    - source: salt://formulas/compute/files/nova-compute.conf
+### /multiarch patches
+
 {% if grains['os_family'] == 'RedHat' %}
 spice-html5:
   git.latest:
