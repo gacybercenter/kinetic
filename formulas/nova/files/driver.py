@@ -5777,9 +5777,9 @@ class LibvirtDriver(driver.ComputeDriver):
             else:
                 guest.os_cmdline = CONSOLE
         elif virt_type in ("kvm", "qemu"):
-           guest.os_arch = libvirt_utils.get_arch(image_meta)
-           guest.os_mach_type = libvirt_utils.get_machine_type(image_meta)
-           if caps.host.cpu.arch in (fields.Architecture.I686,
+            guest.os_arch = libvirt_utils.get_arch(image_meta)
+            guest.os_mach_type = libvirt_utils.get_machine_type(image_meta)
+            if caps.host.cpu.arch in (fields.Architecture.I686,
                                       fields.Architecture.X86_64):
                 guest.sysinfo = self._get_guest_config_sysinfo(instance)
                 guest.os_smbios = vconfig.LibvirtConfigGuestSMBIOS()
