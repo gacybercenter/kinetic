@@ -120,7 +120,7 @@ driver_patch:
 {% elif grains['os_family'] == 'Debian' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/driver.py
 {% endif %}
-    - source: salt://formulas/nova/files/driver.py
+    - source: salt://formulas/compute/files/driver.py
 
 config_patch:
   file.managed:
@@ -129,7 +129,7 @@ config_patch:
 {% elif grains['os_family'] == 'Debian' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/config.py
 {% endif %}
-    - source: salt://formulas/nova/files/config.py
+    - source: salt://formulas/compute/files/config.py
 ### /multiarch patches
 
 {% if grains['os_family'] == 'RedHat' %}

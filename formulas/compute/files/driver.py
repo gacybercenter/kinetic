@@ -159,7 +159,7 @@ DISABLE_PREFIX = 'AUTO: '
 DISABLE_REASON_UNDEFINED = None
 
 # Guest config console string
-CONSOLE = "console=tty0 console=ttyS0 console=hvc0"
+CONSOLE = "console=tty0 console=ttyS0 console=hvc0 console=ttyAMA0"
 
 GuestNumaConfig = collections.namedtuple(
     'GuestNumaConfig', ['cpuset', 'cputune', 'numaconfig', 'numatune'])
@@ -5801,7 +5801,6 @@ class LibvirtDriver(driver.ComputeDriver):
                     guest.os_loader_type = "pflash"
                 else:
                     raise exception.UEFINotSupported()
-            guest.os_mach_type = libvirt_utils.get_machine_type(image_meta)
             if image_meta.properties.get('hw_boot_menu') is None:
                 guest.os_bootmenu = strutils.bool_from_string(
                     flavor.extra_specs.get('hw:boot_menu', 'no'))
@@ -7796,17 +7795,16 @@ class LibvirtDriver(driver.ComputeDriver):
         resources: ty.Dict[str, ty.Set['objects.Resource']] = (
             collections.defaultdict(set)
         )
-
-        result = {}
-        if memory_mb:
-            result[orc.MEMORY_MB] = {
+        result = {
+            orc.MEMORY_MB: {
                 'total': memory_mb,
                 'min_unit': 1,
                 'max_unit': memory_mb,
                 'step_size': 1,
                 'allocation_ratio': ratios[orc.MEMORY_MB],
                 'reserved': CONF.reserved_host_memory_mb,
-            }
+            },
+        }
 
         # NOTE(stephenfin): We have to optionally report these since placement
         # forbids reporting inventory with total=0
@@ -7847,17 +7845,15 @@ class LibvirtDriver(driver.ComputeDriver):
         # compute RP once the issues from bug #1784020 have been resolved.
         if provider_tree.has_sharing_provider(orc.DISK_GB):
             LOG.debug('Ignoring sharing provider - see bug #1784020')
-
-        if disk_gb:
-            result[orc.DISK_GB] = {
-                'total': disk_gb,
-                'min_unit': 1,
-                'max_unit': disk_gb,
-                'step_size': 1,
-                'allocation_ratio': ratios[orc.DISK_GB],
-                'reserved': (self._get_reserved_host_disk_gb_from_config() +
-                             self._get_disk_size_reserved_for_image_cache()),
-            }
+        result[orc.DISK_GB] = {
+            'total': disk_gb,
+            'min_unit': 1,
+            'max_unit': disk_gb,
+            'step_size': 1,
+            'allocation_ratio': ratios[orc.DISK_GB],
+            'reserved': (self._get_reserved_host_disk_gb_from_config() +
+                         self._get_disk_size_reserved_for_image_cache()),
+        }
 
         # TODO(sbauza): Use traits to providing vGPU types. For the moment,
         # it will be only documentation support by explaining to use
@@ -7892,10 +7888,6 @@ class LibvirtDriver(driver.ComputeDriver):
         """Update resources and inventory for vpmems in provider tree."""
         prov_data = provider_tree.data(nodename)
         for rc, vpmems in self._vpmems_by_rc.items():
-            # Skip (and omit) inventories with total=0 because placement does
-            # not allow setting total=0 for inventory.
-            if not len(vpmems):
-                continue
             inventory[rc] = {
                 'total': len(vpmems),
                 'max_unit': len(vpmems),
@@ -8008,10 +8000,6 @@ class LibvirtDriver(driver.ComputeDriver):
         # Dict of PGPU RPs keyed by their libvirt PCI name
         pgpu_rps = {}
         for pgpu_dev_id, inventory in inventories_dict.items():
-            # Skip (and omit) inventories with total=0 because placement does
-            # not allow setting total=0 for inventory.
-            if not inventory['total']:
-                continue
             # For each physical GPU, we make sure to have a child provider
             pgpu_rp_name = '%s_%s' % (nodename, pgpu_dev_id)
             if not provider_tree.exists(pgpu_rp_name):
