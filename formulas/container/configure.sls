@@ -95,6 +95,13 @@ os_neutron_dac_override:
       - service: neutron_linuxbridge_agent_service
 {% endif %}
 
+## fix for disabling md5 on fips systems per
+## https://opendev.org/openstack/oslo.utils/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76
+/usr/lib/python3/dist-packages/oslo_utils/secretutils.py:
+  file.managed:
+    - source: https://opendev.org/openstack/oslo.utils/raw/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76/oslo_utils/secretutils.py
+    - skip_verify: True
+
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
@@ -110,7 +117,7 @@ neutron_linuxbridge_agent_service:
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
-  
+
 {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
 /etc/neutron/plugins/ml2/openvswitch_agent.ini:
