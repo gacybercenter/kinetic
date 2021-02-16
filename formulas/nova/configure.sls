@@ -128,26 +128,6 @@ create_{{ flavor }}:
         console_domain: {{ pillar['haproxy']['console_domain'] }}
         token_ttl: {{ pillar['nova']['token_ttl'] }}
 
-### temporary patches for multiarch
-driver_patch:
-  file.managed:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/driver.py
-{% elif grains['os_family'] == 'Debian' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/driver.py
-{% endif %}
-    - source: salt://formulas/nova/files/driver.py
-
-config_patch:
-  file.managed:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/config.py
-{% elif grains['os_family'] == 'Debian' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/config.py
-{% endif %}
-    - source: salt://formulas/nova/files/config.py
-### /multiarch patches
-
 spice-html5:
   git.latest:
     - name: https://gitlab.com/gacybercenter/spice-html5.git
