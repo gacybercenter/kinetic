@@ -20,7 +20,7 @@
 kata_repo:
   pkgrepo.managed:
     - humanname: kata containers
-    - name: deb https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04/ /
+    - name: deb https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04 /
     - file: /etc/apt/sources.list.d/kata.list
     - key_url: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_16.04/Release.key
 
