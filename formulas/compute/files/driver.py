@@ -5788,7 +5788,10 @@ class LibvirtDriver(driver.ComputeDriver):
             if caps.host.cpu.arch in (fields.Architecture.I686,
                                       fields.Architecture.X86_64):
                 guest.sysinfo = self._get_guest_config_sysinfo(instance)
-                guest.os_smbios = vconfig.LibvirtConfigGuestSMBIOS()
+                if guest.os_arch == fields.Architecture.ppc64le:
+                    guest.os_smbios = None
+                else:
+                    guest.os_smbios = vconfig.LibvirtConfigGuestSMBIOS()
             hw_firmware_type = image_meta.properties.get('hw_firmware_type')
             if caps.host.cpu.arch == fields.Architecture.AARCH64:
                 if not hw_firmware_type:
