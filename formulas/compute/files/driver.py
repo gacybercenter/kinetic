@@ -4706,7 +4706,7 @@ class LibvirtDriver(driver.ComputeDriver):
             if guestarch == fields.Architecture.AARCH64:
                 cpu.model = "cortex-a57"
             elif guestarch == fields.Architecture.PPC64LE:
-                cpu.model = "power8"
+                cpu.model = "POWER8"
 
         return cpu
 
