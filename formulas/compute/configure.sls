@@ -130,11 +130,6 @@ config_patch:
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/config.py
 {% endif %}
     - source: salt://formulas/compute/files/config.py
-
-nova_compute_patch:
-  file.managed:
-    - name: /etc/nova/nova-compute.conf
-    - source: salt://formulas/compute/files/nova-compute.conf
 ### /multiarch patches
 
 {% if grains['os_family'] == 'RedHat' %}
