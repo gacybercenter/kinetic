@@ -4702,6 +4702,7 @@ class LibvirtDriver(driver.ComputeDriver):
         caps = self._host.get_capabilities()
         if guestarch != caps.host.cpu.arch:
             # Try emulating. Other arch configs will go here
+            cpu.mode = None
             if guestarch == fields.Architecture.AARCH64:
                 cpu.model = "cortex-a57"
 
@@ -5779,6 +5780,9 @@ class LibvirtDriver(driver.ComputeDriver):
         elif virt_type in ("kvm", "qemu"):
             guest.os_arch = libvirt_utils.get_arch(image_meta)
             guest.os_mach_type = libvirt_utils.get_machine_type(image_meta)
+            if caps.host.cpu.arch != guest.os_arch:
+                # If emulating, downgrade from kvm to qemu
+                guest.virt_type = "qemu"
             if caps.host.cpu.arch in (fields.Architecture.I686,
                                       fields.Architecture.X86_64):
                 guest.sysinfo = self._get_guest_config_sysinfo(instance)
