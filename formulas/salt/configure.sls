@@ -91,7 +91,7 @@ api:
               - base:
                 - ref: {{ pillar['kinetic_remote_configuration']['branch'] }}
 {% for remote, config in pillar.get('gitfs_other_configurations', {}).items() %}
-          - {{ pillar['gitfs_other_configurations'][remote]['url'] }}
+          - {{ pillar['gitfs_other_configurations'][remote]['url'] }}:
             - saltenv:
               - base:
                 - ref: {{ pillar['gitfs_other_configurations'][remote]['branch'] }}
