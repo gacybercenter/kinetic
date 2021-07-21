@@ -122,7 +122,7 @@ wait_for_provisioning_{{ type }}:
 {% if style == 'virtual' %}
     - timeout: 600
 {% elif style == 'physical' %}
-    - timeout: 1200
+    - timeout: 1500
 {% endif %}
 
 accept_minion_{{ type }}:
