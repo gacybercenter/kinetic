@@ -30,7 +30,7 @@ heat_packages:
       - python3-tornado
       - python3-zunclient
       - python3-designateclient
-      - python3-vitragclient
+      - python3-vitrageclient
 
 {% elif grains['os_family'] == 'RedHat' %}
 
