@@ -41,7 +41,7 @@ horizon_packages:
       - python3-dev
     - reload_modules: True
 
-  {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %} 
+  {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
 magnum_latest:
   git.latest:
     - name: https://opendev.org/openstack/magnum-ui.git
