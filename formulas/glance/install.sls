@@ -28,6 +28,9 @@ glance_packages:
       - python3-rbd
       - python3-rados
       - python3-openstackclient
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - name: boto3
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -39,5 +42,8 @@ glance_packages:
       - python3-rbd
       - python3-rados
       - python3-openstackclient
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - name: boto3
 
 {% endif %}

@@ -89,6 +89,7 @@ mk_public_network:
 {% elif grains['os_family'] == 'RedHat' %}
         lock_path: /var/lib/neutron/tmp
 {% endif %}
+        rpc_workers: {{ grains['num_cpus'] * 2 }}
 
 /etc/neutron/plugins/ml2/ml2_conf.ini:
   file.managed:

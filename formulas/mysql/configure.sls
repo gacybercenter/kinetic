@@ -124,6 +124,7 @@ mariadb_service:
       - file: openstack.conf
 
 {% for service in pillar['openstack_services'] if grains['spawning'] == 0 %}
+{% if pillar['openstack_services'][service]['configuration']['dbs'] is defined %}
   {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
     {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
@@ -135,7 +136,6 @@ create_{{ service }}_user_{{ address }}:
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
-
     {% endfor %}
   {% endfor %}
 
@@ -166,6 +166,7 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
       {% endfor %}
     {% endfor %}
   {% endfor %}
+{% endif %}
 {% endfor %}
 
 {% if pillar['hosts']['mysql']['count'] > 1 %}
