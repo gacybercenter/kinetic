@@ -71,6 +71,12 @@ update_cells:
       - service: nova_conductor_service
       - service: nova_spiceproxy_service
 
+make_vms_pool:
+  event.send:
+    - name: create/vms/pool
+    - data:
+        pgs: {{ pillar['cephconf']['vms_pgs'] }}
+
 {{ spawn.spawnzero_complete() }}
 
 ## This is lightning fast but I'm not sure how I feel about writing directly to the database

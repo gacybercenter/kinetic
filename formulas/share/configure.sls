@@ -21,6 +21,13 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+make_filesystem:
+  event.send:
+    - name: create/manila/filesystem
+    - data:
+        metadata_pgs: {{ pillar['cephconf']['fileshare_metadata_pgs'] }}
+        data_pgs: {{ pillar['cephconf']['fileshare_data_pgs'] }}
+
 {{ spawn.spawnzero_complete() }}
 
 {% else %}

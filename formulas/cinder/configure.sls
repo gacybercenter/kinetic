@@ -30,6 +30,12 @@ cinder-manage db sync:
         key: build_phase
         value: configure
 
+make_volumes_pool:
+  event.send:
+    - name: create/volumes/pool
+    - data:
+        pgs: {{ pillar['cephconf']['volumes_pgs'] }}
+
 {{ spawn.spawnzero_complete() }}
 
 {% else %}

@@ -31,6 +31,12 @@ glance-manage db_sync:
         key: build_phase
         value: configure
 
+make_images_pool:
+  event.send:
+    - name: create/images/pool
+    - data:
+        pgs: {{ pillar['cephconf']['images_pgs'] }}
+
 {{ spawn.spawnzero_complete() }}
 
 {% else %}

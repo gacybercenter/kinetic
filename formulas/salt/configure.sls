@@ -192,6 +192,7 @@ api:
 {% set adminkey = salt['generate.cephx_key']() %}
 {% set volumeskey = salt['generate.cephx_key']() %}
 {% set computekey = salt['generate.cephx_key']() %}
+{% set crashkey = salt['generate.cephx_key']() %}
 {% set osdkey = salt['generate.cephx_key']() %}
 
 /srv/dynamic_pillar/ceph.sls:
@@ -229,18 +230,23 @@ api:
           ceph-client-images-keyring: |
             [client.images]
                  key = {{ salt['generate.cephx_key']() }}
-                 caps mon = "allow r"
+                 caps mon = "allow r, allow command \"osd blacklist\""
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
           ceph-client-volumes-keyring: |
             [client.volumes]
                  key = {{ volumeskey }}
-                 caps mon = "allow r"
+                 caps mon = "allow r, allow command \"osd blacklist\""
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rx pool=images"
           ceph-client-compute-keyring: |
             [client.compute]
                  key = {{ computekey }}
-                 caps mon = "allow r"
+                 caps mon = "allow r, allow command \"osd blacklist\""
                  caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
+          ceph-client-crash-keyring: |
+            [client.crash]
+                key = {{ crashkey }}
+                caps mon = "profile crash"
+                caps mgr = "profile crash"
           ceph-client-compute-key: {{ computekey }}
           ceph-client-volumes-key: {{ volumeskey }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}

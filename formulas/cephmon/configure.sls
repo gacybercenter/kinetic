@@ -108,7 +108,7 @@ fs.file-max:
   file.managed:
     - source: salt://formulas/cephmon/files/limits.conf
 
-{% for auth in ['images', 'volumes', 'compute'] %}
+{% for auth in ['images', 'volumes', 'compute', 'crash'] %}
 ceph auth import -i /etc/ceph/ceph.client.{{ auth }}.keyring:
   cmd.run:
     - onchanges:
@@ -130,8 +130,17 @@ ceph osd pool application enable {{ pool }} rbd:
       - ceph osd pool application get {{ pool }} | grep -q rbd
     {% endif %}
   {% endfor %}
+  {% if salt['pillar.get']('hosts:manila:enabled', 'False') == True %}
 ceph fs new manila fileshare_metadata fileshare_data:
   cmd.run:
     - unless:
       - ceph fs get manila
+  {% endif %}
 {% endif %}
+
+#set the global osd pool default autoscale to off if VMs pool does not have it.
+#checking the VMs pool status as the gloabl status data is not available
+ceph config set global osd_pool_default_pg_autoscale_mode off:
+  cmd.run:
+    - unless:
+      - ceph osd pool get vms pg_autoscale_mode |grep -q off
