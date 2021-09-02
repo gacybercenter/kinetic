@@ -32,7 +32,7 @@ horizon_packages:
   {% if salt['pillar.get']('hosts:sahara:enabled', 'False') == True %}
       - python3-sahara-dashboard
   {% endif %}
-  {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
+  {% if salt['pillar.get']('hosts:manila:enabled', 'False') == True %}
       - python3-manila-ui
   {% endif %}
       - python3-cffi
