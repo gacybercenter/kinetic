@@ -20,7 +20,7 @@ include:
 
 {% if grains['os_family'] == 'Debian' %}
     {% if pillar['neutron']['backend'] == "linuxbridge" %}
-    
+
 neutron_packages:
   pkg.installed:
     - pkgs:

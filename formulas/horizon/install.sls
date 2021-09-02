@@ -139,7 +139,7 @@ install_zun_ui:
 set_module_permissions:
   file.directory:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled
-    - file_mode: 644
+    - file_mode: "0644"
     - follow_symlinks: True
     - recurse:
       - mode

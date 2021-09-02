@@ -162,7 +162,7 @@ kuryr:
   file.directory:
     - user: kuryr
     - group: kuryr
-    - mode: 755
+    - mode: "0755"
     - makedirs: True
 
 kuryr_latest:
@@ -204,7 +204,7 @@ zun:
   file.directory:
     - user: zun
     - group: zun
-    - mode: 755
+    - mode: "0755"
     - makedirs: True
 
 /etc/zun/rootwrap.d:

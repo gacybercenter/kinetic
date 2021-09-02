@@ -69,7 +69,7 @@ zun:
   file.directory:
     - user: zun
     - group: zun
-    - mode: 755
+    - mode: "0755"
     - makedirs: True
 
 /etc/zun/rootwrap.d:

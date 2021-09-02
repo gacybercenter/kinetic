@@ -32,7 +32,7 @@ include:
 /etc/ceph/ceph.client.volumes.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-volumes-keyring
-    - mode: 640
+    - mode: "0640"
     - user: root
     - group: cinder
 

@@ -73,4 +73,4 @@ provision_{{ type }}:
           type: {{ type }}
           targets: {{ targets }}
     - require:
-      - zeroize_{{ type }}          
+      - zeroize_{{ type }}

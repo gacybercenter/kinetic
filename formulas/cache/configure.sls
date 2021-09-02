@@ -113,7 +113,7 @@ create acng container:
 /etc/systemd/system/apt-cacher-ng-container.service:
   file.managed:
     - source: salt://formulas/cache/files/apt-cacher-ng-container.service
-    - mode: 644
+    - mode: "0644"
     - require:
       - cmd: create acng container
 

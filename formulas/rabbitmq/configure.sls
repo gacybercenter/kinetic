@@ -51,7 +51,7 @@ systemctl daemon-reload:
 /var/lib/rabbitmq/.erlang.cookie:
   file.managed:
     - contents_pillar: rabbitmq:erlang_cookie
-    - mode: 400
+    - mode: "0400"
     - user: rabbitmq
     - group: rabbitmq
 

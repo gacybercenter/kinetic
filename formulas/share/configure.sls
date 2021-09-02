@@ -33,7 +33,7 @@ get_adminkey:
   file.managed:
     - name: /etc/ceph/ceph.client.admin.keyring
     - contents_pillar: ceph:ceph-client-admin-keyring
-    - mode: 600
+    - mode: "0600"
     - user: root
     - group: root
     - prereq:
@@ -51,7 +51,7 @@ wipe_adminkey:
 
 /etc/ceph/ceph.client.{{ grains['id'] }}.keyring:
   file.managed:
-    - mode: 640
+    - mode: "0640"
     - user: root
     - group: manila
 

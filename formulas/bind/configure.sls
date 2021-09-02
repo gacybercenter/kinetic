@@ -76,7 +76,7 @@ bind_conf:
   file.managed:
     - makedirs: True
     - contents_pillar: designate:designate_rndc_key
-    - mode: 640
+    - mode: "0640"
     - user: root
 {% if grains['os_family'] == 'Debian' %}
     - group: bind
