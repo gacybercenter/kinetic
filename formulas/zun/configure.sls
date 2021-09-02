@@ -60,25 +60,25 @@ zun-db-manage upgrade:
 /etc/sudoers.d/zun_sudoers:
   file.managed:
     - source: salt://formulas/zun/files/zun_sudoers
-    - requires:
+    - require:
       - /formulas/zun/install
 
 /etc/zun/api-paste.ini:
   file.managed:
     - source: salt://formulas/zun/files/api-paste.ini
-    - requires:
+    - require:
       - sls: /formulas/zun/install
 
 /etc/systemd/system/zun-api.service:
   file.managed:
     - source: salt://formulas/zun/files/zun-api.service
-    - requires:
+    - require:
       - sls: /formulas/zun/install
 
 /etc/systemd/system/zun-wsproxy.service:
   file.managed:
     - source: salt://formulas/zun/files/zun-wsproxy.service
-    - requires:
+    - require:
       - sls: /formulas/zun/install
 
 zun_api_service:

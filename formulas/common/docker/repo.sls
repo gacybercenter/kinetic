@@ -17,7 +17,7 @@
 docker_repo:
   pkgrepo.managed:
     - humanname: docker
-    - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+    - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
     - file: /etc/apt/sources.list.d/docker.list
     - key_url: https://download.docker.com/linux/ubuntu/gpg
 
@@ -33,13 +33,13 @@ update_packages_docker:
 docker_repo:
   pkgrepo.managed:
     - name: docker
-    - baseurl: https://download.docker.com/linux/centos/7/$basearch/stable/
+    - baseurl: https://download.docker.com/linux/centos/8/$basearch/stable/
     - file: /etc/yum.repos.d/docker.repo
     - gpgkey: https://download.docker.com/linux/centos/gpg
 
 update_packages_docker:
-  cmd.run:
-    - name: salt-call pkg.upgrade setopt='best=False'
+  pkg.uptodate:
+    - refresh: true
     - onchanges:
       - docker_repo
 

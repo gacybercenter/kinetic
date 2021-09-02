@@ -69,7 +69,7 @@ webssh2:
 /etc/systemd/system/webssh2.service:
   file.managed:
     - source: salt://formulas/webssh2/files/webssh2.service
-    - mode: 644
+    - mode: "0644"
 
 webssh2_service:
   service.running:

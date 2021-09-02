@@ -162,13 +162,13 @@ kuryr:
   file.directory:
     - user: kuryr
     - group: kuryr
-    - mode: 755
+    - mode: "0755"
     - makedirs: True
 
 kuryr_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
-    - branch: stable/victoria
+    - branch: stable/wallaby
     - target: /var/lib/kuryr
     - force_clone: true
 
@@ -204,7 +204,7 @@ zun:
   file.directory:
     - user: zun
     - group: zun
-    - mode: 755
+    - mode: "0755"
     - makedirs: True
 
 /etc/zun/rootwrap.d:
@@ -216,7 +216,7 @@ zun:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/victoria
+    - branch: stable/wallaby
     - target: /var/lib/zun
     - force_clone: true
 

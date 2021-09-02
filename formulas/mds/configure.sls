@@ -33,7 +33,7 @@ include:
     - contents:
       - ceph ALL = (root) NOPASSWD:ALL
       - Defaults:ceph !requiretty
-    - mode: 644
+    - mode: "0644"
 
 /var/lib/ceph/mds/ceph-{{ grains['id'] }}:
   file.directory:
@@ -44,7 +44,7 @@ get_adminkey:
   file.managed:
     - name: /etc/ceph/ceph.client.admin.keyring
     - contents_pillar: ceph:ceph-client-admin-keyring
-    - mode: 600
+    - mode: "0600"
     - user: root
     - group: root
     - prereq:

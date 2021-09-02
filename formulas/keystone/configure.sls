@@ -270,7 +270,7 @@ update_certificate_store:
   file.managed:
     - contents_pillar: keystone:fernet_primary
     - makedirs: True
-    - mode: 600
+    - mode: "0600"
     - user: keystone
     - group: keystone
 
@@ -278,7 +278,7 @@ update_certificate_store:
   file.managed:
     - contents_pillar: keystone:fernet_secondary
     - makedirs: True
-    - mode: 600
+    - mode: "0600"
     - user: keystone
     - group: keystone
 

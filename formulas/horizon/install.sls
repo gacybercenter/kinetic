@@ -29,18 +29,23 @@ horizon_packages:
       - python3-setuptools
       - python3-designate-dashboard
       - openstack-dashboard
+  {% if salt['pillar.get']('hosts:sahara:enabled', 'False') == True %}
       - python3-sahara-dashboard
+  {% endif %}
+  {% if salt['pillar.get']('hosts:manila:enabled', 'False') == True %}
       - python3-manila-ui
+  {% endif %}
       - python3-cffi
       - git
       - build-essential
       - python3-dev
     - reload_modules: True
 
+  {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
 magnum_latest:
   git.latest:
     - name: https://opendev.org/openstack/magnum-ui.git
-    - branch: stable/train
+    - branch: stable/wallaby
     - target: /usr/share/openstack-dashboard/magnum-ui/
     - force_clone: true
 
@@ -65,6 +70,7 @@ install_magnum_ui:
     - cwd: /usr/share/openstack-dashboard/magnum-ui/
     - onchanges:
       - cmd: magnum_ui_requirements
+  {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -77,9 +83,15 @@ horizon_packages:
       - python3-setuptools
       - openstack-designate-ui
       - openstack-dashboard
+  {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
       - openstack-magnum-ui
+  {% endif %}
+  {% if salt['pillar.get']('hosts:sahara:enabled', 'False') == True %}
       - openstack-sahara-ui
+  {% endif %}
+  {% if salt['pillar.get']('hosts:manila:enabled', 'False') == True %}
       - openstack-manila-ui
+  {% endif %}
       - gcc
       - git
       - platform-python-devel
@@ -91,7 +103,7 @@ horizon_packages:
 zun_latest:
   git.latest:
     - name: https://opendev.org/openstack/zun-ui.git
-    - branch: stable/ussuri
+    - branch: stable/wallaby
     - target: /usr/share/openstack-dashboard/zun-ui/
     - force_clone: true
 
@@ -127,7 +139,7 @@ install_zun_ui:
 set_module_permissions:
   file.directory:
     - name: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled
-    - file_mode: 644
+    - file_mode: "0644"
     - follow_symlinks: True
     - recurse:
       - mode

@@ -31,7 +31,7 @@ include:
 /etc/ceph/ceph.mon.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-mon-keyring
-    - mode: 600
+    - mode: "0600"
     - user: ceph
     - group: ceph
 
@@ -72,7 +72,7 @@ monmaptool --addv {{ host }} [v1:{{ address }}:6789,v2:{{ address }}:3300] /etc/
 ceph-mon --cluster ceph --mkfs -i {{ grains['id'] }} --monmap /etc/ceph/monmap --keyring /etc/ceph/ceph.mon.keyring && touch /var/lib/ceph/mon/ceph-{{ grains['id'] }}/done:
   cmd.run:
     - runas: ceph
-    - requires:
+    - require:
       - /var/lib/ceph/mon/ceph-{{ grains['id'] }}
     - creates:
       - /var/lib/ceph/mon/ceph-{{ grains['id'] }}/done

@@ -230,8 +230,6 @@ openstack_services:
               path: /
   swift:
     configuration:
-      dbs:
-        - swift
       services:
         swift:
           type: object-store

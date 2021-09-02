@@ -132,7 +132,7 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
 /etc/designate/rndc.key:
   file.managed:
     - contents_pillar: designate:designate_rndc_key
-    - mode: 640
+    - mode: "0640"
     - user: root
     - group: designate
 

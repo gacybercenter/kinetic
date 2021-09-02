@@ -83,3 +83,10 @@ rsyslog:
   service.running:
     - watch:
       - /etc/rsyslog.d/10-syslog.conf
+
+/etc/security/limits.d/90-ulimit-default.conf:
+  file.managed:
+    - source: salt://formulas/common/ulimit/90-ulimit-default.conf
+    - user: root
+    - group: root
+    - mode: "0644"

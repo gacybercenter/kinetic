@@ -39,14 +39,14 @@ include:
 /etc/ceph/ceph.client.compute.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-compute-keyring
-    - mode: 640
+    - mode: "0640"
     - user: root
     - group: nova
 
 /etc/ceph/client.compute.key:
   file.managed:
     - contents_pillar: ceph:ceph-client-compute-key
-    - mode: 640
+    - mode: "0640"
     - user: root
     - group: nova
 
@@ -72,7 +72,7 @@ load_ceph_compute_key:
 /etc/ceph/client.volumes.key:
   file.managed:
     - contents_pillar: ceph:ceph-client-volumes-key
-    - mode: 640
+    - mode: "0640"
     - user: nova
     - group: nova
 

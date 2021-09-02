@@ -56,6 +56,8 @@ IMAGE_CUSTOM_PROPERTY_TITLES = {
 LAUNCH_INSTANCE_DEFAULTS = {
     "create_volume": False,
 }
+LAUNCH_INSTANCE_NG_ENABLED = True
+LAUNCH_INSTANCE_LEGACY_ENABLED = False
 IMAGE_RESERVED_CUSTOM_PROPERTIES = []
 API_RESULT_LIMIT = 1000
 API_RESULT_PAGE_SIZE = 20
@@ -232,8 +234,8 @@ SECURITY_GROUP_RULES = {
     'ldap': {
         'name': 'LDAP',
         'ip_protocol': 'tcp',
-        'from_port': '389',
-        'to_port': '389',
+        'from_port': '636',
+        'to_port': '636',
     },
     'https': {
         'name': 'HTTPS',

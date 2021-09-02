@@ -112,7 +112,7 @@ secret_key:
     - user: apache
     - group: apache
 {% endif %}
-    - mode: 600
+    - mode: "0600"
     - contents_pillar: horizon:horizon_secret_key
 
 {% if salt['pillar.get']('horizon:theme:url', False) != False %}

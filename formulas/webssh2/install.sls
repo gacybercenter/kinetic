@@ -52,7 +52,7 @@ webssh2_packages:
 {% if grains['os_family'] == 'RedHat' %}
       - policycoreutils-python-utils
       - policycoreutils
-{% endif %}      
+{% endif %}
     - reload_modules: True
 
 webssh2_source:

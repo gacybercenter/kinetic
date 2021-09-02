@@ -16,9 +16,9 @@
 
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Victoria
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/victoria main
-    - file: /etc/apt/sources.list.d/cloudarchive-victoria.list
+    - humanname: Ubuntu Cloud Archive - Wallaby
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/wallaby main
+    - file: /etc/apt/sources.list.d/cloudarchive-wallaby.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
 
@@ -43,7 +43,7 @@ CentOS-PowerTools:
 
 rdo:
   pkg.installed:
-    - name: centos-release-openstack-victoria
+    - name: centos-release-openstack-wallaby
 
 update_packages_rdo:
   pkg.uptodate:

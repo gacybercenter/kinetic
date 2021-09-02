@@ -42,7 +42,7 @@ apply_base_{{ type }}:
         splay: 0
 
 ### This macro renders to a block if there are unmet dependencies
-{{ orchestration.needs_check_one(type=type, phase='networking')}}
+{{ orchestration.needs_check_one(type=type, phase='networking') }}
 
 apply_networking_{{ type }}:
   salt.state:
@@ -62,13 +62,13 @@ apply_networking_{{ type }}:
       - apply_base_{{ type }}
 
 ## This macro updates the build_phase grain and forces a mine update
-{{ orchestration.reboot_and_wait(type=type, targets=targets, phase='networking')}}
+{{ orchestration.reboot_and_wait(type=type, targets=targets, phase='networking') }}
 
 ## This macro updates the build_phase grain and forces a mine update
-{{ orchestration.build_phase_update(type=type, targets=targets, phase='networking')}}
+{{ orchestration.build_phase_update(type=type, targets=targets, phase='networking') }}
 
 ### This macro renders to a block if there are unmet dependencies
-{{ orchestration.needs_check_one(type=type, phase='install')}}
+{{ orchestration.needs_check_one(type=type, phase='install') }}
 
 apply_install_{{ type }}:
   salt.state:
@@ -88,10 +88,10 @@ apply_install_{{ type }}:
       - wait_for_{{ type }}_networking_reboot
 
 ## This macro updates the build_phase grain and forces a mine update
-{{ orchestration.build_phase_update(type=type, targets=targets, phase='install')}}
+{{ orchestration.build_phase_update(type=type, targets=targets, phase='install') }}
 
 ### This macro renders to a block if there are unmet dependencies
-{{ orchestration.needs_check_one(type=type, phase='configure')}}
+{{ orchestration.needs_check_one(type=type, phase='configure') }}
 
 apply_configure_{{ type }}:
   salt.state:
@@ -110,7 +110,7 @@ apply_configure_{{ type }}:
       - apply_install_{{ type }}
 
 ## this macro executes a reboot and wait loop
-{{ orchestration.reboot_and_wait(type=type, targets=targets, phase='configure')}}
+{{ orchestration.reboot_and_wait(type=type, targets=targets, phase='configure') }}
 
 ## This macro updates the build_phase grain and forces a mine update
-{{ orchestration.build_phase_update(type=type, targets=targets, phase='configure')}}
+{{ orchestration.build_phase_update(type=type, targets=targets, phase='configure') }}
