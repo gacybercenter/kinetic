@@ -39,7 +39,7 @@ include:
   file.managed:
     - contents_pillar: ceph:ceph-keyring
 
-{% for client_keyring in ['admin', 'images', 'volumes', 'compute'] %}
+{% for client_keyring in ['admin', 'images', 'volumes', 'compute', 'crash'] %}
 /etc/ceph/ceph.client.{{ client_keyring }}.keyring:
   file.managed:
     - contents_pillar: ceph:ceph-client-{{ client_keyring }}-keyring
