@@ -39,6 +39,7 @@ horizon_packages:
       - git
       - build-essential
       - python3-dev
+      - python3-etcd3gw
     - reload_modules: True
 
   {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}

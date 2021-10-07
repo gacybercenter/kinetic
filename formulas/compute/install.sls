@@ -34,6 +34,7 @@ compute_packages:
       - python3-rados
       - frr
       - frr-pythontools
+      - python3-etcd3gw
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 compute_packages:
@@ -48,6 +49,7 @@ compute_packages:
       - python3-rados
       - frr
       - frr-pythontools
+      - python3-etcd3gw
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -65,6 +67,7 @@ compute_packages:
       - haproxy
       - frr
       - frr-pythontools
+      - python3-etcd3gw
 
   {% endif %}
 

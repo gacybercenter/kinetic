@@ -27,6 +27,7 @@ magnum_packages:
       - magnum-conductor
       - python3-magnumclient
       - python3-openstackclient
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 

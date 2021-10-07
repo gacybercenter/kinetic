@@ -29,6 +29,7 @@ sahara_packages:
       - sahara-engine
       - python3-saharaclient
       - python3-openstackclient
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 

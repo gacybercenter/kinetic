@@ -35,6 +35,7 @@ container_packages:
       - kata-runtime
       - kata-proxy
       - kata-shim
+      - python3-etcd3gw
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 container_packages:
@@ -51,6 +52,7 @@ container_packages:
       - kata-proxy
       - kata-shim
       - numactl
+      - python3-etcd3gw
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -67,6 +69,7 @@ container_packages:
       - kata-runtime
       - kata-proxy
       - kata-shim
+      - python3-etcd3gw
 
     {% endif %}
 

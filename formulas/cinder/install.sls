@@ -27,6 +27,7 @@ cinder_packages:
       - cinder-scheduler
       - python3-openstackclient
       - python3-memcache
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 

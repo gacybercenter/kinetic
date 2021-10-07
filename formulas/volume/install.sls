@@ -30,6 +30,7 @@ volume_packages:
       - ceph-common
       - python3-rbd
       - python3-rados
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 

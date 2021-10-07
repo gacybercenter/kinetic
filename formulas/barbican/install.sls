@@ -27,6 +27,7 @@ barbican_packages:
       - barbican-keystone-listener
       - barbican-worker
       - python3-openstackclient
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 
