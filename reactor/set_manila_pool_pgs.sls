@@ -1,4 +1,4 @@
-create_manila_filesystem:
+set_manila_filesystem_pgs:
   local.cmd.run:
     - tgt: 'G@spawning:0 and G@type:cephmon'
     - tgt_type: compound

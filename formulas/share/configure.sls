@@ -21,12 +21,14 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+{% if pillar['cephconf']['autoscale'] == "off" %}
 make_filesystem:
   event.send:
-    - name: create/manila/filesystem
+    - name: set/manila/pool_pgs
     - data:
         metadata_pgs: {{ pillar['cephconf']['fileshare_metadata_pgs'] }}
         data_pgs: {{ pillar['cephconf']['fileshare_data_pgs'] }}
+{% endif %}
 
 {{ spawn.spawnzero_complete() }}
 

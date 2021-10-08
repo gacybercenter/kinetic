@@ -30,11 +30,13 @@ cinder-manage db sync:
         key: build_phase
         value: configure
 
-make_volumes_pool:
+{% if pillar['cephconf']['autoscale'] == "off" %}
+set_volumes_pool_pgs:
   event.send:
-    - name: create/volumes/pool
+    - name: set/volumes/pool_pgs
     - data:
         pgs: {{ pillar['cephconf']['volumes_pgs'] }}
+{% endif %}
 
 {{ spawn.spawnzero_complete() }}
 

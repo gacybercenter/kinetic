@@ -1,4 +1,4 @@
-create_vms_pool:
+set_vms_pool_pgs:
   salt.function:
     - name: cmd.run
     - tgt: 'G@spawning:0 and G@type:cephmon'
