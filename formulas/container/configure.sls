@@ -290,19 +290,19 @@ ovn_controller_service:
   file.managed:
     - source: salt://formulas/container/files/zun_sudoers
     - require:
-      - /formulas/container/install
+      - sls: /formulas/container/install
 
 /etc/zun/rootwrap.conf:
   file.managed:
     - source: salt://formulas/container/files/rootwrap.conf
     - require:
-      - /formulas/container/install
+      - sls: /formulas/container/install
 
 /etc/zun/rootwrap.d/zun.filters:
   file.managed:
     - source: salt://formulas/container/files/zun.filters
     - require:
-      - /formulas/container/install
+      - sls: /formulas/container/install
 
 /etc/systemd/system/docker.service.d/docker.conf:
   file.managed:
@@ -312,7 +312,7 @@ ovn_controller_service:
     - defaults:
         etcd_cluster: {{ constructor.etcd_connection_constructor() }}
     - require:
-      - /formulas/container/install
+      - sls: /formulas/container/install
 
 /etc/containerd/config.toml:
   file.managed:
@@ -337,7 +337,7 @@ install_zun_cni:
   file.managed:
     - source: salt://formulas/container/files/zun-compute.service
     - require:
-      - /formulas/container/install
+      - sls: /formulas/container/install
 
 /etc/systemd/system/zun-cni-daemon.service:
   file.managed:
@@ -350,7 +350,7 @@ install_zun_cni:
   file.managed:
     - source: salt://formulas/container/files/kuryr-libnetwork.service
     - require:
-      - /formulas/container/install
+      - sls: /formulas/container/install
 
 systemctl daemon-reload:
   cmd.wait:
