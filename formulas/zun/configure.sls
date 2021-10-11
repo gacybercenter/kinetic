@@ -61,7 +61,7 @@ zun-db-manage upgrade:
   file.managed:
     - source: salt://formulas/zun/files/zun_sudoers
     - require:
-      - /formulas/zun/install
+      - sls: /formulas/zun/install
 
 /etc/zun/api-paste.ini:
   file.managed:
