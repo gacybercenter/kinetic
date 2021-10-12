@@ -1,6 +1,5 @@
 set_volumes_pool_pgs:
-  salt.function:
-    - name: cmd.run
+  local.cmd.run:
     - tgt: 'G@spawning:0 and G@type:cephmon'
     - tgt_type: compound
     - arg:
