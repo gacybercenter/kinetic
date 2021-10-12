@@ -14,7 +14,8 @@
 
 #!/usr/bin/env python
 
-from cgi import parse_qs, escape
+from html import escape
+from urllib.parse import parse_qs
 
 body = """\
 #!ipxe

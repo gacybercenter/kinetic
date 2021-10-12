@@ -70,12 +70,10 @@ systemd-networkd:
 ### You should only do this with versions of systemd
 ### 241 or greater
 
-  {% if grains['systemd']['version']|int >= 241 %}
 /etc/resolv.conf:
   file.symlink:
     - target: /run/systemd/resolve/resolv.conf
     - force: True
-  {% endif %}
 
 ### Iterate through all networks
 ### Management is always DHCP
@@ -152,6 +150,8 @@ systemd-networkd:
 
 /etc/systemd/network/{{ network }}.network:
   file.managed:
+    - require:
+      - file: /etc/resolv.conf
     - replace: True
     - contents: |
         [Match]

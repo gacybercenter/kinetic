@@ -31,6 +31,7 @@ network_packages:
       - neutron-metadata-agent
       - python3-openstackclient
       - python3-tornado
+      - python3-etcd3gw
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 

@@ -31,6 +31,7 @@ heat_packages:
       - python3-zunclient
       - python3-designateclient
       - python3-vitrageclient
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 

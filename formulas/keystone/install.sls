@@ -30,6 +30,7 @@ keystone_packages:
       - ldap-utils
       - apache2
       - libapache2-mod-wsgi-py3
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 

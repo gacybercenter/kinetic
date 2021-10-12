@@ -28,6 +28,7 @@ manila_packages:
       - python3-openstackclient
       - python3-manilaclient
       - python3-memcache
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 

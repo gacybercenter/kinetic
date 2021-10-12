@@ -32,6 +32,7 @@ designate_packages:
       - python3-designateclient
       - python3-openstackclient
       - python3-pip
+      - python3-etcd3gw
 
 pymemcache:
   pip.installed:

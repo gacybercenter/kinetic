@@ -26,6 +26,7 @@ swift_packages:
     - pkgs:
       - radosgw
       - python3-openstackclient
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 

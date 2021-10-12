@@ -21,6 +21,7 @@
     - makedirs: True
     - defaults:
         fsid: {{ pillar['ceph']['fsid'] }}
+        autoscale: {{ pillar['cephconf']['autoscale'] }}
         mon_members: |
           mon host =
           {%- for host, addresses in salt['mine.get']('role:cephmon', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}

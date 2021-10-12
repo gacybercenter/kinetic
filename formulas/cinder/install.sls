@@ -27,6 +27,7 @@ cinder_packages:
       - cinder-scheduler
       - python3-openstackclient
       - python3-memcache
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -38,3 +39,17 @@ cinder_packages:
       - python3-memcached
 
 {% endif %}
+#This is designed to patch bug https://bugs.launchpad.net/cinder/+bug/1931004 and issue: https://git.cybbh.space/vta/kinetic/-/issues/70. As of July 29, 2021 this fix is still in progress upstream
+#but works when tested in vtadev. This is a temporary solution pending a proper solution to code upstream.
+
+rbd_patch:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: '0644'
+    - replace: True
+    - names:
+      - /usr/lib/python3/dist-packages/cinder/volume/drivers/rbd.py:
+        - source: salt://formulas/cinder/files/rbd.py
+      - /usr/lib/python3/dist-packages/cinder/tests/unit/volume/drivers/test_rbd.py:
+        - source: salt://formulas/cinder/files/test_rbd.py

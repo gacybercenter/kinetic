@@ -26,6 +26,7 @@ placement_packages:
       - python3-openstackclient
       - placement-api
       - python3-pymysql
+      - python3-etcd3gw
 
 {% elif grains['os_family'] == 'RedHat' %}
 

@@ -28,6 +28,7 @@ glance_packages:
       - python3-rbd
       - python3-rados
       - python3-openstackclient
+      - python3-etcd3gw
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - name: boto3

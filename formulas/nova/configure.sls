@@ -71,6 +71,14 @@ update_cells:
       - service: nova_conductor_service
       - service: nova_spiceproxy_service
 
+{% if pillar['cephconf']['autoscale'] == False %}
+set_vms_pool_pgs:
+  event.send:
+    - name: set/vms/pool_pgs
+    - data:
+        pgs: {{ pillar['cephconf']['vms_pgs'] }}
+{% endif %}
+
 {{ spawn.spawnzero_complete() }}
 
 ## This is lightning fast but I'm not sure how I feel about writing directly to the database
