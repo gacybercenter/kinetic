@@ -31,13 +31,11 @@ glance-manage db_sync:
         key: build_phase
         value: configure
 
-{% if pillar['cephconf']['autoscale'] == "off" %}
 set_images_pool_pgs:
   event.send:
     - name: set/images/pool_pgs
     - data:
         pgs: {{ pillar['cephconf']['images_pgs'] }}
-{% endif %}
 
 {{ spawn.spawnzero_complete() }}
 
