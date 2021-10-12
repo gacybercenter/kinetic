@@ -21,7 +21,7 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
-{% if pillar['cephconf']['autoscale'] == "False" %}
+{% if pillar['cephconf']['autoscale'] == False %}
 make_filesystem:
   event.send:
     - name: set/manila/pool_pgs
