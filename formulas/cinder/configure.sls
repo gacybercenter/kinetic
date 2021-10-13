@@ -30,7 +30,7 @@ cinder-manage db sync:
         key: build_phase
         value: configure
 
-{% if pillar['cephconf']['autoscale'] == False %}
+{% if pillar['cephconf']['autoscale'] == 'off' %}
 set_volumes_pool_pgs:
   event.send:
     - name: set/volume/pool_pgs

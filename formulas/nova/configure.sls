@@ -71,7 +71,7 @@ update_cells:
       - service: nova_conductor_service
       - service: nova_spiceproxy_service
 
-{% if pillar['cephconf']['autoscale'] == False %}
+{% if pillar['cephconf']['autoscale'] == 'off' %}
 set_vms_pool_pgs:
   event.send:
     - name: set/vms/pool_pgs

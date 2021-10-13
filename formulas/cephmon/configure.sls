@@ -138,9 +138,9 @@ ceph fs new manila fileshare_metadata fileshare_data:
   {% endif %}
 {% endif %}
 
-#set the global osd pool default autoscale to off if VMs pool does not have it.
-#checking the VMs pool status as the gloabl status data is not available
+{% if pillar['cephconf']['autoscale'] == 'off' %}
 ceph config set global osd_pool_default_pg_autoscale_mode off:
   cmd.run:
     - unless:
       - ceph osd pool get vms pg_autoscale_mode |grep -q off
+{% endif %}
