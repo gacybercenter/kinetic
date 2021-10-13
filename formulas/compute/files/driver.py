@@ -1079,7 +1079,7 @@ class LibvirtDriver(driver.ComputeDriver):
                 "'VCPU' or 'PCPU' inventory, you must migrate the "
                 "'vcpu_pin_set' config option value to '[compute] "
                 "cpu_shared_set' and '[compute] cpu_dedicated_set', "
-                "respectively, and undefinehostarch = caps.host.cpu.arch
+                "respectively, and undefinehostarch = caps.host.cpu.arch")
         if hostarch not in (
             LOG.warning(
                 "The 'vcpu_pin_set' config option has been deprecated and "
