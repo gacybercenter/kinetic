@@ -20,7 +20,7 @@
 kata_repo:
   pkgrepo.managed:
     - humanname: kata containers
-    - name: deb https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04/ /
+    - name: deb https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_20.04 /
     - file: /etc/apt/sources.list.d/kata.list
     - key_url: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/master/xUbuntu_16.04/Release.key
 
@@ -36,7 +36,7 @@ update_packages_kata:
 kata_repo:
   pkgrepo.managed:
     - name: kata
-    - baseurl: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/stable-1.11/CentOS_7/
+    - baseurl: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/stable-1.11/CentOS_7
     - file: /etc/yum.repos.d/kata.repo
     - gpgkey: https://download.opensuse.org/repositories/home:/katacontainers:/releases:/x86_64:/stable-1.11/CentOS_7/repodata/repomd.xml.key
 
