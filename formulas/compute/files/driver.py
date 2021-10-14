@@ -5085,7 +5085,8 @@ class LibvirtDriver(driver.ComputeDriver):
 
     def _get_guest_cpu_config(self, flavor, image_meta,
                               guest_cpu_numa_config, instance_numa_topology):
-        guest_arch = libvirt_utils.get_arch(image_meta)
+        #Required image properties 'hw_emulation_architecture' (value needs to be all lowercase) and 'hw_machine_type' (set to virt)
+        guest_arch = image_meta.properties.get("hw_emulation_architecture")
         cpu = self._get_guest_cpu_model_config(flavor, guest_arch)
 
         if cpu is None:
@@ -5804,7 +5805,7 @@ class LibvirtDriver(driver.ComputeDriver):
         clk.add_timer(tmrtc)
 
         hpet = image_meta.properties.get('hw_time_hpet', False)
-        guest_arch = libvirt_utils.get_arch(image_meta)
+        guest_arch = image_meta.properties.get("hw_emulation_architecture")
         if guest_arch in (fields.Architecture.I686,
                          fields.Architecture.X86_64):
             # NOTE(rfolco): HPET is a hardware timer for x86 arch.
@@ -5900,7 +5901,7 @@ class LibvirtDriver(driver.ComputeDriver):
         # virtualization type, and features. The video.type attribute can
         # be overridden by the user with image_meta.properties, which
         # is carried out in the next if statement below this one.
-        guest_arch = libvirt_utils.get_arch(image_meta)
+        guest_arch = image_meta.properties.get("hw_emulation_architecture")
         if CONF.libvirt.virt_type == 'parallels':
             video.type = 'vga'
         elif guest_arch in (fields.Architecture.PPC,
@@ -6109,7 +6110,7 @@ class LibvirtDriver(driver.ComputeDriver):
         hw_firmware_type = image_meta.properties.get(
             'hw_firmware_type')
         caps = self._host.get_capabilities()
-        guest_arch = libvirt_utils.get_arch(image_meta)
+        guest_arch = image_meta.properties.get("hw_emulation_architecture")
         return self._host.supports_uefi and (
             hw_firmware_type == fields.FirmwareType.UEFI or
             caps.host.cpu.arch == fields.Architecture.AARCH64 or
@@ -6173,7 +6174,7 @@ class LibvirtDriver(driver.ComputeDriver):
         if CONF.libvirt.virt_type in ("kvm", "qemu"):
             caps = self._host.get_capabilities()
             host_arch = caps.host.cpu.arch
-            guest_arch = libvirt_utils.get_arch(image_meta)
+            guest_arch = image_meta.properties.get("hw_emulation_architecture")
             guest.os_arch = guest_arch
 
             if guest_arch != host_arch:
@@ -6977,7 +6978,7 @@ class LibvirtDriver(driver.ComputeDriver):
             # libvirt will automatically add a PS2 keyboard)
             # TODO(stephenfin): We might want to do this for other non-x86
             # architectures
-            guest_arch = libvirt_utils.get_arch(image_meta)
+            guest_arch = image_meta.properties.get("hw_emulation_architecture")
             if guest_arch != fields.Architecture.AARCH64:
                 return None
 
