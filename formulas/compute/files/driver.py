@@ -5085,7 +5085,10 @@ class LibvirtDriver(driver.ComputeDriver):
 
     def _get_guest_cpu_config(self, flavor, image_meta,
                               guest_cpu_numa_config, instance_numa_topology):
-        #Required image properties 'hw_emulation_architecture' (value needs to be all lowercase) and 'hw_machine_type' (set to virt)
+        # Required image properties:
+        # aarch64: 'hw_emulation_architecture=aarch64' and 'hw_machine_type=virt'
+        # aarch64 emulation requires further video support
+        # ppc64le: 'hw_emulation_architecture=ppc64le' and 'hw_machine_type=pseries'
         guest_arch = image_meta.properties.get("hw_emulation_architecture")
         cpu = self._get_guest_cpu_model_config(flavor, guest_arch)
 
@@ -6496,7 +6499,11 @@ class LibvirtDriver(driver.ComputeDriver):
         # controller (x86 gets one by default)
         usbhost.model = None
         if not self._guest_needs_usb(guest, image_meta):
-            usbhost.model = 'none'
+            archs = (fields.Architecture.PPC, fields.Architecture.PPC64, fields.Architecture.PPC64LE)
+            if image_meta.properties.get("hw_emulation_architecture") in archs:
+                usbhost.model = None
+            else:
+                usbhost.model = 'none'
         guest.add_device(usbhost)
 
     def _guest_add_pcie_root_ports(self, guest):
