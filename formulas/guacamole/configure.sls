@@ -38,7 +38,7 @@ include:
     - source: salt://formulas/guacamole/files/user-mapping.xml
     - template: jinja
     - defaults: 
-      - admin_password: {{ pillar['guacamole']['admin_password'] }}
+        admin_password: {{ pillar['guacamole']['admin_password'] }}
 
 guacd_service:
   service.running:
