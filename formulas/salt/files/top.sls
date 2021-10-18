@@ -145,5 +145,7 @@ base:
     - neutron
   'horizon*':
     - horizon
+  'guacamole*':
+    - guacamole
   'webssh2*':
     - webssh2

@@ -273,6 +273,13 @@ api:
         cache:
           maintenance_password: {{ salt['random.get_str']('64') }}
 
+/srv/dynamic_pillar/guacamole.sls:
+  file.managed:
+    - replace: false
+    - contents: |
+        guacamole:
+          admin_password: {{ salt['random.get_str']('64') }}
+
 /srv/dynamic_pillar/webssh2.sls:
   file.managed:
     - replace: false
