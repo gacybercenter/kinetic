@@ -21,11 +21,16 @@ include:
 
 {% if grains['os_family'] == 'Debian' %}
 
+held_packages:
+  pkg.installed:
+    - pkgs:
+      - cinder-volume: 2:18.0.0-0ubuntu3~cloud0
+    - hold: True
+
 volume_packages:
   pkg.installed:
     - pkgs:
       - python3-openstackclient
-      - cinder-volume
       - python3-memcache
       - ceph-common
       - python3-rbd
