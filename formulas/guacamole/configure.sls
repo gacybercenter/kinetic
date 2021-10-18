@@ -27,29 +27,29 @@ include:
 
 {% endif %}
 
-/etc/guacamole/guacamole.properties:
-  file.managed:
-    - contents: |
-        guacd-hostname: localhost
-        guacd-port:     4822
+# /etc/guacamole/guacamole.properties:
+#   file.managed:
+#     - contents: |
+#         guacd-hostname: localhost
+#         guacd-port:     4822
 
-/etc/guacamole/user-mapping.xml:
-  file.managed:
-    - source: salt://formulas/guacamole/files/user-mapping.xml
-    - template: jinja
-    - defaults: 
-        admin_password: {{ pillar['guacamole']['admin_password'] }}
+# /etc/guacamole/user-mapping.xml:
+#   file.managed:
+#     - source: salt://formulas/guacamole/files/user-mapping.xml
+#     - template: jinja
+#     - defaults: 
+#         admin_password: {{ pillar['guacamole']['admin_password'] }}
 
-guacd_service:
-  service.running:
-    - enable: True
-    - name: guacd
-    - watch:
-      - file: /etc/guacamole/guacamole.properties
+# guacd_service:
+#   service.running:
+#     - enable: True
+#     - name: guacd
+#     - watch:
+#       - file: /etc/guacamole/guacamole.properties
 
-tomcat_service:
-  service.running:
-    - enable: True
-    - name: tomcat9
-    - watch:
-      - file: /etc/guacamole/guacamole.properties
+# tomcat_service:
+#   service.running:
+#     - enable: True
+#     - name: tomcat9
+#     - watch:
+#       - file: /etc/guacamole/guacamole.properties
