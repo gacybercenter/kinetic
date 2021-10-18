@@ -21,63 +21,39 @@ include:
   - /formulas/common/frr/repo
 
 {% if grains['os_family'] == 'Debian' %}
+held_packages:
+  pkg.installed:
+    - pkgs:
+      - nova-compute: 3:23.0.2-0ubuntu1~cloud0
+    - hold: True
+
+compute_packages:
+  pkg.installed:
+    - pkgs:
+      - python3-tornado
+      - ceph-common
+      - spice-html5
+      - python3-rbd
+      - python3-rados
+      - frr
+      - frr-pythontools
+      - python3-etcd3gw
+      - qemu-system
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
-compute_packages:
-  pkg.installed:
-    - pkgs:
-      - nova-compute
       - neutron-linuxbridge-agent
-      - python3-tornado
-      - ceph-common
-      - spice-html5
-      - python3-rbd
-      - python3-rados
-      - frr
-      - frr-pythontools
-      - python3-etcd3gw
-
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
-compute_packages:
-  pkg.installed:
-    - pkgs:
-      - nova-compute
       - neutron-openvswitch-agent
-      - python3-tornado
-      - ceph-common
-      - spice-html5
-      - python3-rbd
-      - python3-rados
-      - frr
-      - frr-pythontools
-      - python3-etcd3gw
-
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-
-compute_packages:
-  pkg.installed:
-    - pkgs:
-      - nova-compute
-      - python3-tornado
-      - ceph-common
-      - spice-html5
-      - python3-rbd
-      - python3-rados
       - ovn-host
       - neutron-ovn-metadata-agent
       - haproxy
-      - frr
-      - frr-pythontools
-      - python3-etcd3gw
-
   {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
-  {% if pillar['neutron']['backend'] == "linuxbridge" %}
 compute_packages:
   pkg.installed:
     - pkgs:
       - openstack-nova-compute
-      - openstack-neutron-linuxbridge
       - python3-tornado
       - ceph-common
       - python3-rbd
@@ -85,37 +61,17 @@ compute_packages:
       - conntrack-tools
       - frr
       - frr-pythontools
-
+      - qemu-system-arm
+      - qemu-system-mips
+  {% if pillar['neutron']['backend'] == "linuxbridge" %}
+      - openstack-neutron-linuxbridge
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
-compute_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-nova-compute
       - openstack-openvswitch-agent
-      - python3-tornado
-      - ceph-common
-      - python3-rbd
-      - python3-rados
-      - openstack-neutron-common
-      - frr
-      - frr-pythontools
-
-  {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-compute_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-nova-compute
+   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
       - rdo-ovn-host
       - openstack-neutron-ovn-metadata-agent
-      - python3-tornado
-      - ceph-common
-      - python3-rbd
-      - python3-rados
       - openstack-neutron-common
       - haproxy
-      - frr
-      - frr-pythontools
-
   {% endif %}
 
 {% endif %}

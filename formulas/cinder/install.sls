@@ -20,11 +20,16 @@ include:
 
 {% if grains['os_family'] == 'Debian' %}
 
+held_packages:
+  pkg.installed:
+    - pkgs:
+      - cinder-api: 2:18.0.0-0ubuntu3~cloud0
+      - cinder-scheduler: 2:18.0.0-0ubuntu3~cloud0
+    - hold: True
+
 cinder_packages:
   pkg.installed:
     - pkgs:
-      - cinder-api
-      - cinder-scheduler
       - python3-openstackclient
       - python3-memcache
       - python3-etcd3gw
