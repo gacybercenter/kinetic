@@ -31,7 +31,7 @@ held_packages:
 
 nova_packages:
   pkg.installed:
-    - pkgs:     
+    - pkgs:
       - python3-openstackclient
       - python3-etcd3gw
 
