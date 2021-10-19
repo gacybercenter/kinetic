@@ -1,0 +1,61 @@
+version: "2"
+services:
+  guacd:
+    image: "guacamole/guacd"
+    container_name: guacd
+    hostname: guacd
+    restart: always
+    ports:
+      - "4822:4822"
+    networks:
+        internal:
+
+  guacamole:
+    image: "guacamole/guacamole"
+    container_name: guacamole
+    hostname: guacamole
+    restart: always
+    volumes:
+      - "/data/shared/guacamole/guacamole/guac-home:/data"
+      - "/data/shared/guacamole/guacamole/conf:/conf:ro"
+    ports:
+      - "8080:8080"
+    environment:
+      - GUACD_HOSTNAME=guacd
+      - GUACD_PORT=4822
+      - MYSQL_HOSTNAME=mysql
+      - MYSQL_DATABASE=guacamole_db
+      - MYSQL_USER=guacdbuser
+      - MYSQL_PASSWORD=password123
+      - GUACAMOLE_HOME=/data
+    links:
+      - mysql:mysql
+      - guacd:guacd
+    depends_on:
+      - mysql
+      - guacd
+    networks:
+        default:
+        internal:
+
+  mysql:
+    image: mariadb:10.4.12
+    container_name: mysql
+    hostname: mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=password123
+      - MYSQL_USER=guacdbuser
+      - MYSQL_PASSWORD=password123
+      - MYSQL_DATABASE=guacamole_db
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
+      - ./data:/var/lib/mysql
+    networks:
+        internal:
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
+
+networks:
+    default:
+    internal:
+        internal: true
