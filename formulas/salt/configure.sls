@@ -278,7 +278,8 @@ api:
     - replace: false
     - contents: |
         guacamole:
-          admin_password: {{ salt['random.get_str']('64') }}
+          mysql_password: {{ salt['random.get_str']('64') }}
+          guac_password: {{ salt['random.get_str']('64') }}
 
 /srv/dynamic_pillar/webssh2.sls:
   file.managed:

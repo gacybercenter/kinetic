@@ -16,35 +16,19 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
+  - /formulas/common/docker/repo
 
-# {% if grains['os_family'] == 'Debian' %}
+{% if grains['os_family'] == 'Debian' %}
 
-# guacamole_packages:
-#   pkg.installed:
-#     - pkgs:
-#       - libcairo2-dev
-#       - libjpeg-turbo8-dev
-#       - libpng-dev # has no installation candidate
-#       - libtool-bin
-#       - libossp-uuid-dev
-#       - libvncclient1
-#       - freerdp2-dev
-#       - libavcodec-dev
-#       - libavformat-dev
-#       - libavutil-dev
-#       - libswscale-dev
-#       - libpango1.0-dev
-#       - libssh2-1-dev
-#       - libtelnet-dev
-#       - libvncserver-dev
-#       - libwebsockets-dev
-#       - libpulse-dev
-#       - libssl-dev
-#       - libvorbis-dev
-#       - libwebp-dev
-#       - tomcat9
+guacamole_packages:
+  pkg.installed:
+    - pkgs:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose
 
-# {% elif grains['os_family'] == 'RedHat' %}
+{% elif grains['os_family'] == 'RedHat' %}
 
 # CentOS-PowerTools:
 #   pkgrepo.managed:
@@ -77,48 +61,28 @@ include:
 #       - libwebp-devel
 #       - tomcat
 
-# {% endif %}
+{% endif %}
 
-# guacamole-server:
-#   archive.extracted:
-#     - name: /root/guacamole-server
-#     - source: https://downloads.apache.org/guacamole/1.3.0/source/guacamole-server-1.3.0.tar.gz
-#     - source_hash: https://www.apache.org/dist/guacamole/1.3.0/source/guacamole-server-1.3.0.tar.gz.sha256
-#     - require:
-#       - pkg: guacamole_packages
+/root/docker-compose.yml:
+  file.managed:
+    - source: salt://formulas/guacamole/files/docker-compose.yml
+    - template: jinja
+    - defaults: 
+        guac_password: {{ pillar['guacamole']['guac_password'] }}
+        mysql_password: {{ pillar['guacamole']['mysql_password'] }}
 
-# install_guacamole_server:
-#   cmd.run:
-#     - name: ./configure --with-systemd-dir=/etc/systemd/system && make && make install && ldconfig
-#     - cwd: /root/guacamole-server/guacamole-server-1.3.0/
-#     - require:
-#       - archive: guacamole-server
+/root/init/initdb.sql:
+  file.managed:
+    - source: salt://formulas/guacamole/files/initdb.sql
+    - makedirs: True
 
-# download_guacamole_client:
-#   file.managed:
-#     - name: /var/lib/tomcat9/webapps/guacamole.war
-#     - source: https://downloads.apache.org/guacamole/1.3.0/binary/guacamole-1.3.0.war
-#     - source_hash: https://downloads.apache.org/guacamole/1.3.0/binary/guacamole-1.3.0.war.sha256
-#     - require:
-#       - pkg: guacamole_packages
-
-# /etc/guacamole/extensions:
-#   file.directory:
-#     - makedirs: True
-#     - require:
-#       - pkg: guacamole_packages
-
-# guacamole-quickconnect:
-#   archive.extracted:
-#     - name: /root/guacamole-quickconnect
-#     - source: https://downloads.apache.org/guacamole/1.3.0/binary/guacamole-auth-quickconnect-1.3.0.tar.gz
-#     - source_hash: https://www.apache.org/dist/guacamole/1.3.0/binary/guacamole-auth-quickconnect-1.3.0.tar.gz.sha256
-#     - require:
-#       - pkg: guacamole_packages
-
-# install-quickconnect-extension:
-#   file.copy:
-#     - name: /etc/guacamole/extensions/guacamole-auth-quickconnect-1.3.0.jar
-#     - source: /root/guacamole-quickconnect/guacamole-auth-quickconnect-1.3.0/guacamole-auth-quickconnect-1.3.0.jar
-#     - require:
-#       - file: /etc/guacamole/extensions
+start_guac:
+  cmd.run:
+    - name: docker-compose up -d
+    - cwd: /root
+    - require:
+      - file: /root/docker-compose.yml
+      - file: /root/init/initdb.sql
+      - pkg: guacamole_packages
+    - unless:
+      - docker-compose ps | grep -q guacd

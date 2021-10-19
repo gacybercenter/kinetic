@@ -1,4 +1,0 @@
-<user-mapping>
-    <authorize username="admin" password="{{ admin_password }}">
-    </authorize>
-</user-mapping>
