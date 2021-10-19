@@ -62,27 +62,3 @@ guacamole_packages:
 #       - tomcat
 
 {% endif %}
-
-/root/docker-compose.yml:
-  file.managed:
-    - source: salt://formulas/guacamole/files/docker-compose.yml
-    - template: jinja
-    - defaults: 
-        guac_password: {{ pillar['guacamole']['guac_password'] }}
-        mysql_password: {{ pillar['guacamole']['mysql_password'] }}
-
-/root/init/initdb.sql:
-  file.managed:
-    - source: salt://formulas/guacamole/files/initdb.sql
-    - makedirs: True
-
-start_guac:
-  cmd.run:
-    - name: docker-compose up -d
-    - cwd: /root
-    - require:
-      - file: /root/docker-compose.yml
-      - file: /root/init/initdb.sql
-      - pkg: guacamole_packages
-    - unless:
-      - docker-compose ps | grep -q guacd

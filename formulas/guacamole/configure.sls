@@ -26,3 +26,48 @@ include:
 {{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
+
+/opt/guacamole/docker-compose.yml:
+  file.managed:
+    - source: salt://formulas/guacamole/files/docker-compose.yml
+    - makedirs: True
+    - template: jinja
+    - defaults: 
+        guac_password: {{ pillar['guacamole']['guac_password'] }}
+        mysql_password: {{ pillar['guacamole']['mysql_password'] }}s
+
+/opt/guacamole/init/initdb.sql:
+  file.managed:
+    - source: salt://formulas/guacamole/files/initdb.sql
+    - makedirs: True
+
+/opt/guacamole/guacamole/extensions:
+  file.directory:
+    - makedirs: True
+
+guacamole_quickconnect:
+  archive.extracted:
+    - names: /opt/guacamole/guacamole/extensions
+    - source: https://downloads.apache.org/guacamole/1.3.0/binary/guacamole-auth-quickconnect-1.3.0.tar.gz
+    - source_hash: https://www.apache.org/dist/guacamole/1.3.0/binary/guacamole-auth-quickconnect-1.3.0.tar.gz.sha256
+    - require:
+      - file: /opt/guacamole/guacamole/extensions
+
+guacamole_branding:
+  file.managed:
+    - names: /opt/guacamole/guacamole/extensions
+    - source: salt://formulas/guacamole/files/branding.jar # source: https://github.com/Zer0CoolX/guacamole-customize-loginscreen-extension
+    - require:
+      - file: /opt/guacamole/guacamole/extensions
+
+guacamole_start:
+  cmd.run:
+    - name: docker-compose up -d
+    - cwd: /opt/guacamole
+    - require:
+      - file: /opt/guacamole/docker-compose.yml
+      - file: /opt/guacamole/init/initdb.sql
+      - file: /opt/guacamole/guacamole/extensions
+      - archive: guacamole_quickconnect
+    - unless:
+      - docker-compose ps | grep -q guacd

@@ -17,8 +17,7 @@ services:
     hostname: guacamole
     restart: always
     volumes:
-      - "/data/shared/guacamole/guacamole/guac-home:/data"
-      - "/data/shared/guacamole/guacamole/conf:/conf:ro"
+      - "/opt/guacamole/guacamole:/data"
     ports:
       - "8080:8080"
     environment:
@@ -50,8 +49,8 @@ services:
       - MYSQL_PASSWORD={{ guac_password }}
       - MYSQL_DATABASE=guacamole_db
     volumes:
-      - ./init:/docker-entrypoint-initdb.d
-      - ./data:/var/lib/mysql
+      - /opt/guacamole/init:/docker-entrypoint-initdb.d
+      - /opt/guacamole/data:/var/lib/mysql
     networks:
         internal:
     command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
