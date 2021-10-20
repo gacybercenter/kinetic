@@ -27,7 +27,7 @@ include:
 
 {% endif %}
 
-guacamole_mysql:
+guacamole_mysql_start:
   cmd.run:
     - name: docker-compose up -d mysql
     - cwd: /opt/guacamole
@@ -42,9 +42,9 @@ guacamole_mysql_check:
       - interval: 20
       - until: True
     - rquires:
-      - cmd: guacamole_mysql
+      - cmd: guacamole_mysql_start
 
-guacamole_guacd:
+guacamole_guacd_start:
   cmd.run:
     - name: docker-compose up -d guacd
     - cwd: /opt/guacamole
@@ -53,11 +53,40 @@ guacamole_guacd:
     - unless:
       - docker ps | grep -q guacd
 
-guacamole_guacamole:
+guacamole_guacamole_pull:
   cmd.run:
     - name: docker-compose up -d guacamole
     - cwd: /opt/guacamole
     - rquires:
-      - cmd: guacamole_guacd
+      - cmd: guacamole_mysql_check
+    - unless:
+      -  docker image ls | grep -q 'guacamole/guacamole'
+
+guacamole_guacamole_pull_check:
+  cmd.run:
+    - name: docker image ls | grep -q 'guacamole/guacamole'
+    - retry:
+      - attempts: 10
+      - interval: 20
+      - until: True
+    - rquires:
+      - cmd: guacamole_guacamole_pull
+
+guacamole_guacamole_start:
+  cmd.run:
+    - name: docker-compose up -d guacamole
+    - cwd: /opt/guacamole
+    - rquires:
+      - cmd: guacamole_guacamole_pull_check
     - unless:
       - docker ps | grep -q guacamole
+
+guacamole_guacamole_start_check:
+  cmd.run:
+    - name: docker logs guacamole | grep -q 'Georgia Cyber Range'
+    - retry:
+      - attempts: 10
+      - interval: 20
+      - until: True
+    - rquires:
+      - cmd: guacamole_guacamole_start
