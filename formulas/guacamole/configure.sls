@@ -27,9 +27,43 @@ include:
 
 {% endif %}
 
-guacamole_start:
+guacamole_mysql:
   cmd.run:
-    - name: docker-compose up -d
+    - name: docker-compose up -d mysql
     - cwd: /opt/guacamole
     - unless:
-      - docker-compose ps | grep -q guacd
+      - docker ps | grep mysql
+
+guacamole_mysql_check:
+  cmd.run:
+    - name: docker logs mysql | grep -q guacamole_db
+    - retry:
+      - attempts: 5
+      - interval: 20
+      - until: True
+
+guacamole_guacd:
+  cmd.run:
+    - name: docker-compose up -d guacd
+    - cwd: /opt/guacamole
+    - rquires:
+      - cmd: guacamole_mysql_check
+    - unless:
+      - docker ps | grep guacd
+
+guacamole_guacd_check:
+  cmd.run:
+    - name: docker logs guacd | grep -q 4822
+    - retry:
+      - attempts: 5
+      - interval: 20
+      - until: True
+
+guacamole_guacamole:
+  cmd.run:
+    - name: docker-compose up -d guacamole
+    - cwd: /opt/guacamole
+    - rquires:
+      - cmd: guacamole_guacd_check
+    - unless:
+      - docker ps | grep guacamole

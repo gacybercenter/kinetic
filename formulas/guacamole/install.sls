@@ -87,14 +87,3 @@ guacamole_extensions:
       - /opt/guacamole/guacamole/extensions/branding.jar:
         - source: salt://formulas/guacamole/files/branding.jar
         # source: https://github.com/Zer0CoolX/guacamole-customize-loginscreen-extension
-
-guacamole_pull:
-  cmd.run:
-    - name: docker-compose pull && docker-compose up --no-start
-    - cwd: /opt/guacamole
-    - require:
-      - file: /opt/guacamole/docker-compose.yml
-      - file: /opt/guacamole/init/initdb.sql
-      - file: guacamole_extensions
-    - unless:
-      - docker image ls guacamole/guacd
