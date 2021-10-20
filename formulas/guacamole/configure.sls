@@ -47,7 +47,7 @@ include:
 
 guacamole_quickconnect:
   archive.extracted:
-    - names: /opt/guacamole/guacamole/extensions
+    - name: /opt/guacamole/guacamole/extensions
     - source: https://downloads.apache.org/guacamole/1.3.0/binary/guacamole-auth-quickconnect-1.3.0.tar.gz
     - source_hash: https://www.apache.org/dist/guacamole/1.3.0/binary/guacamole-auth-quickconnect-1.3.0.tar.gz.sha256
     - require:
@@ -55,7 +55,7 @@ guacamole_quickconnect:
 
 guacamole_branding:
   file.managed:
-    - names: /opt/guacamole/guacamole/extensions
+    - name: /opt/guacamole/guacamole/extensions
     - source: salt://formulas/guacamole/files/branding.jar # source: https://github.com/Zer0CoolX/guacamole-customize-loginscreen-extension
     - require:
       - file: /opt/guacamole/guacamole/extensions
