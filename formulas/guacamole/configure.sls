@@ -51,33 +51,13 @@ guacamole_guacd:
     - rquires:
       - cmd: guacamole_mysql_check
     - unless:
-      - docker ps | grep guacd
-
-guacamole_guacd_check:
-  cmd.run:
-    - name: docker ps | grep -q guacd
-    - retry:
-      - attempts: 5
-      - interval: 20
-      - until: True
-    - rquires:
-      - cmd: guacamole_guacd
+      - docker ps | grep -q guacd
 
 guacamole_guacamole:
   cmd.run:
     - name: docker-compose up -d guacamole
     - cwd: /opt/guacamole
     - rquires:
-      - cmd: guacamole_guacd_check
+      - cmd: guacamole_guacd
     - unless:
       - docker ps | grep -q guacamole
-
-guacamole_guacamole_check:
-  cmd.run:
-    - name: docker ps | grep -q guacamole
-    - retry:
-      - attempts: 5
-      - interval: 20
-      - until: True
-    - rquires:
-      - cmd: guacamole_guacamole
