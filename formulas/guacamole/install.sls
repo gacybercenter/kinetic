@@ -62,3 +62,39 @@ guacamole_packages:
 #       - tomcat
 
 {% endif %}
+
+/opt/guacamole/docker-compose.yml:
+  file.managed:
+    - source: salt://formulas/guacamole/files/docker-compose.yml
+    - makedirs: True
+    - template: jinja
+    - defaults: 
+        guac_password: {{ pillar['guacamole']['guac_password'] }}
+        mysql_password: {{ pillar['guacamole']['mysql_password'] }}s
+
+/opt/guacamole/init/initdb.sql:
+  file.managed:
+    - source: salt://formulas/guacamole/files/initdb.sql
+    - makedirs: True
+
+guacamole_extensions:
+  file.managed:
+    - makedirs: True
+    - names:
+      - /opt/guacamole/guacamole/extensions/guacamole-auth-quickconnect-1.3.0.jar:
+        - source: salt://formulas/guacamole/files/guacamole-auth-quickconnect-1.3.0.jar
+        # source: https://downloads.apache.org/guacamole/1.3.0/binary/guacamole-auth-quickconnect-1.3.0.tar.gz
+      - /opt/guacamole/guacamole/extensions/branding.jar:
+        - source: salt://formulas/guacamole/files/branding.jar
+        # source: https://github.com/Zer0CoolX/guacamole-customize-loginscreen-extension
+
+guacamole_pull:
+  cmd.run:
+    - name: docker-compose pull && docker-compose up --no-start
+    - cwd: /opt/guacamole
+    - require:
+      - file: /opt/guacamole/docker-compose.yml
+      - file: /opt/guacamole/init/initdb.sql
+      - file: guacamole_extensions
+    - unless:
+      - docker image ls guacamole/guacd

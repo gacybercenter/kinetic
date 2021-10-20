@@ -28,9 +28,6 @@ services:
       - MYSQL_USER=guacdbuser
       - MYSQL_PASSWORD={{ guac_password }}
       - GUACAMOLE_HOME=/data
-    links:
-      - mysql:mysql
-      - guacd:guacd
     depends_on:
       - mysql
       - guacd
