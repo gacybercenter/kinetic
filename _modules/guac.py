@@ -22,7 +22,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 socket.setdefaulttimeout(0.5)
 
-__virtualname__ = "guacamole"
+__virtualname__ = "guac"
 
 def __virtual__():
     return __virtualname__
@@ -90,7 +90,7 @@ class Session:
                         "guac-organizational-role": attributes.get("guac-organizational-role", "")
                 },
             }
-        ).json()
+        )
 
     def update_user(self, username: str, attributes: dict = {}):
         """Updates a user"""
@@ -117,6 +117,45 @@ class Session:
             },
             verify=False,
         )
+
+    def update_user_password(self, username: str, oldpassword: str, newpassword: str):
+        """Updates a user Password"""
+
+        return requests.put(
+            f"{self.host}/api/session/data/{self.data_source}/users/{username}/password",
+            headers={"Content-Type": "application/json"},
+            params=self.params,
+            json={
+                "oldPassword": oldpassword,
+                "newPassword": newpassword
+            },
+            verify=False,
+        )
+
+    def update_user_connection(self, username: str, connectionid: str, operation: str = "add", isgroup: bool = False):
+        """Change a user Connections"""
+
+        if not isgroup:
+            path =  f"/connectionPermissions/{connectionid}"
+        elif isgroup:
+            path = f"/connectionGroupPermissions/{connectionid}"
+
+        if operation == "add" or operation == "remove":
+            return requests.patch(
+                f"{self.host}/api/session/data/{self.data_source}/users/{username}/permissions",
+                headers={"Content-Type": "application/json"},
+                params=self.params,
+                json=[
+                    {
+                        "op": operation,
+                        "path": path,
+                        "value": "READ"
+                    }
+                ],
+                verify=False,
+            )
+        else:
+            return "Invalid Operation, requires (add or remove)"
 
     def delete_user(self, username: str):
         """Deletes user"""
@@ -150,7 +189,7 @@ class Session:
                 }
             },
             verify=False,
-        ).json()
+        )
 
     def update_user_group(self, identifier: str, attributes: dict = {}):
         """Updates a user group"""
@@ -213,9 +252,9 @@ class Session:
                 }
             },
             verify=False,
-        ).json()
+        )
 
-    def update_connection_group(self, identifier: str, attributes: dict = {}):
+    def update_connection_group(self, identifier: str, name: str, type: str, parent_identifier: str = None, attributes: dict = {}):
         """Updates a connection group"""
 
         return requests.put(
@@ -223,9 +262,14 @@ class Session:
             headers={"Content-Type": "application/json"},
             params=self.params,
             json={
+                "parentIdentifier": parent_identifier,
                 "identifier": identifier,
+                "name": name,
+                "type": type,
                 "attributes": {
-                    "disabled": attributes.get("disabled", "")
+                    "max-connections": attributes.get("max-connections", ""),
+                    "max-connections-per-user": attributes.get("max-connections-per-user", ""),
+                    "enable-session-affinity": attributes.get("enable-session-affinity", "")
                 }
             },
             verify=False,
@@ -238,4 +282,41 @@ class Session:
             f"{self.host}/api/session/data/{self.data_source}/connectionGroups/{connection_group}",
             params=self.params,
             verify=False,
+        )
+
+    def list_sharing_profile(self):
+        """Returns sharing profiles"""
+
+        return requests.get(
+            f"{self.host}/api/session/data/{self.data_source}/sharingProfiles",
+            verify=False,
+            params=self.params,
+        ).json()
+
+    def create_sharing_profile(self, identifier: str, name: str, parameters: dict = {}):
+        """Creates connection sharing profile"""
+
+        return requests.post(
+            f"{self.host}/api/session/data/{self.data_source}/sharingProfiles",
+            headers={"Content-Type": "application/json"},
+            verify=False,
+            params=self.params,
+            json={
+                "primaryConnectionIdentifier": identifier,
+                "name": name,
+                "parameters": {
+                    "read-only": parameters.get("read-only", "")
+                },
+                "attributes": {}
+            },
+        )
+
+    def delete_sharing_profile(self, identifier: str):
+        """Deletes connection sharing profile"""
+
+        return requests.delete(
+            f"{self.host}/api/session/data/{self.data_source}/sharingProfiles/{identifier}",
+            headers={"Content-Type": "application/json"},
+            verify=False,
+            params=self.params,
         )
