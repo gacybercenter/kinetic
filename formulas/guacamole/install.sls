@@ -68,9 +68,9 @@ guacamole_packages:
     - source: salt://formulas/guacamole/files/docker-compose.yml
     - makedirs: True
     - template: jinja
-    - defaults: 
+    - defaults:
         guac_password: {{ pillar['guacamole']['guac_password'] }}
-        mysql_password: {{ pillar['guacamole']['mysql_password'] }}s
+        mysql_password: {{ pillar['guacamole']['mysql_password'] }}
 
 /opt/guacamole/init/initdb.sql:
   file.managed:
