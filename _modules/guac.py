@@ -170,11 +170,11 @@ class Session:
     def list_user_groups(self):
         """Returns user groups"""
 
-        return requests.get(
+        return json.dumps(requests.get(
             f"{self.host}/api/session/data/{self.data_source}/userGroups",
             params=self.params,
             verify=False,
-        ).json()
+        ).json(), indent=2)
 
     def create_user_group(self, identifier: str, attributes: dict = {}):
         """Creates a user group"""
@@ -220,20 +220,20 @@ class Session:
     def list_connections(self):
         """Returns connections"""
 
-        return requests.get(
+        return json.dumps(requests.get(
             f"{self.host}/api/session/data/{self.data_source}/connections",
             verify=False,
             params=self.params,
-        ).json()
+        ).json(), indent=2)
 
     def list_connection_groups(self):
         """Returns connection groups"""
 
-        return requests.get(
+        return json.dumps(requests.get(
             f"{self.host}/api/session/data/{self.data_source}/connectionGroups",
             params=self.params,
             verify=False,
-        ).json()
+        ).json(), indent=2)
 
     def create_connection_group(self, name: str, type: str, parent_identifier: str = None, attributes: dict = {}):
         """Creates a connection group"""
@@ -288,11 +288,11 @@ class Session:
     def list_sharing_profile(self):
         """Returns sharing profiles"""
 
-        return requests.get(
+        return json.dumps(requests.get(
             f"{self.host}/api/session/data/{self.data_source}/sharingProfiles",
             verify=False,
             params=self.params,
-        ).json()
+        ).json(), indent=2)
 
     def create_sharing_profile(self, identifier: str, name: str, parameters: dict = {}):
         """Creates connection sharing profile"""
