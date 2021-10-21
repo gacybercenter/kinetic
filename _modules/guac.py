@@ -18,6 +18,7 @@
 import socket
 import requests
 import urllib3
+import json
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 socket.setdefaulttimeout(0.5)
@@ -60,11 +61,11 @@ class Session:
     def list_users(self):
         """Returns users"""
 
-        return requests.get(
+        return json.dumps(requests.get(
             f"{self.host}/api/session/data/{self.data_source}/users",
             params=self.params,
             verify=False
-        ).json()
+        ).json(), indent=2)
 
     def create_user(self, username: str, password: str, attributes: dict = {}):
         """Creates user"""
