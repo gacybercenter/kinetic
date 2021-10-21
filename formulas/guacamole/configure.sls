@@ -17,16 +17,6 @@ include:
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 
-{% if grains['spawning'] == 0 %}
-
-{{ spawn.spawnzero_complete() }}
-
-{% else %}
-
-{{ spawn.check_spawnzero_status(grains['type']) }}
-
-{% endif %}
-
 guacamole_mysql_start:
   cmd.run:
     - name: docker-compose up -d mysql
@@ -90,3 +80,29 @@ guacamole_guacamole_start_check:
       - until: True
     - rquires:
       - cmd: guacamole_guacamole_start
+
+{% if grains['spawning'] == 0 %}
+
+mod_default_user:
+  guac.update_user_password:
+    - username: guacadmin
+    - oldpassword: guacadmin
+    - newpassword: {{ pillar['guacamole']['default_password'] }}
+
+create_range_group:
+  guac.create_user_group:
+    - identifier: range
+
+create_public_group:
+  guac.create_user_group:
+    - identifier: public
+
+{{ spawn.spawnzero_complete() }}
+
+{% else %}
+
+{{ spawn.check_spawnzero_status(grains['type']) }}
+
+{% endif %}
+
+

@@ -226,8 +226,12 @@ class Session:
             params=self.params,
         ).json(), indent=2)
 
-    def create_ssh_connection(self, parent_identifier: str, name: str, parameters: dict = {}, attributes: dict = {}):
-        """Creates an SSH connection"""
+    def create_ssh_connection(self, name: str, parent_identifier: str, parameters: dict = {}, attributes: dict = {}):
+        """Creates an SSH connection
+        parent_identifier is required if placing in a specific connection group
+        parameters = {"hostname": "", "port": "", "username": "", "password": ""}
+        attributes = {"max-connections": "", "max-connections-per-user": "" }
+        """
 
         return requests.post(
             f"{self.host}/api/session/data/{self.data_source}/connections",
@@ -291,8 +295,12 @@ class Session:
             verify=False,
         )
 
-    def create_rdp_connection(self, parent_identifier: str, name: str, parameters: dict = {}, attributes: dict = {}):
-        """Creates an RDP connection"""
+    def create_rdp_connection(self, name: str, parent_identifier: str = "ROOT", parameters: dict = {}, attributes: dict = {}):
+        """Creates an RDP connection
+        parent_identifier is required if placing in a specific connection group
+        parameters = {"hostname": "", "port": "", "username": "", "password": "", "security": "any", "ignore-cert": "true"}
+        attributes = {"max-connections": "", "max-connections-per-user": "" }
+        """
 
         return requests.post(
             f"{self.host}/api/session/data/{self.data_source}/connections",
@@ -387,6 +395,15 @@ class Session:
                     "guacd-hostname": attributes.get("guacd-hostname", ""),
                 }
             },
+            verify=False,
+        )
+
+    def delete_connection(self, identifier: str):
+        """Deletes a connection"""
+
+        return requests.delete(
+            f"{self.host}/api/session/data/{self.data_source}/connections/{identifier}",
+            params=self.params,
             verify=False,
         )
 
