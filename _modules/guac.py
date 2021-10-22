@@ -158,6 +158,74 @@ class Session:
         else:
             return "Invalid Operation, requires (add or remove)"
 
+    def update_user_permissions(self, username: str, operation: str = "add", cuser: bool = False, cusergroup: bool = False, cconnect: bool = False, cconnectgroup: bool = False, cshare: bool = False, admin: bool = False):
+        """Change a user Connections"""
+
+        path = f"/userPermissions/{username}"
+
+        permissions = []
+
+        permissions.append({
+                "op": operation,
+                "path": path,
+                "value": "UPDATE"
+                })
+
+        if cuser:
+            permissions.append({
+                            "op": operation,
+                            "path": "/systemPermissions",
+                            "value": "CREATE_USER"
+                        })
+
+        if cusergroup:
+            permissions.append({
+                        "op": operation,
+                        "path": "/systemPermissions",
+                        "value": "CREATE_USER_GROUP"
+                    })
+
+        if cconnect:
+            permissions.append({
+                        "op": operation,
+                        "path": "/systemPermissions",
+                        "value": "CREATE_CONNECTION"
+                    })
+
+        if cconnectgroup:
+            permissions.append({
+                        "op": operation,
+                        "path": "/systemPermissions",
+                        "value": "CREATE_CONNECTION_GROUP"
+                    })
+
+        if cshare:
+            permissions.append({
+                        "op": operation,
+                        "path": "/systemPermissions",
+                        "value": "CREATE_SHARING_PROFILE"
+                    })
+
+        if admin:
+            permissions.append({
+                        "op": operation,
+                        "path": "/systemPermissions",
+                        "value": "ADMINISTER"
+                    })
+
+        print(permissions)
+
+        if operation == "add" or operation == "remove":
+            return requests.patch(
+                f"{self.host}/api/session/data/{self.data_source}/users/{username}/permissions",
+                headers={"Content-Type": "application/json"},
+                params=self.params,
+                json=permissions,
+                verify=False,
+            )
+        else:
+            return "Invalid Operation, requires (add or remove)"
+
     def delete_user(self, username: str):
         """Deletes user"""
 

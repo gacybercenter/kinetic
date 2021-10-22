@@ -278,7 +278,7 @@ api:
     - replace: false
     - contents: |
         guacamole:
-          guac_mysql_password: {{ salt['random.get_str']('64') }}
+          guacamole_mysql_password: {{ salt['random.get_str']('64') }}
           guacadmin_password: {{ salt['random.get_str']('16') }}
 
 /srv/dynamic_pillar/top.sls:
