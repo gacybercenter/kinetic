@@ -147,5 +147,3 @@ base:
     - horizon
   'guacamole*':
     - guacamole
-  'webssh2*':
-    - webssh2
