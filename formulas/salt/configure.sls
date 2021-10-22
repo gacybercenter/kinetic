@@ -278,17 +278,8 @@ api:
     - replace: false
     - contents: |
         guacamole:
-          mysql_password: {{ salt['random.get_str']('64') }}
-          guac_password: {{ salt['random.get_str']('64') }}
-          default_password: {{ salt['random.get_str']('16') }}
-
-/srv/dynamic_pillar/webssh2.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        webssh2:
-          session_name: {{ salt['random.get_str']('64') }}
-          session_secret: {{ salt['random.get_str']('64') }}
+          guac_mysql_password: {{ salt['random.get_str']('64') }}
+          guacadmin_password: {{ salt['random.get_str']('16') }}
 
 /srv/dynamic_pillar/top.sls:
   file.managed:
