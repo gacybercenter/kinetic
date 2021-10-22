@@ -17,29 +17,10 @@ include:
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 
-guacamole_mysql_start:
-  cmd.run:
-    - name: docker-compose up -d mysql
-    - cwd: /opt/guacamole
-    - unless:
-      - docker ps | grep -q mysql
-
-guacamole_mysql_check:
-  cmd.run:
-    - name: docker logs mysql | grep -q guacamole_db
-    - retry:
-      - attempts: 5
-      - interval: 20
-      - until: True
-    - rquires:
-      - cmd: guacamole_mysql_start
-
 guacamole_guacd_start:
   cmd.run:
     - name: docker-compose up -d guacd
     - cwd: /opt/guacamole
-    - rquires:
-      - cmd: guacamole_mysql_check
     - unless:
       - docker ps | grep -q guacd
 
@@ -87,17 +68,33 @@ mod_default_user:
   guac.update_user_password:
     - username: guacadmin
     - oldpassword: guacadmin
-    - newpassword: {{ pillar['guacamole']['default_password'] }}
+    - newpassword: {{ pillar['guacamole']['guacadmin_password'] }}
 
-create_range_group:
-  guac.create_user_group:
-    - identifier: range
 
-create_public_group:
+# {{ guacamole_domain }}/guacamole
+
+
+{% for group in ['range', 'public'] %}
+create_group_{{ group }}:
   guac.create_user_group:
-    - identifier: public
+    - identifier: {{ group }}
+
+  {% if {{ group }} == "range" %}
+set_{{ group }}_permissions:
+  guac.create_user_group:
+    - identifier: {{ group }}
+    - operation: add
+    - cuser: True
+    - cusergroup: True
+    - cconnect: True
+    - cconnectgroup: True
+    - cshare: True
+    - admin: True
+  {% endif %}
+{% endfor %}
 
 {{ spawn.spawnzero_complete() }}
+
 
 {% else %}
 

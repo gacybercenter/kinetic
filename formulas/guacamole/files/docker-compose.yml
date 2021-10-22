@@ -7,6 +7,8 @@ services:
     restart: always
     ports:
       - "4822:4822"
+    volumes:
+      - /opt/guacamole/recordings:/opt/guacamole/recordings
     networks:
         default:
         internal:
@@ -18,16 +20,18 @@ services:
     restart: always
     volumes:
       - "/opt/guacamole/guacamole:/data"
+      - "/opt/guacamole/ROOT:/usr/local/tomcat/webapps/ROOT"
     ports:
       - "8080:8080"
     environment:
       - GUACD_HOSTNAME=guacd
       - GUACD_PORT=4822
-      - MYSQL_HOSTNAME=mysql
+      - MYSQL_HOSTNAME={{ guacamole_mysql_host }}
       - MYSQL_DATABASE=guacamole_db
-      - MYSQL_USER=guacdbuser
-      - MYSQL_PASSWORD={{ guac_password }}
+      - MYSQL_USER=guacamole
+      - MYSQL_PASSWORD={{ guacamole_mysql_password }}
       - GUACAMOLE_HOME=/data
+      - LOG_LEVEL=info
     depends_on:
       - mysql
       - guacd
@@ -41,9 +45,9 @@ services:
     hostname: mysql
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD={{ mysql_password }}
-      - MYSQL_USER=guacdbuser
-      - MYSQL_PASSWORD={{ guac_password }}
+      - MYSQL_RANDOM_ROOT_PASSWORD=true
+      - MYSQL_USER=guacamole
+      - MYSQL_PASSWORD={{ guacamole_mysql_password }}
       - MYSQL_DATABASE=guacamole_db
     volumes:
       - /opt/guacamole/init:/docker-entrypoint-initdb.d
