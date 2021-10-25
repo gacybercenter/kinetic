@@ -79,7 +79,7 @@ create_group_{{ group }}:
   guac.create_group:
     - identifier: {{ group }}
 
-    {% if {{ group }} == "range" %}
+    {% if group == 'range' %}
 set_{{ group }}_permissions:
   guac.update_permissions:
     - identifier: {{ group }}
