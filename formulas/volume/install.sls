@@ -24,7 +24,7 @@ include:
 held_packages:
   pkg.installed:
     - pkgs:
-      - cinder-volume: 2:18.1.0-0ubuntu3~cloud0
+      - cinder-volume: 2:18.1.0-0ubuntu1~cloud0
     - hold: True
 
 volume_packages:
