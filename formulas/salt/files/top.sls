@@ -55,6 +55,7 @@ base:
     - magnum
     - sahara
     - manila
+    - integrated_services
   'rabbitmq*':
     - rabbitmq
   'graylog*':
@@ -147,3 +148,4 @@ base:
     - horizon
   'guacamole*':
     - guacamole
+    - integrated_services
