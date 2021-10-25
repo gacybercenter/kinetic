@@ -66,30 +66,45 @@ guacamole_guacamole_start_check:
 
 {% if grains['build_phase'] != "configure" %}
 mod_default_user:
-  guac.update_password:
-    - host: https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
-    - authuser: guacadmin
-    - authpass: guacadmin
-    - username: guacadmin
-    - oldpassword: guacadmin
-    - newpassword: {{ pillar['guacamole']['guacadmin_password'] }}
+  salt.function:
+    - name: guac.update_password
+    - tgt: guacamole
+    - arg:
+      - host: https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
+      - authuser: guacadmin
+      - authpass: guacadmin
+      - username: guacadmin
+      - oldpassword: guacadmin
+      - newpassword: {{ pillar['guacamole']['guacadmin_password'] }}
 
   {% for group in ['range', 'public'] %}
 create_group_{{ group }}:
-  guac.create_group:
-    - identifier: {{ group }}
+  salt.function:
+    - name: guac.create_group
+    - tgt: guacamole
+    - arg:
+      - host: https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
+      - authuser: guacadmin
+      - authpass: {{ pillar['guacamole']['guacadmin_password'] }}
+      - identifier: {{ group }}
 
     {% if group == 'range' %}
 set_{{ group }}_permissions:
-  guac.update_permissions:
-    - identifier: {{ group }}
-    - operation: add
-    - cuser: True
-    - cusergroup: True
-    - cconnect: True
-    - cconnectgroup: True
-    - cshare: True
-    - admin: True
+  salt.function:
+    - name: guac.update_permissions
+    - tgt: guacamole
+    - arg:
+      - host: https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
+      - authuser: guacadmin
+      - authpass: {{ pillar['guacamole']['guacadmin_password'] }}
+      - identifier: {{ group }}
+      - operation: add
+      - cuser: True
+      - cusergroup: True
+      - cconnect: True
+      - cconnectgroup: True
+      - cshare: True
+      - admin: True
     {% endif %}
   {% endfor %}
 {% endif %}
