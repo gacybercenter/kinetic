@@ -112,6 +112,10 @@ api:
   file.managed:
     - source: salt://formulas/salt/files/openstack_services.sls
 
+/srv/dynamic_pillar/integrated_services.sls:
+  file.managed:
+    - source: salt://formulas/salt/files/integrated_services.sls
+
 {% for service in salt['pillar.get']('openstack_services', {}) %}
 /srv/dynamic_pillar/{{ service }}.sls:
   file.managed:
@@ -144,7 +148,7 @@ api:
 {% elif service == 'keystone' %}
         extra_opts: |
             fernet_primary: {{ salt['fernet.make_key']() }}
-              fernet_secondary: {{ salt['fernet.make_key']() }}
+            fernet_secondary: {{ salt['fernet.make_key']() }}
 {% else %}
         extra_opts: ''
 {% endif %}

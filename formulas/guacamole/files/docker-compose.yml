@@ -27,7 +27,7 @@ services:
       - GUACD_HOSTNAME=guacd
       - GUACD_PORT=4822
       - MYSQL_HOSTNAME={{ guacamole_mysql_host }}
-      - MYSQL_DATABASE=guacamole_db
+      - MYSQL_DATABASE={{ guacamole_db }}
       - MYSQL_USER=guacamole
       - MYSQL_PASSWORD={{ guacamole_mysql_password }}
       - GUACAMOLE_HOME=/data
@@ -48,7 +48,7 @@ services:
       - MYSQL_RANDOM_ROOT_PASSWORD=true
       - MYSQL_USER=guacamole
       - MYSQL_PASSWORD={{ guacamole_mysql_password }}
-      - MYSQL_DATABASE=guacamole_db
+      - MYSQL_DATABASE={{ guacamole_db }}
     volumes:
       - /opt/guacamole/init:/docker-entrypoint-initdb.d
       - /opt/guacamole/data:/var/lib/mysql

@@ -73,6 +73,7 @@ set haproxy static-mapping:
     - aliases:
       - {{ pillar['haproxy']['console_domain'] }}
       - {{ pillar['haproxy']['docs_domain'] }}
+      - {{ pillar['haproxy']['guacamole_domain'] }}
     - username: {{ pillar['danos']['username'] }}
     - password: {{ pillar['danos_password'] }}
   {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}

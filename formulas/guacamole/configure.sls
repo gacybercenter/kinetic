@@ -64,24 +64,24 @@ guacamole_guacamole_start_check:
 
 {% if grains['spawning'] == 0 %}
 
+{% if grains['build_phase'] != "configure" %}
 mod_default_user:
-  guac.update_user_password:
+  guac.update_password:
+    - host: https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
+    - authuser: guacadmin
+    - authpass: guacadmin
     - username: guacadmin
     - oldpassword: guacadmin
     - newpassword: {{ pillar['guacamole']['guacadmin_password'] }}
 
-
-# {{ guacamole_domain }}/guacamole
-
-
-{% for group in ['range', 'public'] %}
+  {% for group in ['range', 'public'] %}
 create_group_{{ group }}:
-  guac.create_user_group:
+  guac.create_group:
     - identifier: {{ group }}
 
-  {% if {{ group }} == "range" %}
+    {% if {{ group }} == "range" %}
 set_{{ group }}_permissions:
-  guac.create_user_group:
+  guac.update_permissions:
     - identifier: {{ group }}
     - operation: add
     - cuser: True
@@ -90,16 +90,14 @@ set_{{ group }}_permissions:
     - cconnectgroup: True
     - cshare: True
     - admin: True
-  {% endif %}
-{% endfor %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
 
 {{ spawn.spawnzero_complete() }}
-
 
 {% else %}
 
 {{ spawn.check_spawnzero_status(grains['type']) }}
 
 {% endif %}
-
-

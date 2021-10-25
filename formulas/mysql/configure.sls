@@ -152,7 +152,7 @@ create_{{ db }}_db:
       {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
 grant_{{ service }}_privs_{{ db }}_{{ address }}:
-   mysql_grants.present:
+  mysql_grants.present:
     - grant: all privileges
     - database: {{ db }}.*
     - user: {{ service }}
@@ -168,6 +168,54 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
   {% endfor %}
 {% endif %}
 {% endfor %}
+
+{% for service in pillar['integrated_services'] if grains['spawning'] == 0 %}
+{% if pillar['integrated_services'][service]['configuration']['dbs'] is defined %}
+  {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+    {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+
+create_{{ service }}_user_{{ address }}:
+  mysql_user.present:
+    - name: {{ service }}
+    - password: {{ pillar [service][service + '_mysql_password'] }}
+    - host: {{ address }}
+    - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
+    {% endfor %}
+  {% endfor %}
+
+  {% for db in pillar['integrated_services'][service]['configuration']['dbs'] %}
+
+create_{{ db }}_db:
+  mysql_database.present:
+    - name: {{ db }}
+    - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
+
+    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+
+grant_{{ service }}_privs_{{ db }}_{{ address }}:
+  mysql_grants.present:
+    - grant: all privileges
+    - database: {{ db }}.*
+    - user: {{ service }}
+    - host: {{ address }}
+    - connection_unix_socket: {{ sock }}
+    - require:
+      - service: mariadb_service
+      - mysql_user: create_{{ service }}_user_{{ address }}
+      - mysql_database: create_{{ db }}_db
+
+      {% endfor %}
+    {% endfor %}
+  {% endfor %}
+{% endif %}
+{% endfor %}
+
+
 
 {% if pillar['hosts']['mysql']['count'] > 1 %}
   {% if grains['build_phase'] == 'install' %}

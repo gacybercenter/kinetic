@@ -71,7 +71,8 @@ guacamole_packages:
     - defaults:
         guacadmin_password: {{ pillar['guacamole']['guacadmin_password'] }}
         guacamole_mysql_password: {{ pillar['guacamole']['guacamole_mysql_password'] }}
-        guacamole_mysql_host: {{ pillar['haproxy']['dashboard_domain'] }}
+        guacamole_mysql_host: {{ pillar['haproxy']['guacamole_domain'] }}
+        guacamole_db: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'] }}
 
 /opt/guacamole/init/initdb.sql:
   file.managed:
@@ -81,10 +82,11 @@ guacamole_packages:
 guacamole_redirect:
   file.managed:
     - makedirs: True
-    - names: /opt/guacamole/ROOT/index.jsp:
-      - source: salt://formulas/guacamole/files/index.jsp
-    - names: /opt/guacamole/ROOT/WEB-INF/web.xml:
-      - source: salt://formulas/guacamole/files/web.xml
+    - names: 
+      - /opt/guacamole/ROOT/index.jsp:
+        - source: salt://formulas/guacamole/files/index.jsp
+      - /opt/guacamole/ROOT/WEB-INF/web.xml:
+        - source: salt://formulas/guacamole/files/web.xml
 
 guacamole_extensions:
   file.managed:
