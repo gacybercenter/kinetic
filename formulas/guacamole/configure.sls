@@ -65,6 +65,16 @@ guacamole_guacamole_start_check:
 {% if grains['spawning'] == 0 %}
 
 {% if grains['build_phase'] != "configure" %}
+
+import_schema:
+  mysql_query.run_file:
+    - database: dbname
+    - query_file: /opt/guacamole/init/initdb.sql
+    - database: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'][0] }}
+    - connection_pass: {{ pillar['guacamole']['guacamole_mysql_password'] }}
+    - connection_user: guacamole
+    - connection_host: {{ pillar['haproxy']['guacamole_domain'] }}
+
 mod_default_user:
   salt.function:
     - name: guac.update_password

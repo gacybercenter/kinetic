@@ -26,35 +26,17 @@ services:
     environment:
       - GUACD_HOSTNAME=guacd
       - GUACD_PORT=4822
-      - MYSQL_HOSTNAME={{ guacamole_mysql_host }}
-      - MYSQL_DATABASE={{ guacamole_db }}
+      - MYSQL_HOSTNAME=guac.gacyberrange.org
+      - MYSQL_DATABASE=guacamole
       - MYSQL_USER=guacamole
-      - MYSQL_PASSWORD={{ guacamole_mysql_password }}
+      - MYSQL_PASSWORD=Us0fpU1AaqgRBL1RURPpotxnvRZvTFzr3rOBAvoutakXkiqj4hOwEMZCiRbf0d8X
       - GUACAMOLE_HOME=/data
       - LOG_LEVEL=info
     depends_on:
-      - mysql
       - guacd
     networks:
         default:
         internal:
-
-  mysql:
-    image: mariadb:10.4.12
-    container_name: mysql
-    hostname: mysql
-    restart: always
-    environment:
-      - MYSQL_RANDOM_ROOT_PASSWORD=true
-      - MYSQL_USER=guacamole
-      - MYSQL_PASSWORD={{ guacamole_mysql_password }}
-      - MYSQL_DATABASE={{ guacamole_db }}
-    volumes:
-      - /opt/guacamole/init:/docker-entrypoint-initdb.d
-      - /opt/guacamole/data:/var/lib/mysql
-    networks:
-        internal:
-    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
 
 networks:
     default:
