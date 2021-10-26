@@ -27,10 +27,11 @@ guacamole_packages:
       - docker-ce-cli
       - containerd.io
       - docker-compose
+      - default-libmysqlclient-dev
 
 guacamole_mysql_requirement:
   cmd.run:
-    - name: pip3 install mysql-connector-python
+    - name: pip3 install mysql-connector-python mysqlclient
 
 {% elif grains['os_family'] == 'RedHat' %}
 
