@@ -188,15 +188,15 @@ create_{{ service }}_user_{{ address }}:
   {% for db in pillar['integrated_services'][service]['configuration']['dbs'] %}
 
     {%if db != 'guacamole' %}
+      {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+
 create_{{ db }}_db:
   mysql_database.present:
     - name: {{ db }}
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
-
-      {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
 grant_{{ service }}_privs_{{ db }}_{{ address }}:
   mysql_grants.present:
