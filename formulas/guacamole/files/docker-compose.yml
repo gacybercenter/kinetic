@@ -26,10 +26,10 @@ services:
     environment:
       - GUACD_HOSTNAME=guacd
       - GUACD_PORT=4822
-      - MYSQL_HOSTNAME=guac.gacyberrange.org
+      - MYSQL_HOSTNAME={{ guacamole_mysql_host }}
       - MYSQL_DATABASE=guacamole
       - MYSQL_USER=guacamole
-      - MYSQL_PASSWORD=Us0fpU1AaqgRBL1RURPpotxnvRZvTFzr3rOBAvoutakXkiqj4hOwEMZCiRbf0d8X
+      - MYSQL_PASSWORD={{ guacamole_mysql_password }}
       - GUACAMOLE_HOME=/data
       - LOG_LEVEL=info
     depends_on:
