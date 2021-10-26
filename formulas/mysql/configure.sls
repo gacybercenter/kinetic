@@ -199,15 +199,19 @@ create_{{ db }}_db:
       {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
     {%if db == 'guacamole' %}
-import_schema:
-  mysql_query.run_file:
-    - query_file: salt://formulas/guacamole/files/guacamole.sql
-    - database: {{ db }}
-    - connection_host: {{ address }}
-    - connection_unix_socket: {{ sock }}
-    - connection_user: root
+# Need to further investigate issue with initilizing a db using a file
+# preferred option would be mysql_puery.run_file.
+/tmp/guacamole.sql:
+  name: 
+    - source: salt://formulas/guacamole/files/initdb.sql
+
+{{ db }}_init:
+  cmd.run:
+    - name: mysql -uroot {{ db }} < /tmp/initdb.sql
     - require:
-      - mysql_grants: grant_{{ service }}_privs_{{ db }}_{{ address }}
+      - mysql_database: create_{{ db }}_db
+    -unless:
+      - mysql -uroot {{ db }} -e "SELECT name FROM guacamole_entity" | grep -q "guacadmin"
 
     {% endif%}
 
