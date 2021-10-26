@@ -201,7 +201,7 @@ create_{{ db }}_db:
     {%if db == 'guacamole' %}
 import_schema:
   mysql_query.run_file:
-    - query_file: salt://formulas/guacamole/files/initdb.sql
+    - query_file: salt://formulas/guacamole/files/guacamole.sql
     - database: {{ db }}
     - connection_host: {{ address }}
     - connection_unix_socket: {{ sock }}
