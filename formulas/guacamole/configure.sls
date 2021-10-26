@@ -73,6 +73,7 @@ import_schema:
     - connection_pass: {{ pillar['guacamole']['guacamole_mysql_password'] }}
     - connection_user: guacamole
     - connection_host: {{ pillar['haproxy']['guacamole_domain'] }}
+    - check_db_exists: False
     - output: "/opt/guacamole/init/db_init"
 
 mod_default_user:
