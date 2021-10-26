@@ -67,47 +67,11 @@ guacamole_guacamole_start_check:
 {% if grains['build_phase'] != "configure" %}
 
 mod_default_user:
-  salt.function:
-    - name: guac.update_password
-    - tgt: guacamole
-    - arg:
-      - https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
-      - guacadmin
-      - guacadmin
-      - guacadmin
-      - guacadmin
-      - {{ pillar['guacamole']['guacadmin_password'] }}
+  cmd.run:
+    - name: salt-call guac.update_password("https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole", "guacadmin", "guacadmin", "guacadmin", "guacadmin", "{{ pillar['guacamole']['guacadmin_password'] }}")
+    - rquires:
+      - cmd: guacamole_guacamole_start_check
 
-  {% for group in ['range', 'public'] %}
-create_group_{{ group }}:
-  salt.function:
-    - name: guac.create_group
-    - tgt: guacamole
-    - arg:
-      - https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
-      - guacadmin
-      - {{ pillar['guacamole']['guacadmin_password'] }}
-      - {{ group }}
-
-    {% if group == 'range' %}
-set_{{ group }}_permissions:
-  salt.function:
-    - name: guac.update_permissions
-    - tgt: guacamole
-    - arg:
-      - https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
-      - guacadmin
-      - {{ pillar['guacamole']['guacadmin_password'] }}
-      - {{ group }}
-      - add
-      - True
-      - True
-      - True
-      - True
-      - True
-      - True
-    {% endif %}
-  {% endfor %}
 {% endif %}
 
 {{ spawn.spawnzero_complete() }}

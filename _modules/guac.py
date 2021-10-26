@@ -15,27 +15,45 @@
 ## could potentially be fleshed out and become formal fully-featured
 ## salt module
 
-from salt.modules.guacamole import Session
+import socket
+import requests
+import urllib3
+import json
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+socket.setdefaulttimeout(0.5)
 
 __virtualname__ = "guac"
 
 def __virtual__():
     return __virtualname__
 
-def update_password(host, authuser, authpass, username, oldpassword, newpassword):
-    s = Session(host, authuser, authpass)
-    data = s.update_user_password(username, oldpassword, newpassword)
-    s.delete_token()
-    return data
+def generate_token(host: str, authuser: str, authpass: str):
+    return requests.post(
+        f"{host}/api/tokens",
+        data={"username": authuser, "password": authpass},
+        verify=False,
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    ).json()['authToken']
 
-def create_group(host, authuser, authpass, identifier, attributes):
-    s = Session(host, authuser, authpass)
-    data = s.create_user_group(identifier, attributes)
-    s.delete_token()
-    return data
+def delete_token(host, token):
+    return requests.delete(
+        f"{host}/api/tokens/{token}",
+        params=token,
+        verify=False,
+    )
 
-def update_permissions(host, authuser, authpass, username, operation, cuser, cusergroup, cconnect, cconnectgroup, cshare, admin):
-    s = Session(host, authuser, authpass)
-    data = s.update_user_permissions(username, operation, cuser, cusergroup, cconnect, cconnectgroup, cshare, admin)
-    s.delete_token()
+def update_user_password(host, authuser, authpass, username: str, oldpassword: str, newpassword: str):
+    token = generate_token(host, authuser, authpass)
+    data = requests.put(
+        f"{host}/api/session/data/mysql/users/{username}/password",
+        headers={"Content-Type": "application/json"},
+        params=token,
+        json={
+            "oldPassword": oldpassword,
+            "newPassword": newpassword
+        },
+        verify=False,
+    )
+    delete_token(host, token)
     return data
