@@ -205,7 +205,6 @@ import_schema:
     - database: {{ db }}
     - connection_host: {{ address }}
     - connection_unix_socket: {{ sock }}
-    - output: grain
     - require:
       - mysql_database: create_{{ db }}_db
 
