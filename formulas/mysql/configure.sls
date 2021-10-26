@@ -207,7 +207,7 @@ import_schema:
     - connection_host: {{ address }}
     - connection_unix_socket: {{ sock }}
     - require:
-      - mysql_database: create_{{ db }}_db
+      - service: mariadb_service
     {% endif%}
 
 grant_{{ service }}_privs_{{ db }}_{{ address }}:
