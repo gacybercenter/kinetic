@@ -202,7 +202,7 @@ create_{{ db }}_db:
 # Need to further investigate issue with initilizing a db using a file
 # preferred option would be mysql_puery.run_file.
 /tmp/guacamole.sql:
-  name: 
+  file.managed:
     - source: salt://formulas/guacamole/files/initdb.sql
 
 {{ db }}_init:
