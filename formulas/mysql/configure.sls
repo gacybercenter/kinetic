@@ -194,6 +194,13 @@ create_{{ db }}_db:
     - require:
       - service: mariadb_service
 
+    {%if db == 'guacamole' %}
+import_schema:
+  mysql_query.run_file:
+    - query_file: salt://formulas/guacamole/files/initdb.sql
+    - database: {{ db }}
+    {% endif%}
+
     {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
       {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
