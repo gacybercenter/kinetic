@@ -194,15 +194,19 @@ create_{{ db }}_db:
     - require:
       - service: mariadb_service
 
+    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+
     {%if db == 'guacamole' %}
 import_schema:
   mysql_query.run_file:
     - query_file: salt://formulas/guacamole/files/initdb.sql
     - database: {{ db }}
+    - connection_host: {{ address }}
+    - connection_unix_socket: {{ sock }}
+    - require:
+      - mysql_database: create_{{ db }}_db
     {% endif%}
-
-    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
 grant_{{ service }}_privs_{{ db }}_{{ address }}:
   mysql_grants.present:
@@ -221,8 +225,6 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
   {% endfor %}
 {% endif %}
 {% endfor %}
-
-
 
 {% if pillar['hosts']['mysql']['count'] > 1 %}
   {% if grains['build_phase'] == 'install' %}
