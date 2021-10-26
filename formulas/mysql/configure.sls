@@ -205,8 +205,10 @@ import_schema:
     - database: {{ db }}
     - connection_host: {{ address }}
     - connection_unix_socket: {{ sock }}
+    - connection_user: {{ service }}
+    - connection_pass: {{ pillar [service][service + '_mysql_password'] }}
     - require:
-      - mysql_database: create_{{ db }}_db
+      - mysql_grants: grant_{{ service }}_privs_{{ db }}_{{ address }}
 
     {% endif%}
 
