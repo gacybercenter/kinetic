@@ -188,15 +188,28 @@ create_{{ service }}_user_{{ address }}:
   {% for db in pillar['integrated_services'][service]['configuration']['dbs'] %}
 
     {%if db != 'guacamole' %}
-      {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-
 create_{{ db }}_db:
   mysql_database.present:
     - name: {{ db }}
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
+    {% endif%}
+
+    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+
+    {%if db == 'guacamole' %}
+import_schema:
+  mysql_query.run_file:
+    - query_file: salt://formulas/guacamole/files/initdb.sql
+    - database: {{ db }}
+    - connection_host: {{ address }}
+    - connection_unix_socket: {{ sock }}
+    - output: grain
+    - require:
+      - service: mariadb_service
+    {% endif%}
 
 grant_{{ service }}_privs_{{ db }}_{{ address }}:
   mysql_grants.present:
@@ -210,38 +223,8 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
       - mysql_user: create_{{ service }}_user_{{ address }}
       - mysql_database: create_{{ db }}_db
 
-        {% endfor %}
       {% endfor %}
-    {% endif%}
-
-    {%if db == 'guacamole' %}
-      {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-        {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-
-import_{{ db }}_schema:
-  mysql_query.run_file:
-    - query_file: salt://formulas/guacamole/files/initdb.sql
-    - database: {{ db }}
-    - connection_host: {{ address }}
-    - connection_unix_socket: {{ sock }}
-    - require:
-      - service: mariadb_service
-
-grant_{{ service }}_privs_{{ db }}_{{ address }}:
-  mysql_grants.present:
-    - grant: all privileges
-    - database: {{ db }}.*
-    - user: {{ service }}
-    - host: {{ address }}
-    - connection_unix_socket: {{ sock }}
-    - require:
-      - service: mariadb_service
-      - mysql_user: create_{{ service }}_user_{{ address }}
-      - mysql_query: import_{{ db }}_schema
-
-        {% endfor %}
-      {% endfor %}
-    {% endif%}
+    {% endfor %}
   {% endfor %}
 {% endif %}
 {% endfor %}
