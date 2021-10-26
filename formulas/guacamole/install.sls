@@ -28,6 +28,10 @@ guacamole_packages:
       - containerd.io
       - docker-compose
 
+guacamole_mysql_requirement:
+  cmd.run:
+    - name: pip3 install mysql-connector-python
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 # CentOS-PowerTools:

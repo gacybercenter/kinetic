@@ -67,7 +67,7 @@ guacamole_guacamole_start_check:
 {% if grains['build_phase'] != "configure" %}
 
 import_schema:
-  mysql.run_file:
+  mysql_query.run_file:
     - query_file: /opt/guacamole/init/initdb.sql
     - database: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'][0] }}
     - connection_pass: {{ pillar['guacamole']['guacamole_mysql_password'] }}
