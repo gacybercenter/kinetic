@@ -77,6 +77,7 @@ guacamole_mysql_requirement:
         guacadmin_password: {{ pillar['guacamole']['guacadmin_password'] }}
         guacamole_mysql_password: {{ pillar['guacamole']['guacamole_mysql_password'] }}
         guacamole_mysql_host: {{ pillar['haproxy']['guacamole_domain'] }}
+        guacamole_db: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'][0] }}
 
 /opt/guacamole/init/initdb.sql:
   file.managed:
