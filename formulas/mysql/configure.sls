@@ -182,19 +182,18 @@ create_{{ service }}_user_{{ address }}:
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
+
     {% endfor %}
   {% endfor %}
 
   {% for db in pillar['integrated_services'][service]['configuration']['dbs'] %}
 
-    {%if db != 'guacamole' %}
 create_{{ db }}_db:
   mysql_database.present:
     - name: {{ db }}
     - connection_unix_socket: {{ sock }}
     - require:
       - service: mariadb_service
-    {% endif%}
 
     {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
       {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
@@ -208,7 +207,8 @@ import_schema:
     - connection_unix_socket: {{ sock }}
     - output: grain
     - require:
-      - service: mariadb_service
+      - mysql_database: create_{{ db }}_db
+
     {% endif%}
 
 grant_{{ service }}_privs_{{ db }}_{{ address }}:
