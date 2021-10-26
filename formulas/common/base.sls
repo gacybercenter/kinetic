@@ -39,7 +39,7 @@ role:
 
 {{ pillar['timezone'] }}:
   timezone.system:
-    - {{ pillar['timezone'] }}: True
+    - utc: True
 
 {% if grains['os_family'] == 'Debian' %}
 /etc/systemd/timesyncd.conf:
