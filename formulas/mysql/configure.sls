@@ -201,7 +201,7 @@ create_{{ db }}_db:
     {%if db == 'guacamole' %}
 # Need to further investigate issue with initilizing a db using a file
 # preferred option would be mysql_puery.run_file.
-/tmp/guacamole.sql:
+/tmp/initdb.sql:
   file.managed:
     - source: salt://formulas/guacamole/files/initdb.sql
 
