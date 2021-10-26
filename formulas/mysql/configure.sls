@@ -210,7 +210,7 @@ create_{{ db }}_db:
     - name: mysql -uroot {{ db }} < /tmp/initdb.sql
     - require:
       - mysql_database: create_{{ db }}_db
-    -unless:
+    - unless:
       - mysql -uroot {{ db }} -e "SELECT name FROM guacamole_entity" | grep -q "guacadmin"
 
     {% endif%}
