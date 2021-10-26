@@ -66,27 +66,17 @@ guacamole_guacamole_start_check:
 
 {% if grains['build_phase'] != "configure" %}
 
-import_schema:
-  mysql_query.run_file:
-    - query_file: salt://formulas/guacamole/files/initdb.sql
-    - database: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'][0] }}
-    - connection_pass: {{ pillar['guacamole']['guacamole_mysql_password'] }}
-    - connection_user: guacamole
-    - connection_host: {{ pillar['haproxy']['guacamole_domain'] }}
-    - check_db_exists: False
-    - output: "/opt/guacamole/init/db_init"
-
 mod_default_user:
   salt.function:
     - name: guac.update_password
     - tgt: guacamole
     - arg:
-      - host: https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
-      - authuser: guacadmin
-      - authpass: guacadmin
-      - username: guacadmin
-      - oldpassword: guacadmin
-      - newpassword: {{ pillar['guacamole']['guacadmin_password'] }}
+      - https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
+      - guacadmin
+      - guacadmin
+      - guacadmin
+      - guacadmin
+      - {{ pillar['guacamole']['guacadmin_password'] }}
 
   {% for group in ['range', 'public'] %}
 create_group_{{ group }}:
@@ -94,10 +84,10 @@ create_group_{{ group }}:
     - name: guac.create_group
     - tgt: guacamole
     - arg:
-      - host: https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
-      - authuser: guacadmin
-      - authpass: {{ pillar['guacamole']['guacadmin_password'] }}
-      - identifier: {{ group }}
+      - https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
+      - guacadmin
+      - {{ pillar['guacamole']['guacadmin_password'] }}
+      - {{ group }}
 
     {% if group == 'range' %}
 set_{{ group }}_permissions:
@@ -105,17 +95,17 @@ set_{{ group }}_permissions:
     - name: guac.update_permissions
     - tgt: guacamole
     - arg:
-      - host: https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
-      - authuser: guacadmin
-      - authpass: {{ pillar['guacamole']['guacadmin_password'] }}
-      - identifier: {{ group }}
-      - operation: add
-      - cuser: True
-      - cusergroup: True
-      - cconnect: True
-      - cconnectgroup: True
-      - cshare: True
-      - admin: True
+      - https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole
+      - guacadmin
+      - {{ pillar['guacamole']['guacadmin_password'] }}
+      - {{ group }}
+      - add
+      - True
+      - True
+      - True
+      - True
+      - True
+      - True
     {% endif %}
   {% endfor %}
 {% endif %}
