@@ -100,6 +100,7 @@ hosts:
         haproxy: configure
         memcached: configure
         rabbitmq: configure
+        mysql: configure
   glance:
     needs:
       install:
@@ -313,3 +314,4 @@ hosts:
       configure:
         controller: configure
         haproxy: configure
+        mysql: configure
