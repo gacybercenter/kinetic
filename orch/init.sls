@@ -18,10 +18,11 @@
 ## They below will wipe everything that has a '-' in the minion_id, e.g.
 ## everything except salt and pxe
 
+{% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
 init_poweroff:
   salt.function:
     - name: system.poweroff
-    - tgt: '*-*'
+    - tgt: {{ type }}-\*
 
 ## This gives hosts that were givena shutdown order the ability to shut down
 ## There have been cases where a zeroize reset command was issued before a
@@ -36,7 +37,8 @@ init_sleep:
 wipe_init_keys:
   salt.wheel:
     - name: key.delete
-    - match: '*-*'
+    - match: {{ type }}-\*
+{% endfor %}
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
 ## in the waiting room
