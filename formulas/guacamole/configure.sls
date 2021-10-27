@@ -68,7 +68,7 @@ guacamole_guacamole_start_check:
 
 mod_default_user:
   cmd.run:
-    - name: salt-call guac.update_password("https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole", "guacadmin", "guacadmin", "guacadmin", "guacadmin", "{{ pillar['guacamole']['guacadmin_password'] }}")
+    - name: salt-call 'guac.update_password("https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole", "guacadmin", "guacadmin", "guacadmin", "guacadmin", "{{ pillar['guacamole']['guacadmin_password'] }}")'
     - rquires:
       - cmd: guacamole_guacamole_start_check
 
