@@ -19,7 +19,7 @@
 ## everything except salt and pxe
 
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
-init_poweroff:
+init_{{ type }}_poweroff:
   salt.function:
     - name: system.poweroff
     - tgt: {{ type }}-\*
@@ -27,14 +27,14 @@ init_poweroff:
 ## This gives hosts that were givena shutdown order the ability to shut down
 ## There have been cases where a zeroize reset command was issued before a
 ## successful shutdown
-init_sleep:
+init_{{ type }}_sleep:
   salt.function:
     - name: test.sleep
     - tgt: salt
     - kwarg:
         length: 30
 
-wipe_init_keys:
+wipe_{{ type }}_keys:
   salt.wheel:
     - name: key.delete
     - match: {{ type }}-\*
