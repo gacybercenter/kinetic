@@ -22,7 +22,7 @@
 init_{{ type }}_poweroff:
   salt.function:
     - name: system.poweroff
-    - tgt: {{ type }}-\*
+    - tgt: '{{ type }}-*'
 
 ## This gives hosts that were givena shutdown order the ability to shut down
 ## There have been cases where a zeroize reset command was issued before a
@@ -37,7 +37,7 @@ init_{{ type }}_sleep:
 wipe_{{ type }}_keys:
   salt.wheel:
     - name: key.delete
-    - match: {{ type }}-\*
+    - match: '{{ type }}-*'
 {% endfor %}
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
