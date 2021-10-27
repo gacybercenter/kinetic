@@ -66,11 +66,19 @@ guacamole_guacamole_start_check:
 
 {% if grains['build_phase'] != "configure" %}
 
-mod_default_user:
-  cmd.run:
-    - name: salt-call 'guac.update_user_password("https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole", "guacadmin", "guacadmin", "guacadmin", "guacadmin", "{{ pillar['guacamole']['guacadmin_password'] }}")'
-    - rquires:
-      - cmd: guacamole_guacamole_start_check
+# Need to build a guacamole state for calls directly from here, as other work arounds to function as intended
+# this can currently be manually executed by creating a simple main.py under modules and the executing the below under _modules
+# 
+# from guacamole import Session
+# session = Session("https://guac.gacyberrange.org/guacamole", "mysql", "guacadmin", "guacadmin")
+# session.update_user_password("guacadmin","guacadmin","NEWPASSWORDHERE"))
+# session.delete_token()
+#
+# mod_default_user:
+#   cmd.run:
+#     - name: salt-call 'guac.update_user_password("https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole", "guacadmin", "guacadmin", "guacadmin", "guacadmin", "{{ pillar['guacamole']['guacadmin_password'] }}")'
+#     - rquires:
+#       - cmd: guacamole_guacamole_start_check
 
 {% endif %}
 
