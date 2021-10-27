@@ -198,7 +198,7 @@ create_{{ db }}_db:
     {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
       {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
-    {%if db == 'guacamole' %}
+    {% if db == 'guacamole' %}
 # Need to further investigate issue with initilizing a db using a file
 # preferred option would be mysql_puery.run_file.
 /tmp/initdb.sql:
@@ -213,7 +213,7 @@ create_{{ db }}_db:
     - unless:
       - mysql -uroot {{ db }} -e "SELECT name FROM guacamole_entity" | grep -q "guacadmin"
 
-    {% endif%}
+    {% endif %}
 
 grant_{{ service }}_privs_{{ db }}_{{ address }}:
   mysql_grants.present:
