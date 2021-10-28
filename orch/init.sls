@@ -32,7 +32,7 @@ init_{{ type }}_sleep:
     - name: test.sleep
     - tgt: salt
     - kwarg:
-        length: 30
+        length: 10
 
 wipe_{{ type }}_keys:
   salt.wheel:
