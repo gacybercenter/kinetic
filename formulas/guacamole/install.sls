@@ -33,7 +33,7 @@ cryptography_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-    - names: 
+    - names:
       - mysql-connector-python
       - mysqlclient
 
