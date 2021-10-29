@@ -148,7 +148,7 @@ api:
 {% elif service == 'keystone' %}
         extra_opts: |
             fernet_primary: {{ salt['fernet.make_key']() }}
-            fernet_secondary: {{ salt['fernet.make_key']() }}
+              fernet_secondary: {{ salt['fernet.make_key']() }}
 {% else %}
         extra_opts: ''
 {% endif %}
