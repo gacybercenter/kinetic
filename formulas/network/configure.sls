@@ -210,6 +210,13 @@ create_port:
         interface_driver: openvswitch
 {% endif %}
 
+### This is related to this issue https://github.com/cloudbase/salt-openstack/issues/23 researching why this recently started happening.
+### I haven't found anything related to this in openstack bugs yet.
+### Related error on neutron-l3-agent - oslo_config.cfg.ConfigFilesNotFoundError: Failed to find some config files: /etc/neutron/fwaas_driver.ini
+/etc/neutron/fwaas_driver.ini:
+  file.managed:
+    - source: salt://formulas/network/files/fwaas_driver.ini
+
 /etc/neutron/metadata_agent.ini:
   file.managed:
     - source: salt://formulas/network/files/metadata_agent.ini
@@ -262,3 +269,4 @@ neutron_l3_agent_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/l3_agent.ini
+      - file: /etc/neutron/fwaas_driver.ini
