@@ -1412,7 +1412,7 @@ class LibvirtDriver(driver.ComputeDriver):
 
     def _undefine_domain(self, instance):
         try:
-            guest = self._host.get_guest(instance)          
+            guest = self._host.get_guest(instance)
             try:
                 support_uefi = self._check_uefi_support(instance.image_meta)
                 guest.delete_configuration(support_uefi)
@@ -5085,7 +5085,7 @@ class LibvirtDriver(driver.ComputeDriver):
 
     def _get_guest_cpu_config(self, flavor, image_meta,
                               guest_cpu_numa_config, instance_numa_topology):
-        
+
         # Required image properties (config drive is not supported):
         # aarch64: 'hw_emulation_architecture=aarch64' and 'hw_machine_type=virt'
         # ppc64le: 'hw_emulation_architecture=ppc64le' and 'hw_machine_type=pseries'
