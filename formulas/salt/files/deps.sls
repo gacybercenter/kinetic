@@ -100,6 +100,7 @@ hosts:
         haproxy: configure
         memcached: configure
         rabbitmq: configure
+        mysql: configure
   glance:
     needs:
       install:
@@ -306,10 +307,11 @@ hosts:
         cache: configure
       configure:
         controller: configure
-  webssh2:
+  guacamole:
     needs:
       install:
         cache: configure
       configure:
         controller: configure
         haproxy: configure
+        mysql: configure

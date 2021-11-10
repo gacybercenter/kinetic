@@ -41,6 +41,18 @@ role:
   timezone.system:
     - utc: True
 
+{% if grains['os_family'] == 'Debian' %}
+/etc/systemd/timesyncd.conf:
+  file.managed:
+    - source: salt://formulas/common/ntp/timesyncd.conf
+    - template: jinja
+    - defaults:
+        ntp_server: {{ pillar['ntp']['ntp_server'] }}
+        ntp_fallback: {{ pillar['ntp']['ntp_fallback'] }}
+  cmd.wait:
+    - name: timedatectl set-ntp true
+{% endif %}
+
 {% for key in pillar['authorized_keys'] %}
 {{ key }}:
   ssh_auth.present:
@@ -77,6 +89,15 @@ hosts_name_resolution:
       {% endif %}
     {% endfor %}
   {% endfor %}
+{% endif %}
+
+{% if grains['os_family'] == 'Debian' %}
+timesyncd:
+  service.running:
+    - name: systemd-timesyncd
+    - enable: True
+    - onchanges:
+      - /etc/systemd/timesyncd.conf
 {% endif %}
 
 rsyslog:

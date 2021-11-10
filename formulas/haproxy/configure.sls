@@ -73,6 +73,7 @@ set haproxy static-mapping:
     - aliases:
       - {{ pillar['haproxy']['console_domain'] }}
       - {{ pillar['haproxy']['docs_domain'] }}
+      - {{ pillar['haproxy']['guacamole_domain'] }}
     - username: {{ pillar['danos']['username'] }}
     - password: {{ pillar['danos_password'] }}
   {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
@@ -97,7 +98,7 @@ acme_certs:
     - aliases:
       - {{ pillar['haproxy']['console_domain'] }}
       - {{ pillar['haproxy']['docs_domain'] }}
-      - {{ pillar['haproxy']['webssh2_domain'] }}
+      - {{ pillar['haproxy']['guacamole_domain'] }}
     - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
 {% if salt['pillar.get']('development:test_certs', False) == True %}
@@ -139,7 +140,7 @@ create_master_pem:
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         console_domain:  {{ pillar['haproxy']['console_domain'] }}
         docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
-        webssh2_domain:  {{ pillar['haproxy']['webssh2_domain'] }}
+        guacamole_domain:  {{ pillar['haproxy']['guacamole_domain'] }}
         keystone_hosts: {{ constructor.haproxy_listener_constructor(role='keystone', port='5000')|yaml_encode }}
         glance_api_hosts: {{ constructor.haproxy_listener_constructor(role='glance', port='9292')|yaml_encode }}
         nova_compute_api_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='8774')|yaml_encode }}
@@ -161,7 +162,7 @@ create_master_pem:
         sahara_hosts: {{ constructor.haproxy_listener_constructor(role='sahara', port='8386')|yaml_encode }}
         manila_hosts: {{ constructor.haproxy_listener_constructor(role='manila', port='8786')|yaml_encode }}
         mysql_hosts: {{ constructor.haproxy_listener_constructor(role='mysql', port='3306')|yaml_encode }}
-        webssh2_hosts: {{ constructor.haproxy_listener_constructor(role='webssh2', port='2222')|yaml_encode }}
+        guacamole_hosts: {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080')|yaml_encode }}
 
 haproxy_service_watch:
   service.running:

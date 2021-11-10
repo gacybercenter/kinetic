@@ -23,8 +23,8 @@ include:
 held_packages:
   pkg.installed:
     - pkgs:
-      - cinder-api: 2:18.0.0-0ubuntu3~cloud0
-      - cinder-scheduler: 2:18.0.0-0ubuntu3~cloud0
+      - cinder-api: 2:18.1.0-0ubuntu1~cloud0
+      - cinder-scheduler: 2:18.1.0-0ubuntu1~cloud0
     - hold: True
 
 cinder_packages:

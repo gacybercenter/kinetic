@@ -1,0 +1,44 @@
+version: "2"
+services:
+  guacd:
+    image: "guacamole/guacd"
+    container_name: guacd
+    hostname: guacd
+    restart: always
+    ports:
+      - "4822:4822"
+    volumes:
+      - /opt/guacamole/recordings:/opt/guacamole/recordings
+    networks:
+        default:
+        internal:
+
+  guacamole:
+    image: "guacamole/guacamole:1.3.0"
+    container_name: guacamole
+    hostname: guacamole
+    restart: always
+    volumes:
+      - "/opt/guacamole/guacamole:/data"
+      - "/opt/guacamole/ROOT:/usr/local/tomcat/webapps/ROOT"
+    ports:
+      - "8080:8080"
+    environment:
+      - GUACD_HOSTNAME=guacd
+      - GUACD_PORT=4822
+      - MYSQL_HOSTNAME={{ guacamole_mysql_host }}
+      - MYSQL_DATABASE={{ guacamole_db }}
+      - MYSQL_USER=guacamole
+      - MYSQL_PASSWORD={{ guacamole_mysql_password }}
+      - GUACAMOLE_HOME=/data
+      - LOG_LEVEL=info
+    depends_on:
+      - guacd
+    networks:
+        default:
+        internal:
+
+networks:
+    default:
+    internal:
+        internal: true

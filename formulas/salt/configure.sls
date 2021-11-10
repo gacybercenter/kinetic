@@ -112,6 +112,10 @@ api:
   file.managed:
     - source: salt://formulas/salt/files/openstack_services.sls
 
+/srv/dynamic_pillar/integrated_services.sls:
+  file.managed:
+    - source: salt://formulas/salt/files/integrated_services.sls
+
 {% for service in salt['pillar.get']('openstack_services', {}) %}
 /srv/dynamic_pillar/{{ service }}.sls:
   file.managed:
@@ -273,13 +277,13 @@ api:
         cache:
           maintenance_password: {{ salt['random.get_str']('64') }}
 
-/srv/dynamic_pillar/webssh2.sls:
+/srv/dynamic_pillar/guacamole.sls:
   file.managed:
     - replace: false
     - contents: |
-        webssh2:
-          session_name: {{ salt['random.get_str']('64') }}
-          session_secret: {{ salt['random.get_str']('64') }}
+        guacamole:
+          guacamole_mysql_password: {{ salt['random.get_str']('64') }}
+          guacadmin_password: {{ salt['random.get_str']('16') }}
 
 /srv/dynamic_pillar/top.sls:
   file.managed:

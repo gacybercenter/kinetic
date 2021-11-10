@@ -8,7 +8,7 @@ Instead of delivering enterprise IT services, a kinetic Cyber Range is focused o
 By delivering the ability to provide emulation and/or virtualization at scale for numerous microarchitectures *without needing to invest in any physical hardware beyond traditional amd64 servers*, kinetic lets OT security researchers focus on hacking rather than configuring individual instances of qemu and trying to figure out the correct magical configuration to get a given ISA to run.
 Kinetic delivers the ability to rapidly scale-out OT-oriented workloads using cloud-native tooling and processes with minimal overhead.
 The core components are https://www.saltstack.com/[salt], https://www.openstack.org[openstack], and https://ceph.com/[ceph].
-It also integrates other projects such as https://www.graylog.org/[graylog], https://github.com/billchurch/webssh2[webssh2], https://wiki.debian.org/AptCacherNg[apt-cacher-ng], and https://antora.org/[antora], with many more integrations to come.
+It also integrates other projects such as https://www.graylog.org/[graylog], https://guacamole.apache.org/[guacamole], https://wiki.debian.org/AptCacherNg[apt-cacher-ng], and https://antora.org/[antora], with many more integrations to come.
 
 Kinetic is currently in the middle of being converted from a bespoke, single environment solution to a framework - it is not ready for production and pointing your environment at our master branch will break everything.
 The creation of the version 1.0 tag will indicate that kinetic is production ready.
