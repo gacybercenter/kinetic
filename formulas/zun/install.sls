@@ -82,7 +82,7 @@ zun:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/wallaby
+    - branch: stable/xena
     - target: /var/lib/zun
     - force_clone: true
 
