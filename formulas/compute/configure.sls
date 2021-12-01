@@ -113,24 +113,24 @@ load_ceph_volumes_key:
         console_domain: {{ pillar['haproxy']['console_domain'] }}
 
 ### temporary patches for multiarch
-multiarch_patch:
-  file.managed:
-    - names:
-{% if grains['os_family'] == 'RedHat' %}
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/driver.py:
-        - source: salt://formulas/compute/files/driver.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/config.py:
-        - source: salt://formulas/compute/files/config.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/objects/image_meta.py:
-        - source: salt://formulas/compute/files/image_meta.py
-{% elif grains['os_family'] == 'Debian' %}
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/driver.py:
-        - source: salt://formulas/compute/files/driver.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/config.py:
-        - source: salt://formulas/compute/files/config.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/objects/image_meta.py:
-        - source: salt://formulas/compute/files/image_meta.py
-{% endif %}
+# multiarch_patch:
+#   file.managed:
+#     - names:
+# {% if grains['os_family'] == 'RedHat' %}
+#       - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/driver.py:
+#         - source: salt://formulas/compute/files/driver.py
+#       - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/config.py:
+#         - source: salt://formulas/compute/files/config.py
+#       - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/objects/image_meta.py:
+#         - source: salt://formulas/compute/files/image_meta.py
+# {% elif grains['os_family'] == 'Debian' %}
+#       - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/driver.py:
+#         - source: salt://formulas/compute/files/driver.py
+#       - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/config.py:
+#         - source: salt://formulas/compute/files/config.py
+#       - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/objects/image_meta.py:
+#         - source: salt://formulas/compute/files/image_meta.py
+# {% endif %}
 ## /multiarch patches
 
 {% if grains['os_family'] == 'RedHat' %}
@@ -187,14 +187,14 @@ libvirtd_service:
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
-arp_protect_fix:
-  file.managed:
-  {% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-  {% elif grains['os_family'] == 'Debian' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-  {% endif %}
-    - source: salt://formulas/compute/files/arp_protect.py
+# arp_protect_fix:
+#   file.managed:
+#   {% if grains['os_family'] == 'RedHat' %}
+#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+#   {% elif grains['os_family'] == 'Debian' %}
+#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+#   {% endif %}
+#     - source: salt://formulas/compute/files/arp_protect.py
 ###
 
   {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}

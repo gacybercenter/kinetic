@@ -107,16 +107,16 @@ fs.inotify.max_user_instances:
 
 
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
-arp_protect_fix:
-  file.managed:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-{% elif grains['os_family'] == 'Debian' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-{% endif %}
-    - source: salt://formulas/network/files/arp_protect.py
-{% endif %}
+# {% if pillar['neutron']['backend'] == "linuxbridge" %}
+# arp_protect_fix:
+#   file.managed:
+# {% if grains['os_family'] == 'RedHat' %}
+#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+# {% elif grains['os_family'] == 'Debian' %}
+#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+# {% endif %}
+#     - source: salt://formulas/network/files/arp_protect.py
+# {% endif %}
 ###
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}

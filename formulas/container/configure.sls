@@ -73,28 +73,28 @@ include:
 
 ## fix for disabling md5 on fips systems per
 ## https://opendev.org/openstack/oslo.utils/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76
-oslo_md5_fix:
-  file.managed:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/oslo_utils/secretutils.py
-{% elif grains['os_family'] == 'Debian' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/oslo_utils/secretutils.py
-{% endif %}
-    - source: https://opendev.org/openstack/oslo.utils/raw/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76/oslo_utils/secretutils.py
-    - skip_verify: True
+# oslo_md5_fix:
+#   file.managed:
+# {% if grains['os_family'] == 'RedHat' %}
+#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/oslo_utils/secretutils.py
+# {% elif grains['os_family'] == 'Debian' %}
+#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/oslo_utils/secretutils.py
+# {% endif %}
+#     - source: https://opendev.org/openstack/oslo.utils/raw/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76/oslo_utils/secretutils.py
+#     - skip_verify: True
 ##
 
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
 
 ### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
-arp_protect_fix:
-  file.managed:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-{% elif grains['os_family'] == 'Debian' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-{% endif %}
-    - source: salt://formulas/container/files/arp_protect.py
+# arp_protect_fix:
+#   file.managed:
+# {% if grains['os_family'] == 'RedHat' %}
+#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+# {% elif grains['os_family'] == 'Debian' %}
+#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
+# {% endif %}
+#     - source: salt://formulas/container/files/arp_protect.py
 ###
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
@@ -324,8 +324,8 @@ ovn_controller_service:
 cni_plugins:
   archive.extracted:
     - name: /opt/cni/bin
-    - source: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz
-    - source_hash: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz.sha512
+    - source: https://github.com/containernetworking/plugins/releases/download/v1.0.1/cni-plugins-linux-amd64-v1.0.1.tgz
+    - source_hash: https://github.com/containernetworking/plugins/releases/download/v1.0.1/cni-plugins-linux-amd64-v1.0.1.tgz.sha512
 
 install_zun_cni:
   cmd.run:
