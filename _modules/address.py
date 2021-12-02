@@ -92,20 +92,20 @@ def release_all_addresses():
     connection.commit()
     connection.close()
 
-def rest_login(username, password):
-    login = requests.post('https://salt:8000/login', verify=False, json={'username':'api',
+def rest_login(username, password, target):
+    login = requests.post(f'https://{target}:8000/login', verify=False, json={'username':'api',
                                                                          'password':''+password+'',
                                                                          'eauth':'pam'})
     token = json.loads(login.text)["return"][0]["token"]
     return token
 
-def client_get_address(username, password, network, host):
-    token = rest_login(username, password)
-    lease = requests.post('https://salt:8000/', verify=False, headers={'X-Auth-Token':token}, json=[{
+def client_get_address(username, password, network, host, target):
+    token = rest_login(username, password, target)
+    lease = requests.post(f'https://{target}:8000/', verify=False, headers={'X-Auth-Token':token}, json=[{
     'client': 'local',
-    'tgt': 'salt',
+    'tgt': target,
     'fun': 'address.get_address',
     'arg': [network, host]
     }])
-    address = json.loads(lease.text)["return"][0]["salt"]
+    address = json.loads(lease.text)["return"][0][target]
     return address

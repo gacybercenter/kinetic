@@ -18,17 +18,17 @@
 {% if salt['pillar.get']('universal', False) == False %}
 master_setup:
   salt.state:
-    - tgt: 'salt'
+    - tgt: '{{ pillar['salt']['name'] }}'
     - highstate: true
     - fail_minions:
-      - 'salt'
+      - '{{ pillar['salt']['name'] }}'
 
 pxe_setup:
   salt.state:
-    - tgt: 'pxe'
+    - tgt: '{{ pillar['pxe']['name'] }}'
     - highstate: true
     - fail_minions:
-      - 'pxe'
+      - '{{ pillar['pxe']['name'] }}'
 {% endif %}
 
 ## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
