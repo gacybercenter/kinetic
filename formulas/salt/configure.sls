@@ -126,22 +126,22 @@ api:
       - file: /srv/dynamic_pillar/openstack_services.sls
     - defaults:
         service: {{ service }}
-        mysql_password: {{ salt['random.get_str']('64') }}
-        service_password: {{ salt['random.get_str']('64') }}
+        mysql_password: {{ salt['random.get_str']('64', punctuation=False) }}
+        service_password: {{ salt['random.get_str']('64', punctuation=False) }}
 {% if service == 'designate' %}
         extra_opts: |
             designate_rndc_key: |
                 key "designate" {
                         algorithm hmac-sha512;
                         secret
-                "{{ salt['random.get_str']('64') | base64_encode }}";
+                "{{ salt['random.get_str']('64', punctuation=False) | base64_encode }}";
                 };
 {% elif service == 'neutron' %}
         extra_opts: |
-            metadata_proxy_shared_secret: {{ salt['random.get_str']('64') }}
+            metadata_proxy_shared_secret: {{ salt['random.get_str']('64', punctuation=False) }}
 {% elif service == 'zun' %}
         extra_opts: |
-            kuryr_service_password: {{ salt['random.get_str']('64') }}
+            kuryr_service_password: {{ salt['random.get_str']('64', punctuation=False) }}
 {% elif service == 'barbican' %}
         extra_opts: |
             simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}
@@ -159,14 +159,14 @@ api:
     - replace: false
     - contents: |
         horizon:
-          horizon_secret_key: {{ salt['random.get_str']('64') }}
+          horizon_secret_key: {{ salt['random.get_str']('64', punctuation=False) }}
 
 /srv/dynamic_pillar/mysql.sls:
   file.managed:
     - replace: false
     - contents: |
         mysql:
-          mysql_root_password: {{ salt['random.get_str']('64') }}
+          mysql_root_password: {{ salt['random.get_str']('64', punctuation=False) }}
           wsrep_cluster_name: {{ salt['random.get_str']('32') }}
 
 /srv/dynamic_pillar/rabbitmq.sls:
@@ -174,7 +174,7 @@ api:
     - replace: false
     - contents: |
         rabbitmq:
-          rabbitmq_password: {{ salt['random.get_str']('64') }}
+          rabbitmq_password: {{ salt['random.get_str']('64', punctuation=False) }}
           erlang_cookie: {{ salt['generate.erlang_cookie'](20) }}
 
 /srv/dynamic_pillar/etcd.sls:
@@ -182,9 +182,9 @@ api:
     - replace: false
     - contents: |
         etcd:
-          etcd_cluster_token: {{ salt['random.get_str']('64') }}
+          etcd_cluster_token: {{ salt['random.get_str']('64', punctuation=False) }}
 
-{% set graylog_password = salt['random.get_str']('64') %}
+{% set graylog_password = salt['random.get_str']('64', punctuation=False) %}
 /srv/dynamic_pillar/graylog.sls:
   file.managed:
     - replace: false
@@ -204,7 +204,7 @@ api:
     - replace: false
     - contents: |
         ceph:
-          fsid: {{ salt['random.get_str']('64') | uuid }}
+          fsid: {{ salt['random.get_str']('64', punctuation=False) | uuid }}
           ceph-mon-keyring: |
             [mon.]
                  key = {{ salt['generate.cephx_key']() }}
@@ -261,28 +261,28 @@ api:
     - replace: false
     - contents: |
         openstack:
-          admin_password: {{ salt['random.get_str']('64') }}
+          admin_password: {{ salt['random.get_str']('64', punctuation=False) }}
 
 /srv/dynamic_pillar/api.sls:
   file.managed:
     - replace: false
     - contents: |
         api:
-          user_password: {{ salt['random.get_str']('64') }}
+          user_password: {{ salt['random.get_str']('64', punctuation=False) }}
 
 /srv/dynamic_pillar/cache.sls:
   file.managed:
     - replace: false
     - contents: |
         cache:
-          maintenance_password: {{ salt['random.get_str']('64') }}
+          maintenance_password: {{ salt['random.get_str']('64', punctuation=False) }}
 
 /srv/dynamic_pillar/guacamole.sls:
   file.managed:
     - replace: false
     - contents: |
         guacamole:
-          guacamole_mysql_password: {{ salt['random.get_str']('64') }}
+          guacamole_mysql_password: {{ salt['random.get_str']('64', punctuation=False) }}
           guacadmin_password: {{ salt['random.get_str']('16') }}
 
 /srv/dynamic_pillar/top.sls:
