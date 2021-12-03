@@ -93,8 +93,8 @@ def release_all_addresses():
     connection.close()
 
 def rest_login(username, password, target):
-    login = requests.post(f'https://{target}:8000/login', verify=False, json={'username':'api',
-                                                                         'password':''+password+'',
+    login = requests.post(f'https://{target}:8000/login', verify=False, json={'username':username,
+                                                                         'password':password,
                                                                          'eauth':'pam'})
     token = json.loads(login.text)["return"][0]["token"]
     return token
