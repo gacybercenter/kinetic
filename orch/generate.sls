@@ -36,7 +36,7 @@ pxe_setup:
 {% set targets = {} %}
 {% if style == 'physical' %}
 ## create and endpoints dictionary of all physical uuids
-  {% set endpoints = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"] %}
+  {% set endpoints = salt.saltutil.runner('mine.get',tgt=pillar['pxe']['name'],fun='redfish.gather_endpoints')[pillar['pxe']['name']] %}
   {% for id in pillar['hosts'][type]['uuids'] %}
     {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
     {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64')|uuid) %}
