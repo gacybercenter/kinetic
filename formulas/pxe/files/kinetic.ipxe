@@ -1,5 +1,4 @@
 #!ipxe
 
-shell
 dhcp
 chain http://{{ pxe_record }}/?uuid=${uuid}
