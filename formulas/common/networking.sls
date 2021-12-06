@@ -174,7 +174,7 @@ systemd-networkd:
     {% else %}
         [Network]
         DHCP=no
-        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host'], pillar['salt']['name']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
+        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host'], pillar['salt']['record']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
     {% endif %}
   {% endfor %}
 {% endif %}
