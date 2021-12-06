@@ -2,3 +2,8 @@
 
 dhcp
 chain http://{{ pxe_record }}/?uuid=${uuid}
+boot ||
+echo
+echo net boot failed, booting ipxe shell
+echo
+shell
