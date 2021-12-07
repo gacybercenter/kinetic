@@ -19,7 +19,10 @@
 ## as functions focused on getting those leases issued to clients
 ## in a usable format
 
-import sqlite3, requests, json, os
+import sqlite3
+import requests
+import json
+import os
 
 __virtualname__ = 'address'
 
@@ -92,20 +95,35 @@ def release_all_addresses():
     connection.commit()
     connection.close()
 
-def rest_login(username, password, target):
-    login = requests.post(f'https://{target}:8000/login', verify=False, json={'username':username,
-                                                                         'password':password,
-                                                                         'eauth':'pam'})
+def rest_login(username, password, url):
+    login = requests.post(
+                f'https://{url}:8000/login',
+                verify=False,
+                json={
+                    'username':username,
+                    'password':password,
+                    'eauth':'pam'
+                }
+            )
     token = json.loads(login.text)["return"][0]["token"]
     return token
 
-def client_get_address(username, password, network, host, target):
-    token = rest_login(username, password, target)
-    lease = requests.post(f'https://{target}:8000/', verify=False, headers={'X-Auth-Token':token}, json=[{
-    'client': 'local',
-    'tgt': target,
-    'fun': 'address.get_address',
-    'arg': [network, host]
-    }])
+def client_get_address(username, password, network, host, url, target):
+    token = rest_login(username, password, url)
+    lease = requests.post(
+                f'https://{url}:8000/',
+                verify=False,
+                headers={
+                    'X-Auth-Token':token
+                },
+                json=[
+                    {
+                    'client': 'local',
+                    'tgt': target,
+                    'fun': 'address.get_address',
+                    'arg': [network, host]
+                    }
+                ]
+            )
     address = json.loads(lease.text)["return"][0][target]
     return address
