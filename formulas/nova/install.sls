@@ -23,10 +23,10 @@ include:
 nova_packages:
   pkg.installed:
     - pkgs:
-      - openstack-nova-api
-      - openstack-nova-conductor
-      - openstack-nova-spicehtml5proxy
-      - openstack-nova-scheduler
+      - nova-api
+      - nova-conductor
+      - nova-spiceproxy
+      - nova-scheduler
       - python3-openstackclient
       - python3-etcd3gw
 
