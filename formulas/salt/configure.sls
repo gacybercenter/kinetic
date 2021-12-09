@@ -240,7 +240,7 @@ api:
             [client.volumes]
                  key = {{ volumeskey }}
                  caps mon = "allow r, allow command \"osd blacklist\""
-                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rx pool=images"
+                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rwx pool=images"
           ceph-client-compute-keyring: |
             [client.compute]
                  key = {{ computekey }}
