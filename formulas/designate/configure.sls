@@ -67,6 +67,9 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
 /etc/designate/tlds.conf:
   file.managed:
     - source: salt://formulas/designate/files/tlds.conf
+    - template: jinja
+    - defaults:
+        tld: {{ pillar['designate']['tld'] }}
 
 /etc/designate/designate.conf:
   file.managed:
