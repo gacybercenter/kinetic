@@ -24,7 +24,7 @@ include:
 volume_packages:
   pkg.installed:
     - pkgs:
-      - cinder-api
+      - cinder-volume
       - python3-openstackclient
       - python3-memcache
       - ceph-common
