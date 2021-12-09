@@ -71,19 +71,6 @@ include:
   file.managed:
     - source: salt://formulas/compute/files/neutron_sudoers
 
-## fix for disabling md5 on fips systems per
-## https://opendev.org/openstack/oslo.utils/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76
-# oslo_md5_fix:
-#   file.managed:
-# {% if grains['os_family'] == 'RedHat' %}
-#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/oslo_utils/secretutils.py
-# {% elif grains['os_family'] == 'Debian' %}
-#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/oslo_utils/secretutils.py
-# {% endif %}
-#     - source: https://opendev.org/openstack/oslo.utils/raw/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76/oslo_utils/secretutils.py
-#     - skip_verify: True
-##
-
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
 
   {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
