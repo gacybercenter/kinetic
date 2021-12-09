@@ -2205,7 +2205,7 @@ class LibvirtConfigGuestHostdevPCI(LibvirtConfigGuestHostdev):
         self.function = None
 
         self.alias = None
-
+        
     def __eq__(self, other):
         if not isinstance(other, LibvirtConfigGuestHostdevPCI):
             return False
@@ -2809,6 +2809,7 @@ class LibvirtConfigGuest(LibvirtConfigObject):
         self.os_init_path = None
         self.os_boot_dev = []
         self.os_smbios = None
+        self.os_arch = None
         self.os_mach_type = None
         self.os_bootmenu = False
         self.devices = []
@@ -2851,6 +2852,8 @@ class LibvirtConfigGuest(LibvirtConfigObject):
             os.set("firmware", self.os_firmware)
 
         type_node = self._text_node("type", self.os_type)
+        if self.os_arch is not None:
+            type_node.set("arch", self.os_arch)
         if self.os_mach_type is not None:
             type_node.set("machine", self.os_mach_type)
         os.append(type_node)

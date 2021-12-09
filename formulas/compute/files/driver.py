@@ -1427,9 +1427,13 @@ class LibvirtDriver(driver.ComputeDriver):
         try:
             guest = self._host.get_guest(instance)
             try:
-                hw_firmware_type = instance.image_meta.properties.get(
-                    'hw_firmware_type')
-                support_uefi = self._check_uefi_support(hw_firmware_type)
+                emulation_arch = instance.image_meta.properties.get("hw_emulation_architecture")
+                if emulation_arch:
+                    support_uefi = self._check_uefi_support(instance.image_meta)
+                else:
+                    hw_firmware_type = instance.image_meta.properties.get(
+                        'hw_firmware_type')
+                    support_uefi = self._check_uefi_support(hw_firmware_type)
                 guest.delete_configuration(support_uefi)
             except libvirt.libvirtError as e:
                 with excutils.save_and_reraise_exception() as ctxt:
@@ -5132,8 +5136,19 @@ class LibvirtDriver(driver.ComputeDriver):
 
     def _get_guest_cpu_config(self, flavor, image_meta,
                               guest_cpu_numa_config, instance_numa_topology):
-        arch = libvirt_utils.get_arch(image_meta)
-        cpu = self._get_guest_cpu_model_config(flavor, arch)
+
+        # Required image properties (config drive is not supported):
+        # aarch64: 'hw_emulation_architecture=aarch64' and 'hw_machine_type=virt'
+        # ppc64le: 'hw_emulation_architecture=ppc64le' and 'hw_machine_type=pseries'
+        # Work in Progress:
+        # aarch64 emulation requires further video support
+        # s390x: 'hw_emulation_architecture=s390x' and 'hw_machine_type=s390-ccw-virtio' and 'hw_video_model=virtio'
+        emulation_arch = image_meta.properties.get("hw_emulation_architecture")
+        if emulation_arch:
+            cpu = self._get_guest_cpu_model_config(flavor, emulation_arch)
+        else:
+            arch = libvirt_utils.get_arch(image_meta)
+            cpu = self._get_guest_cpu_model_config(flavor, arch)
 
         if cpu is None:
             return None
@@ -5145,6 +5160,15 @@ class LibvirtDriver(driver.ComputeDriver):
         cpu.threads = topology.threads
         cpu.numa = guest_cpu_numa_config
 
+        if emulation_arch:
+            caps = self._host.get_capabilities()
+            if emulation_arch != caps.host.cpu.arch:
+                # Try emulating. Other arch configs will go here
+                cpu.mode = None
+                if emulation_arch == fields.Architecture.AARCH64:
+                    cpu.model = "cortex-a57"
+                elif emulation_arch == fields.Architecture.PPC64LE:
+                    cpu.model = "POWER8"
         return cpu
 
     def _get_guest_disk_config(
@@ -5831,7 +5855,12 @@ class LibvirtDriver(driver.ComputeDriver):
         clk.add_timer(tmrtc)
 
         hpet = image_meta.properties.get('hw_time_hpet', False)
-        guestarch = libvirt_utils.get_arch(image_meta)
+        emulation_arch = image_meta.properties.get("hw_emulation_architecture")
+        if emulation_arch:
+            guestarch = emulation_arch
+        else:
+            guestarch = libvirt_utils.get_arch(image_meta)
+
         if guestarch in (fields.Architecture.I686,
                          fields.Architecture.X86_64):
             # NOTE(rfolco): HPET is a hardware timer for x86 arch.
@@ -5894,7 +5923,11 @@ class LibvirtDriver(driver.ComputeDriver):
 
         if CONF.libvirt.virt_type in ("qemu", "kvm"):
             # vmcoreinfo support is x86, ARM-only for now
-            guestarch = libvirt_utils.get_arch(image_meta)
+            emulation_arch = image_meta.properties.get("hw_emulation_architecture")
+            if emulation_arch:
+                guestarch = emulation_arch
+            else:
+                guestarch = libvirt_utils.get_arch(image_meta)
             if guestarch in (
                 fields.Architecture.I686, fields.Architecture.X86_64,
                 fields.Architecture.AARCH64,
@@ -5937,7 +5970,11 @@ class LibvirtDriver(driver.ComputeDriver):
         # virtualization type, and features. The video.type attribute can
         # be overridden by the user with image_meta.properties, which
         # is carried out in the next if statement below this one.
-        guestarch = libvirt_utils.get_arch(image_meta)
+        emulation_arch = image_meta.properties.get("hw_emulation_architecture")
+        if emulation_arch:
+            guestarch = emulation_arch
+        else:
+            guestarch = libvirt_utils.get_arch(image_meta)
         if CONF.libvirt.virt_type == 'parallels':
             video.type = 'vga'
         elif guestarch in (fields.Architecture.PPC,
@@ -6142,12 +6179,20 @@ class LibvirtDriver(driver.ComputeDriver):
             return flavor
         return instance.flavor
 
-    def _check_uefi_support(self, hw_firmware_type):
-        caps = self._host.get_capabilities()
-        return self._host.supports_uefi and (
-            hw_firmware_type == fields.FirmwareType.UEFI or
-            caps.host.cpu.arch == fields.Architecture.AARCH64
-        )
+    def _check_uefi_support(self, image_meta):
+        emulation_arch = image_meta.properties.get("hw_emulation_architecture")
+        if emulation_arch:
+            guestarch = emulation_arch
+            return self._host.supports_uefi and (
+                guestarch == fields.Architecture.AARCH64
+            )
+        else:
+            hw_firmware_type = image_meta.properties.get('hw_firmware_type')
+            caps = self._host.get_capabilities()
+            return self._host.supports_uefi and (
+                hw_firmware_type == fields.FirmwareType.UEFI or
+                caps.host.cpu.arch == fields.Architecture.AARCH64
+            )
 
     def _check_secure_boot_support(
         self,
@@ -6204,10 +6249,20 @@ class LibvirtDriver(driver.ComputeDriver):
         flavor: 'objects.Flavor',
     ) -> None:
         if CONF.libvirt.virt_type in ("kvm", "qemu"):
-            arch = libvirt_utils.get_arch(image_meta)
-            if arch in (fields.Architecture.I686, fields.Architecture.X86_64):
-                guest.sysinfo = self._get_guest_config_sysinfo(instance)
-                guest.os_smbios = vconfig.LibvirtConfigGuestSMBIOS()
+            caps = self._host.get_capabilities()
+            host_arch = caps.host.cpu.arch
+            emulation_arch = image_meta.properties.get("hw_emulation_architecture")
+            if emulation_arch:
+                arch = emulation_arch
+                guest.os_arch = emulation_arch
+                if arch != host_arch:
+                    # If emulating, downgrade from kvm to qemu
+                    guest.virt_type = "qemu"
+            else:
+                arch = libvirt_utils.get_arch(image_meta)
+                if arch in (fields.Architecture.I686, fields.Architecture.X86_64):
+                    guest.sysinfo = self._get_guest_config_sysinfo(instance)
+                    guest.os_smbios = vconfig.LibvirtConfigGuestSMBIOS()
 
             mach_type = libvirt_utils.get_machine_type(image_meta)
             guest.os_mach_type = mach_type
@@ -6347,7 +6402,11 @@ class LibvirtDriver(driver.ComputeDriver):
 
     def _is_s390x_guest(self, image_meta):
         s390x_archs = (fields.Architecture.S390, fields.Architecture.S390X)
-        return libvirt_utils.get_arch(image_meta) in s390x_archs
+        emulation_arch = image_meta.properties.get("hw_emulation_architecture")
+        if emulation_arch:
+            return emulation_arch in s390x_archs
+        else:
+            return libvirt_utils.get_arch(image_meta) in s390x_archs
 
     def _is_ppc64_guest(self, image_meta):
         archs = (fields.Architecture.PPC64, fields.Architecture.PPC64LE)
@@ -6520,7 +6579,12 @@ class LibvirtDriver(driver.ComputeDriver):
         # controller (x86 gets one by default)
         usbhost.model = None
         if not self._guest_needs_usb(guest, image_meta):
-            usbhost.model = 'none'
+            archs = (fields.Architecture.PPC, fields.Architecture.PPC64, fields.Architecture.PPC64LE)
+            emulation_arch = image_meta.properties.get("hw_emulation_architecture")
+            if emulation_arch in archs:
+                usbhost.model = None
+            else:
+                usbhost.model = 'none'
         guest.add_device(usbhost)
 
     def _guest_add_pcie_root_ports(self, guest):
@@ -7002,7 +7066,11 @@ class LibvirtDriver(driver.ComputeDriver):
             # libvirt will automatically add a PS2 keyboard)
             # TODO(stephenfin): We might want to do this for other non-x86
             # architectures
-            arch = libvirt_utils.get_arch(image_meta)
+            emulation_arch = image_meta.properties.get("hw_emulation_architecture")
+            if emulation_arch:
+                arch = emulation_arch
+            else:
+                arch = libvirt_utils.get_arch(image_meta)
             if arch != fields.Architecture.AARCH64:
                 return None
 

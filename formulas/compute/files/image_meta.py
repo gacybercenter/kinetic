@@ -294,6 +294,9 @@ class ImageMetaProps(base.NovaObject):
         # name of guest hardware architecture eg i686, x86_64, ppc64
         'hw_architecture': fields.ArchitectureField(),
 
+        # name of instance emulation architecture eg i686, x86_64, ppc64
+        'hw_emulation_architecture': fields.StringField(),
+
         # used to decide to expand root disk partition and fs to full size of
         # root disk
         'hw_auto_disk_config': fields.StringField(),
