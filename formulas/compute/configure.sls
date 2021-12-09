@@ -154,7 +154,7 @@ nova_compute_service:
     - enable: true
     - watch:
       - file: /etc/nova/nova.conf
-      - file: multiarch_patch
+#      - file: multiarch_patch
 
 {% if grains['os_family'] == 'RedHat' %}
 libvirtd_service:
