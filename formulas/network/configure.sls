@@ -105,20 +105,6 @@ fs.inotify.max_user_instances:
   file.managed:
     - source: salt://formulas/network/files/neutron_sudoers
 
-
-### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
-# {% if pillar['neutron']['backend'] == "linuxbridge" %}
-# arp_protect_fix:
-#   file.managed:
-# {% if grains['os_family'] == 'RedHat' %}
-#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-# {% elif grains['os_family'] == 'Debian' %}
-#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-# {% endif %}
-#     - source: salt://formulas/network/files/arp_protect.py
-# {% endif %}
-###
-
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 ## this used to be a default but was changed to a boolean here:
 ## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
