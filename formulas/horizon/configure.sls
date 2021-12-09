@@ -67,16 +67,16 @@ local_settings:
 {% endif %}
 
 ### ref: https://bugs.launchpad.net/horizon/+bug/1880188
-# swift_ceph_patch:
-#   file.line:
-# {% if grains['os_family'] == 'RedHat' %}
-#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/swiftclient/client.py
-# {% elif grains['os_family'] == 'Debian' %}
-#     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/swiftclient/client.py
-# {% endif %}
-#     - content: parsed = urlparse(urljoin(url, '/swift/info'))
-#     - match: parsed = urlparse(urljoin(url, '/info'))
-#     - mode: replace
+swift_ceph_patch:
+  file.line:
+{% if grains['os_family'] == 'RedHat' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/swiftclient/client.py
+{% elif grains['os_family'] == 'Debian' %}
+    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/swiftclient/client.py
+{% endif %}
+    - content: parsed = urlparse(urljoin(url, '/swift/info'))
+    - match: parsed = urlparse(urljoin(url, '/info'))
+    - mode: replace
 
 {% if grains['os_family'] == 'Debian' %}
 apache_conf:
@@ -158,4 +158,4 @@ apache2_service:
       - file: apache_conf
       - git: install_theme
       - cmd: configure-compress-static
-#      - file: swift_ceph_patch
+      - file: swift_ceph_patch
