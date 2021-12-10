@@ -38,9 +38,8 @@ barbican-manage db upgrade:
 
 {% endif %}
 
-/etc/barbican/barbican.conf:
+conf-files:
   file.managed:
-    - source: salt://formulas/barbican/files/barbican.conf
     - template: jinja
     - defaults:
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
@@ -50,11 +49,12 @@ barbican-manage db upgrade:
         memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['barbican']['barbican_service_password'] }}
         kek: {{ pillar['barbican']['simplecrypto_key'] }}
-
+    - names:
+      - /etc/barbican/barbican.conf:
+        - source: salt://formulas/barbican/files/barbican.conf
 {% if grains['os_family'] == 'RedHat' %}
-/etc/httpd/conf.d/wsgi-barbican.conf:
-  file.managed:
-    - source: salt://formulas/barbican/files/wsgi-barbican.conf
+      - /etc/httpd/conf.d/wsgi-barbican.conf:
+        - source: salt://formulas/barbican/files/wsgi-barbican.conf
 {% endif %}
 
 barbican_keystone_listener_service:
@@ -66,7 +66,7 @@ barbican_keystone_listener_service:
 {% endif %}
     - enable: True
     - watch:
-      - file: /etc/barbican/barbican.conf
+      - file: conf-files
 
 barbican_worker_service:
   service.running:
@@ -77,7 +77,7 @@ barbican_worker_service:
 {% endif %}
     - enable: True
     - watch:
-      - file: /etc/barbican/barbican.conf
+      - file: conf-files
 
 barbican_service:
   service.running:
@@ -88,7 +88,4 @@ barbican_service:
 {% endif %}
     - enable: true
     - watch:
-      - file: /etc/barbican/barbican.conf
-{% if grains['os_family'] == 'RedHat' %}
-      - file: /etc/httpd/conf.d/wsgi-barbican.conf
-{% endif %}
+      - file: conf-files
