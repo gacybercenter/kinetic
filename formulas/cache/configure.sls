@@ -74,8 +74,7 @@ apt-cacher-ng_service:
     - name: apt-cacher-ng
     - enable: True
     - watch:
-      - file: apt-cacher-ng-conf
-      - file: security-conf
+      - file: conf-files
       - cmd: get_centos_mirros
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -89,9 +88,7 @@ build acng container image:
     - name: buildah bud -t acng acng.dockerfile
     - onchanges:
       - file: /root/acng.dockerfile
-      - file: apt-cacher-ng-conf
-      - file: security-conf
-      - file: curl-conf
+      - file: conf-files
 
 ## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
 ## podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng
