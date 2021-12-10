@@ -127,7 +127,6 @@ create_master_pem:
         placement_api_hosts: {{ constructor.haproxy_listener_constructor(role='placement', port='8778')|yaml_encode }}
         nova_spiceproxy_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='6082')|yaml_encode }}
         dashboard_hosts: {{ constructor.haproxy_listener_constructor(role='horizon', port='80')|yaml_encode }}
-        docs_hosts:  {{ constructor.haproxy_listener_constructor(role='antora', port='80')|yaml_encode }}
         neutron_api_hosts: {{ constructor.haproxy_listener_constructor(role='neutron', port='9696')|yaml_encode }}
         heat_api_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port='8004')|yaml_encode }}
         cinder_api_hosts: {{ constructor.haproxy_listener_constructor(role='cinder', port='8776')|yaml_encode }}
