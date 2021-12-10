@@ -27,35 +27,28 @@ include:
 
 {% endif %}
 
-apt-cacher-ng-conf:
+conf-files:
   file.managed:
-{% if grains['os_family'] == 'Debian' %}
-    - name: /etc/apt-cacher-ng/acng.conf
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /root/acng.conf
-{% endif %}
-    - source: salt://formulas/cache/files/acng.conf
-
-security-conf:
-  file.managed:
-{% if grains['os_family'] == 'Debian' %}
-    - name: /etc/apt-cacher-ng/security.conf
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /root/security.conf
-{% endif %}
-    - contents: |
-        AdminAuth: acng:{{ pillar['cache']['maintenance_password'] }}
-
-curl-conf:
-  file.managed:
-{% if grains['os_family'] == 'Debian' %}
-    - name: /etc/apt-cacher-ng/curl
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /root/curl
-{% endif %}
     - makedirs: True
-    - contents: |
-        user = acng:{{ pillar['cache']['maintenance_password'] }}
+    - template: jinja
+    - defaults:
+        cache_password: {{ pillar['cache']['maintenance_password'] }}
+    - names:
+{% if grains['os_family'] == 'Debian' %}
+    - /etc/apt-cacher-ng/acng.conf:
+      - source: salt://formulas/cache/files/acng.conf
+    - /etc/apt-cacher-ng/security.conf:
+      - source: salt://formulas/cache/files/security.conf
+    - /etc/apt-cacher-ng/curl:
+      - source: salt://formulas/cache/files/curl
+{% elif grains['os_family'] == 'RedHat' %}
+    - /root/acng.conf:
+      - source: salt://formulas/cache/files/acng.conf
+    - /root/security.conf:
+      - source: salt://formulas/cache/files/security.conf
+    - /root/curl:
+      - source: salt://formulas/cache/files/curl
+{% endif %}
 
 get_centos_mirros:
   cmd.run:
