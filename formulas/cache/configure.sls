@@ -35,19 +35,19 @@ conf-files:
         cache_password: {{ pillar['cache']['maintenance_password'] }}
     - names:
 {% if grains['os_family'] == 'Debian' %}
-    - /etc/apt-cacher-ng/acng.conf:
-      - source: salt://formulas/cache/files/acng.conf
-    - /etc/apt-cacher-ng/security.conf:
-      - source: salt://formulas/cache/files/security.conf
-    - /etc/apt-cacher-ng/curl:
-      - source: salt://formulas/cache/files/curl
+      - /etc/apt-cacher-ng/acng.conf:
+        - source: salt://formulas/cache/files/acng.conf
+      - /etc/apt-cacher-ng/security.conf:
+        - source: salt://formulas/cache/files/security.conf
+      - /etc/apt-cacher-ng/curl:
+        - source: salt://formulas/cache/files/curl
 {% elif grains['os_family'] == 'RedHat' %}
-    - /root/acng.conf:
-      - source: salt://formulas/cache/files/acng.conf
-    - /root/security.conf:
-      - source: salt://formulas/cache/files/security.conf
-    - /root/curl:
-      - source: salt://formulas/cache/files/curl
+      - /root/acng.conf:
+        - source: salt://formulas/cache/files/acng.conf
+      - /root/security.conf:
+        - source: salt://formulas/cache/files/security.conf
+      - /root/curl:
+        - source: salt://formulas/cache/files/curl
 {% endif %}
 
 get_centos_mirros:
