@@ -28,34 +28,51 @@ include:
   {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
 {% endif %}
 
-/etc/modprobe.d/kvm.conf:
+conf-files:
   file.managed:
-    - source: salt://formulas/compute/files/kvm.conf
-
-/etc/frr/daemons:
-  file.managed:
-    - source: salt://formulas/common/frr/files/daemons
-
-/etc/ceph/ceph.client.compute.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-compute-keyring
-    - mode: "0640"
-    - user: root
-    - group: nova
-
-/etc/ceph/client.compute.key:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-compute-key
-    - mode: "0640"
-    - user: root
-    - group: nova
-
-/etc/ceph/ceph-nova.xml:
-  file.managed:
-    - source: salt://formulas/compute/files/ceph-nova.xml
     - template: jinja
     - defaults:
-        uuid: {{ pillar['ceph']['nova-uuid'] }}
+        nova_uuid: {{ pillar['ceph']['nova-uuid'] }}
+        volumes_uuid: {{ pillar['ceph']['volumes-uuid'] }}
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
+        nova_password: {{ pillar['nova']['nova_service_password'] }}
+        my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='internal') }}
+        neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
+        placement_password: {{ pillar['placement']['placement_service_password'] }}
+        rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
+        console_domain: {{ pillar['haproxy']['console_domain'] }}
+    -names: 
+      - /etc/modprobe.d/kvm.conf:
+        - source: salt://formulas/compute/files/kvm.conf
+      - /etc/frr/daemons:
+        - source: salt://formulas/common/frr/files/daemons
+      - /etc/ceph/ceph-nova.xml:
+        - source: salt://formulas/compute/files/ceph-nova.xml
+      - /etc/ceph/ceph-volumes.xml:
+        - source: salt://formulas/compute/files/ceph-volumes.xml
+      - /etc/nova/nova.conf:
+        - source: salt://formulas/compute/files/nova.conf
+      - /etc/sudoers.d/neutron_sudoers:
+        - source: salt://formulas/compute/files/neutron_sudoers
+      - /etc/neutron/neutron.conf:
+        - source: salt://formulas/compute/files/neutron.conf
+
+ceph_keyrings:
+  file.managed:
+    - names:
+      - /etc/ceph/ceph.client.compute.keyring:
+        - contents_pillar: ceph:ceph-client-compute-keyring
+      - /etc/ceph/client.compute.key:
+        - contents_pillar: ceph:ceph-client-compute-key
+      - /etc/ceph/client.volumes.key:
+        - contents_pillar: ceph:ceph-client-volumes-key
+    - mode: "0640"
+    - user: root
+    - group: nova
 
 define_ceph_compute_key:
   cmd.run:
@@ -69,20 +86,6 @@ load_ceph_compute_key:
     - unless:
       - virsh secret-get-value {{ pillar['ceph']['nova-uuid'] }}
 
-/etc/ceph/client.volumes.key:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-volumes-key
-    - mode: "0640"
-    - user: nova
-    - group: nova
-
-/etc/ceph/ceph-volumes.xml:
-  file.managed:
-    - source: salt://formulas/compute/files/ceph-volumes.xml
-    - template: jinja
-    - defaults:
-        uuid: {{ pillar['ceph']['volumes-uuid'] }}
-
 define_ceph_volumes_key:
   cmd.run:
     - name: virsh secret-define --file /etc/ceph/ceph-volumes.xml
@@ -94,23 +97,6 @@ load_ceph_volumes_key:
     - name: virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(cat /etc/ceph/client.volumes.key)
     - unless:
       - virsh secret-get-value {{ pillar['ceph']['volumes-uuid'] }}
-
-/etc/nova/nova.conf:
-  file.managed:
-    - source: salt://formulas/compute/files/nova.conf
-    - template: jinja
-    - defaults:
-        transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-        memcached_servers: {{ constructor.memcached_url_constructor() }}
-        password: {{ pillar['nova']['nova_service_password'] }}
-        my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-        api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='internal') }}
-        neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
-        placement_password: {{ pillar['placement']['placement_service_password'] }}
-        rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
-        console_domain: {{ pillar['haproxy']['console_domain'] }}
 
 ### temporary patches for multiarch
 multiarch_patch:
@@ -140,10 +126,6 @@ spice-html5:
     - target: /usr/share/spice-html5
 {% endif %}
 
-/etc/sudoers.d/neutron_sudoers:
-  file.managed:
-    - source: salt://formulas/compute/files/neutron_sudoers
-
 nova_compute_service:
   service.running:
 {% if grains['os_family'] == 'Debian' %}
@@ -168,70 +150,26 @@ libvirtd_service:
       - cmd: load_ceph_volumes_key
 {% endif %}
 
-/etc/neutron/neutron.conf:
+{% for backend in pillar['neutron']['backend'] %}
+  {% if backend != "networking-ovn" %}
+/etc/neutron/plugins/ml2/{{ backend}}_agent.ini:
   file.managed:
-    - source: salt://formulas/compute/files/neutron.conf
-    - template: jinja
-    - defaults:
-        transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-        memcached_servers: {{ constructor.memcached_url_constructor() }}
-        password: {{ pillar['neutron']['neutron_service_password'] }}
-  {% if grains['os_family'] == 'Debian' %}
-        lock_path: /var/lock/neutron
-  {% elif grains['os_family'] == 'RedHat' %}
-        lock_path: /var/lib/neutron/tmp
-  {% endif %}
-
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
-
-  {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
-## this used to be a default but was changed to a boolean here:
-## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
-os_neutron_dac_override:
-  selinux.boolean:
-    - value: on
-    - persist: True
-    - watch_in:
-      - service: neutron_linuxbridge_agent_service
-  {% endif %}
-
-neutron_linuxbridge_agent_service:
-  service.running:
-    - name: neutron-linuxbridge-agent
-    - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-
-/etc/neutron/plugins/ml2/linuxbridge_agent.ini:
-  file.managed:
-    - source: salt://formulas/compute/files/linuxbridge_agent.ini
+    - source: salt://formulas/compute/files/{{ backend }}_agent.ini
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
-
-{% elif pillar['neutron']['backend'] == "openvswitch" %}
-
-/etc/neutron/plugins/ml2/openvswitch_agent.ini:
-  file.managed:
-    - source: salt://formulas/compute/files/openvswitch_agent.ini
-    - template: jinja
-    - defaults:
+    {% if backend == "openvswitch" %}
         vxlan_udp_port: 4789
         l2_population: True
         arp_responder: True
         enable_distributed_routing: False
         drop_flows_on_start: False
-        extensions: qos
-        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
+        extensions: qos       
+      {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         bridge_mappings: public_br
-{% endfor %}
+      {% endfor %}
 
-{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
 create_bridge:
   openvswitch_bridge.present:
     - name: public_br
@@ -240,18 +178,28 @@ create_port:
   openvswitch_port.present:
     - name: {{ public_interface }}
     - bridge: public_br
-{% endfor %}
+    {% elif backend == "linuxbridge" %}
+      {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
+## this used to be a default but was changed to a boolean here:
+## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
+os_neutron_dac_override:
+  selinux.boolean:
+    - value: on
+    - persist: True
+    - watch_in:
+      - service: neutron_linuxbridge_agent_service
+      {% endif %}
+    {% endif %}
 
-neutron_openvswitch_agent_service:
+neutron_{{ backend }}_agent_service:
   service.running:
-    - name: neutron-openvswitch-agent
+    - name: neutron-{{ backend }}-agent
     - enable: true
     - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/openvswitch_agent.ini
+      - file: conf-files
+      - file: /etc/neutron/plugins/ml2/{{ backend }}_agent.ini
 
-{% elif pillar['neutron']['backend'] == "networking-ovn" %}
-
+  {% elif backend == "networking-ovn" %}
 neutron-ovn-metadata-agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/neutron_ovn_metadata_agent.ini
@@ -271,6 +219,7 @@ openvswitch_service:
   {% endif %}
     - enable: true
     - watch:
+      - file: conf-files
       - file: neutron-ovn-metadata-agent.ini
 
 set-ovn-remote:
@@ -380,5 +329,4 @@ ovn_metadata_service:
       - file: neutron-ovn-metadata-agent.ini
     - require:
       - cmd: ovsdb_listen
-
 {% endif %}

@@ -1,5 +1,5 @@
 <secret ephemeral="no" private="no">
-<uuid>{{ uuid }}</uuid>
+<uuid>{{ volumes_uuid }}</uuid>
 <usage type="ceph">
 <name>client.volumes secret</name>
 </usage>
