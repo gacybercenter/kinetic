@@ -329,4 +329,5 @@ ovn_metadata_service:
       - file: neutron-ovn-metadata-agent.ini
     - require:
       - cmd: ovsdb_listen
-{% endif %}
+  {% endif %}
+{% endfor %}
