@@ -24,7 +24,7 @@ designate-manage database sync:
   cmd.run:
     - runas: designate
     - require:
-      - file: /etc/designate/designate.conf
+      - file: conf-files
     - unless:
       - fun: grains.equals
         key: build_phase
@@ -64,30 +64,30 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
 
 {% endif %}
 
-/etc/designate/tlds.conf:
+conf-files:
   file.managed:
-    - source: salt://formulas/designate/files/tlds.conf
+    - makedirs: true
     - template: jinja
     - defaults:
         tld: {{ pillar['designate']['tld'] }}
-
-/etc/designate/designate.conf:
-  file.managed:
-    - source: salt://formulas/designate/files/designate.conf
-    - template: jinja
-    - defaults:
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
         sql_connection_string: {{ constructor.mysql_url_constructor(user='designate', database='designate') }}
         www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
-        password: {{ pillar['designate']['designate_service_password'] }}
+        designate_password: {{ pillar['designate']['designate_service_password'] }}
         listen_api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:9001
         designate_public_endpoint: {{ constructor.endpoint_url_constructor(project='designate', service='designate', endpoint='public') }}
         coordination_server: {{ constructor.spawnzero_ip_constructor(type='memcached', network='management') }}:11211
+    - names:
+      - /etc/designate/tlds.conf:
+        - source: salt://formulas/designate/files/tlds.conf
+      - /etc/designate/designate.conf:
+        - source: salt://formulas/designate/files/designate.conf
 
 ## Trying to write yaml in yaml via salt with correct indentation is basically impossible when using
 ## file.managed with the source directive.  Using contents is ugly, but it works.
+## To do: write a macro to be called in constructor and source from yaml instead writing yaml with yaml
 /etc/designate/pools.yaml:
   file.managed:
     - template: jinja
@@ -146,7 +146,7 @@ designate_api_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: /etc/designate/designate.conf
+      - file: conf-files
       - file: /etc/designate/pools.yaml
 
 designate_central_service:
@@ -156,7 +156,7 @@ designate_central_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: /etc/designate/designate.conf
+      - file: conf-files
       - file: /etc/designate/pools.yaml
 
 designate_worker_service:
@@ -166,7 +166,7 @@ designate_worker_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: /etc/designate/designate.conf
+      - file: conf-files
       - file: /etc/designate/pools.yaml
 
 designate_producer_service:
@@ -176,7 +176,7 @@ designate_producer_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: /etc/designate/designate.conf
+      - file: conf-files
       - file: /etc/designate/pools.yaml
 
 designate_mdns_service:
@@ -186,5 +186,5 @@ designate_mdns_service:
     - watch:
       - file: /etc/designate/designate.conf
     - require:
-      - file: /etc/designate/designate.conf
+      - file: conf-files
       - file: /etc/designate/pools.yaml
