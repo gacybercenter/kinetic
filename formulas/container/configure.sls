@@ -85,7 +85,7 @@ install_zun_cni:
 
 {% for backend in pillar['neutron']['backend'] %}
   {% if backend != "networking-ovn" %}
-/etc/neutron/plugins/ml2/{{ backend}}_agent.ini:
+/etc/neutron/plugins/ml2/{{ backend }}_agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/{{ backend }}_agent.ini
     - template: jinja
@@ -98,7 +98,7 @@ install_zun_cni:
         arp_responder: True
         enable_distributed_routing: False
         drop_flows_on_start: False
-        extensions: qos       
+        extensions: qos
       {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         bridge_mappings: public_br
       {% endfor %}

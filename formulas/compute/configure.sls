@@ -45,7 +45,7 @@ conf-files:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
-    - names: 
+    - names:
       - /etc/modprobe.d/kvm.conf:
         - source: salt://formulas/compute/files/kvm.conf
       - /etc/frr/daemons:
@@ -152,7 +152,7 @@ libvirtd_service:
 
 {% for backend in pillar['neutron']['backend'] %}
   {% if backend != "networking-ovn" %}
-/etc/neutron/plugins/ml2/{{ backend}}_agent.ini:
+/etc/neutron/plugins/ml2/{{ backend }}_agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/{{ backend }}_agent.ini
     - template: jinja
@@ -165,7 +165,7 @@ libvirtd_service:
         arp_responder: True
         enable_distributed_routing: False
         drop_flows_on_start: False
-        extensions: qos       
+        extensions: qos
       {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         bridge_mappings: public_br
       {% endfor %}
