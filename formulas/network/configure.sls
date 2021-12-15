@@ -27,7 +27,7 @@ include:
 {% endif %}
 
 {% set backend = pillar['neutron']['backend'] %}
-{% if backend = "networking-ovn" %}
+{% if backend == 'networking-ovn' %}
 ovn_use:
   event.send:
     - name: networking-ovn
