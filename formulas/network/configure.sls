@@ -28,9 +28,11 @@ include:
 
 {% set backend = pillar['neutron']['backend'] %}
 {% if backend = "networking-ovn" %}
-ovn:
+ovn_use:
   event.send:
-    -event You are spinnning network nodes when they are not needed
+    - name: networking-ovn
+    - data:
+        config_error: "You are spinnning network nodes, but set networking-ovn as the backend. If you really want ovn set; spin up ovsdb nodes instead."
 {% else %}
 
   {% if grains['spawning'] == 0 %}
