@@ -61,64 +61,13 @@ mk_public_network:
 
 {% endif %}
 
-/etc/neutron/neutron.conf:
+conf-files:
   file.managed:
     - source: salt://formulas/neutron/files/neutron.conf
     - template: jinja
     - defaults:
-        core_plugin: neutron.plugins.ml2.plugin.Ml2Plugin
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
-        service_plugins: router
-{% elif pillar['neutron']['backend'] == "openvswitch" %}
-        service_plugins: router
-{% elif pillar['neutron']['backend'] == "networking-ovn" %}
+{% if pillar['neutron']['backend'] == "networking-ovn" %}
         service_plugins: neutron.services.ovn_l3.plugin.OVNL3RouterPlugin
-{% endif %}
-        transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        sql_connection_string: {{ constructor.mysql_url_constructor(user='neutron', database='neutron') }}
-        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-        memcached_servers: {{ constructor.memcached_url_constructor() }}
-        password: {{ pillar['neutron']['neutron_service_password'] }}
-        my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-        nova_password: {{ pillar['nova']['nova_service_password'] }}
-        designate_url: {{ constructor.endpoint_url_constructor(project='designate', service='designate', endpoint='public', base=True) }}
-        designate_password: {{ pillar['designate']['designate_service_password'] }}
-{% if grains['os_family'] == 'Debian' %}
-        lock_path: /var/lock/neutron
-{% elif grains['os_family'] == 'RedHat' %}
-        lock_path: /var/lib/neutron/tmp
-{% endif %}
-        rpc_workers: {{ grains['num_cpus'] * 2 }}
-
-/etc/neutron/plugins/ml2/ml2_conf.ini:
-  file.managed:
-    - source: salt://formulas/neutron/files/ml2_conf.ini
-    - template: jinja
-    - defaults:
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
-        type_drivers: flat,vlan,vxlan
-        tenant_network_types: vxlan
-        mechanism_drivers: linuxbridge,l2population
-        extension_drivers: port_security,dns_domain_ports
-        ovn_nb_connection: ""
-        ovn_sb_connection: ""
-        ovn_l3_scheduler: ""
-        ovn_native_dhcp: ""
-        ovn_metadata_enabled: ""
-        enable_distributed_floating_ip:  ""
-{% elif pillar['neutron']['backend'] == "openvswitch" %}
-        type_drivers: flat,vlan,vxlan
-        tenant_network_types: vxlan
-        mechanism_drivers: openvswitch,l2population
-        extension_drivers: port_security,qos,dns_domain_ports
-        ovn_nb_connection: ""
-        ovn_sb_connection: ""
-        ovn_l3_scheduler: ""
-        ovn_native_dhcp: ""
-        ovn_metadata_enabled: ""
-        enable_distributed_floating_ip:  ""
-{% elif pillar['neutron']['backend'] == "networking-ovn" %}
         type_drivers: local,flat,vlan,geneve
         tenant_network_types: geneve
         mechanism_drivers: ovn
@@ -130,8 +79,40 @@ mk_public_network:
         ovn_l3_mode: True
         ovn_metadata_enabled: True
         enable_distributed_floating_ip: False
+{% else %}
+        service_plugins: router
+        type_drivers: {{ pillar['neutron']['openvswitch']['type_drivers'] }}
+        tenant_network_types: {{ pillar['neutron']['openvswitch']['tenant_network_types'] }}
+        mechanism_drivers: {{ pillar['neutron']['openvswitch']['mechanism_drivers'] }}
+        extension_drivers: {{ pillar['neutron']['openvswitch']['extension_drivers'] }}
+        ovn_nb_connection: ""
+        ovn_sb_connection: ""
+        ovn_l3_scheduler: ""
+        ovn_native_dhcp: ""
+        ovn_metadata_enabled: ""
+        enable_distributed_floating_ip:  ""
 {% endif %}
-        vni_ranges: 1:65536
+        core_plugin: neutron.plugins.ml2.plugin.Ml2Plugin
+        transport_url: {{ constructor.rabbitmq_url_constructor() }}
+        sql_connection_string: {{ constructor.mysql_url_constructor(user='neutron', database='neutron') }}
+        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
+        memcached_servers: {{ constructor.memcached_url_constructor() }}
+        password: {{ pillar['neutron']['neutron_service_password'] }}
+        my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        nova_password: {{ pillar['nova']['nova_service_password'] }}
+        designate_url: {{ constructor.endpoint_url_constructor(project='designate', service='designate', endpoint='public', base=True) }}
+        designate_password: {{ pillar['designate']['designate_service_password'] }}
+        dns_domain: {{ pillar['designate']['tld'] }} 
+        rpc_workers: {{ grains['num_cpus'] * 2 }}
+        vni_ranges: {{ pillar['neutron']['openvswitch']['vni_ranges'] }}
+    - names:
+      - /etc/neutron/neutron.conf:
+        - source: salt://formulas/neutron/files/neutron.conf
+      - /etc/neutron/plugins/ml2/ml2_conf.ini:
+        - source: salt://formulas/neutron/files/ml2_conf.ini
+      - /etc/sudoers.d/neutron_sudoers:
+        - source: salt://formulas/neutron/files/neutron_sudoers
 
 {% if grains['os_family'] == 'RedHat' %}
 plugin_symlink:
@@ -145,10 +126,6 @@ plugin_symlink:
 fs.inotify.max_user_instances:
   sysctl.present:
     - value: 1024
-
-/etc/sudoers.d/neutron_sudoers:
-  file.managed:
-    - source: salt://formulas/neutron/files/neutron_sudoers
 
 neutron_server_service:
   service.running:
