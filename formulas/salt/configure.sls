@@ -108,13 +108,13 @@ api:
 /srv/dynamic_pillar:
   file.directory
 
-/srv/dynamic_pillar/openstack_services.sls:
+services:
   file.managed:
-    - source: salt://formulas/salt/files/openstack_services.sls
-
-/srv/dynamic_pillar/integrated_services.sls:
-  file.managed:
-    - source: salt://formulas/salt/files/integrated_services.sls
+    - names:
+      - /srv/dynamic_pillar/openstack_services.sls:
+        - source: salt://formulas/salt/files/openstack_services.sls
+      - /srv/dynamic_pillar/integrated_services.sls:
+        - source: salt://formulas/salt/files/integrated_services.sls
 
 {% for service in salt['pillar.get']('openstack_services', {}) %}
 /srv/dynamic_pillar/{{ service }}.sls:
@@ -154,44 +154,54 @@ api:
 {% endif %}
 {% endfor %}
 
-/srv/dynamic_pillar/horizon.sls:
+passwords:
   file.managed:
     - replace: false
     - contents: |
         horizon:
           horizon_secret_key: {{ salt['random.get_str']('64', punctuation=False) }}
-
-/srv/dynamic_pillar/mysql.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        mysql:
-          mysql_root_password: {{ salt['random.get_str']('64', punctuation=False) }}
-          wsrep_cluster_name: {{ salt['random.get_str']('32') }}
-
-/srv/dynamic_pillar/rabbitmq.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        rabbitmq:
-          rabbitmq_password: {{ salt['random.get_str']('64', punctuation=False) }}
-          erlang_cookie: {{ salt['generate.erlang_cookie'](20) }}
-
-/srv/dynamic_pillar/etcd.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        etcd:
-          etcd_cluster_token: {{ salt['random.get_str']('64', punctuation=False) }}
-
+    - names:
+      - /srv/dynamic_pillar/horizon.sls:
+        - contents: |
+            horizon:
+              horizon_secret_key: {{ salt['random.get_str']('64', punctuation=False) }}
+      - /srv/dynamic_pillar/mysql.sls:
+        - contents: |
+            mysql:
+              mysql_root_password: {{ salt['random.get_str']('64', punctuation=False) }}
+              wsrep_cluster_name: {{ salt['random.get_str']('32') }}
+      - /srv/dynamic_pillar/rabbitmq.sls:
+        - contents: |
+            rabbitmq:
+              rabbitmq_password: {{ salt['random.get_str']('64', punctuation=False) }}
+              erlang_cookie: {{ salt['generate.erlang_cookie'](20) }}
+      - /srv/dynamic_pillar/etcd.sls:
+        - contents: |
+            etcd:
+              etcd_cluster_token: {{ salt['random.get_str']('64', punctuation=False) }}
 {% set graylog_password = salt['random.get_str']('64', punctuation=False) %}
-/srv/dynamic_pillar/graylog.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        graylog:
-          graylog_password: {{ graylog_password }}
-          graylog_password_sha2: {{ graylog_password | sha256 }}
+      - /srv/dynamic_pillar/graylog.sls:
+        - contents: |
+            graylog:
+              graylog_password: {{ graylog_password }}
+              graylog_password_sha2: {{ graylog_password | sha256 }}
+      - /srv/dynamic_pillar/openstack.sls:
+        - contents: |
+            openstack:
+              admin_password: {{ salt['random.get_str']('64', punctuation=False) }}
+      - /srv/dynamic_pillar/api.sls:
+        - contents: |
+            api:
+              user_password: {{ salt['random.get_str']('64', punctuation=False) }}
+      - /srv/dynamic_pillar/cache.sls:
+        - contents: |
+            cache:
+              maintenance_password: {{ salt['random.get_str']('64', punctuation=False) }}
+      - /srv/dynamic_pillar/guacamole.sls:
+        - contents: |
+            guacamole:
+              guacamole_mysql_password: {{ salt['random.get_str']('64', punctuation=False) }}
+              guacadmin_password: {{ salt['random.get_str']('16') }}
 
 {% set adminkey = salt['generate.cephx_key']() %}
 {% set volumeskey = salt['generate.cephx_key']() %}
@@ -255,35 +265,6 @@ api:
           ceph-client-volumes-key: {{ volumeskey }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
           nova-uuid: {{ salt['random.get_str']('30') | uuid }}
-
-/srv/dynamic_pillar/openstack.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        openstack:
-          admin_password: {{ salt['random.get_str']('64', punctuation=False) }}
-
-/srv/dynamic_pillar/api.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        api:
-          user_password: {{ salt['random.get_str']('64', punctuation=False) }}
-
-/srv/dynamic_pillar/cache.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        cache:
-          maintenance_password: {{ salt['random.get_str']('64', punctuation=False) }}
-
-/srv/dynamic_pillar/guacamole.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        guacamole:
-          guacamole_mysql_password: {{ salt['random.get_str']('64', punctuation=False) }}
-          guacadmin_password: {{ salt['random.get_str']('16') }}
 
 /srv/dynamic_pillar/top.sls:
   file.managed:
