@@ -38,9 +38,9 @@ zun-db-manage upgrade:
 
 {% endif %}
 
-/etc/zun/zun.conf:
+conf-files:
   file.managed:
-    - source: salt://formulas/zun/files/zun.conf
+    - makedirs: true
     - template: jinja
     - defaults:
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
@@ -56,28 +56,17 @@ zun-db-manage upgrade:
         api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         wsproxy_host: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
-
-/etc/sudoers.d/zun_sudoers:
-  file.managed:
-    - source: salt://formulas/zun/files/zun_sudoers
-    - require:
-      - sls: /formulas/zun/install
-
-/etc/zun/api-paste.ini:
-  file.managed:
-    - source: salt://formulas/zun/files/api-paste.ini
-    - require:
-      - sls: /formulas/zun/install
-
-/etc/systemd/system/zun-api.service:
-  file.managed:
-    - source: salt://formulas/zun/files/zun-api.service
-    - require:
-      - sls: /formulas/zun/install
-
-/etc/systemd/system/zun-wsproxy.service:
-  file.managed:
-    - source: salt://formulas/zun/files/zun-wsproxy.service
+    - names:
+      - /etc/zun/zun.conf:
+        - source: salt://formulas/zun/files/zun.conf
+      - /etc/sudoers.d/zun_sudoers:
+        - source: salt://formulas/zun/files/zun_sudoers
+      - /etc/zun/api-paste.ini:
+        - source: salt://formulas/zun/files/api-paste.ini
+      - /etc/systemd/system/zun-api.service:
+        - source: salt://formulas/zun/files/zun-api.service
+      - /etc/systemd/system/zun-wsproxy.service:
+        - source: salt://formulas/zun/files/zun-wsproxy.service
     - require:
       - sls: /formulas/zun/install
 
