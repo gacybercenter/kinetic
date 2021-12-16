@@ -26,8 +26,7 @@ include:
   {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
 {% endif %}
 
-{% set backend = pillar['neutron']['backend'] %}
-{% if backend == 'networking-ovn' %}
+{% if pillar['neutron']['backend'] == 'networking-ovn' %}
 ovn_use:
   event.send:
     - name: networking-ovn
@@ -71,7 +70,7 @@ conf-files:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
         bridge_mappings: public_br
-        interface_driver: {{ backend }}
+        interface_driver: {{ pillar['neutron']['backend'] }}
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
     - names:
@@ -81,8 +80,8 @@ conf-files:
         - source: salt://formulas/network/files/ml2_conf.ini
       - /etc/sudoers.d/neutron_sudoers:
         - source: salt://formulas/network/files/neutron_sudoers
-      - /etc/neutron/plugins/ml2/{{ backend }}_agent.ini:
-        - source: salt://formulas/compute/files/{{ backend }}_agent.ini
+      - /etc/neutron/plugins/ml2/{{ pillar['neutron']['backend'] }}_agent.ini:
+        - source: salt://formulas/compute/files/{{ pillar['neutron']['backend'] }}_agent.ini
       - /etc/neutron/l3_agent.ini:
         - source: salt://formulas/network/files/l3_agent.ini
       - /etc/neutron/dhcp_agent.ini:
@@ -151,7 +150,6 @@ neutron_linuxbridge_agent_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 neutron_openvswitch_agent_service:
   service.running:
