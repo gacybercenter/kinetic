@@ -142,25 +142,14 @@ create_port:
       - service: neutron_openvswitch_agent_service
   {% endif %}
 
-  {% if neutron_backend == "linuxbridge" %}
-neutron_linuxbridge_agent_service:
+neutron_{{ neutron_backend }}_agent_service:
   service.running:
-    - name: neutron-linuxbridge-agent
+    - name: neutron-{{ neutron_backend }}-agent
     - enable: true
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-  {% elif neutron_backend == "openvswitch" %}
-neutron_openvswitch_agent_service:
-  service.running:
-    - name: neutron-openvswitch-agent
-    - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/plugins/ml2/openvswitch_agent.ini
-  {% endif %}
+      - file: /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini
 
 neutron_dhcp_agent_service:
   service.running:
