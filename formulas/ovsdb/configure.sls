@@ -28,6 +28,7 @@ include:
 
 {% endif %}
 
+{% if neutron_backend == 'networking-ovn' %}
 ovn_northd_opts:
   file.managed:
       {% if grains['os_family'] == "RedHat" %}
@@ -123,3 +124,9 @@ set_southbound_election_timer_final:
       - 'ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Election timer: 5000"'
     - onlyif:
       - 'ovs-appctl -t /run/ovn/ovnsb_db.ctl cluster/status OVN_Southbound | grep -q "Role: leader"'
+{% else %}
+ovn_use:
+  event.send:
+    - name: networking-ovn
+    - data:
+        config_error: "You are spinnning osvdb nodes, but did not set networking-ovn as the backend. Spin up network nodes instead or change the answer file to networking-ovn."
