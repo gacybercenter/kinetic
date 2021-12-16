@@ -26,7 +26,8 @@ include:
   {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
 {% endif %}
 
-{% if pillar['neutron']['backend'] == 'networking-ovn' %}
+{% set neutron_backend = pillar['neutron']['backend'] %}
+{% if neutron_backend == 'networking-ovn' %}
 ovn_use:
   event.send:
     - name: networking-ovn
@@ -70,7 +71,7 @@ conf-files:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
         bridge_mappings: public_br
-        interface_driver: {{ pillar['neutron']['backend'] }}
+        interface_driver: {{ neutron_backend }}
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
     - names:
@@ -80,8 +81,8 @@ conf-files:
         - source: salt://formulas/network/files/ml2_conf.ini
       - /etc/sudoers.d/neutron_sudoers:
         - source: salt://formulas/network/files/neutron_sudoers
-      - /etc/neutron/plugins/ml2/{{ pillar['neutron']['backend'] }}_agent.ini:
-        - source: salt://formulas/network/files/{{ pillar['neutron']['backend'] }}_agent.ini
+      - /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini:
+        - source: salt://formulas/network/files/{{ neutron_backend }}_agent.ini
       - /etc/neutron/l3_agent.ini:
         - source: salt://formulas/network/files/l3_agent.ini
       - /etc/neutron/dhcp_agent.ini:
@@ -110,9 +111,9 @@ os_neutron_dac_override:
     - value: on
     - persist: True
     - watch_in:
-    {% if pillar['neutron']['backend'] == "linuxbridge" %}
+    {% if neutron_backend == "linuxbridge" %}
       - service: neutron_linuxbridge_agent_service
-    {% elif pillar['neutron']['backend'] == "openvswitch" %}
+    {% elif neutron_backend == "openvswitch" %}
       - service: neutron_openvswitch_agent_service
     {% endif %}
 
@@ -125,7 +126,7 @@ os_dnsmasq_dac_override:
       - service: neutron_dhcp_agent_service
   {% endif %}
 
-  {% if pillar['neutron']['backend'] == "openvswitch" %}
+  {% if neutron_backend == "openvswitch" %}
 create_bridge:
   openvswitch_bridge.present:
     - name: public_br
@@ -141,7 +142,7 @@ create_port:
       - service: neutron_openvswitch_agent_service
   {% endif %}
 
-  {% if pillar['neutron']['backend'] == "linuxbridge" %}
+  {% if neutron_backend == "linuxbridge" %}
 neutron_linuxbridge_agent_service:
   service.running:
     - name: neutron-linuxbridge-agent
@@ -150,7 +151,7 @@ neutron_linuxbridge_agent_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
       - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-  {% elif pillar['neutron']['backend'] == "openvswitch" %}
+  {% elif neutron_backend == "openvswitch" %}
 neutron_openvswitch_agent_service:
   service.running:
     - name: neutron-openvswitch-agent
