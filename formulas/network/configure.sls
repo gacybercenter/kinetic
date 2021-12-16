@@ -92,18 +92,17 @@ conf-files:
       - /etc/neutron/metadata_agent.ini:
         - source: salt://formulas/network/files/metadata_agent.ini
 
+fs.inotify.max_user_instances:
+  sysctl.present:
+    - value: 1024
+
   {% if grains['os_family'] == 'RedHat' %}
 plugin_symlink:
   file.symlink:
     - name: /etc/neutron/plugin.ini
     - target: /etc/neutron/plugins/ml2/ml2_conf.ini
-  {% endif %}
 
-fs.inotify.max_user_instances:
-  sysctl.present:
-    - value: 1024
-
-  {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
+    {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 ## this used to be a default but was changed to a boolean here:
 ## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
 os_neutron_dac_override:
@@ -111,11 +110,7 @@ os_neutron_dac_override:
     - value: on
     - persist: True
     - watch_in:
-    {% if neutron_backend == "linuxbridge" %}
-      - service: neutron_linuxbridge_agent_service
-    {% elif neutron_backend == "openvswitch" %}
-      - service: neutron_openvswitch_agent_service
-    {% endif %}
+      - service: neutron_{{ neutron_backend }}_agent_service
 
 ## ref: https://github.com/redhat-openstack/openstack-selinux/commit/9460342f3e5a7214bd05b9cfa73a1896478d8785
 os_dnsmasq_dac_override:
@@ -124,6 +119,7 @@ os_dnsmasq_dac_override:
     - persist: True
     - watch_in:
       - service: neutron_dhcp_agent_service
+    {% endif %}
   {% endif %}
 
   {% if neutron_backend == "openvswitch" %}
