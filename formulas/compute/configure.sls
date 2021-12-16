@@ -136,7 +136,7 @@ nova_compute_service:
     - enable: true
     - watch:
       - file: /etc/nova/nova.conf
-#      - file: multiarch_patch
+      - file: multiarch_patch
 
 {% if grains['os_family'] == 'RedHat' %}
 libvirtd_service:
@@ -150,25 +150,18 @@ libvirtd_service:
       - cmd: load_ceph_volumes_key
 {% endif %}
 
-{% for backend in pillar['neutron']['backend'] %}
-  {% if backend != "networking-ovn" %}
-/etc/neutron/plugins/ml2/{{ backend }}_agent.ini:
+{% set neutron_backend = pillar['neutron']['backend'] %}
+{% if neutron_backend != "networking-ovn" %}
+/etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini:
   file.managed:
-    - source: salt://formulas/compute/files/{{ backend }}_agent.ini
+    - source: salt://formulas/compute/files/{{ neutron_backend }}_agent.ini
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
-    {% if backend == "openvswitch" %}
-        vxlan_udp_port: 4789
-        l2_population: True
-        arp_responder: True
-        enable_distributed_routing: False
-        drop_flows_on_start: False
+  {% if neutron_backend == "openvswitch" %}
         extensions: qos
-      {% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         bridge_mappings: public_br
-      {% endfor %}
 
 create_bridge:
   openvswitch_bridge.present:
@@ -178,8 +171,9 @@ create_port:
   openvswitch_port.present:
     - name: {{ public_interface }}
     - bridge: public_br
-    {% elif backend == "linuxbridge" %}
-      {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
+  {% endif %}
+  {% if grains['os_family'] == 'RedHat' %}
+    {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 ## this used to be a default but was changed to a boolean here:
 ## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
 os_neutron_dac_override:
@@ -187,19 +181,19 @@ os_neutron_dac_override:
     - value: on
     - persist: True
     - watch_in:
-      - service: neutron_linuxbridge_agent_service
-      {% endif %}
+      - service: neutron_{{ neutron_backend }}_agent_service
     {% endif %}
+  {% endif %}
 
-neutron_{{ backend }}_agent_service:
+neutron_{{ neutron_backend }}_agent_service:
   service.running:
-    - name: neutron-{{ backend }}-agent
+    - name: neutron-{{ neutron_backend }}-agent
     - enable: true
     - watch:
       - file: conf-files
-      - file: /etc/neutron/plugins/ml2/{{ backend }}_agent.ini
+      - file: /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini
 
-  {% elif backend == "networking-ovn" %}
+{% elif neutron_backend == "networking-ovn" %}
 neutron-ovn-metadata-agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/neutron_ovn_metadata_agent.ini
@@ -329,5 +323,4 @@ ovn_metadata_service:
       - file: neutron-ovn-metadata-agent.ini
     - require:
       - cmd: ovsdb_listen
-  {% endif %}
-{% endfor %}
+{% endif %}
