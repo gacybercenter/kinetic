@@ -81,7 +81,7 @@ conf-files:
       - /etc/sudoers.d/neutron_sudoers:
         - source: salt://formulas/network/files/neutron_sudoers
       - /etc/neutron/plugins/ml2/{{ pillar['neutron']['backend'] }}_agent.ini:
-        - source: salt://formulas/compute/files/{{ pillar['neutron']['backend'] }}_agent.ini
+        - source: salt://formulas/network/files/{{ pillar['neutron']['backend'] }}_agent.ini
       - /etc/neutron/l3_agent.ini:
         - source: salt://formulas/network/files/l3_agent.ini
       - /etc/neutron/dhcp_agent.ini:
