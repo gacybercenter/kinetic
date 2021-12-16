@@ -103,7 +103,7 @@ conf-files:
         nova_password: {{ pillar['nova']['nova_service_password'] }}
         designate_url: {{ constructor.endpoint_url_constructor(project='designate', service='designate', endpoint='public', base=True) }}
         designate_password: {{ pillar['designate']['designate_service_password'] }}
-        dns_domain: {{ pillar['designate']['tld'] }} 
+        dns_domain: {{ pillar['designate']['tld'] }}
         rpc_workers: {{ grains['num_cpus'] * 2 }}
         vni_ranges: {{ pillar['neutron']['openvswitch']['vni_ranges'] }}
     - names:
