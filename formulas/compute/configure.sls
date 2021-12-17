@@ -28,12 +28,15 @@ include:
   {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
 {% endif %}
 
+{% set nova_uuid == {{ pillar['ceph']['nova-uuid'] }}%}
+{% set volumes_uuid == {{ pillar['ceph']['volumes-uuid'] }}%}
+
 conf-files:
   file.managed:
     - template: jinja
     - defaults:
-        nova_uuid: {{ pillar['ceph']['nova-uuid'] }}
-        volumes_uuid: {{ pillar['ceph']['volumes-uuid'] }}
+        nova_uuid: {{ nova_uuid }}
+        volumes_uuid: {{ volumes_uuid }}
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
         www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
@@ -45,6 +48,7 @@ conf-files:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
+        password: {{ pillar['openstack']['admin_password'] }}
     - names:
       - /etc/modprobe.d/kvm.conf:
         - source: salt://formulas/compute/files/kvm.conf
@@ -60,6 +64,8 @@ conf-files:
         - source: salt://formulas/compute/files/neutron_sudoers
       - /etc/neutron/neutron.conf:
         - source: salt://formulas/compute/files/neutron.conf
+      - /etc/openstack/clouds.yml:
+        - source: salt://formulas/common/openstack/files/clouds.yml
 
 ceph_keyrings:
   file.managed:
@@ -74,29 +80,20 @@ ceph_keyrings:
     - user: root
     - group: nova
 
-define_ceph_compute_key:
-  cmd.run:
-    - name: virsh secret-define --file /etc/ceph/ceph-nova.xml
-    - unless:
-      - virsh secret-list | grep -q {{ pillar['ceph']['nova-uuid'] }}
-
-load_ceph_compute_key:
-  cmd.run:
-    - name: virsh secret-set-value --secret {{ pillar['ceph']['nova-uuid'] }} --base64 $(cat /etc/ceph/client.compute.key)
-    - unless:
-      - virsh secret-get-value {{ pillar['ceph']['nova-uuid'] }}
-
-define_ceph_volumes_key:
-  cmd.run:
-    - name: virsh secret-define --file /etc/ceph/ceph-volumes.xml
-    - unless:
-      - virsh secret-list | grep -q {{ pillar['ceph']['volumes-uuid'] }}
-
-load_ceph_volumes_key:
-  cmd.run:
-    - name: virsh secret-set-value --secret {{ pillar['ceph']['volumes-uuid'] }} --base64 $(cat /etc/ceph/client.volumes.key)
-    - unless:
-      - virsh secret-get-value {{ pillar['ceph']['volumes-uuid'] }}
+libvirt_secrets:
+  file.managed:
+    - names:
+      - /etc/libvirt/secrets/{{ nova_uuid }}.base64:
+        - contents_pillar: ceph:ceph-client-compute-key
+      - /etc/libvirt/secrets/{{ volumes_uuid }}.base64:
+        - contents_pillar: ceph:ceph-client-volumes-key
+      - /etc/libvirt/secrets/{{ nova_uuid }}.xml:
+        - source: salt://formulas/compute/files/ceph-nova.xml
+      - /etc/libvirt/secrets/{{ volumes_uuid }}.xml:
+        - source: salt://formulas/compute/files/ceph-volumes.xml
+    - mode: "0600"
+    - user: root
+    - group: root
 
 ### temporary patches for multiarch
 multiarch_patch:
@@ -324,3 +321,15 @@ ovn_metadata_service:
     - require:
       - cmd: ovsdb_listen
 {% endif %}
+
+libvirtd_service:
+  service.running:
+    - name: libvirtd
+    - enable: True
+    - watch:
+      - file: /etc/libvirt/secrets/{{ nova_uuid }}.xml
+      - file: /etc/libvirt/secrets/{{ volumes_uuid }}.xml
+      - file: /etc/libvirt/secrets/{{ nova_uuid }}.base64
+      - file: /etc/libvirt/secrets/{{ volumes_uuid }}.base64
+    - require:
+      - file: libvirt_secrets
