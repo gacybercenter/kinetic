@@ -63,8 +63,6 @@ conf-files:
         - source: salt://formulas/compute/files/neutron_sudoers
       - /etc/neutron/neutron.conf:
         - source: salt://formulas/compute/files/neutron.conf
-      - /etc/openstack/clouds.yml:
-        - source: salt://formulas/common/openstack/files/clouds.yml
 
 ceph_keyrings:
   file.managed:
