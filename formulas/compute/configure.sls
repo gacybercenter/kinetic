@@ -28,8 +28,8 @@ include:
   {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
 {% endif %}
 
-{% set nova_uuid == {{ pillar['ceph']['nova-uuid'] }}%}
-{% set volumes_uuid == {{ pillar['ceph']['volumes-uuid'] }}%}
+{% set nova_uuid == {{ pillar['ceph']['nova-uuid'] }} %}
+{% set volumes_uuid == {{ pillar['ceph']['volumes-uuid'] }} %}
 
 conf-files:
   file.managed:
