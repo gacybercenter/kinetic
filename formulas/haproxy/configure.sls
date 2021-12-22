@@ -51,7 +51,6 @@ set haproxy static-mapping:
     - address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - aliases:
       - {{ pillar['haproxy']['console_domain'] }}
-      - {{ pillar['haproxy']['docs_domain'] }}
       - {{ pillar['haproxy']['guacamole_domain'] }}
     - username: {{ pillar['danos']['username'] }}
     - password: {{ pillar['danos_password'] }}
@@ -76,7 +75,6 @@ acme_certs:
     - name: {{ pillar['haproxy']['dashboard_domain'] }}
     - aliases:
       - {{ pillar['haproxy']['console_domain'] }}
-      - {{ pillar['haproxy']['docs_domain'] }}
       - {{ pillar['haproxy']['guacamole_domain'] }}
     - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
@@ -118,7 +116,6 @@ create_master_pem:
         management_ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         console_domain:  {{ pillar['haproxy']['console_domain'] }}
-        docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
         guacamole_domain:  {{ pillar['haproxy']['guacamole_domain'] }}
         keystone_hosts: {{ constructor.haproxy_listener_constructor(role='keystone', port='5000')|yaml_encode }}
         glance_api_hosts: {{ constructor.haproxy_listener_constructor(role='glance', port='9292')|yaml_encode }}
