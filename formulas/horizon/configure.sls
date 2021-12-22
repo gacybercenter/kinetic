@@ -123,6 +123,23 @@ install_theme:
     - branch: {{ salt['pillar.get']('horizon:theme:branch') }}
 {% endif %}
 
+### temporary patches for pyScss
+pyScss_deprecation_patch:
+  file.managed:
+    - names:
+{% if grains['os_family'] == 'RedHat' %}
+      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/dist-packages/scss/namespace.py:
+        - source: salt://formulas/horizon/files/namespace.py
+      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/dist-packages/scss/types.py:
+        - source: salt://formulas/horizon/files/types.py        
+{% elif grains['os_family'] == 'Debian' %}
+      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/namespace.py:
+        - source: salt://formulas/horizon/files/namespace.py
+      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/types.py:
+        - source: salt://formulas/horizon/files/types.py
+{% endif %}
+### /temporary patches for pyScss
+
 configure-collect-static:
   cmd.run:
     - name: python3 manage.py collectstatic --noinput
@@ -144,22 +161,7 @@ configure-compress-static:
     - require:
       - cmd: configure-collect-static
 
-### temporary patches for pyScss
-pyScss_deprecation_patch:
-  file.managed:
-    - names:
-{% if grains['os_family'] == 'RedHat' %}
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/dist-packages/scss/namespace.py:
-        - source: salt://formulas/horizon/files/namespace.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/dist-packages/scss/types.py:
-        - source: salt://formulas/horizon/files/types.py        
-{% elif grains['os_family'] == 'Debian' %}
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/namespace.py:
-        - source: salt://formulas/horizon/files/namespace.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/types.py:
-        - source: salt://formulas/horizon/files/types.py
-{% endif %}
-### /temporary patches for pyScss
+
 
 apache2_service:
   service.running:

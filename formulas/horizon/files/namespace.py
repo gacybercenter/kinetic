@@ -175,7 +175,7 @@ class Namespace(object):
         except TypeError:
             argspec = inspect.getargspec(function)
 
-        if argspec.varargs or argspec.keywords:
+        if argspec.varargs or argspec.varkw:
             # Accepts some arbitrary number of arguments
             arities = [None]
         else:
