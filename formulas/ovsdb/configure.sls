@@ -28,6 +28,8 @@ include:
 
 {% endif %}
 
+{% set neutron_backend = pillar['neutron']['backend'] %}
+
 {% if neutron_backend == 'networking-ovn' %}
 ovn_northd_opts:
   file.managed:
