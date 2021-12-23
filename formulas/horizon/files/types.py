@@ -5,10 +5,10 @@ from __future__ import unicode_literals
 
     ### NOTE: Fix collections depracation for collections import
     ### https://github.com/chrisjsewell/pyScss/commit/147a49013a2f72f20edd058d9df7175d1283e2b1
-try:
-    from collections.abc import Iterable
-except ImportError:
-    from collections import Iterable
+# try:
+from collections.abc import Iterable
+# except ImportError:
+#     from collections import Iterable
 
 ###############################################################################
 

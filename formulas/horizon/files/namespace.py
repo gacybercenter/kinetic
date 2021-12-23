@@ -169,11 +169,11 @@ class Namespace(object):
 
     def _auto_register_function(self, function, name, ignore_args=0):
         name = name.replace('_', '-').rstrip('-')
-        try:
-            argspec = inspect.getfullargspec(function)
-                # Deprecated since Python3.0, must use inspect.getfullargspec()                
-        except TypeError:
-            argspec = inspect.getargspec(function)
+        # try:
+        argspec = inspect.getfullargspec(function)
+        # Deprecated since Python3.0, must use inspect.getfullargspec()                
+        # except TypeError:
+        #     argspec = inspect.getargspec(function)
 
         if argspec.varargs or argspec.varkw:
             # Accepts some arbitrary number of arguments
