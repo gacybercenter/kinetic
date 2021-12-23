@@ -31,48 +31,48 @@ include:
 {% if neutron_backend == 'networking-ovn' %}
 ovn_northd_opts:
   file.managed:
-      {% if grains['os_family'] == "RedHat" %}
+  {% if grains['os_family'] == "RedHat" %}
     - name: /etc/sysconfig/ovn-northd
-      {% elif grains['os_family'] == "Debian" %}
+  {% elif grains['os_family'] == "Debian" %}
     - name: /etc/default/ovn-central
-      {% endif %}
+  {% endif %}
     - source: salt://formulas/ovsdb/files/ovn-northd
     - template: jinja
     - defaults:
-        {% if grains['os_family'] == "RedHat" %}
+    {% if grains['os_family'] == "RedHat" %}
         opts_name: OVN_NORTHD_OPTS
-        {% elif grains['os_family'] == "Debian" %}
+    {% elif grains['os_family'] == "Debian" %}
         opts_name: OVN_CTL_OPTS
-        {% endif %}
+    {% endif %}
         self_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         nb_cluster: {{ constructor.ovn_nb_connection_constructor() }}
         sb_cluster: {{ constructor.ovn_sb_connection_constructor() }}
-        {% if grains['spawning'] != 0 %}
+      {% if grains['spawning'] != 0 %}
         cluster_remote: |-
             --db-nb-cluster-remote-addr={{ constructor.ovn_cluster_remote_constructor() }} \
             --db-sb-cluster-remote-addr={{ constructor.ovn_cluster_remote_constructor() }}
-        {% elif grains['spawning'] == 0 %}
+      {% elif grains['spawning'] == 0 %}
         cluster_remote: ""
-        {% endif %}
+      {% endif %}
 
 ovn_northd_service:
   service.running:
-{% if grains['os_family'] == 'RedHat' %}
+  {% if grains['os_family'] == 'RedHat' %}
     - name: ovn-northd
-{% elif grains['os_family'] == 'Debian' %}
+  {% elif grains['os_family'] == 'Debian' %}
     - name: ovn-central
-{% endif %}
+  {% endif %}
     - enable: true
     - watch:
       - file: ovn_northd_opts
 
 openvswitch_service:
   service.running:
-{% if grains['os_family'] == 'RedHat' %}
+  {% if grains['os_family'] == 'RedHat' %}
     - name: openvswitch
-{% elif grains['os_family'] == 'Debian' %}
+  {% elif grains['os_family'] == 'Debian' %}
     - name: openvswitch-switch
-{% endif %}
+  {% endif %}
     - enable: true
     - require:
       - service: ovn_northd_service
@@ -130,3 +130,4 @@ ovn_use:
     - name: networking-ovn
     - data:
         config_error: "You are spinnning osvdb nodes, but did not set networking-ovn as the backend. Spin up network nodes instead or change the answer file to networking-ovn."
+{% endif %}
