@@ -17,7 +17,7 @@ base:
     - api
     - deps
     - openstack_services
-  'salt':
+  'salt*':
     - openstack
   'cache*':
     - cache
