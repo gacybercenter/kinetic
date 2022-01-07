@@ -30,7 +30,7 @@ init_{{ type }}_poweroff:
 init_{{ type }}_sleep:
   salt.function:
     - name: test.sleep
-    - tgt: salt
+    - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
         length: 10
 
@@ -62,7 +62,7 @@ create_{{ type }}_exec_runner:
 {{ type }}_origin_phase_runner_delay:
   salt.function:
     - name: test.sleep
-    - tgt: salt
+    - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
         length: 1
 

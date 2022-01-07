@@ -25,9 +25,9 @@ include:
   {% set public_interface = pillar['hosts'][grains['type']]['networks']['public']['interfaces'][0] %}
 {% endif %}
 
-/etc/zun/zun.conf:
+conf-files:
   file.managed:
-    - source: salt://formulas/container/files/zun.conf
+    - makedirs: true
     - template: jinja
     - defaults:
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
@@ -35,114 +35,67 @@ include:
         www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
-        password: {{ pillar['zun']['zun_service_password'] }}
+        zun_password: {{ pillar['zun']['zun_service_password'] }}
+        kuryr_password: {{ pillar ['zun']['kuryr_service_password'] }}
+        neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         docker_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        etcd_cluster: {{ constructor.etcd_connection_constructor() }}
+        zun_group_id: {{ salt['group.info']('zun')['gid'] }}
+    - names:
+      - /etc/zun/zun.conf:
+        - source: salt://formulas/container/files/zun.conf
+      - /etc/kuryr/kuryr.conf:
+        - source: salt://formulas/container/files/kuryr.conf
+      - /etc/neutron/neutron.conf:
+        - source: salt://formulas/container/files/neutron.conf
+      - /etc/sudoers.d/neutron_sudoers:
+        - source: salt://formulas/compute/files/neutron_sudoers
+      - /etc/sudoers.d/zun_sudoers:
+        - source: salt://formulas/container/files/zun_sudoers
+      - /etc/zun/rootwrap.conf:
+        - source: salt://formulas/container/files/rootwrap.conf
+      - /etc/zun/rootwrap.d/zun.filters:
+        - source: salt://formulas/container/files/zun.filters
+      - /etc/systemd/system/docker.service.d/docker.conf:
+        - source: salt://formulas/container/files/docker.conf
+      - /etc/containerd/config.toml:
+        - source: salt://formulas/container/files/config.toml
+      - /etc/systemd/system/zun-compute.service:
+        - source: salt://formulas/container/files/zun-compute.service
+      - /etc/systemd/system/zun-cni-daemon.service:
+        - source: salt://formulas/container/files/zun-cni-daemon.service
+      - /etc/systemd/system/kuryr-libnetwork.service:
+        - source: salt://formulas/container/files/kuryr-libnetwork.service
+    - require:
+      - sls: /formulas/container/install
 
-/etc/kuryr/kuryr.conf:
+cni_plugins:
+  archive.extracted:
+    - name: /opt/cni/bin
+    - source: https://github.com/containernetworking/plugins/releases/download/v1.0.1/cni-plugins-linux-amd64-v1.0.1.tgz
+    - source_hash: https://github.com/containernetworking/plugins/releases/download/v1.0.1/cni-plugins-linux-amd64-v1.0.1.tgz.sha512
+
+install_zun_cni:
+  cmd.run:
+    - name: install -o zun -m 0555 -D /usr/local/bin/zun-cni /opt/cni/bin/zun-cni
+    - creates:
+      - /opt/cni/bin/zun-cni
+
+{% set neutron_backend = pillar['neutron']['backend'] %}
+{% if neutron_backend != "networking-ovn" %}
+/etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini:
   file.managed:
-    - source: salt://formulas/container/files/kuryr.conf
-    - template: jinja
-    - defaults:
-        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-        password: {{ pillar ['zun']['kuryr_service_password'] }}
-        memcached_servers: {{ constructor.memcached_url_constructor() }}
-
-/etc/neutron/neutron.conf:
-  file.managed:
-    - source: salt://formulas/container/files/neutron.conf
-    - makedirs: true
-    - template: jinja
-    - defaults:
-        transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-        memcached_servers: {{ constructor.memcached_url_constructor() }}
-        password: {{ pillar['neutron']['neutron_service_password'] }}
-  {% if grains['os_family'] == 'Debian' %}
-        lock_path: /var/lock/neutron
-  {% elif grains['os_family'] == 'RedHat' %}
-        lock_path: /var/lib/neutron/tmp
-  {% endif %}
-
-/etc/sudoers.d/neutron_sudoers:
-  file.managed:
-    - source: salt://formulas/compute/files/neutron_sudoers
-
-## fix for disabling md5 on fips systems per
-## https://opendev.org/openstack/oslo.utils/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76
-oslo_md5_fix:
-  file.managed:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/oslo_utils/secretutils.py
-{% elif grains['os_family'] == 'Debian' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/oslo_utils/secretutils.py
-{% endif %}
-    - source: https://opendev.org/openstack/oslo.utils/raw/commit/603fa500c1a24ad8753b680b8d75468abbd3dd76/oslo_utils/secretutils.py
-    - skip_verify: True
-##
-
-{% if pillar['neutron']['backend'] == "linuxbridge" %}
-
-### workaround for https://bugs.launchpad.net/neutron/+bug/1887281
-arp_protect_fix:
-  file.managed:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-{% elif grains['os_family'] == 'Debian' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/neutron/plugins/ml2/drivers/linuxbridge/agent/arp_protect.py
-{% endif %}
-    - source: salt://formulas/container/files/arp_protect.py
-###
-
-{% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
-## this used to be a default but was changed to a boolean here:
-## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
-os_neutron_dac_override:
-  selinux.boolean:
-    - value: on
-    - persist: True
-    - watch_in:
-      - service: neutron_linuxbridge_agent_service
-{% endif %}
-
-neutron_linuxbridge_agent_service:
-  service.running:
-    - name: neutron-linuxbridge-agent
-    - enable: true
-    - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
-
-/etc/neutron/plugins/ml2/linuxbridge_agent.ini:
-  file.managed:
-    - source: salt://formulas/compute/files/linuxbridge_agent.ini
+    - source: salt://formulas/compute/files/{{ neutron_backend }}_agent.ini
     - template: jinja
     - defaults:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
-
-{% elif pillar['neutron']['backend'] == "openvswitch" %}
-
-/etc/neutron/plugins/ml2/openvswitch_agent.ini:
-  file.managed:
-    - source: salt://formulas/compute/files/openvswitch_agent.ini
-    - template: jinja
-    - defaults:
-        vxlan_udp_port: 4789
-        l2_population: True
-        arp_responder: True
-        enable_distributed_routing: False
-        drop_flows_on_start: False
+  {% if neutron_backend == "openvswitch" %}
         extensions: qos
-        local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
-{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
         bridge_mappings: public_br
-{% endfor %}
 
-{% for network in pillar['hosts'][grains['type']]['networks'] if network == 'public' %}
 create_bridge:
   openvswitch_bridge.present:
     - name: public_br
@@ -151,26 +104,50 @@ create_port:
   openvswitch_port.present:
     - name: {{ public_interface }}
     - bridge: public_br
-{% endfor %}
+  {% endif %}
+  {% if grains['os_family'] == 'RedHat' %}
+    {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
+## this used to be a default but was changed to a boolean here:
+## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
+os_neutron_dac_override:
+  selinux.boolean:
+    - value: on
+    - persist: True
+    - watch_in:
+      - service: neutron_{{ neutron_backend }}_agent_service
+    {% endif %}
+  {% endif %}
 
-neutron_openvswitch_agent_service:
+neutron_{{ neutron_backend }}_agent_service:
   service.running:
-    - name: neutron-openvswitch-agent
+    - name: neutron-{{ neutron_backend }}-agent
     - enable: true
     - watch:
-      - file: /etc/neutron/neutron.conf
-      - file: /etc/neutron/plugins/ml2/openvswitch_agent.ini
+      - file: conf-files
+      - file: /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini
 
-{% elif pillar['neutron']['backend'] == "networking-ovn" %}
+{% elif neutron_backend == "networking-ovn" %}
+neutron-ovn-metadata-agent.ini:
+  file.managed:
+    - source: salt://formulas/compute/files/neutron_ovn_metadata_agent.ini
+    - name: /etc/neutron/neutron_ovn_metadata_agent.ini
+    - template: jinja
+    - defaults:
+        nova_metadata_host: {{ pillar['endpoints']['public'] }}
+        metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
+        ovn_sb_connection: {{ constructor.ovn_sb_connection_constructor() }}
 
 openvswitch_service:
   service.running:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: openvswitch
-{% elif grains['os_family'] == 'Debian' %}
+  {% if grains['os_family'] == 'Debian' %}
     - name: openvswitch-switch
-{% endif %}
+  {% elif grains['os_family'] == 'RedHat' %}
+    - name: openvswitch
+  {% endif %}
     - enable: true
+    - watch:
+      - file: conf-files
+      - file: neutron-ovn-metadata-agent.ini
 
 set-ovn-remote:
   cmd.run:
@@ -229,7 +206,7 @@ ovs-vsctl set open . external_ids:ovn-remote-probe-interval=180000 :
     - unless:
       - ovs-vsctl get open . external-ids:ovn-remote-probe-interval | grep -q "180000"
 
-ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=60 :
+ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=180 :
   cmd.run:
     - require:
       - service: openvswitch_service
@@ -238,13 +215,11 @@ ovs-vsctl set open . external_ids:ovn-openflow-probe-interval=60 :
         interval: 10
         splay: 5
     - unless:
-      - ovs-vsctl get open . external-ids:ovn-openflow-probe-interval | grep -q "60"
+      - ovs-vsctl get open . external-ids:ovn-openflow-probe-interval | grep -q "180"
 
 ovsdb_listen:
   cmd.run:
     - name: ovs-vsctl set-manager ptcp:6640:127.0.0.1
-    - require:
-      - cmd: map_bridge
     - unless:
       - ovs-vsctl get-manager | grep -q "ptcp:6640:127.0.0.1"
 
@@ -274,10 +249,10 @@ enable_bridge:
 
 ovn_controller_service:
   service.running:
-  {% if grains['os_family'] == 'RedHat' %}
-    - name: ovn-controller
-  {% elif grains['os_family'] == 'Debian' %}
+  {% if grains['os_family'] == 'Debian' %}
     - name: ovn-host
+  {% elif grains['os_family'] == 'RedHat' %}
+    - name: ovn-controller
   {% endif %}
     - enable: true
     - require:
@@ -286,72 +261,6 @@ ovn_controller_service:
       - cmd: set_encap_ip
 {% endif %}
 
-/etc/sudoers.d/zun_sudoers:
-  file.managed:
-    - source: salt://formulas/container/files/zun_sudoers
-    - require:
-      - sls: /formulas/container/install
-
-/etc/zun/rootwrap.conf:
-  file.managed:
-    - source: salt://formulas/container/files/rootwrap.conf
-    - require:
-      - sls: /formulas/container/install
-
-/etc/zun/rootwrap.d/zun.filters:
-  file.managed:
-    - source: salt://formulas/container/files/zun.filters
-    - require:
-      - sls: /formulas/container/install
-
-/etc/systemd/system/docker.service.d/docker.conf:
-  file.managed:
-    - source: salt://formulas/container/files/docker.conf
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        etcd_cluster: {{ constructor.etcd_connection_constructor() }}
-    - require:
-      - sls: /formulas/container/install
-
-/etc/containerd/config.toml:
-  file.managed:
-    - source: salt://formulas/container/files/config.toml
-    - template: jinja
-    - defaults:
-        zun_group_id: {{ salt['group.info']('zun')['gid'] }}
-
-cni_plugins:
-  archive.extracted:
-    - name: /opt/cni/bin
-    - source: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz
-    - source_hash: https://github.com/containernetworking/plugins/releases/download/v0.8.4/cni-plugins-linux-amd64-v0.8.4.tgz.sha512
-
-install_zun_cni:
-  cmd.run:
-    - name: install -o zun -m 0555 -D /usr/local/bin/zun-cni /opt/cni/bin/zun-cni
-    - creates:
-      - /opt/cni/bin/zun-cni
-
-/etc/systemd/system/zun-compute.service:
-  file.managed:
-    - source: salt://formulas/container/files/zun-compute.service
-    - require:
-      - sls: /formulas/container/install
-
-/etc/systemd/system/zun-cni-daemon.service:
-  file.managed:
-    - source: salt://formulas/container/files/zun-cni-daemon.service
-    - require:
-      - archive: cni_plugins
-      - cmd: install_zun_cni
-
-/etc/systemd/system/kuryr-libnetwork.service:
-  file.managed:
-    - source: salt://formulas/container/files/kuryr-libnetwork.service
-    - require:
-      - sls: /formulas/container/install
-
 systemctl daemon-reload:
   cmd.wait:
     - watch:
@@ -359,6 +268,10 @@ systemctl daemon-reload:
       - file: /etc/systemd/system/zun-compute.service
       - file: /etc/systemd/system/kuryr-libnetwork.service
       - file: /etc/systemd/system/zun-cni-daemon.service
+    - require:
+      - file: conf-files
+      - archive: cni_plugins
+      - cmd: install_zun_cni
 
 docker_service:
   service.running:
@@ -366,6 +279,8 @@ docker_service:
     - name: docker
     - watch:
       - file: /etc/systemd/system/docker.service.d/docker.conf
+    - require:
+      - file: conf-files
 
 kuryr_libnetwork_service:
   service.running:
@@ -373,6 +288,8 @@ kuryr_libnetwork_service:
     - name: kuryr-libnetwork
     - watch:
       - file: /etc/kuryr/kuryr.conf
+    - require:
+      - file: conf-files
 
 containerd_service:
   service.running:
@@ -380,6 +297,8 @@ containerd_service:
     - name: containerd
     - watch:
       - file: /etc/containerd/config.toml
+    - require:
+      - file: conf-files
 
 zun_compute_service:
   service.running:
@@ -387,6 +306,8 @@ zun_compute_service:
     - name: zun-compute
     - watch:
       - file: /etc/zun/zun.conf
+    - require:
+      - file: conf-files
 
 zun_cni_daemon_service:
   service.running:
@@ -394,3 +315,5 @@ zun_cni_daemon_service:
     - name: zun-cni-daemon
     - watch:
       - file: /etc/zun/zun.conf
+    - require:
+      - file: conf-files

@@ -693,303 +693,303 @@ class Session:
             verify=False,
         )
 
-    def create_connection(self, type: str, name: str, parent_identifier: int, parameters: dict = {}, attributes: dict = {}):
+    def manage_connection(self, request: str, type: str, name: str, parent_identifier: int, identifier: int = None, parameters: dict = {}, attributes: dict = {}):
         """
-        Creates an SSH connection
-        parent_identifier is required if placing in a specific connection group
-        parameters = {"hostname": "", "port": "", "username": "", "password": ""}
-        attributes = {"max-connections": "", "max-connections-per-user": "" }
+        NOTE Creates an SSH connection
+        * @param request = post (create) or put (update)
+        * @param type = ssh, rdp, vnc, telnet, kubernetes
+        * @param parent_identifier is required if placing in a specific connection group
+        * @param parameters = {"hostname": "", "port": "", "username": "", "password": ""}
+        * @param attributes = {"max-connections": "", "max-connections-per-user": "" }
         """
-        network = {
-            "hostname": parameters.get("hostname", ""),
-            "port": parameters.get("port", ""),
-        }
-        network_ssh = {
-            "hostname": parameters.get("hostname", ""),
-            "port": parameters.get("port", ""),
-            "host-key": parameters.get("host-key", ""),
-        }
-        authentication_general = {
-            "username": parameters.get("username", ""),
-            "password": parameters.get("password", ""),
-        }
-        authentication_telnet = {
-            "username-regex": parameters.get("username-regex", ""),
-            "password-regex": parameters.get("password-regex", ""),
-            "login-success-regex": parameters.get("login-success-regex", ""),
-            "login-failure-regex": parameters.get("login-failure-regex", ""),
-        }
-        authentication_ssh = {
-            "host-key": parameters.get("host-key", ""),
-            "private-key": parameters.get("private-key", ""),
-        }
-        display_vnc = {
-            "read-only": parameters.get("read-only", ""),
-            "swap-red-blue": parameters.get("swap-red-blue", ""),
-            "cursor": parameters.get("cursor", ""),
-            "color-depth": parameters.get("color-depth", ""),
-        }
-        display_rdp = {
-            "width": parameters.get("width", ""),
-            "height": parameters.get("height", ""),
-            "dpi": parameters.get("dpi", ""),
-            "resize-method": parameters.get("resize-method", ""),
-            "read-only": parameters.get("read-only", ""),
-            "color-depth": parameters.get("color-depth", ""),
-        }
-        display_terminal = {
-            "color-scheme": parameters.get("color-scheme", ""),
-            "font-name": parameters.get("font-name", ""),
-            "font-size": parameters.get("font-size", ""),
-            "scrollback": parameters.get("scrollback", ""),
-            "read-only": parameters.get("read-only", ""),
-        }
-        terminal_behaviour = {
-            "backspace": parameters.get("backspace", ""),
-            "terminal-type": parameters.get("terminal-type", ""),
-        }
-        typescript = {
-            "create-typescript-path": parameters.get("create-typescript-path", ""),
-            "typescript-path": parameters.get("typescript-path", ""),
-            "typescript-name": parameters.get("typescript-name", ""),
-        }
-        clipboard_graphical = {
-            "clipboard-encoding": parameters.get("clipboard-encoding", ""),
-            "disable-copy": parameters.get("disable-copy", ""),
-            "disable-paste": parameters.get("disable-paste", ""),
-        }
-        clipboard_terminal = {
-            "disable-copy": parameters.get("disable-copy", ""),
-            "disable-paste": parameters.get("disable-paste", ""),
-        }
-        session_environment = {
-            "timezone": parameters.get("timezone", None),
-            "server-alive-interval": parameters.get("server-alive-interval", ""),
-            "command": parameters.get("command", ""),
-            "locale": parameters.get("locale", ""),
-        }
-        rdp_gateway = {
-            "gateway-port": parameters.get("gateway-port", ""),
-            "gateway-hostname": parameters.get("gateway-hostname", ""),
-            "gateway-username": parameters.get("gateway-username", ""),
-            "gateway-password": parameters.get("gateway-password", ""),
-            "gateway-domain": parameters.get("gateway-domain", ""),
-        }
-        basic_settings = {
-            "timezone": parameters.get("timezone", None),
-            "initial-program": parameters.get("initial-program", ""),
-            "client-name": parameters.get("client-name", ""),
-            "console": parameters.get("console", ""),
-        }
-        vnc_repeater = {
-            "dest-host": parameters.get("dest-host", ""),
-            "dest-port": parameters.get("dest-port", ""),
-        }
-        screen_recording = {
-            "recording-name": parameters.get("recording-name"),
-            "recording-path": parameters.get("recording-path"),
-            "recording-exclude-output": parameters.get("recording-exclude-output" ""),
-            "recording-exclude-mouse": parameters.get("recording-exclude-mouse", ""),
-            "recording-include-keys": parameters.get("recording-include-keys", ""),
-            "create-recording-path": parameters.get("create-recording-path", ""),
-        }
-        sftp = {
-            "enable-sftp": parameters.get("enable-sftp", ""),
-            "sftp-port": parameters.get("sftp-port", ""),
-            "sftp-server-alive-interval": parameters.get("sftp-server-alive-interval", ""),
-            "sftp-hostname": parameters.get("sftp-hostname", ""),
-            "sftp-host-key": parameters.get("sftp-host-key", ""),
-            "sftp-username": parameters.get("sftp-username", ""),
-            "sftp-password": parameters.get("sftp-password", ""),
-            "sftp-private-key": parameters.get("sftp-private-key", ""),
-            "sftp-passphrase": parameters.get("sftp-passphrase", ""),
-            "sftp-root-directory": parameters.get("sftp-root-directory", ""),
-            "sftp-directory": parameters.get("sftp-directory", ""),
-        }
-        sftp_ssh = {
-            "enable-sftp": parameters.get("enable-sftp", ""),
-            "sftp-root-directory": parameters.get("sftp-root-directory", ""),
-        }
-        audio = {
-            "enable-audio": parameters.get("enable-audio", ""),
-            "audio-servername": parameters.get("audio-servername", ""),
-
-        }
 
         if type == "vnc":
             parameters = {
-                **network,
-                **authentication_general,
-                **display_vnc,
-                **clipboard_graphical,
-                **vnc_repeater,
-                **screen_recording,
-                **sftp,
-                **audio,
+                "port": parameters.get("port", ""),
+                "read-only": parameters.get("read-only", ""),
+                "swap-red-blue": parameters.get("swap-red-blue", ""),
+                "cursor": parameters.get("cursor", ""),
+                "color-depth": parameters.get("color-depth", ""),
+                "clipboard-encoding": parameters.get("clipboard-encoding", ""),
+                "disable-copy": parameters.get("disable-copy", ""),
+                "disable-paste": parameters.get("disable-paste", ""),
+                "dest-port": parameters.get("dest-port", ""),
+                "recording-exclude-output": parameters.get("recording-exclude-output", ""),
+                "recording-exclude-mouse": parameters.get("recording-exclude-mouse", ""),
+                "recording-include-keys": parameters.get("recording-include-keys", ""),
+                "create-recording-path": parameters.get("create-recording-path", ""),
+                "enable-sftp": parameters.get("enable-sftp", "true"),
+                "sftp-port": parameters.get("sftp-port", ""),
+                "sftp-server-alive-interval": parameters.get("sftp-server-alive-interval", ""),
+                "enable-audio": parameters.get("enable-audio", ""),
+                "audio-servername": parameters.get("audio-servername", ""),
+                "sftp-directory": parameters.get("sftp-directory", ""),
+                "sftp-root-directory": parameters.get("sftp-root-directory", ""),
+                "sftp-passphrase": parameters.get("sftp-passphrase", ""),
+                "sftp-private-key": parameters.get("sftp-private-key", ""),
+                "sftp-username": parameters.get("sftp-username", ""),
+                "sftp-password": parameters.get("sftp-password", ""),
+                "sftp-host-key": parameters.get("sftp-host-key", ""),
+                "sftp-hostname": parameters.get("sftp-hostname", ""),
+                "recording-name": parameters.get("recording-name", ""),
+                "recording-path": parameters.get("recording-path", ""),
+                "dest-host": parameters.get("dest-host", ""),
+                "password": parameters.get("password", ""),
+                "username": parameters.get("username", ""),
+                "hostname": parameters.get("hostname", ""),
             }
+
         if type == "ssh":
             parameters = {
-                **network_ssh,
-                **authentication_general,
-                **authentication_ssh,
-                **display_terminal,
-                **clipboard_terminal,
-                **session_environment,
-                **terminal_behaviour,
-                **typescript,
-                **screen_recording,
-                **sftp_ssh,
+                "port": parameters.get("port", ""),
+                "read-only": parameters.get("read-only", ""),
+                "swap-red-blue": parameters.get("swap-red-blue", ""),
+                "cursor": parameters.get("cursor", ""),
+                "color-depth": parameters.get("color-depth", ""),
+                "clipboard-encoding": parameters.get("clipboard-encoding", ""),
+                "disable-copy": parameters.get("disable-copy", ""),
+                "disable-paste": parameters.get("disable-paste", ""),
+                "dest-port": parameters.get("dest-port", ""),
+                "recording-exclude-output": parameters.get("recording-exclude-output", ""),
+                "recording-exclude-mouse": parameters.get("recording-exclude-mouse", ""),
+                "recording-include-keys": parameters.get("recording-include-keys", ""),
+                "create-recording-path": parameters.get("create-recording-path", ""),
+                "enable-sftp": parameters.get("enable-sftp", ""),
+                "sftp-port": parameters.get("sftp-port", ""),
+                "sftp-server-alive-interval": parameters.get("sftp-server-alive-interval", ""),
+                "enable-audio": parameters.get("enable-audio", ""),
+                "color-scheme": parameters.get("color-scheme", ""),
+                "font-size": parameters.get("font-size", ""),
+                "scrollback": parameters.get("scrollback", ""),
+                "timezone": parameters.get("timezone", None),
+                "server-alive-interval": parameters.get("server-alive-interval", ""),
+                "backspace": parameters.get("backspace", ""),
+                "terminal-type": parameters.get("terminal-type", ""),
+                "create-typescript-path": parameters.get("create-typescript-path", ""),
+                "hostname": parameters.get("hostname", ""),
+                "host-key": parameters.get("host-key", ""),
+                "private-key": parameters.get("private-key", ""),
+                "username": parameters.get("username", ""),
+                "password": parameters.get("password", ""),
+                "passphrase": parameters.get("passphrase", ""),
+                "font-name": parameters.get("font-name", ""),
+                "command": parameters.get("command", ""),
+                "locale": parameters.get("locale", ""),
+                "typescript-path": parameters.get("typescript-path", ""),
+                "typescript-name": parameters.get("typescript-name", ""),
+                "recording-path": parameters.get("recording-path", ""),
+                "recording-name": parameters.get("recording-name", ""),
+                "sftp-root-directory": parameters.get("sftp-root-directory", ""),
             }
+
         if type == "rdp":
             parameters = {
-                **network,
-                **rdp_gateway,
-                **basic_settings,
-                **display_rdp,
+                "port": parameters.get("port", ""),
+                "read-only": parameters.get("read-only", ""),
+                "swap-red-blue": parameters.get("swap-red-blue", ""),
+                "cursor": parameters.get("cursor", ""),
+                "color-depth": parameters.get("color-depth", ""),
+                "clipboard-encoding": parameters.get("clipboard-encoding", ""),
+                "disable-copy": parameters.get("disable-copy", ""),
+                "disable-paste": parameters.get("disabled-paste", ""),
+                "dest-port": parameters.get("dest-port", ""),
+                "recording-exclude-output": parameters.get("recording-exclude-output" ""),
+                "recording-exclude-mouse": parameters.get("recording-exclude-mouse", ""),
+                "recording-include-keys": parameters.get("recording-include-keys", ""),
+                "create-recording-path": parameters.get("create-recording-path", ""),
+                "enable-sftp": parameters.get("enable-sftp", ""),
+                "sftp-port": parameters.get("sftp-port", ""),
+                "sftp-server-alive-interval": parameters.get("sftp-server-alive-interval", ""),
+                "enable-audio": parameters.get("enable-audio", ""),
+                "security": parameters.get("security", ""),
+                "disable-auth": parameters.get("disable-auth", ""),
+                "ignore-cert": parameters.get("ignore-cert", ""),
+                "gateway-port": parameters.get("gateway-port", ""),
+                "gateway-hostname": parameters.get("gateway-hostname", ""),
+                "gateway-username": parameters.get("gateway-username", ""),
+                "gateway-password": parameters.get("gateway-password", ""),
+                "gateway-domain": parameters.get("gateway-domain", ""),
+                "server-layout": parameters.get("server-layout", ""),
+                "timezone": parameters.get("timezone", ""),
+                "console": parameters.get("console", ""),
+                "width": parameters.get("width", ""),
+                "height": parameters.get("height", ""),
+                "dpi": parameters.get("dpi", ""),
+                "resize-method": parameters.get("resize-method", ""),
+                "console-audio": parameters.get("console-audio", ""),
+                "disable-audio": parameters.get("disable-audio", ""),
+                "enable-audio-input": parameters.get("enable-audio-input", ""),
+                "enable-printing": parameters.get("enable-printing", ""),
+                "enable-drive": parameters.get("enable-drive", ""),
+                "create-drive-path": parameters.get("create-drive-path", ""),
+                "enable-wallpaper": parameters.get("enable-wallpaper", ""),
+                "enable-theming": parameters.get("enable-theming", ""),
+                "enable-font-smoothing": parameters.get("enable-font-smoothing", ""),
+                "enable-full-window-drag": parameters.get("enable-full-window-drag", ""),
+                "enable-desktop-composition": parameters.get("enable-desktop-composition", ""),
+                "enable-menu-animations": parameters.get("enable-menu-animations", ""),
+                "disable-bitmap-caching": parameters.get("disable-bitmap-caching", ""),
+                "disable-offscreen-caching": parameters.get("disable-offscreen-caching", ""),
+                "disable-glyph-caching": parameters.get("disable-glyph-caching", ""),
+                "preconnection-id": parameters.get("preconnection-id", ""),
+                "hostname": parameters.get("hostname", ""),
+                "username": parameters.get("username", ""),
+                "password": parameters.get("password", ""),
+                "domain": parameters.get("domain", ""),
+
+                "initial-program": parameters.get("initial-program", ""),
+                "client-name": parameters.get("client-name", ""),
+
+                "printer-name": parameters.get("printer-name", ""),
+                "drive-name": parameters.get("drive-name", ""),
+                "drive-path": parameters.get("drive-path", ""),
+                "static-channels": parameters.get("static-channels", ""),
+
+                "remote-app": parameters.get("remote-app", ""),
+                "remote-app-dir": parameters.get("remote-app-dir", ""),
+                "remote-app-args": parameters.get("remote-app-args", ""),
+
+                "preconnection-blob": parameters.get("preconnection-blob", ""),
+                "load-balance-info": parameters.get("load-balance-info", ""),
+                "recording-path": parameters.get("recording-path", ""),
+                "recording-name": parameters.get("recording-name", ""),
+                "sftp-hostname": parameters.get("sftp-hostname", ""),
+                "sftp-host-key": parameters.get("sftp-host-key", ""),
+                "sftp-username": parameters.get("sftp-username", ""),
+                "sftp-password": parameters.get("sftp-password", ""),
+                "sftp-private-key": parameters.get("sftp-private-key", ""),
+                "sftp-passphrase": parameters.get("sftp-passphrase", ""),
+                "sftp-root-directory": parameters.get("sftp-root-directory", ""),
+                "sftp-directory": parameters.get("sftp-directory", ""),
             }
+
         if type == "telnet":
             parameters = {
-
+                "port": parameters.get("port", ""),
+                "read-only": parameters.get("read-only", ""),
+                "swap-red-blue": parameters.get("swap-red-blue", ""),
+                "cursor": parameters.get("cursor", ""),
+                "color-depth": parameters.get("color-depth", ""),
+                "clipboard-encoding": parameters.get("clipboard-encoding", ""),
+                "disable-copy": parameters.get("disable-copy", ""),
+                "disable-paste": parameters.get("disable-paste", ""),
+                "dest-port": parameters.get("dest-port", ""),
+                "recording-exclude-output": parameters.get("recording-exclude-output", ""),
+                "recording-exclude-mouse": parameters.get("recording-exclude-mouse", ""),
+                "recording-include-keys": parameters.get("recording-include-keys", ""),
+                "create-recording-path": parameters.get("create-recording-path", ""),
+                "enable-sftp": parameters.get("enable-sftp", ""),
+                "sftp-port": parameters.get("sftp-port", ""),
+                "sftp-server-alive-interval": parameters.get("sftp-server-alive-interval", ""),
+                "enable-audio": parameters.get("enable-audio", ""),
+                "color-scheme": parameters.get("color-scheme", ""),
+                "font-size": parameters.get("font-size", ""),
+                "scrollback": parameters.get("scrollback", ""),
+                "backspace": parameters.get("backspace", ""),
+                "terminal-type": parameters.get("terminal-type", ""),
+                "create-typescript-path": parameters.get("create-typescript-path", ""),
+                "hostname": parameters.get("hostname", ""),
+                "username": parameters.get("username", ""),
+                "password": parameters.get("password", ""),
+                "username-regex": parameters.get("username-regex", ""),
+                "password-regex": parameters.get("password-regex", ""),
+                "login-success-regex": parameters.get("login-success-regex", ""),
+                "login-failure-regex": parameters.get("login-failure-regex", ""),
+                "font-name": parameters.get("font-name", ""),
+                "typescript-path": parameters.get("typescript-path", ""),
+                "typescript-name": parameters.get("typescript-name", ""),
+                "recording-path": parameters.get("recording-path", ""),
+                "recording-name": parameters.get("recording-name", ""),
             }
+
         if type == "kubernetes":
             parameters = {
-
+                "port": parameters.get("port", ""),
+                "read-only": parameters.get("read-only", ""),
+                "swap-red-blue": parameters.get("swap-red-blue", ""),
+                "cursor": parameters.get("cursor", ""),
+                "color-depth": parameters.get("color-depth", ""),
+                "clipboard-encoding": parameters.get("clipboard-encoding", ""),
+                "disable-copy": parameters.get("disable-copy", ""),
+                "disable-paste": parameters.get("disable-paste", ""),
+                "dest-port": parameters.get("dest-port", ""),
+                "recording-exclude-output": parameters.get("recording-exclude-output", ""),
+                "recording-exclude-mouse": parameters.get("recording-exclude-mouse", ""),
+                "recording-include-keys": parameters.get("recording-include-keys", ""),
+                "create-recording-path": parameters.get("create-recording-path", ""),
+                "enable-sftp": parameters.get("enable-sftp", ""),
+                "sftp-port": parameters.get("sftp-port", ""),
+                "sftp-server-alive-interval": parameters.get("sftp-server-alive-interval", ""),
+                "enable-audio": parameters.get("enable-audio", ""),
+                "use-ssl": parameters.get("use-ssl", ""),
+                "ignore-cert": parameters.get("ignore-cert", ""),
+                "color-scheme": parameters.get("color-scheme", ""),
+                "font-size": parameters.get("font-size", ""),
+                "scrollback": parameters.get("scrollback", ""),
+                "backspace": parameters.get("backspace", ""),
+                "create-typescript-path": parameters.get("create-typescript-path", ""),
+                "hostname": parameters.get("hostname", ""),
+                "ca-cert": parameters.get("ca-cert", ""),
+                "namespace": parameters.get("namespace", ""),
+                "pod": parameters.get("pod", ""),
+                "container": parameters.get("container", ""),
+                "client-cert": parameters.get("client-cert", ""),
+                "client-key": parameters.get("client-key", ""),
+                "font-name": parameters.get("font-name", ""),
+                "typescript-path": parameters.get("typescript-path", ""),
+                "typescript-name": parameters.get("typescript-name", ""),
+                "recording-path": parameters.get("recording-path", ""),
+                "recording-name": parameters.get("recording-name", ""),
             }
 
+        attributes = {
+                "max-connections": attributes.get("max-connections", ""),
+                "max-connections-per-user": attributes.get("max-connections-per-user", ""),
+                "weight": attributes.get("weight", ""),
+                "failover-only": attributes.get("failover-only", ""),
+                "guacd-port": attributes.get("guacd-port", ""),
+                "guacd-encryption": attributes.get("guacd-encryption", ""),
+                "guacd-hostname": attributes.get("guacd-hostname", ""),
+        }
 
-        return requests.post(
-            f"{self.host}/api/session/data/{self.data_source}/connections",
-            headers={"Content-Type": "application/json"},
-            params=self.params,
-            json={
+        if request == "post":
+            json = {
                 "parentIdentifier": str(parent_identifier),
                 "name": name,
                 "protocol": type,
                 "parameters": parameters,
-                "attributes": {
-                    "max-connections": attributes.get("max-connections", ""),
-                    "max-connections-per-user": attributes.get("max-connections-per-user", ""),
-                    "weight": attributes.get("weight", ""),
-                    "failover-only": attributes.get("failover-only", ""),
-                    "guacd-port": attributes.get("guacd-port", ""),
-                    "guacd-encryption": attributes.get("guacd-encryption", ""),
-                    "guacd-hostname": attributes.get("guacd-hostname", ""),
-                }
-            },
-            verify=False,
-        )
+                "attributes": attributes,
+            }
 
-    def create_rdp_connection(self, name: str, parent_identifier: str = "ROOT", parameters: dict = {}, attributes: dict = {}):
-        """Creates an RDP connection
-        parent_identifier is required if placing in a specific connection group
-        parameters = {"hostname": "", "port": "", "username": "", "password": "", "security": "any", "ignore-cert": "true"}
-        attributes = {"max-connections": "", "max-connections-per-user": "" }
-        """
-
-
-
-
-
-
-        return requests.post(
-            f"{self.host}/api/session/data/{self.data_source}/connections",
-            headers={"Content-Type": "application/json"},
-            params=self.params,
+        if request == "put":
             json={
-                "parentIdentifier": parent_identifier,
+                "parentIdentifier": str(parent_identifier),
                 "name": name,
-                "protocol": "rdp",
-                "parameters": {
-                        "port": parameters.get("port", ""),
-                        "read-only": parameters.get("read-only", ""),
-                        "swap-red-blue": parameters.get("swap-red-blue", ""),
-                        "cursor": parameters.get("cursor", ""),
-                        "color-depth": parameters.get("color-depth", ""),
-                        "clipboard-encoding": parameters.get("clipboard-encoding", ""),
-                        "disable-copy": parameters.get("disable-copy", ""),
-                        "disable-paste": parameters.get("disabled-paste", ""),
-                        "dest-port": parameters.get("dest-port", ""),
-                        "recording-exclude-output": parameters.get("recording-exclude-output" ""),
-                        "recording-exclude-mouse": parameters.get("recording-exclude-mouse", ""),
-                        "recording-include-keys": parameters.get("recording-include-keys", ""),
-                        "create-recording-path": parameters.get("create-recording-path", ""),
-                        "enable-sftp": parameters.get("enable-sftp", ""),
-                        "sftp-port": parameters.get("sftp-port", ""),
-                        "sftp-server-alive-interval": parameters.get("sftp-server-alive-interval", ""),
-                        "enable-audio": parameters.get("enable-audio", ""),
-                        "security": parameters.get("security", ""),
-                        "disable-auth": parameters.get("disable-auth", ""),
-                        "ignore-cert": parameters.get("ignore-cert", ""),
-                        "gateway-port": parameters.get("gateway-port", ""),
-                        "gateway-hostname": parameters.get("gateway-hostname", ""),
-                        "gateway-username": parameters.get("gateway-username", ""),
-                        "gateway-password": parameters.get("gateway-password", ""),
-                        "gateway-domain": parameters.get("gateway-domain", ""),
-                        "server-layout": parameters.get("server-layout", ""),
-                        "timezone": parameters.get("timezone", ""),
-                        "console": parameters.get("console", ""),
-                        "width": parameters.get("width", ""),
-                        "height": parameters.get("height", ""),
-                        "dpi": parameters.get("dpi", ""),
-                        "resize-method": parameters.get("resize-method", ""),
-                        "console-audio": parameters.get("console-audio", ""),
-                        "disable-audio": parameters.get("disable-audio", ""),
-                        "enable-audio-input": parameters.get("enable-audio-input", ""),
-                        "enable-printing": parameters.get("enable-printing", ""),
-                        "enable-drive": parameters.get("enable-drive", ""),
-                        "create-drive-path": parameters.get("create-drive-path", ""),
-                        "enable-wallpaper": parameters.get("enable-wallpaper", ""),
-                        "enable-theming": parameters.get("enable-theming", ""),
-                        "enable-font-smoothing": parameters.get("enable-font-smoothing", ""),
-                        "enable-full-window-drag": parameters.get("enable-full-window-drag", ""),
-                        "enable-desktop-composition": parameters.get("enable-desktop-composition", ""),
-                        "enable-menu-animations": parameters.get("enable-menu-animations", ""),
-                        "disable-bitmap-caching": parameters.get("disable-bitmap-caching", ""),
-                        "disable-offscreen-caching": parameters.get("disable-offscreen-caching", ""),
-                        "disable-glyph-caching": parameters.get("disable-glyph-caching", ""),
-                        "preconnection-id": parameters.get("preconnection-id", ""),
-                        "hostname": parameters.get("hostname", ""),
-                        "username": parameters.get("username", ""),
-                        "password": parameters.get("password", ""),
-                        "domain": parameters.get("domain", ""),
+                "identifier": str(identifier),
+                "activeConnections": 0,
+                "protocol": type,
+                "parameters": parameters,
+                "attributes": attributes,
+            }
 
-                        "initial-program": parameters.get("initial-program", ""),
-                        "client-name": parameters.get("client-name", ""),
-
-                        "printer-name": parameters.get("printer-name", ""),
-                        "drive-name": parameters.get("drive-name", ""),
-                        "drive-path": parameters.get("drive-path", ""),
-                        "static-channels": parameters.get("static-channels", ""),
-
-                        "remote-app": parameters.get("remote-app", ""),
-                        "remote-app-dir": parameters.get("remote-app-dir", ""),
-                        "remote-app-args": parameters.get("remote-app-args", ""),
-
-                        "preconnection-blob": parameters.get("preconnection-blob", ""),
-                        "load-balance-info": parameters.get("load-balance-info", ""),
-                        "recording-path": parameters.get("recording-path", ""),
-                        "recording-name": parameters.get("recording-name", ""),
-                        "sftp-hostname": parameters.get("sftp-hostname", ""),
-                        "sftp-host-key": parameters.get("sftp-host-key", ""),
-                        "sftp-username": parameters.get("sftp-username", ""),
-                        "sftp-password": parameters.get("sftp-password", ""),
-                        "sftp-private-key": parameters.get("sftp-private-key", ""),
-                        "sftp-passphrase": parameters.get("sftp-passphrase", ""),
-                        "sftp-root-directory": parameters.get("sftp-root-directory", ""),
-                        "sftp-directory": parameters.get("sftp-directory", ""),
-                },
-                "attributes": {
-                    "max-connections": attributes.get("max-connections", ""),
-                    "max-connections-per-user": attributes.get("max-connections-per-user", ""),
-                    "weight": attributes.get("weight", ""),
-                    "failover-only": attributes.get("failover-only", ""),
-                    "guacd-port": attributes.get("guacd-port", ""),
-                    "guacd-encryption": attributes.get("guacd-encryption", ""),
-                    "guacd-hostname": attributes.get("guacd-hostname", ""),
-                }
-            },
-            verify=False,
-        )
+        if request == "post":
+            return requests.post(
+                f"{self.host}/api/session/data/{self.data_source}/connections",
+                headers={"Content-Type": "application/json"},
+                params=self.params,
+                json=json,
+                verify=False,
+            )
+        elif request == "put":
+            return requests.put(
+                f"{self.host}/api/session/data/{self.data_source}/connections",
+                headers={"Content-Type": "application/json"},
+                params=self.params,
+                json=json,
+                verify=False,
+            )
+        else:
+            return "Invalid request option, requires (post or put)"
 
     def delete_connection(self, identifier: int):
         """Deletes a connection"""

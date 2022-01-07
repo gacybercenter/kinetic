@@ -32,9 +32,9 @@ include:
 {% if salt['pillar.get']('danos:enabled', False) == True %}
 set haproxy group:
   danos.set_resourcegroup:
-    - name: haproxy-group
+    - name: haproxy-{{ pillar['haproxy']['group'] }}
     - type: address-group
-    - description: list of current haproxy servers
+    - description: current haproxy servers for {{ pillar['haproxy']['group'] }}
     - values:
       - {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - username: {{ pillar['danos']['username'] }}
@@ -45,34 +45,12 @@ set haproxy group:
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
 
-  {% if salt['mine.get']('G@role:share and G@build_phase:configure', 'network.ip_addrs', tgt_type='compound')|length != 0 %}
-set nfs group:
-  danos.set_resourcegroup:
-    - name: manila-share-servers
-    - type: address-group
-    - description: list of current nfs-ganesha servers
-    - values:
-    {% for host, addresses in salt['mine.get']('G@role:share and G@build_phase:configure', 'network.ip_addrs', tgt_type='compound') | dictsort() %}
-      {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-      - {{ address }}
-      {%- endfor -%}
-    {% endfor %}
-    - username: {{ pillar['danos']['username'] }}
-    - password: {{ pillar['danos_password'] }}
-    {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
-    - host: {{ grains['ip4_gw'] }}
-    {% else %}
-    - host: {{ pillar['danos']['endpoint'] }}
-    {% endif %}
-  {% endif %}
-
 set haproxy static-mapping:
   danos.set_statichostmapping:
     - name: {{ pillar['haproxy']['dashboard_domain'] }}
     - address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - aliases:
       - {{ pillar['haproxy']['console_domain'] }}
-      - {{ pillar['haproxy']['docs_domain'] }}
       - {{ pillar['haproxy']['guacamole_domain'] }}
     - username: {{ pillar['danos']['username'] }}
     - password: {{ pillar['danos_password'] }}
@@ -97,7 +75,6 @@ acme_certs:
     - name: {{ pillar['haproxy']['dashboard_domain'] }}
     - aliases:
       - {{ pillar['haproxy']['console_domain'] }}
-      - {{ pillar['haproxy']['docs_domain'] }}
       - {{ pillar['haproxy']['guacamole_domain'] }}
     - email: {{ pillar['haproxy']['acme_email'] }}
     - renew: 14
@@ -139,7 +116,6 @@ create_master_pem:
         management_ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         console_domain:  {{ pillar['haproxy']['console_domain'] }}
-        docs_domain:  {{ pillar['haproxy']['docs_domain'] }}
         guacamole_domain:  {{ pillar['haproxy']['guacamole_domain'] }}
         keystone_hosts: {{ constructor.haproxy_listener_constructor(role='keystone', port='5000')|yaml_encode }}
         glance_api_hosts: {{ constructor.haproxy_listener_constructor(role='glance', port='9292')|yaml_encode }}
@@ -148,7 +124,6 @@ create_master_pem:
         placement_api_hosts: {{ constructor.haproxy_listener_constructor(role='placement', port='8778')|yaml_encode }}
         nova_spiceproxy_hosts: {{ constructor.haproxy_listener_constructor(role='nova', port='6082')|yaml_encode }}
         dashboard_hosts: {{ constructor.haproxy_listener_constructor(role='horizon', port='80')|yaml_encode }}
-        docs_hosts:  {{ constructor.haproxy_listener_constructor(role='antora', port='80')|yaml_encode }}
         neutron_api_hosts: {{ constructor.haproxy_listener_constructor(role='neutron', port='9696')|yaml_encode }}
         heat_api_hosts: {{ constructor.haproxy_listener_constructor(role='heat', port='8004')|yaml_encode }}
         cinder_api_hosts: {{ constructor.haproxy_listener_constructor(role='cinder', port='8776')|yaml_encode }}

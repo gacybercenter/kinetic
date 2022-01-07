@@ -178,6 +178,7 @@ def set_statichostmapping(name,
             for alias in aliases:
                 __salt__["danos.set_configuration"](host, username, password, '/system/static-host-mapping/host-name/'+name+'/alias/'+alias, location, **kwargs)
             __salt__["danos.commit_configuration"](host, username, password, location)
+            __salt__["danos.reset_dns_forwarding_cache"](host, username, password)
             __salt__["danos.delete_session"](host, username, password, location)
 
             ret["result"] = True

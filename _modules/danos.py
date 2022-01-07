@@ -41,6 +41,12 @@ def delete_session(host, username, password, location):
     delete_session = requests.delete(url, headers=headers, verify=False)
     return delete_session.text
 
+def reset_dns_forwarding_cache(host, username, password, **kwargs):
+    headers = make_auth_header(username, password)
+    url = "https://"+host+"/rest/op/reset/dns/forwarding/cache"
+    command = requests.post(url, headers=headers, verify=False)
+    return command.text
+
 def get_full_configuration(host, username, password, **kwargs):
     headers = make_auth_header(username, password)
     location = make_session(host, username, password)

@@ -34,11 +34,18 @@ boot || sleep 5 && inc try && echo Failed to boot on try ${try}... && goto retry
 shell
 """
 
+def endian(val):
+    little_hex = bytearray.fromhex(val)
+    little_hex.reverse()
+    str_little = ''.join(format(x, '02x') for x in little_hex)
+    return str_little
+
 def application (environ, start_response):
 
     d = parse_qs(environ['QUERY_STRING'])
     uuid = d.get('uuid', [''])[0]
     uuid = escape(uuid)
+    uuid = f'{endian(uuid[0:8])}-{endian(uuid[9:13])}-{endian(uuid[14:18])}-{uuid[19:]}'.upper()
     host_data = open("/var/www/html/assignments/"+uuid.upper(), "r")
     host_type = host_data.readline().strip()
     hostname_assignment = host_data.readline().strip()

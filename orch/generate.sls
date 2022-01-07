@@ -18,17 +18,17 @@
 {% if salt['pillar.get']('universal', False) == False %}
 master_setup:
   salt.state:
-    - tgt: 'salt'
+    - tgt: '{{ pillar['salt']['name'] }}'
     - highstate: true
     - fail_minions:
-      - 'salt'
+      - '{{ pillar['salt']['name'] }}'
 
 pxe_setup:
   salt.state:
-    - tgt: 'pxe'
+    - tgt: '{{ pillar['pxe']['name'] }}'
     - highstate: true
     - fail_minions:
-      - 'pxe'
+      - '{{ pillar['pxe']['name'] }}'
 {% endif %}
 
 ## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
@@ -36,7 +36,7 @@ pxe_setup:
 {% set targets = {} %}
 {% if style == 'physical' %}
 ## create and endpoints dictionary of all physical uuids
-  {% set endpoints = salt.saltutil.runner('mine.get',tgt='pxe',fun='redfish.gather_endpoints')["pxe"] %}
+  {% set endpoints = salt.saltutil.runner('mine.get',tgt=pillar['pxe']['name'],fun='redfish.gather_endpoints')[pillar['pxe']['name']] %}
   {% for id in pillar['hosts'][type]['uuids'] %}
     {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
     {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64')|uuid) %}

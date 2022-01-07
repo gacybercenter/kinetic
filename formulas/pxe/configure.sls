@@ -24,6 +24,12 @@ include:
             - {{ pillar ['api_user'] }}
             - {{ pillar ['bmc_password'] }}
 
+/var/www/html/assignments:
+  file.directory
+
+/var/www/html/index.html:
+  file.absent
+
 https://github.com/ipxe/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
@@ -31,12 +37,18 @@ https://github.com/ipxe/ipxe.git:
     - require:
       - sls: /formulas/pxe/install
 
-/var/www/html/ipxe/src/kinetic.ipxe:
+conf-files:
   file.managed:
-    - source: salt://formulas/pxe/files/kinetic.ipxe
     - template: jinja
     - defaults:
         pxe_record: {{ pillar['pxe']['record'] }}
+    - names:
+      - /var/www/html/ipxe/src/kinetic.ipxe:
+        - source: salt://formulas/pxe/files/kinetic.ipxe
+      - /etc/apache2/sites-available/wsgi.conf:
+        - source: salt://formulas/pxe/files/wsgi.conf
+      - /var/www/html/index.py:
+        - source: salt://formulas/pxe/files/index.py
 
 create_efi_module:
   cmd.run:
@@ -45,16 +57,9 @@ create_efi_module:
     - cwd: /var/www/html/ipxe/src/
     - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
 
-/var/www/html/index.html:
-  file.absent
-
 Disable default site:
   apache_site.disabled:
     - name: 000-default
-
-/etc/apache2/sites-available/wsgi.conf:
-  file.managed:
-    - source: salt://formulas/pxe/files/wsgi.conf
 
 wsgi_site:
   apache_site.enabled:
@@ -63,16 +68,6 @@ wsgi_site:
 wsgi_module:
   apache_module.enabled:
     - name: wsgi
-
-/var/www/html/index.py:
-  file.managed:
-    - source: salt://formulas/pxe/files/index.py
-    - template: jinja
-    - defaults:
-        pxe_record: {{ pillar['pxe']['record'] }}
-
-/var/www/html/assignments:
-  file.directory
 
 {% for type in pillar['hosts'] if pillar['hosts'][type]['style'] == 'physical' %}
 /var/www/html/configs/{{ type }}:
