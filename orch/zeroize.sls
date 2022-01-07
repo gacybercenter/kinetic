@@ -33,7 +33,7 @@
 set_bootonce_host_{{ id }}:
   salt.function:
     - name: redfish.set_bootonce
-    - tgt: pxe
+    - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
       - {{ targets[id]['api_host'] }}
       - {{ api_user }}
@@ -44,7 +44,7 @@ set_bootonce_host_{{ id }}:
 reset_host_{{ id }}:
   salt.function:
     - name: redfish.reset_host
-    - tgt: pxe
+    - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
       - {{ targets[id]['api_host'] }}
       - {{ api_user }}
@@ -53,7 +53,7 @@ reset_host_{{ id }}:
 assign_uuid_to_{{ id }}:
   salt.function:
     - name: file.write
-    - tgt: 'pxe'
+    - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
       - /var/www/html/assignments/{{ id }}
       - {{ type }}
@@ -69,7 +69,7 @@ assign_uuid_to_{{ id }}:
 {{ type }}_wheel_removal_delay:
   salt.function:
     - name: test.sleep
-    - tgt: salt
+    - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
         length: 5
 
@@ -108,7 +108,7 @@ delete_{{ type }}_key:
 expire_{{ type }}_dead_hosts:
   salt.function:
     - name: address.expire_dead_hosts
-    - tgt: salt
+    - tgt: {{ pillar['salt']['name'] }}
 
 ## There should be some kind of retry mechanism here if this event never fires
 ## to deal with transient problems.  Re-exec zeroize for the given target?
@@ -152,7 +152,7 @@ wait_for_minion_first_start_{{ type }}:
 remove_pending_{{ type }}-{{ id }}:
   salt.function:
     - name: file.remove
-    - tgt: 'pxe'
+    - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
       - /var/www/html/assignments/{{ id }}
     - require:

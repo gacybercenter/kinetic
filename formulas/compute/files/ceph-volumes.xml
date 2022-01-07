@@ -1,6 +1,6 @@
 <secret ephemeral="no" private="no">
-<uuid>{{ uuid }}</uuid>
-<usage type="ceph">
-<name>client.volumes secret</name>
-</usage>
+  <uuid>{{ volumes_uuid }}</uuid>
+  <usage type="ceph">
+    <name>client.volumes secret</name>
+  </usage>
 </secret>

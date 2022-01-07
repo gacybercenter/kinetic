@@ -108,13 +108,13 @@ api:
 /srv/dynamic_pillar:
   file.directory
 
-/srv/dynamic_pillar/openstack_services.sls:
+services:
   file.managed:
-    - source: salt://formulas/salt/files/openstack_services.sls
-
-/srv/dynamic_pillar/integrated_services.sls:
-  file.managed:
-    - source: salt://formulas/salt/files/integrated_services.sls
+    - names:
+      - /srv/dynamic_pillar/openstack_services.sls:
+        - source: salt://formulas/salt/files/openstack_services.sls
+      - /srv/dynamic_pillar/integrated_services.sls:
+        - source: salt://formulas/salt/files/integrated_services.sls
 
 {% for service in salt['pillar.get']('openstack_services', {}) %}
 /srv/dynamic_pillar/{{ service }}.sls:
@@ -126,22 +126,22 @@ api:
       - file: /srv/dynamic_pillar/openstack_services.sls
     - defaults:
         service: {{ service }}
-        mysql_password: {{ salt['random.get_str']('64') }}
-        service_password: {{ salt['random.get_str']('64') }}
+        mysql_password: {{ salt['random.get_str']('64', punctuation=False) }}
+        service_password: {{ salt['random.get_str']('64', punctuation=False) }}
 {% if service == 'designate' %}
         extra_opts: |
             designate_rndc_key: |
                 key "designate" {
                         algorithm hmac-sha512;
                         secret
-                "{{ salt['random.get_str']('64') | base64_encode }}";
+                "{{ salt['random.get_str']('64', punctuation=False) | base64_encode }}";
                 };
 {% elif service == 'neutron' %}
         extra_opts: |
-            metadata_proxy_shared_secret: {{ salt['random.get_str']('64') }}
+            metadata_proxy_shared_secret: {{ salt['random.get_str']('64', punctuation=False) }}
 {% elif service == 'zun' %}
         extra_opts: |
-            kuryr_service_password: {{ salt['random.get_str']('64') }}
+            kuryr_service_password: {{ salt['random.get_str']('64', punctuation=False) }}
 {% elif service == 'barbican' %}
         extra_opts: |
             simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}
@@ -154,44 +154,54 @@ api:
 {% endif %}
 {% endfor %}
 
-/srv/dynamic_pillar/horizon.sls:
+passwords:
   file.managed:
     - replace: false
     - contents: |
         horizon:
-          horizon_secret_key: {{ salt['random.get_str']('64') }}
-
-/srv/dynamic_pillar/mysql.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        mysql:
-          mysql_root_password: {{ salt['random.get_str']('64') }}
-          wsrep_cluster_name: {{ salt['random.get_str']('32') }}
-
-/srv/dynamic_pillar/rabbitmq.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        rabbitmq:
-          rabbitmq_password: {{ salt['random.get_str']('64') }}
-          erlang_cookie: {{ salt['generate.erlang_cookie'](20) }}
-
-/srv/dynamic_pillar/etcd.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        etcd:
-          etcd_cluster_token: {{ salt['random.get_str']('64') }}
-
-{% set graylog_password = salt['random.get_str']('64') %}
-/srv/dynamic_pillar/graylog.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        graylog:
-          graylog_password: {{ graylog_password }}
-          graylog_password_sha2: {{ graylog_password | sha256 }}
+          horizon_secret_key: {{ salt['random.get_str']('64', punctuation=False) }}
+    - names:
+      - /srv/dynamic_pillar/horizon.sls:
+        - contents: |
+            horizon:
+              horizon_secret_key: {{ salt['random.get_str']('64', punctuation=False) }}
+      - /srv/dynamic_pillar/mysql.sls:
+        - contents: |
+            mysql:
+              mysql_root_password: {{ salt['random.get_str']('64', punctuation=False) }}
+              wsrep_cluster_name: {{ salt['random.get_str']('32') }}
+      - /srv/dynamic_pillar/rabbitmq.sls:
+        - contents: |
+            rabbitmq:
+              rabbitmq_password: {{ salt['random.get_str']('64', punctuation=False) }}
+              erlang_cookie: {{ salt['generate.erlang_cookie'](20) }}
+      - /srv/dynamic_pillar/etcd.sls:
+        - contents: |
+            etcd:
+              etcd_cluster_token: {{ salt['random.get_str']('64', punctuation=False) }}
+{% set graylog_password = salt['random.get_str']('64', punctuation=False) %}
+      - /srv/dynamic_pillar/graylog.sls:
+        - contents: |
+            graylog:
+              graylog_password: {{ graylog_password }}
+              graylog_password_sha2: {{ graylog_password | sha256 }}
+      - /srv/dynamic_pillar/openstack.sls:
+        - contents: |
+            openstack:
+              admin_password: {{ salt['random.get_str']('64', punctuation=False) }}
+      - /srv/dynamic_pillar/api.sls:
+        - contents: |
+            api:
+              user_password: {{ salt['random.get_str']('64', punctuation=False) }}
+      - /srv/dynamic_pillar/cache.sls:
+        - contents: |
+            cache:
+              maintenance_password: {{ salt['random.get_str']('64', punctuation=False) }}
+      - /srv/dynamic_pillar/guacamole.sls:
+        - contents: |
+            guacamole:
+              guacamole_mysql_password: {{ salt['random.get_str']('64', punctuation=False) }}
+              guacadmin_password: {{ salt['random.get_str']('16') }}
 
 {% set adminkey = salt['generate.cephx_key']() %}
 {% set volumeskey = salt['generate.cephx_key']() %}
@@ -204,7 +214,7 @@ api:
     - replace: false
     - contents: |
         ceph:
-          fsid: {{ salt['random.get_str']('64') | uuid }}
+          fsid: {{ salt['random.get_str']('64', punctuation=False) | uuid }}
           ceph-mon-keyring: |
             [mon.]
                  key = {{ salt['generate.cephx_key']() }}
@@ -240,7 +250,7 @@ api:
             [client.volumes]
                  key = {{ volumeskey }}
                  caps mon = "allow r, allow command \"osd blacklist\""
-                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rx pool=images"
+                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rwx pool=images"
           ceph-client-compute-keyring: |
             [client.compute]
                  key = {{ computekey }}
@@ -255,35 +265,6 @@ api:
           ceph-client-volumes-key: {{ volumeskey }}
           volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
           nova-uuid: {{ salt['random.get_str']('30') | uuid }}
-
-/srv/dynamic_pillar/openstack.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        openstack:
-          admin_password: {{ salt['random.get_str']('64') }}
-
-/srv/dynamic_pillar/api.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        api:
-          user_password: {{ salt['random.get_str']('64') }}
-
-/srv/dynamic_pillar/cache.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        cache:
-          maintenance_password: {{ salt['random.get_str']('64') }}
-
-/srv/dynamic_pillar/guacamole.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        guacamole:
-          guacamole_mysql_password: {{ salt['random.get_str']('64') }}
-          guacadmin_password: {{ salt['random.get_str']('16') }}
 
 /srv/dynamic_pillar/top.sls:
   file.managed:

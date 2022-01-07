@@ -16,9 +16,9 @@
 
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Wallaby
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/wallaby main
-    - file: /etc/apt/sources.list.d/cloudarchive-wallaby.list
+    - humanname: Ubuntu Cloud Archive - Xena
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/xena main
+    - file: /etc/apt/sources.list.d/cloudarchive-xena.list
     - keyid: ECD76E3E
     - keyserver: keyserver.ubuntu.com
 
@@ -43,7 +43,7 @@ CentOS-PowerTools:
 
 rdo:
   pkg.installed:
-    - name: centos-release-openstack-wallaby
+    - name: centos-release-openstack-xena
 
 update_packages_rdo:
   pkg.uptodate:

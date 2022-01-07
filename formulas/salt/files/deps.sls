@@ -66,13 +66,6 @@ hosts:
         cache: configure
       configure:
         controller: configure
-  antora:
-    needs:
-      install:
-        cache: configure
-      configure:
-        controller: configure
-        haproxy: configure
   mysql:
     needs:
       install:

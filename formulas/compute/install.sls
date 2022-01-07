@@ -21,15 +21,10 @@ include:
   - /formulas/common/frr/repo
 
 {% if grains['os_family'] == 'Debian' %}
-held_packages:
-  pkg.installed:
-    - pkgs:
-      - nova-compute: 3:23.0.2-0ubuntu1~cloud0
-    - hold: True
-
 compute_packages:
   pkg.installed:
     - pkgs:
+      - nova-compute
       - python3-tornado
       - ceph-common
       - spice-html5

@@ -20,18 +20,13 @@ include:
 
 {% if grains['os_family'] == 'Debian' %}
 
-held_packages:
-  pkg.installed:
-    - pkgs:
-      - nova-api: 3:23.0.2-0ubuntu1~cloud0
-      - nova-conductor: 3:23.0.2-0ubuntu1~cloud0
-      - nova-spiceproxy: 3:23.0.2-0ubuntu1~cloud0
-      - nova-scheduler: 3:23.0.2-0ubuntu1~cloud0
-    - hold: True
-
 nova_packages:
   pkg.installed:
     - pkgs:
+      - nova-api
+      - nova-conductor
+      - nova-spiceproxy
+      - nova-scheduler
       - python3-openstackclient
       - python3-etcd3gw
 

@@ -15,7 +15,14 @@
 ## redfish module - primarily used for bootstrapping
 ## could potentially be fleshed out and become formal fully-featured
 ## salt module
-import redfish, pyghmi.ipmi.command, json, ipaddress, socket, requests, urllib3, re
+
+import redfish
+import pyghmi.ipmi.command
+import json
+import ipaddress
+import socket
+import requests
+import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 socket.setdefaulttimeout(0.5)
@@ -38,7 +45,13 @@ def check_version(ip):
     redfish_version = requests.get(
         "https://" + str(ip) + "/redfish/v1", timeout=1, verify=False
     )
-    if re.match('^.*("RedfishVersion":"1.0.1").*$', redfish_version.text) != None:
+    ### This will work for now, needs better logic to handle all supported versions
+    response = redfish_version.json()
+    version = response["RedfishVersion"]
+    version_subs = version.split('.')
+    version_subs = [int(sub) for sub in version_subs]
+
+    if version_subs[0] >= 1 and version_subs[1] >= 0:
         return True
     else:
         return False
@@ -60,12 +73,12 @@ def gather_endpoints(network, username, password):
     for ip in ipaddress.IPv4Network(network):
         if tcp_connect(ip, 443) == 0:
             try:
-                if check_version(ip) == True:
-                    session = login(str(ip), username, password)
-                    redfish_status = session.get("/redfish/v1/Systems/1", None)
-                    body = json.loads(redfish_status.text)
-                    redfish_endpoints[body["UUID"]] = str(ip)
-                    session.logout()
+                #if check_version(ip) == True:
+                session = login(str(ip), username, password)
+                redfish_status = session.get("/redfish/v1/Systems/1", None)
+                body = json.loads(redfish_status.text)
+                redfish_endpoints[body["UUID"]] = str(ip)
+                session.logout()
             except:
                 print("Error processing {}".format(ip))
                 pass
