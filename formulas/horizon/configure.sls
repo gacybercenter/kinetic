@@ -131,7 +131,7 @@ pyScss_deprecation_patch:
       - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/dist-packages/scss/namespace.py:
         - source: salt://formulas/horizon/files/namespace.py
       - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/dist-packages/scss/types.py:
-        - source: salt://formulas/horizon/files/types.py        
+        - source: salt://formulas/horizon/files/types.py
 {% elif grains['os_family'] == 'Debian' %}
       - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/namespace.py:
         - source: salt://formulas/horizon/files/namespace.py
