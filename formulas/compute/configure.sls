@@ -79,6 +79,11 @@ ceph_keyrings:
 
 libvirt_secrets:
   file.managed:
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        nova_uuid: {{ nova_uuid }}
+        volumes_uuid: {{ volumes_uuid }}
     - names:
       - /etc/libvirt/secrets/{{ nova_uuid }}.base64:
         - contents_pillar: ceph:ceph-client-compute-key
@@ -116,7 +121,7 @@ multiarch_patch:
 {% if grains['os_family'] == 'RedHat' %}
 spice-html5:
   git.latest:
-    - name: https://gitlab.com/gacybercenter/gacyberrange/forks/spice-html5.git
+    - name: https://github.com/freedesktop/spice-html5.git
     - target: /usr/share/spice-html5
 {% endif %}
 
@@ -131,18 +136,6 @@ nova_compute_service:
     - watch:
       - file: /etc/nova/nova.conf
       - file: multiarch_patch
-
-{% if grains['os_family'] == 'RedHat' %}
-libvirtd_service:
-  service.running:
-    - name: libvirtd
-    - enable: true
-    - require_in:
-      - cmd: define_ceph_compute_key
-      - cmd: load_ceph_compute_key
-      - cmd: define_ceph_volumes_key
-      - cmd: load_ceph_volumes_key
-{% endif %}
 
 {% set neutron_backend = pillar['neutron']['backend'] %}
 {% if neutron_backend != "networking-ovn" %}
