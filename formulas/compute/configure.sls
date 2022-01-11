@@ -116,7 +116,7 @@ multiarch_patch:
 {% if grains['os_family'] == 'RedHat' %}
 spice-html5:
   git.latest:
-    - name: https://github.com/freedesktop/spice-html5.git
+    - name: https://gitlab.com/gacybercenter/gacyberrange/forks/spice-html5.git
     - target: /usr/share/spice-html5
 {% endif %}
 
