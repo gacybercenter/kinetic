@@ -25,6 +25,7 @@ designate-manage database sync:
     - runas: designate
     - require:
       - file: conf-files
+      - service: designate_central_service
     - unless:
       - fun: grains.equals
         key: build_phase
