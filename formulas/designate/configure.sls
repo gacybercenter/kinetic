@@ -20,23 +20,48 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+{{ spawn.spawnzero_complete() }}
+
 designate-manage database sync:
   cmd.run:
     - runas: designate
     - require:
       - file: conf-files
-      - service: designate_central_service
     - unless:
       - fun: grains.equals
         key: build_phase
         value: configure
+
+### this is a bit odd that it just started causing problems
+### Starting the services here because it does not seem to
+### starting the service before trying to update the pools
+spawning_designate_api_service:
+  service.running:
+    - name: designate-api
+    - enable: true
+    - watch:
+      - file: /etc/designate/designate.conf
+    - require:
+      - file: conf-files
+      - file: /etc/designate/pools.yaml
+
+spawning_designate_central_service:
+  service.running:
+    - name: designate-central
+    - enable: true
+    - watch:
+      - file: /etc/designate/designate.conf
+    - require:
+      - file: conf-files
+      - file: /etc/designate/pools.yaml
 
 designate-manage pool update:
   cmd.run:
     - runas: designate
     - require:
       - file: /etc/designate/pools.yaml
-      - cmd: designate-manage database sync
+      - service: spawning_designate_api_service
+      - service: spawning_designate_central_service
     - onchanges:
       - file: /etc/designate/pools.yaml
 
@@ -48,8 +73,6 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
       - cmd: designate-manage pool update
     - onchanges:
       - file: /etc/designate/tlds.conf
-
-{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
