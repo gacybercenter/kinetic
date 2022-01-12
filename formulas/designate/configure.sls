@@ -47,7 +47,7 @@ designate-manage pool update:
     - runas: designate
     - require:
       - file: /etc/designate/pools.yaml
-      - cmd: designate_central_service
+      - service: designate_central_service
     - onchanges:
       - file: /etc/designate/pools.yaml
 
