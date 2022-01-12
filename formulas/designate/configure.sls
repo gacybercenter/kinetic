@@ -20,8 +20,6 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
-{{ spawn.spawnzero_complete() }}
-
 designate-manage database sync:
   cmd.run:
     - runas: designate
@@ -32,9 +30,8 @@ designate-manage database sync:
         key: build_phase
         value: configure
 
-### this is a bit odd that it just started causing problems
-### Starting the services here because it does not seem to
-### starting the service before trying to update the pools
+### salt state service.running doesn't seem to restart the designate_central_service
+### must perform cmd.run to restart as a fix
 
 restart_designate_central_service:
   cmd.run:
@@ -59,6 +56,8 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
       - cmd: designate-manage pool update
     - onchanges:
       - file: /etc/designate/tlds.conf
+
+{{ spawn.spawnzero_complete() }}
 
 {% else %}
 
