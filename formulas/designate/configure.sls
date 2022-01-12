@@ -38,22 +38,12 @@ designate-manage database sync:
 spawning_designate_api_service:
   service.running:
     - name: designate-api
-    - enable: true
-    - watch:
-      - file: /etc/designate/designate.conf
-    - require:
-      - file: conf-files
-      - file: /etc/designate/pools.yaml
+    - reload: True
 
 spawning_designate_central_service:
   service.running:
     - name: designate-central
-    - enable: true
-    - watch:
-      - file: /etc/designate/designate.conf
-    - require:
-      - file: conf-files
-      - file: /etc/designate/pools.yaml
+    - reload: True
 
 designate-manage pool update:
   cmd.run:
