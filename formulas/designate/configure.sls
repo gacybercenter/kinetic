@@ -35,11 +35,7 @@ designate-manage pool update:
     - runas: designate
     - require:
       - file: /etc/designate/pools.yaml
-      - service: designate_api_service
-      - service: designate_central_service
-      - service: designate_mdns_service
-      - service: designate_worker_service
-      - service: designate_producer_service
+      - cmd: designate-manage database sync
     - onchanges:
       - file: /etc/designate/pools.yaml
 
@@ -48,11 +44,7 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
     - runas: designate
     - require:
       - file: /etc/designate/tlds.conf
-      - service: designate_api_service
-      - service: designate_central_service
-      - service: designate_mdns_service
-      - service: designate_worker_service
-      - service: designate_producer_service
+      - cmd: designate-manage pool update
     - onchanges:
       - file: /etc/designate/tlds.conf
 
