@@ -84,6 +84,8 @@ conf-files:
         - source: salt://formulas/designate/files/tlds.conf
       - /etc/designate/designate.conf:
         - source: salt://formulas/designate/files/designate.conf
+      - /etc/designate/policy.yaml:
+        - source: salt://formulas/designate/files/policy.yaml
 
 ## Trying to write yaml in yaml via salt with correct indentation is basically impossible when using
 ## file.managed with the source directive.  Using contents is ugly, but it works.
