@@ -36,18 +36,18 @@ designate-manage database sync:
 ### Starting the services here because it does not seem to
 ### starting the service before trying to update the pools
 
-# restart_designate_central_service:
-#   cmd.run:
-#     - name: systemctl restart designate-central.service
-#     - require:
-#       - cmd: designate-manage database sync
+restart_designate_central_service:
+  cmd.run:
+    - name: systemctl restart designate-central.service
+    - require:
+      - cmd: designate-manage database sync
 
 designate-manage pool update:
   cmd.run:
     - runas: designate
     - require:
       - file: /etc/designate/pools.yaml
-      - service: designate_central_service
+      - cmd: restart_designate_central_service
     - onchanges:
       - file: /etc/designate/pools.yaml
 
@@ -147,7 +147,6 @@ designate_api_service:
   service.running:
     - name: designate-api
     - enable: True
-    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -158,7 +157,6 @@ designate_central_service:
   service.running:
     - name: designate-central
     - enable: True
-    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -169,7 +167,6 @@ designate_worker_service:
   service.running:
     - name: designate-worker
     - enable: True
-    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -180,7 +177,6 @@ designate_producer_service:
   service.running:
     - name: designate-producer
     - enable: True
-    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -191,7 +187,6 @@ designate_mdns_service:
   service.running:
     - name: designate-mdns
     - enable: True
-    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:
