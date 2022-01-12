@@ -35,23 +35,19 @@ designate-manage database sync:
 ### this is a bit odd that it just started causing problems
 ### Starting the services here because it does not seem to
 ### starting the service before trying to update the pools
-spawning_designate_api_service:
-  service.running:
-    - name: designate-api
-    - reload: True
 
-spawning_designate_central_service:
-  service.running:
-    - name: designate-central
-    - reload: True
+restart_designate_central_service:
+  cmd.run:
+    - name: systemctl restart designate-central.service
+    - require:
+      - cmd: designate-manage database sync
 
 designate-manage pool update:
   cmd.run:
     - runas: designate
     - require:
       - file: /etc/designate/pools.yaml
-      - service: spawning_designate_api_service
-      - service: spawning_designate_central_service
+      - service: restart_designate_central_service
     - onchanges:
       - file: /etc/designate/pools.yaml
 
