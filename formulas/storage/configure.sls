@@ -38,7 +38,7 @@ move_crush_bucket:
   cmd.run:
     - name: ceph osd crush move {{ grains['host'] }} root=default
     - require_in:
-      - cmd: finish_crush_bucket
+      - file: finish_crush_bucket
     - creates:
       - /etc/ceph/bucket_done
 
