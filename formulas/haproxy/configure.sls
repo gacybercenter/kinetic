@@ -70,6 +70,10 @@ haproxy_connect_any:
       - sls: /formulas/haproxy/install
 {% endif %}
 
+haproxy_service_stop:
+  service.dead:
+    - name: haproxy
+
 acme_certs:
   acme.cert:
     - name: {{ pillar['haproxy']['dashboard_domain'] }}
@@ -83,6 +87,7 @@ acme_certs:
 {% endif %}
 {% if salt['pillar.get']('danos:enabled', False) == True %}
     - require:
+      - service: haproxy_service_stop
       - danos: set haproxy group
       - danos: set haproxy static-mapping
 {% endif %}
@@ -145,3 +150,4 @@ haproxy_service_watch:
     - reload: true
     - watch:
       - file: /etc/haproxy/haproxy.cfg
+      - acme: acme_certs
