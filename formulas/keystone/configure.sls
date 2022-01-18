@@ -90,10 +90,9 @@ user_role_init:
     - service_name: {{ service }}
     - require:
       - keystone_service: {{ service }}_service_create
-    {% endif %}
         {% endfor %}
-      {% endif %}
-    {% endfor %}
+      {% endfor %}
+    {% endif %}
   {% endfor %}
 
 ##LDAP-specific changes
