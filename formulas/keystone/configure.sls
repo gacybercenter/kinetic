@@ -72,9 +72,8 @@ user_role_init:
     - user: {{ project }}
     - require:
       - keystone_user: {{ project }}_user_init
-    {% endif %}
-    {% for service, attribs in pillar['openstack_services'][project]['configuration']['services'].items() %}
-      {% if salt['pillar.get']('hosts:'+service+':enabled', False) == True %}
+
+      {% for service, attribs in pillar['openstack_services'][project]['configuration']['services'].items() %}
 {{ service }}_service_create:
   keystone_service.present:
     - name: {{ service }}
@@ -91,7 +90,7 @@ user_role_init:
     - service_name: {{ service }}
     - require:
       - keystone_service: {{ service }}_service_create
-
+    {% endif %}
         {% endfor %}
       {% endif %}
     {% endfor %}
