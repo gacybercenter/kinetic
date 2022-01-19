@@ -48,6 +48,8 @@ conf-files:
         - source: salt://formulas/pxe/files/kinetic.ipxe
       - /etc/apache2/sites-available/wsgi.conf:
         - source: salt://formulas/pxe/files/wsgi.conf
+      - /etc/apache2/apache2.conf:
+        - source: salt://formulas/pxe/files/apache2.conf
       - /var/www/html/index.py:
         - source: salt://formulas/pxe/files/index.py
 
