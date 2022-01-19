@@ -112,6 +112,7 @@ apache2_service:
     - watch:
       - apache_module: wsgi_module
       - file: /etc/apache2/sites-available/wsgi.conf
+      - file: /etc/apache2/apache2.conf
       - apache_site: wsgi
       - apache_site: 000-default
 
