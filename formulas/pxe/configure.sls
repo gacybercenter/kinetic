@@ -42,6 +42,7 @@ conf-files:
     - template: jinja
     - defaults:
         pxe_record: {{ pillar['pxe']['record'] }}
+        pxe_name: {{ pillar['pxe']['name'] }}
     - names:
       - /var/www/html/ipxe/src/kinetic.ipxe:
         - source: salt://formulas/pxe/files/kinetic.ipxe
