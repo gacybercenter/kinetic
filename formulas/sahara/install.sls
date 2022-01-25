@@ -145,7 +145,7 @@ storm_plugin_requirements:
       - systemctl is-active sahara-engine
     - require:
       - git: storm_plugin_latest
-      
+
 cdh_plugin_requirements:
   cmd.run:
     - name: pip3 install -r /var/lib/sahara_plugin_cdh/requirements.txt
