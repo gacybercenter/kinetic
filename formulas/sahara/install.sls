@@ -28,8 +28,6 @@ sahara_packages:
       - sahara-api
       - sahara-engine
       - python3-saharaclient
-      - python3-sahara-plugin-vanilla
-      - python3-sahara-plugin-spark
       - python3-openstackclient
       - python3-etcd3gw
 
@@ -42,8 +40,186 @@ sahara_packages:
       - openstack-sahara-engine
       - openstack-sahara
       - python3-saharaclient
-      - python3-sahara-plugin-vanilla
-      - python3-sahara-plugin-spark
       - python3-openstackclient
 
 {% endif %}
+
+mapr_plugin_latest:
+ file.directory:
+   - name: /var/lib/sahara_plugin_mapr
+   - user: sahara
+   - group: sahara
+   - mode: "0755"
+   - makedirs: True
+ git.latest:
+   - name: https://github.com/openstack/sahara-plugin-mapr.git
+   - branch: stable/xena
+   - target: /var/lib/sahara_plugin_mapr
+   - force_clone: True
+
+ambari_plugin_latest:
+ file.directory:
+   - name: /var/lib/sahara_plugin_ambari
+   - user: sahara
+   - group: sahara
+   - mode: "0755"
+   - makedirs: True
+ git.latest:
+   - name: https://github.com/openstack/sahara-plugin-ambari.git
+   - branch: stable/xena
+   - target: /var/lib/sahara_plugin_ambari
+   - force_clone: True
+
+storm_plugin_latest:
+ file.directory:
+   - name: /var/lib/sahara_plugin_storm
+   - user: sahara
+   - group: sahara
+   - mode: "0755"
+   - makedirs: True
+ git.latest:
+   - name: https://github.com/openstack/sahara-plugin-storm.git
+   - branch: stable/xena
+   - target: /var/lib/sahara_plugin_storm
+   - force_clone: True
+
+cdh_plugin_latest:
+ file.directory:
+   - name: /var/lib/sahara_plugin_cdh
+   - user: sahara
+   - group: sahara
+   - mode: "0755"
+   - makedirs: True
+ git.latest:
+   - name: https://github.com/openstack/sahara-plugin-cdh.git
+   - branch: stable/xena
+   - target: /var/lib/sahara_plugin_cdh
+   - force_clone: True
+
+spark_plugin_latest:
+ file.directory:
+   - name: /var/lib/sahara_plugin_spark
+   - user: sahara
+   - group: sahara
+   - mode: "0755"
+   - makedirs: True
+ git.latest:
+   - name: https://github.com/openstack/sahara-plugin-spark.git
+   - branch: stable/xena
+   - target: /var/lib/sahara_plugin_spark
+   - force_clone: True
+
+vanilla_plugin_latest:
+ file.directory:
+   - name: /var/lib/sahara_plugin_vanilla
+   - user: sahara
+   - group: sahara
+   - mode: "0755"
+   - makedirs: True
+ git.latest:
+   - name: https://github.com/openstack/sahara-plugin-vanilla.git
+   - branch: stable/xena
+   - target: /var/lib/sahara_plugin_vanilla
+   - force_clone: True
+
+mapr_plugin_requirements:
+  cmd.run:
+    - name: pip3 install -r /var/lib/sahara_plugin_mapr/requirements.txt
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - git: mapr_plugin_latest
+
+ambari_plugin_requirements:
+  cmd.run:
+    - name: pip3 install -r /var/lib/sahara_plugin_ambari/requirements.txt
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - git: ambari_plugin_latest
+
+storm_plugin_requirements:
+  cmd.run:
+    - name: pip3 install -r /var/lib/sahara_plugin_storm/requirements.txt
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - git: storm_plugin_latest
+      
+cdh_plugin_requirements:
+  cmd.run:
+    - name: pip3 install -r /var/lib/sahara_plugin_cdh/requirements.txt
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - git: cdh_plugin_latest
+
+spark_plugin_requirements:
+  cmd.run:
+    - name: pip3 install -r /var/lib/sahara_plugin_spark/requirements.txt
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - git: spark_plugin_latest
+
+vanilla_plugin_requirements:
+  cmd.run:
+    - name: pip3 install -r /var/lib/sahara_plugin_vanilla/requirements.txt
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - git: vanilla_plugin_latest
+
+mapr_plugin_install:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd : /var/lib/sahara_plugin_mapr
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - cmd: mapr_plugin_requirements
+
+ambari_plugin_install:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd : /var/lib/sahara_plugin_ambari
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - cmd: ambari_plugin_requirements
+
+storm_plugin_install:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd : /var/lib/sahara_plugin_storm
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - cmd: storm_plugin_requirements
+
+cdh_plugin_install:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd : /var/lib/sahara_plugin_cdh
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - cmd: cdh_plugin_requirements
+
+spark_plugin_install:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd : /var/lib/sahara_plugin_spark
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - cmd: spark_plugin_requirements
+
+vanilla_plugin_install:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd : /var/lib/sahara_plugin_vanilla
+    - unless:
+      - systemctl is-active sahara-engine
+    - require:
+      - cmd: vanilla_plugin_requirements
