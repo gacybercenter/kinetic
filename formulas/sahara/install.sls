@@ -28,6 +28,8 @@ sahara_packages:
       - sahara-api
       - sahara-engine
       - python3-saharaclient
+      - python3-sahara-plugin-vanilla
+      - python3-sahara-plugin-spark
       - python3-openstackclient
       - python3-etcd3gw
 
@@ -40,6 +42,8 @@ sahara_packages:
       - openstack-sahara-engine
       - openstack-sahara
       - python3-saharaclient
+      - python3-sahara-plugin-vanilla
+      - python3-sahara-plugin-spark
       - python3-openstackclient
 
 {% endif %}
