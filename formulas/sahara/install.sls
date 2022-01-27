@@ -122,6 +122,14 @@ vanilla_plugin_latest:
    - target: /var/lib/sahara_plugin_vanilla
    - force_clone: True
 
+### Patch sahara_plugin_vanilla https://gitlab.com/gacybercenter/gacyberrange/infrastructure/kinetic/-/issues/142
+vanilla_patch:
+  file.managed:
+    - name: /var/lib/sahara_plugin_vanilla/build/lib/sahara_plugin_vanilla/plugins/vanilla/hadoop2/run_scripts.py
+    - source: salt://formulas/sahara/files/run_scripts.py
+    - require:
+      - git: vanilla_plugin_latest
+
 mapr_plugin_requirements:
   cmd.run:
     - name: pip3 install -r /var/lib/sahara_plugin_mapr/requirements.txt
@@ -168,7 +176,7 @@ vanilla_plugin_requirements:
     - unless:
       - systemctl is-active sahara-engine
     - require:
-      - git: vanilla_plugin_latest
+      - file: vanilla_patch
 
 mapr_plugin_install:
   cmd.run:
