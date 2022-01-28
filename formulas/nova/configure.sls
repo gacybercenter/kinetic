@@ -133,6 +133,7 @@ create_{{ flavor }}:
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
+        dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         token_ttl: {{ pillar['nova']['token_ttl'] }}
 
 spice-html5:
@@ -189,6 +190,20 @@ nova_spiceproxy_service:
     - name: nova-spiceproxy
 {% elif grains['os_family'] == 'RedHat' %}
     - name: openstack-nova-spicehtml5proxy
+{% endif %}
+    - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
+    - watch:
+      - file: /etc/nova/nova.conf
+
+nova_serialproxy_service:
+  service.running:
+{% if grains['os_family'] == 'Debian' %}
+    - name: nova-serialproxy
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-nova-serialproxy
 {% endif %}
     - enable: true
     - retry:
