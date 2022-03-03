@@ -60,6 +60,9 @@ set_volumes_pool_pgs:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='public') }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
+{% if salt['pillar.get']('hosts:barbican:enabled', 'False') == True %}
+        barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barican', endpoint='internal') }}
+{% endif %}
 
 cinder_api_service:
   service.running:

@@ -50,7 +50,9 @@ include:
         my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='internal') }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
-
+{% if salt['pillar.get']('hosts:barbican:enabled', 'False') == True %}
+        barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barican', endpoint='internal') }}
+{% endif %}
 
 ## Somehow, the cinder service is attempted to be started before cinder.conf
 ## is fully configured, leading to a situation where it tries to run with a deafult

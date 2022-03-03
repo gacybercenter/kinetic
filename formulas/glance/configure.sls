@@ -71,6 +71,9 @@ set_images_pool_pgs:
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
         password: {{ pillar['glance']['glance_service_password'] }}
+{% if salt['pillar.get']('hosts:barbican:enabled', 'False') == True %}
+        barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barican', endpoint='internal') }}
+{% endif %}
 
 glance_api_service:
   service.running:
