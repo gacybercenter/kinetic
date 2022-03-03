@@ -99,6 +99,11 @@ create_master_pem:
     - require:
       - acme: acme_certs
 
+create_dhparams_file:
+  cmd.run:
+    - name: openssl dhparam -out /etc/haproxy/dhparams.pem 2048
+    - unless: ls /etc/haproxy/dhparams.pem
+
 /etc/haproxy/haproxy.cfg:
   file.managed:
     - source: salt://formulas/haproxy/files/haproxy.cfg
