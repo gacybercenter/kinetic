@@ -157,6 +157,14 @@ create_magnum_admin_user:
     - name: magnum_domain_admin
     - domain: magnum
     - password: {{ pillar ['magnum']['magnum_service_password'] }}
+
+magnum_domain_admin_role_assignment:
+  keystone_role_grant.present:
+    - name: admin
+    - domain: magnum
+    - user_domain: magnum
+    - user: magnum_domain_admin
+
   {% endif %}
 
 ## zun-specific configurations
