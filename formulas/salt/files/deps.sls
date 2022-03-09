@@ -308,3 +308,14 @@ hosts:
         controller: configure
         haproxy: configure
         mysql: configure
+  octavia:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+        haproxy: configure
+        memcached: configure
+        rabbitmq: configure
+        keystone: configure
+        neutron: configure

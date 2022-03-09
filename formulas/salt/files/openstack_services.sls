@@ -347,3 +347,25 @@ openstack_services:
               protocol: "https://"
               port: ":8786"
               path: /v2/%(project_id)s
+  octavia:
+    configuration:
+      dbs:
+        - octavia
+        - octavia_persistence
+      services:
+        sahara:
+          type: load-balancer
+          description: OpenStack Octavia
+          endpoints:
+            internal:
+              protocol: "https://"
+              port: ":9876"
+              path: /
+            admin:
+              protocol: "https://"
+              port: ":9876"
+              path: /
+            public:
+              protocol: "https://"
+              port: ":9876"
+              path: /

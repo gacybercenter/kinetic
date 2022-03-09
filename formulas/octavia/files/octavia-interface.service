@@ -1,0 +1,13 @@
+[Unit]
+Description=Octavia Interface Creator
+Requires=neutron-linuxbridge-agent.service
+After=neutron-linuxbridge-agent.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/opt/octavia-interface.sh start
+ExecStop=/opt/octavia-interface.sh stop
+
+[Install]
+WantedBy=multi-user.target

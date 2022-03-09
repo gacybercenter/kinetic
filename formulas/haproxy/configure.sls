@@ -149,6 +149,7 @@ create_dhparams_file:
         manila_hosts: {{ constructor.haproxy_listener_constructor(role='manila', port='8786')|yaml_encode }}
         mysql_hosts: {{ constructor.haproxy_listener_constructor(role='mysql', port='3306')|yaml_encode }}
         guacamole_hosts: {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080')|yaml_encode }}
+        octavia_hosts: {{ constructor.haproxy_listener_constructor(role='octavia', port='9876')|yaml_encode }}
 
 haproxy_service_watch:
   service.running:

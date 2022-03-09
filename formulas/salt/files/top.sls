@@ -150,3 +150,6 @@ base:
   'guacamole*':
     - guacamole
     - integrated_services
+  'octavia*':
+    - octavia
+    - rabbitmq

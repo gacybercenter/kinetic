@@ -28,6 +28,7 @@ horizon_packages:
       - python3-pip
       - python3-setuptools
       - python3-designate-dashboard
+      - python3-octavia-dashboard
       - openstack-dashboard
   {% if salt['pillar.get']('hosts:sahara:enabled', 'False') == True %}
       - python3-sahara-dashboard
@@ -83,6 +84,7 @@ horizon_packages:
       - python3-pip
       - python3-setuptools
       - openstack-designate-ui
+      - openstack-octavia-ui
       - openstack-dashboard
   {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
       - openstack-magnum-ui
