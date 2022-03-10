@@ -55,6 +55,7 @@ base:
     - magnum
     - sahara
     - manila
+    - octavia
     - guacamole
     - integrated_services
   'rabbitmq*':
