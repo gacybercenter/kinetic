@@ -77,6 +77,7 @@ base:
     - designate
     - swift
     - zun
+    - octavia
     - openstack
   'barbican*':
     - barbican
