@@ -78,13 +78,12 @@ conf-files:
         www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
         auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
         memcached_servers: {{ constructor.memcached_url_constructor() }}
-        # octavia_password: {{ pillar['octavia']['octavia_service_password'] }}
-        oct_pass: {{ pillar['octavia']['octavia_service_password'] }}
+        octavia_password: {{ pillar['octavia']['octavia_service_password'] }}
         listen_api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}:9001
         octavia_public_endpoint: {{ constructor.endpoint_url_constructor(project='octavia', service='octavia', endpoint='public') }}
         coordination_server: {{ constructor.spawnzero_ip_constructor(type='memcached', network='management') }}:11211
-        mgmt_port_mac: {{ fix_me }}
-        brname: {{ pillar['ocatavia']['octavia_bridge_name'] }}
+        #mgmt_port_mac: {{ fix_me }}
+        #brname: {{ pillar['octavia']['octavia_bridge_name'] }}
     - names:
       - /etc/octavia/octavia.conf:
         - source: salt://formulas/octavia/files/octavia.conf
@@ -95,7 +94,7 @@ conf-files:
 #     - template: jinja
 #     - defaults:
 #         mgmt_port_mac: {{ fix_me }}
-#         brname: {{ pillar['ocatavia']['octavia_bridge_name'] }}
+#         brname: {{ pillar['octavia']['octavia_bridge_name'] }}
 #     - retry:
 #         attempts: 3
 #         interval: 10
