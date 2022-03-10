@@ -353,7 +353,7 @@ openstack_services:
         - octavia
         - octavia_persistence
       services:
-        sahara:
+        octavia:
           type: load-balancer
           description: OpenStack Octavia
           endpoints:
