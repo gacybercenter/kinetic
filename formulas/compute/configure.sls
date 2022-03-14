@@ -48,13 +48,10 @@ conf-files:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
-<<<<<<< HEAD
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
-=======
 {% if salt['pillar.get']('hosts:barbican:enabled', 'False') == True %}
         barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barican', endpoint='internal') }}
 {% endif %}
->>>>>>> f7e0da4... We have Barbican enabled and built but, we needed to add the corresponding Barbican configs to the OpenStack services in order for them to communicate with the service.
     - names:
       - /etc/modprobe.d/kvm.conf:
         - source: salt://formulas/compute/files/kvm.conf
