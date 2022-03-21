@@ -51,7 +51,7 @@ include:
         api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='internal') }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
 {% if salt['pillar.get']('hosts:barbican:enabled', 'False') == True %}
-        barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barican', endpoint='internal') }}
+        barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barbican', endpoint='internal') }}
 {% endif %}
 
 ## Somehow, the cinder service is attempted to be started before cinder.conf

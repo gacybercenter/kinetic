@@ -50,7 +50,7 @@ conf-files:
         console_domain: {{ pillar['haproxy']['console_domain'] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
 {% if salt['pillar.get']('hosts:barbican:enabled', 'False') == True %}
-        barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barican', endpoint='internal') }}
+        barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barbican', endpoint='internal') }}
 {% endif %}
     - names:
       - /etc/modprobe.d/kvm.conf:

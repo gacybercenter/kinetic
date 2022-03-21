@@ -61,7 +61,7 @@ set_volumes_pool_pgs:
         api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='public') }}
         rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
 {% if salt['pillar.get']('hosts:barbican:enabled', 'False') == True %}
-        barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barican', endpoint='internal') }}
+        barbican_endpoint: {{ constructor.endpoint_url_constructor(project='barbican', service='barbican', endpoint='internal') }}
 {% endif %}
 
 cinder_api_service:
