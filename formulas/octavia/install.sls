@@ -26,10 +26,6 @@ octavia_packages:
       - bridge-utils
       - redis
       - octavia-api
-      - octavia-health-manager
-      - octavia-housekeeping
-      - octavia-common
-      - octavia-worker
       - python3-octavia
       - python3-octaviaclient
       - python3-memcache
@@ -50,11 +46,7 @@ octavia_packages:
   pkg.installed:
     - pkgs:
       - bridge-utils
-      - openstack-octavia-common
       - openstack-octavia-api
-      - openstack-octavia-health-manager
-      - openstack-octavia-housekeeping
-      - openstack-octavia-worker
       - python3-octavia
       - python3-memcached
       - python3-octaviaclient

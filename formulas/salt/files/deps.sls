@@ -139,6 +139,9 @@ hosts:
         rabbitmq: configure
         keystone: configure
         neutron: configure
+{% if salt['pillar.get']('hosts:octavia:enabled', False) == True %}
+        octavia: configure
+{% endif %}
   horizon:
     needs:
       install:

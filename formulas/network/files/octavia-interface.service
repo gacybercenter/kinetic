@@ -1,6 +1,6 @@
 [Unit]
 Description=Octavia Interface Creator
-Requires=neutron-linuxbridge-agent.service
+Requires=neutron-openvswitch-agent.service
 After=neutron-linuxbridge-agent.service
 
 [Service]

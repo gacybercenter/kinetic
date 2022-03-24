@@ -45,8 +45,15 @@ network_packages:
       - neutron-metadata-agent
       - python3-openstackclient
       - python3-tornado
-
+    {% if salt['pillar.get']('hosts:octavia:enabled', False) == True %}
+      - redis
+      - octavia-health-manager
+      - octavia-housekeeping
+      - octavia-worker
+      - python3-octavia
+      - python3-octaviaclient
     {% endif %}
+  {% endif %}
 
 {% elif grains['os_family'] == 'RedHat' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
@@ -70,6 +77,12 @@ network_packages:
       - openstack-neutron-openvswitch
       - iptables-ebtables
       - python3-openstackclient
-
+    {% if salt['pillar.get']('hosts:octavia:enabled', False) == True %}
+      - openstack-octavia-health-manager
+      - openstack-octavia-housekeeping
+      - openstack-octavia-worker
+      - python3-octavia
+      - python3-octaviaclient
+    {% endif %}
   {% endif %}
 {% endif %}

@@ -74,6 +74,11 @@ conf-files:
         interface_driver: {{ neutron_backend }}
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
+        controller_ip_port_list: {{ octavia_healthmon_url_constructor() }}
+        octavia_sql_connection_string: {{ constructor.mysql_url_constructor(user='octavia', database='octavia') }}
+        octavia_sql_persistence_connection_string: {{ constructor.mysql_url_constructor(user='octavia', database='octavia-persistence') }}
+        octavia_password: {{ pillar['octavia']['octavia_service_password'] }}
+        octavia_public_endpoint: {{ constructor.endpoint_url_constructor(project='octavia', service='octavia', endpoint='public') }}
     - names:
       - /etc/neutron/neutron.conf:
         - source: salt://formulas/network/files/neutron.conf
@@ -91,6 +96,16 @@ conf-files:
         - source: salt://formulas/network/files/fwaas_driver.ini
       - /etc/neutron/metadata_agent.ini:
         - source: salt://formulas/network/files/metadata_agent.ini
+  {% if salt['pillar.get']('hosts:octavia:enabled', False) == True %}
+      - /etc/octavia/octavia.conf:
+        - source: salt://formulas/octavia/files/octavia.conf
+
+/etc/dhcp/octavia:
+  file.managed:
+    - source: salt://formulas/octavia/files/dhclient.conf
+    - makedirs: True
+    - mode: "0755"
+  {% endif %}
 
 fs.inotify.max_user_instances:
   sysctl.present:
@@ -171,4 +186,27 @@ neutron_l3_agent_service:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/l3_agent.ini
       - file: /etc/neutron/fwaas_driver.ini
+
+  {% if salt['pillar.get']('hosts:octavia:enabled', False) == True %}
+# octavia_health_manager_service:
+#   service.running:
+#     - name: octavia-health-manager
+#     - enable: True
+#     - watch:
+#       - file: conf-files
+
+# octavia_housekeeping_service:
+#   service.running:
+#     - name: octavia-housekeeping
+#     - enable: True
+#     - watch:
+#       - file: conf-files
+
+# octavia_worker_service:
+#   service.running:
+#     - name: octavia-worker
+#     - enable: True
+#     - watch:
+#       - file: conf-files
+  {% endif %}
 {% endif %}

@@ -111,6 +111,7 @@ base:
     - rabbitmq
     - nova
     - designate
+    - octavia
   'heat*':
     - heat
     - rabbitmq

@@ -150,3 +150,16 @@ server {{ host }} {{ address }}{{ port }} check inter 2000 rise 2 fall 5
 {%- endif -%}
 
 {%- endmacro -%}
+
+### This macro creates octavia health monitor cluster strings
+{% macro octavia_healthmon_url_constructor() -%}
+
+{%- for host, addresses in salt['mine.get']('role:network', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+  {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
+    {% set address = address+":5555" %}
+{{ address }}
+  {%- endfor -%}
+  {% if loop.index < loop.length %},{% endif %}
+{%- endfor %}
+
+{%- endmacro -%}
