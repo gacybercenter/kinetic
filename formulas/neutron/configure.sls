@@ -106,6 +106,10 @@ conf-files:
         dns_domain: {{ pillar['designate']['tld'] }}
         rpc_workers: {{ grains['num_cpus'] * 2 }}
         vni_ranges: {{ pillar['neutron']['openvswitch']['vni_ranges'] }}
+{% if salt['pillar.get']('neutron:l3ha', 'False') == True %}
+        max_l3_agents_per_router: {{ pillar['neutron']['max_l3_agents_per_router'] }}
+{% endif %}
+        dhcp_agents_per_network: {{ pillar['neutron']['dhcp_agents_per_network'] }}
     - names:
       - /etc/neutron/neutron.conf:
         - source: salt://formulas/neutron/files/neutron.conf

@@ -74,6 +74,10 @@ conf-files:
         interface_driver: {{ neutron_backend }}
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
+{% if salt['pillar.get']('neutron:l3ha', 'False') == True %}
+        max_l3_agents_per_router: {{ pillar['neutron']['max_l3_agents_per_router'] }}
+{% endif %}
+        dhcp_agents_per_network: {{ pillar['neutron']['dhcp_agents_per_network'] }}
     - names:
       - /etc/neutron/neutron.conf:
         - source: salt://formulas/network/files/neutron.conf
