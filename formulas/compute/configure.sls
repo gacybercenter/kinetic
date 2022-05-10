@@ -98,6 +98,28 @@ libvirt_secrets:
     - user: root
     - group: root
 
+/root/.ssh/config:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: '0400'
+    - source: salt://formulas/compute/files/config
+
+{% for key in pillar['nova_live_migration_auth_key'] %}
+{{ key }}:
+  ssh_auth.present:
+    - user: root
+    - enc: {{ pillar['nova_live_migration_auth_key'][ key ]['encoding'] }}
+{% endfor %}
+
+/root/.ssh/id_rsa:
+  file.managed:
+    - contents_pillar: nova_private_key
+    - user: root
+    - group: root
+    - mode: '0600'
+    - replace: False
+
 {% if grains['os_family'] == 'RedHat' %}
 spice-html5:
   git.latest:

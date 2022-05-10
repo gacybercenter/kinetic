@@ -34,6 +34,7 @@ compute_packages:
       - frr-pythontools
       - python3-etcd3gw
       - qemu-system
+      - nvme-cli
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
       - neutron-linuxbridge-agent
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
@@ -58,6 +59,7 @@ compute_packages:
       - frr-pythontools
       - qemu-system-arm
       - qemu-system-mips
+      - nvme-cli
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
       - openstack-neutron-linuxbridge
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
