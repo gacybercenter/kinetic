@@ -144,7 +144,7 @@ services:
             kuryr_service_password: {{ salt['random.get_str']('64', punctuation=False) }}
 {% elif service == 'barbican' %}
         extra_opts: |
-            simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}
+            simplecrypto_key: {{ salt['random.get_str']('32', punctuation=False) | base64_encode }}
 {% elif service == 'keystone' %}
         extra_opts: |
             fernet_primary: {{ salt['fernet.make_key']() }}
@@ -169,7 +169,7 @@ passwords:
         - contents: |
             mysql:
               mysql_root_password: {{ salt['random.get_str']('64', punctuation=False) }}
-              wsrep_cluster_name: {{ salt['random.get_str']('32') }}
+              wsrep_cluster_name: {{ salt['random.get_str']('32', punctuation=False) }}
       - /srv/dynamic_pillar/rabbitmq.sls:
         - contents: |
             rabbitmq:
@@ -201,7 +201,7 @@ passwords:
         - contents: |
             guacamole:
               guacamole_mysql_password: {{ salt['random.get_str']('64', punctuation=False) }}
-              guacadmin_password: {{ salt['random.get_str']('16') }}
+              guacadmin_password: {{ salt['random.get_str']('16', punctuation=False) }}
 
 {% set adminkey = salt['generate.cephx_key']() %}
 {% set volumeskey = salt['generate.cephx_key']() %}
@@ -263,8 +263,8 @@ passwords:
                 caps mgr = "profile crash"
           ceph-client-compute-key: {{ computekey }}
           ceph-client-volumes-key: {{ volumeskey }}
-          volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
-          nova-uuid: {{ salt['random.get_str']('30') | uuid }}
+          volumes-uuid: {{ salt['random.get_str']('30', punctuation=False) | uuid }}
+          nova-uuid: {{ salt['random.get_str']('30', punctuation=False) | uuid }}
 
 /srv/dynamic_pillar/top.sls:
   file.managed:
