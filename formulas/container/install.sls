@@ -191,6 +191,7 @@ kuryr_latest:
 kuryr_requirements:
   cmd.run:
     - name: pip3 install -r /var/lib/kuryr/requirements.txt
+    - runas: kuryr
     - unless:
       - systemctl is-active kuryr-libnetwork
     - require:
@@ -199,6 +200,7 @@ kuryr_requirements:
 installkuryr:
   cmd.run:
     - name: python3 setup.py install
+    - runas: kuryr
     - cwd: /var/lib/kuryr/
     - unless:
       - systemctl is-active kuryr-libnetwork
@@ -242,6 +244,7 @@ zun_latest:
 zun_requirements:
   cmd.run:
     - name: pip3 install -r /var/lib/zun/requirements.txt
+    - runas: zun
     - unless:
       - systemctl is-active zun-compute
     - require:
@@ -250,6 +253,7 @@ zun_requirements:
 installzun:
   cmd.run:
     - name: python3 setup.py install
+    - runas: zun
     - cwd : /var/lib/zun/
     - unless:
       - systemctl is-active zun-compute

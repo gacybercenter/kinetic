@@ -99,6 +99,7 @@ zun_latest:
 zun_requirements:
   cmd.run:
     - name: pip3 install -r /var/lib/zun/requirements.txt
+    - runas: zun
     - unless:
       - systemctl is-active zun-api
     - require:
@@ -107,6 +108,7 @@ zun_requirements:
 installzun:
   cmd.run:
     - name: python3 setup.py install
+    - runas: zun
     - cwd : /var/lib/zun/
     - unless:
       - systemctl is-active zun-api
