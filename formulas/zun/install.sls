@@ -79,12 +79,20 @@ zun:
     - group: root
     - makedirs: True
 
+git_config:
+  git.config_set:
+    - name: safe.directory
+    - value: /var/lib/zun
+    - global: True
+
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
     - branch: stable/yoga
     - target: /var/lib/zun
     - force_clone: true
+    - require:
+      - git: git_config
 
 zun_requirements:
   cmd.run:

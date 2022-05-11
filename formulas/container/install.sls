@@ -168,12 +168,22 @@ kuryr:
     - mode: "0755"
     - makedirs: True
 
+git_config:
+  git.config_set:
+    - name: safe.directory
+    - multivar:
+      - /var/lib/zun
+      - /var/lib/kuryr
+    - global: True
+
 kuryr_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
     - branch: stable/yoga
     - target: /var/lib/kuryr
     - force_clone: true
+    - require:
+      - git: git_config
 
 kuryr_requirements:
   cmd.run:
@@ -222,6 +232,8 @@ zun_latest:
     - branch: stable/yoga
     - target: /var/lib/zun
     - force_clone: true
+    - require:
+      - git: git_config
 
 zun_requirements:
   cmd.run:
