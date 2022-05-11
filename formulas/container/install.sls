@@ -184,6 +184,7 @@ kuryr_latest:
     - branch: stable/yoga
     - target: /var/lib/kuryr
     - force_clone: true
+    - user: kuryr
     - require:
       - git: kuryr_config
 
@@ -234,6 +235,7 @@ zun_latest:
     - branch: stable/yoga
     - target: /var/lib/zun
     - force_clone: true
+    - user: zun
     - require:
       - git: zun_config
 
