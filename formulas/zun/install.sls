@@ -83,6 +83,7 @@ git_config:
   git.config_set:
     - name: safe.directory
     - value: /var/lib/zun
+    - user: zun
     - global: True
 
 zun_latest:

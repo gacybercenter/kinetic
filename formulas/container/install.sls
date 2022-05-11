@@ -168,13 +168,15 @@ kuryr:
     - mode: "0755"
     - makedirs: True
 
-git_config:
+{% for user in ['zun', 'kuryr'] %}
+{{ user }}_config:
   git.config_set:
     - name: safe.directory
+    - user: {{ user }}
     - multivar:
-      - /var/lib/zun
-      - /var/lib/kuryr
+      - /var/lib/{{ user }}
     - global: True
+{% endfor %}
 
 kuryr_latest:
   git.latest:
@@ -183,7 +185,7 @@ kuryr_latest:
     - target: /var/lib/kuryr
     - force_clone: true
     - require:
-      - git: git_config
+      - git: kuryr_config
 
 kuryr_requirements:
   cmd.run:
@@ -233,7 +235,7 @@ zun_latest:
     - target: /var/lib/zun
     - force_clone: true
     - require:
-      - git: git_config
+      - git: zun_config
 
 zun_requirements:
   cmd.run:
