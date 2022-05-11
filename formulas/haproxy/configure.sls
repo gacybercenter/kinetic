@@ -44,6 +44,10 @@ set haproxy group:
   {% else %}
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 set haproxy static-mapping:
   danos.set_statichostmapping:
@@ -59,6 +63,10 @@ set haproxy static-mapping:
   {% else %}
     - host: {{ pillar['danos']['endpoint'] }}
   {% endif %}
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 {% endif %}
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
