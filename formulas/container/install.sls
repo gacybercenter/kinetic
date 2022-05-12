@@ -184,14 +184,12 @@ kuryr_latest:
     - branch: stable/yoga
     - target: /var/lib/kuryr
     - force_clone: true
-    - user: kuryr
     - require:
       - cmd: kuryr_config
 
 kuryr_requirements:
   cmd.run:
     - name: pip3 install -r /var/lib/kuryr/requirements.txt
-    - runas: kuryr
     - unless:
       - systemctl is-active kuryr-libnetwork
     - require:
@@ -200,7 +198,6 @@ kuryr_requirements:
 installkuryr:
   cmd.run:
     - name: python3 setup.py install
-    - runas: kuryr
     - cwd: /var/lib/kuryr/
     - unless:
       - systemctl is-active kuryr-libnetwork
@@ -237,14 +234,12 @@ zun_latest:
     - branch: stable/yoga
     - target: /var/lib/zun
     - force_clone: true
-    - user: zun
     - require:
       - cmd: zun_config
 
 zun_requirements:
   cmd.run:
     - name: pip3 install -r /var/lib/zun/requirements.txt
-    - runas: zun
     - unless:
       - systemctl is-active zun-compute
     - require:
@@ -253,7 +248,6 @@ zun_requirements:
 installzun:
   cmd.run:
     - name: python3 setup.py install
-    - runas: zun
     - cwd : /var/lib/zun/
     - unless:
       - systemctl is-active zun-compute

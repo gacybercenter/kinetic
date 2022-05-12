@@ -93,14 +93,12 @@ zun_latest:
     - branch: stable/yoga
     - target: /var/lib/zun
     - force_clone: true
-    - user: zun
     - require:
       - cmd: git_config
 
 zun_requirements:
   cmd.run:
     - name: pip3 install -r /var/lib/zun/requirements.txt
-    - runas: zun
     - unless:
       - systemctl is-active zun-api
     - require:
@@ -109,7 +107,6 @@ zun_requirements:
 installzun:
   cmd.run:
     - name: python3 setup.py install
-    - runas: zun
     - cwd : /var/lib/zun/
     - unless:
       - systemctl is-active zun-api
