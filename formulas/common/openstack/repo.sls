@@ -19,7 +19,7 @@ uca:
     - humanname: Ubuntu Cloud Archive - Yoga
     - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/yoga main
     - file: /etc/apt/sources.list.d/cloudarchive-yoga.list
-    - keyid: ECD76E3E
+    - keyid: EC4926EA
     - keyserver: keyserver.ubuntu.com
 
 update_packages_uca:
