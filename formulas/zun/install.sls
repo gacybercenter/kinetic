@@ -95,7 +95,7 @@ zun_latest:
     - force_clone: true
     - user: zun
     - require:
-      - git: git_config
+      - cmd: git_config
 
 zun_requirements:
   cmd.run:

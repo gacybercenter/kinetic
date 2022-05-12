@@ -186,7 +186,7 @@ kuryr_latest:
     - force_clone: true
     - user: kuryr
     - require:
-      - git: kuryr_config
+      - cmd: kuryr_config
 
 kuryr_requirements:
   cmd.run:
@@ -239,7 +239,7 @@ zun_latest:
     - force_clone: true
     - user: zun
     - require:
-      - git: zun_config
+      - cmd: zun_config
 
 zun_requirements:
   cmd.run:
