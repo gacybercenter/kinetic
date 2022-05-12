@@ -170,12 +170,12 @@ kuryr:
 
 {% for user in ['zun', 'kuryr'] %}
 {{ user }}_config:
-  git.config_set:
-    - name: safe.directory
-    - user: {{ user }}
-    - multivar:
-      - /var/lib/{{ user }}
-    - global: True
+  cmd.run:
+    - name: git config --system --add safe.directory "/var/lib/{{ user }}"
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 {% endfor %}
 
 kuryr_latest:

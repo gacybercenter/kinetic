@@ -80,11 +80,12 @@ zun:
     - makedirs: True
 
 git_config:
-  git.config_set:
-    - name: safe.directory
-    - value: /var/lib/zun
-    - user: zun
-    - global: True
+  cmd.run:
+    - name: git config --system --add safe.directory "/var/lib/zun"
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 zun_latest:
   git.latest:
