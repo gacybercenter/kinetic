@@ -137,7 +137,6 @@ nova_compute_service:
     - enable: true
     - watch:
       - file: /etc/nova/nova.conf
-      - file: multiarch_patch
 
 {% set neutron_backend = pillar['neutron']['backend'] %}
 {% if neutron_backend != "networking-ovn" %}
