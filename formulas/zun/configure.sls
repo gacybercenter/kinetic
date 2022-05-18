@@ -67,6 +67,10 @@ conf-files:
         - source: salt://formulas/zun/files/zun-api.service
       - /etc/systemd/system/zun-wsproxy.service:
         - source: salt://formulas/zun/files/zun-wsproxy.service
+### temporary patch for jinja.py on salt-minion reference https://github.com/saltstack/salt/issues/61848
+### ref fix https://github.com/NixOS/nixpkgs/pull/172129/commits/bddee7b008a2f3a961fa31601defca34119ae148, https://github.com/NixOS/nixpkgs/pull/172129
+      - /usr/lib/python3/dist-packages/salt/utils/jinja.py:
+        - source: salt://formulas/zun/files/jinja.py
     - require:
       - sls: /formulas/zun/install
 
