@@ -125,7 +125,7 @@ jinja_patch:
     - name: /usr/lib/python3/dist-packages/salt/utils/jinja.py
     - source: salt://formulas/zun/files/jinja.py
     - require:
-      - sls: /formulas/zun/install
+      - sls: /formulas/container/install
 
 neutron_{{ neutron_backend }}_agent_service:
   service.running:
