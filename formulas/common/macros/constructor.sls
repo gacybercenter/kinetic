@@ -156,7 +156,7 @@ server {{ host }} {{ address }}{{ port }} check inter 2000 rise 2 fall 5
 {% macro host_file_constructor(role) -%}
 
 {%- if role == 'compute' -%}
-  {% for host, addresses in salt['mine.get']('G@type:compute', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
+  {% for host, addresses in salt['mine.get']('role:'+role, 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
     {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
 {{ host }} {{ address }}
     {% endfor -%}
