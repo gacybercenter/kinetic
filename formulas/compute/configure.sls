@@ -49,6 +49,7 @@ conf-files:
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
+        compute_hosts: {{ constructor. host_file_constructor(role='compute') }}
     - names:
       - /etc/modprobe.d/kvm.conf:
         - source: salt://formulas/compute/files/kvm.conf
@@ -64,6 +65,8 @@ conf-files:
         - source: salt://formulas/compute/files/neutron_sudoers
       - /etc/neutron/neutron.conf:
         - source: salt://formulas/compute/files/neutron.conf
+      - /etc/hosts:
+        - source: salt://formulas/compute/files/hosts
 
 ceph_keyrings:
   file.managed:
