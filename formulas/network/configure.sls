@@ -74,6 +74,7 @@ conf-files:
         interface_driver: {{ neutron_backend }}
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
+        explicitly_egress_direct: True
 {% if salt['pillar.get']('neutron:l3ha', 'False') == True %}
         max_l3_agents_per_router: {{ pillar['neutron']['max_l3_agents_per_router'] }}
 {% endif %}
