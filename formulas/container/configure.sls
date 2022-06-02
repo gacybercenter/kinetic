@@ -14,6 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/ceph/configure
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
@@ -70,6 +71,17 @@ conf-files:
         - source: salt://formulas/container/files/kuryr-libnetwork.service
     - require:
       - sls: /formulas/container/install
+
+ceph_keyrings:
+  file.managed:
+    - names:
+      - /etc/ceph/ceph.client.volumes.keyring:
+        - contents_pillar: ceph:ceph-client-volumes-keyring
+      - /etc/ceph/client.volumes.key:
+        - contents_pillar: ceph:ceph-client-volumes-key
+    - mode: "0640"
+    - user: root
+    - group: nova
 
 cni_plugins:
   archive.extracted:

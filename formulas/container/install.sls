@@ -17,6 +17,7 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
+  - /formulas/common/ceph/repo
   - /formulas/common/docker/repo
   - /formulas/common/kata/repo
 
@@ -36,6 +37,8 @@ container_packages:
       - kata-proxy
       - kata-shim
       - python3-etcd3gw
+      - open-iscsi
+      - ceph-common
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 container_packages:
@@ -53,6 +56,8 @@ container_packages:
       - kata-shim
       - numactl
       - python3-etcd3gw
+      - open-iscsi
+      - ceph-common
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -70,6 +75,8 @@ container_packages:
       - kata-proxy
       - kata-shim
       - python3-etcd3gw
+      - open-iscsi
+      - ceph-common
 
     {% endif %}
 
