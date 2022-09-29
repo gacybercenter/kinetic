@@ -296,6 +296,3 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 DESIGNATE = { 'records_use_fips': True }
 SESSION_TIMEOUT = {{ session_timeout }}
 {{ theming }}
-YUYU_URL="https://%s:8182" % OPENSTACK_HOST
-CURRENCIES = ('USD')
-DEFAULT_CURRENCY = "USD"
