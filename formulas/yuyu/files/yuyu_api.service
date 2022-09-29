@@ -1,0 +1,12 @@
+[Unit]
+Description=yuyu api daemon
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/var/lib/yuyu
+ExecStart=/var/lib/yuyu/env/bin/gunicorn yuyu.wsgi --workers 2 --bind 127.0.0.1:8182 --log-file=logs/gunicorn.log
+
+[Install]
+WantedBy=multi-user.target

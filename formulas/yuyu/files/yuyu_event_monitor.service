@@ -1,0 +1,12 @@
+[Unit]
+Description=yuyu event monitor daemon
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/var/lib/yuyu
+ExecStart=/var/lib/yuyu/env/bin/python manage.py event_monitor
+
+[Install]
+WantedBy=multi-user.target
