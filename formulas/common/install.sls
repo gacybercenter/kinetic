@@ -74,4 +74,8 @@ common_install:
   pkg.installed:
     - pkgs:
       - python3-pip
+{% if grains['virtual'] == "physical" %}
+      - python3-pyghmi
+      - ipmitool
+{% endif %}
     - reload_modules: True
