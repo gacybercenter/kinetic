@@ -14,6 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/ceph/configure
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
@@ -71,6 +72,17 @@ conf-files:
     - require:
       - sls: /formulas/container/install
 
+ceph_keyrings:
+  file.managed:
+    - names:
+      - /etc/ceph/ceph.client.volumes.keyring:
+        - contents_pillar: ceph:ceph-client-volumes-keyring
+      - /etc/ceph/client.volumes.key:
+        - contents_pillar: ceph:ceph-client-volumes-key
+    - mode: "0640"
+    - user: root
+    - group: nova
+
 cni_plugins:
   archive.extracted:
     - name: /opt/cni/bin
@@ -117,6 +129,15 @@ os_neutron_dac_override:
       - service: neutron_{{ neutron_backend }}_agent_service
     {% endif %}
   {% endif %}
+
+### temporary patch for jinja.py on salt-minion reference https://github.com/saltstack/salt/issues/61848
+### ref fix https://github.com/NixOS/nixpkgs/pull/172129/commits/bddee7b008a2f3a961fa31601defca34119ae148, https://github.com/NixOS/nixpkgs/pull/172129
+jinja_patch:
+  file.managed:
+    - name: /usr/lib/python3/dist-packages/salt/utils/jinja.py
+    - source: salt://formulas/zun/files/jinja.py
+    - require:
+      - sls: /formulas/container/install
 
 neutron_{{ neutron_backend }}_agent_service:
   service.running:
