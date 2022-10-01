@@ -77,13 +77,14 @@ common_install:
     - reload_modules: True
 
 {% if grains['virtual'] == "physical" %}
-pyghmi_pip:
-  pip.installed:
-    - name: pyghmi
-    - require:
-      - pkg: common_install
-  pkg.installed:
-    - pkgs:
-      - ipmitool
-      - vim
+#pyghmi_pip:
+#  pip.installed:
+#    - name: pyghmi
+#    - bin_env: '/usr/bin/pip3'
+#    - require:
+#      - pkg: common_install
+#  pkg.installed:
+#    - pkgs:
+#      - ipmitool
+#      - vim
 {% endif %}
