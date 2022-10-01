@@ -154,6 +154,7 @@ nova_compute_service:
   {% if neutron_backend == "openvswitch" %}
         extensions: qos
         bridge_mappings: public_br
+        explicitly_egress_direct: True
 
 create_bridge:
   openvswitch_bridge.present:
