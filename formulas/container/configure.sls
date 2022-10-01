@@ -107,6 +107,7 @@ install_zun_cni:
   {% if neutron_backend == "openvswitch" %}
         extensions: qos
         bridge_mappings: public_br
+        explicitly_egress_direct: True
 
 create_bridge:
   openvswitch_bridge.present:
