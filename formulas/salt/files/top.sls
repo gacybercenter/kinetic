@@ -146,6 +146,7 @@ base:
     - rabbitmq
     - neutron
     - ceph
+    - swift
   'horizon*':
     - horizon
   'guacamole*':
