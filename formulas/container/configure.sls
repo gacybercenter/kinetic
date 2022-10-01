@@ -81,7 +81,7 @@ ceph_keyrings:
         - contents_pillar: ceph:ceph-client-volumes-key
     - mode: "0640"
     - user: root
-    - group: nova
+    - group: root
 
 cni_plugins:
   archive.extracted:
