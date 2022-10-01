@@ -145,6 +145,7 @@ base:
     - zun
     - rabbitmq
     - neutron
+    - ceph
   'horizon*':
     - horizon
   'guacamole*':
