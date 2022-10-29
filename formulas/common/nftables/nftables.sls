@@ -13,6 +13,7 @@ common_remove:
     - pkgs:
       - firewalld
 
+{% if grains['build_phase'] != 'configure' %}
 openstack_api:
   nftables.append:
     - position: 1
@@ -86,3 +87,4 @@ public_block_17:
     - connstate: new
     - source: '10.101.128.0/17'
     - save: True
+{% endif %}
