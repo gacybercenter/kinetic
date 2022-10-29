@@ -33,3 +33,9 @@ cryptography_pip:
     - name: cryptography
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
+
+pyghmi_pip:
+ pip.installed:
+   - name: pyghmi
+   - bin_env: '/usr/bin/pip3'
+   - reload_modules: True
