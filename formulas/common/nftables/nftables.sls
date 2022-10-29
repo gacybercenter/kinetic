@@ -3,9 +3,10 @@ nftables:
 
 nftables_service:
   service.running:
-  - enable: true
-  - requires:
-    - nftables
+    - name: nftables
+    - enable: true
+    - requires:
+      - nftables
 
 common_remove:
   pkg.removed:
