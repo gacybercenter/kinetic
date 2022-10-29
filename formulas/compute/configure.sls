@@ -54,8 +54,6 @@ conf-files:
     - names:
       - /etc/modprobe.d/kvm.conf:
         - source: salt://formulas/compute/files/kvm.conf
-      - /etc/frr/daemons:
-        - source: salt://formulas/common/frr/files/daemons
       - /etc/ceph/ceph-nova.xml:
         - source: salt://formulas/compute/files/ceph-nova.xml
       - /etc/ceph/ceph-volumes.xml:
@@ -68,6 +66,8 @@ conf-files:
         - source: salt://formulas/compute/files/neutron.conf
       - /etc/hosts:
         - source: salt://formulas/compute/files/hosts
+      # - /etc/frr/daemons:
+      #   - source: salt://formulas/common/frr/files/daemons
 
 ceph_keyrings:
   file.managed:
