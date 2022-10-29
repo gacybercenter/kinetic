@@ -13,7 +13,7 @@ common_remove:
       - firewalld
 
 openstack_api:
-  nftables.insert:
+  nftables.append:
     - position: 1
     - table: filter
     - chain: INPUT
