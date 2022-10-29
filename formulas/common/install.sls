@@ -65,11 +65,6 @@ upgraded:
       - update_all
 {% endif %}
 
-common_remove:
-  pkg.removed:
-    - pkgs:
-      - firewalld
-
 common_install:
   pkg.installed:
     - pkgs:
