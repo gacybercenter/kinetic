@@ -30,8 +30,6 @@ compute_packages:
       - spice-html5
       - python3-rbd
       - python3-rados
-      - frr
-      - frr-pythontools
       - python3-etcd3gw
       - qemu-system
       - nvme-cli
@@ -44,6 +42,8 @@ compute_packages:
       - neutron-ovn-metadata-agent
       - haproxy
   {% endif %}
+#      - frr
+#      - frr-pythontools
 
 {% elif grains['os_family'] == 'RedHat' %}
 compute_packages:
@@ -55,8 +55,6 @@ compute_packages:
       - python3-rbd
       - python3-rados
       - conntrack-tools
-      - frr
-      - frr-pythontools
       - qemu-system-arm
       - qemu-system-mips
       - nvme-cli
@@ -70,5 +68,7 @@ compute_packages:
       - openstack-neutron-common
       - haproxy
   {% endif %}
+#      - frr
+#      - frr-pythontools
 
 {% endif %}
