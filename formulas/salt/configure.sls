@@ -244,18 +244,18 @@ passwords:
           ceph-client-images-keyring: |
             [client.images]
                  key = {{ salt['generate.cephx_key']() }}
-                 caps mon = "allow r, allow command \"osd blacklist\""
-                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
+                 caps mon = "allow r, allow command \"osd blacklist\", allow profile rbd"
+                 caps osd = "profile rbd pool=images"
           ceph-client-volumes-keyring: |
             [client.volumes]
                  key = {{ volumeskey }}
-                 caps mon = "allow r, allow command \"osd blacklist\""
-                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rwx pool=images"
+                 caps mon = "allow r, allow command \"osd blacklist\", allow profile rbd"
+                 caps osd = "profile rbd pool=volumes, profile rbd-read-only pool=images"
           ceph-client-compute-keyring: |
             [client.compute]
                  key = {{ computekey }}
-                 caps mon = "allow r, allow command \"osd blacklist\""
-                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
+                 caps mon = "allow r, allow command \"osd blacklist\", allow profile rbd"
+                 caps osd = "profile rbd pool=vms, profile rbd pool=images, profile rbd pool=volumes"
           ceph-client-crash-keyring: |
             [client.crash]
                 key = {{ crashkey }}
