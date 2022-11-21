@@ -102,7 +102,7 @@ rsyslog:
 {% if grains['os_family'] == 'Debian' %}
 /etc/td-agent/td-agent.conf:
   file.managed:
-    - source: salt://formulas/common/fluentd/td-agent.conf
+    - source: salt://formulas/common/fluentd/files/td-agent.conf
     - template: jinja
     - defaults:
         fluentd_logger: {{ pillar['fluentd_url'] }}
