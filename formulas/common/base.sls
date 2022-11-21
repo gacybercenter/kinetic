@@ -75,21 +75,8 @@ hosts_name_resolution:
     - source: salt://formulas/common/syslog/files/10-syslog.conf
     - template: jinja
     - defaults:
-{% if salt['pillar.get']('syslog_url', False) != False %}
-        logger: {{ pillar['syslog_url'] }}
-{% else %}
         logger: 127.0.0.1:5514
-{% endif %}
-{% if salt['pillar.get']('syslog_url', False) == False %}
-  {% for host, addresses in salt['mine.get']('role:graylog', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {% for address in addresses %}
-      {% if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-    - context:
-        logger: {{ address }}:5514
-      {% endif %}
-    {% endfor %}
-  {% endfor %}
-{% endif %}
+
 
 {% if grains['os_family'] == 'Debian' %}
 timesyncd:
@@ -111,3 +98,20 @@ rsyslog:
     - user: root
     - group: root
     - mode: "0644"
+
+{% if grains['os_family'] == 'Debian' %}
+/etc/td-agent/td-agent.conf:
+  file.managed:
+    - source: salt://formulas/common/fluentd/td-agent.conf
+    - template: jinja
+    - defaults:
+        fluentd_logger: {{ pillar['fluentd_url'] }}
+        # NOTE(chateaulav): need correct password call
+        fluentd_password: {{ pillar ['fluentd_password'] }}
+        service: {{ type }}
+
+td-agent:
+  service.running:
+    - watch:
+      - /etc/td-agent/td-agent.conf 
+{% endif %}

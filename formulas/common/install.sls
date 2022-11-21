@@ -69,6 +69,7 @@ common_install:
   pkg.installed:
     - pkgs:
       - python3-pip
+      - td-agent
     - reload_modules: True
 
 {% if grains['virtual'] == "physical" %}
