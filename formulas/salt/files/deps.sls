@@ -225,7 +225,7 @@ hosts:
         memcached: configure
         rabbitmq: configure
         keystone: configure
-  graylog:
+  opensearch:
     needs:
       install:
         cache: configure

@@ -69,8 +69,16 @@ common_install:
   pkg.installed:
     - pkgs:
       - python3-pip
-      - td-agent
     - reload_modules: True
+
+{% if salt['pillar.get']('fluentd:enabled', False) == True %}
+  {% if grains['os_family'] == 'Debian' %}
+common_logging_install:
+  pkg.installed:
+    - sources:
+      - td-agent: https://packages.treasuredata.com/4/ubuntu/focal/pool/contrib/f/fluentd-apt-source/fluentd-apt-source_2020.8.25-1_all.deb
+  {% endif %}
+{% endif %}
 
 {% if grains['virtual'] == "physical" %}
 pyghmi_pip:

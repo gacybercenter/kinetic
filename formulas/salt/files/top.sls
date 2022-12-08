@@ -59,8 +59,8 @@ base:
     - integrated_services
   'rabbitmq*':
     - rabbitmq
-  'graylog*':
-    - graylog
+  'opensearch*':
+    - opensearch
   'keystone*':
     - keystone
     - barbican

@@ -179,12 +179,12 @@ passwords:
         - contents: |
             etcd:
               etcd_cluster_token: {{ salt['random.get_str']('64', punctuation=False) }}
-{% set graylog_password = salt['random.get_str']('64', punctuation=False) %}
-      - /srv/dynamic_pillar/graylog.sls:
+{% set opensearch_password = salt['random.get_str']('64', punctuation=False) %}
+      - /srv/dynamic_pillar/opensearch.sls:
         - contents: |
-            graylog:
-              graylog_password: {{ graylog_password }}
-              graylog_password_sha2: {{ graylog_password | sha256 }}
+            opensearch:
+              opensearch_password: {{ opensearch_password }}
+              opensearch_password_sha2: {{ opensearch_password | sha256 }}
       - /srv/dynamic_pillar/openstack.sls:
         - contents: |
             openstack:
