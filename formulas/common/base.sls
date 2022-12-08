@@ -108,25 +108,24 @@ rsyslog:
     - append
     - template: jinja
     - sources:
-    # TODO(chateaulav): finish logic loops for proper conf building
       - salt://formulas/common/fluentd/files/00-source-salt.conf
       - salt://formulas/common/fluentd/files/00-source-syslog.conf
-    {% if {{ type }} in 'designate, nova, glance, heat, neutron, storage, keystone, volume, cephmon, cinder, placement, network, swift, compute' %}
+    {% if grains['type'] in 'designate, nova, glance, heat, neutron, storage, keystone, volume, cephmon, cinder, placement, network, swift, compute' %}
       - salt://formulas/common/fluentd/files/01-source-api.conf
     {% endif %}
-    {% if {{ type }} in 'compute, network, neutron' %}
+    {% if grains['type'] in 'compute, network, neutron' %}
       - salt://formulas/common/fluentd/files/01-source-openvswitch.conf
     {% endif %}
-    {% if {{ type }} == 'compute' %}
+    {% if grains['type'] == 'compute' %}
       - salt://formulas/common/fluentd/files/01-source-libvirt.conf
     {% endif %}
-    {% if {{ type }} in 'keystone, horizon, cinder, placement, cache, pxe' %}
+    {% if grains['type'] in 'keystone, horizon, cinder, placement, cache, pxe' %}
       - salt://formulas/common/fluentd/files/01-source-wsgi.conf
     {% endif %}
-    {% if {{ type }} == 'mysql' %}
+    {% if grains['type'] == 'mysql' %}
       - salt://formulas/common/fluentd/files/source-mariadb.conf
     {% endif %}
-    {% if {{ type }} == 'rabbitmq' %}
+    {% if grains['type'] == 'rabbitmq' %}
       - salt://formulas/common/fluentd/files/source-rabbitmq.conf
     {% endif %}
       - salt://formulas/common/fluentd/files/02-filter-transform.conf
@@ -138,33 +137,33 @@ rsyslog:
         fluentd_logger: {{ pillar['fluentd']['record'] }}
         fluentd_password: {{ pillar['fluentd_password'] }}
         hostname: {{ grains['host'] }}
-    {% if {{ type }} in 'designate, nova, glance, heat, neutron, storage, keystone, volume, cephmon, cinder, placement, network, swift, compute' %}
-        service: {{ type }}
-        {% if {{ type }} == 'storage' %}
+    {% if grains['type'] in 'designate, nova, glance, heat, neutron, storage, keystone, volume, cephmon, cinder, placement, network, swift, compute' %}
+        service: grains['type']
+        {% if grains['type'] == 'storage' %}
         api_service_log: /var/log/ceph/*.log
-        {% elif {{ type }} in 'nova' %}
+        {% elif grains['type'] in 'nova' %}
         api_service_log: {% for service in 'nova, keystone' %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
-        {% elif {{ type }} in 'volume' %}
+        {% elif grains['type'] in 'volume' %}
         api_service_log: {% for service in 'ceph, cinder' %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
-        {% elif {{ type }} in 'cephmon' %}
+        {% elif grains['type'] in 'cephmon' %}
         api_service_log: /var/log/ceph/*.log
-        {% elif {{ type }} in 'network' %}
+        {% elif grains['type'] in 'network' %}
         api_service_log: /var/log/neutron/*.log
-        {% elif {{ type }} in 'swift' %}
+        {% elif grains['type'] in 'swift' %}
         api_service_log: /var/log/ceph/*.log
-        {% elif {{ type }} in 'compute' %}
+        {% elif grains['type'] in 'compute' %}
         api_service_log: {% for service in 'ceph, keystone, neutron, nova' %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
         {% else %}
         api_service_log: /var/log/{{ service }}/*.log
         {% endif %}
 
-    {% elif {{ type }} == 'keystone, horizon, cinder, placement, cache, pxe' %}
-        service: {{ type }}
-    {% elif {{ type }} == 'rabbitmq' %}
-        service: {{ type }}
+    {% elif grains['type'] == 'keystone, horizon, cinder, placement, cache, pxe' %}
+        service: grains['type']
+    {% elif grains['type'] == 'rabbitmq' %}
+        service: grains['type']
         log_hostname: {{ grains['host'] }}
     {% else %}
-        service: {{ type }}
+        service: grains['type']
     {% endif %}
 
 td-agent:
