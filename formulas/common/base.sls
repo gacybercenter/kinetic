@@ -106,7 +106,8 @@ rsyslog:
 td-agent_log_permissions:
   user.present:
     - name: td-agent
-    - groups: root
+    - groups:
+      - root
 
 /etc/td-agent/td-agent.conf:
   file:
