@@ -75,8 +75,8 @@ common_install:
   {% if grains['os_family'] == 'Debian' %}
 common_logging_install:
   pkg.installed:
-    - sources:
-      - td-agent: https://packages.treasuredata.com/4/ubuntu/focal/pool/contrib/f/fluentd-apt-source/fluentd-apt-source_2020.8.25-1_all.deb
+    - name: td-agent
+    - source: https://packages.treasuredata.com/4/ubuntu/focal/pool/contrib/f/fluentd-apt-source/fluentd-apt-source_2020.8.25-1_all.deb
   {% endif %}
 {% endif %}
 
