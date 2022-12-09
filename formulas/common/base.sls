@@ -111,22 +111,22 @@ rsyslog:
     - sources:
       - salt://formulas/common/fluentd/files/00-source-salt.conf
       - salt://formulas/common/fluentd/files/00-source-syslog.conf
-    {% if salt['grains.get']('type') in 'designate, nova, glance, heat, neutron, storage, keystone, volume, cephmon, cinder, placement, network, swift, compute' %}
+    {% if grains['type'] in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
       - salt://formulas/common/fluentd/files/01-source-api.conf
     {% endif %}
-    {% if salt['grains.get']('type') in 'compute, network, neutron' %}
+    {% if grains['type'] in ['compute', 'network', 'neutron'] %}
       - salt://formulas/common/fluentd/files/01-source-openvswitch.conf
     {% endif %}
-    {% if salt['grains.get']('type') == 'compute' %}
+    {% if grains['type'] == 'compute' %}
       - salt://formulas/common/fluentd/files/01-source-libvirt.conf
     {% endif %}
-    {% if salt['grains.get']('type') in 'keystone, horizon, cinder, placement, cache, pxe' %}
+    {% if grains['type'] in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
       - salt://formulas/common/fluentd/files/01-source-wsgi.conf
     {% endif %}
-    {% if salt['grains.get']('type') == 'mysql' %}
+    {% if grains['type'] == 'mysql' %}
       - salt://formulas/common/fluentd/files/source-mariadb.conf
     {% endif %}
-    {% if salt['grains.get']('type') == 'rabbitmq' %}
+    {% if grains['type'] == 'rabbitmq' %}
       - salt://formulas/common/fluentd/files/source-rabbitmq.conf
     {% endif %}
       - salt://formulas/common/fluentd/files/02-filter-transform.conf
@@ -138,33 +138,33 @@ rsyslog:
         fluentd_logger: {{ pillar['fluentd']['record'] }}
         fluentd_password: {{ pillar['fluentd_password'] }}
         hostname: {{ grains['host'] }}
-    {% if salt['grains.get']('type') in 'designate, nova, glance, heat, neutron, storage, keystone, volume, cephmon, cinder, placement, network, swift, compute' %}
-        service: salt['grains.get']('type')
-        {% if salt['grains.get']('type') == 'storage' %}
+    {% if grains['type'] in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
+        service: {{ type }}
+        {% if grains['type'] == 'storage' %}
         api_service_log: /var/log/ceph/*.log
-        {% elif salt['grains.get']('type') in 'nova' %}
-        api_service_log: {% for service in 'nova, keystone' %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
-        {% elif salt['grains.get']('type') in 'volume' %}
-        api_service_log: {% for service in 'ceph, cinder' %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
-        {% elif salt['grains.get']('type') in 'cephmon' %}
+        {% elif grains['type'] in 'nova' %}
+        api_service_log: {% for service in ['nova', 'keystone'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
+        {% elif grains['type'] in 'volume' %}
+        api_service_log: {% for service in ['ceph', 'cinder'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
+        {% elif grains['type'] in 'cephmon' %}
         api_service_log: /var/log/ceph/*.log
-        {% elif salt['grains.get']('type') in 'network' %}
+        {% elif grains['type'] in 'network' %}
         api_service_log: /var/log/neutron/*.log
-        {% elif salt['grains.get']('type') in 'swift' %}
+        {% elif grains['type'] in 'swift' %}
         api_service_log: /var/log/ceph/*.log
-        {% elif salt['grains.get']('type') in 'compute' %}
-        api_service_log: {% for service in 'ceph, keystone, neutron, nova' %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
+        {% elif grains['type'] in 'compute' %}
+        api_service_log: {% for service in ['ceph', 'keystone', 'neutron', 'nova'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
         {% else %}
         api_service_log: /var/log/{{ service }}/*.log
         {% endif %}
 
-    {% elif salt['grains.get']('type') == 'keystone, horizon, cinder, placement, cache, pxe' %}
-        service: salt['grains.get']('type')
-    {% elif salt['grains.get']('type') == 'rabbitmq' %}
-        service: salt['grains.get']('type')
+    {% elif grains['type'] == ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
+        service: {{ type }}
+    {% elif grains['type'] == 'rabbitmq' %}
+        service: {{ type }}
         log_hostname: {{ grains['host'] }}
     {% else %}
-        service: salt['grains.get']('type')
+        service: {{ type }}
     {% endif %}
 
 td-agent:
