@@ -5,7 +5,7 @@ nftables_service:
   service.running:
     - name: nftables
     - enable: true
-    - requires:
+    - require:
       - nftables
 
 common_remove:

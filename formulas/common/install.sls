@@ -83,7 +83,6 @@ grok_plugin_install:
     - name: td-agent-gem install fluent-plugin-grok-parser
     - require:
       - pkg: common_logging_install
-
   {% endif %}
 {% endif %}
 

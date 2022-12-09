@@ -103,7 +103,11 @@ rsyslog:
 # node ip
 {% if salt['pillar.get']('fluentd:enabled', False) == True %}
   {% if grains['os_family'] == 'Debian' %}
-  
+td-agent_log_permissions:
+  user.present:
+    - name: td-agent
+    - groups: root
+
 /etc/td-agent/td-agent.conf:
   file:
     - append
