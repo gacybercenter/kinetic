@@ -117,9 +117,6 @@ rsyslog:
     {% if grains['type'] in ['compute', 'network', 'neutron'] %}
       - salt://formulas/common/fluentd/files/01-source-openvswitch.conf
     {% endif %}
-    {% if grains['type'] == 'compute' %}
-      - salt://formulas/common/fluentd/files/01-source-libvirt.conf
-    {% endif %}
     {% if grains['type'] in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
       - salt://formulas/common/fluentd/files/01-source-wsgi.conf
     {% endif %}
@@ -138,6 +135,11 @@ rsyslog:
         fluentd_logger: {{ pillar['fluentd']['record'] }}
         fluentd_password: {{ pillar['fluentd_password'] }}
         hostname: {{ grains['host'] }}
+    {% if grains['type'] == 'salt' %}
+        salt_service_log: /var/log/salt/master,/var/log/salt/minion
+    {% else %}
+        salt_service_log: /var/log/salt/minion
+    {% endif %}
     {% if grains['type'] in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
         service: {{ type }}
         {% if grains['type'] == 'storage' %}
@@ -157,14 +159,11 @@ rsyslog:
         {% else %}
         api_service_log: /var/log/{{ service }}/*.log
         {% endif %}
-
     {% elif grains['type'] == ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
         service: {{ type }}
     {% elif grains['type'] == 'rabbitmq' %}
         service: {{ type }}
         log_hostname: {{ grains['host'] }}
-    {% else %}
-        service: {{ type }}
     {% endif %}
 
 td-agent:

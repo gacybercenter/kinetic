@@ -77,6 +77,13 @@ common_logging_install:
   pkg.installed:
     - name: td-agent
     - source: https://packages.treasuredata.com/4/ubuntu/focal/pool/contrib/f/fluentd-apt-source/fluentd-apt-source_2020.8.25-1_all.deb
+
+grok_plugin_install:
+  cmd.run:
+    - name: td-agent-gem install fluent-plugin-grok-parser
+    - require:
+      - pkg: common_logging_install
+
   {% endif %}
 {% endif %}
 
