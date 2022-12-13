@@ -6,7 +6,7 @@ nftables_service:
     - name: nftables
     - enable: true
     - require:
-      - nftables
+      - pkg: nftables
 
 common_remove:
   pkg.removed:
