@@ -152,10 +152,10 @@ td-agent_log_permissions:
       - salt://formulas/common/fluentd/files/01-source-wsgi.conf
     {% endif %}
     {% if grains['type'] == 'mysql' %}
-      - salt://formulas/common/fluentd/files/source-mariadb.conf
+      - salt://formulas/common/fluentd/files/01-source-mariadb.conf
     {% endif %}
     {% if grains['type'] == 'rabbitmq' %}
-      - salt://formulas/common/fluentd/files/source-rabbitmq.conf
+      - salt://formulas/common/fluentd/files/01-source-rabbitmq.conf
     {% endif %}
       - salt://formulas/common/fluentd/files/02-filter-transform.conf
     {% if grains['type'] in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
@@ -185,7 +185,7 @@ td-agent_log_permissions:
         {% elif grains['type'] in 'compute' %}
         api_service_log: {% for service in ['ceph', 'keystone', 'neutron', 'nova'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
         {% else %}
-        api_service_log: /var/log/{{ service }}/*.log
+        api_service_log: /var/log/{{ type }}/*.log
         {% endif %}
     {% elif grains['type'] == ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
         service: {{ type }}
