@@ -107,26 +107,25 @@ td-agent_log_permissions:
   user.present:
     - name: td-agent
     - groups:
-      - root
-      #- adm
-      #- nova
-      #- keystone
-      #- designate
-      #- ceph
-      #- mysql
-      #- haproxy
-      #- neutron
-      #- cinder
-      #- libvirt
-      #- glance
-      #- rabbitmq
-      #- heat
-      #- zun
-      #- placement
-      #- memcache
-      #- horizon
-      #- bind
-      #- etcd
+      - adm
+      - www-data
+    {% if grains['type'] in ['mysql', 'rabbitmq', 'bind', 'horizon', 'etcd', 'memcached', 'placment', 'designate', 'zun', 'glance', 'heat'] %}
+      - {{ type }}
+    {% elif grains['type'] in ['storage', 'volume', 'cephmon', 'swift'] %}
+      - ceph
+    {% elif grains['type'] in ['nova', 'keystone', 'compute'] %}
+      - keystone
+    {% elif grains['type'] in ['nova', 'compute'] %}
+      - nova
+    {% elif grains['type'] in ['controller', 'compute'] %}
+      - libvirt
+    {% elif grains['type'] in ['neutron', 'network', 'compute'] %}
+      - neutron
+    {% elif grains['type'] in ['volume', 'cinder'] %}
+      - cinder
+    {% elif grains['type'] in ['network', 'haproxy'] %}
+      - haproxy
+    {% endif %}
 
 /etc/td-agent/td-agent.conf:
   file:
@@ -151,8 +150,10 @@ td-agent_log_permissions:
       - salt://formulas/common/fluentd/files/source-rabbitmq.conf
     {% endif %}
       - salt://formulas/common/fluentd/files/02-filter-transform.conf
+    {% if grains['type'] in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
       - salt://formulas/common/fluentd/files/04-format-apache.conf
       - salt://formulas/common/fluentd/files/04-format-wsgi.conf
+    {% endif %}
       - salt://formulas/common/fluentd/files/05-match-opensearch.conf
     - defaults:
         fluentd_logger: {{ pillar['fluentd']['record'] }}
