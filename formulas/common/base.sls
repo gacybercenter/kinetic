@@ -111,19 +111,26 @@ td-agent_log_permissions:
       - www-data
     {% if grains['type'] in ['mysql', 'rabbitmq', 'bind', 'horizon', 'etcd', 'memcached', 'placment', 'designate', 'zun', 'glance', 'heat'] %}
       - {{ type }}
-    {% elif grains['type'] in ['storage', 'volume', 'cephmon', 'swift'] %}
+    {% endif %}
+    {% if grains['type'] in ['storage', 'volume', 'cephmon', 'swift'] %}
       - ceph
-    {% elif grains['type'] in ['nova', 'keystone', 'compute'] %}
+    {% endif %}
+    {% if grains['type'] in ['nova', 'keystone', 'compute'] %}
       - keystone
-    {% elif grains['type'] in ['nova', 'compute'] %}
+    {% endif %}
+    {% if grains['type'] in ['nova', 'compute'] %}
       - nova
-    {% elif grains['type'] in ['controller', 'compute'] %}
+    {% endif %}
+    {% if grains['type'] in ['controller', 'compute'] %}
       - libvirt
-    {% elif grains['type'] in ['neutron', 'network', 'compute'] %}
+    {% endif %}
+    {% if grains['type'] in ['neutron', 'network', 'compute'] %}
       - neutron
-    {% elif grains['type'] in ['volume', 'cinder'] %}
+    {% endif %}
+    {% if grains['type'] in ['volume', 'cinder'] %}
       - cinder
-    {% elif grains['type'] in ['network', 'haproxy'] %}
+    {% endif %}
+    {% if grains['type'] in ['network', 'haproxy'] %}
       - haproxy
     {% endif %}
 
