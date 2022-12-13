@@ -108,6 +108,25 @@ td-agent_log_permissions:
     - name: td-agent
     - groups:
       - root
+      #- adm
+      #- nova
+      #- keystone
+      #- designate
+      #- ceph
+      #- mysql
+      #- haproxy
+      #- neutron
+      #- cinder
+      #- libvirt
+      #- glance
+      #- rabbitmq
+      #- heat
+      #- zun
+      #- placement
+      #- memcache
+      #- horizon
+      #- bind
+      #- etcd
 
 /etc/td-agent/td-agent.conf:
   file:
@@ -132,7 +151,6 @@ td-agent_log_permissions:
       - salt://formulas/common/fluentd/files/source-rabbitmq.conf
     {% endif %}
       - salt://formulas/common/fluentd/files/02-filter-transform.conf
-      - salt://formulas/common/fluentd/files/03-filter-rewrite.conf
       - salt://formulas/common/fluentd/files/04-format-apache.conf
       - salt://formulas/common/fluentd/files/04-format-wsgi.conf
       - salt://formulas/common/fluentd/files/05-match-opensearch.conf
@@ -147,17 +165,13 @@ td-agent_log_permissions:
     {% endif %}
     {% if grains['type'] in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
         service: {{ type }}
-        {% if grains['type'] == 'storage' %}
-        api_service_log: /var/log/ceph/*.log
-        {% elif grains['type'] in 'nova' %}
+        {% if grains['type'] in ['nova'] %}
         api_service_log: {% for service in ['nova', 'keystone'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
-        {% elif grains['type'] in 'volume' %}
+        {% elif grains['type'] in ['volume'] %}
         api_service_log: {% for service in ['ceph', 'cinder'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
-        {% elif grains['type'] in 'cephmon' %}
-        api_service_log: /var/log/ceph/*.log
-        {% elif grains['type'] in 'network' %}
+        {% elif grains['type'] in ['network'] %}
         api_service_log: /var/log/neutron/*.log
-        {% elif grains['type'] in 'swift' %}
+        {% elif grains['type'] in ['swift', 'cephmon', 'storage'] %}
         api_service_log: /var/log/ceph/*.log
         {% elif grains['type'] in 'compute' %}
         api_service_log: {% for service in ['ceph', 'keystone', 'neutron', 'nova'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
