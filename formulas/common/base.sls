@@ -108,6 +108,7 @@ td-agent_log_permissions:
     - name: td-agent
     - groups:
       - adm
+      - root
       - www-data
     {% if grains['type'] in ['mysql', 'rabbitmq', 'bind', 'horizon', 'etcd', 'memcached', 'placment', 'designate', 'zun', 'glance', 'heat'] %}
       - {{ type }}
