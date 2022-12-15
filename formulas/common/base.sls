@@ -110,8 +110,11 @@ td-agent_log_permissions:
       - adm
       - root
       - www-data
-    {% if grains['type'] in ['mysql', 'rabbitmq', 'bind', 'horizon', 'etcd', 'memcached', 'placment', 'designate', 'zun', 'glance', 'heat'] %}
+    {% if grains['type'] in ['mysql', 'rabbitmq', 'bind', 'horizon', 'etcd', 'placment', 'designate', 'zun', 'glance', 'heat'] %}
       - {{ type }}
+    {% endif %}
+    {% if grains['type'] in ['memcached'] %}
+      - memcache
     {% endif %}
     {% if grains['type'] in ['storage', 'volume', 'cephmon', 'swift'] %}
       - ceph
@@ -159,7 +162,6 @@ td-agent_log_permissions:
     {% endif %}
       - salt://formulas/common/fluentd/files/02-filter-transform.conf
     {% if grains['type'] in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
-      - salt://formulas/common/fluentd/files/04-format-apache.conf
       - salt://formulas/common/fluentd/files/04-format-wsgi.conf
     {% endif %}
       - salt://formulas/common/fluentd/files/05-match-opensearch.conf
