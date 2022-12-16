@@ -1,0 +1,12 @@
+2022-12-16T14:28:00.240-0500 7ffa7dc9e700  0 log_channel(cluster) log [DBG] : pgmap v2072295: 3905 pgs: 3905 active+clean; 1.2 TiB data, 13 TiB used, 1.9 PiB / 1.9 PiB avail; 5.6 KiB/s rd, 1.0 MiB/s wr, 194 op/s
+2022-12-16T14:28:00.764-0500 7ffa62928700  0 [volumes INFO mgr_util] scanning for idle connections..
+2022-12-16T14:28:02.008-0500 7ffa6d93e700  0 [rbd_support INFO root] MirrorSnapshotScheduleHandler: load_schedules
+2022-12-16T14:28:02.008-0500 7ffa6c13b700  0 [rbd_support INFO root] TrashPurgeScheduleHandler: load_schedules
+2022-12-16T14:28:02.056-0500 7ffa6d93e700  0 [rbd_support INFO root] load_schedules: images, start_after=
+2022-12-16T14:27:02.928-0500 7f756fe29700  1 mon.cephmon-d79d94ba-b19a-5327-b58f-e317f7faeeda@0(leader).osd e14583 _set_new_cache_sizes cache_size:1020054731 inc_alloc: 117440512 full_alloc: 725614592 kv_alloc: 167772160
+2022-12-16T14:27:04.256-0500 7f756d624700  0 mon.cephmon-d79d94ba-b19a-5327-b58f-e317f7faeeda@0(leader) e1 handle_command mon_command({"prefix": "df", "format": "json"} v 0) v1
+2022-12-16T14:27:04.256-0500 7f756d624700  0 log_channel(audit) log [DBG] : from='client.? v1:10.100.2.44:0/1422534198' entity='client.compute' cmd=[{"prefix": "df", "format": "json"}]: dispatch
+2022-12-16T14:27:21.544588-0500 mon.cephmon-5d75afa5-fe5a-582c-b0d8-4ac63f8edb19 (mon.2) 1485073 : audit [DBG] from='client.? v1:10.100.2.38:0/3397813863' entity='client.compute' cmd=[{"prefix": "df", "format": "json"}]: dispatch
+2022-12-16T14:27:17.870594-0500 mgr.cephmon-d79d94ba-b19a-5327-b58f-e317f7faeeda (mgr.8574108) 2065034 : cluster [DBG] pgmap v2072274: 3905 pgs: 3905 active+clean; 1.2 TiB data, 13 TiB used, 1.9 PiB / 1.9 PiB avail; 108 KiB/s rd, 1.9 MiB/s wr, 222 op/s
+2022-12-16T14:27:18.583822-0500 osd.94 (osd.94) 2288 : cluster [DBG] 14.15e deep-scrub starts
+2022-12-16T14:27:18.587886-0500 osd.94 (osd.94) 2289 : cluster [DBG] 14.15e deep-scrub ok

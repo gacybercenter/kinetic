@@ -147,6 +147,7 @@ td-agent_log_permissions:
       - salt://formulas/common/fluentd/files/00-source-syslog.conf
     {% if grains['type'] in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
       - salt://formulas/common/fluentd/files/01-source-api.conf
+      - salt://formulas/common/fluentd/files/01-source-ceph.conf
     {% endif %}
     {% if grains['type'] in ['compute', 'network', 'neutron'] %}
       - salt://formulas/common/fluentd/files/01-source-openvswitch.conf
@@ -179,13 +180,11 @@ td-agent_log_permissions:
         {% if grains['type'] in ['nova'] %}
         api_service_log: {% for service in ['nova', 'keystone'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
         {% elif grains['type'] in ['volume'] %}
-        api_service_log: {% for service in ['ceph', 'cinder'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
+        api_service_log: {% for service in ['cinder'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
         {% elif grains['type'] in ['network'] %}
         api_service_log: /var/log/neutron/*.log
-        {% elif grains['type'] in ['swift', 'cephmon', 'storage'] %}
-        api_service_log: /var/log/ceph/*.log
         {% elif grains['type'] in 'compute' %}
-        api_service_log: {% for service in ['ceph', 'keystone', 'neutron', 'nova'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
+        api_service_log: {% for service in ['keystone', 'neutron', 'nova'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
         {% else %}
         api_service_log: /var/log/{{ type }}/*.log
         {% endif %}
