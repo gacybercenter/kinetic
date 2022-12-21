@@ -149,6 +149,9 @@ td-agent_log_permissions:
       - salt://formulas/common/fluentd/files/01-source-api.conf
       - salt://formulas/common/fluentd/files/01-source-ceph.conf
     {% endif %}
+    {% if grains['type'] == 'haproxy' %}
+      - salt://formulas/common/fluentd/files/01-source-haproxy.conf
+    {% endif %}
     {% if grains['type'] in ['compute', 'network', 'neutron'] %}
       - salt://formulas/common/fluentd/files/01-source-openvswitch.conf
     {% endif %}
