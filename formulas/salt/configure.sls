@@ -306,6 +306,13 @@ passwords:
       ovsdb: ""
 {% endif %}
 
+/srv/dynamic_pillar/junos.sls:
+  file.managed:
+    - replace: false
+    - contents: |
+        junos:
+          switch_password: {{ salt['random.get_str']('64', punctuation=False) }}
+
 /etc/salt/master:
   file.managed:
     - contents: ''
