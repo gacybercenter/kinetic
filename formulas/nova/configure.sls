@@ -81,29 +81,21 @@ set_vms_pool_pgs:
 
 {{ spawn.spawnzero_complete() }}
 
-## This is lightning fast but I'm not sure how I feel about writing directly to the database
-## outside the context of the API.  Should probably change to the flavor_present state
-## once the openstack-ng modules are done in salt
-## Also, there is a problem if bootstrapping a non-existent database, namely the jinja
-## mysql query will fail.  This needs to be more intelligent.  Temp workaround is to
-## only create flavors at very beginning, and not pick up pillar changes later in lifecycle
 {% for flavor, attribs in pillar['flavors'].items() %}
-create_{{ flavor }}:
-  mysql_query.run:
-    - database: nova_api
-    - connection_pass: {{ pillar['nova']['nova_mysql_password'] }}
-    - connection_user: nova
-    - connection_host: {{ pillar['haproxy']['dashboard_domain'] }}
-    - query: "INSERT INTO nova_api.flavors(name,memory_mb,vcpus,swap,flavorid,rxtx_factor,root_gb,ephemeral_gb,disabled,is_public) VALUES ('{{ flavor }}',{{ attribs['ram'] }},{{ attribs['vcpus'] }},0,'{{ salt['random.get_str']('64', punctuation=False)|uuid }}',1,{{ attribs['disk'] }},0,0,1);"
-    - output: "/root/{{ flavor }}"
+{{ flavor }}:
+  nova.flavor:
+    - name: {{ flavor }}
+    - ram: {{ attribs['ram'] }}
+    - vcpus: {{ attribs['vcpus'] }}
+    - disk: {{ attribs['disk'] }}
+    - ephemeral_disk: 0
+    - swap_disk: 0
+    - public: True
     - require:
       - service: nova_api_service
       - service: nova_scheduler_service
       - service: nova_conductor_service
       - service: nova_spiceproxy_service
-    - retry:
-        attempts: 3
-        interval: 10
     - unless:
       - fun: grains.equals
         key: build_phase
