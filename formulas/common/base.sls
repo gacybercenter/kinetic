@@ -15,6 +15,9 @@
 {% set type = opts.id.split('-')[0] %}
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 
+include:
+  - /formulas/common/fluentd/repo
+
 initial_module_sync:
   saltutil.sync_all:
     - refresh: True
@@ -103,12 +106,12 @@ rsyslog:
 # node ip
 {% if salt['pillar.get']('fluentd:enabled', False) == True %}
   {% if grains['os_family'] == 'Debian' %}
-{% if salt['pillar.get']('fluentd:enabled', False) == True %}
-  {% if grains['os_family'] == 'Debian' %}
+
 common_logging_install:
   pkg.installed:
-    - sources:
-      - td-agent: https://packages.treasuredata.com/4/ubuntu/focal/pool/contrib/f/fluentd-apt-source/fluentd-apt-source_2020.8.25-1_all.deb
+    - name: td-agent
+    - require:
+      - sls: /formulas/common/ceph/repo
 
 grok_plugin_install:
   cmd.run:
@@ -214,6 +217,8 @@ td-agent_log_permissions:
         service: {{ type }}
         log_hostname: {{ grains['host'] }}
     {% endif %}
+    - require:
+      - pkg: common_logging_install
 
 td-agent:
   service.running:
