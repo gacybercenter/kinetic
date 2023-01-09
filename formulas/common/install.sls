@@ -71,21 +71,6 @@ common_install:
       - python3-pip
     - reload_modules: True
 
-{% if salt['pillar.get']('fluentd:enabled', False) == True %}
-  {% if grains['os_family'] == 'Debian' %}
-common_logging_install:
-  pkg.installed:
-    - name: td-agent
-    - source: https://packages.treasuredata.com/4/ubuntu/focal/pool/contrib/f/fluentd-apt-source/fluentd-apt-source_2020.8.25-1_all.deb
-
-grok_plugin_install:
-  cmd.run:
-    - name: td-agent-gem install fluent-plugin-grok-parser
-    - require:
-      - pkg: common_logging_install
-  {% endif %}
-{% endif %}
-
 {% if grains['virtual'] == "physical" %}
 # temporary patch for pyopenssl https://stackoverflow.com/questions/73830524/attributeerror-module-lib-has-no-attribute-x509-v-flag-cb-issuer-check that exists on storage nodes
   {% if grains['type'] == "storage" %}
