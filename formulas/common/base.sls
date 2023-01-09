@@ -111,7 +111,7 @@ common_logging_install:
   pkg.installed:
     - name: td-agent
     - require:
-      - sls: /formulas/common/ceph/repo
+      - sls: /formulas/common/fluentd/repo
 
 grok_plugin_install:
   cmd.run:
