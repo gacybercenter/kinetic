@@ -159,7 +159,7 @@ td-agent_log_permissions:
 td_agent_conf:
   file.managed:
     - name: /etc/td-agent/td-agent.conf
-      - source: salt://formulas/common/fluentd/files/td-agent.conf
+    - source: salt://formulas/common/fluentd/files/td-agent.conf
 
 /etc/td-agent/td-agent.conf:
   file:
