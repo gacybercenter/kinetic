@@ -29,4 +29,5 @@ jproxy_pip_packages:
     - names:
       - junos-eznc
       - jxmlease
+      - yamlordereddictloader
       - pyOpenSSL
