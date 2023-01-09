@@ -112,7 +112,6 @@ common_logging_install:
     - name: td-agent
     - require:
       - sls: /formulas/common/fluentd/repo
-      - grains: type
 
 grok_plugin_install:
   cmd.run:
@@ -127,31 +126,31 @@ td-agent_log_permissions:
       - adm
       - root
       - www-data
-    {% if grains['type'] in ['mysql', 'rabbitmq', 'bind', 'horizon', 'etcd', 'placment', 'designate', 'zun', 'glance', 'heat'] %}
+    {% if type in ['mysql', 'rabbitmq', 'bind', 'horizon', 'etcd', 'placment', 'designate', 'zun', 'glance', 'heat'] %}
       - {{ type }}
     {% endif %}
-    {% if grains['type'] in ['memcached'] %}
+    {% if type in ['memcached'] %}
       - memcache
     {% endif %}
-    {% if grains['type'] in ['storage', 'volume', 'cephmon', 'swift'] %}
+    {% if type in ['storage', 'volume', 'cephmon', 'swift'] %}
       - ceph
     {% endif %}
-    {% if grains['type'] in ['nova', 'keystone', 'compute'] %}
+    {% if type in ['nova', 'keystone', 'compute'] %}
       - keystone
     {% endif %}
-    {% if grains['type'] in ['nova', 'compute'] %}
+    {% if type in ['nova', 'compute'] %}
       - nova
     {% endif %}
-    {% if grains['type'] in ['controller', 'compute'] %}
+    {% if type in ['controller', 'compute'] %}
       - libvirt
     {% endif %}
-    {% if grains['type'] in ['neutron', 'network', 'compute'] %}
+    {% if type in ['neutron', 'network', 'compute'] %}
       - neutron
     {% endif %}
-    {% if grains['type'] in ['volume', 'cinder'] %}
+    {% if type in ['volume', 'cinder'] %}
       - cinder
     {% endif %}
-    {% if grains['type'] in ['network', 'haproxy'] %}
+    {% if type in ['network', 'haproxy'] %}
       - haproxy
     {% endif %}
     - require:
@@ -169,27 +168,27 @@ td_agent_conf:
     - sources:
       - salt://formulas/common/fluentd/files/00-source-salt.conf
       - salt://formulas/common/fluentd/files/00-source-syslog.conf
-    {% if grains['type'] in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
+    {% if type in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
       - salt://formulas/common/fluentd/files/01-source-api.conf
       - salt://formulas/common/fluentd/files/01-source-ceph.conf
     {% endif %}
-    {% if grains['type'] == 'haproxy' %}
+    {% if type == 'haproxy' %}
       - salt://formulas/common/fluentd/files/01-source-haproxy.conf
     {% endif %}
-    {% if grains['type'] in ['compute', 'network', 'neutron'] %}
+    {% if type in ['compute', 'network', 'neutron'] %}
       - salt://formulas/common/fluentd/files/01-source-openvswitch.conf
     {% endif %}
-    {% if grains['type'] in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
+    {% if type in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
       - salt://formulas/common/fluentd/files/01-source-wsgi.conf
     {% endif %}
-    {% if grains['type'] == 'mysql' %}
+    {% if type == 'mysql' %}
       - salt://formulas/common/fluentd/files/01-source-mariadb.conf
     {% endif %}
-    {% if grains['type'] == 'rabbitmq' %}
+    {% if type == 'rabbitmq' %}
       - salt://formulas/common/fluentd/files/01-source-rabbitmq.conf
     {% endif %}
       - salt://formulas/common/fluentd/files/02-filter-transform.conf
-    {% if grains['type'] in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
+    {% if type in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
       - salt://formulas/common/fluentd/files/04-format-wsgi.conf
     {% endif %}
       - salt://formulas/common/fluentd/files/05-match-opensearch.conf
@@ -197,27 +196,27 @@ td_agent_conf:
         fluentd_logger: {{ pillar['fluentd']['record'] }}
         fluentd_password: {{ pillar['fluentd_password'] }}
         hostname: {{ grains['host'] }}
-    {% if grains['type'] == 'salt' %}
+    {% if type == 'salt' %}
         salt_service_log: /var/log/salt/master,/var/log/salt/minion
     {% else %}
         salt_service_log: /var/log/salt/minion
     {% endif %}
-    {% if grains['type'] in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
+    {% if type in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
         service: {{ type }}
-        {% if grains['type'] in ['nova'] %}
+        {% if type in ['nova'] %}
         api_service_log: {% for service in ['nova', 'keystone'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
-        {% elif grains['type'] in ['volume'] %}
+        {% elif type in ['volume'] %}
         api_service_log: {% for service in ['cinder'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
-        {% elif grains['type'] in ['network'] %}
+        {% elif type in ['network'] %}
         api_service_log: /var/log/neutron/*.log
-        {% elif grains['type'] in 'compute' %}
+        {% elif type in 'compute' %}
         api_service_log: {% for service in ['keystone', 'neutron', 'nova'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
         {% else %}
         api_service_log: /var/log/{{ type }}/*.log
         {% endif %}
-    {% elif grains['type'] == ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
+    {% elif type == ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
         service: {{ type }}
-    {% elif grains['type'] == 'rabbitmq' %}
+    {% elif type == 'rabbitmq' %}
         service: {{ type }}
         log_hostname: {{ grains['host'] }}
     {% endif %}
