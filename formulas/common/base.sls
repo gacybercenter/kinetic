@@ -156,6 +156,11 @@ td-agent_log_permissions:
     - require:
       - pkg: common_logging_install
 
+td_agent_conf:
+  file.managed:
+    - name: /etc/td-agent/td-agent.conf
+      - source: salt://formulas/common/fluentd/files/td-agent.conf
+
 /etc/td-agent/td-agent.conf:
   file:
     - append
@@ -217,6 +222,7 @@ td-agent_log_permissions:
     {% endif %}
     - require:
       - pkg: common_logging_install
+      - file: td_agent_conf
 
 td-agent:
   service.running:
@@ -224,5 +230,6 @@ td-agent:
       - /etc/td-agent/td-agent.conf
     - require:
       - pkg: common_logging_install
+      - file: /etc/td-agent/td-agent.conf
   {% endif %}
 {% endif %}
