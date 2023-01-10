@@ -126,7 +126,7 @@ td-agent_log_permissions:
       - adm
       - root
       - www-data
-    {% if type in ['mysql', 'rabbitmq', 'bind', 'horizon', 'etcd', 'placment', 'designate', 'zun', 'glance', 'heat'] %}
+    {% if type in ['mysql', 'rabbitmq', 'bind', 'horizon', 'etcd', 'placment', 'designate', 'glance', 'heat'] %}
       - {{ type }}
     {% endif %}
     {% if type in ['memcached'] %}
