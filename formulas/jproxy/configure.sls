@@ -23,6 +23,37 @@ salt-proxy@qfx5200-32c-r1-sw1-spine:
   service.running:
     - enable: True
 
+salt-proxy@qfx5200-32c-r2-sw5-spine:
+  service.running:
+    - enable: True
+
+salt-proxy@qfx5200-48y-r1-sw2-leaf:
+  service.running:
+    - enable: True
+
+salt-proxy@qfx5200-48y-r1-sw3-leaf:
+  service.running:
+    - enable: True
+
+salt-proxy@qfx5200-48y-r2-sw6-leaf:
+  service.running:
+    - enable: True
+
+salt-proxy@qfx5200-48y-r2-sw7-leaf:
+  service.running:
+    - enable: True
+
+
+salt-proxy@ex3400-48t-r1-sw4-oob-vc:
+  service.running:
+    - enable: True
+
+
+salt-proxy@ex3400-48t-r2-sw9-wan:
+  service.running:
+    - enable: True
+
+
 {{ spawn.spawnzero_complete() }}
 
 {% else %}
