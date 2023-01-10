@@ -29,45 +29,45 @@ include:
 {% endif %}
 
 ### Gateway configuration
-{% if salt['pillar.get']('danos:enabled', False) == True %}
-set haproxy group:
-  danos.set_resourcegroup:
-    - name: haproxy-{{ pillar['haproxy']['group'] }}
-    - type: address-group
-    - description: current haproxy servers for {{ pillar['haproxy']['group'] }}
-    - values:
-      - {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-    - username: {{ pillar['danos']['username'] }}
-    - password: {{ pillar['danos_password'] }}
-  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
-    - host: {{ grains['ip4_gw'] }}
-  {% else %}
-    - host: {{ pillar['danos']['endpoint'] }}
-  {% endif %}
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
+#{% if salt['pillar.get']('danos:enabled', False) == True %}
+#set haproxy group:
+#  danos.set_resourcegroup:
+#    - name: haproxy-{{ pillar['haproxy']['group'] }}
+#    - type: address-group
+#    - description: current haproxy servers for {{ pillar['haproxy']['group'] }}
+#    - values:
+#      - {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+#    - username: {{ pillar['danos']['username'] }}
+#    - password: {{ pillar['danos_password'] }}
+#  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
+#    - host: {{ grains['ip4_gw'] }}
+#  {% else %}
+#    - host: {{ pillar['danos']['endpoint'] }}
+#  {% endif %}
+#    - unless:
+#      - fun: grains.equals
+#        key: build_phase
+#        value: configure
 
-set haproxy static-mapping:
-  danos.set_statichostmapping:
-    - name: {{ pillar['haproxy']['dashboard_domain'] }}
-    - address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-    - aliases:
-      - {{ pillar['haproxy']['console_domain'] }}
-      - {{ pillar['haproxy']['guacamole_domain'] }}
-    - username: {{ pillar['danos']['username'] }}
-    - password: {{ pillar['danos_password'] }}
-  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
-    - host: {{ grains['ip4_gw'] }}
-  {% else %}
-    - host: {{ pillar['danos']['endpoint'] }}
-  {% endif %}
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
-{% endif %}
+#set haproxy static-mapping:
+#  danos.set_statichostmapping:
+#    - name: {{ pillar['haproxy']['dashboard_domain'] }}
+#    - address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+#    - aliases:
+#      - {{ pillar['haproxy']['console_domain'] }}
+#      - {{ pillar['haproxy']['guacamole_domain'] }}
+#    - username: {{ pillar['danos']['username'] }}
+#    - password: {{ pillar['danos_password'] }}
+#  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
+#    - host: {{ grains['ip4_gw'] }}
+#  {% else %}
+#    - host: {{ pillar['danos']['endpoint'] }}
+#  {% endif %}
+#    - unless:
+#      - fun: grains.equals
+#        key: build_phase
+#        value: configure
+#{% endif %}
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 haproxy_connect_any:
@@ -93,12 +93,12 @@ acme_certs:
 {% if salt['pillar.get']('development:test_certs', False) == True %}
     - test_cert: True
 {% endif %}
-{% if salt['pillar.get']('danos:enabled', False) == True %}
-    - require:
-      - service: haproxy_service_stop
-      - danos: set haproxy group
-      - danos: set haproxy static-mapping
-{% endif %}
+#{% if salt['pillar.get']('danos:enabled', False) == True %}
+#    - require:
+#      - service: haproxy_service_stop
+#      - danos: set haproxy group
+#      - danos: set haproxy static-mapping
+#{% endif %}
 
 create_master_pem:
   cmd.run:
