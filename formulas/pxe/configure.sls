@@ -72,10 +72,12 @@ wsgi_module:
   apache_module.enabled:
     - name: wsgi
 
-{% for type in pillar['hosts'] if pillar['hosts'][type]['style'] == 'physical' %}
+{% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':style') == 'physical' %}
 /var/www/html/configs/{{ type }}:
   file.managed:
-  {% if 'ubuntu' in pillar['hosts'][type]['os'] %}
+  {% if salt['pillar.get']('hosts:'+type+':style') == 'container' %}
+    - source: salt://formulas/pxe/files/container.preseed
+  {% elif 'ubuntu' in pillar['hosts'][type]['os'] %}
     - source: salt://formulas/pxe/files/common.preseed
   {% elif 'centos' in pillar['hosts'][type]['os'] %}
     - source: salt://formulas/pxe/files/common.kickstart
