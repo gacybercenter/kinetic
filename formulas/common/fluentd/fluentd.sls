@@ -22,6 +22,10 @@ common_logging_install:
     - name: td-agent
     - require:
       - sls: /formulas/common/fluentd/repo
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 grok_plugin_install:
   cmd.run:
