@@ -12,14 +12,11 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-include:
-  - /formulas/common/base
-  - /formulas/common/networking
-  - /formulas/common/install
-  - /formulas/common/openstack/repo
-  - /formulas/common/rabbitmq/repo
+{% if grains['os_family'] == 'Debian' %}
 
-rabbitmq_packages:
-  pkg.installed:
-    - pkgs:
-      - rabbitmq-server
+repo-setup.sh:
+  cmd.script:
+    - name: repo-setup.sh
+    - source: salt://formulas/common/rabbitmq/files/repo-setup.sh
+
+{% endif %}
