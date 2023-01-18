@@ -14,53 +14,13 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/fluentd/fluentd
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 
-guacamole_guacd_start:
+guacamole_start:
   cmd.run:
-    - name: docker-compose up -d guacd
-    - cwd: /opt/guacamole
-    - unless:
-      - docker ps | grep -q guacd
-
-guacamole_guacamole_pull:
-  cmd.run:
-    - name: docker-compose up -d guacamole
-    - cwd: /opt/guacamole
-    - rquires:
-      - cmd: guacamole_mysql_check
-    - unless:
-      -  docker image ls | grep -q 'guacamole/guacamole'
-
-guacamole_guacamole_pull_check:
-  cmd.run:
-    - name: docker image ls | grep -q 'guacamole/guacamole'
-    - retry:
-      - attempts: 10
-      - interval: 20
-      - until: True
-    - rquires:
-      - cmd: guacamole_guacamole_pull
-
-guacamole_guacamole_start:
-  cmd.run:
-    - name: docker-compose up -d guacamole
-    - cwd: /opt/guacamole
-    - rquires:
-      - cmd: guacamole_guacamole_pull_check
-    - unless:
-      - docker ps | grep -q guacamole
-
-guacamole_guacamole_start_check:
-  cmd.run:
-    - name: docker logs guacamole | grep -q 'Georgia Cyber Range'
-    - retry:
-      - attempts: 10
-      - interval: 20
-      - until: True
-    - rquires:
-      - cmd: guacamole_guacamole_start
+    - name: "salt-call --local dockercompose.start /opt/guacamole/docker-compose.yml"
 
 {% if grains['spawning'] == 0 %}
 

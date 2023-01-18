@@ -14,6 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/fluentd/fluentd
   - /formulas/common/ceph/configure
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}

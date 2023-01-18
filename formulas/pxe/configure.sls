@@ -14,6 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/fluentd/fluentd
 
 /etc/salt/minion.d/mine_functions.conf:
   file.managed:
