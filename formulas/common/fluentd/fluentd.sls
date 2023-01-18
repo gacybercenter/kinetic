@@ -28,6 +28,8 @@ grok_plugin_install:
     - name: td-agent-gem install fluent-plugin-grok-parser
     - require:
       - pkg: common_logging_install
+    - unless:
+      - td-agent-gem list | grep -q 'fluent-plugin-grok-parser'
 
 td-agent_log_permissions:
   user.present:
