@@ -22,25 +22,25 @@ guacamole_pull:
   cmd.run:
     - name: "salt-call --local dockercompose.pull /opt/guacamole/docker-compose.yml"
     - unless:
-      - docker image ls | grep -q 'guacamole/guacd'
-      - docker image ls | grep -q 'guacamole/guacamole'
+      - cmd: docker image ls | grep -q 'guacamole/guacd'
+      - cmd: docker image ls | grep -q 'guacamole/guacamole'
 
 guacamole_start:
   cmd.run:
     - name: "salt-call --local dockercompose.start /opt/guacamole/docker-compose.yml"
     - require:
-      - docker image ls | grep -q 'guacamole/guacd'
-      - docker image ls | grep -q 'guacamole/guacamole'
+      - cmd: docker image ls | grep -q 'guacamole/guacd'
+      - cmd: docker image ls | grep -q 'guacamole/guacamole'
       - guacamole_pull
 
 ROOT_path:
   cmd.run:
     - name: "docker exec -it guacamole  mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
     - require:
-      - docker exec -it guacamole whoami | grep -q guacamole
+      - cmd: docker exec -it guacamole whoami | grep -q guacamole
       - guacamole_start
     - unless:
-      - docker exec -it guacamole  ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
+      - cmd: docker exec -it guacamole  ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
 {% if grains['spawning'] == 0 %}
 
