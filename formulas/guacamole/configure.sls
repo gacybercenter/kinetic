@@ -25,9 +25,9 @@ guacamole_pull:
       - docker image ls | grep -q 'guacamole/guacd'
       - docker image ls | grep -q 'guacamole/guacamole'
 
-guacamole_start:
+guacamole_up:
   cmd.run:
-    - name: "salt-call --local dockercompose.start /opt/guacamole/docker-compose.yml"
+    - name: "salt-call --local dockercompose.up /opt/guacamole/docker-compose.yml"
     - require:
       - guacamole_pull
     - unless:
@@ -37,7 +37,7 @@ ROOT_path:
   cmd.run:
     - name: "docker exec -it guacamole  mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
     - require:
-      - guacamole_start
+      - guacamole_up
     - unless:
       - docker exec -it guacamole  ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
@@ -45,19 +45,6 @@ ROOT_path:
 
 {% if grains['build_phase'] != "configure" %}
 
-# Need to build a guacamole state for calls directly from here, as other work arounds to function as intended
-# this can currently be manually executed by creating a simple main.py under modules and the executing the below under _modules
-# 
-# from guacamole import Session
-# session = Session("https://guac.gacyberrange.org/guacamole", "mysql", "guacadmin", "guacadmin")
-# session.update_user_password("guacadmin","guacadmin","NEWPASSWORDHERE"))
-# session.delete_token()
-#
-# mod_default_user:
-#   cmd.run:
-#     - name: salt-call 'guac.update_user_password("https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole", "guacadmin", "guacadmin", "guacadmin", "guacadmin", "{{ pillar['guacamole']['guacadmin_password'] }}")'
-#     - rquires:
-#       - cmd: guacamole_guacamole_start_check
 
 {% endif %}
 
