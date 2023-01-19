@@ -26,13 +26,16 @@ guacamole_start:
   cmd.run:
     - name: "salt-call --local dockercompose.start /opt/guacamole/docker-compose.yml"
     - require:
+      - docker image ls | grep -q 'guacamole/guacd'
+      - docker image ls | grep -q 'guacamole/guacamole'
       - guacamole_pull
 
 ROOT_path:
   cmd.run:
     - name: "docker exec -it guacamole  mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
     - require:
-      - guacamole_guacamole_start
+      - docker exec -it guacamole whoami | grep -q guacamole
+      - guacamole_start
     - unless:
       - docker exec -it guacamole  ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
