@@ -21,6 +21,9 @@ include:
 guacamole_pull:
   cmd.run:
     - name: "salt-call --local dockercompose.pull /opt/guacamole/docker-compose.yml"
+    - unless:
+      - docker image ls | grep -q 'guacamole/guacd'
+      - docker image ls | grep -q 'guacamole/guacamole'
 
 guacamole_start:
   cmd.run:
