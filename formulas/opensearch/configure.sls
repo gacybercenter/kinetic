@@ -23,12 +23,17 @@ include:
 opensearch_pull:
   cmd.run:
     - name: "salt-call --local dockercompose.pull /opt/opensearch/docker-compose.yml"
+    - unless:
+      - docker image ls | grep -q 'opensearchproject/opensearch'
+      - docker image ls | grep -q 'opensearchproject/opensearch-dashboards'
 
 opensearch_start:
   cmd.run:
-    - name: "salt-call --local dockercompose.start /opt/opensearch/docker-compose.yml"
+    - name: "salt-call --local dockercompose.up /opt/opensearch/docker-compose.yml"
     - require:
       - opensearch_pull
+    - unless:
+      - docker exec -it opensearch-node1 whoami | grep -q opensearch
 
 {{ spawn.spawnzero_complete() }}
 
