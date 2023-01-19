@@ -35,11 +35,11 @@ guacamole_up:
 
 ROOT_path:
   cmd.run:
-    - name: "docker exec -it guacamole  mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+    - name: "docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
     - require:
       - guacamole_up
     - unless:
-      - docker exec -it guacamole  ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
+      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
 {% if grains['spawning'] == 0 %}
 
