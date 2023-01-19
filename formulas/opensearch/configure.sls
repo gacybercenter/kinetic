@@ -20,9 +20,15 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+opensearch_pull:
+  cmd.run:
+    - name: "salt-call --local dockercompose.pull /opt/opensearch/docker-compose.yml"
+
 opensearch_start:
   cmd.run:
     - name: "salt-call --local dockercompose.start /opt/opensearch/docker-compose.yml"
+    - require:
+      - opensearch_pull
 
 {{ spawn.spawnzero_complete() }}
 

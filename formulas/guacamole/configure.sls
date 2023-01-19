@@ -18,9 +18,23 @@ include:
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 
+guacamole_pull:
+  cmd.run:
+    - name: "salt-call --local dockercompose.pull /opt/guacamole/docker-compose.yml"
+
 guacamole_start:
   cmd.run:
     - name: "salt-call --local dockercompose.start /opt/guacamole/docker-compose.yml"
+    - require:
+      - guacamole_pull
+
+ROOT_path:
+  cmd.run:
+    - name: "docker exec -it guacamole  mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+    - require:
+      - guacamole_guacamole_start
+    - unless:
+      - docker exec -it guacamole  ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
 {% if grains['spawning'] == 0 %}
 
