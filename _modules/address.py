@@ -19,9 +19,10 @@
 ## as functions focused on getting those leases issued to clients
 ## in a usable format
 
-import sqlite3
-import requests
+
 import json
+import requests
+import sqlite3
 import os
 
 __virtualname__ = 'address'
@@ -48,8 +49,7 @@ def get_address(network, host):
         connection.commit()
         connection.close()
         return address
-    else:
-        return existing_lease[0]
+    return existing_lease[0]
 
 def release_single_address(address):
     connection = login()
@@ -108,6 +108,7 @@ def rest_login(username, password, url):
     token = json.loads(login.text)["return"][0]["token"]
     return token
 
+# NOTE(chateaulav): this function needs to be refactored to be single focused
 def client_get_address(username, password, network, host, url, target):
     token = rest_login(username, password, url)
     lease = requests.post(

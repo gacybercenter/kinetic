@@ -16,7 +16,12 @@
 ## inspiration for simple cephx-key function taken from
 ## https://github.com/ceph/ceph-ansible/blob/master/library/ceph_key.py#L26
 
-import random, os, struct, time, base64, string
+import base64
+import os
+import random
+import string
+import struct
+import time
 
 __virtualname__ = 'generate'
 

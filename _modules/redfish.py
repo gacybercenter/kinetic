@@ -16,12 +16,12 @@
 ## could potentially be fleshed out and become formal fully-featured
 ## salt module
 
-import redfish
-import pyghmi.ipmi.command
-import json
 import ipaddress
-import socket
+import json
+import pyghmi.ipmi.command
+import redfish
 import requests
+import socket
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -80,7 +80,7 @@ def gather_endpoints(network, username, password):
                 redfish_endpoints[body["UUID"]] = str(ip)
                 session.logout()
             except:
-                print("Error processing {}".format(ip))
+                print(f"Error processing {ip}")
                 pass
     return redfish_endpoints
 
@@ -116,17 +116,14 @@ def set_bootonce(host, username, password, mode, target):
     try:
         session.logout()
     except:
-        print(
-            "Redfish logout failed.  This is probably a bug in your particular redfish implementation and can likely be ignored."
-        )
+        print("Redfish logout failed. This is probably a bug in your particular redfish implementation and can likely be ignored.")
     if response.status != 200:
         cmd = pyghmi.ipmi.command.Command(
             bmc=host, userid=username, password=password, keepalive=False
         )
         cmd.set_bootdev(bootdev="network", uefiboot=True)
         return cmd.get_bootdev()
-    else:
-        return response.text
+    return response.text
 
 
 def reset_host(host, username, password):
