@@ -25,26 +25,18 @@ designate-manage database sync:
     - runas: designate
     - require:
       - file: conf-files
+      - service: designate_central_service
     - unless:
       - fun: grains.equals
         key: build_phase
         value: configure
-
-### salt state service.running doesn't seem to restart the designate_central_service
-### must perform cmd.run to restart as a fix
-
-restart_designate_central_service:
-  cmd.run:
-    - name: systemctl restart designate-central.service
-    - require:
-      - cmd: designate-manage database sync
 
 designate-manage pool update:
   cmd.run:
     - runas: designate
     - require:
       - file: /etc/designate/pools.yaml
-      - cmd: restart_designate_central_service
+      - cmd: designate-manage database sync
     - onchanges:
       - file: /etc/designate/pools.yaml
 
@@ -67,7 +59,7 @@ designate-manage tlds import --input_file /etc/designate/tlds.conf:
 
 conf-files:
   file.managed:
-    - makedirs: True
+    - makedirs: true
     - template: jinja
     - defaults:
         tld: {{ pillar['designate']['tld'] }}
@@ -145,7 +137,7 @@ conf-files:
 designate_api_service:
   service.running:
     - name: designate-api
-    - enable: True
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -155,7 +147,7 @@ designate_api_service:
 designate_central_service:
   service.running:
     - name: designate-central
-    - enable: True
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -165,7 +157,7 @@ designate_central_service:
 designate_worker_service:
   service.running:
     - name: designate-worker
-    - enable: True
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -175,7 +167,7 @@ designate_worker_service:
 designate_producer_service:
   service.running:
     - name: designate-producer
-    - enable: True
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -185,7 +177,7 @@ designate_producer_service:
 designate_mdns_service:
   service.running:
     - name: designate-mdns
-    - enable: True
+    - enable: true
     - watch:
       - file: /etc/designate/designate.conf
     - require:
