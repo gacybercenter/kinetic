@@ -51,10 +51,9 @@ def check_version(ip_address):
     version_subs = version.split('.')
     version_subs = [int(sub) for sub in version_subs]
 
-    if version_subs[0] >= 1 and version_subs[1] >= 0:
+    if bool(version_subs[0] >= 1 and version_subs[1] >= 0):
         return True
-    else:
-        return False
+    return False
 
 
 def login(host, username, password):
