@@ -41,7 +41,7 @@ def check_all(type, needs):
                     ret["ready"] = False
                     ret["comment"].append(
                         endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[phase][dep])
-        if phase_ok:
+        if phase_ok is True:
             __context__["retcode"] = 0
             ret["ready"] = True
             ret["comment"] = type+" orchestration routine may proceed"
@@ -70,6 +70,6 @@ def check_one(type, needs):
                 ret["ready"] = False
                 ret["comment"].append(
                     endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
-    if ret["ready"]:
+    if ret["ready"] is True:
         ret["comment"] = type+" orchestration routine may proceed"
     return ret
