@@ -139,13 +139,27 @@ etcd://
   {% for host, addresses in salt['mine.get']('G@type:mysql', 'network.ip_addrs', tgt_type='compound') | dictsort() -%}
     {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
 server {{ host }} {{ address }}{{ port }} check inter 2000 rise 2 fall 5 backup
-{% endfor -%}
+    {% endfor -%}
   {%- endfor -%}
 {%- else -%}
   {% for host, addresses in salt['mine.get']('role:'+role, 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
     {%- for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) -%}
 server {{ host }} {{ address }}{{ port }} check inter 2000 rise 2 fall 5
-{% endfor -%}
+    {% endfor -%}
+  {%- endfor -%}
+{%- endif -%}
+
+{%- endmacro -%}
+
+### This macro is used to create hosts files for compute nodes
+### to enable name resolution for live migration
+{% macro host_file_constructor(role) -%}
+
+{%- if role == 'compute' -%}
+  {% for host, addresses in salt['mine.get']('role:'+role, 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+    {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+{{ address }} {{ host }}
+    {%- endfor -%}
   {%- endfor -%}
 {%- endif -%}
 

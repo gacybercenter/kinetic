@@ -26,6 +26,7 @@ nova_packages:
       - nova-api
       - nova-conductor
       - nova-spiceproxy
+      - nova-serialproxy
       - nova-scheduler
       - python3-openstackclient
       - python3-etcd3gw

@@ -14,6 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/fluentd/fluentd
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
@@ -94,7 +95,7 @@ create_{{ flavor }}:
     - connection_pass: {{ pillar['nova']['nova_mysql_password'] }}
     - connection_user: nova
     - connection_host: {{ pillar['haproxy']['dashboard_domain'] }}
-    - query: "INSERT INTO nova_api.flavors(name,memory_mb,vcpus,swap,flavorid,rxtx_factor,root_gb,ephemeral_gb,disabled,is_public) VALUES ('{{ flavor }}',{{ attribs['ram'] }},{{ attribs['vcpus'] }},0,'{{ salt['random.get_str']('64')|uuid }}',1,{{ attribs['disk'] }},0,0,1);"
+    - query: "INSERT INTO nova_api.flavors(name,memory_mb,vcpus,swap,flavorid,rxtx_factor,root_gb,ephemeral_gb,disabled,is_public) VALUES ('{{ flavor }}',{{ attribs['ram'] }},{{ attribs['vcpus'] }},0,'{{ salt['random.get_str']('64', punctuation=False)|uuid }}',1,{{ attribs['disk'] }},0,0,1);"
     - output: "/root/{{ flavor }}"
     - require:
       - service: nova_api_service
@@ -133,6 +134,7 @@ create_{{ flavor }}:
         neutron_password: {{ pillar['neutron']['neutron_service_password'] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
+        dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         token_ttl: {{ pillar['nova']['token_ttl'] }}
 
 spice-html5:
@@ -189,6 +191,20 @@ nova_spiceproxy_service:
     - name: nova-spiceproxy
 {% elif grains['os_family'] == 'RedHat' %}
     - name: openstack-nova-spicehtml5proxy
+{% endif %}
+    - enable: true
+    - retry:
+        attempts: 3
+        interval: 10
+    - watch:
+      - file: /etc/nova/nova.conf
+
+nova_serialproxy_service:
+  service.running:
+{% if grains['os_family'] == 'Debian' %}
+    - name: nova-serialproxy
+{% elif grains['os_family'] == 'RedHat' %}
+    - name: openstack-nova-serialproxy
 {% endif %}
     - enable: true
     - retry:

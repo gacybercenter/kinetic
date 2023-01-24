@@ -14,71 +14,37 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/fluentd/fluentd
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 
-guacamole_guacd_start:
+guacamole_pull:
   cmd.run:
-    - name: docker-compose up -d guacd
-    - cwd: /opt/guacamole
+    - name: "salt-call --local dockercompose.pull /opt/guacamole/docker-compose.yml"
     - unless:
-      - docker ps | grep -q guacd
+      - docker image ls | grep -q 'guacamole/guacd'
+      - docker image ls | grep -q 'guacamole/guacamole'
 
-guacamole_guacamole_pull:
+guacamole_up:
   cmd.run:
-    - name: docker-compose up -d guacamole
-    - cwd: /opt/guacamole
-    - rquires:
-      - cmd: guacamole_mysql_check
+    - name: "salt-call --local dockercompose.up /opt/guacamole/docker-compose.yml"
+    - require:
+      - guacamole_pull
     - unless:
-      -  docker image ls | grep -q 'guacamole/guacamole'
+      - docker exec -it guacamole whoami | grep -q guacamole
 
-guacamole_guacamole_pull_check:
+ROOT_path:
   cmd.run:
-    - name: docker image ls | grep -q 'guacamole/guacamole'
-    - retry:
-      - attempts: 10
-      - interval: 20
-      - until: True
-    - rquires:
-      - cmd: guacamole_guacamole_pull
-
-guacamole_guacamole_start:
-  cmd.run:
-    - name: docker-compose up -d guacamole
-    - cwd: /opt/guacamole
-    - rquires:
-      - cmd: guacamole_guacamole_pull_check
+    - name: "docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+    - require:
+      - guacamole_up
     - unless:
-      - docker ps | grep -q guacamole
-
-guacamole_guacamole_start_check:
-  cmd.run:
-    - name: docker logs guacamole | grep -q 'Georgia Cyber Range'
-    - retry:
-      - attempts: 10
-      - interval: 20
-      - until: True
-    - rquires:
-      - cmd: guacamole_guacamole_start
+      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
 {% if grains['spawning'] == 0 %}
 
 {% if grains['build_phase'] != "configure" %}
 
-# Need to build a guacamole state for calls directly from here, as other work arounds to function as intended
-# this can currently be manually executed by creating a simple main.py under modules and the executing the below under _modules
-# 
-# from guacamole import Session
-# session = Session("https://guac.gacyberrange.org/guacamole", "mysql", "guacadmin", "guacadmin")
-# session.update_user_password("guacadmin","guacadmin","NEWPASSWORDHERE"))
-# session.delete_token()
-#
-# mod_default_user:
-#   cmd.run:
-#     - name: salt-call 'guac.update_user_password("https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole", "guacadmin", "guacadmin", "guacadmin", "guacadmin", "{{ pillar['guacamole']['guacadmin_password'] }}")'
-#     - rquires:
-#       - cmd: guacamole_guacamole_start_check
 
 {% endif %}
 

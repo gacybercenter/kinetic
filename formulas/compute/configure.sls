@@ -14,6 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/fluentd/fluentd
   - /formulas/common/ceph/configure
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
@@ -48,11 +49,12 @@ conf-files:
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         rbd_secret_uuid: {{ pillar['ceph']['nova-uuid'] }}
         console_domain: {{ pillar['haproxy']['console_domain'] }}
+        dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
+        compute_hosts: {{ constructor.host_file_constructor(role='compute')|yaml_encode }}
+        explicitly_egress_direct: True
     - names:
       - /etc/modprobe.d/kvm.conf:
         - source: salt://formulas/compute/files/kvm.conf
-      - /etc/frr/daemons:
-        - source: salt://formulas/common/frr/files/daemons
       - /etc/ceph/ceph-nova.xml:
         - source: salt://formulas/compute/files/ceph-nova.xml
       - /etc/ceph/ceph-volumes.xml:
@@ -63,6 +65,10 @@ conf-files:
         - source: salt://formulas/compute/files/neutron_sudoers
       - /etc/neutron/neutron.conf:
         - source: salt://formulas/compute/files/neutron.conf
+      - /etc/hosts:
+        - source: salt://formulas/compute/files/hosts
+      # - /etc/frr/daemons:
+      #   - source: salt://formulas/common/frr/files/daemons
 
 ceph_keyrings:
   file.managed:
@@ -97,26 +103,27 @@ libvirt_secrets:
     - user: root
     - group: root
 
-### temporary patches for multiarch
-multiarch_patch:
+/root/.ssh/config:
   file.managed:
-    - names:
-{% if grains['os_family'] == 'RedHat' %}
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/driver.py:
-        - source: salt://formulas/compute/files/driver.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/virt/libvirt/config.py:
-        - source: salt://formulas/compute/files/config.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/nova/objects/image_meta.py:
-        - source: salt://formulas/compute/files/image_meta.py
-{% elif grains['os_family'] == 'Debian' %}
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/driver.py:
-        - source: salt://formulas/compute/files/driver.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/virt/libvirt/config.py:
-        - source: salt://formulas/compute/files/config.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/nova/objects/image_meta.py:
-        - source: salt://formulas/compute/files/image_meta.py
-{% endif %}
-### /multiarch patches
+    - user: root
+    - group: root
+    - mode: '0400'
+    - source: salt://formulas/compute/files/config
+
+{% for key in pillar['nova_live_migration_auth_key'] %}
+{{ key }}:
+  ssh_auth.present:
+    - user: root
+    - enc: {{ pillar['nova_live_migration_auth_key'][ key ]['encoding'] }}
+{% endfor %}
+
+/root/.ssh/id_rsa:
+  file.managed:
+    - contents_pillar: nova_private_key
+    - user: root
+    - group: root
+    - mode: '0600'
+    - replace: False
 
 {% if grains['os_family'] == 'RedHat' %}
 spice-html5:
@@ -135,7 +142,6 @@ nova_compute_service:
     - enable: true
     - watch:
       - file: /etc/nova/nova.conf
-      - file: multiarch_patch
 
 {% set neutron_backend = pillar['neutron']['backend'] %}
 {% if neutron_backend != "networking-ovn" %}
@@ -149,6 +155,7 @@ nova_compute_service:
   {% if neutron_backend == "openvswitch" %}
         extensions: qos
         bridge_mappings: public_br
+        explicitly_egress_direct: True
 
 create_bridge:
   openvswitch_bridge.present:

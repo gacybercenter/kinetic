@@ -14,6 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/fluentd/fluentd
 
 /etc/salt/minion.d/mine_functions.conf:
   file.managed:
@@ -42,11 +43,14 @@ conf-files:
     - template: jinja
     - defaults:
         pxe_record: {{ pillar['pxe']['record'] }}
+        pxe_name: {{ pillar['pxe']['name'] }}
     - names:
       - /var/www/html/ipxe/src/kinetic.ipxe:
         - source: salt://formulas/pxe/files/kinetic.ipxe
       - /etc/apache2/sites-available/wsgi.conf:
         - source: salt://formulas/pxe/files/wsgi.conf
+      - /etc/apache2/apache2.conf:
+        - source: salt://formulas/pxe/files/apache2.conf
       - /var/www/html/index.py:
         - source: salt://formulas/pxe/files/index.py
 
@@ -69,10 +73,12 @@ wsgi_module:
   apache_module.enabled:
     - name: wsgi
 
-{% for type in pillar['hosts'] if pillar['hosts'][type]['style'] == 'physical' %}
+{% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':style') == 'physical' %}
 /var/www/html/configs/{{ type }}:
   file.managed:
-  {% if 'ubuntu' in pillar['hosts'][type]['os'] %}
+  {% if salt['pillar.get']('hosts:'+type+':style') == 'container' %}
+    - source: salt://formulas/pxe/files/container.preseed
+  {% elif 'ubuntu' in pillar['hosts'][type]['os'] %}
     - source: salt://formulas/pxe/files/common.preseed
   {% elif 'centos' in pillar['hosts'][type]['os'] %}
     - source: salt://formulas/pxe/files/common.kickstart
@@ -109,6 +115,7 @@ apache2_service:
     - watch:
       - apache_module: wsgi_module
       - file: /etc/apache2/sites-available/wsgi.conf
+      - file: /etc/apache2/apache2.conf
       - apache_site: wsgi
       - apache_site: 000-default
 

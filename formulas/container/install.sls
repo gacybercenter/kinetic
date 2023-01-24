@@ -17,6 +17,7 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
+  - /formulas/common/ceph/repo
   - /formulas/common/docker/repo
   - /formulas/common/kata/repo
 
@@ -36,6 +37,8 @@ container_packages:
       - kata-proxy
       - kata-shim
       - python3-etcd3gw
+      - open-iscsi
+      - ceph-common
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 container_packages:
@@ -53,6 +56,8 @@ container_packages:
       - kata-shim
       - numactl
       - python3-etcd3gw
+      - open-iscsi
+      - ceph-common
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -70,6 +75,8 @@ container_packages:
       - kata-proxy
       - kata-shim
       - python3-etcd3gw
+      - open-iscsi
+      - ceph-common
 
     {% endif %}
 
@@ -168,12 +175,24 @@ kuryr:
     - mode: "0755"
     - makedirs: True
 
+{% for user in ['zun', 'kuryr'] %}
+{{ user }}_config:
+  cmd.run:
+    - name: git config --system --add safe.directory "/var/lib/{{ user }}"
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
+{% endfor %}
+
 kuryr_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
-    - branch: stable/xena
+    - branch: stable/yoga
     - target: /var/lib/kuryr
     - force_clone: true
+    - require:
+      - cmd: kuryr_config
 
 kuryr_requirements:
   cmd.run:
@@ -219,9 +238,11 @@ zun:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/xena
+    - branch: stable/yoga
     - target: /var/lib/zun
     - force_clone: true
+    - require:
+      - cmd: zun_config
 
 zun_requirements:
   cmd.run:
