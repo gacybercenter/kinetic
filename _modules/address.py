@@ -37,15 +37,15 @@ def login(database = '/srv/addresses/addresses.db'):
 def get_address(network, host):
     connection = login()
     cursor = connection.cursor()
-    q = (host, network)
-    cursor.execute('SELECT address FROM addresses where host=? AND network=?', q)
+    query_values = (host, network)
+    cursor.execute('SELECT address FROM addresses where host=? AND network=?', query_values)
     existing_lease = cursor.fetchone()
     if existing_lease is None:
-        n = (network, )
-        cursor.execute('SELECT address FROM addresses where host IS NULL AND network=?', n)
+        network_value = (network, )
+        cursor.execute('SELECT address FROM addresses where host IS NULL AND network=?', network_value)
         address = cursor.fetchone()[0]
-        d = (host, address)
-        cursor.execute("UPDATE addresses SET host=? WHERE address=?", d)
+        host_address_value = (host, address)
+        cursor.execute("UPDATE addresses SET host=? WHERE address=?", host_address_value)
         connection.commit()
         connection.close()
         return address
@@ -54,8 +54,8 @@ def get_address(network, host):
 def release_single_address(address):
     connection = login()
     cursor = connection.cursor()
-    a = (address, )
-    cursor.execute("UPDATE addresses SET host=NULL WHERE address=?", a)
+    address_value = (address, )
+    cursor.execute("UPDATE addresses SET host=NULL WHERE address=?", address_value)
     connection.commit()
     connection.close()
 
@@ -67,8 +67,8 @@ def expire_dead_hosts():
     working_list = all_leases
     minions = os.listdir('/etc/salt/pki/master/minions')
     for minion in minions:
-        m = (minion, )
-        cursor.execute("SELECT host FROM addresses WHERE host=?", m)
+        minion_value = (minion, )
+        cursor.execute("SELECT host FROM addresses WHERE host=?", minion_value)
         minion_leases = cursor.fetchall()
         working_list = [i for i in working_list if i not in minion_leases]
     working_list = list(set(working_list))
@@ -83,8 +83,8 @@ def expire_dead_hosts():
 def release_all_host_addresses(host):
     connection = login()
     cursor = connection.cursor()
-    h = (host, )
-    cursor.execute("UPDATE addresses SET host=NULL WHERE host=?", h)
+    host_value = (host, )
+    cursor.execute("UPDATE addresses SET host=NULL WHERE host=?", host_value)
     connection.commit()
     connection.close()
 

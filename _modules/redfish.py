@@ -34,16 +34,16 @@ def __virtual__():
     return __virtualname__
 
 
-def tcp_connect(ip, port):
+def tcp_connect(ip_address, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex((str(ip), port))
+    result = sock.connect_ex((str(ip_address), port))
     sock.close()
     return result
 
 
-def check_version(ip):
+def check_version(ip_address):
     redfish_version = requests.get(
-        "https://" + str(ip) + "/redfish/v1", timeout=1, verify=False
+        "https://" + str(ip_address) + "/redfish/v1", timeout=1, verify=False
     )
     ### This will work for now, needs better logic to handle all supported versions
     response = redfish_version.json()
@@ -70,17 +70,17 @@ def login(host, username, password):
 
 def gather_endpoints(network, username, password):
     redfish_endpoints = {}
-    for ip in ipaddress.IPv4Network(network):
-        if tcp_connect(ip, 443) == 0:
+    for ip_address in ipaddress.IPv4Network(network):
+        if tcp_connect(ip_address, 443) == 0:
             try:
                 #if check_version(ip) == True:
-                session = login(str(ip), username, password)
+                session = login(str(ip_address), username, password)
                 redfish_status = session.get("/redfish/v1/Systems/1", None)
                 body = json.loads(redfish_status.text)
-                redfish_endpoints[body["UUID"]] = str(ip)
+                redfish_endpoints[body["UUID"]] = str(ip_address)
                 session.logout()
             except:
-                print(f"Error processing {ip}")
+                print(f"Error processing {ip_address}")
                 pass
     return redfish_endpoints
 
