@@ -16,12 +16,12 @@
 ## could potentially be fleshed out and become formal fully-featured
 ## salt module
 
-import redfish
-import pyghmi.ipmi.command
-import json
 import ipaddress
-import socket
+import json
+import pyghmi.ipmi.command
+import redfish
 import requests
+import socket
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -34,16 +34,16 @@ def __virtual__():
     return __virtualname__
 
 
-def tcp_connect(ip, port):
+def tcp_connect(ip_address, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex((str(ip), port))
+    result = sock.connect_ex((str(ip_address), port))
     sock.close()
     return result
 
 
-def check_version(ip):
+def check_version(ip_address):
     redfish_version = requests.get(
-        "https://" + str(ip) + "/redfish/v1", timeout=1, verify=False
+        "https://" + str(ip_address) + "/redfish/v1", timeout=1, verify=False
     )
     ### This will work for now, needs better logic to handle all supported versions
     response = redfish_version.json()
@@ -51,10 +51,9 @@ def check_version(ip):
     version_subs = version.split('.')
     version_subs = [int(sub) for sub in version_subs]
 
-    if version_subs[0] >= 1 and version_subs[1] >= 0:
+    if bool(version_subs[0] >= 1 and version_subs[1] >= 0):
         return True
-    else:
-        return False
+    return False
 
 
 def login(host, username, password):
@@ -70,17 +69,17 @@ def login(host, username, password):
 
 def gather_endpoints(network, username, password):
     redfish_endpoints = {}
-    for ip in ipaddress.IPv4Network(network):
-        if tcp_connect(ip, 443) == 0:
+    for ip_address in ipaddress.IPv4Network(network):
+        if tcp_connect(ip_address, 443) == 0:
             try:
                 #if check_version(ip) == True:
-                session = login(str(ip), username, password)
+                session = login(str(ip_address), username, password)
                 redfish_status = session.get("/redfish/v1/Systems/1", None)
                 body = json.loads(redfish_status.text)
-                redfish_endpoints[body["UUID"]] = str(ip)
+                redfish_endpoints[body["UUID"]] = str(ip_address)
                 session.logout()
             except:
-                print("Error processing {}".format(ip))
+                print(f"Error processing {ip_address}")
                 pass
     return redfish_endpoints
 
@@ -116,17 +115,14 @@ def set_bootonce(host, username, password, mode, target):
     try:
         session.logout()
     except:
-        print(
-            "Redfish logout failed.  This is probably a bug in your particular redfish implementation and can likely be ignored."
-        )
+        print("Redfish logout failed. This is probably a bug in your particular redfish implementation and can likely be ignored.")
     if response.status != 200:
         cmd = pyghmi.ipmi.command.Command(
             bmc=host, userid=username, password=password, keepalive=False
         )
         cmd.set_bootdev(bootdev="network", uefiboot=True)
         return cmd.get_bootdev()
-    else:
-        return response.text
+    return response.text
 
 
 def reset_host(host, username, password):

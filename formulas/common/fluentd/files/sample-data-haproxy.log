@@ -1,0 +1,2 @@
+Dec 22 09:59:17 haproxy-8d61ff18-0f12-5a22-8247-b72cb31d25ea haproxy[267118]: 10.100.1.114:41544 [22/Dec/2022:09:59:17.487] placement_api_cluster~ placement_api_cluster/placement-4b4ea85a-85ca-586a-b9b0-97d5835b2531 1/0/0/50/51 200 2463 - - ---- 872/3/0/0/0 0/0 "GET /resource_providers/7768718f-afd6-46fa-b0ff-49f66188f0d0/allocations HTTP/1.1"
+Dec 22 09:59:17 haproxy-8d61ff18-0f12-5a22-8247-b72cb31d25ea haproxy[267118]: 10.100.1.90:40268 [22/Dec/2022:09:54:17.213] mysql_cluster mysql_cluster/mysql-5a58d167-961c-5ed5-aae3-131e3ab6b46c 1/0/300099 60041 -- 871/868/867/867/0 0/0

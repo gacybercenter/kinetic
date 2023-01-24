@@ -16,10 +16,10 @@
 
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Xena
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/xena main
-    - file: /etc/apt/sources.list.d/cloudarchive-xena.list
-    - keyid: ECD76E3E
+    - humanname: Ubuntu Cloud Archive - Yoga
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/yoga main
+    - file: /etc/apt/sources.list.d/cloudarchive-yoga.list
+    - keyid: EC4926EA
     - keyserver: keyserver.ubuntu.com
 
 update_packages_uca:
@@ -43,7 +43,7 @@ CentOS-PowerTools:
 
 rdo:
   pkg.installed:
-    - name: centos-release-openstack-xena
+    - name: centos-release-openstack-yoga
 
 update_packages_rdo:
   pkg.uptodate:

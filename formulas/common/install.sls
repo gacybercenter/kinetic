@@ -65,13 +65,30 @@ upgraded:
       - update_all
 {% endif %}
 
-common_remove:
-  pkg.removed:
-    - pkgs:
-      - firewalld
-
 common_install:
   pkg.installed:
     - pkgs:
       - python3-pip
     - reload_modules: True
+
+{% if grains['virtual'] == "physical" %}
+# temporary patch for pyopenssl https://stackoverflow.com/questions/73830524/attributeerror-module-lib-has-no-attribute-x509-v-flag-cb-issuer-check that exists on storage nodes
+storage_pip_patch:
+  cmd.run:
+    - name: rm -rf /usr/lib/python3/dist-packages/OpenSSL
+
+pyghmi_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pyopenssl
+      - pyghmi
+    - require:
+      - pkg: common_install
+      - cmd: storage_pip_patch
+  pkg.installed:
+    - pkgs:
+      - ipmitool
+      - vim
+{% endif %}

@@ -15,6 +15,10 @@
 ## could potentially be fleshed out and become formal fully-featured
 ## salt module
 
+# NOTE(chateaulav): This needs to be flushed out in official guacamole module
+#                   and imported from there. do not make changes here seperate
+#                   form main project
+
 import socket
 import requests
 import urllib3

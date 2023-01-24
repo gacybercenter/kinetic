@@ -59,8 +59,8 @@ base:
     - integrated_services
   'rabbitmq*':
     - rabbitmq
-  'graylog*':
-    - graylog
+  'opensearch*':
+    - opensearch
   'keystone*':
     - keystone
     - barbican
@@ -145,8 +145,12 @@ base:
     - zun
     - rabbitmq
     - neutron
+    - ceph
+    - swift
   'horizon*':
     - horizon
   'guacamole*':
     - guacamole
     - integrated_services
+  'jproxy*':
+    - junos
