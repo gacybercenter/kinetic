@@ -24,7 +24,7 @@
 import requests
 import json
 
-hostname = 'http://hostname'
+hostname = 'http://tnsr.internal.gacyberrange.org'
 __virtualname__ = 'tnsr'
 
 def __virtual__():
@@ -32,7 +32,7 @@ def __virtual__():
 
 ### NAT SECTION ###
 
-def get_nat_config():
+def get_nat_config(hostname):
     url = f"{hostname}/restconf/data/netgate-nat:nat-config"
     headers = {'Content-Type': 'application/json'}
     response = requests.get(url, headers=headers)
@@ -40,7 +40,8 @@ def get_nat_config():
         raise ValueError("Failed to retrieve nat config with status code: " + str(response.status_code))
     return response.json()
 
-def update_nat_config(data):
+def update_nat_config(data, 
+                    hostname):
     # Can be used to make or update the configuration
     url = f"{hostname}/restconf/data/netgate-nat:nat-config"
     headers = {'Content-Type': 'application/json'}
@@ -49,7 +50,7 @@ def update_nat_config(data):
         raise ValueError("Failed to update nat config with status code: " + str(response.status_code))
     return response.json()
 
-def delete_nat_config():
+def delete_nat_config(hostname):
     url = f"{hostname}/restconf/data/netgate-nat:nat-config"
     headers = {'Content-Type': 'application/json'}
     response = requests.delete(url, headers=headers)
@@ -64,7 +65,8 @@ def update_nat_config_mapping_entry(protocol,
                                     local_port, 
                                     extr_addr, 
                                     extr_port, 
-                                    table_name):
+                                    table_name,
+                                    hostname):
     data = {
         "netgate-nat:nat-config": {
             "static": {
@@ -93,7 +95,8 @@ def get_nat_config_mapping_entry(protocol,
                                 local_port, 
                                 extr_addr, 
                                 extr_port, 
-                                table_name):
+                                table_name,
+                                hostname):
     url = f"{hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table/mapping-entry?protocol={protocol}&local-addr={local_addr}&local-port={local_port}&extr-addr={extr_addr}&extr-port={extr_port}&table-name={table_name}"
     url = url.format(protocol=protocol,
                     local_addr=local_addr, 
@@ -109,7 +112,8 @@ def delete_nat_config_mapping_entry(protocol,
                                     local_port, 
                                     extr_addr, 
                                     extr_port, 
-                                    table_name):
+                                    table_name,
+                                    hostname):
     url = f"{hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table/mapping-entry?protocol={protocol}&local-addr={local_addr}&local-port={local_port}&extr-addr={extr_addr}&extr-port={extr_port}&table-name={table_name}"
     url = url.format(protocol=protocol, 
                     local_addr=local_addr, 
@@ -121,7 +125,7 @@ def delete_nat_config_mapping_entry(protocol,
     return response.text
 
 
-def get_nat_state():
+def get_nat_state(hostname):
     url = f"{hostname}/restconf/data/netgate-nat:nat-state"
     headers = {'Content-Type': 'application/json'}
     response = requests.get(url, 
@@ -135,7 +139,8 @@ def get_nat_state_mapping_entry(protocol,
                                 local_port, 
                                 extr_addr, 
                                 extr_port, 
-                                table_name):
+                                table_name,
+                                hostname):
     url = f"{hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table/mapping-entry?protocol={protocol}&local-addr={local_addr}&local-port={local_port}&extr-addr={extr_addr}&extr-port={extr_port}&table-name={table_name}"
     url = url.format(protocol=protocol, 
                     local_addr=local_addr, 
@@ -152,7 +157,7 @@ def get_nat_state_mapping_entry(protocol,
 
 ### UNBOUND SECTION ###
 
-def get_unbound_config():
+def get_unbound_config(hostname):
     url = f"{hostname}/restconf/data/netgate-unbound:unbound-config"
     headers = {'Content-Type': 'application/json'}
     response = requests.get(url, 
@@ -161,7 +166,8 @@ def get_unbound_config():
         raise ValueError("Failed to retrieve unbound config with status code: " + str(response.status_code))
     return response.json()
 
-def update_unbound_config(payload):
+def update_unbound_config(payload, 
+                        hostname):
     url = f"{hostname}/restconf/data/netgate-unbound:unbound-config"
     headers = {'Content-Type': 'application/json'}
     response = requests.put(url, 
@@ -171,7 +177,7 @@ def update_unbound_config(payload):
         raise ValueError("Failed to update unbound config with status code: " + str(response.status_code))
     return response.json()
 
-def delete_unbound_config():
+def delete_unbound_config(hostname):
     url = f"{hostname}/restconf/data/netgate-unbound:unbound-config"
     headers = {'Content-Type': 'application/json'}
     response = requests.delete(url, 
@@ -181,7 +187,8 @@ def delete_unbound_config():
 
 
 def get_unbound_config_host(zone_name, 
-                            zone_type):
+                            zone_type,
+                            hostname):
     url = f"{hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones?zone-name={zone_name}&type={zone_type}"
     url = url.format(zone_name=zone_name, 
                     zone_type=zone_type)
@@ -195,7 +202,8 @@ def update_unbound_config_host(zone_name,
                                 host_name_1, 
                                 ip_address_1, 
                                 host_name_2, 
-                                ip_address_2):
+                                ip_address_2,
+                                hostname):
     data={
         "netgate-unbound:unbound-config": {
             "daemon": {
@@ -239,7 +247,8 @@ def delete_unbound_config_host(zone_name,
                                 host_name_1, 
                                 ip_address_1, 
                                 host_name_2, 
-                                ip_address_2):
+                                ip_address_2,
+                                hostname):
     url = f"{hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones"
     payload = {
         "zone": {
@@ -271,7 +280,7 @@ def delete_unbound_config_host(zone_name,
 
 ### COMMIT SECTION ###
 
-def netconfig_commit():
+def netconfig_commit(hostname):
     url = f"{hostname}/restconf/operations/ietf-netconf:commit"
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, 
@@ -280,7 +289,7 @@ def netconfig_commit():
         raise ValueError("Failed to commit with status code: " + str(response.status_code))
     return response.text
 
-def netconfig_cancel_commit():
+def netconfig_cancel_commit(hostname):
     url = f"{hostname}/restconf/operations/ietf-netconf:cancel-commit"
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, 
@@ -289,7 +298,8 @@ def netconfig_cancel_commit():
         raise ValueError("Failed to cancel commit with status code: " + str(response.status_code))
     return response.text
 
-def netconfig_close_session(session_id):
+def netconfig_close_session(session_id,
+                            hostname):
     url = f"{hostname}/restconf/operations/ietf-netconf:close-session"
     headers = {'Content-Type': 'application/json'}
     data = {"session-id": session_id}
@@ -300,7 +310,8 @@ def netconfig_close_session(session_id):
         raise ValueError("Failed to close session with status code: " + str(response.status_code))
     return response.text
 
-def netconfig_delete_config(target):
+def netconfig_delete_config(target,
+                            hostname):
     url = f"{hostname}/restconf/operations/ietf-netconf:delete-config"
     headers = {'Content-Type': 'application/json'}
     data = {"target": target}
@@ -309,7 +320,7 @@ def netconfig_delete_config(target):
         raise ValueError("Failed to delete config with status code: " + str(response.status_code))
     return response.text
 
-def netconfig_discard_changes():
+def netconfig_discard_changes(hostname):
     url = f"{hostname}/restconf/operations/ietf-netconf:discard-changes"
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, headers=headers)
@@ -319,7 +330,8 @@ def netconfig_discard_changes():
 
 def netconfig_edit_config(payload, 
                         config_type, 
-                        target):
+                        target, 
+                        hostname):
     url = f"{hostname}/restconf/operations/ietf-netconf:edit-config"
     headers = {'Content-Type': 'application/json'}
     data = {
