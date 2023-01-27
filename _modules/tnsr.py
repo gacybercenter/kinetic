@@ -25,6 +25,12 @@ import requests
 import json
 
 hostname = 'http://tnsr.internal.gacyberrange.org'
+
+# Remove before commiting (sensitive).
+cert = "~/gcc/data-center/tnsr/rest_api/tnsr-gacyberrange.crt"
+key = "~/gcc/data-center/tnsr/rest_api/tnsr-gacyberrange.key" 
+cacert = "~/gcc/data-center/tnsr/rest_api/tnsr-rest_api.crt"
+
 __virtualname__ = 'tnsr'
 
 def __virtual__():
@@ -32,10 +38,13 @@ def __virtual__():
 
 ### NAT SECTION ###
 
-def get_nat_config(hostname):
+def get_nat_config(hostname, cert, key, cacert):
     url = f"{hostname}/restconf/data/netgate-nat:nat-config"
     headers = {'Content-Type': 'application/json'}
-    response = requests.get(url, headers=headers)
+    response = requests.get(url,
+                            cert=(cert, key),
+                            verify=cacert,
+                            headers=headers)
     if response.status_code != 200:
         raise ValueError("Failed to retrieve nat config with status code: " + str(response.status_code))
     return response.json()
@@ -45,7 +54,9 @@ def update_nat_config(data,
     # Can be used to make or update the configuration
     url = f"{hostname}/restconf/data/netgate-nat:nat-config"
     headers = {'Content-Type': 'application/json'}
-    response = requests.put(url, data=json.dumps(data), headers=headers)
+    response = requests.put(url, 
+                            data=json.dumps(data), 
+                            headers=headers)
     if response.status_code != 200:
         raise ValueError("Failed to update nat config with status code: " + str(response.status_code))
     return response.json()
@@ -53,7 +64,8 @@ def update_nat_config(data,
 def delete_nat_config(hostname):
     url = f"{hostname}/restconf/data/netgate-nat:nat-config"
     headers = {'Content-Type': 'application/json'}
-    response = requests.delete(url, headers=headers)
+    response = requests.delete(url, 
+                                headers=headers)
     if response.status_code != 200:
         raise ValueError("Failed to delete nat config with status code: " + str(response.status_code))
     return response.json()
