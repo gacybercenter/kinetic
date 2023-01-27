@@ -43,7 +43,7 @@ class Session:
         try:
             response = requests.get(url,
                                     cert=(self.cert, self.key),
-                                    verify=cacert,
+                                    verify=self.cacert,
                                     headers=headers)
             response.raise_for_status()
             return response.json()
