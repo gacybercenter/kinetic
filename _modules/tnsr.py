@@ -79,8 +79,20 @@ class Session:
         except requests.exceptions.HTTPError as err:
             raise ValueError(f"Failed to delete nat config. {err}")
 
-
     #If the curley braces dont work, use the ASKII encoding : '%7B' for '{' and '%7D' for '}'
+
+    def get_nat_config_mapping_table(self):
+        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
+        headers = {'Content-Type': 'application/json'}
+        try:
+            response = requests.get(url,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as err:
+            raise ValueError(f"Failed to get nat config. {err}")
 
     def update_nat_config_mapping_entry(self,
                                         protocol, 
