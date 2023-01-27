@@ -57,10 +57,10 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.put(url,
-                                cert=(self.cert, self.key),
-                                verify=self.cacert, 
-                                data=json.dumps(payload), 
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert, 
+                                    data=json.dumps(payload), 
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -71,9 +71,9 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.delete(url, 
-                                    cert=(self.cert, self.key),
-                                    verify=self.cacert,
-                                    headers=headers)
+                                        cert=(self.cert, self.key),
+                                        verify=self.cacert,
+                                        headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -121,10 +121,10 @@ class Session:
         url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
         try:
             response = requests.post(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                data=json.dumps(data), 
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    data=json.dumps(data), 
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -171,8 +171,8 @@ class Session:
                         table_name=table_name)
         try:
             response = requests.delete(url, 
-                                    cert=(self.cert, self.key),
-                                    verify=self.cacert,)
+                                        cert=(self.cert, self.key),
+                                        verify=self.cacert,)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -184,9 +184,9 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.get(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -199,9 +199,9 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.get(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -214,10 +214,10 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.put(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                json=payload, 
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    json=payload, 
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -229,9 +229,9 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.delete(url, 
-                                    cert=(self.cert, self.key),
-                                    verify=self.cacert,
-                                    headers=headers)
+                                        cert=(self.cert, self.key),
+                                        verify=self.cacert,
+                                        headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -243,9 +243,9 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.get(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -292,10 +292,10 @@ class Session:
         url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
         try:
             response = requests.post(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                data=json.dumps(data), 
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    data=json.dumps(data), 
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -310,9 +310,9 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.get(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -351,10 +351,10 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.delete(url, 
-                                    cert=(self.cert, self.key),
-                                    verify=self.cacert,
-                                    json=payload, 
-                                    headers=headers)
+                                        cert=(self.cert, self.key),
+                                        verify=self.cacert,
+                                        json=payload, 
+                                        headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -367,9 +367,9 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.post(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -381,9 +381,9 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.post(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -397,10 +397,10 @@ class Session:
         data = {"session-id": session_id}
         try:
             response = requests.post(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                json=data,
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    json=data,
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -414,10 +414,10 @@ class Session:
         data = {"target": target}
         try:
             response = requests.post(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                json=data,
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    json=data,
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -429,9 +429,9 @@ class Session:
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.post(url,
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
@@ -453,10 +453,10 @@ class Session:
         }
         try:
             response = requests.post(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                json=data, 
-                                headers=headers)
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    json=data, 
+                                    headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as err:
