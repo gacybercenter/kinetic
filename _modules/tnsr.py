@@ -179,7 +179,6 @@ class Session:
             raise ValueError(f"Failed to delete nat config mapping entry. {err}")
 
 
-
     def get_nat_state(self):
         url = f"{self.hostname}/restconf/data/netgate-nat:nat-state"
         headers = {'Content-Type': 'application/json'}
@@ -192,33 +191,6 @@ class Session:
             return response.json()
         except requests.exceptions.HTTPError as err:
             raise ValueError(f"Failed to get nat state. {err}")
-
-
-    def get_nat_state_mapping_entry(self,
-                                    protocol, 
-                                    local_addr, 
-                                    local_port, 
-                                    extr_addr, 
-                                    extr_port, 
-                                    table_name):
-        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table/mapping-entry?protocol={protocol}&local-addr={local_addr}&local-port={local_port}&extr-addr={extr_addr}&extr-port={extr_port}&table-name={table_name}"
-        url = url.format(protocol=protocol, 
-                        local_addr=local_addr, 
-                        local_port=local_port, 
-                        extr_addr=extr_addr, 
-                        extr_port=extr_port, 
-                        table_name=table_name)
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.get(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,
-                                headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to get nat state mapping entry. {err}")
-
 
     ### UNBOUND SECTION ###
 
@@ -266,12 +238,8 @@ class Session:
             raise ValueError(f"Failed to delete unbound config. {err}")
 
 
-    def get_unbound_config_host(self, 
-                                zone_name, 
-                                zone_type):
-        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones?zone-name={zone_name}&type={zone_type}"
-        url = url.format(zone_name=zone_name, 
-                        zone_type=zone_type)
+    def get_unbound_config_hosts(self):
+        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server"
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.get(url, 
@@ -282,7 +250,6 @@ class Session:
             return response.json()
         except requests.exceptions.HTTPError as err:
             raise ValueError(f"Failed to get unbound config host. {err}")
-
 
     def update_unbound_config_host(self,
                                     zone_name, 
@@ -334,7 +301,22 @@ class Session:
         except requests.exceptions.HTTPError as err:
             raise ValueError(f"Failed to update unbound config host. {err}")
 
-
+    def get_unbound_config_host(self, 
+                                zone_name, 
+                                zone_type):
+        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones?zone-name={zone_name}&type={zone_type}"
+        url = url.format(zone_name=zone_name, 
+                        zone_type=zone_type)
+        headers = {'Content-Type': 'application/json'}
+        try:
+            response = requests.get(url, 
+                                cert=(self.cert, self.key),
+                                verify=self.cacert,
+                                headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as err:
+            raise ValueError(f"Failed to get unbound config host. {err}")
 
     def delete_unbound_config_host(self,
                                     zone_name, 
@@ -377,7 +359,6 @@ class Session:
             return response.json()
         except requests.exceptions.HTTPError as err:
             raise ValueError(f"Failed to delete unbound config host. {err}")
-
 
     ### COMMIT SECTION ###
 
