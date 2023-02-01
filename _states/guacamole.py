@@ -21,21 +21,27 @@ def update_user(name,
     ### If test is specified:
     ### the same, return changes dict.
     if kwargs["test"]:
-        current_state = __salt__["guacamole.detail_user"](username)
+        current_state = __salt__["guacamole.detail_user"](guac_user)
+
+    current_state_1 = {
+        "username": current_state['username'],
+            "attributes": {
+                "guac-full-name": current_state['attributes'].get("guac-full-name"),
+                "guac-email-address": current_state['attributes'].get("guac-email-address"),
+                "guac-organization": current_state['attributes'].get("guac-organization"),
+            },
+        }
 
     new_state = {
-        "username": "",
-        "attributes": {
-            "guac-full-name": null,
-            "access-window-start": null,
-            "guac-organization": null,
-            "access-window-end": null,
-            "disabled": null,
-        },
-        
-    }
+        "username": guac_user,
+            "attributes": {
+                "guac-full-name": guac_full_name,
+                "guac-email-address": guac_email,
+                "guac-organization": guac_org,
+            },
+        }
 
-    if current_state == new_state:
+    if current_state_1 == new_state:
         ret["result"] = True
         ret["comment"] = "System in correct state"
         return ret
@@ -44,11 +50,30 @@ def update_user(name,
     # if state does need to be changed. Check if we're running
     # in ``test=true`` mode.
     if __opts__["test"] == True:
-        ret["comment"] = 'The state of "{0}" will be changed.'.format(name)
+        ret["comment"] = 'The state of "{0}" will be changed.'.format(guac_user)
         ret["changes"] = {
             "old": current_state,
-            "new": "Description of the new state",
+            "new": "updated user",
         }
-   #detail_user = ret["changes"].update({"name": {"old": "", "new": "name-1"}})
+        
+        detail_user = ret["changes"].update({"guac_user": {"old": current_state, "new": new_state}})
 
-   
+        # Return ``None`` when running with ``test=true``.
+        ret["result"] = None
+
+        return ret
+
+    # Finally, make the actual change and return the result.
+    new_state = __salt__["guacamole.update_user"](guac_user, attributes={"guac-full-name": guac_full_name, 
+    "guac-email-address": guac_email, "guac-organization": guac_org})
+
+    ret["comment"] = 'The state of "{0}" was changed!'.format(name)
+
+    ret["changes"] = {
+        "old": current_state,
+        "new": new_state,
+    }
+
+    ret["result"] = True
+
+    return ret 
