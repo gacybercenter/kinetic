@@ -7,7 +7,7 @@ __virtualname__ = "guacamole"
 def __virtual__():
     return __virtualname__
 
-def update_user(name,
+def update_user_details(name,
                 host,
                 username,
                 password,
@@ -50,13 +50,13 @@ def update_user(name,
     # if state does need to be changed. Check if we're running
     # in ``test=true`` mode.
     if __opts__["test"] == True:
-        ret["comment"] = 'The state of "{0}" will be changed.'.format(guac_user)
+        ret["comment"] = 'The state of "{0}" will be changed.'.format(name)
         ret["changes"] = {
             "old": current_state,
             "new": "updated user",
         }
         
-        detail_user = ret["changes"].update({"guac_user": {"old": current_state, "new": new_state}})
+        ret["changes"].update({"guac_user": {"old": current_state, "new": new_state}})
 
         # Return ``None`` when running with ``test=true``.
         ret["result"] = None
@@ -76,4 +76,60 @@ def update_user(name,
 
     ret["result"] = True
 
-    return ret 
+    return ret
+
+
+
+def update_user_password(name,
+                host,
+                username,
+                password,
+                guac_new_password,
+                **kwargs):
+    
+    ret = {"name": name, "result": False, "changes": {}, "comment": ""}
+    
+    if "test" not in kwargs:
+        kwargs["test"] = __opts__.get("test", False)
+
+    ### If test is specified:
+    ### the same, return changes dict.
+    if kwargs["test"]:
+        guac_old_password = 'Pull Pillar Value'
+
+
+    if guac_old_password == guac_new_password:
+        ret["result"] = True
+        ret["comment"] = "System in correct state"
+        return ret
+        
+
+    # if state does need to be changed. Check if we're running
+    # in ``test=true`` mode.
+    if __opts__["test"] == True:
+        ret["comment"] = 'The state of "{0}" will be changed.'.format(name)
+        ret["changes"] = {
+            "old": guac_old_password,
+            "new": "updated password",
+        }
+        
+        ret["changes"].update({"guac_old_password": {"old": guac_old_password, "guac_new_password"}})
+
+        # Return ``None`` when running with ``test=true``.
+        ret["result"] = None
+
+        return ret
+
+    # Finally, make the actual change and return the result.
+    new_password = __salt__["guacamole.update_user_password"](guac_password)
+
+    ret["comment"] = 'The state of "{0}" was changed!'.format(name)
+
+    ret["changes"] = {
+        "old": guac_old_password,
+        "new": guac_new_password,
+    }
+
+    ret["result"] = True
+
+    return ret
