@@ -29,413 +29,303 @@ __virtualname__ = 'tnsr'
 def __virtual__():
     return __virtualname__
 class Session:
-    def __init__(self, hostname: str, cert: str, key: str, cacert: str):
+    def __init__(self, hostname: str, cert: str, key: str, cacert: str, headers: dict):
         self.hostname = hostname
         self.cert = cert
         self.key = key
         self.cacert = cacert
+        self.headers = headers
+
+    ### Debugging ###
+
+    def get_headers(self):
+        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config"
+        response = requests.request("OPTIONS",
+                                    url,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers)
+        return response.text
 
     ### NAT SECTION ###
 
     def get_nat_config(self):
         url = f"{self.hostname}/restconf/data/netgate-nat:nat-config"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.get(url,
+        response = requests.request("GET",
+                                    url,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to get nat config. {err}")
+                                    headers=self.headers)
+        return response.text
 
     def update_nat_config(self, 
                         payload):
         # Can be used to make or update the configuration
         url = f"{self.hostname}/restconf/data/netgate-nat:nat-config"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.put(url,
+        response = requests.request("PUT",
+                                    url,
+                                    json=payload,
                                     cert=(self.cert, self.key),
-                                    verify=self.cacert, 
-                                    data=json.dumps(payload), 
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to retrieve nat config. {err}")
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
 
     def delete_nat_config(self):
         url = f"{self.hostname}/restconf/data/netgate-nat:nat-config"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.delete(url, 
-                                        cert=(self.cert, self.key),
-                                        verify=self.cacert,
-                                        headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to delete nat config. {err}")
+        response = requests.request("DELETE",
+                                    url,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
+
 
     #If the curley braces dont work, use the ASKII encoding : '%7B' for '{' and '%7D' for '}'
 
-    def get_nat_config_mapping_table(self):
-        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.get(url,
+    def update_nat_static(self, 
+                            payload):
+        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static"
+        response = requests.request("PUT",
+                                    url,
+                                    data=payload,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to get nat config. {err}")
+                                    headers=self.headers,)
+        return response.text
 
-    def update_nat_config_mapping_entry(self,
-                                        protocol, 
-                                        local_addr, 
-                                        local_port, 
-                                        extr_addr, 
-                                        extr_port, 
-                                        table_name):
-        data = {
-            "netgate-nat:nat-config": {
-                "static": {
-                    "mapping-table": {
-                        "mapping-entry": {
-                            "protocol": protocol,
-                            "local-addr": local_addr,
-                            "local-port": local_port,
-                            "extr-addr": extr_addr,
-                            "extr-port": extr_port,
-                            "table-name": table_name
-                        }
-                    }
-                }
-            }
-        }
-        headers = {'Content-Type': 'application/json'}
+    def get_nat_mapping_tables(self):
         url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
-        try:
-            response = requests.post(url, 
+        response = requests.request("GET",
+                                    url,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    data=json.dumps(data), 
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to update nat config mapping entry. {err}")
+                                    headers=self.headers,)
+        return response.text
 
 
-    def get_nat_config_mapping_entry(self,
-                                    protocol, 
-                                    local_addr, 
-                                    local_port, 
-                                    extr_addr, 
-                                    extr_port, 
-                                    table_name):
-        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table/mapping-entry?protocol={protocol}&local-addr={local_addr}&local-port={local_port}&extr-addr={extr_addr}&extr-port={extr_port}&table-name={table_name}"
-        url = url.format(protocol=protocol,
-                        local_addr=local_addr, 
-                        local_port=local_port, 
-                        extr_addr=extr_addr, 
-                        extr_port=extr_port, 
-                        table_name=table_name)
-        try:
-            response = requests.get(url, 
-                                cert=(self.cert, self.key),
-                                verify=self.cacert,)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to get nat config mapping entry. {err}")
+    def update_nat_mapping_tables(self, 
+                                payload):
+        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
+        response = requests.request("PUT",
+                                    url,
+                                    data=payload,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
 
+    def make_nat_mapping_tables(self, 
+                            payload):
+        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
+        response = requests.request("POST",
+                                    url,
+                                    data=payload,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
 
-    def delete_nat_config_mapping_entry(self,
-                                        protocol, 
-                                        local_addr, 
-                                        local_port, 
-                                        extr_addr, 
-                                        extr_port, 
-                                        table_name):
-        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table/mapping-entry?protocol={protocol}&local-addr={local_addr}&local-port={local_port}&extr-addr={extr_addr}&extr-port={extr_port}&table-name={table_name}"
-        url = url.format(protocol=protocol, 
-                        local_addr=local_addr, 
-                        local_port=local_port, 
-                        extr_addr=extr_addr, 
-                        extr_port=extr_port, 
-                        table_name=table_name)
-        try:
-            response = requests.delete(url, 
-                                        cert=(self.cert, self.key),
-                                        verify=self.cacert,)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to delete nat config mapping entry. {err}")
+    def update_nat_mapping_tables(self, 
+                            payload):
+        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
+        response = requests.request("PUT",
+                                    url,
+                                    data=payload,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
+
+    def get_nat_entry(self, **kwargs):
+        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table/mapping-entry=%7B{transport_protocol}%7D,%7B{local_address}%7D,%7B{local_port}%7D,%7B{external_address}%7D,%7B{external_port}%7D,%7B{route_table_name}%7D"
+        response = requests.request("GET",
+                                    url,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
+
+    def delete_nat_entry(self, **kwargs):
+        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table/mapping-entry=%7B{transport_protocol}%7D,%7B{local_address}%7D,%7B{local_port}%7D,%7B{external_address}%7D,%7B{external_port}%7D,%7B{route_table_name}%7D"
+        response = requests.request("DELETE",
+                                    url,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
 
 
     def get_nat_state(self):
         url = f"{self.hostname}/restconf/data/netgate-nat:nat-state"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.get(url, 
+        response = requests.request("GET",
+                                    url,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to get nat state. {err}")
+                                    headers=self.headers,)
+        return response.text
 
     ### UNBOUND SECTION ###
 
     def get_unbound_config(self):
         url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.get(url, 
+        response = requests.request("GET",
+                                    url,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to get unbound config. {err}")
+                                    headers=self.headers,)
+        return response.text
 
 
     def update_unbound_config(self, 
                             payload):
         url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.put(url, 
+        response = requests.request("PUT",
+                                    url,
+                                    data=payload,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    json=payload, 
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to update unbound config. {err}")
+                                    headers=self.headers,)
+        return response.text
+
 
 
     def delete_unbound_config(self):
         url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.delete(url, 
-                                        cert=(self.cert, self.key),
-                                        verify=self.cacert,
-                                        headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to delete unbound config. {err}")
-
-
-    def get_unbound_config_hosts(self):
-        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.get(url, 
+        response = requests.request("DELETE",
+                                    url,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to get unbound config host. {err}")
+                                    headers=self.headers,)
+        return response.text
 
-    def update_unbound_config_host(self,
-                                    zone_name, 
-                                    zone_type, 
-                                    host_name_1, 
-                                    ip_address_1, 
-                                    host_name_2, 
-                                    ip_address_2):
-        data={
-            "netgate-unbound:unbound-config": {
-                "daemon": {
-                    "server": {
-                        "local-zones": {
-                            "zone": {
-                                "zone-name": zone_name,
-                                "type": zone_type,
-                                "hosts": {
-                                    "host": [
-                                        {
-                                            "host-name": host_name_1,
-                                            "ip-address": [
-                                                ip_address_1
-                                            ]
-                                        },
-                                        {
-                                            "host-name": host_name_2,
-                                            "ip-address": [
-                                                ip_address_2
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        headers = {'Content-Type': 'application/json'}
-        url = f"{self.hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
-        try:
-            response = requests.post(url, 
-                                    cert=(self.cert, self.key),
-                                    verify=self.cacert,
-                                    data=json.dumps(data), 
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to update unbound config host. {err}")
 
-    def get_unbound_config_host(self, 
-                                zone_name, 
-                                zone_type):
-        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones?zone-name={zone_name}&type={zone_type}"
-        url = url.format(zone_name=zone_name, 
-                        zone_type=zone_type)
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.get(url, 
-                                    cert=(self.cert, self.key),
-                                    verify=self.cacert,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to get unbound config host. {err}")
-
-    def delete_unbound_config_host(self,
-                                    zone_name, 
-                                    zone_type, 
-                                    host_name_1, 
-                                    ip_address_1, 
-                                    host_name_2, 
-                                    ip_address_2):
+    def get_unbound_zones(self):
         url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones"
-        payload = {
-            "zone": {
-                "zone-name": zone_name,
-                "type": zone_type,
-                "hosts": {
-                    "host": [
-                        {
-                            "host-name": host_name_1,
-                            "ip-address": [
-                                ip_address_1
-                            ]
-                        },
-                        {
-                            "host-name": host_name_2,
-                            "ip-address": [
-                                ip_address_2
-                            ]
-                        }
-                    ]
-                }
-            }
-        }
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.delete(url, 
-                                        cert=(self.cert, self.key),
-                                        verify=self.cacert,
-                                        json=payload, 
-                                        headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to delete unbound config host. {err}")
+        response = requests.request("GET",
+                                    url,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
+
+
+    def update_unbound_zones(self,
+                            payload):
+        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones"
+        response = requests.request("PUT",
+                                    url,
+                                    data=payload,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
+
+
+    def get_unbound_zone_name(self, 
+                                zone_name):
+        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones/zone={zone_name}"
+        url = url.format(zone_name=zone_name)
+        response = requests.request("GET",
+                                    url,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
+
+    def make_unbound_zone_name(self, 
+                                zone_name,
+                                payload):
+        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/netgate-unbound:daemon/netgate-unbound:server/netgate-unbound:local-zones/netgate-unbound:zone={zone_name}"
+        url = url.format(zone_name=zone_name)
+        response = requests.request("POST",
+                                    url,
+                                    data=payload,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
+
+    def update_unbound_zone_name(self, 
+                                zone_name,
+                                payload):
+        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones/zone={zone_name}"
+        url = url.format(zone_name=zone_name)
+        response = requests.request("PUT",
+                                    url,
+                                    data=payload,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
+
+    def delete_unbound_zone_name(self, 
+                                zone_name):
+        url = f"{self.hostname}/restconf/data/netgate-unbound:unbound-config/static/mapping-table/local-zones/zone={zone_name}"
+        url = url.format(zone_name=zone_name)
+        response = requests.request("DELETE",
+                                    url,
+                                    cert=(self.cert, self.key),
+                                    verify=self.cacert,
+                                    headers=self.headers,)
+        return response.text
 
     ### COMMIT SECTION ###
 
     def netconfig_commit(self):
         url = f"{self.hostname}/restconf/operations/ietf-netconf:commit"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.post(url, 
+        response = requests.request("POST",
+                                    url,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to commit netconfig. {err}")
+                                    headers=self.headers,)
+        return response.text
 
 
     def netconfig_cancel_commit(self):
         url = f"{self.hostname}/restconf/operations/ietf-netconf:cancel-commit"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.post(url, 
+        url = f"{self.hostname}/restconf/operations/ietf-netconf:commit"
+        response = requests.request("POST",
+                                    url,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to cancel commit netconfig. {err}")
+                                    headers=self.headers,)
+        return response.text
 
 
     def netconfig_close_session(self,
                                 session_id):
         url = f"{self.hostname}/restconf/operations/ietf-netconf:close-session"
-        headers = {'Content-Type': 'application/json'}
         data = {"session-id": session_id}
-        try:
-            response = requests.post(url, 
+        response = requests.request("POST",
+                                    url,
+                                    json=data,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    json=data,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to close session netconfig. {err}")
+                                    headers=self.headers,)
+        return response.text
 
 
     def netconfig_delete_config(self,
                                 target):
         url = f"{self.hostname}/restconf/operations/ietf-netconf:delete-config"
-        headers = {'Content-Type': 'application/json'}
         data = {"target": target}
-        try:
-            response = requests.post(url, 
+        response = requests.request("POST",
+                                    url,
+                                    json=data,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    json=data,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to delete netconfig. {err}")
+                                    headers=self.headers,)
+        return response.text
 
 
     def netconfig_discard_changes(self):
         url = f"{self.hostname}/restconf/operations/ietf-netconf:discard-changes"
-        headers = {'Content-Type': 'application/json'}
-        try:
-            response = requests.post(url,
+        response = requests.request("POST",
+                                    url,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to discard changes netconfig. {err}")
+                                    headers=self.headers,)
+        return response.text
 
 
     def netconfig_edit_config(self, 
@@ -443,7 +333,6 @@ class Session:
                             config_type, 
                             target):
         url = f"{self.hostname}/restconf/operations/ietf-netconf:edit-config"
-        headers = {'Content-Type': 'application/json'}
         data = {
             "ietf-netconf:edit-config": {
                 "target": target,
@@ -451,14 +340,11 @@ class Session:
                 "config": payload
             }
         }
-        try:
-            response = requests.post(url, 
+        response = requests.request("POST",
+                                    url,
+                                    json=data,
                                     cert=(self.cert, self.key),
                                     verify=self.cacert,
-                                    json=data, 
-                                    headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as err:
-            raise ValueError(f"Failed to edit config netconfig. {err}")
+                                    headers=self.headers,)
+        return response.text
 
