@@ -14,135 +14,84 @@
 
 ### Tnsr State Module
 
-from _modules.tnsr import Session
+import json
 
 __virtualname__ = 'tnsr'
 
 def __virtual__():
     return __virtualname__
 
-def managed(name):
+def nat_updated(name, new_tables, **kwargs):
     """
     Ensure that the NAT config is managed by Salt.
     """
+    test = kwargs.get("test", __opts__.get("test", False))
     ret = {"name": name, "changes": {}, "result": True, "comment": ""}
+    
+    # Create TNSR session
+    tnsr = __salt__['tnsr.Session'](hostname, cert, key, cacert, headers)
 
-    nat_config = Session(hostname, cert, key, cacert)
-    # Check if the NAT config is already managed by Salt
-    mapping_table = nat_config.get_nat_config_mapping_table()
-    if mapping_table:
+    # Get current NAT mapping tables
+    current_tables = json.loads(tnsr.get_nat_mapping_tables())
+
+    # Check if the NAT mapping tables are already managed by Salt
+    if current_tables == new_tables:
         ret["comment"] = "NAT config is already managed by Salt"
         return ret
 
-    # Update NAT config mapping entry
-    if __opts__["test"]:
+    # Check if test mode is enabled
+    if test:
         ret["result"] = None
         ret["comment"] = "NAT config mapping entry would be updated"
         return ret
 
-    protocol = "tcp"
-    local_addr = "192.168.1.100"
-    local_port = "80"
-    extr_addr = "10.0.0.1"
-    extr_port = "8080"
-    table_name = "my-table"
+    # Update NAT config mapping entry
+    result = tnsr.update_nat_mapping_tables(new_tables)
 
-    result = nat_config.update_nat_config_mapping_entry(protocol, 
-                                                        local_addr, 
-                                                        local_port, 
-                                                        extr_addr, 
-                                                        extr_port, 
-                                                        table_name)
-    ret["changes"]["updated"] = result
+    # Check if update was successful
     if not result:
         ret["result"] = False
         ret["comment"] = "Failed to update NAT config mapping entry"
+        return ret
+
+    ret["changes"]["updated"] = result
+    ret["comment"] = "Successfully updated NAT config mapping entry"
     return ret
 
 
-def dns_updated(name):
+def unbound_updated(name, new_zones, **kwargs):
     """
     Ensure that the DNS config is managed by Salt.
     """
+    test = kwargs.get("test", __opts__.get("test", False))
     ret = {"name": name, "changes": {}, "result": True, "comment": ""}
 
-    dns_config = Session(hostname, cert, key, cacert)
-    # Check if the NAT config is already managed by Salt
-    hosts = dns_config.get_unbound_config_hosts()
-    if hosts:
+    # Create TNSR session
+    tnsr = __salt__["tnsr.Session"](hostname, cert, key, cacert, headers)
+
+    # Get current Unbound zones
+    current_zones = json.loads(tnsr.get_unbound_local_zones())
+
+    # Check if the Unbound zones are already managed by Salt
+    if current_zones == new_zones:
         ret["comment"] = "DNS config is already managed by Salt"
         return ret
 
-    # Update NAT config mapping entry
-    if __opts__["test"]:
+    # Check if test mode is enabled
+    if test:
         ret["result"] = None
         ret["comment"] = "DNS config mapping entry would be updated"
         return ret
 
-    zone_name = "among us"
-    zone_type = "imposter"
-    host_name_1 = "Red"
-    ip_address_1 = "10.0.0.1"
-    host_name_2 = "Blue"
-    ip_address_2 = "10.0.0.2"
+    # Update Unbound zones
+    result = tnsr.update_unbound_local_zones(new_zones)
 
-    result = dns_config.update_unbound_config_host(zone_name, 
-                                                    zone_type, 
-                                                    host_name_1, 
-                                                    ip_address_1, 
-                                                    host_name_2, 
-                                                    ip_address_2)
-    ret["changes"]["updated"] = result
+    # Check if update was successful
     if not result:
         ret["result"] = False
         ret["comment"] = "Failed to update DNS config mapping entry"
-    return ret
-
-
-
-
-### Templates ###
-
-def dns_updated(name, primary_server, secondary_server):
-    """
-    Ensure that the DNS settings in TNSR are updated.
-    """
-    ret = {"name": name, "changes": {}, "result": True, "comment": ""}
-    # Check if the DNS settings are already correct
-    if __salt__["tnsr.check_dns"](primary_server, secondary_server):
-        ret["comment"] = "DNS settings are already correct"
         return ret
-    # Update the DNS settings
-    if __opts__["test"]:
-        ret["result"] = None
-        ret["comment"] = "DNS settings would be updated"
-        return ret
-    result = __salt__["tnsr.update_dns"](primary_server, secondary_server)
-    ret["changes"]["updated"] = result["name"]
-    if not result["result"]:
-        ret["result"] = False
-        ret["comment"] = "Failed to update DNS settings"
-    return ret
-
-def managed(name, user, password, host, port=80, api_key=None, verify_ssl=True):
-    """
-    Ensure that the TNSR API is managed by Salt.
-    """
-    ret = {"name": name, "changes": {}, "result": True, "comment": ""}
-    # Check if the TNSR API is already managed by Salt
-    if "tnsr" in __salt__:
-        ret["comment"] = "TNSR API is already managed by Salt"
-        return ret
-    # Add the TNSR API to the Salt execution module
-    if __opts__["test"]:
-        ret["result"] = None
-        ret["comment"] = "TNSR API would be added to the Salt execution module"
-        return ret
-    result = __salt__["tnsr.manage_api"](
-        user, password, host, port=port, api_key=api_key, verify_ssl=verify_ssl
-    )
-    ret["changes"]["managed"] = result["name"]
-    if not result["result"]:
-        ret["result"] = False
-        ret["comment"] = "Failed to add TNSR API to the Salt execution module"
+    
+    ret["changes"]["updated"] = result
+    ret["comment"] = "Successfully updated NAT config mapping entry"
     return ret
