@@ -68,7 +68,7 @@ def detail_user(host: str,
         verify=False
     ).json(), indent=2)
 
-    delete_token(host, data_source, token)
+    delete_token(host, token)
     return response
 
 def update_user(host: str,
@@ -104,7 +104,7 @@ def update_user(host: str,
         verify=False,
     )
 
-    delete_token(host, data_source, token)
+    delete_token(host, token)
     return response
 
 def update_user_password(host: str,
@@ -129,5 +129,5 @@ def update_user_password(host: str,
         verify=False,
     )
 
-    delete_token(host, data_source, token)
+    delete_token(host, token)
     return response
