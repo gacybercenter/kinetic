@@ -78,6 +78,49 @@ apt-cacher-ng_service:
       - file: conf-files
       - cmd: get_centos_mirros
 
+{% for dir in [data, logs]%}
+/opt/cache/windows/{{ dir }}:
+  file.directory:
+    - user: root
+    - group: root
+    - mode: 755
+    - makedirs: True
+{% endfor %}
+
+apache2_service:
+  service.dead:
+    - name: apache2
+    - enable: false
+
+lancachenet_monolith:
+  docker_container.running:
+    - name: lancache
+    - image: lancachenet/monolithic:latest
+    - restart_policy: unless-stopped
+    - volumes:
+      - /opt/cache/windows/data:/data/cache
+      - /opt/cache/windows/logs:/data/logs
+    - ports:
+      - 80:80
+      - 443:443
+    - require:
+      - service: apache2_service
+
+# NOTE(chateaulav): should apply a better filter to target whatever ip is
+#                   assigned as the management interface
+lancachenet_dns:
+  docker_container.running:
+    - name: lancache-dns
+    - image: lancachenet/lancache-dns:latest
+    - restart_policy: unless-stopped
+    - ports:
+      - 53:53/udp
+    - environment:
+      UPSTREAM_DNS: {{ piller['networking']['addresses']['float_dns'] }}
+      WSUSCACHE_IP: {{ salt['mine.get']('role:cache', 'network.ip_addrs', 'ens3').items() }}
+    - require:
+      - docker_container: lancachenet_monolith
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 /root/acng.dockerfile:

@@ -25,6 +25,8 @@ cache_packages:
       - apt-cacher-ng
       - python3-pip
       - apache2
+      - docker.io
+      - containerd
     - reload_modules: True
 
 {% elif grains['os_family'] == 'RedHat' %}
