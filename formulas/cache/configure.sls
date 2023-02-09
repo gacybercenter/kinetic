@@ -78,7 +78,7 @@ apt-cacher-ng_service:
       - file: conf-files
       - cmd: get_centos_mirros
 
-{% for dir in [data, logs]%}
+{% for dir in ['data', 'logs']%}
 /opt/cache/windows/{{ dir }}:
   file.directory:
     - user: root
@@ -105,6 +105,8 @@ lancachenet_monolith:
       - 443:443
     - require:
       - service: apache2_service
+      - file: /opt/cache/windows/data
+      - file: /opt/cache/windows/logs
 
 # NOTE(chateaulav): should apply a better filter to target whatever ip is
 #                   assigned as the management interface
