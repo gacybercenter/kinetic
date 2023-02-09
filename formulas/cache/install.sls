@@ -26,6 +26,7 @@ cache_packages:
       - apt-cacher-ng
       - python3-pip
       - apache2
+      - docker-ce
       - docker-ce-cli
       - containerd.io
       - docker-compose
