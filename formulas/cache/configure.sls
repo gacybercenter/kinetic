@@ -94,7 +94,7 @@ apache2_service:
 
 systemd_resolved_service:
   service.dead:
-    - name: systemd_resolved
+    - name: systemd-resolved
     - enable: false
 
 lancachenet_monolith:
