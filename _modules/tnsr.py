@@ -31,12 +31,12 @@ def __virtual__():
 ### NAT SECTION ###
 
 def nat_tables_request(method, 
-                    cert, 
-                    key, 
-                    cacert=False, 
-                    payload=None,
-                    hostname="https://tnsr.internal.gacyberrange.org",
-                    headers={'Content-Type': 'application/yang-data+json'}):
+                        cert, 
+                        key, 
+                        cacert=False, 
+                        payload=None,
+                        hostname="https://tnsr.internal.gacyberrange.org",
+                        headers={'Content-Type': 'application/yang-data+json'}):
     url = f"{hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
     response = requests.request(method, 
                                 url, 
@@ -45,6 +45,29 @@ def nat_tables_request(method,
                                 headers=headers, 
                                 data=payload)
     return response.text
+
+def merge_tables(current_tables, 
+                    new_tables, 
+                    get_difference=False):
+    merged_tables = {'netgate-nat:mapping-table': {'mapping-entry': []}}
+    # Loop through the current tables
+    for table in current_tables['netgate-nat:mapping-table']['mapping-entry']:
+        if get_difference:
+            # Append tables in current tables, but not in new tables
+            if table not in new_tables['netgate-nat:mapping-table']['mapping-entry']:
+                merged_tables['netgate-nat:mapping-table']['mapping-entry'].append(table)
+        else:
+            # Append tables in current tables, but not in merged_tables
+            if table not in merged_tables['netgate-nat:mapping-table']['mapping-entry']:
+                merged_tables['netgate-nat:mapping-table']['mapping-entry'].append(table)
+    # Loop through the new tables
+    for table in new_tables['netgate-nat:mapping-table']['mapping-entry']:
+        if not get_difference:
+            # Append tables in new tables, but not in merged_tables
+            if table not in merged_tables['netgate-nat:mapping-table']['mapping-entry']:
+                merged_tables['netgate-nat:mapping-table']['mapping-entry'].append(table)
+
+    return merged_tables
 
 ### UNBOUND SECTION ###
 
@@ -64,3 +87,25 @@ def unbound_zones_request(method,
                                 data=payload)
     return response.text
 
+def merge_zones(current_zones, 
+                new_zones, 
+                get_difference=False):
+    merged_zones = {'netgate-unbound:local-zones': {'zone': []}}
+    # Loop through the current tables
+    for zone in current_zones['netgate-unbound:local-zones']['zone']:
+        if get_difference:
+            # Append tables in current tables, but not in new tables
+            if zone not in new_zones['netgate-unbound:local-zones']['zone']:
+                merged_zones['netgate-unbound:local-zoneses']['zone'].append(zone)
+        else:
+            # Append tables in current tables, but not in merged_tables
+            if zone not in merged_zones['netgate-unbound:local-zones']['zone']:
+                merged_zones['netgate-unbound:local-zones']['zone'].append(zone)
+    # Loop through the new tables
+    for zone in new_zones['netgate-unbound:local-zones']['zone']:
+        if not get_difference:
+            # Append tables in new tables, but not in merged_tables
+            if zone not in merged_zones['netgate-unbound:local-zones']['zone']:
+                merged_zones['netgate-unbound:local-zones']['zone'].append(zone)
+
+    return merged_zones

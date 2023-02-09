@@ -29,8 +29,10 @@ def nat_updated(name,
                 cacert=False, 
                 **kwargs):
 
-    # Check if "test" is a keyword argument, default to False if not provided
+    # Checks for "test" and "delete" keyword arguments, default to False if not provided
     test = kwargs.get("test", __opts__.get("test", False))
+    remove = kwargs.get("delete", __opts__.get("remove", False))
+
     ret = {"name": name, "changes": {}, "result": True, "comment": ""}
     
     # Get current NAT tables
@@ -39,41 +41,42 @@ def nat_updated(name,
                                                         key, 
                                                         cacert=cacert)
 
-    try:
-        # Try to parse current JSON and new YAML data
-        current_tables = json.loads(current_tables)
-        new_tables = yaml.safe_load(new_tables)
-    except Exception as e:
-        ret["result"] = False
-        ret["comment"] = f"Failed to parse the JSON or YAML NAT data. Error: {e}"
-        return ret
+    # Parse current JSON and new YAML data
+    current_tables = json.loads(current_tables)
+    new_tables = yaml.safe_load(new_tables)
 
-    # Check if the NAT mapping tables are already managed by Salt
-    if current_tables == new_tables:
+    merged_tables = __salt__["tnsr.merge_tables"](current_tables, 
+                                                new_tables, 
+                                                remove)
+
+    if merged_tables == current_tables:
         ret["comment"] = "NAT tables are already managed by Salt"
         return ret
 
-    # Check if test mode is enabled
+    # If test, return old and new tables
     if test:
-        ret["result"] = None
+        ret["changes"] = {
+            "old": current_tables,
+            "new": merged_tables,
+        }
         ret["comment"] = "NAT tables would have been updated"
+        ret["result"] = None
         return ret
 
-    # Update NAT config mapping entry
-    result = __salt__["tnsr.nat_tables_request"]("PUT", 
-                                                cert, 
-                                                key, 
-                                                cacert=cacert, 
-                                                payload=new_tables)
+    # Update NAT mapping tables
+    __salt__["tnsr.nat_tables_request"]("PUT", 
+                                        cert, 
+                                        key, 
+                                        cacert=cacert, 
+                                        payload=json.dumps(merged_tables))
 
-    # Check if update was successful
-    if not result:
-        ret["result"] = False
-        ret["comment"] = "Failed to update NAT tables"
-        return ret
-
-    ret["changes"]["updated"] = result
+    # Return successful update
+    ret["changes"] = {
+            "old": current_tables,
+            "new": merged_tables,
+        }
     ret["comment"] = "Successfully updated NAT tables"
+    ret["result"] = True
     return ret
 
 
@@ -84,49 +87,52 @@ def unbound_updated(name,
                     cacert=False, 
                     **kwargs):
 
-    # Check if "test" is a keyword argument, default to False if not provided
+    # Checks for "test" and "delete" keyword arguments, default to False if not provided
     test = kwargs.get("test", __opts__.get("test", False))
-    ret = {"name": name, "changes": {}, "result": True, "comment": ""}
+    remove = kwargs.get("delete", __opts__.get("remove", False))
 
-    # Get current Unbound zones
+    ret = {"name": name, "changes": {}, "result": True, "comment": ""}
+    
+    # Get current NAT tables
     current_zones = __salt__["tnsr.unbound_zones_request"]("GET", 
                                                             cert, 
                                                             key, 
                                                             cacert=cacert)
-    
-    try:
-        # Try to parse current JSON and new YAML data
-        current_zones = json.loads(current_zones)
-        new_zones = yaml.safe_load(new_zones)
-    except Exception as e:
-        ret["result"] = False
-        ret["comment"] = f"Failed to parse the JSON or YAML DNS data. Error: {e}"
+
+    # Parse current JSON and new YAML data
+    current_zones = json.loads(current_zones)
+    new_zones = yaml.safe_load(new_zones)
+
+    merged_zones = __salt__["tnsr.merge_zones"](current_zones, 
+                                                new_zones, 
+                                                remove)
+
+    if merged_zones == current_zones:
+        ret["comment"] = "NAT tables are already managed by Salt"
         return ret
 
-    # Check if the Unbound zones are already managed by Salt
-    if current_zones == new_zones:
-        ret["comment"] = "DNS mapping is already managed by Salt"
-        return ret
-
-    # Check if test mode is enabled
+    # If test, return old and new zones
     if test:
+        ret["changes"] = {
+            "old": current_zones,
+            "new": merged_zones
+        }
+        ret["comment"] = "NAT tables would have been updated"
         ret["result"] = None
-        ret["comment"] = "DNS mapping would have been updated"
         return ret
 
-    # Update Unbound zones
-    result = __salt__["tnsr.unbound_zones_request"]("PUT", 
-                                                    cert, 
-                                                    key, 
-                                                    cacert=cacert, 
-                                                    payload=new_zones)
+    # Update DNS zones
+    __salt__["tnsr.unbound_zones_request"]("PUT", 
+                                            cert, 
+                                            key, 
+                                            cacert=cacert, 
+                                            payload=json.dumps(merged_zones))
 
-    # Check if update was successful
-    if not result:
-        ret["result"] = False
-        ret["comment"] = "Failed to update DNS mapping"
-        return ret
-    
-    ret["changes"]["updated"] = result
-    ret["comment"] = "Successfully updated DNS mapping"
+    # Return successful update
+    ret["changes"] = {
+            "old": current_zones,
+            "new": merged_zones,
+        }
+    ret["comment"] = "Successfully updated NAT tables"
+    ret["result"] = True
     return ret
