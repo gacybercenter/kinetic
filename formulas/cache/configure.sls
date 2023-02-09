@@ -101,8 +101,8 @@ lancachenet_monolith:
       - /opt/cache/windows/data:/data/cache
       - /opt/cache/windows/logs:/data/logs
     - ports:
-      - 80:80
-      - 443:443
+      - 80
+      - 443
     - require:
       - service: apache2_service
       - file: /opt/cache/windows/data
@@ -116,7 +116,7 @@ lancachenet_dns:
     - image: lancachenet/lancache-dns:latest
     - restart_policy: unless-stopped
     - ports:
-      - 53:53/udp
+      - 53/udp
     - environment:
       UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       WSUSCACHE_IP: {{ salt['mine.get']('role:cache', 'network.ip_addrs', 'ens3').items() }}
