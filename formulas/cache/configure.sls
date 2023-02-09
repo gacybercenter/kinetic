@@ -118,7 +118,7 @@ lancachenet_dns:
     - ports:
       - 53:53/udp
     - environment:
-      UPSTREAM_DNS: {{ piller['networking']['addresses']['float_dns'] }}
+      UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       WSUSCACHE_IP: {{ salt['mine.get']('role:cache', 'network.ip_addrs', 'ens3').items() }}
     - require:
       - docker_container: lancachenet_monolith
