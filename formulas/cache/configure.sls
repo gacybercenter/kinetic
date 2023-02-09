@@ -92,6 +92,11 @@ apache2_service:
     - name: apache2
     - enable: false
 
+systemd_resolved_service:
+  service.dead:
+    - name: systemd_resolved
+    - enable: false
+
 lancachenet_monolith:
   docker_container.running:
     - name: lancache
@@ -103,6 +108,9 @@ lancachenet_monolith:
     - ports:
       - 80
       - 443
+    - port_bindings:
+      - 80:80
+      - 443:443
     - require:
       - service: apache2_service
       - file: /opt/cache/windows/data
@@ -117,10 +125,13 @@ lancachenet_dns:
     - restart_policy: unless-stopped
     - ports:
       - 53/udp
+    - port_bindings:
+      - 53:53/udp
     - environment:
-      UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
-      WSUSCACHE_IP: {{ salt['mine.get']('role:cache', 'network.ip_addrs', 'ens3').items() }}
+      - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
+      - WSUSCACHE_IP: {{ salt['mine.get']('role:cache', 'network.ip_addrs', 'ens3').items() }}
     - require:
+      - service: systemd_resolved_service
       - docker_container: lancachenet_monolith
 
 {% elif grains['os_family'] == 'RedHat' %}
