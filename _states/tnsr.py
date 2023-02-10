@@ -50,7 +50,7 @@ def nat_updated(name,
                                                 remove)
 
     if merged_tables == current_tables:
-        ret["comment"] = "NAT tables are already managed by Salt"
+        ret["comment"] = "NAT tables already exist"
         return ret
 
     # If test, return old and new tables
@@ -108,7 +108,7 @@ def unbound_updated(name,
                                                 remove)
 
     if merged_zones == current_zones:
-        ret["comment"] = "NAT tables are already managed by Salt"
+        ret["comment"] = "Unbound zones already exist"
         return ret
 
     # If test, return old and new zones
@@ -117,7 +117,7 @@ def unbound_updated(name,
             "old": current_zones,
             "new": merged_zones
         }
-        ret["comment"] = "NAT tables would have been updated"
+        ret["comment"] = "Unbound zones would have been updated"
         ret["result"] = None
         return ret
 
@@ -133,6 +133,6 @@ def unbound_updated(name,
             "old": current_zones,
             "new": merged_zones,
         }
-    ret["comment"] = "Successfully updated NAT tables"
+    ret["comment"] = "Successfully updated Unbound zones"
     ret["result"] = True
     return ret
