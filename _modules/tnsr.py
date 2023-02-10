@@ -46,27 +46,20 @@ def nat_tables_request(method,
                                 data=payload)
     return response.text
 
-def merge_tables(current_tables, 
-                    new_tables, 
-                    get_difference=False):
-    merged_tables = {'netgate-nat:mapping-table': {'mapping-entry': []}}
-    # Loop through the current tables
-    for table in current_tables['netgate-nat:mapping-table']['mapping-entry']:
-        if get_difference:
-            # Append tables in current tables, but not in new tables
-            if table not in new_tables['netgate-nat:mapping-table']['mapping-entry']:
-                merged_tables['netgate-nat:mapping-table']['mapping-entry'].append(table)
-        else:
-            # Append tables in current tables, but not in merged_tables
-            if table not in merged_tables['netgate-nat:mapping-table']['mapping-entry']:
-                merged_tables['netgate-nat:mapping-table']['mapping-entry'].append(table)
-    # Loop through the new tables
-    for table in new_tables['netgate-nat:mapping-table']['mapping-entry']:
-        if not get_difference:
-            # Append tables in new tables, but not in merged_tables
-            if table not in merged_tables['netgate-nat:mapping-table']['mapping-entry']:
-                merged_tables['netgate-nat:mapping-table']['mapping-entry'].append(table)
-
+def merge_tables(current_tables, new_tables, get_difference=False):
+    # Initialize the dictionary that will store the merged zones
+    merged_tables = {'netgate-nat:mapping-table': {'mapping-entry': []}}    
+    # If get_difference is True, return only the zones that are in current_zones but not in new_zones
+    if get_difference:
+        merged_tables['netgate-nat:mapping-table']['mapping-entry'] = [zone for zone in current_tables['netgate-nat:mapping-table']['mapping-entry'] 
+                                                                    if zone not in new_tables['netgate-nat:mapping-table']['mapping-entry']]
+    # If get_difference is False, merge the two lists of zones
+    else:
+        merged_tables['netgate-nat:mapping-table']['mapping-entry'] = [zone for zone in new_tables['netgate-nat:mapping-table']['mapping-entry'] 
+                                                                    if zone not in current_tables['netgate-nat:mapping-table']['mapping-entry']]
+        merged_tables['netgate-nat:mapping-table']['mapping-entry'] += current_tables['netgate-nat:mapping-table']['mapping-entry']
+    
+    # Return the merged zones
     return merged_tables
 
 ### UNBOUND SECTION ###
@@ -87,25 +80,19 @@ def unbound_zones_request(method,
                                 data=payload)
     return response.text
 
-def merge_zones(current_zones, 
-                new_zones, 
-                get_difference=False):
+def merge_zones(current_zones, new_zones, get_difference=False):
+    # Initialize the dictionary that will store the merged zones
     merged_zones = {'netgate-unbound:local-zones': {'zone': []}}
-    # Loop through the current tables
-    for zone in current_zones['netgate-unbound:local-zones']['zone']:
-        if get_difference:
-            # Append tables in current tables, but not in new tables
-            if zone not in new_zones['netgate-unbound:local-zones']['zone']:
-                merged_zones['netgate-unbound:local-zoneses']['zone'].append(zone)
-        else:
-            # Append tables in current tables, but not in merged_tables
-            if zone not in merged_zones['netgate-unbound:local-zones']['zone']:
-                merged_zones['netgate-unbound:local-zones']['zone'].append(zone)
-    # Loop through the new tables
-    for zone in new_zones['netgate-unbound:local-zones']['zone']:
-        if not get_difference:
-            # Append tables in new tables, but not in merged_tables
-            if zone not in merged_zones['netgate-unbound:local-zones']['zone']:
-                merged_zones['netgate-unbound:local-zones']['zone'].append(zone)
-
+    
+    # If get_difference is True, return only the zones that are in current_zones but not in new_zones
+    if get_difference:
+        merged_zones['netgate-unbound:local-zones']['zone'] = [zone for zone in current_zones['netgate-unbound:local-zones']['zone'] 
+                                                            if zone not in new_zones['netgate-unbound:local-zones']['zone']]
+    # If get_difference is False, merge the two lists of zones
+    else:
+        merged_zones['netgate-unbound:local-zones']['zone'] = [zone for zone in new_zones['netgate-unbound:local-zones']['zone'] 
+                                                            if zone not in current_zones['netgate-unbound:local-zones']['zone']]
+        merged_zones['netgate-unbound:local-zones']['zone'] += current_zones['netgate-unbound:local-zones']['zone']
+    
+    # Return the merged zones
     return merged_zones
