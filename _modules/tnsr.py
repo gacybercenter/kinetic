@@ -51,12 +51,12 @@ def merge_tables(current_tables, new_tables, get_difference=False):
     merged_tables = {'netgate-nat:mapping-table': {'mapping-entry': []}}    
     # If get_difference is True, return only the zones that are in current_zones but not in new_zones
     if get_difference:
-        merged_tables['netgate-nat:mapping-table']['mapping-entry'] = [zone for zone in current_tables['netgate-nat:mapping-table']['mapping-entry'] 
-                                                                    if zone not in new_tables['netgate-nat:mapping-table']['mapping-entry']]
+        merged_tables['netgate-nat:mapping-table']['mapping-entry'] = [table for table in current_tables['netgate-nat:mapping-table']['mapping-entry'] 
+                                                                    if table not in new_tables['netgate-nat:mapping-table']['mapping-entry']]
     # If get_difference is False, merge the two lists of zones
     else:
-        merged_tables['netgate-nat:mapping-table']['mapping-entry'] = [zone for zone in new_tables['netgate-nat:mapping-table']['mapping-entry'] 
-                                                                    if zone not in current_tables['netgate-nat:mapping-table']['mapping-entry']]
+        merged_tables['netgate-nat:mapping-table']['mapping-entry'] = [table for table in new_tables['netgate-nat:mapping-table']['mapping-entry'] 
+                                                                    if table not in current_tables['netgate-nat:mapping-table']['mapping-entry']]
         merged_tables['netgate-nat:mapping-table']['mapping-entry'] += current_tables['netgate-nat:mapping-table']['mapping-entry']
     
     # Return the merged zones
