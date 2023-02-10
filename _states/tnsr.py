@@ -1,18 +1,20 @@
-## Copyright 2020 Augusta University
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
+"""
+Copyright 2020 Augusta University
 
-### Tnsr State Module
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Tnsr State Module
+"""
 
 import json
 import yaml
@@ -29,35 +31,21 @@ def nat_updated(name,
                 cacert=False,
                 **kwargs):
     """
-    Manages NAT entry entries.
+    Update NAT entries on the TNSR platform.
 
-    This state module compares the current NAT entries for the inputed entries.
-    It calls out to the execution modules 'merge_entries' and 'nat_entries_request'
-    to get and combine the new entries with the current entries. It if the new
-    entries don't exist in the current entries, it calls out to the execution
-    module 'nat_entries_request' in order to update the current NAT entries to
-    the combined new and current entries. This state module can also test for
-    changes by setting "test" keyword argument to true. Finally, this state module
-    can delete the new entries fron the current NAT entries by setting "delete"
-    keyword argument to true.
-
-    name
-        Name of Salt state
-    new_entries
-        NAT entries to be added or removed
-    cert
-        Path to certificate location
-    key
-        Path to key location
-    hostname
-        Host device URL
-    cacert : False
-        Path to certificate authority location
-    **kwargs
-        test : False
-            When True, returns results without making changes to the NAT table
-        delete : False
-            When True, deletes new entries from the current NAT table
+    :param name: The name of the state.
+    :param new_entries: The new NAT entries in YAML format.
+    :param cert: The path to the client certificate file.
+    :param key: The path to the client private key file.
+    :param cacert: The path to the CA certificate file.
+    :param kwargs: Additional keyword arguments.
+        :test: Optional argument to test the update and return changes (default is False).
+        :delete: Optional argument to delete the specified NAT entries (default is False).
+    :return: A dictionary with the following keys:
+        :name: The name of the state.
+        :changes: A dictionary with the old and new NAT entries.
+        :result: True if the update was successful, None if in test mode, and False otherwise.
+        :comment: A string describing the result of the update.
     """
     # Checks for "test" and "delete" keyword arguments, default to False if not provided
     test = kwargs.get("test", __opts__.get("test", False))
@@ -126,36 +114,26 @@ def unbound_updated(name,
                     cacert=False,
                     **kwargs):
     """
-    Manages Unbound zones.
+    Update the Unbound zones.
 
-    This state module compares the current Unbound zones for the inputed zones.
-    It calls out to the execution modules 'merge_zones' and 'unbound_zones_request
-    to get and combine the new zones with the current Unbound zones. It if the new
-    zones don't exist in the current Unbound zones, it calls out to the execution
-    module 'unbound_zones_request' in order to update the current Unbound zones to
-    the combined new and current zones. This state module can also test for
-    changes by setting "test" keyword argument to true. Finally, this state module
-    can delete the new zones from the Unbound zones by setting "delete" keyword
-    argument to true.
-
-    name
-        Name of Salt state
-    new_entries
-        Unbound zones to be added or removed
-    cert
-        Path to certificate location
-    key
-        Path to key location
-    hostname
-        Host device URL
-    cacert : False
-        Path to certificate authority location
-    **kwargs
-        test : False
-            When True, returns results without making changes to the Unbound zones
-        delete : False
-            When True, deletes new zones from the currernt Unbound zones
+    :param name: The name of the state.
+    :new_zones: The new Unbound zones in YAML format.
+    :cert: The path to the certificate file.
+    :key: The path to the private key file.
+    :cacert: The path to the CA certificate file.
+    :kwargs: Optional keyword arguments:
+        :test: Boolean value that controls whether the function will execute changes
+            (False) or only return what changes would occur (True). The default
+            value is False.
+        :delete: Boolean value that controls whether the zones will be deleted (True)
+            or added (False). The default value is False.
+    :return: A dictionary with the following keys:
+        :name: The name of the state.
+        :changes: A dictionary with the old and new Unbound zones.
+        :result: A boolean value indicating the success or failure of the update.
+        :comment: A string with a summary of the operation and the result.
     """
+
     # Checks for "test" and "delete" keyword arguments, default to False if not provided
     test = kwargs.get("test", __opts__.get("test", False))
     remove = kwargs.get("delete", __opts__.get("remove", False))
