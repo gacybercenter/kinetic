@@ -30,69 +30,72 @@ def __virtual__():
 
 ### NAT SECTION ###
 
-def nat_tables_request(method, 
-                        cert, 
-                        key, 
-                        cacert=False, 
+def nat_entries_request(method,
+                        cert,
+                        key,
+                        cacert=False,
                         payload=None,
                         hostname="https://tnsr.internal.gacyberrange.org",
                         headers={'Content-Type': 'application/yang-data+json'}):
     url = f"{hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
-    response = requests.request(method, 
-                                url, 
-                                cert=(cert, key), 
-                                verify=cacert, 
-                                headers=headers, 
+    response = requests.request(method,
+                                url,
+                                cert=(cert, key),
+                                verify=cacert,
+                                headers=headers,
                                 data=payload)
     return response.text
 
-def merge_tables(current_tables, new_tables, get_difference=False):
-    # Initialize the dictionary that will store the merged zones
-    merged_tables = {'netgate-nat:mapping-table': {'mapping-entry': []}}    
-    # If get_difference is True, return only the zones that are in current_zones but not in new_zones
+def merge_entries(current_entries, new_entries, get_difference=False):
+    # Initialize the dictionary that will store the merged entries
+    merged_entries = {'netgate-nat:mapping-table': {'mapping-entry': []}}
+    # Extract entries from their wrappers
+    current_entries = current_entries['netgate-nat:mapping-table']['mapping-entry']
+    new_entries = new_entries['netgate-nat:mapping-table']['mapping-entry']
+    # If get_difference is True, return current entries - new entries
     if get_difference:
-        merged_tables['netgate-nat:mapping-table']['mapping-entry'] = [table for table in current_tables['netgate-nat:mapping-table']['mapping-entry'] 
-                                                                    if table not in new_tables['netgate-nat:mapping-table']['mapping-entry']]
-    # If get_difference is False, merge the two lists of zones
+        different = [entry for entry in current_entries if entry not in new_entries]
+        merged_entries['netgate-nat:mapping-table']['mapping-entry'] = different
+    # If get_difference is False, return current entries + new entries
     else:
-        merged_tables['netgate-nat:mapping-table']['mapping-entry'] = [table for table in new_tables['netgate-nat:mapping-table']['mapping-entry'] 
-                                                                    if table not in current_tables['netgate-nat:mapping-table']['mapping-entry']]
-        merged_tables['netgate-nat:mapping-table']['mapping-entry'] += current_tables['netgate-nat:mapping-table']['mapping-entry']
-    
-    # Return the merged zones
-    return merged_tables
+        same = [entry for entry in new_entries if entry not in current_entries]
+        same += current_entries
+        merged_entries['netgate-nat:mapping-table']['mapping-entry'] = same
+    # Return the merged entries
+    return merged_entries
 
 ### UNBOUND SECTION ###
 
-def unbound_zones_request(method, 
-                        cert, 
-                        key, 
+def unbound_zones_request(method,
+                        cert,
+                        key,
                         cacert=False,
-                        payload=None, 
+                        payload=None,
                         hostname="https://tnsr.internal.gacyberrange.org",
                         headers={'Content-Type': 'application/yang-data+json'}):
     url = f"{hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones"
-    response = requests.request(method, 
-                                url, 
-                                cert=(cert, key), 
-                                verify=cacert, 
-                                headers=headers, 
+    response = requests.request(method,
+                                url,
+                                cert=(cert, key),
+                                verify=cacert,
+                                headers=headers,
                                 data=payload)
     return response.text
 
 def merge_zones(current_zones, new_zones, get_difference=False):
     # Initialize the dictionary that will store the merged zones
     merged_zones = {'netgate-unbound:local-zones': {'zone': []}}
-    
-    # If get_difference is True, return only the zones that are in current_zones but not in new_zones
+    # Extract zones from their wrappers
+    current_zones = current_zones['netgate-unbound:local-zones']['zone']
+    new_zones = new_zones['netgate-unbound:local-zones']['zone']
+    # If get_difference is True, return current zones - new zones
     if get_difference:
-        merged_zones['netgate-unbound:local-zones']['zone'] = [zone for zone in current_zones['netgate-unbound:local-zones']['zone'] 
-                                                            if zone not in new_zones['netgate-unbound:local-zones']['zone']]
-    # If get_difference is False, merge the two lists of zones
+        different = [entry for entry in current_zones if entry not in new_zones]
+        merged_zones['netgate-unbound:local-zones']['zone'] = different
+    # If get_difference is False, return current zones + new zones
     else:
-        merged_zones['netgate-unbound:local-zones']['zone'] = [zone for zone in new_zones['netgate-unbound:local-zones']['zone'] 
-                                                            if zone not in current_zones['netgate-unbound:local-zones']['zone']]
-        merged_zones['netgate-unbound:local-zones']['zone'] += current_zones['netgate-unbound:local-zones']['zone']
-    
+        same = [entry for entry in new_zones if entry not in current_zones]
+        same += current_zones
+        merged_zones['netgate-unbound:local-zones']['zone'] = same
     # Return the merged zones
     return merged_zones
