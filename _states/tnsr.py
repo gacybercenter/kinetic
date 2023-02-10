@@ -43,14 +43,20 @@ def nat_updated(name,
 
     # Parse current JSON and new YAML data
     current_tables = json.loads(current_tables)
-    new_tables = yaml.safe_load(new_tables)
+    new_tables = {'netgate-nat:mapping-table': {'mapping-entry': yaml.safe_load(new_tables)}}
 
     merged_tables = __salt__["tnsr.merge_tables"](current_tables, 
                                                 new_tables, 
                                                 remove)
 
-    if merged_tables == current_tables:
-        ret["comment"] = "NAT tables already exist"
+    # If item to be removed does not exist
+    if remove and merged_tables == current_tables:
+        ret["comment"] = "NAT tables to be removed do not exist"
+        return ret
+
+    # If item to be added already exists
+    if not remove and merged_tables == current_tables:
+        ret["comment"] = "NAT tables to be added already exist"
         return ret
 
     # If test, return old and new tables
@@ -101,14 +107,20 @@ def unbound_updated(name,
 
     # Parse current JSON and new YAML data
     current_zones = json.loads(current_zones)
-    new_zones = yaml.safe_load(new_zones)
+    new_zones = {'netgate-unbound:local-zones': {'zone': yaml.safe_load(new_zones)}}
 
     merged_zones = __salt__["tnsr.merge_zones"](current_zones, 
                                                 new_zones, 
                                                 remove)
 
-    if merged_zones == current_zones:
-        ret["comment"] = "Unbound zones already exist"
+    # If item to be removed does not exist
+    if remove and merged_zones == current_zones:
+        ret["comment"] = "Unbound zones to be removed do not exist"
+        return ret
+
+    # If item to be added already exists
+    if not remove and merged_zones == current_zones:
+        ret["comment"] = "Unbound zones to be added already exist"
         return ret
 
     # If test, return old and new zones
