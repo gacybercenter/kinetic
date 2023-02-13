@@ -1,20 +1,17 @@
 ### Guacamole State Module
+"""Guacamole is State Module"""
 import json
-from urllib.parse import quote
 
 __virtualname__ = "guacamole"
 
 def __virtual__():
     return __virtualname__
 
-def update_user_details(name,
-                host,
-                username,
-                password,
-                **kwargs):
-    
+def update_user_details(name, host, username, password,**kwargs):
+    """Updatind User Details""" 
+
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
-    
+
     if "test" not in kwargs:
         kwargs["test"] = __opts__.get("test", False)
 
@@ -42,23 +39,22 @@ def update_user_details(name,
         ret["result"] = True
         ret["comment"] = "System in correct state"
         return ret
-        
-# if state does need to be changed. Check if we're running
+
+# if state does need to be changed. Check if running
 # in ``test=true`` mode.
     if __opts__["test"] == True:
-        ret["comment"] = 'The state of "{0}" will be changed.'.format(name)
+        ret["comment"] = f'The state of "{name}" will be changed.'
         ret["changes"] = {
             "old": current_state,
             "new": new_state,
         }
-        
 # Return ``None`` when running with ``test=true``.
         ret["result"] = None
 
         return ret
 
 # Finally, make the actual change and return the result.
-    new_state = __salt__["guacamole.update_user"](host, username, password,new_state.get("username"), new_state.get("attributes"))
+    new_state = __salt__["guacamole.update_user"](host, username, password, new_state.get("username"), new_state.get("attributes"))
     new_state = json.loads(__salt__["guacamole.detail_user"](host,"mysql",username, password, kwargs.get("guac_username")))
 
     new_state = {
@@ -70,7 +66,7 @@ def update_user_details(name,
             },
         }
 
-    ret["comment"] = 'The state of "{0}" was changed!'.format(name)
+    ret["comment"] = f'The state of "{name}" was changed!'
 
     ret["changes"] = {
         "old": current_state,
@@ -78,20 +74,12 @@ def update_user_details(name,
     }
 
     ret["result"] = True
-
     return ret
 
-
-
-def update_user_password(name,
-                host,
-                username,
-                password,
-                guac_new_password,
-                **kwargs):
-    
+def update_user_password(name, host, username, password, guac_new_password, **kwargs):
+    """Updatind User Passwords"""
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
-    
+
     if "test" not in kwargs:
         kwargs["test"] = __opts__.get("test", False)
 
@@ -103,28 +91,24 @@ def update_user_password(name,
         ret["comment"] = "System in correct state"
         return ret
 
-
 # if state does need to be changed. Check if we're running
 # in ``test=true`` mode.
     if __opts__["test"] == True:
-        ret["comment"] = 'The state of "{0}" will be changed.'.format(name)
+        ret["comment"] = f'The state of "{name}" will be changed.'
         ret["changes"] = {
             "old": guac_old_password,
             "new": guac_new_password,
         }
-        
 
 # Return ``None`` when running with ``test=true``.
         ret["result"] = None
-
         return ret
 
 # Finally, make the actual change and return the result.
     new_password = __salt__["guacamole.update_user_password"](host, "mysql", username, password, kwargs.get("guac_username"), guac_old_password, guac_new_password)
+    ret["comment"] = f'The state of "{name}" was changed!'
 
-    ret["comment"] = 'The state of "{0}" was changed!'.format(name)
-
-#Need to find methods to pull password hash from has hash values
+#Need to find methods to pull password hash
 
     ret["changes"] = {
         "old": guac_old_password,
