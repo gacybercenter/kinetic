@@ -18,12 +18,9 @@ def update_user_details(name,
     if "test" not in kwargs:
         kwargs["test"] = __opts__.get("test", False)
 
-    ### If test is specified:
-    ### the same, return changes dict.
-    if kwargs["test"]:
-        current_state = __salt__["guacamole.detail_user"](guac_user)
+    current_state = json.loads(__salt__["guacamole.detail_user"](host, "mysql", username, password, kwargs.get("guac_username")))
 
-    current_state_1 = {
+    current_state = {
         "username": current_state['username'],
             "attributes": {
                 "guac-full-name": current_state['attributes'].get("guac-full-name"),
@@ -33,39 +30,45 @@ def update_user_details(name,
         }
 
     new_state = {
-        "username": guac_user,
+    "username": kwargs.get("guac_username"),
             "attributes": {
-                "guac-full-name": guac_full_name,
-                "guac-email-address": guac_email,
-                "guac-organization": guac_org,
+                "guac-full-name": kwargs.get("guac_full_name", None),
+                "guac-email-address": kwargs.get("guac_email", None),
+                "guac-organization": kwargs.get("guac_org", None),
             },
         }
 
-    if current_state_1 == new_state:
+    if current_state == new_state:
         ret["result"] = True
         ret["comment"] = "System in correct state"
         return ret
         
-
-    # if state does need to be changed. Check if we're running
-    # in ``test=true`` mode.
+# if state does need to be changed. Check if we're running
+# in ``test=true`` mode.
     if __opts__["test"] == True:
         ret["comment"] = 'The state of "{0}" will be changed.'.format(name)
         ret["changes"] = {
             "old": current_state,
-            "new": "updated user",
+            "new": new_state,
         }
         
-        ret["changes"].update({"guac_user": {"old": current_state, "new": new_state}})
-
-        # Return ``None`` when running with ``test=true``.
+# Return ``None`` when running with ``test=true``.
         ret["result"] = None
 
         return ret
 
-    # Finally, make the actual change and return the result.
-    new_state = __salt__["guacamole.update_user"](guac_user, attributes={"guac-full-name": guac_full_name, 
-    "guac-email-address": guac_email, "guac-organization": guac_org})
+# Finally, make the actual change and return the result.
+    new_state = __salt__["guacamole.update_user"](host, username, password,new_state.get("username"), new_state.get("attributes"))
+    new_state = json.loads(__salt__["guacamole.detail_user"](host,"mysql",username, password, kwargs.get("guac_username")))
+
+    new_state = {
+        "username": new_state["username"],
+            "attributes": {
+                "guac-full-name": new_state['attributes'].get("guac-full-name"),
+                "guac-email-address": new_state['attributes'].get("guac-email-address"),
+                "guac-organization": new_state['attributes'].get("guac-organization"),
+            },
+        }
 
     ret["comment"] = 'The state of "{0}" was changed!'.format(name)
 
@@ -92,42 +95,40 @@ def update_user_password(name,
     if "test" not in kwargs:
         kwargs["test"] = __opts__.get("test", False)
 
-    ### If test is specified:
-    ### the same, return changes dict.
-    if kwargs["test"]:
-        guac_old_password = 'Pull Pillar Value'
-
+    guac_old_password = kwargs.get("guac_old_password")
+    guac_new_password = guac_new_password
 
     if guac_old_password == guac_new_password:
         ret["result"] = True
         ret["comment"] = "System in correct state"
         return ret
-        
 
-    # if state does need to be changed. Check if we're running
-    # in ``test=true`` mode.
+
+# if state does need to be changed. Check if we're running
+# in ``test=true`` mode.
     if __opts__["test"] == True:
         ret["comment"] = 'The state of "{0}" will be changed.'.format(name)
         ret["changes"] = {
             "old": guac_old_password,
-            "new": "updated password",
+            "new": guac_new_password,
         }
         
-        ret["changes"].update({"guac_old_password": {"old": guac_old_password, "guac_new_password"}})
 
-        # Return ``None`` when running with ``test=true``.
+# Return ``None`` when running with ``test=true``.
         ret["result"] = None
 
         return ret
 
-    # Finally, make the actual change and return the result.
-    new_password = __salt__["guacamole.update_user_password"](guac_password)
+# Finally, make the actual change and return the result.
+    new_password = __salt__["guacamole.update_user_password"](host, "mysql", username, password, kwargs.get("guac_username"), guac_old_password, guac_new_password)
 
     ret["comment"] = 'The state of "{0}" was changed!'.format(name)
 
+#Need to find methods to pull password hash from has hash values
+
     ret["changes"] = {
         "old": guac_old_password,
-        "new": guac_new_password,
+        "new": new_password.status_code
     }
 
     ret["result"] = True

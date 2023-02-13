@@ -86,7 +86,7 @@ def update_user(host: str,
         headers={"Content-Type": "application/json"},
         params={"token": token},
         json={
-            "username": username,
+            "username": guac_username,
             "attributes": {
                 "guac-email-address": attributes.get("guac-email-address", None),
                 "guac-organizational-role": attributes.get("guac-organizational-role", None),
