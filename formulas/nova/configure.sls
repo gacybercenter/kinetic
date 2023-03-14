@@ -139,7 +139,7 @@ create_{{ flavor }}:
 
 spice-html5:
   git.latest:
-    - name: https://gitlab.com/gacybercenter/gacyberrange/forks/spice-html5.git
+    - name: https://gitlab.freedesktop.org/spice/spice-html5.git
     - target: /usr/share/spice-html5
     - force_clone: True
 
