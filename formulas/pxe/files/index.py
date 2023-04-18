@@ -45,7 +45,7 @@ def application (environ, start_response):
     d = parse_qs(environ['QUERY_STRING'])
     uuid = d.get('uuid', [''])[0]
     uuid = escape(uuid)
-    uuid = f'{uuid[0:8]}-{uuid[9:13]}-{uuid[14:18]}-{uuid[19:]}'.upper()
+    uuid = f'{endian(uuid[0:8])}-{endian(uuid[9:13])}-{endian(uuid[14:18])}-{uuid[19:]}'.upper()
     host_data = open("/var/www/html/assignments/"+uuid.upper(), "r")
     host_type = host_data.readline().strip()
     hostname_assignment = host_data.readline().strip()
