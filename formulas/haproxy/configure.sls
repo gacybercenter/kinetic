@@ -79,34 +79,34 @@ haproxy_connect_any:
       - sls: /formulas/haproxy/install
 {% endif %}
 
-# haproxy_service_stop:
-#   service.dead:
-#     - name: haproxy
+haproxy_service_stop:
+  service.dead:
+    - name: haproxy
 
-# acme_certs:
-#   acme.cert:
-#     - name: {{ pillar['haproxy']['dashboard_domain'] }}
-#     - aliases:
-#       - {{ pillar['haproxy']['console_domain'] }}
-#       - {{ pillar['haproxy']['guacamole_domain'] }}
-#     - email: {{ pillar['haproxy']['acme_email'] }}
-#     - renew: 14
-# {% if salt['pillar.get']('development:test_certs', False) == True %}
-#     - test_cert: True
-# {% endif %}
-# {% if salt['pillar.get']('danos:enabled', False) == True %}
-#     - require:
-#       - service: haproxy_service_stop
-#       - danos: set haproxy group
-#       - danos: set haproxy static-mapping
-# {% endif %}
+acme_certs:
+  acme.cert:
+    - name: {{ pillar['haproxy']['dashboard_domain'] }}
+    - aliases:
+      - {{ pillar['haproxy']['console_domain'] }}
+      - {{ pillar['haproxy']['guacamole_domain'] }}
+    - email: {{ pillar['haproxy']['acme_email'] }}
+    - renew: 14
+{% if salt['pillar.get']('development:test_certs', False) == True %}
+    - test_cert: True
+{% endif %}
+{% if salt['pillar.get']('danos:enabled', False) == True %}
+    - require:
+      - service: haproxy_service_stop
+      - danos: set haproxy group
+      - danos: set haproxy static-mapping
+{% endif %}
 
-# create_master_pem:
-#   cmd.run:
-#     - name: cat /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/fullchain.pem /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/privkey.pem > /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
-#     - creates: /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
-#     - require:
-#       - acme: acme_certs
+create_master_pem:
+  cmd.run:
+    - name: cat /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/fullchain.pem /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/privkey.pem > /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
+    - creates: /etc/letsencrypt/live/{{ pillar['haproxy']['dashboard_domain'] }}/master.pem
+    - require:
+      - acme: acme_certs
 
 create_dhparams_file:
   cmd.run:
