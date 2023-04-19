@@ -16,8 +16,8 @@
 
 mariadb_repo:
   pkgrepo.managed:
-    - humanname: mariadb10.5
-    - name: deb http://downloads.mariadb.com/MariaDB/mariadb-10.5/repo/ubuntu focal main
+    - humanname: mariadb10.10
+    - name: deb http://downloads.mariadb.com/MariaDB/mariadb-10.10/repo/ubuntu focal main
     - file: /etc/apt/sources.list.d/mariadb.list
     - keyid: F1656F24C74CD1D8
     - keyserver: keyserver.ubuntu.com

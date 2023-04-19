@@ -1,0 +1,11 @@
+2022-12-16 12:37:53.088 132981 INFO nova.metadata.wsgi.server [-] 10.100.1.203 "OPTIONS / HTTP/1.0" status: 200 len: 234 time: 0.0007348
+2022-12-16 10:47:41.609 133142 INFO neutron.wsgi [-] 10.100.1.203 - - [16/Dec/2022 11:29:05] "OPTIONS / HTTP/1.0" 200 94 0.002204
+2022-12-16 10:47:41.609 133142 INFO neutron.wsgi [-] Agent rpc_loop - iteration:123689 completed. Processed ports statistics: {'regular': {'added': 0, 'updated': 0, 'removed': 0}}. Elapsed:0.003
+2022-12-16 10:47:41.609 133142 INFO neutron.wsgi [req-afa0e17a-3718-42f7-9755-ea2554ff0fb1 1321c84e38a546c9989b63b35563afbd 8513631911b548189da4596e52e03891 - default default] 10.100.1.203 "GET /v2.0/ports?network_id=68764852-6a3b-4f52-81d9-deae11bc3d24&device_owner=network%3Adhcp HTTP/1.1" status: 200  len: 2509 time: 0.0600183
+2022-12-16 10:47:41.609 133142 INFO neutron.wsgi [-] 10.100.1.203 "GET / HTTP/1.1" status: 200  len: 2509 time: 0.0600183
+2022-12-16 10:47:41.609 133142 INFO neutron.wsgi  10.100.1.203 "GET / HTTP/1.1" status: 200  len: 2509 time: 0.0600183
+2022-12-16 10:47:41.609 133142 INFO neutron.wsgi [req-afa0e17a-3718-42f7-9755-ea2554ff0fb1 1321c84e38a546c9989b63b35563afbd 8513631911b548189da4596e52e03891 - default default] Agent rpc_loop - iteration:123639 started
+2022-12-16 10:47:41.609 133142 INFO neutron.wsgi [req-afa0e17a-3718-42f7-9755-ea2554ff0fb1 - - - - -] Agent rpc_loop - iteration:123639 started
+2022-12-16 10:47:41.609 133142 INFO neutron.wsgi [-] Agent rpc_loop - iteration:123639 started
+2022-12-16 10:47:41.609 133142 INFO neutron.wsgi [-] Agent rpc_loop - iteration:123689 completed. Processed ports statistics: {'regular': {'added': 0, 'updated': 0, 'removed': 0}}. Elapsed:0.003
+2022-12-16 13:25:56.589797 2022-12-16 13:25:56.589 129594 INFO placement.requestlog [req-3c9bf936-f3f9-4b32-a943-73a69d413250 5bfd24b302fe4a3ca053854d125e15b6 8513631911b548189da4596e52e03891 - default default] 10.100.1.203 "GET /resource_providers/78a4fae4-dd19-40e6-b3c9-4d251d4b30a0/allocations" status: 200 len: 564 microversion: 1.0\x1b[00m

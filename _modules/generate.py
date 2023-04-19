@@ -16,7 +16,12 @@
 ## inspiration for simple cephx-key function taken from
 ## https://github.com/ceph/ceph-ansible/blob/master/library/ceph_key.py#L26
 
-import random, os, struct, time, base64, string
+import base64
+import os
+import random
+import string
+import struct
+import time
 
 __virtualname__ = 'generate'
 
@@ -24,10 +29,7 @@ def __virtual__():
     return __virtualname__
 
 def mac(prefix='52:54:00'):
-    return '{0}:{1:02X}:{2:02X}:{3:02X}'.format(prefix,
-                                                random.randint(0, 0xff),
-                                                random.randint(0, 0xff),
-                                                random.randint(0, 0xff))
+    return f'{prefix}'.join(f':{random.randint(0, 0xff):02x}' for i in range(3))
 
 def erlang_cookie(length = 20):
     return ''.join(random.choice(string.ascii_uppercase) for i in range(length))

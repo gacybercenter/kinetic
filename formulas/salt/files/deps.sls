@@ -225,7 +225,7 @@ hosts:
         memcached: configure
         rabbitmq: configure
         keystone: configure
-  graylog:
+  opensearch:
     needs:
       install:
         cache: configure
@@ -308,3 +308,10 @@ hosts:
         controller: configure
         haproxy: configure
         mysql: configure
+  jproxy:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+        haproxy: configure

@@ -46,7 +46,7 @@ horizon_packages:
 magnum_latest:
   git.latest:
     - name: https://opendev.org/openstack/magnum-ui.git
-    - branch: stable/xena
+    - branch: stable/yoga
     - target: /usr/share/openstack-dashboard/magnum-ui/
     - force_clone: true
 
@@ -104,7 +104,7 @@ horizon_packages:
 zun_latest:
   git.latest:
     - name: https://opendev.org/openstack/zun-ui.git
-    - branch: stable/xena
+    - branch: stable/yoga
     - target: /usr/share/openstack-dashboard/zun-ui/
     - force_clone: true
 

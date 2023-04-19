@@ -16,8 +16,8 @@
 
 ceph_repo:
   pkgrepo.managed:
-    - humanname: Ceph Pacific
-    - name: deb https://download.ceph.com/debian-pacific focal main
+    - humanname: Ceph Quincy
+    - name: deb https://download.ceph.com/debian-quincy focal main
     - file: /etc/apt/sources.list.d/ceph.list
     - key_url: https://download.ceph.com/keys/release.asc
 
@@ -33,14 +33,14 @@ update_packages_ceph:
 ceph_repo:
   pkgrepo.managed:
     - name: ceph
-    - baseurl: https://download.ceph.com/rpm-pacific/el8/$basearch
+    - baseurl: https://download.ceph.com/rpm-quincy/el8/$basearch
     - file: /etc/yum.repos.d/ceph.repo
     - gpgkey: https://download.ceph.com/keys/release.asc
 
 ceph_repo_noarch:
   pkgrepo.managed:
     - name: ceph_noarch
-    - baseurl: https://download.ceph.com/rpm-pacific/el8/noarch
+    - baseurl: https://download.ceph.com/rpm-quincy/el8/noarch
     - file: /etc/yum.repos.d/ceph_noarch.repo
     - gpgkey: https://download.ceph.com/keys/release.asc
 

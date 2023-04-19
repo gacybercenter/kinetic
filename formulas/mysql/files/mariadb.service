@@ -1,5 +1,5 @@
 [Unit]
-Description=MariaDB 10.5.8 database server
+Description=MariaDB 10.10.2 database server
 Documentation=man:mariadbd(8)
 Documentation=https://mariadb.com/kb/en/library/systemd/
 After=network.target

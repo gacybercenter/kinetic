@@ -14,6 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
+  - /formulas/common/fluentd/fluentd
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
@@ -144,7 +145,7 @@ services:
             kuryr_service_password: {{ salt['random.get_str']('64', punctuation=False) }}
 {% elif service == 'barbican' %}
         extra_opts: |
-            simplecrypto_key: {{ salt['random.get_str']('32') | base64_encode }}
+            simplecrypto_key: {{ salt['random.get_str']('32', punctuation=False) | base64_encode }}
 {% elif service == 'keystone' %}
         extra_opts: |
             fernet_primary: {{ salt['fernet.make_key']() }}
@@ -169,7 +170,7 @@ passwords:
         - contents: |
             mysql:
               mysql_root_password: {{ salt['random.get_str']('64', punctuation=False) }}
-              wsrep_cluster_name: {{ salt['random.get_str']('32') }}
+              wsrep_cluster_name: {{ salt['random.get_str']('32', punctuation=False) }}
       - /srv/dynamic_pillar/rabbitmq.sls:
         - contents: |
             rabbitmq:
@@ -179,12 +180,12 @@ passwords:
         - contents: |
             etcd:
               etcd_cluster_token: {{ salt['random.get_str']('64', punctuation=False) }}
-{% set graylog_password = salt['random.get_str']('64', punctuation=False) %}
-      - /srv/dynamic_pillar/graylog.sls:
+{% set opensearch_password = salt['random.get_str']('64', punctuation=False) %}
+      - /srv/dynamic_pillar/opensearch.sls:
         - contents: |
-            graylog:
-              graylog_password: {{ graylog_password }}
-              graylog_password_sha2: {{ graylog_password | sha256 }}
+            opensearch:
+              opensearch_password: {{ opensearch_password }}
+              opensearch_password_sha2: {{ opensearch_password | sha256 }}
       - /srv/dynamic_pillar/openstack.sls:
         - contents: |
             openstack:
@@ -201,7 +202,7 @@ passwords:
         - contents: |
             guacamole:
               guacamole_mysql_password: {{ salt['random.get_str']('64', punctuation=False) }}
-              guacadmin_password: {{ salt['random.get_str']('16') }}
+              guacadmin_password: {{ salt['random.get_str']('16', punctuation=False) }}
 
 {% set adminkey = salt['generate.cephx_key']() %}
 {% set volumeskey = salt['generate.cephx_key']() %}
@@ -244,18 +245,18 @@ passwords:
           ceph-client-images-keyring: |
             [client.images]
                  key = {{ salt['generate.cephx_key']() }}
-                 caps mon = "allow r, allow command \"osd blacklist\""
-                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=images"
+                 caps mon = "allow r, allow command \"osd blacklist\", allow profile rbd"
+                 caps osd = "profile rbd pool=images"
           ceph-client-volumes-keyring: |
             [client.volumes]
                  key = {{ volumeskey }}
-                 caps mon = "allow r, allow command \"osd blacklist\""
-                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=volumes, allow rwx pool=images"
+                 caps mon = "allow r, allow command \"osd blacklist\", allow profile rbd"
+                 caps osd = "profile rbd pool=volumes, profile rbd-read-only pool=images"
           ceph-client-compute-keyring: |
             [client.compute]
                  key = {{ computekey }}
-                 caps mon = "allow r, allow command \"osd blacklist\""
-                 caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=vms, allow rx pool=images"
+                 caps mon = "allow r, allow command \"osd blacklist\", allow profile rbd"
+                 caps osd = "profile rbd pool=vms, profile rbd pool=images, profile rbd pool=volumes"
           ceph-client-crash-keyring: |
             [client.crash]
                 key = {{ crashkey }}
@@ -263,8 +264,8 @@ passwords:
                 caps mgr = "profile crash"
           ceph-client-compute-key: {{ computekey }}
           ceph-client-volumes-key: {{ volumeskey }}
-          volumes-uuid: {{ salt['random.get_str']('30') | uuid }}
-          nova-uuid: {{ salt['random.get_str']('30') | uuid }}
+          volumes-uuid: {{ salt['random.get_str']('30', punctuation=False) | uuid }}
+          nova-uuid: {{ salt['random.get_str']('30', punctuation=False) | uuid }}
 
 /srv/dynamic_pillar/top.sls:
   file.managed:
@@ -305,6 +306,13 @@ passwords:
 {% else %}
       ovsdb: ""
 {% endif %}
+
+/srv/dynamic_pillar/junos.sls:
+  file.managed:
+    - replace: false
+    - contents: |
+        junos:
+          switch_password: {{ salt['random.get_str']('64', punctuation=False) }}
 
 /etc/salt/master:
   file.managed:
