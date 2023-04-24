@@ -31,6 +31,7 @@
             <source bridge='{{ network }}_br'/>
             <model type='virtio'/>
             <driver name='vhost' queues='{{ pillar['hosts'][type]['cpu'] }}' rx_queue_size='1024'/>
+            <mac address='{{ salt['generate.mac']('52:54:00') }}'/>
             <address type='pci' domain='0x0000' bus='0x00' slot='0x{{ slot }}' function='0x0'/>
           </interface>
         {% endfor %}
