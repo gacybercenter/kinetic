@@ -29,7 +29,17 @@ def __virtual__():
     return __virtualname__
 
 def mac(prefix='52:54:00'):
-    return f'{prefix}'.join(f':{random.randint(0, 0xff):02x}' for i in range(3))
+    return '{0}:{1:02X}:{2:02X}:{3:02X}'.format(prefix,
+                                                random.randint(0, 0xff),
+                                                random.randint(0, 0xff),
+                                                random.randint(0, 0xff))
+#
+#
+#  Need to revisit the function below
+#
+
+# def mac(prefix='52:54:00'):
+#     return f'{prefix}'.join(f':{random.randint(0, 0xff):02x}' for i in range(3))
 
 def erlang_cookie(length = 20):
     return ''.join(random.choice(string.ascii_uppercase) for i in range(length))
