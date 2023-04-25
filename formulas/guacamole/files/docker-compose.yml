@@ -14,7 +14,7 @@ services:
         internal:
 
   guacamole:
-    image: "guacamole/guacamole:latest"
+    image: "guacamole/guacamole:1.4.0"
     container_name: guacamole
     hostname: guacamole
     restart: always
