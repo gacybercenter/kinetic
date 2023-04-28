@@ -147,6 +147,10 @@ systemd-networkd:
         {% else %}
         Name={{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
         {% endif %}
+        {% if network == 'sfe' %}
+        [Link]
+        MTUBytes={{ pillar['storage']['sfe_mtu'] }}
+        {% endif %}
         [Network]
         Bridge={{ network }}_br
     {% endif %}
@@ -171,6 +175,18 @@ systemd-networkd:
         KeepConfiguration=dhcp-on-stop
         [DHCPv4]
         SendRelease=false
+    {% elif network == 'sfe' %}
+        [Link]
+        MTUBytes={{ pillar['storage']['sfe_mtu'] }}
+        [Network]
+        DHCP=no
+        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
+    {% elif network == 'sbe' %}
+        [Link]
+        MTUBytes={{ pillar['storage']['sbe_mtu'] }}
+        [Network]
+        DHCP=no
+        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
     {% elif network =='public' %}
         [Network]
         DHCP=no
