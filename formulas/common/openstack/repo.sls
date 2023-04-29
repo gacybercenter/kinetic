@@ -16,9 +16,9 @@
 
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Yoga
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/yoga main
-    - file: /etc/apt/sources.list.d/cloudarchive-yoga.list
+    - humanname: Ubuntu Cloud Archive - Antelope
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/antelope main
+    - file: /etc/apt/sources.list.d/cloudarchive-antelope.list
     - keyid: EC4926EA
     - keyserver: keyserver.ubuntu.com
 
@@ -43,7 +43,7 @@ CentOS-PowerTools:
 
 rdo:
   pkg.installed:
-    - name: centos-release-openstack-yoga
+    - name: centos-release-openstack-antelope
 
 update_packages_rdo:
   pkg.uptodate:
