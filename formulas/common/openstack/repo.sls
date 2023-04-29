@@ -17,7 +17,7 @@
 uca:
   pkgrepo.managed:
     - humanname: Ubuntu Cloud Archive - Antelope
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu focal-updates/antelope main
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu jammy-updates/antelope main
     - file: /etc/apt/sources.list.d/cloudarchive-antelope.list
     - keyid: EC4926EA
     - keyserver: keyserver.ubuntu.com
