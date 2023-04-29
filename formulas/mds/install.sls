@@ -1,4 +1,4 @@
-## Copyright 2019 Augusta University
+## Copyright 2018 Augusta University
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -21,5 +21,13 @@ include:
 install_ceph:
   pkg.installed:
     - name: ceph
-    - require:
-      - sls: /formulas/common/ceph/repo
+#    - require:
+#      - sls: /formulas/common/ceph/repo
+
+## This is for the current method of dealing with dynamic journal Creation
+## this should eventually be dropped and the current __slot__ mechanism
+## be turned into a custom module, or do a PR against the current
+## ceph modules to bring them up to date
+install_jq:
+  pkg.installed:
+    - name: jq
