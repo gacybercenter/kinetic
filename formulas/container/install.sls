@@ -17,7 +17,7 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
-  - /formulas/common/ceph/repo
+ #  - /formulas/common/ceph/repo
   - /formulas/common/docker/repo
   - /formulas/common/kata/repo
 
