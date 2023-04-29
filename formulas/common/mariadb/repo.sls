@@ -22,13 +22,13 @@ mariadb_repo:
     - keyid: F1656F24C74CD1D8
     - keyserver: keyserver.ubuntu.com
 
-mariadb_maxscale_repo:
-  pkgrepo.managed:
-    - humanname: mariadb_maxscale
-    - name: deb http://downloads.mariadb.com/MaxScale/2.4/ubuntu jammy main
-    - file: /etc/apt/sources.list.d/mariadb_maxscale.list
-    - keyid: 135659E928C12247
-    - keyserver: keyserver.ubuntu.com
+#mariadb_maxscale_repo:
+#  pkgrepo.managed:
+#    - humanname: mariadb_maxscale
+#    - name: deb http://downloads.mariadb.com/MaxScale/2.4/ubuntu jammy main
+#    - file: /etc/apt/sources.list.d/mariadb_maxscale.list
+#    - keyid: 135659E928C12247
+#    - keyserver: keyserver.ubuntu.com
 
 mariadb_tools_repo:
   pkgrepo.managed:
@@ -43,7 +43,7 @@ update_packages_mariadb:
     - refresh: true
     - onchanges:
       - mariadb_tools_repo
-      - mariadb_maxscale_repo
+#      - mariadb_maxscale_repo
       - mariadb_repo
     - dist_upgrade: True
 
