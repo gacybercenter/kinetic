@@ -26,6 +26,7 @@ ifwatch:
   {% for network in pillar['hosts'][grains['type']]['networks'] %}
       - {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
   {% endfor %}
+    - force: True
 {% endif %}
 ###
 
