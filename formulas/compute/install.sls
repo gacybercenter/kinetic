@@ -17,8 +17,8 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
- #  - /formulas/common/ceph/repo
-  - /formulas/common/frr/repo
+#  - /formulas/common/ceph/repo
+#  - /formulas/common/frr/repo
 
 {% if grains['os_family'] == 'Debian' %}
 compute_packages:
