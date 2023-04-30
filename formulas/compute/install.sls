@@ -24,7 +24,15 @@ include:
 compute_packages:
   pkg.installed:
     - pkgs:
-      - 
+      - nova-compute
+      - python3-tornado
+      - ceph-common
+      - spice-html5
+      - python3-rbd
+      - python3-rados
+      - python3-etcd3gw
+      - qemu-system
+      - nvme-cli
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
       - neutron-linuxbridge-agent
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
