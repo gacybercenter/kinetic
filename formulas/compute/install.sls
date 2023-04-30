@@ -80,8 +80,3 @@ compute_packages:
 #      - frr-pythontools
 
 {% endif %}
-
-
-
-
-nova-compute python3-tornado ceph-common spice-html5 python3-rbd python3-rados python3-etcd3gw qemu-system nvme-cli
