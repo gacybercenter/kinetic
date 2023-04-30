@@ -118,6 +118,7 @@ td_agent_conf:
         fluentd_logger: {{ pillar['fluentd']['record'] }}
         fluentd_password: {{ pillar['fluentd_password'] }}
         hostname: {{ grains['host'] }}
+        environment: {{ pillar['haproxy']['group'] }}
     {% if type == 'salt' %}
         salt_service_log: /var/log/salt/master,/var/log/salt/minion
     {% else %}
