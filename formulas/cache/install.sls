@@ -16,6 +16,7 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
+  - /formulas/common/docker/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -25,6 +26,10 @@ cache_packages:
       - apt-cacher-ng
       - python3-pip
       - apache2
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose
     - reload_modules: True
 
 {% elif grains['os_family'] == 'RedHat' %}
