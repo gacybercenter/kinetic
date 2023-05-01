@@ -100,23 +100,13 @@ guacamole_redirect:
 
 # NOTE(chateaulav): current reference for branding:
 #                   https://github.com/Zer0CoolX/guacamole-customize-loginscreen-extension
-/opt/guacamole/guacamole/extensions/branding.jar:
+guacamole_extensions:
   file.managed:
     - makedirs: True
-    - source: salt://formulas/guacamole/files/branding.jar
-
-guacamole_extension_quickconnect:
-  archive.extracted:
-    - name: /opt/guacamole/guacamole/extensions/guacamole-auth-quickconnect-1.5.0.jar
-    - source: https://downloads.apache.org/guacamole/1.5.0/binary/guacamole-auth-quickconnect-1.5.0.tar.gz
-    - source_hash: https://downloads.apache.org/guacamole/1.5.0/binary/guacamole-auth-quickconnect-1.5.0.tar.gz.sha256
-  require:
-    - file: /opt/guacamole/guacamole/extensions/branding.jar
-
-guacamole_extension_recording:
-  archive.extracted:
-    - name: /opt/guacamole/guacamole/extensions/guacamole-history-recording-storage-1.5.0.jar
-    - source: https://downloads.apache.org/guacamole/1.5.0/binary/guacamole-history-recording-storage-1.5.0.tar.gz
-    - source_hash: https://downloads.apache.org/guacamole/1.5.0/binary/guacamole-history-recording-storage-1.5.0.tar.gz.sha256
-  require:
-    - file: /opt/guacamole/guacamole/extensions/branding.jar
+    - names:
+      - /opt/guacamole/guacamole/extensions/guacamole-auth-quickconnect-1.5.0.jar:
+        - source: salt://formulas/guacamole/files/guacamole-auth-quickconnect-1.5.0.jar
+      - /opt/guacamole/guacamole/extensions/guacamole-history-recording-storage-1.5.0.jar:
+        - source: salt://formulas/guacamole/files/guacamole-history-recording-storage-1.5.0.jar
+      - /opt/guacamole/guacamole/extensions/branding.jar:
+        - source: salt://formulas/guacamole/files/branding.jar
