@@ -93,9 +93,9 @@ guacamole_redirect:
   file.managed:
     - makedirs: True
     - names:
-      - /opt/guacamole/ROOT/index.jsp:
+      - /home/guacamole/tomcat/webapps/ROOT/index.jsp:
         - source: salt://formulas/guacamole/files/index.jsp
-      - /opt/guacamole/ROOT/WEB-INF/web.xml:
+      - /home/guacamole/tomcat/webapps/ROOT/WEB-INF/web.xml:
         - source: salt://formulas/guacamole/files/web.xml
 
 # NOTE(chateaulav): current reference for branding:

@@ -8,7 +8,7 @@ services:
     ports:
       - "4822:4822"
     volumes:
-      - /opt/guacamole/recordings:/var/lib/guacamole/recordings
+      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
     networks:
         default:
         internal:
@@ -21,6 +21,7 @@ services:
     volumes:
       - "/opt/guacamole/guacamole:/data"
       - "/opt/guacamole/ROOT:/usr/local/tomcat/webapps/ROOT"
+      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
     ports:
       - "8080:8080"
     environment:
