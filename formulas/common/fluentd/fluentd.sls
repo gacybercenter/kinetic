@@ -74,7 +74,7 @@ td-agent_log_permissions:
 
 /etc/td-agent/td-agent.conf:
   file.managed:
-    - make_dir: True
+    - makedirs: True
     - contents: |
         # This file is managed by Salt, do not edit
         @include /etc/td-agent/conf.d/00-source-salt.conf
@@ -112,7 +112,7 @@ td-agent_log_permissions:
 /etc/td-agent/conf.d/{{ conf }}.conf:
   file.managed:
     - source: salt://formulas/common/fluentd/files/{{ conf }}.conf
-    - make_dir: True
+    - makedirs: True
     - defaults:
         fluentd_logger: {{ pillar['fluentd']['record'] }}
         fluentd_password: {{ pillar['fluentd_password'] }}
