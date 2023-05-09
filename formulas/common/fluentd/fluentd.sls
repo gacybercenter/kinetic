@@ -75,34 +75,33 @@ td-agent_log_permissions:
 /etc/td-agent/td-agent.conf:
   file.managed:
     - makedirs: True
-    - contents: |
-        # This file is managed by Salt, do not edit
-        @include /etc/td-agent/conf.d/00-source-salt.conf
-        @include /etc/td-agent/conf.d/00-source-syslog.conf
+    - contents:
+      - @include /etc/td-agent/conf.d/00-source-salt.conf
+      - @include /etc/td-agent/conf.d/00-source-syslog.conf
     {% if type in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
-        @include /etc/td-agent/conf.d/01-source-api.conf
-        @include /etc/td-agent/conf.d/01-source-ceph.conf
+      - @include /etc/td-agent/conf.d/01-source-api.conf
+      - @include /etc/td-agent/conf.d/01-source-ceph.conf
     {% endif %}
     {% if type == 'haproxy' %}
-        @include /etc/td-agent/conf.d/01-source-haproxy.conf
+      - @include /etc/td-agent/conf.d/01-source-haproxy.conf
     {% endif %}
     {% if type in ['compute', 'network', 'neutron'] %}
-        @include /etc/td-agent/conf.d/01-source-openvswitch.conf
+      - @include /etc/td-agent/conf.d/01-source-openvswitch.conf
     {% endif %}
     {% if type in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
-        @include /etc/td-agent/conf.d/01-source-wsgi.conf
+      - @include /etc/td-agent/conf.d/01-source-wsgi.conf
     {% endif %}
     {% if type == 'mysql' %}
-        @include /etc/td-agent/conf.d/01-source-mariadb.conf
+      - @include /etc/td-agent/conf.d/01-source-mariadb.conf
     {% endif %}
     {% if type == 'rabbitmq' %}
-        @include /etc/td-agent/conf.d/01-source-rabbitmq.conf
+      - @include /etc/td-agent/conf.d/01-source-rabbitmq.conf
     {% endif %}
-        @include /etc/td-agent/conf.d/02-filter-transform.conf
+      - @include /etc/td-agent/conf.d/02-filter-transform.conf
     {% if type in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
-        @include /etc/td-agent/conf.d/04-format-wsgi.conf
+      - @include /etc/td-agent/conf.d/04-format-wsgi.conf
     {% endif %}
-        @include /etc/td-agent/conf.d/05-match-opensearch.conf
+      - @include /etc/td-agent/conf.d/05-match-opensearch.conf
     - require:
       - pkg: common_logging_install
 
