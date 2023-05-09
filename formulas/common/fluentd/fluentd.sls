@@ -72,59 +72,58 @@ td-agent_log_permissions:
     - require:
       - pkg: common_logging_install
 
-td_agent_conf:
-  file.managed:
-    - name: /etc/td-agent/td-agent.conf
-    - source: salt://formulas/common/fluentd/files/td-agent.conf
-    - require:
-      - pkg: common_logging_install
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
-
 /etc/td-agent/td-agent.conf:
-  file:
-    - append
-    - template: jinja
-    - sources:
-      - salt://formulas/common/fluentd/files/00-source-salt.conf
-      - salt://formulas/common/fluentd/files/00-source-syslog.conf
+  file.managed:
+    - make_dir: True
+    - contents: |
+        # This file is managed by Salt, do not edit
+        @include /etc/td-agent/conf.d/00-source-salt.conf
+        @include /etc/td-agent/conf.d/00-source-syslog.conf
     {% if type in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
-      - salt://formulas/common/fluentd/files/01-source-api.conf
-      - salt://formulas/common/fluentd/files/01-source-ceph.conf
+        @include /etc/td-agent/conf.d/01-source-api.conf
+        @include /etc/td-agent/conf.d/01-source-ceph.conf
     {% endif %}
     {% if type == 'haproxy' %}
-      - salt://formulas/common/fluentd/files/01-source-haproxy.conf
+        @include /etc/td-agent/conf.d/01-source-haproxy.conf
     {% endif %}
     {% if type in ['compute', 'network', 'neutron'] %}
-      - salt://formulas/common/fluentd/files/01-source-openvswitch.conf
+        @include /etc/td-agent/conf.d/01-source-openvswitch.conf
     {% endif %}
     {% if type in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
-      - salt://formulas/common/fluentd/files/01-source-wsgi.conf
+        @include /etc/td-agent/conf.d/01-source-wsgi.conf
     {% endif %}
     {% if type == 'mysql' %}
-      - salt://formulas/common/fluentd/files/01-source-mariadb.conf
+        @include /etc/td-agent/conf.d/01-source-mariadb.conf
     {% endif %}
     {% if type == 'rabbitmq' %}
-      - salt://formulas/common/fluentd/files/01-source-rabbitmq.conf
+        @include /etc/td-agent/conf.d/01-source-rabbitmq.conf
     {% endif %}
-      - salt://formulas/common/fluentd/files/02-filter-transform.conf
+        @include /etc/td-agent/conf.d/02-filter-transform.conf
     {% if type in ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
-      - salt://formulas/common/fluentd/files/04-format-wsgi.conf
+        @include /etc/td-agent/conf.d/04-format-wsgi.conf
     {% endif %}
-      - salt://formulas/common/fluentd/files/05-match-opensearch.conf
+        @include /etc/td-agent/conf.d/05-match-opensearch.conf
+    - require:
+      - pkg: common_logging_install
+
+    {% set conf_files = ['00-source-salt', '00-source-syslog', '01-source-api', '01-source-ceph', '01-source-haproxy', '01-source-mariadb', '01-source-openvswitch', '01-source-rabbitmq', '01-source-wsgi', '02-filter-transform', '04-format-wsgi', '05-match-opensearch'] %}
+
+    {% for conf in conf_files %}
+/etc/td-agent/conf.d/{{ conf }}.conf:
+  file.managed:
+    - source: salt://formulas/common/fluentd/files/{{ conf }}.conf
+    - make_dir: True
     - defaults:
         fluentd_logger: {{ pillar['fluentd']['record'] }}
         fluentd_password: {{ pillar['fluentd_password'] }}
         hostname: {{ grains['host'] }}
         environment: {{ pillar['haproxy']['group'] }}
-    {% if type == 'salt' %}
+      {% if type == 'salt' %}
         salt_service_log: /var/log/salt/master,/var/log/salt/minion
-    {% else %}
+      {% else %}
         salt_service_log: /var/log/salt/minion
-    {% endif %}
-    {% if type in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
+      {% endif %}
+      {% if type in ['designate', 'nova', 'glance', 'heat', 'neutron', 'storage', 'keystone', 'volume', 'cephmon', 'cinder', 'placement', 'network', 'swift', 'compute'] %}
         service: {{ type }}
         {% if type in ['nova'] %}
         api_service_log: {% for service in ['nova', 'keystone'] %}/var/log/{{ service }}/*.log{% if not loop.last %},{% endif %}{% endfor %}
@@ -137,26 +136,20 @@ td_agent_conf:
         {% else %}
         api_service_log: /var/log/{{ type }}/*.log
         {% endif %}
-    {% elif type == ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
+      {% elif type == ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
         service: {{ type }}
-    {% elif type == 'rabbitmq' %}
+      {% elif type == 'rabbitmq' %}
         service: {{ type }}
         log_hostname: {{ grains['host'] }}
-    {% endif %}
+      {% endif %}
+    {% endfor %}
     - require:
-      - pkg: common_logging_install
-      - file: td_agent_conf
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
+      - file: /etc/td-agent/td-agent.conf
 
 td-agent:
   service.running:
     - watch:
-      - /etc/td-agent/td-agent.conf
-    - require:
-      - pkg: common_logging_install
-      - file: /etc/td-agent/td-agent.conf
+    {% for conf in conf_files %}
+      - file: /etc/td-agent/conf.d/{{ conf }}.conf
   {% endif %}
 {% endif %}
