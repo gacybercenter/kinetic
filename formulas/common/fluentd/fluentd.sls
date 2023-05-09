@@ -151,5 +151,6 @@ td-agent:
     - watch:
     {% for conf in conf_files %}
       - file: /etc/td-agent/conf.d/{{ conf }}.conf
+    {% endfor %}
   {% endif %}
 {% endif %}
