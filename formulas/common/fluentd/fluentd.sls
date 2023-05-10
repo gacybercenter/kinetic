@@ -140,7 +140,6 @@ td-agent_log_permissions:
         service: {{ type }}
       {% elif type == 'rabbitmq' %}
         service: {{ type }}
-        log_hostname: {{ grains['host'] }}
       {% endif %}
     {% endfor %}
     - require:
