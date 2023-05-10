@@ -111,6 +111,7 @@ td-agent_log_permissions:
 /etc/td-agent/conf.d/{{ conf }}.conf:
   file.managed:
     - source: salt://formulas/common/fluentd/files/{{ conf }}.conf
+    - template: jinja
     - makedirs: True
     - defaults:
         fluentd_logger: {{ pillar['fluentd']['record'] }}
