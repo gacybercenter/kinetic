@@ -72,6 +72,12 @@ def application (environ, start_response):
             'kernel': "kernel http://us.archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/ubuntu-installer/amd64/linux --- auto=true url=http://{{ pxe_record }}/configs/"+host_type+" locale=en_US interface="+interface+" keymap=us netcfg/get_hostname="+hostname_assignment+" debian-installer/allow_unauthenticated_ssl=true initrd=initrd.gz",
             'initrd': "initrd http://us.archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/ubuntu-installer/amd64/initrd.gz"
             }
+    elif os_assignment == "ubuntu2204":
+        response_body = body % {
+            'kernel': "kernel https://cloud-images.ubuntu.com/jammy/current/unpacked/jammy-server-cloudimg-amd64-vmlinuz-generic --- auto=true url=http://{{ pxe_record }}/configs/"+host_type+" locale=en_US interface="+interface+" keymap=us netcfg/get_hostname="+hostname_assignment+" debian-installer/allow_unauthenticated_ssl=true initrd=initrd.gz",
+            'initrd': "initrd https://cloud-images.ubuntu.com/jammy/current/unpacked/jammy-server-cloudimg-amd64-initrd-generic"
+            }
+
 
     response_body = bytes(response_body, encoding= 'utf-8')
     status = '200 OK'
