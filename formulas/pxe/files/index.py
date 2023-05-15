@@ -74,10 +74,9 @@ def application (environ, start_response):
             }
     elif os_assignment == "ubuntu2204":
         response_body = body % {
-            'kernel': "kernel https://cloud-images.ubuntu.com/jammy/current/unpacked/jammy-server-cloudimg-amd64-vmlinuz-generic --- auto=true url=http://{{ pxe_record }}/configs/"+host_type+" locale=en_US interface="+interface+" keymap=us netcfg/get_hostname="+hostname_assignment+" debian-installer/allow_unauthenticated_ssl=true initrd=initrd.gz",
-            'initrd': "initrd https://cloud-images.ubuntu.com/jammy/current/unpacked/jammy-server-cloudimg-amd64-initrd-generic"
+            'kernel': "kernel http://{{ pxe_record }}/tftp/jammy/vmlinuz initrd=initrd autoinstall url=http://{{ pxe_record }}//tftp/jammy/jammy-server-cloudimg-amd64.img net.ifnames=0 biosdevname=0 ip=::::"+hostname_assignment+":"+interface+":dhcp ds=nocloud-net;s=http://{{ pxe_record }}/tftp/assignments/"+uuid.upper()+"/",
+            'initrd': "initrd http://{{ pxe_record }}/tftp/jammy/initrd"
             }
-
 
     response_body = bytes(response_body, encoding= 'utf-8')
     status = '200 OK'

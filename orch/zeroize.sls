@@ -61,6 +61,45 @@ assign_uuid_to_{{ id }}:
       - {{ pillar['hosts'][type]['os'] }}
       - {{ pillar['hosts'][type]['interface'] }}
       - {{ targets[id]['api_host'] }}
+
+meta_data_{{ id }}:
+  salt.function:
+    - name: file.write
+    - tgt: '{{ pillar['pxe']['name'] }}'
+    - args:
+      - /var/www/html/assignments/{{ id }}/meta-data
+      - 'instance-id: {{ type }}-{{ targets[id]['uuid'] }}'
+      - 'local-hostname: {{ type }}-{{ targets[id]['uuid'] }}'
+
+user_data_{{ id }}:
+  salt.function:
+    - name: file.write
+    - tgt: '{{ pillar['pxe']['name'] }}'
+    - args:
+      - /srv/tftp/assignments/{{ uuid }}/user-data
+      - '#cloud-config'
+      - 'autoinstall'
+      - '  version: 1'
+      - '  locale: en_US'
+      - '  identity:'
+      - '    hostname: {{ type }}-{{ targets[id]['uuid'] }}'
+      - '    password: {{ pillar['hosts'][type]['root_password_crypted'] }}'
+      - '  network:'
+      - '    version: 2'
+      - '    ethernets:'
+      - '      {{ pillar['hosts'][type]['interface'] }}:'
+      - '        dhcp4: true'
+      - '  storage:'
+      - '    layout:'
+      - '      name: lvm'
+    {% if type not in ['controller', 'controllerV2'] %}
+      - '  proxy: {{ pillar['hosts'][type]['proxy'] }}'
+    {% endif %}
+      - '  early-commands:'
+      - '    - debconf-set partman-auto/disk "$(parted_devices | grep "{{ pillar['hosts'][type]['disk'] }}" | cut -f 1 | head -n 1)"'
+      - '  late-commands:'
+      - '    - curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;'
+      - '    - /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['name'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
   {% endfor %}
 
 ## reboots initiated by the BMC take a few seconds to take effect
@@ -157,6 +196,13 @@ remove_pending_{{ type }}-{{ id }}:
       - /var/www/html/assignments/{{ id }}
     - require:
       - wait_for_minion_first_start_{{ type }}
+
+remove_pending_dir_{{ type }}-{{ id }}:
+  salt.function:
+    - name: file.absent
+    - tgt: '{{ pillar['pxe']['name'] }}'
+    - arg:
+      - /var/www/html/assignments/{{ id }}
   {% endfor %}
 
 {% elif style == 'virtual' %}

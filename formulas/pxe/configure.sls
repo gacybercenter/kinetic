@@ -49,6 +49,8 @@ conf-files:
         - source: salt://formulas/pxe/files/kinetic.ipxe
       - /etc/apache2/sites-available/wsgi.conf:
         - source: salt://formulas/pxe/files/wsgi.conf
+      - /etc/apache2/sites-available/tftp.conf:
+        - source: salt://formulas/pxe/files/tftp.conf
       - /etc/apache2/apache2.conf:
         - source: salt://formulas/pxe/files/apache2.conf
       - /var/www/html/index.py:
@@ -109,13 +111,39 @@ wsgi_module:
   {% endif %}
 {% endfor %}
 
+tftp_dirs:
+  file.directory:
+    - names:
+      - /srv/tftp/jammy
+
+tftp_site:
+  apache_site.enabled:
+    - name: tftp
+
+tftp_conf:
+  apache_conf.enabled:
+    - name: tftp
+
+jammy_build:
+  file.managed:
+    - makedirs: True
+    - names:
+      - /srv/tftp/jammy/initrd:
+        - source: https://cloud-images.ubuntu.com/jammy/current/unpacked/jammy-server-cloudimg-amd64-initrd-generic
+      - /srv/tftp/jammy/vmlinuz:
+        - source: https://cloud-images.ubuntu.com/jammy/current/unpacked/jammy-server-cloudimg-amd64-vmlinuz-generic
+      - /srv/tftp/jammy/jammy-server-cloudimg-amd64.img:
+        - source: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+
 apache2_service:
   service.running:
     - name: apache2
     - watch:
       - apache_module: wsgi_module
       - file: /etc/apache2/sites-available/wsgi.conf
+      - file: /etc/apache2/sites-available/tftp.conf
       - file: /etc/apache2/apache2.conf
+      - tftp_site: tftp
       - apache_site: wsgi
       - apache_site: 000-default
 
