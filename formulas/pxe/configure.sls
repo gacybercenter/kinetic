@@ -127,6 +127,7 @@ tftp_conf:
 jammy_build:
   file.managed:
     - makedirs: True
+    - skip_verify: True
     - names:
       - /srv/tftp/jammy/initrd:
         - source: https://cloud-images.ubuntu.com/jammy/current/unpacked/jammy-server-cloudimg-amd64-initrd-generic
@@ -143,7 +144,7 @@ apache2_service:
       - file: /etc/apache2/sites-available/wsgi.conf
       - file: /etc/apache2/sites-available/tftp.conf
       - file: /etc/apache2/apache2.conf
-      - tftp_site: tftp
+      - apache_site: tftp
       - apache_site: wsgi
       - apache_site: 000-default
 
