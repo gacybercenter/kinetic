@@ -74,7 +74,7 @@ def application (environ, start_response):
             }
     elif os_assignment == "ubuntu2204":
         response_body = body % {
-            'kernel': "kernel http://{{ pxe_record }}/tftp/jammy/vmlinuz initrd=initrd autoinstall url=http://{{ pxe_record }}//tftp/jammy/jammy-server-cloudimg-amd64.img net.ifnames=0 biosdevname=0 ip=::::"+hostname_assignment+":"+interface+":dhcp ds=nocloud-net;s=http://{{ pxe_record }}/tftp/assignments/"+uuid.upper()+"/",
+            'kernel': "kernel http://{{ pxe_record }}/tftp/jammy/vmlinuz initrd=initrd autoinstall url=http://{{ pxe_record }}//tftp/jammy/jammy-server-cloudimg-amd64.img root=/dev/ram0 net.ifnames=0 biosdevname=0 ip=::::"+hostname_assignment+":"+interface+":dhcp ds=nocloud-net;s=http://{{ pxe_record }}/tftp/assignments/"+uuid.upper()+"/",
             'initrd': "initrd http://{{ pxe_record }}/tftp/jammy/initrd"
             }
 
