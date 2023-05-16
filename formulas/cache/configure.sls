@@ -78,12 +78,12 @@ apt-cacher-ng_service:
       - file: conf-files
       - cmd: get_centos_mirros
 
-{% for dir in ['data', 'logs']%}
+{% for dir in ['data', 'logs'] %}
 /opt/cache/windows/{{ dir }}:
   file.directory:
     - user: root
     - group: root
-    - mode: '755'
+    - mode: "0755"
     - makedirs: True
 {% endfor %}
 
