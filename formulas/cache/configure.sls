@@ -83,7 +83,7 @@ apt-cacher-ng_service:
   file.directory:
     - user: root
     - group: root
-    - mode: 755
+    - mode: '755'
     - makedirs: True
 {% endfor %}
 
