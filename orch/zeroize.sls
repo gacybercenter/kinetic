@@ -66,8 +66,8 @@ meta_data_{{ id }}:
   salt.function:
     - name: file.write
     - tgt: '{{ pillar['pxe']['name'] }}'
-    - args:
-      - /var/www/html/assignments/{{ id }}/meta-data
+    - arg:
+      - /srv/tftp/assignments/{{ id }}/meta-data
       - 'instance-id: {{ type }}-{{ targets[id]['uuid'] }}'
       - 'local-hostname: {{ type }}-{{ targets[id]['uuid'] }}'
 
@@ -75,7 +75,7 @@ user_data_{{ id }}:
   salt.function:
     - name: file.write
     - tgt: '{{ pillar['pxe']['name'] }}'
-    - args:
+    - arg:
       - /srv/tftp/assignments/{{ id }}/user-data
       - '#cloud-config'
       - 'autoinstall'
