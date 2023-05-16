@@ -76,7 +76,7 @@ user_data_{{ id }}:
     - name: file.write
     - tgt: '{{ pillar['pxe']['name'] }}'
     - args:
-      - /srv/tftp/assignments/{{ uuid }}/user-data
+      - /srv/tftp/assignments/{{ id }}/user-data
       - '#cloud-config'
       - 'autoinstall'
       - '  version: 1'
