@@ -214,10 +214,10 @@ remove_pending_{{ type }}-{{ id }}:
 
 remove_pending_dir_{{ type }}-{{ id }}:
   salt.function:
-    - name: file.absent
+    - name: cmd.run
     - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
-      - /srv/tftp/assignments/{{ id }}
+      - 'rm -rf /srv/tftp/assignments/{{ id }}'
   {% endfor %}
 
 {% elif style == 'virtual' %}
