@@ -20,6 +20,11 @@ hosts:
       configure:
         salt: configure
         pxe: configure
+  controllerv2:
+    needs:
+      configure:
+        salt: configure
+        pxe: configure
   storage:
     needs:
       install:

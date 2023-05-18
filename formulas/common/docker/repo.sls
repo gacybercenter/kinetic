@@ -17,7 +17,7 @@
 docker_repo:
   pkgrepo.managed:
     - humanname: docker
-    - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+    - name: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
     - file: /etc/apt/sources.list.d/docker.list
     - key_url: https://download.docker.com/linux/ubuntu/gpg
 

@@ -17,7 +17,7 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
-  - /formulas/common/ceph/repo
+ #  - /formulas/common/ceph/repo
   - /formulas/common/docker/repo
   - /formulas/common/kata/repo
 
@@ -188,7 +188,7 @@ kuryr:
 kuryr_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
-    - branch: stable/yoga
+    - branch: stable/antelope
     - target: /var/lib/kuryr
     - force_clone: true
     - require:
@@ -238,7 +238,7 @@ zun:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/yoga
+    - branch: stable/antelope
     - target: /var/lib/zun
     - force_clone: true
     - require:

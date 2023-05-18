@@ -20,7 +20,7 @@ include:
 controller_packages:
   pkg.installed:
     - pkgs:
-      - qemu-kvm
+      - qemu-system-x86
       - genisoimage
       - mdadm
       - xfsprogs

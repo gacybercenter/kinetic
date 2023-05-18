@@ -26,6 +26,7 @@ ifwatch:
   {% for network in pillar['hosts'][grains['type']]['networks'] %}
       - {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
   {% endfor %}
+    - force: True
 {% endif %}
 ###
 
@@ -102,7 +103,6 @@ systemd-networkd:
         [NetDev]
         Name={{ network }}_bond
         Kind=bond
-
         [Bond]
         Mode=802.3ad
         MIIMonitorSec=100ms
@@ -115,7 +115,6 @@ systemd-networkd:
     - contents: |
         [Match]
         Name={{ interface }}
-
         [Network]
         Bond={{ network }}_bond
       {% endfor %}
