@@ -61,6 +61,60 @@ assign_uuid_to_{{ id }}:
       - {{ pillar['hosts'][type]['os'] }}
       - {{ pillar['hosts'][type]['interface'] }}
       - {{ targets[id]['api_host'] }}
+
+assignments_dir_{{ id }}:
+  salt.function:
+    - name: cmd.run
+    - tgt: '{{ pillar['pxe']['name'] }}'
+    - arg:
+      - 'mkdir -p /srv/tftp/assignments/{{ id }}'
+
+meta_data_{{ id }}:
+  salt.function:
+    - name: file.write
+    - tgt: '{{ pillar['pxe']['name'] }}'
+    - arg:
+      - /srv/tftp/assignments/{{ id }}/meta-data
+      - 'instance-id: {{ type }}-{{ targets[id]['uuid'] }}'
+      - 'local-hostname: {{ type }}-{{ targets[id]['uuid'] }}'
+    - require:
+      - assignments_dir_{{ id }}
+
+user_data_{{ id }}:
+  salt.function:
+    - name: file.write
+    - tgt: '{{ pillar['pxe']['name'] }}'
+    - arg:
+      - /srv/tftp/assignments/{{ id }}/user-data
+      - '#cloud-config'
+      - 'autoinstall:'
+      - '  version: 1'
+      - '  locale: en_US'
+      - '  identity:'
+      - '    username: root'
+      - '    hostname: {{ type }}-{{ targets[id]['uuid'] }}'
+      - '    password: {{ pillar['hosts'][type]['root_password_crypted'] }}'
+      - '  network:'
+      - '    version: 2'
+      - '    ethernets:'
+      - '      {{ pillar['hosts'][type]['interface'] }}:'
+      - '        dhcp4: true'
+      - '  resize_rootfs: true'
+      - '  growpart:'
+      - '    mode: auto'
+      - '  storage:'
+      - '    layout:'
+      - '      name: lvm'
+    {% if type not in ['controller', 'controllerV2'] %}
+      - '  proxy: {{ pillar['hosts'][type]['proxy'] }}'
+    {% endif %}
+      - '  user-data:'
+      - '    disable_root: false'
+      - '  late-commands:'
+      - '    - curtin in-target --target /target -- curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
+      - '    - curtin in-target --target /target -- /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
+    - require:
+      - assignments_dir_{{ id }}
   {% endfor %}
 
 ## reboots initiated by the BMC take a few seconds to take effect
@@ -157,6 +211,13 @@ remove_pending_{{ type }}-{{ id }}:
       - /var/www/html/assignments/{{ id }}
     - require:
       - wait_for_minion_first_start_{{ type }}
+
+remove_pending_dir_{{ type }}-{{ id }}:
+  salt.function:
+    - name: cmd.run
+    - tgt: '{{ pillar['pxe']['name'] }}'
+    - arg:
+      - 'rm -rf /srv/tftp/assignments/{{ id }}'
   {% endfor %}
 
 {% elif style == 'virtual' %}

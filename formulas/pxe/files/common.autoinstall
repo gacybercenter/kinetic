@@ -1,0 +1,26 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US
+  identity:
+    username: root
+    hostname: {{ type }}-{{ targets[id]['uuid'] }}
+    password: {{ pillar['hosts'][type]['root_password_crypted'] }}
+  network:
+    version: 2
+    ethernets:
+      {{ pillar['hosts'][type]['interface'] }}:
+        dhcp4: true
+  resize_rootfs: true
+  growpart:
+    mode: auto
+  storage:
+    layout:
+      name: lvm
+  proxy: {{ pillar['hosts'][type]['proxy'] }}
+  user-data:
+    disable_root: false
+  late-commands:
+    - curtin in-target --target /target -- curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
+    - curtin in-target --target /target -- /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}
+  
