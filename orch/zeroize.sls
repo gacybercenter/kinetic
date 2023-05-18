@@ -64,7 +64,7 @@ assign_uuid_to_{{ id }}:
 
 assignments_dir_{{ id }}:
   salt.function:
-    - name: file.directory
+    - name: file.makedirs
     - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
       - /var/www/html/assignments/{{ id }}
