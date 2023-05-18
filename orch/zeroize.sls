@@ -67,7 +67,7 @@ assignments_dir_{{ id }}:
     - name: file.makedirs
     - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
-      - /var/www/html/assignments/{{ id }}
+      - /srv/tftp/assignments/{{ id }}
 
 meta_data_{{ id }}:
   salt.function:
