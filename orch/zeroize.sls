@@ -62,6 +62,13 @@ assign_uuid_to_{{ id }}:
       - {{ pillar['hosts'][type]['interface'] }}
       - {{ targets[id]['api_host'] }}
 
+assignments_dir_{{ id }}:
+  salt.function:
+    - name: file.directory
+    - tgt: '{{ pillar['pxe']['name'] }}'
+    - arg:
+      - /var/www/html/assignments/{{ id }}
+
 meta_data_{{ id }}:
   salt.function:
     - name: file.write
@@ -70,6 +77,8 @@ meta_data_{{ id }}:
       - /srv/tftp/assignments/{{ id }}/meta-data
       - 'instance-id: {{ type }}-{{ targets[id]['uuid'] }}'
       - 'local-hostname: {{ type }}-{{ targets[id]['uuid'] }}'
+    - require:
+      - assignments_dir_{{ id }}
 
 user_data_{{ id }}:
   salt.function:
@@ -104,6 +113,8 @@ user_data_{{ id }}:
       - '  late-commands:'
       - '    - curtin in-target --target /target -- curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
       - '    - curtin in-target --target /target -- /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
+    - require:
+      - assignments_dir_{{ id }}
   {% endfor %}
 
 ## reboots initiated by the BMC take a few seconds to take effect
@@ -206,7 +217,7 @@ remove_pending_dir_{{ type }}-{{ id }}:
     - name: file.absent
     - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
-      - /var/www/html/assignments/{{ id }}
+      - /srv/tftp/assignments/{{ id }}
   {% endfor %}
 
 {% elif style == 'virtual' %}
