@@ -67,7 +67,7 @@ assignments_dir_{{ id }}:
     - name: cmd.run
     - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
-      - 'mkdir -p /srv/tftp/assignments/{{ id }} && touch /srv/tftp/assignments/{{ id }}/{meta-data,user-data}'
+      - 'mkdir -p /srv/tftp/assignments/{{ id }}'
 
 meta_data_{{ id }}:
   salt.function:

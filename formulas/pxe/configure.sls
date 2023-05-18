@@ -115,7 +115,7 @@ tftp_dirs:
   file.directory:
     - names:
       - /srv/tftp/jammy
-      - /srv/tftp/assgnments
+      - /srv/tftp/assignments
 
 tftp_site:
   apache_site.enabled:
