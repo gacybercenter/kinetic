@@ -74,7 +74,7 @@ def application (environ, start_response):
             }
     elif os_assignment == "ubuntu2204":
         response_body = body % {
-            'kernel': "kernel http://{{ pxe_record }}/tftp/jammy/vmlinuz initrd=initrd autoinstall url=http://{{ pxe_record }}//tftp/jammy/jammy-server-cloudimg-amd64.img root=/dev/ram0 net.ifnames=0 biosdevname=0 ip=::::"+hostname_assignment+":"+interface+":dhcp ds=nocloud-net;s=http://{{ pxe_record }}/tftp/assignments/"+uuid.upper()+"/",
+            'kernel': f'kernel http://{{ pxe_record }}/tftp/jammy/vmlinuz initrd=initrd url=http://{{ pxe_record }}//tftp/jammy/ubuntu-22.04.2-live-server-amd64.iso autoinstall biosdevname=0 ip=::::{hostname_assignment}:{interface}:dhcp ds="nocloud-net;s=http://{{ pxe_record }}/tftp/assignments/{uuid.upper()}/" cloud-config-url=http://{{ pxe_record }}/tftp/assignments/{uuid.upper()}/user-data',
             'initrd': "initrd http://{{ pxe_record }}/tftp/jammy/initrd"
             }
 

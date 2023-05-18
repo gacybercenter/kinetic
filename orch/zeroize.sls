@@ -78,10 +78,11 @@ user_data_{{ id }}:
     - arg:
       - /srv/tftp/assignments/{{ id }}/user-data
       - '#cloud-config'
-      - 'autoinstall'
+      - 'autoinstall:'
       - '  version: 1'
       - '  locale: en_US'
       - '  identity:'
+      - '    username: root'
       - '    hostname: {{ type }}-{{ targets[id]['uuid'] }}'
       - '    password: {{ pillar['hosts'][type]['root_password_crypted'] }}'
       - '  network:'
@@ -89,17 +90,20 @@ user_data_{{ id }}:
       - '    ethernets:'
       - '      {{ pillar['hosts'][type]['interface'] }}:'
       - '        dhcp4: true'
+      - '  resize_rootfs: true'
+      - '  growpart:'
+      - '    mode: auto'
       - '  storage:'
       - '    layout:'
       - '      name: lvm'
     {% if type not in ['controller', 'controllerV2'] %}
       - '  proxy: {{ pillar['hosts'][type]['proxy'] }}'
     {% endif %}
-      - '  early-commands:'
-      - '    - debconf-set partman-auto/disk "$(parted_devices | grep "{{ pillar['hosts'][type]['disk'] }}" | cut -f 1 | head -n 1)"'
+      - '  user-data:'
+      - '    disable_root: false'
       - '  late-commands:'
-      - '    - curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com;'
-      - '    - /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['name'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
+      - '    - curtin in-target --target /target -- curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
+      - '    - curtin in-target --target /target -- /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
   {% endfor %}
 
 ## reboots initiated by the BMC take a few seconds to take effect

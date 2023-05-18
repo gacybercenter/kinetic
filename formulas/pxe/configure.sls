@@ -124,17 +124,21 @@ tftp_conf:
   apache_conf.enabled:
     - name: tftp
 
-jammy_build:
+/srv/tftp/jammy/ubuntu2204.iso:
   file.managed:
     - makedirs: True
-    - skip_verify: True
-    - names:
-      - /srv/tftp/jammy/initrd:
-        - source: https://cloud-images.ubuntu.com/jammy/current/unpacked/jammy-server-cloudimg-amd64-initrd-generic
-      - /srv/tftp/jammy/vmlinuz:
-        - source: https://cloud-images.ubuntu.com/jammy/current/unpacked/jammy-server-cloudimg-amd64-vmlinuz-generic
-      - /srv/tftp/jammy/jammy-server-cloudimg-amd64.img:
-        - source: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+    - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
+    - source_hash: d26bfb7aeec19ce1cc2330e0620568b4516a082a799ad0ec8898048be8943c79
+
+kernel_extract:
+  cmd.script:
+    - source: salt://formulas/pxe/files/kernel-extract.sh
+    - cwd: /srv/tftp/jammy
+    - creates:
+      - /srv/tftp/jammy/vmlinuz
+      - /srv/tftp/jammy/initrd
+    - require:
+      - file: /srv/tftp/jammy/ubuntu2204.iso
 
 apache2_service:
   service.running:
