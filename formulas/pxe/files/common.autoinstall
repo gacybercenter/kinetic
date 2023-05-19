@@ -17,6 +17,7 @@ autoinstall:
   storage:
     layout:
       name: lvm
+      sizing-policy: all
   proxy: {{ pillar['hosts'][type]['proxy'] }}
   user-data:
     disable_root: false

@@ -138,8 +138,12 @@ td-agent_log_permissions:
         {% endif %}
       {% elif type == ['keystone', 'horizon', 'cinder', 'placement', 'cache', 'pxe'] %}
         service: {{ type }}
+        api_service_log: /var/log/{{ type }}/*.log
       {% elif type == 'rabbitmq' %}
         service: {{ type }}
+        api_service_log: /var/log/{{ type }}/*.log
+      {% else %}
+        api_service_log: /var/log/{{ type }}/*.log
       {% endif %}
     {% endfor %}
     - require:

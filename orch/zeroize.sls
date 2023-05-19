@@ -105,6 +105,7 @@ user_data_{{ id }}:
       - '  storage:'
       - '    layout:'
       - '      name: lvm'
+      - '      sizing-policy: all'
     {% if type not in ['controller', 'controllerV2'] %}
       - '  proxy: {{ pillar['hosts'][type]['proxy'] }}'
     {% endif %}
