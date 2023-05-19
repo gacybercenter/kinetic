@@ -140,6 +140,8 @@ td-agent_log_permissions:
         service: {{ type }}
       {% elif type == 'rabbitmq' %}
         service: {{ type }}
+      {% else %}
+        api_service_log: /var/log/{{ type }}/*.log
       {% endif %}
     {% endfor %}
     - require:
