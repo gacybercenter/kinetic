@@ -97,6 +97,14 @@ systemd_resolved_service:
     - name: systemd-resolved
     - enable: false
 
+/run/systemd/resolve/resolv.conf:
+  file.managed:
+    - makedirs: True
+    - contents: |
+        nameserver {{ pillar['networking']['addresses']['float_dns'] }}
+    - require:
+      - service: systemd_resolved_service
+
 lancachenet_monolith:
   docker_container.running:
     - name: lancache
