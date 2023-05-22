@@ -113,6 +113,13 @@ user_data_{{ id }}:
     {% endif %}
       - '  user-data:'
       - '    disable_root: false'
+      - '  early-commands:'
+      - '    - curtin in-target --target /target -- vgs --separator=: --noheadings | cut -f1 -d: | while read vg ; do vgchange -an $vg ; done ;'
+      - '    - curtin in-target --target /target -- pvs --separator=: --noheadings | cut -f1 -d: | while read pv ; do pvremove -ff -y $pv ; done ;'
+      - '    - curtin in-target --target /target -- fdisk -l | grep "Disk /dev/sd" | cut -f1 -d: | cut -f2 -d" " | while read disk ; do mdadm --zero-superblock $disk ; done ;'
+      - '    - curtin in-target --target /target -- fdisk -l | grep "Disk /dev/nvme" | cut -f1 -d: | cut -f2 -d" " | while read disk ; do mdadm --zero-superblock $disk ; done ;'
+      - '    - curtin in-target --target /target -- fdisk -l | grep "Disk /dev/sd" | cut -f1 -d: | cut -f2 -d" " | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done ;'
+      - '    - curtin in-target --target /target -- fdisk -l | grep "Disk /dev/nvme" | cut -f1 -d: | cut -f2 -d" " | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done ;'
       - '  late-commands:'
       - '    - curtin in-target --target /target -- curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
       - '    - curtin in-target --target /target -- /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
