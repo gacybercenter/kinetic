@@ -1,6 +1,14 @@
 #cloud-config
 autoinstall:
   version: 1
+  early-commands:
+    - |
+      vgs --separator=: --noheadings | cut -f1 -d: | while read vg ; do vgchange -an $vg ; done
+      pvs --separator=: --noheadings | cut -f1 -d: | while read pv ; do pvremove -ff -y $pv ; done
+      fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done
+      fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done
+      fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done
+      fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done
   locale: en_US
   identity:
     username: root
@@ -20,6 +28,8 @@ autoinstall:
       sizing-policy: all
       match:
         model: "{{ pillar['hosts'][type]['disk'] }}"
+    swap:
+      swap: 8G
   proxy: {{ pillar['hosts'][type]['proxy'] }}
   user-data:
     disable_root: false

@@ -90,12 +90,13 @@ user_data_{{ id }}:
       - 'autoinstall:'
       - '  version: 1'
       - '  early-commands:'
-      - "    - curtin in-target --target /target -- vgs --separator=: --noheadings | cut -f1 -d: | while read vg ; do vgchange -an $vg ; done"
-      - "    - curtin in-target --target /target -- pvs --separator=: --noheadings | cut -f1 -d: | while read pv ; do pvremove -ff -y $pv ; done"
-      - "    - curtin in-target --target /target -- fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done"
-      - "    - curtin in-target --target /target -- fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done"
-      - "    - curtin in-target --target /target -- fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done"
-      - "    - curtin in-target --target /target -- fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done"
+      - "    - |"
+      - "      vgs --separator=: --noheadings | cut -f1 -d: | while read vg ; do vgchange -an $vg ; done"
+      - "      pvs --separator=: --noheadings | cut -f1 -d: | while read pv ; do pvremove -ff -y $pv ; done"
+      - "      fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done"
+      - "      fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done"
+      - "      fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done"
+      - "      fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done"
       - '  locale: en_US'
       - '  identity:'
       - '    username: root'
@@ -115,8 +116,21 @@ user_data_{{ id }}:
       - '      sizing-policy: all'
       - '      match:'
       - '        model: "{{ pillar['hosts'][type]['disk'] }}"'
+      - '    swap:'
+      - '      size: 8G'
     {% if type not in ['controller', 'controllerV2'] %}
+      {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
+        {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
+        ## if there are no caches, use nothing
+        {% else %}
+          ##pick a random cache and iterate through its addresses, choosing only the management address
+          {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () %}
+            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
       - '  proxy: {{ pillar['hosts'][type]['proxy'] }}'
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endif %}
     {% endif %}
       - '  user-data:'
       - '    disable_root: false'
