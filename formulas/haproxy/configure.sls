@@ -94,12 +94,12 @@ acme_certs:
 {% if salt['pillar.get']('development:test_certs', False) == True %}
     - test_cert: True
 {% endif %}
-#{% if salt['pillar.get']('danos:enabled', False) == True %}
-#    - require:
-#      - service: haproxy_service_stop
-#      - danos: set haproxy group
-#      - danos: set haproxy static-mapping
-#{% endif %}
+{% if salt['pillar.get']('danos:enabled', False) == True %}
+    - require:
+      - service: haproxy_service_stop
+      - danos: set haproxy group
+      - danos: set haproxy static-mapping
+{% endif %}
 
 create_master_pem:
   cmd.run:

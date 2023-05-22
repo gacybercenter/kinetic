@@ -80,6 +80,11 @@ api:
           - git:
             - {{ pillar['kinetic_pillar_configuration']['branch'] }} {{ pillar['kinetic_pillar_configuration']['url'] }}:
               - env: base
+            {%- if salt['pillar.get']('kinetic_pillar_configuration:token', False) %}
+              - user: {{ pillar['kinetic_pillar_configuration']['username'] }}
+              - password: {{ pillar['kinetic_pillar_configuration']['token'] }}
+            {%- endif %}
+
         ext_pillar_first: False
         pillar_gitfs_ssl_verify: True
 

@@ -84,18 +84,37 @@ def gather_endpoints(network, username, password):
     return redfish_endpoints
 
 
-def get_system(host, username, password):
+def get_system(host, username, password, redfish_target='Systems', redfish_path=None):
+    """
+    Consolidates the ability to query 'Systems', 'Managers', and 'Chassis' resources
+    within a single function. Defaults to a basic GET of the '/redfish/v1/Systems/1/' path.
+
+    :param redfish_target: This allows to specify 'Systems', 'Managers', Chassis'
+                           within the '/redfish/v1/{redfish_target}/1/' path.
+    :param redfish_path: This alllows to specify a path beyond the '/redfish/v1/Systems/1/' path.
+    """
+    redfish_targets = ['Systems', 'Managers', 'Chassis']
+    if redfish_target not in redfish_targets:
+        raise ValueError("Invalid redfish target. Expected one of: %s" % redfish_target)
     session = login(host, username, password)
-    response = session.get("/redfish/v1/Systems/1/", None)
+    if redfish_path is None:
+        response = session.get(f'/redfish/v1/{redfish_target}/1/', None)
+    else:
+        response = session.get(f'/redfish/v1/{redfish_target}/1/{redfish_path}', None)
     session.logout()
     return response.text
-
 
 def get_uuid(host, username, password):
     session = login(host, username, password)
     response = session.get("/redfish/v1/Systems/1/", None)
     session.logout()
     return json.loads(response.text)["UUID"]
+
+def get_bootonce(host, username, password):
+    session = login(host, username, password)
+    response = session.get("/redfish/v1/Systems/1/", None)
+    session.logout()
+    return json.loads(response.text)["Boot"]["BootSourceOverrideTarget"]
 
 
 def set_bootonce(host, username, password, mode, target):
@@ -124,6 +143,15 @@ def set_bootonce(host, username, password, mode, target):
         return cmd.get_bootdev()
     return response.text
 
+# TODO(chateaulav): retry mechanism for physical provisioning, need to
+# identify correct variables to use. will leverage .sls to perform retries
+def set_bootonce_retry(host, username, password, mode, target):
+    session = login(host, username, password)
+    status = session.get("/redfish/v1/Systems/1", None)
+    if json.loads(status.text)["PowerState"] == "On":
+        if json.loads(status.text)["Boot"]["BootSourceOverrideTarget"] == "PXE":
+            set_bootonce(host, username, password, mode, target)
+            reset_host(host, username, password)
 
 def reset_host(host, username, password):
     session = login(host, username, password)

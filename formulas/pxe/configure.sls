@@ -49,6 +49,8 @@ conf-files:
         - source: salt://formulas/pxe/files/kinetic.ipxe
       - /etc/apache2/sites-available/wsgi.conf:
         - source: salt://formulas/pxe/files/wsgi.conf
+      - /etc/apache2/sites-available/tftp.conf:
+        - source: salt://formulas/pxe/files/tftp.conf
       - /etc/apache2/apache2.conf:
         - source: salt://formulas/pxe/files/apache2.conf
       - /var/www/html/index.py:
@@ -109,13 +111,45 @@ wsgi_module:
   {% endif %}
 {% endfor %}
 
+tftp_dirs:
+  file.directory:
+    - names:
+      - /srv/tftp/jammy
+      - /srv/tftp/assignments
+
+tftp_site:
+  apache_site.enabled:
+    - name: tftp
+
+tftp_conf:
+  apache_conf.enabled:
+    - name: tftp
+
+/srv/tftp/jammy/ubuntu2204.iso:
+  file.managed:
+    - makedirs: True
+    - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
+    - source_hash: d26bfb7aeec19ce1cc2330e0620568b4516a082a799ad0ec8898048be8943c79
+
+kernel_extract:
+  cmd.script:
+    - source: salt://formulas/pxe/files/kernel-extract.sh
+    - cwd: /srv/tftp/jammy
+    - creates:
+      - /srv/tftp/jammy/vmlinuz
+      - /srv/tftp/jammy/initrd
+    - require:
+      - file: /srv/tftp/jammy/ubuntu2204.iso
+
 apache2_service:
   service.running:
     - name: apache2
     - watch:
       - apache_module: wsgi_module
       - file: /etc/apache2/sites-available/wsgi.conf
+      - file: /etc/apache2/sites-available/tftp.conf
       - file: /etc/apache2/apache2.conf
+      - apache_site: tftp
       - apache_site: wsgi
       - apache_site: 000-default
 

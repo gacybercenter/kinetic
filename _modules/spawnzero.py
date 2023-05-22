@@ -24,7 +24,5 @@ def check(type):
     """
     status = __salt__['mine.get'](tgt='G@role:'+type+' and G@spawning:0',tgt_type='compound',fun='spawnzero_complete')
     if next(iter(status.values()))['spawnzero_complete'] == True:
-        ret = True
-    else:
-        ret = False
-    return ret
+        return True
+    return False

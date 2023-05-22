@@ -1,26 +1,27 @@
 version: "2"
 services:
   guacd:
-    image: "guacamole/guacd"
+    image: "guacamole/guacd:1.5.0"
     container_name: guacd
     hostname: guacd
     restart: always
     ports:
       - "4822:4822"
     volumes:
-      - /opt/guacamole/recordings:/opt/guacamole/recordings
+      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
     networks:
         default:
         internal:
 
   guacamole:
-    image: "guacamole/guacamole:1.4.0"
+    image: "guacamole/guacamole:1.5.0"
     container_name: guacamole
     hostname: guacamole
     restart: always
     volumes:
       - "/opt/guacamole/guacamole:/data"
       - "/opt/guacamole/ROOT:/usr/local/tomcat/webapps/ROOT"
+      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
     ports:
       - "8080:8080"
     environment:
