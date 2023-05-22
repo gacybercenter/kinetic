@@ -106,6 +106,8 @@ user_data_{{ id }}:
       - '    layout:'
       - '      name: lvm'
       - '      sizing-policy: all'
+      - '      match:'
+      - '        model: "{{ pillar['hosts'][type]['disk'] }}"'
     {% if type not in ['controller', 'controllerV2'] %}
       - '  proxy: {{ pillar['hosts'][type]['proxy'] }}'
     {% endif %}
