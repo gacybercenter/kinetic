@@ -91,6 +91,8 @@ user_data_{{ id }}:
       - '  version: 1'
       - '  early-commands:'
       - "    - |"
+      - "      hostnamectl {{ type }}-{{ targets[id]['uuid'] }}"
+      - "      echo {{ type }}-{{ targets[id]['uuid'] }} > /etc/hostname"
       - "      vgs --separator=: --noheadings | cut -f1 -d: | while read vg ; do vgchange -an $vg ; done"
       - "      pvs --separator=: --noheadings | cut -f1 -d: | while read pv ; do pvremove -ff -y $pv ; done"
       - "      fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done"
@@ -122,6 +124,8 @@ user_data_{{ id }}:
       - '    disable_root: false'
       - '  late-commands:'
       - '    - |'
+      - "      hostnamectl {{ type }}-{{ targets[id]['uuid'] }}"
+      - "      echo {{ type }}-{{ targets[id]['uuid'] }} > /etc/hostname"
       - '      curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
       - '      /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
     - require:
