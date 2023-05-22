@@ -32,7 +32,21 @@ hosts:
       configure:
         cephmon: configure
         pxe: configure
+  storagev2:
+    needs:
+      install:
+        cache: configure
+      configure:
+        cephmon: configure
+        pxe: configure
   compute:
+    needs:
+      install:
+        cache: configure
+      configure:
+        nova: configure
+        neutron: configure
+  computev2:
     needs:
       install:
         cache: configure
