@@ -116,15 +116,19 @@ user_data_{{ id }}:
       - '      sizing-policy: all'
       - '      match:'
       - '        model: "{{ pillar['hosts'][type]['disk'] }}"'
-      - '    swap:'
-      - '      size: 8G'
       - '  user-data:'
       - '    disable_root: false'
+      - '    users:'
+      - '      - name: root'
+      - '        password: {{ pillar['hosts'][type]['root_password_crypted'] }}'
       - '  late-commands:'
-      - '    - curtin in-target --target=/target hostnamectl {{ type }}-{{ targets[id]['uuid'] }}'
-      - '    - curtin in-target --target=/target echo {{ type }}-{{ targets[id]['uuid'] }} > /etc/hostname'
-      - '    - curtin in-target --target=/target curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
-      - '    - curtin in-target --target=/target /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
+      - '    - |
+      - '      hostnamectl set-hostname {{ type }}-{{ targets[id]['uuid'] }}'
+      - '      echo {{ type }}-{{ targets[id]['uuid'] }} > /etc/hostname'
+      - "      sed -i 's/ubuntu-server/{{ type }}-{{ targets[id]['uuid'] }}/g' /etc/hosts"
+      - '    - |'
+      - '      curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
+      - '      /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
     - require:
       - assignments_dir_{{ id }}
   {% endfor %}
