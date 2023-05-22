@@ -122,7 +122,7 @@ user_data_{{ id }}:
       - '      - name: root'
       - '        password: {{ pillar['hosts'][type]['root_password_crypted'] }}'
       - '  late-commands:'
-      - '    - |
+      - '    - |'
       - '      hostnamectl set-hostname {{ type }}-{{ targets[id]['uuid'] }}'
       - '      echo {{ type }}-{{ targets[id]['uuid'] }} > /etc/hostname'
       - "      sed -i 's/ubuntu-server/{{ type }}-{{ targets[id]['uuid'] }}/g' /etc/hosts"
