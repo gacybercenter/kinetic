@@ -121,8 +121,8 @@ user_data_{{ id }}:
       - '  user-data:'
       - '    disable_root: false'
       - '  late-commands:'
-      - '    - curtin in-target --target=/target hostnamectl {{ type }}-{{ targets[id]['uuid'] }}"
-      - "    - curtin in-target --target=/target echo {{ type }}-{{ targets[id]['uuid'] }} > /etc/hostname"
+      - '    - curtin in-target --target=/target hostnamectl {{ type }}-{{ targets[id]['uuid'] }}'
+      - '    - curtin in-target --target=/target echo {{ type }}-{{ targets[id]['uuid'] }} > /etc/hostname'
       - '    - curtin in-target --target=/target curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
       - '    - curtin in-target --target=/target /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
     - require:
