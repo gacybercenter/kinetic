@@ -103,6 +103,7 @@ db_lv_{{ osd }}:
   lvm.lv_present:
     - vgname: db_vg
     - extents: {{ step }}%VG
+    - force: True
 {% endfor %}
 
 {% for osd in pillar['osd_mappings'][grains['type']]['osd'] %}
