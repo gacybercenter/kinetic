@@ -11,7 +11,7 @@ autoinstall:
       fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done
   locale: en_US
   identity:
-    username: root
+    username: gacyberrange
     hostname: {{ type }}-{{ targets[id]['uuid'] }}
     password: "{{ pillar['hosts'][type]['root_password_crypted'] }}"
   network:
@@ -30,9 +30,6 @@ autoinstall:
         model: "{{ pillar['hosts'][type]['disk'] }}"
   user-data:
     disable_root: false
-    users:
-      - name: root
-        password: {{ pillar['hosts'][type]['root_password_crypted'] }}
   late-commands:
     - |
       hostnamectl set-hostname {{ type }}-{{ targets[id]['uuid'] }}

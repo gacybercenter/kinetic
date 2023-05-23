@@ -99,9 +99,9 @@ user_data_{{ id }}:
       - "      fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done"
       - '  locale: en_US'
       - '  identity:'
-      - '    username: root'
+      - '    username: gacyberrange'
       - '    hostname: {{ type }}-{{ targets[id]['uuid'] }}'
-      - '    password: {{ pillar['hosts'][type]['root_password_crypted'] }}'
+      - '    password: "{{ pillar['hosts'][type]['root_password_crypted'] }}"'
       - '  network:'
       - '    version: 2'
       - '    ethernets:'
@@ -126,6 +126,7 @@ user_data_{{ id }}:
       - '    - |'
       - '      curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
       - '      /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
+      - '      systemctl enable salt-minion'
     - require:
       - assignments_dir_{{ id }}
   {% endfor %}
