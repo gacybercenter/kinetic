@@ -38,4 +38,4 @@ autoinstall:
     - |
       curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
       /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}
-  
+      systemctl enable salt-minion
