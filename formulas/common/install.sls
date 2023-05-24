@@ -97,4 +97,11 @@ pyghmi_pip:
     - pkgs:
       - ipmitool
       - vim
+
+rdma-core:
+  pkg.installed:
+    - onlyif:
+      - lshw | grep -qi rdma
+    - require:
+      - pkg: common_install
 {% endif %}
