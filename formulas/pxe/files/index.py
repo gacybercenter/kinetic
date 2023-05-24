@@ -45,7 +45,8 @@ def application (environ, start_response):
     d = parse_qs(environ['QUERY_STRING'])
     uuid = d.get('uuid', [''])[0]
     uuid = escape(uuid)
-    uuid = f'{endian(uuid[0:8])}-{endian(uuid[9:13])}-{endian(uuid[14:18])}-{uuid[19:]}'.upper()
+### This is only required for redfish version == 1.8. It does not effect systems > than 1.8. Commenting out as it does not currently effect prod systems ###
+#    uuid = f'{endian(uuid[0:8])}-{endian(uuid[9:13])}-{endian(uuid[14:18])}-{uuid[19:]}'.upper()
     host_data = open("/var/www/html/assignments/"+uuid.upper(), "r")
     host_type = host_data.readline().strip()
     hostname_assignment = host_data.readline().strip()
