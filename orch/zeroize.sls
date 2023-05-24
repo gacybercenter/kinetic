@@ -89,11 +89,19 @@ user_data_{{ id }}:
       - '#cloud-config'
       - 'autoinstall:'
       - '  version: 1'
+      - '  early-commands:'
+      - "    - |"
+      - "      vgs --separator=: --noheadings | cut -f1 -d: | while read vg ; do vgchange -an $vg ; done"
+      - "      pvs --separator=: --noheadings | cut -f1 -d: | while read pv ; do pvremove -ff -y $pv ; done"
+      - "      fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done"
+      - "      fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do mdadm --zero-superblock $disk ; done"
+      - "      fdisk -l | grep 'Disk /dev/sd' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done"
+      - "      fdisk -l | grep 'Disk /dev/nvme' | cut -f1 -d: | cut -f2 -d' ' | while read disk ; do dd if=/dev/zero of=$disk bs=1M count=512 ; done"
       - '  locale: en_US'
       - '  identity:'
-      - '    username: root'
+      - '    username: gacyberrange'
       - '    hostname: {{ type }}-{{ targets[id]['uuid'] }}'
-      - '    password: {{ pillar['hosts'][type]['root_password_crypted'] }}'
+      - '    password: "{{ pillar['hosts'][type]['root_password_crypted'] }}"'
       - '  network:'
       - '    version: 2'
       - '    ethernets:'
@@ -106,14 +114,32 @@ user_data_{{ id }}:
       - '    layout:'
       - '      name: lvm'
       - '      sizing-policy: all'
+      - '      match:'
+      - '        model: "{{ pillar['hosts'][type]['disk'] }}"'
     {% if type not in ['controller', 'controllerV2'] %}
-      - '  proxy: {{ pillar['hosts'][type]['proxy'] }}'
+      {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
+        {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
+      - '  proxy: ""'
+        {% else %}
+          ##pick a random cache and iterate through its addresses, choosing only the management address
+          {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () %}
+            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+      - '  proxy: http://{{ address }}:3142'
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endif %}
     {% endif %}
       - '  user-data:'
       - '    disable_root: false'
+      - '    runcmd:'
+      - '      - curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
+      - '      - /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
       - '  late-commands:'
-      - '    - curtin in-target --target /target -- curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
-      - '    - curtin in-target --target /target -- /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
+      - '    - |'
+      - '      hostnamectl set-hostname {{ type }}-{{ targets[id]['uuid'] }}'
+      - '      echo {{ type }}-{{ targets[id]['uuid'] }} > /etc/hostname'
+      - "      sed -i 's/ubuntu-server/{{ type }}-{{ targets[id]['uuid'] }}/g' /etc/hosts"
     - require:
       - assignments_dir_{{ id }}
   {% endfor %}

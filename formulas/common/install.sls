@@ -72,10 +72,15 @@ common_install:
     - reload_modules: True
 
 {% if grains['virtual'] == "physical" %}
-# temporary patch for pyopenssl https://stackoverflow.com/questions/73830524/attributeerror-module-lib-has-no-attribute-x509-v-flag-cb-issuer-check that exists on storage nodes
-storage_pip_patch:
+## temporary patch for pyopenssl that exists on physical nodes
+## https://stackoverflow.com/questions/73830524/attributeerror-module-lib-has-no-attribute-x509-v-flag-cb-issuer-check
+OpenSSL_dir_remove:
   cmd.run:
     - name: rm -rf /usr/lib/python3/dist-packages/OpenSSL
+
+pyOpenSSL_dir_remove:
+  cmd.run:
+    - name: rm -rf /usr/lib/python3/dist-packages/pyOpenSSL-21.0.0.egg-info
 
 pyghmi_pip:
   pip.installed:
@@ -86,7 +91,8 @@ pyghmi_pip:
       - pyghmi
     - require:
       - pkg: common_install
-      - cmd: storage_pip_patch
+      - cmd: OpenSSL_dir_remove
+      - cmd: pyOpenSSL_dir_remove
   pkg.installed:
     - pkgs:
       - ipmitool
