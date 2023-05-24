@@ -131,7 +131,7 @@ tftp_conf:
   file.managed:
     - makedirs: True
     - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
-    - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/20230523/SHA256SUMS
+    - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
 
 kernel_extract:
   cmd.script:
