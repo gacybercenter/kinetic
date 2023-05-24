@@ -51,6 +51,8 @@ conf-files:
         - source: salt://formulas/pxe/files/wsgi.conf
       - /etc/apache2/sites-available/tftp.conf:
         - source: salt://formulas/pxe/files/tftp.conf
+      - /etc/apache2/conf-available/tftp.conf:
+        - source: salt://formulas/pxe/files/tftp.conf
       - /etc/apache2/apache2.conf:
         - source: salt://formulas/pxe/files/apache2.conf
       - /var/www/html/index.py:
@@ -129,7 +131,7 @@ tftp_conf:
   file.managed:
     - makedirs: True
     - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
-    - source_hash: d26bfb7aeec19ce1cc2330e0620568b4516a082a799ad0ec8898048be8943c79
+    - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/20230523/SHA256SUMS
 
 kernel_extract:
   cmd.script:
