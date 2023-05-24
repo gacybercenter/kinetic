@@ -15,6 +15,7 @@
 #!/usr/bin/env python
 
 from html import escape
+from os import path
 from urllib.parse import parse_qs
 
 body = """\
@@ -45,8 +46,13 @@ def application (environ, start_response):
     d = parse_qs(environ['QUERY_STRING'])
     uuid = d.get('uuid', [''])[0]
     uuid = escape(uuid)
-    uuid = f'{endian(uuid[0:8])}-{endian(uuid[9:13])}-{endian(uuid[14:18])}-{uuid[19:]}'.upper()
-    host_data = open("/var/www/html/assignments/"+uuid.upper(), "r")
+
+    if path.exists(f'/var/www/html/assignments/{uuid.upper()}'):
+        uuid = uuid.upper()
+    else:
+        uuid = f'{endian(uuid[0:8])}-{endian(uuid[9:13])}-{endian(uuid[14:18])}-{uuid[19:]}'.upper()
+
+    host_data = open(f'/var/www/html/assignments/{uuid}', "r")
     host_type = host_data.readline().strip()
     hostname_assignment = host_data.readline().strip()
     os_assignment = host_data.readline().strip()
