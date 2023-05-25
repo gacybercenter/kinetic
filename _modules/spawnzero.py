@@ -30,5 +30,5 @@ def check(type):
         else:
             ret = False
         return ret
-    except:
-        print("error checking spawnzero status")
+    except Exception as e:
+        print(f'Exception: {e}')
