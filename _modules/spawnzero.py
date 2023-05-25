@@ -23,8 +23,12 @@ def check(type):
     has completed and populated the mine
     """
     status = __salt__['mine.get'](tgt='G@role:'+type+' and G@spawning:0',tgt_type='compound',fun='spawnzero_complete')
-    if next(iter(status.values()))['spawnzero_complete'] == True:
-        ret = True
-    else:
-        ret = False
-    return ret
+    print(f'status: {status}')
+    try:
+        if next(iter(status.values()))['spawnzero_complete'] == True:
+            ret = True
+        else:
+            ret = False
+        return ret
+    except:
+        print("error checking spawnzero status")
