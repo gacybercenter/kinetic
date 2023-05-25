@@ -31,6 +31,7 @@ spawnzero_complete:
 check_spawnzero_status:
   module.run:
     - spawnzero.check:
+      - check_spawnzero_status
       - {{ type }}
     - retry:
         attempts: 10
