@@ -30,8 +30,6 @@ def check(name, type):
         if next(iter(status.values())) == True:
             ret["result"] = True
             ret["comment"] = "Spawnzero complete"
-        
-        print(ret)
         return ret
     except Exception as e:
         print(f'Exception: {e}')
