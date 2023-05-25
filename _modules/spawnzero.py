@@ -17,18 +17,21 @@ __virtualname__ = 'spawnzero'
 def __virtual__():
     return __virtualname__
 
-def check(type):
+def check(name, type):
     """
-    Check to see if spawn zero for a given type
-    has completed and populated the mine
+    Check if spawnzero is complete by targeting spawning:0 of the specified role type,
+    this pulls directly from mine data
     """
-    status = __salt__['mine.get'](tgt='G@role:'+type+' and G@spawning:0',tgt_type='compound',fun='spawnzero_complete')
-    print(f'status: {status}')
+
+    ret = {"name": name, "result": False, "changes": {}, "comment": ""}
     try:
-        if next(iter(status.values()))['spawnzero_complete'] == True:
-            ret = True
-        else:
-            ret = False
+        status = __salt__['mine.get'](tgt='G@role:'+type+' and G@spawning:0',tgt_type='compound',fun='spawnzero_complete')
+
+        if next(iter(status.values())) == True:
+            ret["result"] = True
+            ret["comment"] = "Spawnzero complete"
+        
+        print(ret)
         return ret
     except Exception as e:
         print(f'Exception: {e}')
