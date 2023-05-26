@@ -91,8 +91,8 @@ pyghmi_pip:
       - pyghmi
     - require:
       - pkg: common_install
-      - cmd: OpenSSL_dir_remove
-      - cmd: pyOpenSSL_dir_remove
+      - OpenSSL_dir_remove
+      - pyOpenSSL_dir_remove
   pkg.installed:
     - pkgs:
       - ipmitool
