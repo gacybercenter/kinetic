@@ -31,7 +31,7 @@ guacamole_up:
     - require:
       - guacamole_pull
     - unless:
-      - docker exec -it guacamole whoami | grep -q guacamole
+      - docker exec guacamole whoami | grep -q guacamole
 
 ROOT_path:
   cmd.run:
