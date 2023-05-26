@@ -35,7 +35,7 @@ designate-manage database sync:
 ### must perform cmd.run to restart as a fix
 
 designate-central:
-  Service.running:
+  service.running:
     - enable: True
     - reload: True
     - watch:
@@ -48,7 +48,7 @@ designate-manage pool update:
     - runas: designate
     - require:
       - file: /etc/designate/pools.yaml
-      - designate-central
+      - service: designate-central
     - onchanges:
       - file: /etc/designate/pools.yaml
 
