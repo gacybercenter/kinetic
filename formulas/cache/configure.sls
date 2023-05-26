@@ -95,8 +95,8 @@ apache2_service:
 systemd-resolved_servie:
   service.dead:
     - name: systemd-resolved
-    - watch:
-      - 'systemctl status systemd-resolved.service | grep -q "Active: active (running)"'
+    - unless:
+      - 'systemctl status systemd-resolved.service | grep -q "Active: inactive (dead)"'
 
 /run/systemd/resolve/resolv.conf:
   file.managed:
