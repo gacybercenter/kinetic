@@ -33,7 +33,7 @@ def check(name, type, value, **kwargs):
     status = __salt__['mine.get'](tgt='G@role:'+type+' and G@spawning:0',tgt_type='compound',fun='spawnzero_complete')
     current = next(iter(status.values()))
 
-    if test:
+    if kwargs["test"]:
         if current == expected:
             ret["comment"] = "Spawnzero Check would be complete"
             ret["result"] = None
