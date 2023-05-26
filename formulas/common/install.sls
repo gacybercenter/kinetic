@@ -75,12 +75,12 @@ common_install:
 ## temporary patch for pyopenssl that exists on physical nodes
 ## https://stackoverflow.com/questions/73830524/attributeerror-module-lib-has-no-attribute-x509-v-flag-cb-issuer-check
 OpenSSL_dir_remove:
-  cmd.run:
-    - name: rm -rf /usr/lib/python3/dist-packages/OpenSSL
+  file.absent:
+    - name: /usr/lib/python3/dist-packages/OpenSSL
 
 pyOpenSSL_dir_remove:
-  cmd.run:
-    - name: rm -rf /usr/lib/python3/dist-packages/pyOpenSSL-21.0.0.egg-info
+  file.absent:
+    - name: /usr/lib/python3/dist-packages/pyOpenSSL-21.0.0.egg-info
 
 pyghmi_pip:
   pip.installed:
