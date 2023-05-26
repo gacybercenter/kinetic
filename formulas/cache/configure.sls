@@ -92,15 +92,10 @@ apache2_service:
     - name: apache2
     - enable: false
 
-systemd_resolved_disable:
-  service.disabled:
-    - name: systemd-resolved
-
-systemd_resolved_stop:
+systemd-resolved:
   service.dead:
-    - name: systemd-resolved
-    - require:
-      - service: systemd_resolved_disable
+    - watch:
+      - 'systemctl status systemd-resolved.service | grep -q "Active: active (running)"'
 
 /run/systemd/resolve/resolv.conf:
   file.managed:
@@ -108,7 +103,7 @@ systemd_resolved_stop:
     - contents: |
         nameserver {{ pillar['networking']['addresses']['float_dns'] }}
     - require:
-      - service: systemd_resolved_stop
+      - service: systemd-resolved
 
 lancachenet_monolith:
   docker_container.running:
@@ -144,7 +139,7 @@ lancachenet_dns:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ salt['mine.get']('role:cache', 'network.ip_addrs', 'ens3').items() }}
     - require:
-      - service: systemd_resolved_service
+      - service: systemd-resolved
       - docker_container: lancachenet_monolith
 
 {% elif grains['os_family'] == 'RedHat' %}
