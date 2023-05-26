@@ -96,8 +96,9 @@ systemd_resolved_disable:
   service.disabled:
     - name: systemd-resolved
 
-systemd-resolved:
+systemd_resolved_stop:
   service.dead:
+    - name: systemd-resolved
     - require:
       - service: systemd_resolved_disable
 
@@ -107,7 +108,7 @@ systemd-resolved:
     - contents: |
         nameserver {{ pillar['networking']['addresses']['float_dns'] }}
     - require:
-      - service: systemd-resolved
+      - service: systemd_resolved_stop
 
 lancachenet_monolith:
   docker_container.running:
