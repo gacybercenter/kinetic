@@ -47,10 +47,6 @@ def check(name, type, value, **kwargs):
         return ret
 
     if current == expected:
-        ret["changes"] = {
-            "old": current,
-            "new": expected,
-        }
         ret["result"] = True
         ret["comment"] = "Spawnzero Check Successful"
         return ret
