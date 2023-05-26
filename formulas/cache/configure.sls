@@ -92,7 +92,7 @@ apache2_service:
     - name: apache2
     - enable: false
 
-systemd-resolved_servie:
+systemd-resolved_service:
   service.dead:
     - name: systemd-resolved
     - unless:
@@ -104,7 +104,7 @@ systemd-resolved_servie:
     - contents: |
         nameserver {{ pillar['networking']['addresses']['float_dns'] }}
     - require:
-      - service: systemd-resolved
+      - service: systemd-resolved_service
 
 lancachenet_monolith:
   docker_container.running:
@@ -140,7 +140,7 @@ lancachenet_dns:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ salt['mine.get']('role:cache', 'network.ip_addrs', 'ens3').items() }}
     - require:
-      - service: systemd-resolved
+      - service: systemd-resolved_service
       - docker_container: lancachenet_monolith
 
 {% elif grains['os_family'] == 'RedHat' %}
