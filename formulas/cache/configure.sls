@@ -92,10 +92,14 @@ apache2_service:
     - name: apache2
     - enable: false
 
-systemd_resolved_service:
-  service.dead:
+systemd_resolved_disable:
+  service.disabled:
     - name: systemd-resolved
-    - enable: false
+
+systemd-resolved:
+  service.dead:
+    - require:
+      - service: systemd_resolved_disable
 
 /run/systemd/resolve/resolv.conf:
   file.managed:
@@ -103,7 +107,7 @@ systemd_resolved_service:
     - contents: |
         nameserver {{ pillar['networking']['addresses']['float_dns'] }}
     - require:
-      - service: systemd_resolved_service
+      - service: systemd-resolved
 
 lancachenet_monolith:
   docker_container.running:
