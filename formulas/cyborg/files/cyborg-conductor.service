@@ -1,0 +1,11 @@
+[Unit]
+Description = OpenStack Acceleration Conductor Service
+After = network-online.target
+Wants = network-online.target
+
+[Service]
+ExecStart = /usr/local/bin/cyborg-conductor
+User = cyborg
+
+[Install]
+WantedBy = multi-user.target

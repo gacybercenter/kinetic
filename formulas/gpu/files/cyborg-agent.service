@@ -1,0 +1,11 @@
+[Unit]
+Description = OpenStack Acceleration Agent Service
+After = network-online.target
+Wants = network-online.target
+
+[Service]
+ExecStart = /usr/local/bin/cyborg-agent
+User = cyborg
+
+[Install]
+WantedBy = multi-user.target
