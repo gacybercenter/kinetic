@@ -25,6 +25,11 @@ spawnzero_complete:
           mine_function: grains.item
     - onchanges:
       - grains: spawnzero_complete
+
+mine.update:
+  module.run:
+    - require:
+      - spawnzero_complete
 {% endmacro %}
 
 {% macro check_spawnzero_status(type) %}
