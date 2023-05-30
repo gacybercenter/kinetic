@@ -162,3 +162,9 @@ base:
     - integrated_services
   'jproxy*':
     - junos
+  'cyborg*':
+    - cyborg
+    - openstack
+    - rabbitmq
+    - placement
+    - nova
