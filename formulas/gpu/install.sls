@@ -17,22 +17,9 @@ include:
 
 ## Update hash if any upgrades to cuda keyring
 gpu-keyring:
-  file.managed:
-    - name: /root/cuda-keyring_1.0-1_all.deb
-    - source: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
-    - source_hash: 0c4a40cc2caa6a847acbe6d4825a7cf625b7044776243101c0f1164c17b925b3
-    - mode: "0755"
-
-## Only run the installer if the nvidia-installer-disable-nouveau.conf file is not found
-## this should only allow the installer to run initially
-install-keyring:
-  cmd.run:
-    - name: ./cuda-keyring_1.0-1_all.deb
-    - cwd: /root
-    - creates:
-      - /usr/lib/modprobe.d/nvidia-installer-disable-nouveau.conf
-    - require:
-      - file: gpu-keyring
+  pkg.installed:
+    - sources:
+      - cuda-keyring: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
 
 {% if pillar['gpu']['backend'] == "cyborg" %}
 cyborg_packages:
@@ -49,7 +36,7 @@ cyborg_packages:
       - libvulkan1
       - cuda
     - require:
-      - cmd: install-keyring
+      - pkg: gpu-keyring
 
 python3-openssl:
   pkg.installed:
