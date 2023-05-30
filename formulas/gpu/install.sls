@@ -39,10 +39,6 @@ cyborg_packages:
     - require:
       - pkg: gpu-keyring
 
-python3-openssl:
-  pkg.installed:
-    - version: 19.0.0-1build1
-
 pymysql_sa:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
