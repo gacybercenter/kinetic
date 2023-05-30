@@ -35,6 +35,7 @@ cyborg_packages:
       - xorg-dev
       - libvulkan1
       - cuda
+    - refresh: True
     - require:
       - pkg: gpu-keyring
 
