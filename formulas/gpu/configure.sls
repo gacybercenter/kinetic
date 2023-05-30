@@ -39,15 +39,6 @@ gpu-conf-files:
     - require:
       - sls: /formulas/gpu/install
 
-nvidia_vgpud_service:
-  service.enabled:
-    - name: nvidia-vgpud.service
-
-nvidia_vgpu_mgr:
-  service.running:
-    - name: nvidia-vgpu-mgr.service
-    - enable: true
-
 cyborg_agent_service:
   service.running:
     - name: cyborg-agent
