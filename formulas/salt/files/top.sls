@@ -64,6 +64,7 @@ base:
     - sahara
     - manila
     - guacamole
+    - cyborg
     - integrated_services
   'rabbitmq*':
     - rabbitmq
@@ -84,6 +85,7 @@ base:
     - designate
     - swift
     - zun
+    - cyborg
     - openstack
   'barbican*':
     - barbican
