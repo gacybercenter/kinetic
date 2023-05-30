@@ -15,11 +15,12 @@
 include:
   - /formulas/compute/install
 
+## Update hash if any upgrades to cuda keyring
 gpu-keyring:
   file.managed:
     - name: /root/cuda-keyring_1.0-1_all.deb
     - source: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
-    - source_hash: https://developer.download.nvidia.com/compute/cuda/12.1.1/docs/sidebar/md5sum.txt
+    - source_hash: 0c4a40cc2caa6a847acbe6d4825a7cf625b7044776243101c0f1164c17b925b3
     - mode: "0755"
 
 ## Only run the installer if the nvidia-installer-disable-nouveau.conf file is not found
