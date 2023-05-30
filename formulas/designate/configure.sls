@@ -34,9 +34,12 @@ designate-manage database sync:
 ### salt state service.running doesn't seem to restart the designate_central_service
 ### must perform cmd.run to restart as a fix
 
-restart_designate_central_service:
-  cmd.run:
-    - name: systemctl restart designate-central.service
+designate-central:
+  service.running:
+    - enable: True
+    - reload: True
+    - watch:
+      - file: conf-files
     - require:
       - cmd: designate-manage database sync
 
@@ -45,7 +48,7 @@ designate-manage pool update:
     - runas: designate
     - require:
       - file: /etc/designate/pools.yaml
-      - cmd: restart_designate_central_service
+      - service: designate-central
     - onchanges:
       - file: /etc/designate/pools.yaml
 
