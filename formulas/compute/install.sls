@@ -31,7 +31,7 @@ compute_packages:
       - python3-rbd
       - python3-rados
       - python3-etcd3gw
-      - qemu-system
+      - qemu-system-x86
       - nvme-cli
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
       - neutron-linuxbridge-agent

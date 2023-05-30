@@ -101,3 +101,12 @@ rsyslog:
     - user: root
     - group: root
     - mode: "0644"
+
+{% if role == 'gpu' %}
+/etc/modprobe.d/blacklist-nouveau.conf:
+  file.managed:
+    - source: salt://formulas/common/nouveau/blacklist-nouveau.conf
+    - user: root
+    - group: root
+    - mode: "0644"
+{% endif %}

@@ -28,6 +28,14 @@ base:
     - rabbitmq
     - placement
     - swift
+  'gpu*':
+    - ceph
+    - nova
+    - neutron
+    - rabbitmq
+    - placement
+    - swift
+    - cyborg
   'storage*':
     - ceph
     - swift

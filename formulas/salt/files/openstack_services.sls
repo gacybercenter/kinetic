@@ -347,3 +347,24 @@ openstack_services:
               protocol: "https://"
               port: ":8786"
               path: /v2/%(project_id)s
+  cyborg:
+    configuration:
+      dbs:
+        - cyborg
+      services:
+        cyborg:
+          type: accelerator
+          description: OpenStack Acceleration Service
+          endpoints:
+            internal:
+              protocol: "https://"
+              port: ":6666"
+              path: /v2/
+            admin:
+              protocol: "https://"
+              port: ":6666"
+              path: /v2/
+            public:
+              protocol: "https://"
+              port: ":6666"
+              path: /v2/

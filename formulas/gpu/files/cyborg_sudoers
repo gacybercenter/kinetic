@@ -1,0 +1,5 @@
+Defaults:cyborg !requiretty
+Defaults use_pty
+Defaults logfile="/var/log/sudo.log"
+
+cyborg ALL = (root) NOPASSWD: /usr/bin/privsep-helper
