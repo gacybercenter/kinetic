@@ -31,6 +31,10 @@ spawnzero_update:
     - mine.update:
     - require:
       - spawnzero_complete
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 {% endmacro %}
 
 {% macro check_spawnzero_status(type) %}
