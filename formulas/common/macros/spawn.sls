@@ -26,8 +26,9 @@ spawnzero_complete:
     - onchanges:
       - grains: spawnzero_complete
 
-mine.update:
+spawnzero_update:
   module.run:
+    - mine.update:
     - require:
       - spawnzero_complete
 {% endmacro %}
