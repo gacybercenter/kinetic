@@ -3,4 +3,5 @@
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
 /bin/sh /tmp/bootstrap_salt.sh -i {{ hostname }} -x python3 -A dummy-record {{ salt_version }}
 echo master: {{ master_record }} > /etc/salt/minion.d/99-master-address.conf
+printf 'use_superseded:\n  - module.run\n' > /etc/salt/minion.d/98-supersede.conf
 reboot
