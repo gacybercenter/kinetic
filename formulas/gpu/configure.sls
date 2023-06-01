@@ -1,4 +1,4 @@
-include:
+#include:
 #  - /formulas/compute/configure
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
