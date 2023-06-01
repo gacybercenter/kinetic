@@ -1,5 +1,5 @@
 include:
-  - /formulas/compute/configure
+#  - /formulas/compute/configure
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
