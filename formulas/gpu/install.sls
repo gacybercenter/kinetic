@@ -13,15 +13,18 @@
 ## limitations under the License.
 
 include:
-  - /formulas/common/base
-  - /formulas/common/networking
-  - /formulas/common/install
-#  - /formulas/compute/install
+  - /formulas/compute/install
 
 gpu-keyring:
   pkg.installed:
     - sources:
-      - cuda-keyring: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb
+      - cuda-keyring: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+
+cuda:
+  pkg.installed:
+    - refresh: True
+    - require:
+      - pkg: gpu-keyring
 
 {% if pillar['gpu']['backend'] == "cyborg" %}
 cyborg_packages:
@@ -36,7 +39,6 @@ cyborg_packages:
       - python3-etcd3gw
       - xorg-dev
       - libvulkan1
-#      - cuda
     - refresh: True
     - require:
       - pkg: gpu-keyring
