@@ -150,7 +150,7 @@ ubuntu2204_download:
 extract_iso:
   archive.extracted:
     - name: /srv/tftp/jammy/ubuntu2204.iso
-    - dest: /srv/tftp/jammy
+    - source: /srv/tftp/jammy/ubuntu2204.iso
     - archive_format: iso
     - require:
       - ubuntu2204_download
