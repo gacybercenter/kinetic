@@ -21,6 +21,15 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+/etc/openstack/clouds.yml:
+  file.managed:
+    - source: salt://formulas/common/openstack/files/clouds.yml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        password: {{ pillar['openstack']['admin_password'] }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+
 neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head:
   cmd.run:
     - runas: neutron
@@ -32,27 +41,30 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
         key: build_phase
         value: configure
 
-mk_public_network:
-  cmd.script:
-    - source: salt://formulas/neutron/files/mkpublic.sh
-    - template: jinja
-    - defaults:
-        admin_password: {{ pillar['openstack']['admin_password'] }}
-        keystone_internal_endpoint: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-        start: {{ pillar['networking']['addresses']['float_start'] }}
-        end: {{ pillar['networking']['addresses']['float_end'] }}
-        dns: {{ pillar['networking']['addresses']['float_dns'] }}
-        gateway: {{ pillar['networking']['addresses']['float_gateway'] }}
-        cidr: {{ pillar['networking']['subnets']['public'] }}
+{% set start = pillar['networking']['addresses']['float_start'] %}
+{% set end = pillar['networking']['addresses']['float_end'] %}
+{% set dns = pillar['networking']['addresses']['float_dns'] %}
+{% set gateway = pillar['networking']['addresses']['float_gateway'] %}
+{% set cidr = pillar['networking']['subnets']['public'] %}
+
+public_network:
+  cmd.run:
+    - name: openstack network create --external --share --provider-physical-network provider --provider-network-type flat public
     - require:
       - service: neutron_server_service
-    - retry:
-        attempts: 3
-        interval: 10
+      - file: /etc/openstack/clouds.yml
     - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
+      - openstack network list | awk '{print $4}' | grep -q public
+
+public_subnet:
+  cmd.run:
+    - name: openstack subnet create --network public --allocation-pool start={{ start }},end={{ end }} --dns-nameserver {{ dns }} --gateway {{ gateway }} --subnet-range {{ cidr }} public_subnet
+    - require:
+      - service: neutron_server_service
+      - file: /etc/openstack/clouds.yml
+      - cmd: public_network
+    - unless:
+      - openstack subnet list | awk '{print $4}' | grep -q public_subnet
 
 {{ spawn.spawnzero_complete() }}
 
