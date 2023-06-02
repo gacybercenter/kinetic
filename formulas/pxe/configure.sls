@@ -142,6 +142,7 @@ ubuntu2204_download:
 
 /srv/tftp/jammy/ubuntu2204:
   file.absent:
+    - require:
       - extract_iso
       - file: copy_vmlinuz
       - file: copy_initrd
