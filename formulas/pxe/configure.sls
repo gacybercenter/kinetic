@@ -139,17 +139,38 @@ tftp_conf:
 /srv/tftp/jammy/initrd:
   file.absent
 
-kernel_extract:
-  cmd.script:
-    - source: salt://formulas/pxe/files/kernel-extract.sh
-    - cwd: /srv/tftp/jammy
-    - creates:
-      - /srv/tftp/jammy/vmlinuz
-      - /srv/tftp/jammy/initrd
+mount_iso:
+  mount.mounted:
+    - name: /srv/tftp/jammy/ubuntu2204.iso
+    - device: /mnt
+    - fstype: iso9660
+    - mkmnt: True
     - require:
       - file: /srv/tftp/jammy/ubuntu2204.iso
       - file: /srv/tftp/jammy/vmlinuz
       - file: /srv/tftp/jammy/initrd
+
+copy_vmlinuz:
+  file.copy:
+    - name: /mnt/casper/vmlinuz
+    - dest: /srv/tftp/jammy/vmlinuz
+    - require:
+      - mount: mount_iso
+
+copy_initrd:
+  file.copy:
+    - name: /mnt/casper/initrd
+    - dest: /srv/tftp/jammy/initrd
+    - require:
+      - mount: mount_iso
+
+umount_iso:
+  mount.unmounted:
+    - name: /mnt
+    - require:
+      - mount: mount_iso
+      - file: copy_vmlinuz
+      - file: copy_initrd
 
 apache2_service:
   service.running:

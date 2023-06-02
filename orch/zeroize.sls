@@ -144,7 +144,7 @@ user_data_{{ id }}:
       - '    runcmd:'
       - '      - curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
       - '      - /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
-      - "      - printf 'use_superseded:\n  - module.run\n' > /etc/salt/minion.d/98-supersede.conf'"
+      - '      - printf "use_superseded:\n  - module.run\n" > /etc/salt/minion.d/98-supersede.conf'
       - '  late-commands:'
       - '    - |'
       - '      hostnamectl set-hostname {{ type }}-{{ targets[id]['uuid'] }}'
