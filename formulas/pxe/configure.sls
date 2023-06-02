@@ -127,9 +127,8 @@ tftp_conf:
   apache_conf.enabled:
     - name: tftp
 
-ubuntu2204_download:
+/srv/tftp/jammy/ubuntu2204.iso:
   file.managed:
-    - name: /srv/tftp/jammy/ubuntu2204.iso
     - makedirs: True
     - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
     - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
@@ -140,35 +139,17 @@ ubuntu2204_download:
 /srv/tftp/jammy/initrd:
   file.absent
 
-/srv/tftp/jammy/ubuntu2204:
-  file.absent:
+kernel_extract:
+  cmd.script:
+    - source: salt://formulas/pxe/files/kernel-extract.sh
+    - cwd: /srv/tftp/jammy
+    - creates:
+      - /srv/tftp/jammy/vmlinuz
+      - /srv/tftp/jammy/initrd
     - require:
-      - extract_iso
-      - file: copy_vmlinuz
-      - file: copy_initrd
-
-extract_iso:
-  archive.extracted:
-    - name: /srv/tftp/jammy
-    - source: /srv/tftp/jammy/ubuntu2204.iso
-    - require:
-      - ubuntu2204_download
+      - file: /srv/tftp/jammy/ubuntu2204.iso
       - file: /srv/tftp/jammy/vmlinuz
       - file: /srv/tftp/jammy/initrd
-
-copy_vmlinuz:
-  file.copy:
-    - name: /srv/tftp/jammy/ubuntu2204/casper/vmlinuz
-    - dest: /srv/tftp/jammy/vmlinuz
-    - require:
-      - extract_iso
-
-copy_initrd:
-  file.copy:
-    - name: /srv/tftp/jammy/ubuntu2204/casper/initrd
-    - dest: /srv/tftp/jammy/initrd
-    - require:
-      - extract_iso
 
 apache2_service:
   service.running:
