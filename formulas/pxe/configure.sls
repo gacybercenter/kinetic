@@ -127,8 +127,9 @@ tftp_conf:
   apache_conf.enabled:
     - name: tftp
 
-/srv/tftp/jammy/ubuntu2204.iso:
+ubuntu2204_download:
   file.managed:
+    - name: /srv/tftp/jammy/ubuntu2204.iso
     - makedirs: True
     - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
     - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
@@ -139,38 +140,35 @@ tftp_conf:
 /srv/tftp/jammy/initrd:
   file.absent
 
-mount_iso:
-  mount.mounted:
+/srv/tftp/jammy/ubuntu2204:
+  file.absent:
+      - extract_iso
+      - file: copy_vmlinuz
+      - file: copy_initrd
+
+extract_iso:
+  archive.extracted:
     - name: /srv/tftp/jammy/ubuntu2204.iso
-    - device: /mnt
-    - fstype: iso9660
-    - mkmnt: True
+    - dest: /srv/tftp/jammy
+    - archive_format: iso
     - require:
-      - file: /srv/tftp/jammy/ubuntu2204.iso
+      - ubuntu2204_download
       - file: /srv/tftp/jammy/vmlinuz
       - file: /srv/tftp/jammy/initrd
 
 copy_vmlinuz:
   file.copy:
-    - name: /mnt/casper/vmlinuz
+    - name: /srv/tftp/jammy/ubuntu2204/casper/vmlinuz
     - dest: /srv/tftp/jammy/vmlinuz
     - require:
-      - mount: mount_iso
+      - extract_iso
 
 copy_initrd:
   file.copy:
-    - name: /mnt/casper/initrd
+    - name: /srv/tftp/jammy/ubuntu2204/casper/initrd
     - dest: /srv/tftp/jammy/initrd
     - require:
-      - mount: mount_iso
-
-umount_iso:
-  mount.unmounted:
-    - name: /mnt
-    - require:
-      - mount: mount_iso
-      - file: copy_vmlinuz
-      - file: copy_initrd
+      - extract_iso
 
 apache2_service:
   service.running:
