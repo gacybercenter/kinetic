@@ -59,7 +59,7 @@ def application (environ, start_response):
 
     if os_assignment == "rocky9":
         response_body = body % {
-            'kernel': f'kernel http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz inst.repo=http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/ inst.stage2=http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/ inst.ks=http://{{ pxe_record }}/configs/{host_type} lang=en_US keymap=us ip=::::{hostname_assignment}:{interface}:dhcp initrd=initrd.img',
+            'kernel': f'kernel http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz inst.repo=http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/ inst.stage2=http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/kickstart/images/install.img inst.ks=http://{{ pxe_record }}/configs/{host_type} lang=en_US keymap=us ip=::::{hostname_assignment}:{interface}:dhcp initrd=initrd.img',
             'initrd': "initrd http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/kickstart/images/pxeboot/initrd.img"
             }
     elif os_assignment == "ubuntu1804":
