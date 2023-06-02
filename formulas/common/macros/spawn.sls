@@ -44,7 +44,7 @@ check_spawnzero_status:
     - type: {{ type }}
     - value: True
     - retry:
-        attempts: 10
+        attempts: 20
         interval: 30
     - unless:
       - fun: grains.equals
