@@ -134,10 +134,10 @@ tftp_conf:
     - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
 
 /srv/tftp/jammy/vmlinuz:
-  file.absent:
+  file.absent
 
 /srv/tftp/jammy/initrd:
-  file.absent:
+  file.absent
 
 kernel_extract:
   cmd.script:
