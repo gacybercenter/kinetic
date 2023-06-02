@@ -52,10 +52,10 @@ magnum_latest:
 
 copy_magnum_panels:
   module.run:
-    - name: file.copy
-    - src: /usr/share/openstack-dashboard/magnum-ui/magnum_ui/enabled/
-    - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
-    - recurse: True
+    - file.copy:
+      - src: /usr/share/openstack-dashboard/magnum-ui/magnum_ui/enabled/
+      - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+      - recurse: True
     - unless:
       - test -f /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/_1370_project_container_infra_panel_group.py
 
@@ -110,10 +110,10 @@ zun_latest:
 
 copy_zun_panels:
   module.run:
-    - name: file.copy
-    - src: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/
-    - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
-    - recurse: True
+    - file.copy:
+      - src: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/
+      - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+      - recurse: True
     - unless:
       - test -f /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/_0330_cloud_shell.py
 
