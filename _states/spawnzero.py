@@ -30,11 +30,11 @@ def check(name, type, value, **kwargs):
     if "test" not in kwargs:
         kwargs["test"] = __opts__.get("test", False)
 
-    status = __salt__['mine.get'](
-        tgt='G@role:'+type+' and G@spawning:0',
-        tgt_type='compound',
-        fun='spawnzero_complete')
+    status = __salt__['mine.get'](tgt='G@role:'+type+' and G@spawning:0',tgt_type='compound',fun='spawnzero_complete')
     current = next(iter(status.values()))
+
+    print(f'current spawnzero check value: {expected}')
+    print(f'expected spawnzero check value: {expected}')
 
     if kwargs["test"]:
         if current == expected:
