@@ -105,6 +105,7 @@ base:
     - rabbitmq
     - placement
     - neutron
+    - openstack
   'placement*':
     - placement
     - rabbitmq
