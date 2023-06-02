@@ -41,6 +41,7 @@ init_keystone:
         --bootstrap-region-id RegionOne
     - require:
       - file: /etc/keystone/keystone.conf
+      - file: /etc/openstack/clouds.yml
     - unless:
       - fun: grains.equals
         key: build_phase
@@ -53,10 +54,14 @@ service_project_init:
     - name: service
     - domain: default
     - description: Service Project
+    - require:
+      - file: /etc/openstack/clouds.yml
 
 user_role_init:
   keystone_role.present:
     - name: user
+    - require:
+      - file: /etc/openstack/clouds.yml
 
   {% for project in pillar['openstack_services'] %}
     {% if salt['pillar.get']('hosts:'+project+':enabled', False) == True %}
@@ -65,6 +70,8 @@ user_role_init:
     - name: {{ project }}
     - domain: default
     - password: {{ pillar [project][project+'_service_password'] }}
+    - require:
+      - file: /etc/openstack/clouds.yml
 
 {{ project }}_user_role_grant:
   keystone_role_grant.present:
@@ -73,6 +80,7 @@ user_role_init:
     - user: {{ project }}
     - require:
       - keystone_user: {{ project }}_user_init
+      - file: /etc/openstack/clouds.yml
 
       {% for service, attribs in pillar['openstack_services'][project]['configuration']['services'].items() %}
 {{ service }}_service_create:
@@ -80,6 +88,8 @@ user_role_init:
     - name: {{ service }}
     - type: {{ attribs['type'] }}
     - description: {{ attribs['description'] }}
+    - require:
+      - file: /etc/openstack/clouds.yml
 
         {% for endpoint, params in attribs['endpoints'].items() %}
 
@@ -91,6 +101,7 @@ user_role_init:
     - service_name: {{ service }}
     - require:
       - keystone_service: {{ service }}_service_create
+      - file: /etc/openstack/clouds.yml
         {% endfor %}
       {% endfor %}
     {% endif %}
@@ -102,6 +113,8 @@ create_ldap_domain:
   keystone_domain.present:
     - name: {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
     - description: "LDAP Domain"
+    - require:
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 
 ## barbican-specific changes
@@ -109,12 +122,16 @@ create_ldap_domain:
 creator_role_init:
   keystone_role.present:
     - name: creator
+    - require:
+      - file: /etc/openstack/clouds.yml
 
 creator_role_assignment:
   keystone_role_grant.present:
     - name: creator
     - project: service
     - user: barbican
+    - require:
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 
   {% if salt['pillar.get']('hosts:heat:enabled', True) == True %}
@@ -123,12 +140,16 @@ create_heat_domain:
   keystone_domain.present:
     - name: heat
     - description: "Heat stack projects and users"
+    - require:
+      - file: /etc/openstack/clouds.yml
 
 create_heat_admin_user:
   keystone_user.present:
     - name: heat_domain_admin
     - domain: heat
     - password: {{ pillar ['heat']['heat_service_password'] }}
+    - require:
+      - file: /etc/openstack/clouds.yml
 
 heat_domain_admin_role_assignment:
   keystone_role_grant.present:
@@ -136,14 +157,20 @@ heat_domain_admin_role_assignment:
     - domain: heat
     - user_domain: heat
     - user: heat_domain_admin
+    - require:
+      - file: /etc/openstack/clouds.yml
 
 heat_stack_owner_role_init:
   keystone_role.present:
     - name: heat_stack_owner
+    - require:
+      - file: /etc/openstack/clouds.yml
 
 heat_stack_user_role_init:
   keystone_role.present:
     - name: heat_stack_user
+    - require:
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 
 ## magnum-specific configurations
@@ -152,12 +179,16 @@ create_magnum_domain:
   keystone_domain.present:
     - name: magnum
     - description: "Owns users and projects created by magnum"
+    - require:
+      - file: /etc/openstack/clouds.yml
 
 create_magnum_admin_user:
   keystone_user.present:
     - name: magnum_domain_admin
     - domain: magnum
     - password: {{ pillar ['magnum']['magnum_service_password'] }}
+    - require:
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 
 ## zun-specific configurations
@@ -167,12 +198,16 @@ kuryr_user_init:
     - name: kuryr
     - domain: default
     - password: {{ pillar ['zun']['kuryr_service_password'] }}
+    - require:
+      - file: /etc/openstack/clouds.yml
 
 kuryr_user_role_grant:
   keystone_role_grant.present:
     - name: admin
     - project: service
     - user: kuryr
+    - require:
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 {% else %}
 
