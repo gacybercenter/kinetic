@@ -242,22 +242,18 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
 force_recovery:
   module.run:
     - file.chattr:
-      - files:
-        - /var/lib/mysql/gvwstate.dat
-      - kwargs:
-          attributes: i
-          operator: add
+      - /var/lib/mysql/gvwstate.dat
+      - attributes: i
+      - operator: add
 
   {% else %}
 
 force_recovery_removal:
   module.run:
     - file.chattr:
-      - files:
-        - /var/lib/mysql/gvwstate.dat
-      - kwargs:
-          attributes: i
-          operator: remove
+      - /var/lib/mysql/gvwstate.dat
+      - attributes: i
+      - operator: remove
     - onlyif:
       - lsattr -l /var/lib/mysql/gvwstate.dat | grep -q Immutable
   {% endif %}
