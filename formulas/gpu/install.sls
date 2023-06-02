@@ -15,16 +15,19 @@
 include:
   - /formulas/compute/install
 
-gpu-keyring:
-  pkg.installed:
-    - sources:
-      - cuda-keyring: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+# gpu-keyring:
+#   pkg.installed:
+#     - sources:
+#       - cuda-keyring: https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo
 
-cuda:
-  pkg.installed:
-    - refresh: True
-    - require:
-      - pkg: gpu-keyring
+# nvidia_pkgs:
+#   pkg.installed:
+#     - pkgs:
+#       - nvidia-driver:latest-dkms
+#       - cuda
+#     - refresh: True
+#     - require:
+#       - pkg: gpu-keyring
 
 {% if pillar['gpu']['backend'] == "cyborg" %}
 cyborg_packages:

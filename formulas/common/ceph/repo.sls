@@ -33,14 +33,14 @@ update_packages_ceph:
 ceph_repo:
   pkgrepo.managed:
     - name: ceph
-    - baseurl: https://download.ceph.com/rpm-quincy/el8/$basearch
+    - baseurl: https://download.ceph.com/rpm-quincy/el9/noarch
     - file: /etc/yum.repos.d/ceph.repo
     - gpgkey: https://download.ceph.com/keys/release.asc
 
 ceph_repo_noarch:
   pkgrepo.managed:
     - name: ceph_noarch
-    - baseurl: https://download.ceph.com/rpm-quincy/el8/noarch
+    - baseurl: https://download.ceph.com/rpm-quincy/el9/noarch
     - file: /etc/yum.repos.d/ceph_noarch.repo
     - gpgkey: https://download.ceph.com/keys/release.asc
 
