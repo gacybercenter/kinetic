@@ -57,14 +57,9 @@ def application (environ, start_response):
     os_assignment = host_data.readline().strip()
     interface = host_data.readline().strip()
 
-    if os_assignment == "rocky8":
+    if os_assignment == "rocky9":
         response_body = body % {
-            'kernel': f'kernel http://download.rockylinux.org/pub/rocky/8.8/BaseOS/x86_64/kickstart/images/pxeboot/initrd.img ks=http://{{ pxe_record }}/configs/{host_type} lang=en_US keymap=us ip=::::{hostname_assignment}:{interface}:dhcp initrd=initrd.img',
-            'initrd': "initrd http://download.rockylinux.org/pub/rocky/8.8/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz"
-            }
-    elif os_assignment == "rocky9":
-        response_body = body % {
-            'kernel': f'kernel http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/configs/{host_type} lang=en_US keymap=us ip=::::{hostname_assignment}:{interface}:dhcp initrd=initrd.img',
+            'kernel': f'kernel http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz inst.repo=http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/ inst.stage2=http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/ inst.ks=http://{{ pxe_record }}/configs/{host_type} lang=en_US keymap=us ip=::::{hostname_assignment}:{interface}:dhcp initrd=initrd.img',
             'initrd': "initrd http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/kickstart/images/pxeboot/initrd.img"
             }
     elif os_assignment == "ubuntu1804":
