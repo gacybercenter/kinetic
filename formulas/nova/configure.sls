@@ -108,7 +108,7 @@ create_{{ flavor }}:
       - service: nova_spiceproxy_service
       - file: /etc/openstack/clouds.yaml
     - unless:
-      - openstack flavor list | awk '{print $4}' | grep -q {{ flavor }}
+      - export OS_CLOUD=kinetic && openstack flavor list | awk '{print $4}' | grep -q {{ flavor }}
 {% endfor %}
 
 {% else %}
