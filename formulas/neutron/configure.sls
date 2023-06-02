@@ -52,7 +52,7 @@ public_network:
     - name: export OS_CLOUD=kinetic && openstack network create --external --share --provider-physical-network provider --provider-network-type flat public
     - require:
       - service: neutron_server_service
-      - file: /etc/openstack/clouds.yml
+      - file: /etc/openstack/clouds.yaml
     - unless:
       - export OS_CLOUD=kinetic && openstack network list | awk '{print $4}' | grep -q public
 
@@ -61,7 +61,7 @@ public_subnet:
     - name: export OS_CLOUD=kinetic && openstack subnet create --network public --allocation-pool start={{ start }},end={{ end }} --dns-nameserver {{ dns }} --gateway {{ gateway }} --subnet-range {{ cidr }} public_subnet
     - require:
       - service: neutron_server_service
-      - file: /etc/openstack/clouds.yml
+      - file: /etc/openstack/clouds.yaml
       - cmd: public_network
     - unless:
       - export OS_CLOUD=kinetic && openstack subnet list | awk '{print $4}' | grep -q public_subnet
