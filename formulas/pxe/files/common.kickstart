@@ -27,7 +27,7 @@ reboot
 timezone {{ zone }} --ntpservers={{ ntp_server }}
 
 # Use network installation
-url --url="http://mirror.centos.org/centos/8/BaseOS/x86_64/os" --proxy={{ proxy }}
+url --url="http://dl.rockylinux.org/pub/rocky/9.1/BaseOS/x86_64/os" --proxy={{ proxy }}
 
 ## Disk
 # System bootloader configuration
