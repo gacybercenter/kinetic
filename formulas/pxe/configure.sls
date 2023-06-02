@@ -133,6 +133,14 @@ tftp_conf:
     - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
     - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
 
+kernel_cleanup:
+  file.absent:
+    - name:
+      - /srv/tftp/jammy/vmlinuz
+      - /srv/tftp/jammy/initrd
+    - require:
+      - cmd: kernel_extract
+
 kernel_extract:
   cmd.script:
     - source: salt://formulas/pxe/files/kernel-extract.sh
