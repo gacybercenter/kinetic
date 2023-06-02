@@ -59,13 +59,13 @@ def application (environ, start_response):
 
     if os_assignment == "rocky8":
         response_body = body % {
-            'kernel': f'kernel http://rockylinux.osuosl.org/8.4/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/configs/{host_type} lang=en_US keymap=us ip=::::{hostname_assignment}:{interface}:dhcp initrd=initrd.img',
-            'initrd': "initrd http://rockylinux.osuosl.org/8.4/BaseOS/x86_64/kickstart/images/pxeboot/initrd.img"
+            'kernel': f'kernel http://download.rockylinux.org/pub/rocky/8.8/BaseOS/x86_64/kickstart/images/pxeboot/initrd.img ks=http://{{ pxe_record }}/configs/{host_type} lang=en_US keymap=us ip=::::{hostname_assignment}:{interface}:dhcp initrd=initrd.img',
+            'initrd': "initrd http://download.rockylinux.org/pub/rocky/8.8/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz"
             }
-    elif os_assignment == "rocky9.1":
+    elif os_assignment == "rocky9":
         response_body = body % {
-            'kernel': f'kernel http://rockylinux.osuosl.org/9.1/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/configs/{host_type} lang=en_US keymap=us ip=::::{hostname_assignment}:{interface}:dhcp initrd=initrd.img',
-            'initrd': "initrd http://rockylinux.osuosl.org/9.1/BaseOS/x86_64/kickstart/images/pxeboot/initrd.img"
+            'kernel': f'kernel http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz ks=http://{{ pxe_record }}/configs/{host_type} lang=en_US keymap=us ip=::::{hostname_assignment}:{interface}:dhcp initrd=initrd.img',
+            'initrd': "initrd http://download.rockylinux.org/pub/rocky/9.2/BaseOS/x86_64/kickstart/images/pxeboot/initrd.img"
             }
     elif os_assignment == "ubuntu1804":
         response_body = body % {
