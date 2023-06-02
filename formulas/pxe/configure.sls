@@ -133,13 +133,11 @@ tftp_conf:
     - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
     - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
 
-kernel_cleanup:
+/srv/tftp/jammy/vmlinuz:
   file.absent:
-    - name:
-      - /srv/tftp/jammy/vmlinuz
-      - /srv/tftp/jammy/initrd
-    - require:
-      - cmd: kernel_extract
+
+/srv/tftp/jammy/initrd:
+  file.absent:
 
 kernel_extract:
   cmd.script:
@@ -150,6 +148,8 @@ kernel_extract:
       - /srv/tftp/jammy/initrd
     - require:
       - file: /srv/tftp/jammy/ubuntu2204.iso
+      - file: /srv/tftp/jammy/vmlinuz
+      - file: /srv/tftp/jammy/initrd
 
 apache2_service:
   service.running:
