@@ -21,7 +21,7 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
-/etc/openstack/clouds.yml:
+/etc/openstack/clouds.yaml:
   file.managed:
     - source: salt://formulas/common/openstack/files/clouds.yml
     - makedirs: True
@@ -49,22 +49,22 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
 
 public_network:
   cmd.run:
-    - name: openstack network create --external --share --provider-physical-network provider --provider-network-type flat public
+    - name: export OS_CLOUD=kinetic && openstack network create --external --share --provider-physical-network provider --provider-network-type flat public
     - require:
       - service: neutron_server_service
       - file: /etc/openstack/clouds.yml
     - unless:
-      - openstack network list | awk '{print $4}' | grep -q public
+      - export OS_CLOUD=kinetic && openstack network list | awk '{print $4}' | grep -q public
 
 public_subnet:
   cmd.run:
-    - name: openstack subnet create --network public --allocation-pool start={{ start }},end={{ end }} --dns-nameserver {{ dns }} --gateway {{ gateway }} --subnet-range {{ cidr }} public_subnet
+    - name: export OS_CLOUD=kinetic && openstack subnet create --network public --allocation-pool start={{ start }},end={{ end }} --dns-nameserver {{ dns }} --gateway {{ gateway }} --subnet-range {{ cidr }} public_subnet
     - require:
       - service: neutron_server_service
       - file: /etc/openstack/clouds.yml
       - cmd: public_network
     - unless:
-      - openstack subnet list | awk '{print $4}' | grep -q public_subnet
+      - export OS_CLOUD=kinetic && openstack subnet list | awk '{print $4}' | grep -q public_subnet
 
 {{ spawn.spawnzero_complete() }}
 
