@@ -30,10 +30,10 @@ def __virtual__():
 def nat_entries_request(method,
                         cert,
                         key,
+                        hostname,
                         cacert=False,
                         payload=None,
-                        hostname="https://tnsr.internal.gacyberrange.org",
-                        timeout=10):
+                        timeout=60):
     """
     A function to make requests to a REST API endpoint for NAT entries.
 
@@ -50,7 +50,7 @@ def nat_entries_request(method,
     Returns:
     str: The response text from the API endpoint.
     """
-    url = f"{hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
+    url = f"https://{hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
     headers={'Content-Type': 'application/yang-data+json'}
     response = requests.request(method,
                                 url,
@@ -104,9 +104,9 @@ def merge_entries(current_entries,
 def unbound_zones_request(method,
                         cert,
                         key,
+                        hostname,
                         cacert=False,
                         payload=None,
-                        hostname="https://tnsr.internal.gacyberrange.org",
                         timeout=10):
     """
     A function to make requests to a REST API endpoint for Unbound zones.
@@ -120,7 +120,7 @@ def unbound_zones_request(method,
     :param hostname: (optional) The URL of the REST endpoint to request.
     :return: The response text from the server.
     """
-    url = f"{hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones"
+    url = f"https://{hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones"
     headers={'Content-Type': 'application/yang-data+json'}
     response = requests.request(method,
                                 url,

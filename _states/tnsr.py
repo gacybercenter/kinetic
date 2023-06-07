@@ -28,6 +28,7 @@ def nat_updated(name,
                 new_entries,
                 cert,
                 key,
+                hostname,
                 cacert=False,
                 **kwargs):
     """
@@ -54,13 +55,15 @@ def nat_updated(name,
     ret = {
         "name": name,
         "changes": {},
-        "result": True,
+        "result": False,
         "comment": ""
     }
+
     # Get current NAT entries
     current_entries = __salt__["tnsr.nat_entries_request"]("GET",
                                                             cert,
                                                             key,
+                                                            hostname,
                                                             cacert=cacert)
 
     # Parse current JSON and new YAML data
@@ -95,6 +98,7 @@ def nat_updated(name,
     __salt__["tnsr.nat_entries_request"]("PUT",
                                         cert,
                                         key,
+                                        hostname,
                                         cacert=cacert,
                                         payload=json.dumps(merged_entries))
 
@@ -111,6 +115,7 @@ def unbound_updated(name,
                     new_zones,
                     cert,
                     key,
+                    hostname,
                     cacert=False,
                     **kwargs):
     """
@@ -141,13 +146,17 @@ def unbound_updated(name,
     ret = {
         "name": name,
         "changes": {},
-        "result": True,
+        "result": False,
         "comment": ""
     }
+
+    hostname = f"https://{hostname}"
+    
     # Get current NAT entries
     current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
                                                             cert,
                                                             key,
+                                                            hostname,
                                                             cacert=cacert)
 
     # Parse current JSON and new YAML data
@@ -182,6 +191,7 @@ def unbound_updated(name,
     __salt__["tnsr.unbound_zones_request"]("PUT",
                                             cert,
                                             key,
+                                            hostname,
                                             cacert=cacert,
                                             payload=json.dumps(merged_zones))
 

@@ -70,6 +70,47 @@ include:
 #        value: configure
 #{% endif %}
 
+## Gateway configuration
+{% if salt['pillar.get']('tnsr:enabled', False) == True %}
+/etc/haproxy/tnsr_cert:
+  file.managed:
+    - contents: |
+        {{ pillar['tnsr_cert'] }}
+    {# - mode: "0640"
+    - user: root
+    - group: designate #}
+
+/etc/haproxy/tnsr_key:
+  file.managed:
+    - contents: |
+        {{ pillar['tnsr_key'] }}
+    {# - mode: "0640"
+    - user: root
+    - group: designate #}
+
+set haproxy group:
+  tnsr.nat_updated:
+    - name: nat_updated
+    - new_entries: {{json}}
+    - cert: /etc/haproxy/tnsr_cert
+    - key: /etc/haproxy/tnsr_key
+    - hostname: {{ pillar['tnsr']['endpoint'] }}
+    - cacert: False
+    - kwargs: 
+        delete: ""
+
+set haproxy static-mapping:
+  tnsr.unbound_updated:
+    - name: unbound_updated
+    - new_zones: {{zones}}
+    - cert: /etc/haproxy/tnsr_cert
+    - key: /etc/haproxy/tnsr_key
+    - hostname: {{ pillar['tnsr']['endpoint'] }}
+    - cacert: False
+    - kwargs: 
+        delete: ""
+{% endif %}
+
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 haproxy_connect_any:
   selinux.boolean:
