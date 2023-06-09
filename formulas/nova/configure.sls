@@ -21,6 +21,15 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
+/etc/openstack/clouds.yaml:
+  file.managed:
+    - source: salt://formulas/common/openstack/files/clouds.yml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        password: {{ pillar['openstack']['admin_password'] }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+
 nova-manage api_db sync:
   cmd.run:
     - runas: nova
@@ -90,25 +99,16 @@ set_vms_pool_pgs:
 ## only create flavors at very beginning, and not pick up pillar changes later in lifecycle
 {% for flavor, attribs in pillar['flavors'].items() %}
 create_{{ flavor }}:
-  mysql_query.run:
-    - database: nova_api
-    - connection_pass: {{ pillar['nova']['nova_mysql_password'] }}
-    - connection_user: nova
-    - connection_host: {{ pillar['haproxy']['dashboard_domain'] }}
-    - query: "INSERT INTO nova_api.flavors(name,memory_mb,vcpus,swap,flavorid,rxtx_factor,root_gb,ephemeral_gb,disabled,is_public) VALUES ('{{ flavor }}',{{ attribs['ram'] }},{{ attribs['vcpus'] }},0,'{{ salt['random.get_str']('64', punctuation=False)|uuid }}',1,{{ attribs['disk'] }},0,0,1);"
-    - output: "/root/{{ flavor }}"
+  cmd.run:
+    - name: export OS_CLOUD=kinetic && openstack flavor create --ram {{ attribs['ram'] }} --disk {{ attribs['disk'] }} --vcpus {{ attribs['vcpus'] }} --public {{ flavor }}
     - require:
       - service: nova_api_service
       - service: nova_scheduler_service
       - service: nova_conductor_service
       - service: nova_spiceproxy_service
-    - retry:
-        attempts: 3
-        interval: 10
+      - file: /etc/openstack/clouds.yaml
     - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
+      - export OS_CLOUD=kinetic && openstack flavor list | awk '{print $4}' | grep -q {{ flavor }}
 {% endfor %}
 
 {% else %}

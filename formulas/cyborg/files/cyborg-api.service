@@ -1,0 +1,11 @@
+[Unit]
+Description = OpenStack Acceleration API Service
+After = network-online.target
+Wants = network-online.target
+
+[Service]
+ExecStart = /usr/local/bin/cyborg-api
+User = cyborg
+
+[Install]
+WantedBy = multi-user.target

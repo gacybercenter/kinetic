@@ -33,13 +33,18 @@ update_packages_uca:
 
 ## added per https://www.rdoproject.org/install/packstack/
 ## official upstream docs do not reflect this yet
-CentOS-PowerTools:
+crb:
   pkgrepo.managed:
-    - humanname: CentOS-PowerTools
-    - name: CentOS-PowerTools
-    - mirrorlist: http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=PowerTools&infra=$infra
-    - file: /etc/yum.repos.d/CentOS-PowerTools.repo
-    - gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    - humanname: crb
+    - name: crb
+    - baseurl: https://download.rockylinux.org/pub/rocky/9/CRB/x86_64/os/
+    - gpgcheck: 1
+    - enabled: 1
+    - gpgkey: https://download.rockylinux.org/pub/rocky/9/RPM-GPG-KEY-rockylinux-release
+
+crb-install:
+  pkg.installed:
+    - name: powertools
 
 rdo:
   pkg.installed:
@@ -50,13 +55,13 @@ update_packages_rdo:
     - refresh: true
     - onchanges:
       - pkg: rdo
-      - pkgrepo: CentOS-PowerTools
+      - pkgrepo: crb
 
 openstack-selinux:
   pkg.installed:
     - require:
       - pkg: rdo
       - pkg: update_packages_rdo
-      - pkgrepo: CentOS-PowerTools
+      - pkgrepo: crb
 
 {% endif %}

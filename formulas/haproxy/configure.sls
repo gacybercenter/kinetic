@@ -79,10 +79,6 @@ haproxy_connect_any:
       - sls: /formulas/haproxy/install
 {% endif %}
 
-haproxy_service_stop:
-  service.dead:
-    - name: haproxy
-
 acme_certs:
   acme.cert:
     - name: {{ pillar['haproxy']['dashboard_domain'] }}
@@ -94,12 +90,12 @@ acme_certs:
 {% if salt['pillar.get']('development:test_certs', False) == True %}
     - test_cert: True
 {% endif %}
-{% if salt['pillar.get']('danos:enabled', False) == True %}
-    - require:
-      - service: haproxy_service_stop
-      - danos: set haproxy group
-      - danos: set haproxy static-mapping
-{% endif %}
+#{% if salt['pillar.get']('danos:enabled', False) == True %}
+#    - require:
+#      - service: haproxy_service_stop
+#      - danos: set haproxy group
+#      - danos: set haproxy static-mapping
+#{% endif %}
 
 create_master_pem:
   cmd.run:
@@ -146,6 +142,7 @@ create_dhparams_file:
         manila_hosts: {{ constructor.haproxy_listener_constructor(role='manila', port='8786')|yaml_encode }}
         mysql_hosts: {{ constructor.haproxy_listener_constructor(role='mysql', port='3306')|yaml_encode }}
         guacamole_hosts: {{ constructor.haproxy_listener_constructor(role='guacamole', port='8080')|yaml_encode }}
+        cyborg_hosts: {{ constructor.haproxy_listener_constructor(role='cyborg', port='6666')|yaml_encode }}
 
 haproxy_service_watch:
   service.running:

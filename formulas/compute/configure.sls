@@ -51,6 +51,7 @@ conf-files:
         console_domain: {{ pillar['haproxy']['console_domain'] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         compute_hosts: {{ constructor.host_file_constructor(role='compute')|yaml_encode }}
+        gpu_hosts: {{ constructor.host_file_constructor(role='gpu')|yaml_encode }}
         explicitly_egress_direct: True
     - names:
       - /etc/modprobe.d/kvm.conf:

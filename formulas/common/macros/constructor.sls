@@ -155,12 +155,24 @@ server {{ host }} {{ address }}{{ port }} check inter 2000 rise 2 fall 5
 ### to enable name resolution for live migration
 {% macro host_file_constructor(role) -%}
 
-{%- if role == 'compute' -%}
+{%- if role in ['compute', 'gpu', 'arm'] -%}
   {% for host, addresses in salt['mine.get']('role:'+role, 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
     {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 {{ address }} {{ host }}
     {%- endfor -%}
   {%- endfor -%}
+{%- endif -%}
+
+{%- endmacro -%}
+
+### This macro creates GPU BusID strings
+{% macro gpu_busid_constructor() -%}
+
+{%- if grains['role'] == 'gpu' -%}
+  {%- for busid in pillar['hosts']['gpu']['busid_gpu'] -%}
+{{ busid }}
+    {%- if loop.index < loop.length -%},{%- endif -%}
+  {%- endfor %}
 {%- endif -%}
 
 {%- endmacro -%}

@@ -17,26 +17,38 @@ spawnzero_complete:
   grains.present:
     - value: True
   module.run:
-    - name: mine.send
-    - m_name: spawnzero_complete
-    - kwargs:
-        mine_function: grains.item
-    - args:
-      - spawnzero_complete
+    - mine.send:
+      - name: spawnzero_complete
+      - args:
+        - spawnzero_complete
+      - kwargs:
+          mine_function: grains.item
     - onchanges:
       - grains: spawnzero_complete
+
+spawnzero_update:
+  module.run:
+    - mine.update:
+    - require:
+      - spawnzero_complete
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 {% endmacro %}
 
 {% macro check_spawnzero_status(type) %}
 check_spawnzero_status:
-  module.run:
-    - name: spawnzero.check
+  spawnzero.check:
+    - name: check_spawnzero_status
     - type: {{ type }}
+    - value: True
     - retry:
-        attempts: 10
+        attempts: 20
         interval: 30
     - unless:
       - fun: grains.equals
         key: build_phase
         value: configure
+
 {% endmacro %}

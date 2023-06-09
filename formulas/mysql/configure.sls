@@ -241,23 +241,19 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
 ## necessary to perform an automatic recovery is still there
 force_recovery:
   module.run:
-    - name: file.chattr
-    - files:
+    - file.chattr:
       - /var/lib/mysql/gvwstate.dat
-    - kwargs:
-        attributes: i
-        operator: add
+      - attributes: i
+      - operator: add
 
   {% else %}
 
 force_recovery_removal:
   module.run:
-    - name: file.chattr
-    - files:
+    - file.chattr:
       - /var/lib/mysql/gvwstate.dat
-    - kwargs:
-        attributes: i
-        operator: remove
+      - attributes: i
+      - operator: remove
     - onlyif:
       - lsattr -l /var/lib/mysql/gvwstate.dat | grep -q Immutable
   {% endif %}

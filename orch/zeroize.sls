@@ -80,6 +80,15 @@ meta_data_{{ id }}:
     - require:
       - assignments_dir_{{ id }}
 
+
+## NOTE(chateaulav): This generates the required user-data file for
+##                   cloud-init autoinstall, which targets provisioning
+##                   a plain baremetal server allowing for further
+##                   configuration via saltstack.  For the storage layout,
+##                   ensure you run the command:
+##                   'udevadm info /dev/<DISK NAME> | grep ID_MODEL'
+##                   and use the output as the value for the 'model' key in
+##                   the 'match' section of the storage layout.
 user_data_{{ id }}:
   salt.function:
     - name: file.write
@@ -135,6 +144,7 @@ user_data_{{ id }}:
       - '    runcmd:'
       - '      - curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
       - '      - /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
+      - '      - printf "use_superseded:\n  - module.run\n" > /etc/salt/minion.d/98-supersede.conf'
       - '  late-commands:'
       - '    - |'
       - '      hostnamectl set-hostname {{ type }}-{{ targets[id]['uuid'] }}'
@@ -245,6 +255,8 @@ remove_pending_dir_{{ type }}-{{ id }}:
     - tgt: '{{ pillar['pxe']['name'] }}'
     - arg:
       - 'rm -rf /srv/tftp/assignments/{{ id }}'
+    - require:
+      - wait_for_minion_first_start_{{ type }}
   {% endfor %}
 
 {% elif style == 'virtual' %}

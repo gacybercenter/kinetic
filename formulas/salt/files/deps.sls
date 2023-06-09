@@ -62,6 +62,14 @@ hosts:
         neutron: configure
         zun: configure
         etcd: configure
+  gpu:
+    needs:
+      install:
+        cache: configure
+      configure:
+        nova: configure
+        neutron: configure
+        cyborg: configure
   cache:
     needs:
       configure:
@@ -334,3 +342,16 @@ hosts:
       configure:
         controller: configure
         haproxy: configure
+  cyborg:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+        haproxy: configure
+        memcached: configure
+        rabbitmq: configure
+        keystone: configure
+        nova: configure
+        placement: configure
+        glance: configure

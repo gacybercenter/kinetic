@@ -38,6 +38,10 @@ set_images_pool_pgs:
     - name: set/images/pool_pgs
     - data:
         pgs: {{ pillar['cephconf']['images_pgs'] }}
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 {% endif %}
 
 {{ spawn.spawnzero_complete() }}

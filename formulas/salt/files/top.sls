@@ -28,6 +28,14 @@ base:
     - rabbitmq
     - placement
     - swift
+  'gpu*':
+    - ceph
+    - nova
+    - neutron
+    - rabbitmq
+    - placement
+    - swift
+    - cyborg
   'storage*':
     - ceph
     - swift
@@ -56,6 +64,7 @@ base:
     - sahara
     - manila
     - guacamole
+    - cyborg
     - integrated_services
   'rabbitmq*':
     - rabbitmq
@@ -76,6 +85,7 @@ base:
     - designate
     - swift
     - zun
+    - cyborg
     - openstack
   'barbican*':
     - barbican
@@ -95,6 +105,7 @@ base:
     - rabbitmq
     - placement
     - neutron
+    - openstack
   'placement*':
     - placement
     - rabbitmq
@@ -154,3 +165,9 @@ base:
     - integrated_services
   'jproxy*':
     - junos
+  'cyborg*':
+    - cyborg
+    - openstack
+    - rabbitmq
+    - placement
+    - nova
