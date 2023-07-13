@@ -73,12 +73,23 @@ set_build_phase_{{ phase }}_mine_{{ type }}:
 ## This macro executes a reboot-and-wait routine
 {%- macro reboot_and_wait(type, targets, phase) -%}
 
+{% if type in ['controller', 'controllerv2', 'compute', 'computev2', 'storage', 'storagev2', 'container', 'containerv2'] and phase == 'networking' %}
+wait_for_{{ type }}_{{ phase }}_reboot_physical:
+  salt.wait_for_event:
+    - name: salt/minion/*/start
+    - id_list:
+  {% for id in targets %}
+      - {{ type }}-{{ targets[id]['uuid'] }}
+  {% endfor %}
+    - timeout: 600
+{% else %}
+
 reboot_{{ type }}_{{ phase }}:
   salt.function:
     - tgt:
-{% for id in targets %}
+  {% for id in targets %}
       - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
+  {% endfor %}
     - tgt_type: list
     - name: system.reboot
     - require:
@@ -88,11 +99,14 @@ wait_for_{{ type }}_{{ phase }}_reboot:
   salt.wait_for_event:
     - name: salt/minion/*/start
     - id_list:
-{% for id in targets %}
+  {% for id in targets %}
       - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
+  {% endfor %}
     - require:
       - reboot_{{ type }}_{{ phase }}
     - timeout: 600
+{% endif %}
+
+{%- endmacro -%}
 
 {%- endmacro -%}
