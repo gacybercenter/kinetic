@@ -98,6 +98,16 @@ pyghmi_pip:
       - ipmitool
       - vim
 
+pyghmi_salt_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - pyopenssl
+      - pyghmi
+    - require:
+      - pyghmi_pip
+
 rdma-core:
   pkg.installed:
     - onlyif:
