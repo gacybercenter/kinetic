@@ -82,7 +82,7 @@ reboot_{{ type }}_{{ phase }}:
     - tgt_type: list
     - name: system.reboot
     - arg:
-      - 5
+      - 1
     - require:
       - apply_{{ phase }}_{{ type }}
 
