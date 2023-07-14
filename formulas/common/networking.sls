@@ -25,7 +25,7 @@ ifwatch:
       - eth0
   {% elif grains['os_family'] == 'Debian' %}
       - ens3
-  {% endif %}  
+  {% endif %}
 {% else %}
   {% for network in pillar['hosts'][grains['type']]['networks'] %}
       - {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
