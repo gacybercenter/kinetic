@@ -26,8 +26,16 @@ controller_packages:
       - xfsprogs
       - haveged
       - python3-libvirt
+      - libvirt-dev
       - libguestfs-tools
     - reload_modules: true
+
+libvirt-python:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: true
+    - require:
+      - pkg: controller_packages
 
 {% if grains['os_family'] == 'Debian' %}
 
