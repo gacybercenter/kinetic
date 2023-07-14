@@ -31,6 +31,15 @@ cache_packages:
       - containerd
     - reload_modules: True
 
+cache_pips:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - pkgs:
+      - docker
+    - reload_modules: true
+    - require:
+      - pkg: cache_packages
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 cache_packages:
