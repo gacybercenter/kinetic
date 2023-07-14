@@ -28,6 +28,15 @@ pxe_packages:
       - tftpd-hpa
     - reload_modules: True
 
+pxe_pips:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - pkgs:
+      - tornado
+    - reload_modules: true
+    - require:
+      - pkg: pxe_packages
+
 redfish_pip:
   pip.installed:
     - name: redfish
