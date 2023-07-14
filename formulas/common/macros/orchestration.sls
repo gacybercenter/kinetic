@@ -108,5 +108,3 @@ wait_for_{{ type }}_{{ phase }}_reboot:
 {% endif %}
 
 {%- endmacro -%}
-
-{%- endmacro -%}
