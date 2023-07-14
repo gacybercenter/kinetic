@@ -32,7 +32,7 @@ controller_packages:
 
 libvirt-python:
   pip.installed:
-    - bin_env: '/usr/bin/pip3'
+    - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
     - require:
       - pkg: controller_packages
