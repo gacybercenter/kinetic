@@ -33,6 +33,8 @@ pxe_pips:
     - bin_env: '/usr/bin/salt-pip'
     - pkgs:
       - tornado
+      - pyghmi
+      - redfish
     - reload_modules: true
     - require:
       - pkg: pxe_packages
