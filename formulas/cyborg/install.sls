@@ -58,6 +58,30 @@ python-cyborgclient:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
 
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+python-memcached_pip:
+  pip.installed:
+    - name: python-memcached
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+cyborg_packages_salt_pip:
+  pip.installed:
+  -bin_env: '/usr/bin/salt-pip'
+  -reload_modules: true
+  -pkgs:
+    -pymysql
+    -python-memcached
+    -python-openstackclient
+    -python-cyborgclient
+  -require:
+    -cyborg_packages
+
 cyborg:
   group.present:
     - system: True

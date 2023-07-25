@@ -31,6 +31,35 @@ sahara_packages:
       - python3-openstackclient
       - python3-etcd3gw
 
+openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+saharaclient_pip:
+  pip.installed:
+    - name: python-saharaclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+etcd3gw_pip:
+  pip.installed:
+    - name: etcd3gw
+    - bin_env: 'usr/bin/pip3'
+    - reload_modules: True
+
+sahara_packages_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -python-saharaclient
+      -python-openstackclient
+      -etcd3gw
+    -require:
+      -sahara_packages
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 sahara_packages:
@@ -41,5 +70,27 @@ sahara_packages:
       - openstack-sahara
       - python3-saharaclient
       - python3-openstackclient
+
+openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+sarahaclient_pip:
+  pip.installed:
+    - name: python-sarahaclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+sahara_packages_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -python-saharaclient
+      -python-openstackclient
+    -require:
+      -sahara_packages
 
 {% endif %}

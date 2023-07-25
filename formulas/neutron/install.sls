@@ -30,6 +30,35 @@ neutron_packages:
       - python3-tornado
       - python3-etcd3gw
 
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+tornado_pip:
+  pip.installed:
+    - name: tornado
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+etcd3gw_pip:
+  pip.installed:
+    - name: etcd3gw
+    - bin_env: 'usr/bin/pip3'
+    - reload_modules: True
+
+neutron_packages_salt-pip:
+  pip.installed:
+    -bin_env: '/use/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -openstackclient
+      -tornado
+      -etcd3gw
+    -require:
+      -neutron_packages
+
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
 neutron_packages:
@@ -40,6 +69,28 @@ neutron_packages:
       - python3-openstackclient
       - python3-tornado
 
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+tornado_pip:
+  pip.installed:
+    - name: tornado
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+neutron_packages_salt-pip:
+  pip.installed:
+    -bin_env: '/use/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -openstackclient
+      -tornado
+    -require:
+      -neutron_packages
+
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
 neutron_packages:
@@ -49,6 +100,28 @@ neutron_packages:
       - neutron-plugin-ml2
       - python3-openstackclient
       - python3-tornado
+
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+tornado_pip:
+  pip.installed:
+    - name: tornado
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+neutron_packages_salt-pip:
+  pip.installed:
+    -bin_env: '/use/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -openstackclient
+      -tornado
+    -require:
+      -neutron_packages
 
   {% endif %}
 
@@ -62,6 +135,21 @@ neutron_packages:
       - openstack-neutron
       - python3-openstackclient
 
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+neutron_packages_salt-pip:
+  pip.installed:
+    -bin_env: '/use/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -python-openstackclient
+    -require:
+      -neutron_packages
+
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 neutron_packages:
   pkg.installed:
@@ -69,6 +157,21 @@ neutron_packages:
       - openstack-neutron-ml2
       - openstack-neutron
       - python3-openstackclient
+
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+neutron_packages_salt-pip:
+  pip.installed:
+    -bin_env: '/use/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -python-openstackclient
+    -require:
+      -neutron_packages
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -80,6 +183,21 @@ neutron_packages:
       - python3-openstackclient
       - libibverbs
       - rdma-core
+
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+neutron_packages_salt-pip:
+  pip.installed:
+    -bin_env: '/use/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -python-openstackclient
+    -require:
+      -neutron_packages
 
   {% endif %}
 {% endif %}

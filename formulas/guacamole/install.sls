@@ -37,6 +37,15 @@ cryptography_pip:
       - mysql-connector-python
       - mysqlclient
 
+cryptography_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -mysql-connector-python
+      -mysqlclient
+    -requires:
+      -cryptography_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 

@@ -41,6 +41,36 @@ pymemcache:
     - require:
       - pkg: designate_packages
 
+designate_packages_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -memcache
+      -python-designateclient
+      -python-openstackclient
+      -etcd3gw
+    -require:
+      -designate_packages
+
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+python-designateclient_pip:
+  pip.installed:
+    - name: python-designateclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+ectd3gw_pip:
+  pip.installed:
+    - name: ectd3gw
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 designate_packages:
@@ -57,4 +87,39 @@ designate_packages:
       - python3-openstackclient
       - python3-pymemcache
 
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+python-designateclient_pip:
+  pip.installed:
+    - name: python-designateclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+pymemcache_pip:
+  pip.installed:
+    - name: pymemcache
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+memcache_pip:
+  pip.installed:
+    - name: memcache
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+designate_packages_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -memcache
+      -python-designateclient
+      -python-openstackclient
+      -pymemcache
+    -require:
+      -designate_packages
 {% endif %}

@@ -61,6 +61,40 @@ python-cyborgclient:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
 
+memcache_pip:
+  pip.installed:
+    - name: memcache
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+pymysql_pip:
+  pip.installed:
+    - name: pymysql
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+gpu_cyborg_packages_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -python-openstackclient
+      -memcache
+      -pymysql
+      -etcd3gw
+      -eventlet
+    -require:
+      -cyborg_packages
+      -py_mysql_sa
+      -python-cyborgclient
+      -eventlet
+
 cyborg:
   group.present:
     - system: True

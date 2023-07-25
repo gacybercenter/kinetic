@@ -38,6 +38,50 @@ share_packages:
       - sqlite3
       - python3-etcd3gw
 
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+manilaclient_pip:
+  pip.installed:
+    - name: python-manilaclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+memcache_pip:
+  pip.installed:
+    - name: memcache
+    - bin_env: 'usr/bin/pip3'
+    - reload_modules: True
+
+pymysql_pip:
+  pip.installed:
+    - name: pymysql
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+etcd3gw_pip:
+  pip.installed:
+    - name: etcd3gw
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+share_packages_salt_pip:
+  pip.installed: 
+    bin-env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -pymysql
+      -python-openstackclient
+      -python-manilaclient
+      -memcache
+      -etcd3gw
+      #cephfs, rbd, rados- pip install ?
+    -require:
+      -share_packages
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 share_packages:
@@ -64,5 +108,42 @@ ganesha_packages:
       - nfs-ganesha-rados-grace
     - require:
       - pkg: share_packages
+
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+manilaclient_pip:
+  pip.installed:
+    - name: python-manilaclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+memcached_pip:
+  pip.installed:
+    - name: python-memcached
+    - bin_env: 'usr/bin/pip3'
+    - reload_modules: True
+
+pymysql_pip:
+  pip.installed:
+    - name: pymysql
+    - bin_env: '/usr/bin/pip3'
+    -reload_modules: True
+
+share_packages_salt_pip:
+  pip.installed: 
+    bin-env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -pymysql
+      -python-openstackclient
+      -python-manilaclient
+      -python-memcached
+      #rdb and rados - pip install ?
+    -require:
+      -share_packages
 
 {% endif %}

@@ -33,6 +33,56 @@ heat_packages:
       - python3-vitrageclient
       - python3-etcd3gw
 
+python-zunclient_pip:
+  pip.installed:
+    - name: python-zunclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+tornado_pip:
+  pip.installed:
+    - name: tornado
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+python-designateclient_pip:
+  pip.installed:
+    - name: python-designateclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+python-vitrageclient_pip:
+  pip.installed:
+    - name: python-vitrageclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+etcd3gw_pip:
+  pip.installed:
+    - name: etcd3gw
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+heat_packages_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -python-openstackclient
+      -tornado
+      -python-zunclient
+      -python-designatedclient
+      -python-vitrageclient
+      -etcd3gw
+    -require:
+      -heat_packages
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 heat_packages:
@@ -54,5 +104,50 @@ zunclient_install:
     - require:
       - pkg: heat_packages
     - reload_modules: True
+
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+tornado_pip:
+  pip.installed:
+    - name: tornado
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+python-designateclient_pip:
+  pip.installed:
+    - name: python-designateclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+python-vitrageclient_pip:
+  pip.installed:
+    - name: python-vitrageclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+etcd3gw_pip:
+  pip.installed:
+    - name: etcd3gw
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+heat_packages_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -python-openstackclient
+      -tornado
+      -python-zunclient
+      -python-designatedclient
+      -python-vitrageclient
+      -etcd3gw
+    -require:
+      -heat_packages
+      -zunclient_install
 
 {% endif %}

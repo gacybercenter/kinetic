@@ -36,6 +36,43 @@ pymysql_sa:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
 
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+etcd3gw_pip:
+  pip.installed:
+    - name: etcd3gw
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+memcache_pip:
+  pip.installed:
+    - name: memcached
+    - bin_env: 'usr/bin/pip3'
+    - reload_modules: True
+
+pymysql_pip:
+  pip.installed:
+    - name: pymysql
+    - bin_env: '/usr/bin/pip3'
+    -reload_modules: True
+
+zun_packages_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -pymysql
+      -pymysql_sa
+      -memcache
+      -python-openstackclient
+      -etcd3gw
+    -require:
+      -zun_packages
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 zun_packages:
@@ -52,6 +89,35 @@ zun_packages:
       - python3-PyMySQL
       - python3-memcached
       - python3-openstackclient
+
+python-openstackclient_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+memcached_pip:
+  pip.installed:
+    - name: python-memcached
+    - bin_env: 'usr/bin/pip3'
+    - reload_modules: True
+
+pymysql_pip:
+  pip.installed:
+    - name: pymysql
+    - bin_env: '/usr/bin/pip3'
+    -reload_modules: True
+
+zun_packages_salt_pip:
+  pip.installed:
+    -bin_env: '/usr/bin/salt-pip'
+    -reload_modules: true
+    -pkgs:
+      -pymysql
+      -python-memcached
+      -python-openstackclient
+    -require:
+      -zun_packages
 
 {% endif %}
 
