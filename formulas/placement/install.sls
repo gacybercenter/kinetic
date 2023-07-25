@@ -52,9 +52,9 @@ placement_packages_salt_pip:
     -reload_modules: true
     -pkgs:
       -openstackclient
-      -pymysql 
+      -pymysql
       -etcd3gw
-    -require: 
+    -require:
       placement_packages
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -83,9 +83,9 @@ placement_packages_salt_pip:
     -bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
-      -pymysql 
+      -pymysql
       -etcd3gw
-    -require: 
+    -require:
       placement_packages
 
 {% endif %}

@@ -49,6 +49,6 @@ mariadb_packages_salt_pip:
     -bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
-      -pymysql 
+      -pymysql
     -require:
       -mariadb_packages

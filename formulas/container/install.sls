@@ -124,7 +124,7 @@ container_packages_salt_pip:
     -bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
-      -pymysql 
+      -pymysql
       -python-openstackclient
       -etcd3gw
       -tornado
@@ -179,7 +179,7 @@ container_packages_salt_pip:
     -bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
-      -pymysql 
+      -pymysql
       -python-openstackclient
       -etcd3gw
       -tornado
@@ -226,7 +226,7 @@ container_packages_salt_pip:
     -bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
-      -pymysql 
+      -pymysql
       -python-openstackclient
     -require:
       -container_packages
@@ -268,7 +268,7 @@ container_packages_salt_pip:
     -bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
-      -pymysql 
+      -pymysql
       -python-openstackclient
     -require:
       -container_packages
@@ -312,7 +312,7 @@ container_packages_salt_pip:
     -bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
-      -pymysql 
+      -pymysql
       -python-openstackclient
     -require:
       -container_packages
