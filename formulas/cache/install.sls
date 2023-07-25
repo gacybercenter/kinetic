@@ -26,19 +26,32 @@ cache_packages:
       - apt-cacher-ng
       - python3-pip
       - apache2
-      - docker
+      - docker.io
       - docker-compose
       - containerd
     - reload_modules: True
 
-cache_pips:
+## Install docker pip module version 5.0.3 due to bug in 6.0.0, as seen here related to saltstack
+## https://github.com/saltstack/salt/issues/62602
+cache_pip:
   pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
+    - bin_env: '/usr/bin/pip3'
     - pkgs:
-      - docker
+      - docker == 5.0.3
     - reload_modules: true
     - require:
       - pkg: cache_packages
+
+
+cache_salt_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - pkgs:
+      - docker == 5.0.3
+    - reload_modules: true
+    - require:
+      - pkg: cache_packages
+      - pip: cache_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
