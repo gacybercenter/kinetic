@@ -134,7 +134,7 @@ pymysql_pip:
     -reload_modules: True
 
 share_packages_salt_pip:
-  pip.installed: 
+  pip.installed:
     bin-env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
