@@ -69,7 +69,7 @@ etcd3gw_pip:
     -bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
-      -pymysql 
+      -pymysql
       -python-openstackclient
       -etcd3gw
       -tornado

@@ -58,7 +58,7 @@ network_packages_salt_pip:
     -pkgs:
       -python-openstackclient
       -tornado
-      -etcd3gw 
+      -etcd3gw
     -require:
       -network_packages
 

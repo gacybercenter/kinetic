@@ -36,7 +36,7 @@ python-openstackclient_pip:
     - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-    
+
 etcd3gw_pip:
   pip.installed:
     - name: etcd3gw
