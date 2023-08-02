@@ -39,7 +39,7 @@ cyborg_pip:
       - memcache
       - python-openstackclient
       - etcd3gw
-    - require: 
+    - require:
       - pkg: cyborg_packages
 
 cyborg_packages_salt_pip:

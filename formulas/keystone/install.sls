@@ -53,7 +53,7 @@ keystone_packages_salt_pip:
       - ldappool
       - python-openstackclient
       - etcd3gw
-    - requires:
+    - require:
       - keystone_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -87,7 +87,7 @@ keystone_packages_salt_pip:
       - ldap3
       - python-openstackclient
       - mod_wsgi
-    - requires:
+    - require:
       - keystone_pip
 
 {% endif %}

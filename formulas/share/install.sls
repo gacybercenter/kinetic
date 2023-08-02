@@ -96,7 +96,7 @@ share_pip:
     - reload_modules: True
     - names:
       - python-openstackclient
-      - python-manilaclient 
+      - python-manilaclient
       - python-memcached
       - pymysql
 

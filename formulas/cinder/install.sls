@@ -37,7 +37,7 @@ cinder_pip:
       - python-openstackclient
       - memcache
       - etcd3gw
-    - require: 
+    - require:
       - pkg: cinder_packages
 
 cinder_packages_salt_pip:

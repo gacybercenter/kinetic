@@ -46,7 +46,7 @@ magnum_packages_salt_pip:
       - python-magnumclient
       - python-openstackclient
       - etcd3gw
-    - requires:
+    - require:
       - magnum_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -74,7 +74,7 @@ magnum_packages_salt_pip:
     - pkgs:
       - python-magnumclient
       - python-openstackclient
-    - requires:
+    - require:
       - magnum_pip
 
 {% endif %}
