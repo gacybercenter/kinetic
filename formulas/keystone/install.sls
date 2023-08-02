@@ -32,48 +32,29 @@ keystone_packages:
       - libapache2-mod-wsgi-py3
       - python3-etcd3gw
 
-ldap3_pip:
+keystone_pip:
   pip.installed:
-    - name: ldap3
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-ldappool_pip:
-  pip.installed:
-    - name: ldappool
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-shade_pip:
-  pip.installed:
-    - name: shade
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - ldap3
+      - ldappool
+      - etcd3gw
+      - python-openstackclient
+      - shade
 
 keystone_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -shade
-      -ldap3
-      -ldappool
-      -python-openstackclient
-      -etcd3gw
-    -requires:
-      -keystone_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - shade
+      - ldap3
+      - ldappool
+      - python-openstackclient
+      - etcd3gw
+    - requires:
+      - keystone_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -87,49 +68,29 @@ keystone_packages:
       - httpd
       - python3-mod_wsgi
 
-{% endif %}
-
-shade:
+keystone_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-ldap3_pip:
-  pip.installed:
-    - name: ldap3
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-mod_wsgi_pip:
-  pip.installed:
-    - name: mod_wsgi
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-shade_pip:
-  pip.installed:
-    - name: shade
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - shade
+      - ldap3
+      - python-openstackclient
+      - mod_wsgi
 
 keystone_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -shade
-      -ldap3
-      -python-openstackclient
-      -mod_wsgi
-    -requires:
-      -keystone_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - shade
+      - ldap3
+      - python-openstackclient
+      - mod_wsgi
+    - requires:
+      - keystone_pip
 
+{% endif %}
 ## the shade module is affected by https://github.com/saltstack/salt/issues/24925
 ## this is an attempt at a workaround
 Restart Salt Minion:

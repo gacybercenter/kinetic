@@ -28,6 +28,16 @@ salt_pkgs:
       - python3-pygit2
     - reload_modules: True
 
+salt_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - cryptography
+      - pyghmi
+      - pygit2
+      - tornado
+
 salt_pips:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
@@ -37,15 +47,3 @@ salt_pips:
     - reload_modules: true
     - require:
       - pkg: salt_pkgs
-
-cryptography_pip:
-  pip.installed:
-    - name: cryptography
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-pyghmi_pip:
- pip.installed:
-   - name: pyghmi
-   - bin_env: '/usr/bin/pip3'
-   - reload_modules: True

@@ -45,28 +45,24 @@ compute_packages:
 #      - frr
 #      - frr-pythontools
 
+compute_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - tornado
+      - etcd3gw
+
 compute_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: True
-    -pkgs:
-      -tornado
-      -etcd3gw
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - tornado
+      - etcd3gw
       #rbd and rados - no pip install
-    -require:
-      -compute_packages
-
-tornado_pip:
-  pip.installed:
-    - name: tornado
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - require:
+      - pkg: compute_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 compute_packages:
@@ -101,27 +97,24 @@ compute_packages:
   {% endif %}
 #      - frr
 #      - frr-pythontools
-tornado_pip:
-  pip.installed:
-    - name: tornado
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
 
-etcd3gw_pip:
+compute_pip:
   pip.installed:
-    - name: etcd3gw
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
+    - names:
+      - tornado
+      - etcd3gw
 
 compute_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: True
-    -pkgs:
-      -tornado
-      -etcd3gw
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - tornado
+      - etcd3gw
       #rbd and rados - no pip install
-    -require:
-      -compute_packages
+    - require:
+      - pkg: compute_pip
 
 {% endif %}

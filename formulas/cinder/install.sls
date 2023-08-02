@@ -29,34 +29,27 @@ cinder_packages:
       - python3-memcache
       - python3-etcd3gw
 
+cinder_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - memcache
+      - etcd3gw
+    - require: 
+      - pkg: cinder_packages
+
 cinder_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: True
-    -pkgs:
-      -python-openstackclient
-      -memcache
-      -etcd3gw
-    -require:
-      -cinder_packages
-
-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
+    - bin_env: '/usr/bin/salt-pip'
     - reload_modules: True
-
-memcache_pip:
-  pip.installed:
-    - name: memcache
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - pkgs:
+      - python-openstackclient
+      - memcache
+      - etcd3gw
+    - require:
+      - pkg: cinder_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -67,26 +60,22 @@ cinder_packages:
       - python3-openstackclient
       - python3-memcached
 
-openstackclient_pip:
+cinder_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-memcached_pip:
-  pip.installed:
-    - name: python-memcached
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-memcached
 
 cinder_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: True
-    -pkgs:
-      -python-openstackclient
-      -python-memcached
-    -require:
-      -cinder_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - python-openstackclient
+      - python-memcached
+    - require:
+      - pkg: cinder_pip
 
 {% endif %}

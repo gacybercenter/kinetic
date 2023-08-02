@@ -30,12 +30,19 @@ controller_packages:
       - libguestfs-tools
     - reload_modules: true
 
+controller_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - libvirt-python
+
 libvirt-python:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
     - require:
-      - pkg: controller_packages
+      - pkg: controller_pip
 
 {% if grains['os_family'] == 'Debian' %}
 

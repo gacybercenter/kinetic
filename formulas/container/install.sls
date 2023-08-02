@@ -40,41 +40,27 @@ container_packages:
       - open-iscsi
       - ceph-common
 
-pymysql_pip:
+container.pip:
   pip.installed:
-    - name: pymysql
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
+      - tornado
+      - etcd3gw
 
-python-openstackclient_pip:
+container_packages_salt_pip:
   pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-tornado_pip:
-  pip.installed:
-    - name: tornado
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-  container_packages_salt_pip:
-  pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -pymysql
-      -python-openstackclient
-      -etcd3gw
-      -tornado
-    -require:
-      -container_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+      - etcd3gw
+      - tornado
+    - require:
+      - pkg: container_pip
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 container_packages:
@@ -95,41 +81,27 @@ container_packages:
       - open-iscsi
       - ceph-common
 
-pymysql_pip:
+container.pip:
   pip.installed:
-    - name: pymysql
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-tornado_pip:
-  pip.installed:
-    - name: tornado
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
+      - tornado
+      - etcd3gw
 
 container_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -pymysql
-      -python-openstackclient
-      -etcd3gw
-      -tornado
-    -require:
-      -container_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+      - etcd3gw
+      - tornado
+    - require:
+      - pkg: container_pip
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -150,41 +122,27 @@ container_packages:
       - open-iscsi
       - ceph-common
 
-pymysql_pip:
+container.pip:
   pip.installed:
-    - name: pymysql
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-tornado_pip:
-  pip.installed:
-    - name: tornado
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
+      - tornado
+      - etcd3gw
 
 container_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -pymysql
-      -python-openstackclient
-      -etcd3gw
-      -tornado
-    -require:
-      -container_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+      - etcd3gw
+      - tornado
+    - require:
+      - pkg: container_pip
 
     {% endif %}
 
@@ -209,27 +167,23 @@ container_packages:
       - kata-proxy
       - kata-shim
 
-pymysql_pip:
+container.pip:
   pip.installed:
-    - name: pymysql
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
 
 container_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -pymysql
-      -python-openstackclient
-    -require:
-      -container_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+    - require:
+      - pkg: container_pip
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
@@ -251,27 +205,23 @@ container_packages:
       - kata-proxy
       - kata-shim
 
-pymysql_pip:
+container.pip:
   pip.installed:
-    - name: pymysql
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
 
 container_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -pymysql
-      -python-openstackclient
-    -require:
-      -container_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+    - require:
+      - pkg: container_pip
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -295,27 +245,23 @@ container_packages:
       - kata-shim
     - reload_modules: True
 
-pymysql_pip:
+container.pip:
   pip.installed:
-    - name: pymysql
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
 
 container_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -pymysql
-      -python-openstackclient
-    -require:
-      -container_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+    - require:
+      - pkg: container_pip
 
   {% endif %}
 

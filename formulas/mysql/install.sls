@@ -46,9 +46,9 @@ pymysql_pip:
 
 mariadb_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -pymysql
-    -require:
-      -mariadb_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+    - require:
+      - pymysql_pip

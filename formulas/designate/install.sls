@@ -34,42 +34,27 @@ designate_packages:
       - python3-pip
       - python3-etcd3gw
 
-pymemcache:
+designate_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
-    - require:
-      - pkg: designate_packages
+    - reload_modules: True
+    - names:
+      - pymemcache
+      - python-openstackclient
+      - python-designateclient
+      - etcd3gw
 
 designate_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -memcache
-      -python-designateclient
-      -python-openstackclient
-      -etcd3gw
-    -require:
-      -designate_packages
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-python-designateclient_pip:
-  pip.installed:
-    - name: python-designateclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-ectd3gw_pip:
-  pip.installed:
-    - name: ectd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - memcache
+      - python-designateclient
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pkg: designate_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -87,39 +72,25 @@ designate_packages:
       - python3-openstackclient
       - python3-pymemcache
 
-python-openstackclient_pip:
+designate_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-python-designateclient_pip:
-  pip.installed:
-    - name: python-designateclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-pymemcache_pip:
-  pip.installed:
-    - name: pymemcache
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-memcache_pip:
-  pip.installed:
-    - name: memcache
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-designateclient
+      - pymemcache
+      - memcache
 
 designate_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -memcache
-      -python-designateclient
-      -python-openstackclient
-      -pymemcache
-    -require:
-      -designate_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - memcache
+      - python-designateclient
+      - python-openstackclient
+      - pymemcache
+    - require:
+      - pkg: designate_pip
 {% endif %}

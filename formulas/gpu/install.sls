@@ -46,54 +46,30 @@ cyborg_packages:
     - require:
       - pkg: gpu-keyring
 
-pymysql_sa:
+gpu_pips:
   pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
-
-eventlet:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
-
-python-cyborgclient:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
-
-memcache_pip:
-  pip.installed:
-    - name: memcache
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
+    - names:
+      - pymysql_sa
+      - eventlet
+      - python-cyborgclient
+      - memcache
+      - python-openstackclient
+      - pymysql
 
-python-openstackclient_pip:
+gpu_packages_salt_pip:
   pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-pymysql_pip:
-  pip.installed:
-    - name: pymysql
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-gpu_cyborg_packages_salt_pip:
-  pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-      -memcache
-      -pymysql
-      -etcd3gw
-      -eventlet
-    -require:
-      -cyborg_packages
-      -py_mysql_sa
-      -python-cyborgclient
-      -eventlet
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - memcache
+      - pymysql
+      - etcd3gw
+      - eventlet
+    - require:
+      - pkg: gpu_pips
 
 cyborg:
   group.present:

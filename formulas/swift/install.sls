@@ -28,17 +28,13 @@ swift_packages:
       - python3-openstackclient
       - python3-etcd3gw
 
-python-openstackclient_pip:
+swift_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    -reload_modules: True
+    - names:
+      - python-openstackclient
+      - etcd3gwes: True
 
 swift_packages_salt_pip:
   pip.installed:
@@ -48,7 +44,7 @@ swift_packages_salt_pip:
       -python-openstackclient
       -etcd3gw
     -require:
-      -swift_packages
+      -swift_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -58,7 +54,7 @@ swift_packages:
       - ceph-radosgw
       - python3-openstackclient
 
-python-openstackclient_pip:
+swift_pip:
   pip.installed:
     - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
@@ -71,6 +67,6 @@ swift_packages_salt_pip:
     -pkgs:
       -python-openstackclient
     -require:
-      -swift_packages
+      -swift_pip
 
 {% endif %}

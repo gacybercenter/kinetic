@@ -33,34 +33,25 @@ network_packages:
       - python3-tornado
       - python3-etcd3gw
 
-python-openstackclient_pip:
+network_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-tornado_pip:
-  pip.installed:
-    - name: tornado
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: 'usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - tornado
+      - etcd3gw
 
 network_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-      -tornado
-      -etcd3gw
-    -require:
-      -network_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - tornado
+      - etcd3gw
+    - require:
+      - network_packages
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
@@ -75,27 +66,23 @@ network_packages:
       - python3-openstackclient
       - python3-tornado
 
-python-openstackclient_pip:
+network_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-tornado_pip:
-  pip.installed:
-    - name: tornado
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - tornado
 
 network_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-      -tornado
-    -require:
-      -network_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - tornado
+    - require:
+      - network_pip
 
     {% endif %}
 
@@ -119,12 +106,12 @@ python-openstackclient_pip:
 
 network_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-    -require:
-      -network_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+    - require:
+      - network_pip
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
@@ -137,7 +124,7 @@ network_packages:
       - iptables-ebtables
       - python3-openstackclient
 
-python-openstackclient_pip:
+network_pip:
   pip.installed:
     - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
@@ -145,12 +132,12 @@ python-openstackclient_pip:
 
 network_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-    -require:
-      -network_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+    - require:
+      - network_pip
 
   {% endif %}
 {% endif %}

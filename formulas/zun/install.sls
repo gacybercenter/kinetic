@@ -31,47 +31,29 @@ zun_packages:
       - python3-pymysql
       - python3-etcd3gw
 
-pymysql_sa:
+zun_pip:
   pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-memcache_pip:
-  pip.installed:
-    - name: memcached
-    - bin_env: 'usr/bin/pip3'
-    - reload_modules: True
-
-pymysql_pip:
-  pip.installed:
-    - name: pymysql
-    - bin_env: '/usr/bin/pip3'
-    -reload_modules: True
+    - names:
+      - pymysql
+      - pymysql_sa
+      - memcache
+      - python-openstackclient
+      - etcd3gw
 
 zun_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -pymysql
-      -pymysql_sa
-      -memcache
-      -python-openstackclient
-      -etcd3gw
-    -require:
-      -zun_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - pymysql_sa
+      - memcache
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - zun_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -90,34 +72,25 @@ zun_packages:
       - python3-memcached
       - python3-openstackclient
 
-python-openstackclient_pip:
+zun_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-memcached_pip:
-  pip.installed:
-    - name: python-memcached
-    - bin_env: 'usr/bin/pip3'
-    - reload_modules: True
-
-pymysql_pip:
-  pip.installed:
-    - name: pymysql
-    - bin_env: '/usr/bin/pip3'
-    -reload_modules: True
+    - names:
+      - pymysql
+      - python-memcached
+      - python-openstackclient
 
 zun_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -pymysql
-      -python-memcached
-      -python-openstackclient
-    -require:
-      -zun_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-memcached
+      - python-openstackclient
+    - require:
+      - zun_pip
 
 {% endif %}
 

@@ -17,7 +17,7 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
- #  - /formulas/common/ceph/repo
+#  - /formulas/common/ceph/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -32,35 +32,26 @@ volume_packages:
       - python3-rados
       - python3-etcd3gw
 
-python-openstackclient_pip:
+volume_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-memcache_pip:
-  pip.installed:
-    - name: memcache
-    - bin_env: 'usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - memcache
+      - etcd3gw
 
 volume_packages_salt_pip:
   pip.installed:
-    bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -openstackclient
-      -memcache
-      -etcd3gw
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - memcache
+      - etcd3gw
       #rbd and rado - pip install ?
-    -require:
-      -volume_packages
+    - require:
+      - volume_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -74,27 +65,23 @@ volume_packages:
       - python3-rbd
       - python3-rados
 
-python-openstackclient_pip:
+volume_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-memcached_pip:
-  pip.installed:
-    - name: python-memcached
-    - bin_env: 'usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-memcached
 
 volume_packages_salt_pip:
   pip.installed:
     bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-      -python-memcached
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - python-memcached
       #rbd and rados - pip install ?
-    -require:
-      -volume_packages
+    - require:
+      - volume_pip
 
 {% endif %}

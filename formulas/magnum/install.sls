@@ -29,34 +29,25 @@ magnum_packages:
       - python3-openstackclient
       - python3-etcd3gw
 
-python-openstackclient_pip:
+magnum_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-python-magnumclient_pip:
-  pip.installed:
-    - name: python-magnumclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: 'usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-magnumclient
+      - etcd3gw
 
 magnum_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-magnumclient
-      -python-openstackclient
-      -etcd3gw
-    -requires:
-      -magnum_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-magnumclient
+      - python-openstackclient
+      - etcd3gw
+    - requires:
+      - magnum_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -68,26 +59,22 @@ magnum_packages:
       - python3-magnumclient
       - python3-openstackclient
 
-python-openstackclient_pip:
+magnum_pip:
   pip.installed:
-    - name: python-openstackclient
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-
-python-magnumclient_pip:
-  pip.installed:
-    - name: python-magnumclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-magnumclient
 
 magnum_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-magnumclient
-      -python-openstackclient
-    -requires:
-      -magnum_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-magnumclient
+      - python-openstackclient
+    - requires:
+      - magnum_pip
 
 {% endif %}

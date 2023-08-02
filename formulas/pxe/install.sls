@@ -28,6 +28,14 @@ pxe_packages:
       - tftpd-hpa
     - reload_modules: True
 
+pxe_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - names:
+      - redfish
+      - pyghmi
+
 pxe_pips:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
@@ -37,16 +45,4 @@ pxe_pips:
       - redfish
     - reload_modules: true
     - require:
-      - pkg: pxe_packages
-
-redfish_pip:
-  pip.installed:
-    - name: redfish
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-pyghmi_pip:
-  pip.installed:
-    - name: pyghmi
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+      - pkg: pxe_pip

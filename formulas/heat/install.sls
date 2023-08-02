@@ -33,55 +33,33 @@ heat_packages:
       - python3-vitrageclient
       - python3-etcd3gw
 
-python-zunclient_pip:
+heat_pip:
   pip.installed:
-    - name: python-zunclient
     - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-tornado_pip:
-  pip.installed:
-    - name: tornado
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-python-designateclient_pip:
-  pip.installed:
-    - name: python-designateclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-python-vitrageclient_pip:
-  pip.installed:
-    - name: python-vitrageclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - reload_modules: true
+    - names:
+      - python-openstackclient
+      - tornado
+      - python-zunclient
+      - python-designateclient
+      - python-vitrageclient
+      - etcd3gw
+    - require:
+      - pkg: heat_packages
 
 heat_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-      -tornado
-      -python-zunclient
-      -python-designatedclient
-      -python-vitrageclient
-      -etcd3gw
-    -require:
-      -heat_packages
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - tornado
+      - python-zunclient
+      - python-designatedclient
+      - python-vitrageclient
+      - etcd3gw
+    - require:
+      - pkg: heat_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -97,57 +75,24 @@ heat_packages:
       - python3-pip
     - reload_modules: true
 
-zunclient_install:
+heat_pip:
   pip.installed:
-    - name: python-zunclient
     - bin_env: '/usr/bin/pip3'
-    - require:
-      - pkg: heat_packages
-    - reload_modules: True
-
-python-openstackclient_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-tornado_pip:
-  pip.installed:
-    - name: tornado
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-python-designateclient_pip:
-  pip.installed:
-    - name: python-designateclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-python-vitrageclient_pip:
-  pip.installed:
-    - name: python-vitrageclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-etcd3gw_pip:
-  pip.installed:
-    - name: etcd3gw
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - reload_modules: true
+    - names:
+      - python-openstackclient
+      - tornado
+      - python-designateclient
 
 heat_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-      -tornado
-      -python-zunclient
-      -python-designatedclient
-      -python-vitrageclient
-      -etcd3gw
-    -require:
-      -heat_packages
-      -zunclient_install
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - tornado
+      - python-designatedclient
+    - require:
+      - pkg: heat_pip
 
 {% endif %}

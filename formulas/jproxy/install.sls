@@ -34,36 +34,12 @@ jproxy_pip_packages:
 
 jproxy_packages_salt_pip:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -junos-eznc
-      -jxmlease
-      -yamlordereddictloader
-      -pyOpenSSL
-    -require:
-      -jproxy_pip_packages
-
-junos-eznc_pip:
-  pip.installed:
-    - name: junos-eznc
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-jxmlease_pip:
-  pip.installed:
-    - name: jxmlease
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-yamlordereddictloader_pip:
-  pip.installed:
-    - name: yamlordereddictloader
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-pyOpenSSL_pip:
-  pip.installed:
-    - name: pyOpenSSL
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - junos-eznc
+      - jxmlease
+      - yamlordereddictloader
+      - pyOpenSSL
+    - require:
+      - pkg: jproxy_pip_packages
