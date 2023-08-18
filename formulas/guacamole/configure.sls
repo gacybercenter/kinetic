@@ -18,12 +18,27 @@ include:
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 
+guacamole_recording_setup:
+  file.directory:
+    - name: /var/lib/guacamole/recording
+    - makedirs: True
+    - user: 1000
+    - group: 1001
+    - dir_mode: 2750
+    - file_mode: 750
+    - recurse:
+      - user
+      - group
+      - mode
+
 guacamole_pull:
   cmd.run:
     - name: "salt-call --local dockercompose.pull /opt/guacamole/docker-compose.yml"
     - unless:
       - docker image ls | grep -q 'guacamole/guacd'
       - docker image ls | grep -q 'guacamole/guacamole'
+    - require:
+      - file: guacamole_recording_setup
 
 guacamole_up:
   cmd.run:
