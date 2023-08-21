@@ -20,7 +20,7 @@ include:
 
 guacamole_recording_setup:
   file.directory:
-    - name: /var/lib/guacamole/recording
+    - name: /opt/guacamole/recordings
     - makedirs: True
     - user: 1000
     - group: 1001
