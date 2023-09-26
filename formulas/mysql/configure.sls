@@ -245,7 +245,7 @@ force_recovery:
     - user: mysql
     - group: mysql
     - mode: "0660"
-    - attrs: ie 
+    - attrs: ie
 
   {% else %}
 
