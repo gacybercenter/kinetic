@@ -30,13 +30,13 @@ pxe_packages:
 
 pxe_pip:
   pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
+    - bin_env: '/usr/bin/pip3'
     - reload_modules: True
     - names:
       - redfish
       - pyghmi
 
-pxe_pips:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - pkgs:
