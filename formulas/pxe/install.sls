@@ -45,4 +45,4 @@ salt-pip_installs:
       - redfish
     - reload_modules: true
     - require:
-      - pkg: pxe_pip
+      - pip: pxe_pip
