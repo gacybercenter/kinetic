@@ -37,6 +37,8 @@ https://github.com/ipxe/ipxe.git:
     - user: root
     - require:
       - sls: /formulas/pxe/install
+    - unless:
+      - ls /var/www/html/ipxe/src | grep -q kinetic.ipxe
 
 conf-files:
   file.managed:
