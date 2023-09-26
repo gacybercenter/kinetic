@@ -22,7 +22,7 @@ spawnzero_complete:
       - args:
         - spawnzero_complete
       - kwargs:
-          mine_function: grains.item
+          mine_function: grains.get
     - onchanges:
       - grains: spawnzero_complete
 
