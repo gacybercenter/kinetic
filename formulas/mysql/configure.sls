@@ -240,22 +240,22 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
 ## has a clean shutdown.  Making the file immutable ensures that the state
 ## necessary to perform an automatic recovery is still there
 force_recovery:
-  module.run:
-    - file.chattr:
-      - /var/lib/mysql/gvwstate.dat
-      - kwargs:
-        operator: add
-        attributes: i
+  file.managed:
+    - replace: False
+    - user: mysql
+    - group: mysql
+    - mode: "0660"
+    - attrs: ie 
 
   {% else %}
 
 force_recovery_removal:
-  module.run:
-    - file.chattr:
-      - /var/lib/mysql/gvwstate.dat
-      - kwargs:
-        operator: remove
-        attributes: i
+  file.managed:
+    - replace: False
+    - user: mysql
+    - group: mysql
+    - mode: "0660"
+    - attrs: e 
     - onlyif:
       - lsattr -l /var/lib/mysql/gvwstate.dat | grep -q Immutable
   {% endif %}
