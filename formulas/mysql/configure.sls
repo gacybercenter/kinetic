@@ -243,8 +243,9 @@ force_recovery:
   module.run:
     - file.chattr:
       - /var/lib/mysql/gvwstate.dat
-      - attributes: i
-      - operator: add
+      - kwargs:
+        operator: add
+        attributes: i
 
   {% else %}
 
@@ -252,8 +253,9 @@ force_recovery_removal:
   module.run:
     - file.chattr:
       - /var/lib/mysql/gvwstate.dat
-      - attributes: i
-      - operator: remove
+      - kwargs:
+        operator: remove
+        attributes: i
     - onlyif:
       - lsattr -l /var/lib/mysql/gvwstate.dat | grep -q Immutable
   {% endif %}
