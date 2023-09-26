@@ -255,7 +255,7 @@ force_recovery_removal:
     - user: mysql
     - group: mysql
     - mode: "0660"
-    - attrs: e 
+    - attrs: e
     - onlyif:
       - lsattr -l /var/lib/mysql/gvwstate.dat | grep -q Immutable
   {% endif %}
