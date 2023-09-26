@@ -241,6 +241,7 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
 ## necessary to perform an automatic recovery is still there
 force_recovery:
   file.managed:
+    - name: /var/lib/mysql/gvwstate.dat
     - replace: False
     - user: mysql
     - group: mysql
@@ -251,6 +252,7 @@ force_recovery:
 
 force_recovery_removal:
   file.managed:
+    - name: /var/lib/mysql/gvwstate.dat
     - replace: False
     - user: mysql
     - group: mysql
