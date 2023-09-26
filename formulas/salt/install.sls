@@ -38,7 +38,7 @@ salt_pip:
       - pygit2
       - tornado
 
-salt_pips:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - pkgs:
