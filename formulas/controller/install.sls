@@ -37,12 +37,14 @@ controller_pip:
     - names:
       - libvirt-python
 
-libvirt-python:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
+    - names:
+      - libvirt-python
     - require:
-      - pkg: controller_pip
+      - pip: controller_pip
 
 {% if grains['os_family'] == 'Debian' %}
 
