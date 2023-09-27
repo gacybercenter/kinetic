@@ -100,7 +100,9 @@ apply_configure_{{ type }}:
       - {{ type }}-{{ targets[id]['uuid'] }}
 {% endfor %}
     - tgt_type: list
-    - highstate: True
+    - sls:
+      - formulas/{{ role }}/configure
+#    - highstate: True
     - timeout: 600
     - retry:
         interval: 10
