@@ -43,7 +43,7 @@ keystone_pip:
       - python-openstackclient
       - shade
 
-keystone_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -78,7 +78,7 @@ keystone_pip:
       - python-openstackclient
       - mod_wsgi
 
-keystone_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -88,7 +88,7 @@ keystone_packages_salt_pip:
       - python-openstackclient
       - mod_wsgi
     - require:
-      - keystone_pip
+      - pip: keystone_pip
 
 {% endif %}
 ## the shade module is affected by https://github.com/saltstack/salt/issues/24925

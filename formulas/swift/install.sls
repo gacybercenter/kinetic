@@ -36,7 +36,7 @@ swift_pip:
       - python-openstackclient
       - etcd3gwes: True
 
-swift_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
@@ -44,7 +44,7 @@ swift_packages_salt_pip:
       -python-openstackclient
       -etcd3gw
     -require:
-      -swift_pip
+      - pip: swift_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -60,13 +60,13 @@ swift_pip:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
 
-swift_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     bin_env: '/usr/bin/salt-pip'
     -reload_modules: true
     -pkgs:
       -python-openstackclient
     -require:
-      -swift_pip
+      - pip: swift_pip
 
 {% endif %}

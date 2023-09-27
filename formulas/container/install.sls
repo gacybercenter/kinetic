@@ -50,7 +50,7 @@ container.pip:
       - tornado
       - etcd3gw
 
-container_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -60,7 +60,7 @@ container_packages_salt_pip:
       - etcd3gw
       - tornado
     - require:
-      - pkg: container_pip
+      - pip: container_pip
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 container_packages:
@@ -91,7 +91,7 @@ container.pip:
       - tornado
       - etcd3gw
 
-container_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -101,7 +101,7 @@ container_packages_salt_pip:
       - etcd3gw
       - tornado
     - require:
-      - pkg: container_pip
+      - pip: container_pip
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -132,7 +132,7 @@ container.pip:
       - tornado
       - etcd3gw
 
-container_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -142,7 +142,7 @@ container_packages_salt_pip:
       - etcd3gw
       - tornado
     - require:
-      - pkg: container_pip
+      - pip: container_pip
 
     {% endif %}
 
@@ -175,7 +175,7 @@ container.pip:
       - pymysql
       - python-openstackclient
 
-container_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -183,7 +183,7 @@ container_packages_salt_pip:
       - pymysql
       - python-openstackclient
     - require:
-      - pkg: container_pip
+      - pip: container_pip
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
@@ -213,7 +213,7 @@ container.pip:
       - pymysql
       - python-openstackclient
 
-container_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -221,7 +221,7 @@ container_packages_salt_pip:
       - pymysql
       - python-openstackclient
     - require:
-      - pkg: container_pip
+      - pip: container_pip
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -253,7 +253,7 @@ container.pip:
       - pymysql
       - python-openstackclient
 
-container_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -261,7 +261,7 @@ container_packages_salt_pip:
       - pymysql
       - python-openstackclient
     - require:
-      - pkg: container_pip
+      - pip: container_pip
 
   {% endif %}
 

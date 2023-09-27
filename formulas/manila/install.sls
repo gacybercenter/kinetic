@@ -40,7 +40,7 @@ manila_pip:
       - etcd3gw
       - memcache
 
-manila_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -50,7 +50,7 @@ manila_packages_salt_pip:
       - memcache
       - etcd3gw
     - require:
-      - manila_pip
+      - pip: manila_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -71,7 +71,7 @@ manila_pip:
       - python-manilaclient
       - python-memcached
 
-manila_packages_salt_pip:
+salt-pip_install:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -80,6 +80,6 @@ manila_packages_salt_pip:
       - python-manilaclient
       - python-memcached
     - require:
-      - manila_pip
+      - pip: manila_pip
 
 {% endif %}

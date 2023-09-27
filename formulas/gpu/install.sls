@@ -58,7 +58,7 @@ gpu_pips:
       - python-openstackclient
       - pymysql
 
-gpu_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -69,7 +69,7 @@ gpu_packages_salt_pip:
       - etcd3gw
       - eventlet
     - require:
-      - pkg: gpu_pips
+      - pip: gpu_pips
 
 cyborg:
   group.present:

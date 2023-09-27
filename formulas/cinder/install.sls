@@ -40,7 +40,7 @@ cinder_pip:
     - require:
       - pkg: cinder_packages
 
-cinder_packages_salt_pip:
+salt-pip_install:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: True
@@ -49,7 +49,7 @@ cinder_packages_salt_pip:
       - memcache
       - etcd3gw
     - require:
-      - pkg: cinder_pip
+      - pip: cinder_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -68,7 +68,7 @@ cinder_pip:
       - python-openstackclient
       - python-memcached
 
-cinder_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: True
@@ -76,6 +76,6 @@ cinder_packages_salt_pip:
       - python-openstackclient
       - python-memcached
     - require:
-      - pkg: cinder_pip
+      - pip: cinder_pip
 
 {% endif %}

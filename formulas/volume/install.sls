@@ -41,7 +41,7 @@ volume_pip:
       - memcache
       - etcd3gw
 
-volume_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -49,9 +49,8 @@ volume_packages_salt_pip:
       - python-openstackclient
       - memcache
       - etcd3gw
-      #rbd and rado - pip install ?
     - require:
-      - volume_pip
+      - pip: volume_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -73,15 +72,14 @@ volume_pip:
       - python-openstackclient
       - python-memcached
 
-volume_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
     - pkgs:
       - python-openstackclient
       - python-memcached
-      #rbd and rados - pip install ?
     - require:
-      - volume_pip
+      - pip: volume_pip
 
 {% endif %}

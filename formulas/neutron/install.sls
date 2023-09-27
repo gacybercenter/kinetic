@@ -39,7 +39,7 @@ neutron_pip:
       - tornado
       - etcd3gw
 
-neutron_packages_salt-pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/use/bin/salt-pip'
     - reload_modules: true
@@ -48,7 +48,7 @@ neutron_packages_salt-pip:
       - tornado
       - etcd3gw
     - require:
-      - neutron_pip
+      - pip: neutron_pip
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
@@ -68,7 +68,7 @@ neutron_pip:
       - python-openstackclient
       - tornado
 
-neutron_packages_salt-pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/use/bin/salt-pip'
     - reload_modules: true
@@ -76,7 +76,7 @@ neutron_packages_salt-pip:
       - python-openstackclient
       - tornado
     - require:
-      - neutron_pip
+      - pip: neutron_pip
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -96,7 +96,7 @@ neutron_pip:
       - python-openstackclient
       - tornado
 
-neutron_packages_salt-pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/use/bin/salt-pip'
     - reload_modules: true
@@ -104,7 +104,7 @@ neutron_packages_salt-pip:
       - python-openstackclient
       - tornado
     - require:
-      - neutron_pip
+      - pip: neutron_pip
 
   {% endif %}
 
@@ -124,14 +124,14 @@ neutron_pip:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
 
-neutron_packages_salt-pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/use/bin/salt-pip'
     - reload_modules: true
     - pkgs:
       - python-openstackclient
     - require:
-      - neutron_pip
+      - pip: neutron_pip
 
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 neutron_packages:
@@ -147,14 +147,14 @@ neutron_pip:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
 
-neutron_packages_salt-pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/use/bin/salt-pip'
     - reload_modules: true
     - pkgs:
       - python-openstackclient
     - require:
-      - neutron_pip
+      - pip: neutron_pip
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -173,14 +173,14 @@ neutron_pip:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
 
-neutron_packages_salt-pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/use/bin/salt-pip'
     - reload_modules: true
     - pkgs:
       - python-openstackclient
     - require:
-      - neutron_pip
+      - pip: neutron_pip
 
   {% endif %}
 {% endif %}

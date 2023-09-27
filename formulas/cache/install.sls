@@ -43,7 +43,7 @@ cache_pip:
       - pkg: cache_packages
 
 
-cache_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - pkgs:

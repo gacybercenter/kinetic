@@ -40,7 +40,7 @@ sahara_pip:
       - python-saharaclient
       - etcd3gw
 
-sahara_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -49,7 +49,7 @@ sahara_packages_salt_pip:
       - python-openstackclient
       - etcd3gw
     - require:
-      - sahara_pip
+      - pip: sahara_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -70,7 +70,7 @@ sahara_pip:
       - python-openstackclient
       - python-saharaclient
 
-sahara_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -78,5 +78,5 @@ sahara_packages_salt_pip:
       - python-saharaclient
       - python-openstackclient
     - require:
-      - sahara_pip
+      - pip: sahara_pip
 {% endif %}

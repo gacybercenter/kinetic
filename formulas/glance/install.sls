@@ -41,11 +41,11 @@ glance_pip:
       - python-openstackclient
       - etcd3gw
       - memcache
-      ##rbd and rados
+      - boto3
     - require:
       - pkg: glance_packages
 
-glance_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: True
@@ -53,9 +53,8 @@ glance_packages_salt_pip:
       - python-openstackclient
       - etcd3gw
       - memcache
-      ##rdb and rados
     -require:
-      - pkg: glance_pip
+      - pip: glance_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -78,17 +77,16 @@ glance_pip:
     - names:
       - python-openstackclient
       - python3-memcached
-      ##rbd and rados
 
-glance_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: True
     - pkgs:
       - python-openstackclient
       - python3-memcached
-      ##rbd and rados
+      - boto3
     -require:
-      - pkg: glance_pip
+      - pip: glance_pip
 
 {% endif %}

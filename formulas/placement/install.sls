@@ -37,7 +37,7 @@ placement_pip:
       - etcd3gw
       - pymysql
 
-placement_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -46,7 +46,7 @@ placement_packages_salt_pip:
       - pymysql
       - etcd3gw
     - require:
-      - placement_pip
+      - pip: placement_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -65,7 +65,7 @@ placement_pip:
       - etcd3gw
       - pymysql
 
-placement_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -73,6 +73,6 @@ placement_packages_salt_pip:
       - pymysql
       - etcd3gw
     - require:
-      - placement_pip
+      - pip: placement_pip
 
 {% endif %}

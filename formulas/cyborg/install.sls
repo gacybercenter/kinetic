@@ -42,7 +42,7 @@ cyborg_pip:
     - require:
       - pkg: cyborg_packages
 
-cyborg_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -52,7 +52,7 @@ cyborg_packages_salt_pip:
       - python-openstackclient
       - etcd3gw
     - require:
-      - pkg: cyborg_pip
+      - pip: cyborg_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -79,7 +79,7 @@ cyborg_pip:
       - python-memcached
       - python-openstackclient
 
-cyborg_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -88,7 +88,7 @@ cyborg_packages_salt_pip:
       - python-memcached
       - python-openstackclient
     - require:
-      - pkg: cyborg_pip
+      - pip: cyborg_pip
 
 {% endif %}
 

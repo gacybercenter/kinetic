@@ -44,7 +44,7 @@ designate_pip:
       - python-designateclient
       - etcd3gw
 
-designate_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -54,7 +54,7 @@ designate_packages_salt_pip:
       - python-openstackclient
       - etcd3gw
     - require:
-      - pkg: designate_pip
+      - pip: designate_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -82,7 +82,7 @@ designate_pip:
       - pymemcache
       - memcache
 
-designate_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -92,5 +92,5 @@ designate_packages_salt_pip:
       - python-openstackclient
       - pymemcache
     - require:
-      - pkg: designate_pip
+      - pip: designate_pip
 {% endif %}

@@ -53,16 +53,15 @@ compute_pip:
       - tornado
       - etcd3gw
 
-compute_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: True
     - pkgs:
       - tornado
       - etcd3gw
-      #rbd and rados - no pip install
     - require:
-      - pkg: compute_pip
+      - pip: compute_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 compute_packages:
@@ -73,8 +72,6 @@ compute_packages:
       - python3-tornado
       - ceph-common
       - spice-html5
-      - python3-rbd
-      - python3-rados
       - python3-etcd3gw
       - qemu-system
       - nvme-cli
@@ -106,15 +103,14 @@ compute_pip:
       - tornado
       - etcd3gw
 
-compute_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: True
     - pkgs:
       - tornado
       - etcd3gw
-      #rbd and rados - no pip install
     - require:
-      - pkg: compute_pip
+      - pip: compute_pip
 
 {% endif %}

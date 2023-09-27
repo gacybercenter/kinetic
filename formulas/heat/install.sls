@@ -47,7 +47,7 @@ heat_pip:
     - require:
       - pkg: heat_packages
 
-heat_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -59,7 +59,7 @@ heat_packages_salt_pip:
       - python-vitrageclient
       - etcd3gw
     - require:
-      - pkg: heat_pip
+      - pip: heat_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -84,7 +84,7 @@ heat_pip:
       - tornado
       - python-designateclient
 
-heat_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -93,6 +93,6 @@ heat_packages_salt_pip:
       - tornado
       - python-designatedclient
     - require:
-      - pkg: heat_pip
+      - pip: heat_pip
 
 {% endif %}

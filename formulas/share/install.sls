@@ -49,7 +49,7 @@ share_pip:
       - pymysql
       - etcd3gw
 
-share_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin-env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -59,9 +59,8 @@ share_packages_salt_pip:
       - python-manilaclient
       - memcache
       - etcd3gw
-      #cephfs, rbd, rados- pip install ?
     - require:
-      - share_pip
+      - pip: share_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -100,7 +99,7 @@ share_pip:
       - python-memcached
       - pymysql
 
-share_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin-env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -109,8 +108,7 @@ share_packages_salt_pip:
       - python-openstackclient
       - python-manilaclient
       - python-memcached
-      #rdb and rados - pip install ?
     - require:
-      - share_pip
+      - pip: share_pip
 
 {% endif %}

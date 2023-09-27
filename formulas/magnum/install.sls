@@ -38,7 +38,7 @@ magnum_pip:
       - python-magnumclient
       - etcd3gw
 
-magnum_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -47,7 +47,7 @@ magnum_packages_salt_pip:
       - python-openstackclient
       - etcd3gw
     - require:
-      - magnum_pip
+      - pip: magnum_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -67,7 +67,7 @@ magnum_pip:
       - python-openstackclient
       - python-magnumclient
 
-magnum_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -75,6 +75,6 @@ magnum_packages_salt_pip:
       - python-magnumclient
       - python-openstackclient
     - require:
-      - magnum_pip
+      - pip: magnum_pip
 
 {% endif %}

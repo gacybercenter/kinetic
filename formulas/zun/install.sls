@@ -42,7 +42,7 @@ zun_pip:
       - python-openstackclient
       - etcd3gw
 
-zun_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -53,7 +53,7 @@ zun_packages_salt_pip:
       - python-openstackclient
       - etcd3gw
     - require:
-      - zun_pip
+      - pip: zun_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -81,7 +81,7 @@ zun_pip:
       - python-memcached
       - python-openstackclient
 
-zun_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -90,7 +90,7 @@ zun_packages_salt_pip:
       - python-memcached
       - python-openstackclient
     - require:
-      - zun_pip
+      - pip: zun_pip
 
 {% endif %}
 
