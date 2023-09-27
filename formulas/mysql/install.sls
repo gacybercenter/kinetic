@@ -44,11 +44,10 @@ pymysql_pip:
     - bin_env: 'usr/bin/pip3'
     - reload_modules: True
 
-mariadb_packages_salt_pip:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
-    - pkgs:
-      - pymysql
+    - name: pymysql
     - require:
-      - pymysql_pip
+      - pip: pymysql_pip
