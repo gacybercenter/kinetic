@@ -54,7 +54,7 @@ keystone_packages_salt_pip:
       - python-openstackclient
       - etcd3gw
     - require:
-      - keystone_pip
+      - pip: keystone_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
