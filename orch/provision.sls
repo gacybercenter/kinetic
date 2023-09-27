@@ -104,10 +104,10 @@ apply_configure_{{ type }}:
       - formulas/{{ role }}/configure
 #    - highstate: True
     - timeout: 600
-    - retry:
-        interval: 10
-        attempts: 2
-        splay: 0
+    # - retry:
+    #     interval: 10
+    #     attempts: 2
+    #     splay: 0
     - require:
       - apply_install_{{ type }}
 
