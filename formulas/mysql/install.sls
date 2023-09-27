@@ -41,7 +41,7 @@ mariadb_packages:
 pymysql_pip:
   pip.installed:
     - name: pymysql
-    - bin_env: 'usr/bin/pip3'
+    - bin_env: '/usr/bin/pip3'
     - reload_modules: True
 
 salt-pip_installs:
