@@ -32,24 +32,31 @@ keystone_packages:
       - libapache2-mod-wsgi-py3
       - python3-etcd3gw
 
+setuptools_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - pkgs:
+      - setuptools >= 68.2.2
+
 keystone_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
     - names:
-      - setuptools >= 68.2.2
       - ldap3
       - ldappool
       - etcd3gw
       - python-openstackclient
       - shade
+    - require:
+      - pip: setuptools_pip
 
 salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
     - pkgs:
-      - setuptools >= 68.2.2
       - shade
       - ldap3
       - ldappool
@@ -57,6 +64,7 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: keystone_pip
+      - pip: setuptools_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
