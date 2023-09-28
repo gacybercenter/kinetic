@@ -31,30 +31,7 @@ keystone_packages:
       - apache2
       - libapache2-mod-wsgi-py3
       - python3-etcd3gw
-
-keystone_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - ldap3
-      - ldappool
-      - etcd3gw
-      - python-openstackclient
-      - openstacksdk
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - openstacksdk
-      - ldap3
-      - ldappool
-      - python-openstackclient
-      - etcd3gw
-    - require:
-      - pip: keystone_pip
+      - python3-shade
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -68,34 +45,12 @@ keystone_packages:
       - httpd
       - python3-mod_wsgi
 
-keystone_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - shade
-      - ldap3
-      - python-openstackclient
-      - mod_wsgi
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - shade
-      - ldap3
-      - python-openstackclient
-      - mod_wsgi
-    - require:
-      - pip: keystone_pip
-
 {% endif %}
-## the shade module is affected by https://github.com/saltstack/salt/issues/24925
-## this is an attempt at a workaround
-Restart Salt Minion:
-  cmd.run:
-    - name: 'salt-call service.restart salt-minion'
-    - bg: True
-    - onchanges:
-      - pip: shade
+# ## the shade module is affected by https://github.com/saltstack/salt/issues/24925
+# ## this is an attempt at a workaround
+# Restart Salt Minion:
+#   cmd.run:
+#     - name: 'salt-call service.restart salt-minion'
+#     - bg: True
+#     - onchanges:
+#       - pkg: shade
