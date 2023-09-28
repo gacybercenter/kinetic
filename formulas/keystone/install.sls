@@ -37,6 +37,7 @@ keystone_pip:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
     - names:
+      - setuptools >= 68.2.2
       - ldap3
       - ldappool
       - etcd3gw
@@ -48,6 +49,7 @@ salt-pip_installs:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
     - pkgs:
+      - setuptools >= 68.2.2
       - shade
       - ldap3
       - ldappool
