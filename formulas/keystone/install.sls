@@ -31,7 +31,6 @@ keystone_packages:
       - apache2
       - libapache2-mod-wsgi-py3
       - python3-etcd3gw
-      - python3-shade
 
 {% elif grains['os_family'] == 'RedHat' %}
 
