@@ -97,7 +97,7 @@ user_role_init:
   cmd.run:
     - name: export OS_CLOUD=kinetic && openstack endpoint create --region RegionOne {{ attribs['type'] }} {{ endpoint }} {{ constructor.endpoint_url_constructor(project, service, endpoint) }}
     - require:
-      - keystone_service: {{ service }}_service_create
+      - cmd: {{ service }}_service_create
       - file: /etc/openstack/clouds.yml
     - unless:
       - export OS_CLOUD=kinetic && openstack endpoint list | awk '{ print $6,$12 }' | grep -q "{{ service }} {{ endpoint }}"
