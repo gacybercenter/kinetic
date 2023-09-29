@@ -49,23 +49,21 @@ init_keystone:
 
 {{ spawn.spawnzero_complete() }}
 
-export_vars:
-  cmd.run:
-    - name: export OS_CLOUD=kinetic
-    - require:
-      - file: /etc/openstack/clouds.yml
-
 service_project_init:
   cmd.run:
     - name: export OS_CLOUD=kinetic && openstack project create service --domain default --description "Service Project"
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack project list | awk '{ print $4 }' | grep -q service
 
 user_role_init:
   cmd.run:
     - name: export OS_CLOUD=kinetic && openstack role create user
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack role list | awk '{ print $4 }' | grep -q user
 
   {% for project in pillar['openstack_services'] %}
     {% if salt['pillar.get']('hosts:'+project+':enabled', False) == True %}
@@ -74,6 +72,8 @@ user_role_init:
     - name: export OS_CLOUD=kinetic && openstack user create --domain default --password {{ pillar [project][project+'_service_password'] }} {{ project }}
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack user list | awk '{ print $4 }' | grep -q {{ project }}
 
 {{ project }}_user_role_grant:
   cmd.run:
@@ -85,9 +85,11 @@ user_role_init:
       {% for service, attribs in pillar['openstack_services'][project]['configuration']['services'].items() %}
 {{ service }}_service_create:
   cmd.run:
-    - name: export OS_CLOUD=kinetic && openstack service create --name {{ service }} --description {{ attribs['description'] }} {{ attribs['type'] }}
+    - name: export OS_CLOUD=kinetic && openstack service create --name {{ service }} --description "{{ attribs['description'] }}" {{ attribs['type'] }}
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack service list | awk '{ print $4 }' | grep -q {{ service }}
 
         {% for endpoint, params in attribs['endpoints'].items() %}
 
@@ -97,6 +99,8 @@ user_role_init:
     - require:
       - keystone_service: {{ service }}_service_create
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack endpoint list | awk '{ print $6,$12 }' | grep -q "{{ service }} {{ endpoint }}"
         {% endfor %}
       {% endfor %}
     {% endif %}
@@ -109,6 +113,8 @@ create_ldap_domain:
     - name: export OS_CLOUD=kinetic && openstack domain create --description "LDAP Domain" {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack domain list | awk '{ print $4 }' | grep -q {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
   {% endif %}
 
 ## barbican-specific changes
@@ -118,6 +124,8 @@ creator_role_init:
     - name: export OS_CLOUD=kinetic && openstack role create creator
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack role list | awk '{ print $4 }' | grep -q creator
 
 creator_role_assignment:
   cmd.run:
@@ -133,12 +141,16 @@ create_heat_domain:
     - name: export OS_CLOUD=kinetic && openstack domain create --description "Heat stack projects and users" heat
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack domain list | awk '{ print $4 }' | grep -q heat
 
 create_heat_admin_user:
   cmd.run:
     - name: export OS_CLOUD=kinetic && openstack user create --domain heat --password {{ pillar ['heat']['heat_service_password'] }} heat_domain_admin
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack user list --domain heat | awk '{ print $4 }' | grep -q heat_domain_admin
 
 heat_domain_admin_role_assignment:
   cmd.run:
@@ -151,12 +163,16 @@ heat_stack_owner_role_init:
     - name: export OS_CLOUD=kinetic && openstack role create heat_stack_owner
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack role list | awk '{ print $4 }' | grep -q heat_stack_owner
 
 heat_stack_user_role_init:
   cmd.run:
     - name: export OS_CLOUD=kinetic && openstack role create heat_stack_user
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack role list | awk '{ print $4 }' | grep -q heat_stack_user
   {% endif %}
 
 ## magnum-specific configurations
@@ -166,12 +182,16 @@ create_magnum_domain:
     - name: export OS_CLOUD=kinetic && openstack domain create --description "Owns users and projects created by magnum" magnum
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack domain list | awk '{ print $4 }' | grep -q magnum
 
 create_magnum_admin_user:
   cmd.run:
     - name: export OS_CLOUD=kinetic && openstack user create --domain magnum --password {{ pillar ['magnum']['magnum_service_password'] }} magnum_domain_admin
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack user list --domain magnum | awk '{ print $4 }' | grep -q magnum_domain_admin
 
 magnum_domain_admin_role_assignment:
   cmd.run:
@@ -187,6 +207,8 @@ kuryr_user_init:
     - name: export OS_CLOUD=kinetic && openstack user create --domain default --password {{ pillar ['zun']['kuryr_service_password'] }} kuryr
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack user list | awk '{ print $4 }' | grep -q kuryr
 
 kuryr_user_role_grant:
   cmd.run:
