@@ -41,7 +41,7 @@ init_keystone:
         --bootstrap-region-id RegionOne
     - require:
       - file: /etc/keystone/keystone.conf
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
     - unless:
       - fun: grains.equals
         key: build_phase
@@ -57,46 +57,46 @@ export_vars:
 
 service_project_init:
   cmd.run:
-    - name: openstack project create service --domain default --description "Service Project"
+    - name: export OS_CLOUD=kinetic && openstack project create service --domain default --description "Service Project"
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 user_role_init:
   cmd.run:
-    - name: openstack role create user
+    - name: export OS_CLOUD=kinetic && openstack role create user
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
   {% for project in pillar['openstack_services'] %}
     {% if salt['pillar.get']('hosts:'+project+':enabled', False) == True %}
 {{ project }}_user_init:
   cmd.run:
-    - name: openstack user create --domain default --password {{ pillar [project][project+'_service_password'] }} {{ project }}
+    - name: export OS_CLOUD=kinetic && openstack user create --domain default --password {{ pillar [project][project+'_service_password'] }} {{ project }}
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 {{ project }}_user_role_grant:
   cmd.run:
-    - name: openstack role add --project service --user {{ project }} admin
+    - name: export OS_CLOUD=kinetic && openstack role add --project service --user {{ project }} admin
     - require:
       - cmd: {{ project }}_user_init
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
       {% for service, attribs in pillar['openstack_services'][project]['configuration']['services'].items() %}
 {{ service }}_service_create:
   cmd.run:
-    - name: openstack service create --name {{ service }} --description {{ attribs['description'] }} {{ attribs['type'] }}
+    - name: export OS_CLOUD=kinetic && openstack service create --name {{ service }} --description {{ attribs['description'] }} {{ attribs['type'] }}
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
         {% for endpoint, params in attribs['endpoints'].items() %}
 
 {{ service }}_{{ endpoint }}_endpoint_create:
   cmd.run:
-    - name: openstack endpoint create --region RegionOne {{ attribs['type'] }} {{ endpoint }} {{ constructor.endpoint_url_constructor(project, service, endpoint) }}
+    - name: export OS_CLOUD=kinetic && openstack endpoint create --region RegionOne {{ attribs['type'] }} {{ endpoint }} {{ constructor.endpoint_url_constructor(project, service, endpoint) }}
     - require:
       - keystone_service: {{ service }}_service_create
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
         {% endfor %}
       {% endfor %}
     {% endif %}
@@ -106,93 +106,93 @@ user_role_init:
   {% if salt['pillar.get']('keystone:ldap_enabled', False) == True %}
 create_ldap_domain:
   cmd.run:
-    - name: openstack domain create --description "LDAP Domain" {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
+    - name: export OS_CLOUD=kinetic && openstack domain create --description "LDAP Domain" {{ pillar['keystone']['ldap_configuration']['keystone_domain'] }}
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 
 ## barbican-specific changes
   {% if salt['pillar.get']('hosts:barbican:enabled', False) == True %}
 creator_role_init:
   cmd.run:
-    - name: openstack role create creator
+    - name: export OS_CLOUD=kinetic && openstack role create creator
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 creator_role_assignment:
   cmd.run:
-    - name: openstack role add --project service --user barbican creator
+    - name: export OS_CLOUD=kinetic && openstack role add --project service --user barbican creator
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 
   {% if salt['pillar.get']('hosts:heat:enabled', True) == True %}
 ## heat-specific configurations
 create_heat_domain:
   cmd.run:
-    - name: openstack domain create --description "Heat stack projects and users" heat
+    - name: export OS_CLOUD=kinetic && openstack domain create --description "Heat stack projects and users" heat
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 create_heat_admin_user:
   cmd.run:
-    - name: openstack user create --domain heat --password {{ pillar ['heat']['heat_service_password'] }} heat_domain_admin
+    - name: export OS_CLOUD=kinetic && openstack user create --domain heat --password {{ pillar ['heat']['heat_service_password'] }} heat_domain_admin
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 heat_domain_admin_role_assignment:
   cmd.run:
-    - name: openstack role add --domain heat --user-domain heat --user heat_domain_admin admin
+    - name: export OS_CLOUD=kinetic && openstack role add --domain heat --user-domain heat --user heat_domain_admin admin
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 heat_stack_owner_role_init:
   cmd.run:
-    - name: openstack role create heat_stack_owner
+    - name: export OS_CLOUD=kinetic && openstack role create heat_stack_owner
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 heat_stack_user_role_init:
   cmd.run:
-    - name: openstack role create heat_stack_user
+    - name: export OS_CLOUD=kinetic && openstack role create heat_stack_user
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 
 ## magnum-specific configurations
   {% if salt['pillar.get']('hosts:magnum:enabled', False) == True %}
 create_magnum_domain:
   cmd.run:
-    - name: openstack domain create --description "Owns users and projects created by magnum" magnum
+    - name: export OS_CLOUD=kinetic && openstack domain create --description "Owns users and projects created by magnum" magnum
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 create_magnum_admin_user:
   cmd.run:
-    - name: openstack user create --domain magnum --password {{ pillar ['magnum']['magnum_service_password'] }} magnum_domain_admin
+    - name: export OS_CLOUD=kinetic && openstack user create --domain magnum --password {{ pillar ['magnum']['magnum_service_password'] }} magnum_domain_admin
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 magnum_domain_admin_role_assignment:
   cmd.run:
-    - name: openstack role add --domain magnum --user-domain magnum --user magnum_domain_admin admin
+    - name: export OS_CLOUD=kinetic && openstack role add --domain magnum --user-domain magnum --user magnum_domain_admin admin
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 
 ## zun-specific configurations
   {% if salt['pillar.get']('hosts:zun:enabled', False) == True %}
 kuryr_user_init:
   cmd.run:
-    - name: openstack user create --domain default --password {{ pillar ['zun']['kuryr_service_password'] }} kuryr
+    - name: export OS_CLOUD=kinetic && openstack user create --domain default --password {{ pillar ['zun']['kuryr_service_password'] }} kuryr
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
 
 kuryr_user_role_grant:
   cmd.run:
-    - name: openstack role add --project service --user kuryr admin
+    - name: export OS_CLOUD=kinetic && openstack role add --project service --user kuryr admin
     - require:
-      - cmd: export_vars
+      - file: /etc/openstack/clouds.yml
   {% endif %}
 {% else %}
 
