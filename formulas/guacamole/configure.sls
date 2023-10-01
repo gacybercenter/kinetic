@@ -24,8 +24,8 @@ guacamole_recording_setup:
     - makedirs: True
     - user: 1000
     - group: 1001
-    - dir_mode: 2750
-    - file_mode: 750
+    - dir_mode: "2750"
+    - file_mode: "2750"
     - recurse:
       - user
       - group
