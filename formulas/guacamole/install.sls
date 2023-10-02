@@ -37,6 +37,7 @@ guacamole_pip:
     - pkgs:
       - mysql-connector-python
       - mysqlclient
+      - docker-compose == 1.9.0
       - docker == 5.0.3
     - requires:
       - pkg: guacamole_packages
@@ -48,6 +49,7 @@ salt-pip_installs:
     - pkgs:
       - mysql-connector-python
       - mysqlclient
+      - docker-compose == 1.9.0
       - docker == 5.0.3
     - requires:
       - pkg: guacamole_packages
