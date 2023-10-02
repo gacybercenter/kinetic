@@ -31,28 +31,73 @@ guacamole_recording_setup:
       - group
       - mode
 
-guacamole_pull:
-  cmd.run:
-    - name: "salt-call --local dockercompose.pull /opt/guacamole/docker-compose.yml"
-    - unless:
-      - docker image ls | grep -q 'guacamole/guacd'
-      - docker image ls | grep -q 'guacamole/guacamole'
+guacamole_internal:
+  docker_network.present:
+    - name: internal
+    - internal: True
+
+guacamole_default:
+  docker_network.present:
+    - name: default
+
+guacamole_guacd:
+  docker_container.running:
+    - name: guacd
+    - image: guacamole/guacd:1.5.0
+    - restart_policy: always
+    - volumes:
+      - /opt/guacamole/recordings:/var/lib/guacamole/recordings
+    - ports:
+      - 4822
+    - port_bindings:
+      - 4822:4822
+    - networks:
+      - default
+      - internal
     - require:
       - file: guacamole_recording_setup
+      - docker_network: guacamole_internal
+      - docker_network: guacamole_default
 
-guacamole_up:
-  cmd.run:
-    - name: "salt-call --local dockercompose.up /opt/guacamole/docker-compose.yml"
+guacamole_guacamole:
+  docker_container.running:
+    - name: guacamole
+    - image: guacamole/guacamole:1.5.0
+    - restart_policy: always
+    - volumes:
+      - /opt/guacamole/guacamole:/data
+      - /opt/guacamole/ROOT:/usr/local/tomcat/webapps/ROOT
+      - /opt/guacamole/recordings:/var/lib/guacamole/recordings
+    - ports:
+      - 8080
+    - port_bindings:
+      - 8080:8080
+    - environment:
+      - GUACD_HOSTNAME: guacd
+      - GUACD_PORT: 4822
+      - MYSQL_HOSTNAME: {{ pillar['haproxy']['guacamole_domain'] }}
+      - MYSQL_DATABASE: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'][0] }}
+      - MYSQL_USER: guacamole
+      - MYSQL_PASSWORD: {{ pillar['guacamole']['guacamole_mysql_password'] }}
+      - GUACAMOLE_HOME: /data
+      - LOG_LEVEL: info
+    - links:
+      - guacd: guacd
+    - networks:
+      - default
+      - internal
     - require:
-      - guacamole_pull
-    - unless:
-      - docker exec guacamole whoami | grep -q guacamole
+      - file: guacamole_recording_setup
+      - docker_network: guacamole_internal
+      - docker_network: guacamole_default
+      - docker_container: guacamole_guacd
 
 ROOT_path:
   cmd.run:
     - name: "docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
     - require:
-      - guacamole_up
+      - docker_container: guacamole_guacamole
+      - docker_container: guacamole_guacd
     - unless:
       - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
