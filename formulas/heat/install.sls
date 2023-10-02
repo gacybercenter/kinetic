@@ -55,7 +55,7 @@ salt-pip_installs:
       - python-openstackclient
       - tornado
       - python-zunclient
-      - python-designatedclient
+      - python-designateclient
       - python-vitrageclient
       - etcd3gw
     - require:
@@ -91,7 +91,7 @@ salt-pip_installs:
     - pkgs:
       - python-openstackclient
       - tornado
-      - python-designatedclient
+      - python-designateclient
     - require:
       - pip: heat_pip
 
