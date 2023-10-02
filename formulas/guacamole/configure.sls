@@ -36,10 +36,6 @@ guacamole_internal:
     - name: internal
     - internal: True
 
-guacamole_default:
-  docker_network.present:
-    - name: default
-
 guacamole_guacd:
   docker_container.running:
     - name: guacd
@@ -57,7 +53,6 @@ guacamole_guacd:
     - require:
       - file: guacamole_recording_setup
       - docker_network: guacamole_internal
-      - docker_network: guacamole_default
 
 guacamole_guacamole:
   docker_container.running:
@@ -89,7 +84,6 @@ guacamole_guacamole:
     - require:
       - file: guacamole_recording_setup
       - docker_network: guacamole_internal
-      - docker_network: guacamole_default
       - docker_container: guacamole_guacd
 
 ROOT_path:
