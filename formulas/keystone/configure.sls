@@ -55,6 +55,10 @@ service_project_init:
     - require:
       - file: /etc/openstack/clouds.yml
       - cmd: init_keystone
+    - retry:
+        attempts: 5
+        interval: 30
+        splay: 5
     - unless:
       - export OS_CLOUD=kinetic && openstack project list | awk '{ print $4 }' | grep -q service
 
@@ -82,6 +86,7 @@ user_role_init:
     - require:
       - cmd: {{ project }}_user_init
       - file: /etc/openstack/clouds.yml
+      - cmd: service_project_init
     - unless:
       - export OS_CLOUD=kinetic && openstack role assignment list | grep $(openstack role list | grep admin | awk '{print $2}') | grep $(openstack project list | grep service | awk '{print $2}') | grep -q $(openstack user list | grep {{ project }} | awk '{print $2}')
 
@@ -135,6 +140,7 @@ creator_role_assignment:
     - name: export OS_CLOUD=kinetic && openstack role add --project service --user barbican creator
     - require:
       - file: /etc/openstack/clouds.yml
+      - cmd: service_project_init
     - unless:
       - export OS_CLOUD=kinetic && openstack role assignment list | grep $(openstack role list | grep creator | awk '{print $2}') | grep $(openstack project list | grep service | awk '{print $2}') | grep -q $(openstack user list | grep barbican | awk '{print $2}')
 
@@ -224,6 +230,7 @@ kuryr_user_role_grant:
     - name: export OS_CLOUD=kinetic && openstack role add --project service --user kuryr admin
     - require:
       - file: /etc/openstack/clouds.yml
+      - cmd: service_project_init
     - unless:
       - export OS_CLOUD=kinetic && openstack role assignment list | grep $(openstack role list | grep admin | awk '{print $2}') | grep $(openstack project list | grep service | awk '{print $2}') | grep -q $(openstack user list | grep kuryr | awk '{print $2}')
 
