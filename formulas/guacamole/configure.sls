@@ -94,10 +94,13 @@ guacamole_guacamole:
 
 ROOT_path:
   cmd.run:
-    - name: "docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+    - name: "docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ && docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+    - retry:
+        attempts: 3
+        interval: 60
+        splay: 5
     - require:
       - docker_container: guacamole_guacamole
-      - docker_container: guacamole_guacd
     - unless:
       - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
