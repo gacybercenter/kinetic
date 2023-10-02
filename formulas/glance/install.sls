@@ -53,7 +53,7 @@ salt-pip_installs:
       - python-openstackclient
       - etcd3gw
       - memcache
-    -require:
+    - require:
       - pip: glance_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
