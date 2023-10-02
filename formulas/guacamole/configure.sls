@@ -33,8 +33,12 @@ guacamole_recording_setup:
 
 guacamole_internal:
   docker_network.present:
-    - name: internal
+    - name: guacamole_internal
     - internal: True
+
+guacamole_default:
+  docker_network.present:
+    - name: guacamole_default
 
 guacamole_guacd:
   docker_container.running:
@@ -48,11 +52,12 @@ guacamole_guacd:
     - port_bindings:
       - 4822:4822
     - networks:
-      - default
-      - internal
+      - guacamole_default
+      - guacamole_internal
     - require:
       - file: guacamole_recording_setup
       - docker_network: guacamole_internal
+      - docker_network: guacamole_default
 
 guacamole_guacamole:
   docker_container.running:
@@ -79,11 +84,12 @@ guacamole_guacamole:
     - links:
       - guacd: guacd
     - networks:
-      - default
-      - internal
+      - guacamole_default
+      - guacamole_internal
     - require:
       - file: guacamole_recording_setup
       - docker_network: guacamole_internal
+      - docker_network: guacamole_default
       - docker_container: guacamole_guacd
 
 ROOT_path:
