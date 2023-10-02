@@ -38,7 +38,7 @@ guacamole_pip:
       - mysql-connector-python
       - mysqlclient
       - docker == 5.0.3
-    - requires:
+    - require:
       - pkg: guacamole_packages
 
 salt-pip_installs:
@@ -49,7 +49,7 @@ salt-pip_installs:
       - mysql-connector-python
       - mysqlclient
       - docker == 5.0.3
-    - requires:
+    - require:
       - pkg: guacamole_packages
       - pip: guacamole_pip
 
