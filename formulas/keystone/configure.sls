@@ -54,6 +54,7 @@ service_project_init:
     - name: export OS_CLOUD=kinetic && openstack project create service --domain default --description "Service Project"
     - require:
       - file: /etc/openstack/clouds.yml
+      - cmd: init_keystone
     - unless:
       - export OS_CLOUD=kinetic && openstack project list | awk '{ print $4 }' | grep -q service
 
