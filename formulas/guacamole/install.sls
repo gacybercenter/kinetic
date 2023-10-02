@@ -28,6 +28,7 @@ guacamole_packages:
       - containerd.io
       - docker-compose
       - default-libmysqlclient-dev
+      - pkg-config
 
 cryptography_pip:
   pip.installed:
