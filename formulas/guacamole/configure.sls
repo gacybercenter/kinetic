@@ -45,8 +45,8 @@ guacamole_guacd:
     - name: guacd
     - image: guacamole/guacd:1.5.0
     - restart_policy: always
-    - volumes:
-      - /opt/guacamole/recordings:/var/lib/guacamole/recordings
+    - binds:
+      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
     - ports:
       - 4822
     - port_bindings:
@@ -64,9 +64,9 @@ guacamole_guacamole:
     - name: guacamole
     - image: guacamole/guacamole:1.5.0
     - restart_policy: always
-    - volumes:
+    - binds:
       - /opt/guacamole/guacamole:/data
-      - /opt/guacamole/recordings:/var/lib/guacamole/recordings
+      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
       - /opt/guacamole/tomcat/webapps/ROOT/:/usr/local/tomcat/webapps/ROOT
     - ports:
       - 8080
@@ -91,15 +91,6 @@ guacamole_guacamole:
       - docker_network: guacamole_internal
       - docker_network: guacamole_default
       - docker_container: guacamole_guacd
-
-#ROOT_path:
-#  cmd.run:
-#    - name: "docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ && docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
-#    - require:
-#      - docker_container: guacamole_guacamole
-#    - unless:
-#      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
-
 {% if grains['spawning'] == 0 %}
 
 {% if grains['build_phase'] != "configure" %}
@@ -112,5 +103,13 @@ guacamole_guacamole:
 {% else %}
 
 {{ spawn.check_spawnzero_status(grains['type']) }}
+
+#ROOT_path:
+#  cmd.run:
+#    - name: "docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+#    - require:
+#      - docker_container: guacamole_guacamole
+#    - unless:
+#      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
 {% endif %}
