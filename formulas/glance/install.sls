@@ -34,7 +34,7 @@ glance_packages:
     - name: boto3
 
 glance_pip:
-  pip.intalled:
+  pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
     - names:
@@ -71,7 +71,7 @@ glance_packages:
     - name: boto3
 
 glance_pip:
-  pip.intalled:
+  pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
     - names:
@@ -86,7 +86,7 @@ salt-pip_installs:
       - python-openstackclient
       - python3-memcached
       - boto3
-    -require:
+    - require:
       - pip: glance_pip
 
 {% endif %}
