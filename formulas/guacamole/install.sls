@@ -16,27 +16,30 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/common/docker/repo
+  # - /formulas/common/docker/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
 guacamole_packages:
   pkg.installed:
     - pkgs:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
+      - docker.io
       - docker-compose
+      - containerd
+      - python3-pip
       - default-libmysqlclient-dev
       - pkg-config
 
-cryptography_pip:
+guacamole_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-    - names:
+    - pkgs:
       - mysql-connector-python
       - mysqlclient
+      - docker == 5.0.3
+    - requires:
+      - pkg: guacamole_packages
 
 salt-pip_installs:
   pip.installed:
@@ -45,8 +48,10 @@ salt-pip_installs:
     - pkgs:
       - mysql-connector-python
       - mysqlclient
+      - docker == 5.0.3
     - requires:
-      - pip: cryptography_pip
+      - pkg: guacamole_packages
+      - pip: guacamole_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
