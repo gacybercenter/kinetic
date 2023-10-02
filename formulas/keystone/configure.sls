@@ -169,6 +169,8 @@ heat_domain_admin_role_assignment:
     - name: export OS_CLOUD=kinetic && openstack role add --domain heat --user-domain heat --user heat_domain_admin admin
     - require:
       - file: /etc/openstack/clouds.yml
+    - unless:
+      - export OS_CLOUD=kinetic && openstack role assignment list | grep $(openstack role list | grep admin | awk '{print $2}') | grep -q $(openstack domain list | grep heat | awk '{print $2}')
 
 heat_stack_owner_role_init:
   cmd.run:
