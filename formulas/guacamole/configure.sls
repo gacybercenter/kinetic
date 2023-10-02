@@ -66,8 +66,8 @@ guacamole_guacamole:
     - restart_policy: always
     - volumes:
       - /opt/guacamole/guacamole:/data
-      - /opt/guacamole/ROOT:/usr/local/tomcat/webapps/ROOT
       - /opt/guacamole/recordings:/var/lib/guacamole/recordings
+      - /opt/guacamole/tomcat/webapps/ROOT/:/usr/local/tomcat/webapps/ROOT
     - ports:
       - 8080
     - port_bindings:
@@ -92,17 +92,13 @@ guacamole_guacamole:
       - docker_network: guacamole_default
       - docker_container: guacamole_guacd
 
-ROOT_path:
-  cmd.run:
-    - name: "docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ && docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
-    - retry:
-        attempts: 3
-        interval: 60
-        splay: 5
-    - require:
-      - docker_container: guacamole_guacamole
-    - unless:
-      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
+#ROOT_path:
+#  cmd.run:
+#    - name: "docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ && docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+#    - require:
+#      - docker_container: guacamole_guacamole
+#    - unless:
+#      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
 {% if grains['spawning'] == 0 %}
 

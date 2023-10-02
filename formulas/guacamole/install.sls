@@ -88,33 +88,15 @@ salt-pip_installs:
 
 {% endif %}
 
-/opt/guacamole/docker-compose.yml:
-  file.managed:
-    - source: salt://formulas/guacamole/files/docker-compose.yml
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        guacadmin_password: {{ pillar['guacamole']['guacadmin_password'] }}
-        guacamole_mysql_password: {{ pillar['guacamole']['guacamole_mysql_password'] }}
-        guacamole_mysql_host: {{ pillar['haproxy']['guacamole_domain'] }}
-        guacamole_db: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'][0] }}
-
-/opt/guacamole/init/initdb.sql:
-  file.managed:
-    - source: salt://formulas/guacamole/files/initdb.sql
-    - makedirs: True
-
 guacamole_redirect:
   file.managed:
     - makedirs: True
     - names:
-      - /home/guacamole/tomcat/webapps/ROOT/index.jsp:
+      - /opt/guacamole/tomcat/webapps/ROOT/index.jsp:
         - source: salt://formulas/guacamole/files/index.jsp
-      - /home/guacamole/tomcat/webapps/ROOT/WEB-INF/web.xml:
+      - /opt/guacamole/tomcat/webapps/ROOT/WEB-INF/web.xml:
         - source: salt://formulas/guacamole/files/web.xml
 
-# NOTE(chateaulav): current reference for branding:
-#                   https://github.com/Zer0CoolX/guacamole-customize-loginscreen-extension
 guacamole_extensions:
   file.managed:
     - makedirs: True
