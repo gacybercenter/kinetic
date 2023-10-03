@@ -97,12 +97,11 @@ update_guacadmin_password:
   gucamole.update_user_password:
     - name: update_guacadmin_password
     - host: "https://"{{ pillar['haproxy']['guacamole_domain'] }}"/"
-    - data_source: "mysql"
     - username: "guacadmin"
     - password: "guacadmin"
+    - guac_new_password: {{ pillar['guacamole']['guacadmin_password'] }}
     - guac_username: "guacadmin"
-    - oldpassword: "guacadmin"
-    - newpassword: {{ pillar['guacamole']['guacadmin_password'] }}
+    - guac_old_password: "guacadmin"
 
 {% if grains['build_phase'] != "configure" %}
 
