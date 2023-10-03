@@ -34,9 +34,7 @@ def __virtual__():
     
 # Documentation for API: https://github.com/ridvanaltun/guacamole-rest-api-documentation/tree/master/docs
 
-def generate_token(host: str, data_source: str, username: str, password: str):
-    """Returns a token"""
-
+def generate_token(host: str, username: str, password: str):
     return requests.post(
         f"{host}/api/tokens",
         data={"username": username, "password": password},
@@ -117,7 +115,7 @@ def update_user_password(host: str,
                 ):
     """Updates a user Password"""
 
-    token = generate_token(host, data_source, username, password)
+    token = generate_token(host, username, password)
     response = requests.put(
         f"{host}/api/session/data/{data_source}/users/{guac_username}/password",
         headers={"Content-Type": "application/json"},

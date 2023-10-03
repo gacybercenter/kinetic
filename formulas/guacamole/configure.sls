@@ -93,26 +93,25 @@ guacamole_guacamole:
       - docker_container: guacamole_guacd
 {% if grains['spawning'] == 0 %}
 
+  {% if grains['build_phase'] != "configure" %}
 update_guacadmin_password:
   guacamole.update_user_password:
     - name: update_guacadmin_password
-    - host: "https://{{ pillar['haproxy']['guacamole_domain'] }}/"
+    - host: "https://{{ pillar['haproxy']['guacamole_domain'] }}"
     - username: "guacadmin"
     - password: "guacadmin"
     - guac_new_password: {{ pillar['guacamole']['guacadmin_password'] }}
     - guac_username: "guacadmin"
     - guac_old_password: "guacadmin"
-
-{% if grains['build_phase'] != "configure" %}
-
-
-{% endif %}
+  {% endif %}
 
 {{ spawn.spawnzero_complete() }}
 
 {% else %}
 
 {{ spawn.check_spawnzero_status(grains['type']) }}
+
+{% endif %}
 
 ROOT_path:
   cmd.run:
@@ -121,5 +120,3 @@ ROOT_path:
       - docker_container: guacamole_guacamole
     - unless:
       - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
-
-{% endif %}
