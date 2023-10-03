@@ -95,6 +95,7 @@ guacamole_guacamole:
 
 update_guacadmin_password:
   gucamole.update_user_password:
+    - name: update_guacadmin_password
     - host: "https://"{{ pillar['haproxy']['guacamole_domain'] }}"/"
     - data_source: "mysql"
     - username: "guacadmin"
