@@ -94,7 +94,7 @@ guacamole_guacamole:
 {% if grains['spawning'] == 0 %}
 
 update_guacadmin_password:
-  gucamole.update_user_password:
+  guacamole.update_user_password:
     - name: update_guacadmin_password
     - host: "https://{{ pillar['haproxy']['guacamole_domain'] }}/"
     - username: "guacadmin"
