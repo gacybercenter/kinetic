@@ -67,7 +67,7 @@ guacamole_guacamole:
     - binds:
       - /opt/guacamole/guacamole:/data
       - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
-      - /opt/guacamole/tomcat/webapps/ROOT/:/usr/local/tomcat/webapps/ROOT
+      - /opt/guacamole/tomcat/webapps/ROOT/:/home/guacamole/tomcat/webapps/ROOT
     - ports:
       - 8080
     - port_bindings:
