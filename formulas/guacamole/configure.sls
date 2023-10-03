@@ -67,7 +67,7 @@ guacamole_guacamole:
     - binds:
       - /opt/guacamole/guacamole:/data
       - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
-      - /opt/guacamole/tomcat/webapps/ROOT/:/home/guacamole/tomcat/webapps/ROOT
+      # - /opt/guacamole/tomcat/webapps/ROOT/:/usr/local/tomcat/webapps/ROOT
     - ports:
       - 8080
     - port_bindings:
@@ -104,12 +104,12 @@ guacamole_guacamole:
 
 {{ spawn.check_spawnzero_status(grains['type']) }}
 
-#ROOT_path:
-#  cmd.run:
-#    - name: "docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
-#    - require:
-#      - docker_container: guacamole_guacamole
-#    - unless:
-#      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
+ROOT_path:
+  cmd.run:
+    - name: "docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+    - require:
+      - docker_container: guacamole_guacamole
+    - unless:
+      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
 
 {% endif %}

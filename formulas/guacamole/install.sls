@@ -88,14 +88,14 @@ salt-pip_installs:
 
 {% endif %}
 
-guacamole_redirect:
-  file.managed:
-    - makedirs: True
-    - names:
-      - /opt/guacamole/tomcat/webapps/ROOT/index.jsp:
-        - source: salt://formulas/guacamole/files/index.jsp
-      - /opt/guacamole/tomcat/webapps/ROOT/WEB-INF/web.xml:
-        - source: salt://formulas/guacamole/files/web.xml
+# guacamole_redirect:
+#   file.managed:
+#     - makedirs: True
+#     - names:
+#       - /opt/guacamole/tomcat/webapps/ROOT/index.jsp:
+#         - source: salt://formulas/guacamole/files/index.jsp
+#       - /opt/guacamole/tomcat/webapps/ROOT/WEB-INF/web.xml:
+#         - source: salt://formulas/guacamole/files/web.xml
 
 guacamole_extensions:
   file.managed:
