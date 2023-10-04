@@ -37,7 +37,6 @@ designate-manage database sync:
 designate-central:
   service.running:
     - enable: True
-    - reload: True
     - watch:
       - file: conf-files
     - require:
