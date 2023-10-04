@@ -61,7 +61,7 @@ pyroute2_salt_pip:
       - pyroute2
       - pyroute2.ndb
     - require:
-      - pkg: pyroute2_pip
+      - pip: pyroute2_pip
 
 
 
