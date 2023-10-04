@@ -32,9 +32,9 @@ swift_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-    - names:
+    - pkgs:
       - python-openstackclient
-      - etcd3gwes: True
+      - etcd3gw
 
 salt-pip_installs:
   pip.installed:
