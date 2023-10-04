@@ -45,19 +45,23 @@ netplan.io:
 # install_pyroute2:
 #   pkg.installed:
 #     - name: python3-pyroute2
-install_pyroute2:
+pyroute2_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
     - pkgs:
       - pyroute2
       - pyroute2.ndb
+
+pyroute2_salt_pip:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: True
     - pkgs:
       - pyroute2
       - pyroute2.ndb
+    - require:
+      - pkg: pyroute2_pip
 
 
 
