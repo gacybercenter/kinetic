@@ -93,6 +93,27 @@ guacamole_guacamole:
       - docker_container: guacamole_guacd
 {% if grains['spawning'] == 0 %}
 
+#update_guacadmin_password:
+#  gucamole.update_user_password:
+#    - host: {{ pillar['haproxy']['guacamole_domain'] }}
+#    - data_source: "mysql"
+#    - username: "guacadmin"
+#    - password: {{ pillar['guacamole']['guacadmin_old_password'] }}
+#    - guac_username: {{ user }}
+#    - oldpassword: {{ pillar['guacamole']['guacadmin_old_password'] }}
+#    - newpassword: {{ pillar['guacamole']['guacadmin_password'] }}
+
+#{% for user in users %}
+#create_{{ user }}_password:
+#  gucamole.create_users:
+#    - host: {{ pillar['haproxy']['guacamole_domain'] }}
+#    - data_source: "mysql"
+#    - username: "guacadmin"
+#    - password: {{ pillar['guacamole']['guacadmin_password'] }}
+#    - guac_username: {{ user }}
+#    - newpassword: {{ pillar['guacamole']['temporary_password'] }}
+#{% endfor %}
+
 {% if grains['build_phase'] != "configure" %}
 
 
