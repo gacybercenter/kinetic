@@ -42,9 +42,24 @@ ifwatch:
 netplan.io:
   pkg.removed
 
+# install_pyroute2:
+#   pkg.installed:
+#     - name: python3-pyroute2
 install_pyroute2:
-  pkg.installed:
-    - name: python3-pyroute2
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - pkgs:
+      - pyroute2
+      - pyroute2.ndb
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - pyroute2
+      - pyroute2.ndb
+
+
 
   {% if grains['os_family'] == 'RedHat' %}
 install_networkd:
