@@ -38,7 +38,7 @@ swift_pip:
 
 salt-pip_installs:
   pip.installed:
-    bin_env: '/usr/bin/salt-pip'
+    - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
     - pkgs:
       - python-openstackclient
