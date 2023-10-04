@@ -39,11 +39,11 @@ swift_pip:
 salt-pip_installs:
   pip.installed:
     bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-      -etcd3gw
-    -require:
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - etcd3gw
+    - require:
       - pip: swift_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -63,10 +63,10 @@ swift_pip:
 salt-pip_installs:
   pip.installed:
     bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-    -require:
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+    - require:
       - pip: swift_pip
 
 {% endif %}
