@@ -42,9 +42,6 @@ ifwatch:
 netplan.io:
   pkg.removed
 
-# install_pyroute2:
-#   pkg.installed:
-#     - name: python3-pyroute2
 pyroute2_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
@@ -52,6 +49,7 @@ pyroute2_pip:
     - pkgs:
       - pyroute2
       - pyroute2.ndb
+      - pyroute2.ipdb
 
 pyroute2_salt_pip:
   pip.installed:
@@ -60,9 +58,24 @@ pyroute2_salt_pip:
     - pkgs:
       - pyroute2
       - pyroute2.ndb
+      - pyroute2.ipdb
     - require:
       - pip: pyroute2_pip
 
+## Patch pyroute2 to fix a bug in the compat module until it is fixed upstream
+## https://github.com/svinota/pyroute2/issues/1132
+## https://github.com/svinota/pyroute2/pull/1133
+## https://github.com/saltstack/salt/issues/65361
+pyroute2_patch:
+  file.managed:
+    - makedirs: True
+    - names:
+      - /opt/saltstack/salt/extras-3.10/pyroute2/ndb/compat.py:
+        - source: salt://formulas/common/pyroute2/compat.py
+      - /usr/local/lib/python3.10/dist-packages/pyroute2/ndb/compat.py:
+        - source: salt://formulas/common/pyroute2/compat.py
+    - require:
+      - pip: pyroute2_salt_pip
 
 
   {% if grains['os_family'] == 'RedHat' %}
