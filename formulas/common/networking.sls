@@ -32,15 +32,6 @@ ifwatch:
   {% endfor %}
 {% endif %}
     - force: True
-###
-
-## This state doesn't apply to salt/pxe past this point
-{% if grains['type'] not in ['salt', 'pxe'] %}
-
-## disable unneeded services and enable needed ones
-##
-netplan.io:
-  pkg.removed
 
 pyroute2_pip:
   pip.installed:
@@ -76,7 +67,15 @@ pyroute2_patch:
         - source: salt://formulas/common/pyroute2/compat.py
     - require:
       - pip: pyroute2_salt_pip
+###
 
+## This state doesn't apply to salt/pxe past this point
+{% if grains['type'] not in ['salt', 'pxe'] %}
+
+## disable unneeded services and enable needed ones
+##
+netplan.io:
+  pkg.removed
 
   {% if grains['os_family'] == 'RedHat' %}
 install_networkd:
