@@ -65,12 +65,6 @@ upgraded:
       - update_all
 {% endif %}
 
-common_install:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-    - reload_modules: True
-
 {% if grains['virtual'] == "physical" %}
 ## temporary patch for pyopenssl that exists on physical nodes
 ## https://stackoverflow.com/questions/73830524/attributeerror-module-lib-has-no-attribute-x509-v-flag-cb-issuer-check

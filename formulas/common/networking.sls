@@ -33,6 +33,12 @@ ifwatch:
 {% endif %}
     - force: True
 
+python3_pip:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+    - reload_modules: True
+
 pyroute2_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
