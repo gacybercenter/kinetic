@@ -35,7 +35,7 @@ nova_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-    - names:
+    - pkgs:
       - python-openstackclient
       - etcd3gw
 
@@ -44,8 +44,8 @@ salt-pip_installs:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
     - pkgs:
-      -python-openstackclient
-      -etcd3gw
+      - python-openstackclient
+      - etcd3gw
     - require:
       - pip: nova_pip
 
