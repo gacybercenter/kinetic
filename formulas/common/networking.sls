@@ -47,6 +47,8 @@ pyroute2_pip:
       - pyroute2
       - pyroute2.ndb
       - pyroute2.ipdb
+    - require:
+      - pkg: python3_pip
 
 pyroute2_salt_pip:
   pip.installed:
