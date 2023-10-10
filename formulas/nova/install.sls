@@ -41,12 +41,12 @@ nova_pip:
 
 salt-pip_installs:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
       -python-openstackclient
       -etcd3gw
-    -require:
+    - require:
       - pip: nova_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
@@ -69,11 +69,11 @@ nova_pip:
 
 salt-pip_installs:
   pip.installed:
-    -bin_env: '/usr/bin/salt-pip'
-    -reload_modules: true
-    -pkgs:
-      -python-openstackclient
-    -require:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+    - require:
       - pip: nova_pip
 
 {% endif %}
