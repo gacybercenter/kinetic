@@ -54,10 +54,10 @@ conf-files:
 get_centos_mirros:
   cmd.run:
 {% if grains['os_family'] == 'Debian' %}
-    - name: curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/etc/apt-cacher-ng/centos_mirrors
+    - name: curl https://git.centos.org/centos/centos.org/raw/3dc5ae396b4fa849fc03fd07ed01d831b0de9ef8/f/_data/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/etc/apt-cacher-ng/centos_mirrors
     - creates: /etc/apt-cacher-ng/centos_mirrors
 {% elif grains['os_family'] == 'RedHat' %}
-    - name: curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors
+    - name: curl https://git.centos.org/centos/centos.org/raw/3dc5ae396b4fa849fc03fd07ed01d831b0de9ef8/f/_data/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors
     - creates: /root/centos_mirrors
 {% endif %}
 
