@@ -84,7 +84,6 @@ pyghmi_pip:
       - pyopenssl
       - pyghmi
     - require:
-      - pkg: common_install
       - OpenSSL_dir_remove
       - pyOpenSSL_dir_remove
   pkg.installed:
@@ -106,6 +105,4 @@ rdma-core:
   pkg.installed:
     - onlyif:
       - lshw | grep -qi rdma
-    - require:
-      - pkg: common_install
 {% endif %}
