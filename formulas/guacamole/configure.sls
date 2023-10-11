@@ -97,12 +97,15 @@ guacamole_guacamole:
 update_guacadmin_password:
   guacamole.update_user_password:
     - name: update_guacadmin_password
-    - host: "https://{{ pillar['haproxy']['guacamole_domain'] }}"
+    - host: "https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole"
     - username: "guacadmin"
     - password: "guacadmin"
     - guac_new_password: {{ pillar['guacamole']['guacadmin_password'] }}
     - guac_username: "guacadmin"
     - guac_old_password: "guacadmin"
+    - retry:
+        attempts: 3
+        interval: 30
   {% endif %}
 
 {{ spawn.spawnzero_complete() }}
