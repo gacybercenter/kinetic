@@ -101,10 +101,7 @@ designate-manage database sync:
         key: build_phase
         value: configure
 
-### salt state service.running doesn't seem to restart the designate_central_service
-### must perform cmd.run to restart as a fix
-
-designate-central: 
+designate-central:
   service.running:
     - enable: True
     - watch:
