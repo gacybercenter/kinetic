@@ -134,12 +134,12 @@ os_neutron_dac_override:
 
 ### temporary patch for jinja.py on salt-minion reference https://github.com/saltstack/salt/issues/61848
 ### ref fix https://github.com/NixOS/nixpkgs/pull/172129/commits/bddee7b008a2f3a961fa31601defca34119ae148, https://github.com/NixOS/nixpkgs/pull/172129
-jinja_patch:
-  file.managed:
-    - name: /usr/lib/python3/dist-packages/salt/utils/jinja.py
-    - source: salt://formulas/zun/files/jinja.py
-    - require:
-      - sls: /formulas/container/install
+#jinja_patch:
+#  file.managed:
+#    - name: /usr/lib/python3/dist-packages/salt/utils/jinja.py
+#    - source: salt://formulas/zun/files/jinja.py
+#    - require:
+#      - sls: /formulas/container/install
 
 neutron_{{ neutron_backend }}_agent_service:
   service.running:
