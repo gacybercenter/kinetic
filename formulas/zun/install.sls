@@ -129,7 +129,7 @@ git_config:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/antelope
+    - branch: stable/2023.2
     - target: /var/lib/zun
     - force_clone: true
     - require:
