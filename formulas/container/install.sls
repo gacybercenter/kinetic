@@ -36,7 +36,7 @@ container_packages:
       - open-iscsi
       - ceph-common
 
-container.pip:
+container_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
