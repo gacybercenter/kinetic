@@ -46,7 +46,7 @@ oom_score = 0
         runtime_engine = ""
         runtime_root = ""
       [plugins.cri.containerd.runtimes.kata]
-        runtime_type = "io.containerd.kata.v2"
+        runtime_type = ""
     [plugins.cri.cni]
       bin_dir = "/opt/cni/bin"
       conf_dir = "/etc/cni/net.d"

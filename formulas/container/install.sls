@@ -19,7 +19,6 @@ include:
   - /formulas/common/openstack/repo
  #  - /formulas/common/ceph/repo
   - /formulas/common/docker/repo
-  - /formulas/common/kata/repo
 
 {% if grains['os_family'] == 'Debian' %}
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
@@ -33,9 +32,6 @@ container_packages:
       - neutron-linuxbridge-agent
       - python3-tornado
       - python3-pymysql
-      - kata-runtime
-      - kata-proxy
-      - kata-shim
       - python3-etcd3gw
       - open-iscsi
       - ceph-common
@@ -73,9 +69,6 @@ container_packages:
       - neutron-openvswitch-agent
       - python3-tornado
       - python3-pymysql
-      - kata-runtime
-      - kata-proxy
-      - kata-shim
       - numactl
       - python3-etcd3gw
       - open-iscsi
@@ -115,9 +108,6 @@ container_packages:
       - ovn-host
       - python3-tornado
       - python3-pymysql
-      - kata-runtime
-      - kata-proxy
-      - kata-shim
       - python3-etcd3gw
       - open-iscsi
       - ceph-common
@@ -163,9 +153,6 @@ container_packages:
       - numactl
       - python3-openstackclient
       - gcc-c++
-      - kata-runtime
-      - kata-proxy
-      - kata-shim
 
 container.pip:
   pip.installed:
@@ -201,9 +188,6 @@ container_packages:
       - numactl
       - python3-openstackclient
       - gcc-c++
-      - kata-runtime
-      - kata-proxy
-      - kata-shim
 
 container.pip:
   pip.installed:
@@ -240,9 +224,6 @@ container_packages:
       - numactl
       - python3-openstackclient
       - gcc-c++
-      - kata-runtime
-      - kata-proxy
-      - kata-shim
     - reload_modules: True
 
 container.pip:
