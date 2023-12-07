@@ -26,6 +26,7 @@ zun-db-manage upgrade:
     - runas: zun
     - require:
       - file: /etc/zun/zun.conf
+      - file: sqlalchemy_patch
     - unless:
       - fun: grains.equals
         key: build_phase
@@ -71,14 +72,20 @@ conf-files:
     - require:
       - sls: /formulas/zun/install
 
-### temporary patch for jinja.py on salt-minion reference https://github.com/saltstack/salt/issues/61848
-### ref fix https://github.com/NixOS/nixpkgs/pull/172129/commits/bddee7b008a2f3a961fa31601defca34119ae148, https://github.com/NixOS/nixpkgs/pull/172129
-# jinja_patch:
-#   file.managed:
-#     - name: /usr/lib/python3/dist-packages/salt/utils/jinja.py
-#     - source: salt://formulas/zun/files/jinja.py
-#     - require:
-#       - sls: /formulas/zun/install
+### temporary patch for sqlalchemy
+### https://docs.sqlalchemy.org/en/14/orm/session_api.html#sqlalchemy.orm.Session.params.future
+### "The “subtransactions” feature of Session.begin() is removed in version 2.0 and is disabled when the future flag is set."
+sqlalchemy_patch:
+  file.managed:
+    - names: 
+      - /usr/local/lib/python3.10/dist-packages/zun/db/sqlalchemy/alembic/versions/3e80bbfd8da7_convert_type_of_command_from_string_to_.py:
+        - source: salt://formulas/zun/files/3e80bbfd8da7_convert_type_of_command_from_string_to_.py
+      - /usr/local/lib/python3.10/dist-packages/zun/db/sqlalchemy/alembic/versions/33cdd98bb9b2_split_volume_mapping_table.py:
+        - source: salt://formulas/zun/files/33cdd98bb9b2_split_volume_mapping_table.py
+      - /usr/local/lib/python3.10/dist-packages/zun/db/sqlalchemy/alembic/versions/d502ce8fb705_add_rp_uuid_to_compute_node.py:
+        - source: salt://formulas/zun/files/d502ce8fb705_add_rp_uuid_to_compute_node.py
+    - require:
+      - sls: /formulas/zun/install
 
 zun_api_service:
   service.running:
