@@ -74,7 +74,7 @@ container_packages:
       - open-iscsi
       - ceph-common
 
-container.pip:
+container_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
@@ -112,7 +112,7 @@ container_packages:
       - open-iscsi
       - ceph-common
 
-container.pip:
+container_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
@@ -154,7 +154,7 @@ container_packages:
       - python3-openstackclient
       - gcc-c++
 
-container.pip:
+container_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
@@ -189,7 +189,7 @@ container_packages:
       - python3-openstackclient
       - gcc-c++
 
-container.pip:
+container_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
@@ -226,7 +226,7 @@ container_packages:
       - gcc-c++
     - reload_modules: True
 
-container.pip:
+container_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
