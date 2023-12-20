@@ -53,6 +53,13 @@ hosts:
       configure:
         nova: configure
         neutron: configure
+  arm:
+    needs:
+      install:
+        cache: configure
+      configure:
+        nova: configure
+        neutron: configure
   container:
     needs:
       install:

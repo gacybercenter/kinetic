@@ -129,10 +129,16 @@ tftp_conf:
   apache_conf.enabled:
     - name: tftp
 
-/srv/tftp/jammy/ubuntu2204.iso:
+/srv/tftp/jammy/ubuntu2204-amd64.iso:
   file.managed:
     - makedirs: True
     - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
+    - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
+
+/srv/tftp/jammy/ubuntu2204-arm64.iso:
+  file.managed:
+    - makedirs: True
+    - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-arm64.iso
     - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
 
 /srv/tftp/jammy/vmlinuz:
@@ -144,14 +150,15 @@ tftp_conf:
 kernel_extract:
   cmd.script:
     - source: salt://formulas/pxe/files/kernel-extract.sh
-    - cwd: /srv/tftp/jammy
+    - cwd: /srv/tftp/jammy/
     - creates:
-      - /srv/tftp/jammy/vmlinuz
-      - /srv/tftp/jammy/initrd
+      - /srv/tftp/jammy/amd64/vmlinuz
+      - /srv/tftp/jammy/amd64/initrd
+      - /srv/tftp/jammy/arm64/vmlinuz
+      - /srv/tftp/jammy/arm64/initrd
     - require:
-      - file: /srv/tftp/jammy/ubuntu2204.iso
-      - file: /srv/tftp/jammy/vmlinuz
-      - file: /srv/tftp/jammy/initrd
+      - file: /srv/tftp/jammy/ubuntu2204-amd64.iso
+      - file: /srv/tftp/jammy/ubuntu2204-arm64.iso
 
 apache2_service:
   service.running:
