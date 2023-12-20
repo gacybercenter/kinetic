@@ -145,7 +145,7 @@ clean_dir:
   file.directory:
     - name: /srv/tftp/jammy/
     - clean: True
-    - exclude_pat: *.iso
+    - exclude_pat: "*.iso"
 
 kernel_extract:
   cmd.script:
