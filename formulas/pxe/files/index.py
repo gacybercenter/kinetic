@@ -74,12 +74,12 @@ def application (environ, start_response):
             }
     elif os_assignment == "ubuntu2204-amd64":
         response_body = body % {
-            'kernel': f'kernel http://{{ pxe_record }}/tftp/jammy/amd64/vmlinuz initrd=initrd url=http://{{ pxe_record }}//tftp/jammy/amd64/ubuntu2204-amd64.iso autoinstall ip=::::{hostname_assignment}:{interface}:dhcp cloud-config-url=http://{{ pxe_record }}/tftp/assignments/{uuid.upper()}/user-data',
+            'kernel': f'kernel http://{{ pxe_record }}/tftp/jammy/amd64/vmlinuz initrd=initrd url=http://{{ pxe_record }}//tftp/jammy/ubuntu2204-amd64.iso autoinstall ip=::::{hostname_assignment}:{interface}:dhcp cloud-config-url=http://{{ pxe_record }}/tftp/assignments/{uuid.upper()}/user-data',
             'initrd': "initrd http://{{ pxe_record }}/tftp/jammy/amd64/initrd"
             }
     elif os_assignment == "ubuntu2204-arm64":
         response_body = body % {
-            'kernel': f'kernel http://{{ pxe_record }}/tftp/jammy/arm64/vmlinuz initrd=initrd url=http://{{ pxe_record }}//tftp/jammy/arm64/ubuntu2204-arm64.iso autoinstall ip=::::{hostname_assignment}:{interface}:dhcp cloud-config-url=http://{{ pxe_record }}/tftp/assignments/{uuid.upper()}/user-data',
+            'kernel': f'kernel http://{{ pxe_record }}/tftp/jammy/arm64/vmlinuz initrd=initrd url=http://{{ pxe_record }}//tftp/jammy/ubuntu2204-arm64.iso autoinstall ip=::::{hostname_assignment}:{interface}:dhcp cloud-config-url=http://{{ pxe_record }}/tftp/assignments/{uuid.upper()}/user-data',
             'initrd': "initrd http://{{ pxe_record }}/tftp/jammy/arm64/initrd"
         }
 
