@@ -32,6 +32,9 @@ compute_packages:
       - python3-rados
       - python3-etcd3gw
       - qemu-system-x86
+      - qemu-system-arm
+      - qemu-system-ppc
+      - qemu-system-s390x
       - nvme-cli
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
       - neutron-linuxbridge-agent
