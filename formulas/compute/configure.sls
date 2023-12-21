@@ -108,6 +108,7 @@ libvirt_secrets:
 ## Nova Live Migration Setup
 /var/lib/nova/.ssh/config:
   file.managed:
+    - makedirs: True
     - user: nova
     - group: nova
     - mode: '0400'
@@ -115,6 +116,7 @@ libvirt_secrets:
 
 /var/lib/nova/.ssh/id_rsa:
   file.managed:
+    - makedirs: True
     - contents_pillar: nova_private_key
     - user: nova
     - group: nova
