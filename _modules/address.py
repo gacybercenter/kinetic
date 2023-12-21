@@ -36,29 +36,22 @@ def login(database = '/srv/addresses/addresses.db'):
     return connection
 
 def get_address(network, host):
-    try:
-        connection = login()
-        cursor = connection.cursor()
-        query_values = (host, network)
-        cursor.execute('SELECT address FROM addresses where host=? AND network=?', query_values)
-        existing_lease = cursor.fetchone()
-
-        if existing_lease:
-            return existing_lease[0]
-
-        address = None
-        while address is None:
-            cursor.execute('SELECT address FROM addresses where host IS NULL AND network=?', network)
-            address = cursor.fetchone()[0]
-            time.sleep(5)
+    connection = login()
+    cursor = connection.cursor()
+    query_values = (host, network)
+    cursor.execute('SELECT address FROM addresses where host=? AND network=?', query_values)
+    existing_lease = cursor.fetchone()
+    if existing_lease is None:
+        network_value = (network, )
+        cursor.execute('SELECT address FROM addresses where host IS NULL AND network=?', network_value)
+        address = cursor.fetchone()[0]
 
         host_address_value = (host, address)
         cursor.execute("UPDATE addresses SET host=? WHERE address=?", host_address_value)
         connection.commit()
         connection.close()
         return address
-    except Exception as e:
-        print(e)
+    return existing_lease[0]
 
 
 def release_single_address(address):
