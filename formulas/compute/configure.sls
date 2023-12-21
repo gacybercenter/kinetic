@@ -145,7 +145,7 @@ nova:
     - system: True
     - groups:
       - nova
-      - libvirtd
+      - libvirt
 
 {% for key in pillar['nova_live_migration_auth_key'] %}
 {{ key }}:
