@@ -138,7 +138,7 @@ lancachenet_dns:
       - 53:53/udp
     - environment:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
-      - WSUSCACHE_IP: {{ salt['mine.get']('role:cache', 'network.ip_addrs', 'ens3').items() }}
+      - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - require:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith
