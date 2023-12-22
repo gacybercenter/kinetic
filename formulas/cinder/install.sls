@@ -35,7 +35,6 @@ cinder_pip:
     - reload_modules: True
     - names:
       - python-openstackclient
-      - memcache
       - etcd3gw
     - require:
       - pkg: cinder_packages
@@ -46,7 +45,6 @@ salt-pip_install:
     - reload_modules: True
     - pkgs:
       - python-openstackclient
-      - memcache
       - etcd3gw
     - require:
       - pip: cinder_pip

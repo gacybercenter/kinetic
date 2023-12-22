@@ -40,7 +40,6 @@ glance_pip:
     - names:
       - python-openstackclient
       - etcd3gw
-      - memcache
       - boto3
     - require:
       - pkg: glance_packages
@@ -52,7 +51,6 @@ salt-pip_installs:
     - pkgs:
       - python-openstackclient
       - etcd3gw
-      - memcache
     - require:
       - pip: glance_pip
 

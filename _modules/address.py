@@ -21,9 +21,10 @@
 
 
 import json
+import os
 import requests
 import sqlite3
-import os
+import time
 
 __virtualname__ = 'address'
 
@@ -44,12 +45,14 @@ def get_address(network, host):
         network_value = (network, )
         cursor.execute('SELECT address FROM addresses where host IS NULL AND network=?', network_value)
         address = cursor.fetchone()[0]
+
         host_address_value = (host, address)
         cursor.execute("UPDATE addresses SET host=? WHERE address=?", host_address_value)
         connection.commit()
         connection.close()
         return address
     return existing_lease[0]
+
 
 def release_single_address(address):
     connection = login()
