@@ -38,7 +38,6 @@ volume_pip:
     - reload_modules: True
     - names:
       - python-openstackclient
-      - memcache
       - etcd3gw
 
 salt-pip_installs:
@@ -47,7 +46,6 @@ salt-pip_installs:
     - reload_modules: true
     - pkgs:
       - python-openstackclient
-      - memcache
       - etcd3gw
     - require:
       - pip: volume_pip
