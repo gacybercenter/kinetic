@@ -50,7 +50,7 @@
           rgw keystone admin password = {{ pillar ['swift']['swift_service_password'] }}
           rgw keystone admin project = service
           rgw keystone admin domain = default
-          rgw keystone accepted roles = admin,user
+          rgw keystone accepted roles = admin,member,user
           rgw keystone token cache size = 10
           rgw keystone revocation interval = 300
           rgw keystone implicit tenants = true
