@@ -112,7 +112,9 @@ def get_system(host, username, password, redfish_target='Systems', redfish_path=
             else:
                 response = session.get(f'/redfish/v1/{redfish_target}/1/{redfish_path}', None)
             session.logout()
-            return response.text
+            dump = json.loads(response.text)
+            print(json.dumps(dump, indent=4))
+            return 
         elif check_type(host) == "OpenBMC":
             session = login(host, username, password)
             if redfish_path is None:
@@ -120,7 +122,9 @@ def get_system(host, username, password, redfish_target='Systems', redfish_path=
             else:
                 response = session.get(f'/redfish/v1/{redfish_target}/system/{redfish_path}', None)
             session.logout()
-            return response.text
+            dump = json.loads(response.text)
+            print(json.dumps(dump, indent=4))
+            return 
     except:
         print("Redfish get_system failed.")
 
