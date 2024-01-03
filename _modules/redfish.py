@@ -20,9 +20,9 @@ import ipaddress
 import json
 import pyghmi.ipmi.command
 import redfish
-import requests
 import socket
 import urllib3
+import re
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 socket.setdefaulttimeout(0.5)
@@ -34,27 +34,27 @@ def __virtual__():
     return __virtualname__
 
 
-def tcp_connect(ip_address, port):
+def tcp_connect(host, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex((str(ip_address), port))
+    result = sock.connect_ex((str(host), port))
     sock.close()
     return result
 
 
-def check_type(host):
+def check_type(session):
     try:
-        redfish_type = requests.get("https://" + str(host) + "/redfish/v1", timeout=1, verify=False)
-        ### This will work for now, needs better logic to handle all supported versions. Added types for OpenBMC and BMC handling
-        response = redfish_type.json()
-        id = response["Id"]
-        if id == 'RootService':
-            type = "OpenBMC"
-            return type
-        elif id == 'ServiceRoot':
+        redfish_status = session.get("/redfish/v1/Systems", None)
+        body = json.loads(redfish_status.text)
+        matching = (body["Members"])
+        system = re.search(r'/Systems/(.+)', matching[0]['@odata.id']).group(1)
+        if system == "1":
             type = "BMC"
             return type
+        elif system == "system":
+            type = "OpenBMC"
+            return type
     except:
-        print(f"Error processing type for {host}. Verify the IP address and try again.")
+        print(f"Could not determine the system type.")
 
 
 def login(host, username, password):
@@ -73,18 +73,18 @@ def gather_endpoints(network, username, password):
     for host in ipaddress.IPv4Network(network):
         if tcp_connect(host, 443) == 0:
             try:
-                if check_type(host) == "BMC":
-                    #if check_version(ip) == True:
-                    session = login(str(host), username, password)
+                session = login(str(host), username, password)
+                if check_type(session) == "BMC":
                     redfish_status = session.get("/redfish/v1/Systems/1", None)
                     body = json.loads(redfish_status.text)
                     redfish_endpoints[body["UUID"]] = str(host)
                     session.logout()
-                elif check_type(host) == "OpenBMC":
-                    session = login(str(host), username, password)
+                elif check_type(session) == "OpenBMC":
                     redfish_status = session.get("/redfish/v1/Systems/system", None)
                     body = json.loads(redfish_status.text)
                     redfish_endpoints[body["UUID"]] = str(host)
+                    session.logout()
+                else:
                     session.logout()
             except:
                 print(f"Error processing {host}")
@@ -105,8 +105,8 @@ def get_system(host, username, password, redfish_target='Systems', redfish_path=
     if redfish_target not in redfish_targets:
         raise ValueError("Invalid redfish target. Expected one of: %s" % redfish_target)
     try:
-        if check_type(host) == "BMC":
-            session = login(host, username, password)
+        session = login(host, username, password)
+        if check_type(session) == "BMC":
             if redfish_path is None:
                 response = session.get(f'/redfish/v1/{redfish_target}/1/', None)
             else:
@@ -115,8 +115,7 @@ def get_system(host, username, password, redfish_target='Systems', redfish_path=
             dump = json.loads(response.text)
             print(json.dumps(dump, indent=4))
             return 
-        elif check_type(host) == "OpenBMC":
-            session = login(host, username, password)
+        elif check_type(session) == "OpenBMC":
             if redfish_path is None:
                 response = session.get(f'/redfish/v1/{redfish_target}/system/', None)
             else:
@@ -124,39 +123,43 @@ def get_system(host, username, password, redfish_target='Systems', redfish_path=
             session.logout()
             dump = json.loads(response.text)
             print(json.dumps(dump, indent=4))
-            return 
+            return
+        else:
+            session.logout() 
     except:
         print("Redfish get_system failed.")
 
 
 def get_uuid(host, username, password):
     try:
-        if check_type(host) == "BMC":
-            session = login(str(host), username, password)
+        session = login(str(host), username, password)
+        if check_type(session) == "BMC":
             response = session.get("/redfish/v1/Systems/1/", None)
             session.logout()
             return json.loads(response.text)["UUID"]
-        elif check_type(host) == "OpenBMC":
-            session = login(str(host), username, password)
+        elif check_type(session) == "OpenBMC":
             response = session.get("/redfish/v1/Systems/system/", None)
             session.logout()
             return json.loads(response.text)["UUID"]
+        else:
+            session.logout()
     except:
         print("Redfish get_uuid failed.")
 
 
 def get_bootonce(host, username, password):
     try:
-        if check_type(host) == "BMC":
-            session = login(str(host), username, password)
+        session = login(str(host), username, password)
+        if check_type(session) == "BMC":
             response = session.get("/redfish/v1/Systems/1/", None)
             session.logout()
             return json.loads(response.text)["Boot"]["BootSourceOverrideTarget"]
-        elif check_type(host) == "OpenBMC":
-            session = login(str(host), username, password)
+        elif check_type(session) == "OpenBMC":
             response = session.get("/redfish/v1/Systems/system/", None)
             session.logout()
             return json.loads(response.text)["Boot"]["BootSourceOverrideTarget"]
+        else:
+            session.logout()
     except:
         print("Redfish get_bootonce failed.")
 
@@ -165,8 +168,8 @@ def set_bootonce(host, username, password, mode, target):
     ### Default method is to use redfish api
     ### if statuscode != 200, fallback to raw ipmi
     try:
-        if check_type(host) == "BMC":
-            session = login(str(host), username, password)
+        session = login(str(host), username, password)
+        if check_type(session) == "BMC":
             response = session.patch(
                 "/redfish/v1/Systems/1/",
                 body={
@@ -188,8 +191,7 @@ def set_bootonce(host, username, password, mode, target):
                 cmd.set_bootdev(bootdev="network", uefiboot=True)
                 return cmd.get_bootdev()
             return response.text
-        elif check_type(host) == "OpenBMC":
-            session = login(str(host), username, password)
+        elif check_type(session) == "OpenBMC":
             response = session.patch(
                 "/redfish/v1/Systems/system/",
                 body={
@@ -211,6 +213,8 @@ def set_bootonce(host, username, password, mode, target):
                 cmd.set_bootdev(bootdev="network", uefiboot=True)
                 return cmd.get_bootdev()
             return response.text
+        else:
+            session.logout()
     except:
         print("Redfish set_bootonce failed.")
 
@@ -219,20 +223,21 @@ def set_bootonce(host, username, password, mode, target):
 # identify correct variables to use. will leverage .sls to perform retries
 def set_bootonce_retry(host, username, password, mode, target):
     try:
-        if check_type(host) == "BMC":
-            session = login(str(host), username, password)
+        session = login(str(host), username, password)
+        if check_type(session) == "BMC":
             status = session.get("/redfish/v1/Systems/1", None)
             if json.loads(status.text)["PowerState"] == "On":
                 if json.loads(status.text)["Boot"]["BootSourceOverrideTarget"] == "PXE":
                     set_bootonce(host, username, password, mode, target)
                     reset_host(host, username, password)
-        elif check_type(host) == "OpenBMC":
-            session = login(str(host), username, password)
+        elif check_type(session) == "OpenBMC":
             status = session.get("/redfish/v1/Systems/system", None)
             if json.loads(status.text)["PowerState"] == "On":
                 if json.loads(status.text)["Boot"]["BootSourceOverrideTarget"] == "PXE":
                     set_bootonce(host, username, password, mode, target)
                     reset_host(host, username, password)
+        else:
+            session.logout()
     except:
         print("Redfish set_bootonce_retry failed.")
 
@@ -240,8 +245,8 @@ def set_bootonce_retry(host, username, password, mode, target):
 # TODO(brecaldwell): try to get more verbose output. Right now it doesn't say anything for OpenBMC as type
 def reset_host(host, username, password):
     try:
-        if check_type(host) == "BMC":
-            session = login(str(host), username, password)
+        session = login(str(host), username, password)
+        if check_type(session) == "BMC":
             status = session.get("/redfish/v1/Systems/1", None)
             if json.loads(status.text)["PowerState"] == "On":
                 response = session.post(
@@ -255,8 +260,7 @@ def reset_host(host, username, password):
                 )
             session.logout()
             return response.text
-        elif check_type(host) == "OpenBMC":
-            session = login(str(host), username, password)
+        elif check_type(session) == "OpenBMC":
             status = session.get("/redfish/v1/Systems/system", None)
             if json.loads(status.text)["PowerState"] == "On":
                 response = session.post(
@@ -268,6 +272,8 @@ def reset_host(host, username, password):
                     "/redfish/v1/Systems/system/Actions/ComputerSystem.Reset/",
                     body={"ResetType": "On"},
                 )
+            session.logout()
+        else:
             session.logout()
     except:
         print("Redfish reset_host failed.")
