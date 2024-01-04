@@ -207,12 +207,14 @@ def set_bootonce(host, username, password, mode, target):
             except:
                 print("Redfish logout failed. This is probably a bug in your particular redfish implementation and can likely be ignored.")
             if response.status != 200:
-                cmd = pyghmi.ipmi.command.Command(
-                    bmc=host, userid=username, password=password, keepalive=False
-                )
-                cmd.set_bootdev(bootdev="network", uefiboot=True)
-                return cmd.get_bootdev()
-            return response.text
+                pxe = get_bootonce(host, username, password)
+                if pxe == 'Pxe' or pxe == 'PXE':
+                    status = '200'
+                    return status
+                else:
+                    return response.status
+            else:
+                return response.text
         else:
             session.logout()
     except:
