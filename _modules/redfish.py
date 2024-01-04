@@ -275,6 +275,7 @@ def reset_host(host, username, password):
                     body={"ResetType": "On"},
                 )
             session.logout()
+            return response.text
         else:
             session.logout()
     except:
