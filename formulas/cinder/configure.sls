@@ -37,6 +37,10 @@ set_volumes_pool_pgs:
     - name: set/volume/pool_pgs
     - data:
         pgs: {{ pillar['cephconf']['volumes_pgs'] }}
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 {% endif %}
 
 {{ spawn.spawnzero_complete() }}

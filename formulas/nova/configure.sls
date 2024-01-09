@@ -87,6 +87,10 @@ set_vms_pool_pgs:
     - name: set/vms/pool_pgs
     - data:
         pgs: {{ pillar['cephconf']['vms_pgs'] }}
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 {% endif %}
 
 {{ spawn.spawnzero_complete() }}

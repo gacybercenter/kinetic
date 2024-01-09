@@ -29,6 +29,10 @@ make_filesystem:
     - data:
         metadata_pgs: {{ pillar['cephconf']['fileshare_metadata_pgs'] }}
         data_pgs: {{ pillar['cephconf']['fileshare_data_pgs'] }}
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 {% endif %}
 
 {{ spawn.spawnzero_complete() }}
