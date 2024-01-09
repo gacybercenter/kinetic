@@ -146,6 +146,9 @@ clean_dir:
     - name: /srv/tftp/jammy/
     - clean: True
     - exclude_pat: "*.iso"
+    - onchanges:
+      - file: /srv/tftp/jammy/ubuntu2204-amd64.iso
+      - file: /srv/tftp/jammy/ubuntu2204-arm64.iso
 
 kernel_extract:
   cmd.script:
@@ -160,6 +163,9 @@ kernel_extract:
       - file: /srv/tftp/jammy/ubuntu2204-amd64.iso
       - file: /srv/tftp/jammy/ubuntu2204-arm64.iso
       - file: clean_dir
+    - onchanges:
+      - file: /srv/tftp/jammy/ubuntu2204-amd64.iso
+      - file: /srv/tftp/jammy/ubuntu2204-arm64.iso
 
 apache2_service:
   service.running:
