@@ -18,3 +18,5 @@ set_volumes_pool_pgs:
     - tgt_type: compound
     - arg:
       - ceph osd pool set volumes pg_num {{ data['data']['pgs'] }}
+    - unless:
+      - ceph osd dump | grep volumes | grep -q 'pg_num {{ data['data']['pgs'] }}'
