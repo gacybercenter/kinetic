@@ -46,7 +46,7 @@ conf-files:
     - defaults:
         pxe_record: {{ pillar['pxe']['record'] }}
         pxe_name: {{ pillar['pxe']['name'] }}
-        mgmt: {{ pillar['networking']['subnets']['mgmt'].split('/')[0] }}
+        mgmt: {{ pillar['networking']['subnets']['management'].split('/')[0] }}
         mgmt_start: {{ pillar['dhcp-options']['mgmt_start'] }}
         mgmt_end: {{ pillar['dhcp-options']['mgmt_end'] }}
         mgmt_gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
