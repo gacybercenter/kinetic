@@ -25,6 +25,7 @@ pxe_packages:
       - apache2
       - libapache2-mod-wsgi-py3
       - gcc-aarch64-linux-gnu
+      - isc-dhcp-server
       - git
       - tftpd-hpa
     - reload_modules: True

@@ -46,6 +46,16 @@ conf-files:
     - defaults:
         pxe_record: {{ pillar['pxe']['record'] }}
         pxe_name: {{ pillar['pxe']['name'] }}
+        mgmt: {{ pillar['networking']['subnets']['mgmt'].split('/')[0] }}
+        mgmt_start: {{ pillar['dhcp-options']['mgmt_start'] }}
+        mgmt_end: {{ pillar['dhcp-options']['mgmt_end'] }}
+        mgmt_gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+        mgmt_netmask: {{ pillar['dhcp-options']['mgmt_netmask'] }}
+        mgmt_dns: {{ pillar['dhcp-options']['mgmt_dns'] }}
+        domain: {{ pillar['dhcp-options']['domain'] }}
+        tftp: {{ pillar['dhcp-options']['tftp'] }}
+        arm_efi: {{ pillar['dhcp-options']['arm_efi'] }}
+        x86_efi: {{ pillar['dhcp-options']['x86_efi'] }}
     - names:
       - /var/www/html/ipxe/src/kinetic.ipxe:
         - source: salt://formulas/pxe/files/kinetic.ipxe
@@ -59,26 +69,44 @@ conf-files:
         - source: salt://formulas/pxe/files/apache2.conf
       - /var/www/html/index.py:
         - source: salt://formulas/pxe/files/index.py
+      - /etc/dhcp/dhcpd.conf:
+        - source: salt://formulas/pxe/files/dhcpd.conf
 
 create_x86_64_efi_module:
   cmd.run:
     - name: |
         make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
     - cwd: /var/www/html/ipxe/src/
-    - creates:
-      - /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
-      - /var/www/html/ipxe-x86_64.efi
-      - /srv/tftp/ipxe-x86_64.efi
+    - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+
+copy_x86_64_efi_module:
+  file.copy:
+      - makedirs: True
+      - names:
+        - /var/www/html/{{ pillar['dhcp-options']['x86_efi'] }}:
+          - source: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+        - /srv/tftp/{{ pillar['dhcp-options']['x86_efi'] }}:
+          - source: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+      - require:
+        - cmd: create_x86_64_efi_module
 
 create_aarch64_efi_module:
   cmd.run:
     - name: |
         make bin-arm64-efi/ipxe.efi CROSS=aarch64-linux-gnu- EMBED=kinetic.ipxe
     - cwd: /var/www/html/ipxe/src/
-    - creates:
-      - /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
-      - /var/www/html/ipxe-arm64.efi
-      - /srv/tftp/ipxe-arm64.efi
+    - creates: /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
+
+copy_aarch64_efi_module:
+  file.copy:
+      - makedirs: True
+      - names:
+        - /var/www/html/{{ pillar['dhcp-options']['arm_efi'] }}:
+          - source: /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
+        - /srv/tftp/{{ pillar['dhcp-options']['arm_efi'] }}:
+          - source: /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
+      - require:
+        - cmd: create_aarch64_efi_module
 
 Disable default site:
   apache_site.disabled:
@@ -191,6 +219,12 @@ apache2_service:
       - apache_site: tftp
       - apache_site: wsgi
       - apache_site: 000-default
+
+dhcp_service:
+  service.running:
+    - name: isc-dhcp-server
+    - watch:
+      - file: /etc/dhcp/dhcpd.conf
 
 build_phase_final:
   grains.present:
