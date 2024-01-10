@@ -77,12 +77,12 @@ def gather_endpoints(network, username, password):
                 if check_type(session) == "BMC":
                     redfish_status = session.get("/redfish/v1/Systems/1", None)
                     body = json.loads(redfish_status.text)
-                    redfish_endpoints[body["UUID"]] = str(host)
+                    redfish_endpoints[body["UUID"]] = str(host).upper()
                     session.logout()
                 elif check_type(session) == "OpenBMC":
                     redfish_status = session.get("/redfish/v1/Systems/system", None)
                     body = json.loads(redfish_status.text)
-                    redfish_endpoints[body["UUID"]] = str(host)
+                    redfish_endpoints[body["UUID"]] = str(host).upper()
                     session.logout()
                 else:
                     session.logout()
@@ -136,11 +136,11 @@ def get_uuid(host, username, password):
         if check_type(session) == "BMC":
             response = session.get("/redfish/v1/Systems/1/", None)
             session.logout()
-            return json.loads(response.text)["UUID"]
+            return json.loads(response.text)["UUID"].upper()
         elif check_type(session) == "OpenBMC":
             response = session.get("/redfish/v1/Systems/system/", None)
             session.logout()
-            return json.loads(response.text)["UUID"]
+            return json.loads(response.text)["UUID"].upper()
         else:
             session.logout()
     except:
