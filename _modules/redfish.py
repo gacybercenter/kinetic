@@ -244,7 +244,6 @@ def set_bootonce_retry(host, username, password, mode, target):
         print("Redfish set_bootonce_retry failed.")
 
 
-# TODO(brecaldwell): try to get more verbose output. Right now it doesn't say anything for OpenBMC as type
 def reset_host(host, username, password):
     try:
         session = login(str(host), username, password)

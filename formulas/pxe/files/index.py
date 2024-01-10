@@ -44,12 +44,12 @@ def endian(val):
 def application (environ, start_response):
 
     d = parse_qs(environ['QUERY_STRING'])
-    uuid = escape(d.get('uuid', [''])[0])
+    uuid = escape(d.get('uuid', [''])[0]).upper()
 
-    if path.exists(f'/var/www/html/assignments/{uuid.upper()}'):
-        uuid = uuid.upper()
+    if path.exists(f'/var/www/html/assignments/{uuid}'):
+        uuid = uuid
     else:
-        uuid = f'{endian(uuid[0:8])}-{endian(uuid[9:13])}-{endian(uuid[14:18])}-{uuid[19:]}'.upper()
+        uuid = f'{endian(uuid[0:8])}-{endian(uuid[9:13])}-{endian(uuid[14:18])}-{uuid[19:]}'
 
     host_data = open(f'/var/www/html/assignments/{uuid}', "r")
     host_type = host_data.readline().strip()

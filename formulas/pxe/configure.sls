@@ -60,12 +60,25 @@ conf-files:
       - /var/www/html/index.py:
         - source: salt://formulas/pxe/files/index.py
 
-create_efi_module:
+create_x86_64_efi_module:
   cmd.run:
     - name: |
         make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
     - cwd: /var/www/html/ipxe/src/
-    - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+    - creates:
+      - /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+      - /var/www/html/ipxe-x86_64.efi
+      - /srv/tftp/ipxe-x86_64.efi
+
+create_aarch64_efi_module:
+  cmd.run:
+    - name: |
+        make bin-arm64-efi/ipxe.efi CROSS=aarch64-linux-gnu- EMBED=kinetic.ipxe
+    - cwd: /var/www/html/ipxe/src/
+    - creates:
+      - /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
+      - /var/www/html/ipxe-arm64.efi
+      - /srv/tftp/ipxe-arm64.efi
 
 Disable default site:
   apache_site.disabled:
