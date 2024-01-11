@@ -78,6 +78,7 @@ compile_libvirt:
     - require:
       - pkg: compile_libvirt_pkgs
       - file: /root/libvirtd-10-rc-patch.sh
+    - unless: libvirtd --version | grep '10.0'
   {% endif %}
 
 compute_pip:
