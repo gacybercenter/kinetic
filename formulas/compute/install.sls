@@ -48,6 +48,32 @@ compute_packages:
 #      - frr
 #      - frr-pythontools
 
+## NOTE(chateaux): This is a temporary workaround for the arm64 compute nodes
+##                 to compile libvirtd from source due to newer neoverse-n1
+##                 processors not being supported by libvirt version 8.X
+##
+##                 Reference https://libvirt.org/compiling.html, and
+##                 https://download.libvirt.org/
+  {% if grains['type'] == 'arm' %}
+compile_libvirt_pkgs:
+  pkg.installed:
+    - pkgs:
+      - meson
+      - xsltproc
+      - pkg-config
+      - libglib2.0-dev
+      - libgnutls28-dev
+      - libxml2-dev
+      - libyajl-dev
+
+compile_libvirt:
+  script.run:
+    - name: salt://formulas/compute/files/libvirtd-10-rc-patch.sh
+    - cwd: /root
+    - require:
+      - pkg: compile_libvirt_pkgs
+  {% endif %}
+
 compute_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
