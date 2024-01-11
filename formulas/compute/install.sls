@@ -68,6 +68,7 @@ compile_libvirt_pkgs:
 
 /root/libvirtd-10-rc-patch.sh:
   file.managed:
+    - mode: "0755"
     - source: salt://formulas/compute/files/libvirtd-10-rc-patch.sh
 
 compile_libvirt:
