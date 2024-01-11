@@ -67,7 +67,7 @@ compile_libvirt_pkgs:
       - libyajl-dev
 
 compile_libvirt:
-  script.run:
+  cmd.run:
     - name: salt://formulas/compute/files/libvirtd-10-rc-patch.sh
     - cwd: /root
     - require:
