@@ -66,12 +66,17 @@ compile_libvirt_pkgs:
       - libxml2-dev
       - libyajl-dev
 
+/root/libvirtd-10-rc-patch.sh:
+  file.managed:
+    - source: salt://formulas/compute/files/libvirtd-10-rc-patch.sh
+
 compile_libvirt:
   cmd.run:
-    - name: salt://formulas/compute/files/libvirtd-10-rc-patch.sh
+    - name: /root/libvirtd-10-rc-patch.sh
     - cwd: /root
     - require:
       - pkg: compile_libvirt_pkgs
+      - file: /root/libvirtd-10-rc-patch.sh
   {% endif %}
 
 compute_pip:
