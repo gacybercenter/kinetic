@@ -131,7 +131,7 @@ libvirt_secrets:
 /etc/ssh/sshd.allow:
   file.managed:
     - makedirs: True
-    - content: |
+    - contents: |
         nova
         root
 
