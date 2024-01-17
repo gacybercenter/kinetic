@@ -22,7 +22,6 @@ salt_pkgs:
     - pkgs:
       - python3-tornado
       - salt-api
-      - sqlite3
       - haveged
       - curl
       - python3-pygit2

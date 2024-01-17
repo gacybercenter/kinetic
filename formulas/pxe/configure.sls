@@ -46,6 +46,15 @@ conf-files:
     - defaults:
         pxe_record: {{ pillar['pxe']['record'] }}
         pxe_name: {{ pillar['pxe']['name'] }}
+        private: {{ salt['network.convert.cidr'](pillar['networking']['subnets']['private'])['network'] }}
+        private_netmask: {{ salt['network.convert.cidr'](pillar['networking']['subnets']['private'])['netmask'] }}
+        private_range: {{ pillar['networking']['subnets']['private']|replace('0/24', '') }}
+        sfe: {{ salt['network.convert.cidr'](pillar['networking']['subnets']['sfe'])['network'] }}
+        sfe_netmask: {{ salt['network.convert.cidr'](pillar['networking']['subnets']['sfe'])['netmask'] }}
+        sfe_range: {{ pillar['networking']['subnets']['sfe']|replace('0/24', '') }}
+        sbe: {{ salt['network.convert.cidr'](pillar['networking']['subnets']['sbe'])['network'] }}
+        sbe_netmask: {{ salt['network.convert.cidr'](pillar['networking']['subnets']['sbe'])['netmask'] }}
+        sbe_range: {{ pillar['networking']['subnets']['sbe']|replace('0/24', '') }}
         mgmt: {{ pillar['networking']['subnets']['management'].split('/')[0] }}
         mgmt_start: {{ pillar['dhcp-options']['mgmt_start'] }}
         mgmt_end: {{ pillar['dhcp-options']['mgmt_end'] }}

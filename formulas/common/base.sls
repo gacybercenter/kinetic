@@ -18,6 +18,13 @@
 include:
   - /formulas/common/fluentd/repo
 
+/etc/salt/minion.d/1-tunning.conf:
+  file.managed:
+    - contents: |
+        recon_default: 1000
+        recon_max: 59000
+        recon_randomize: True
+
 initial_module_sync:
   saltutil.sync_all:
     - refresh: True

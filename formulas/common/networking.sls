@@ -207,19 +207,15 @@ systemd-networkd:
       {% else %}
         Name={{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
       {% endif %}
-    {% if network == 'management' %}
+    {% if network =='public' %}
+        [Network]
+        DHCP=no
+    {% else %}
         [Network]
         DHCP=yes
         KeepConfiguration=dhcp-on-stop
         [DHCPv4]
         SendRelease=false
-    {% elif network =='public' %}
-        [Network]
-        DHCP=no
-    {% else %}
-        [Network]
-        DHCP=no
-        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host'], pillar['salt']['record'], pillar['salt']['name']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
     {% endif %}
   {% endfor %}
 {% endif %}
