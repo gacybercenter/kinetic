@@ -57,7 +57,7 @@ role:
 
 /etc/sysctl.conf:
   file.managed:
-    - source: salt:://formulas/common/sysctl/files/sysctl.conf
+    - source: salt://formulas/common/sysctl/files/sysctl.conf
 
 sysctl -p:
   cmd.run:
