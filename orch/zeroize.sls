@@ -195,11 +195,6 @@ delete_{{ type }}_key:
     - name: key.delete
     - match: '{{ type }}*'
 
-expire_{{ type }}_dead_hosts:
-  salt.function:
-    - name: address.expire_dead_hosts
-    - tgt: {{ pillar['salt']['name'] }}
-
 ## There should be some kind of retry mechanism here if this event never fires
 ## to deal with transient problems.  Re-exec zeroize for the given target?
 wait_for_provisioning_{{ type }}:
