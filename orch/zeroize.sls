@@ -23,11 +23,14 @@
 {% set targets = pillar['targets'] %}
 
 release_{{ type }}_ip:
-  salt.function:
-    - name: cmd.run
-    - tgt: '{{ type }}-*'
-    - arg:
-      - 'dhclient -r'
+  salt.state:
+    - tgt: 'role:salt'
+    - tgt_type: grain
+    - sls:
+      - orch/states/ip_release
+    - pillar:
+        type: {{ type }}
+    - concurrent: True
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
