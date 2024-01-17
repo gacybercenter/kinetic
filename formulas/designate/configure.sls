@@ -91,7 +91,7 @@ conf-files:
 
 {% if grains['spawning'] == 0 %}
 designate-central-restart-1:
-  service.restart:
+  service.running:
     - name: designate-central
     - enable: True
     - reload: True
@@ -110,7 +110,7 @@ designate-manage database sync:
         value: configure
 
 designate-central-restart-2:
-  service.restart:
+  service.running:
     - name: designate-central
     - enable: True
     - reload: True
