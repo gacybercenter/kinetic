@@ -54,6 +54,17 @@ role:
         ntp_fallback: {{ pillar['ntp']['ntp_fallback'] }}
   cmd.wait:
     - name: timedatectl set-ntp true
+
+/etc/sysctl.conf:
+  file.managed:
+    - source: salt:://formulas/common/sysctl/sysctl.conf
+
+sysctl -p:
+  cmd.run:
+    -require:
+      - file: /etc/sysctl.conf
+    - unless:
+      - sysctl -n 'net.core.netdev_max_backlog' | grep -q 10000
 {% endif %}
 
 {% for key in pillar['authorized_keys'] %}
