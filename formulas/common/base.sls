@@ -61,7 +61,7 @@ role:
 
 sysctl -p:
   cmd.run:
-    -require:
+    - require:
       - file: /etc/sysctl.conf
     - unless:
       - sysctl -n 'net.core.netdev_max_backlog' | grep -q 10000
