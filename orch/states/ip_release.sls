@@ -20,8 +20,3 @@ release_{{ type }}_ip:
     - tgt: '{{ type }}-*'
     - arg:
       - 'dhclient -r'
-    - require_in:
-      - report_success
-
-report_success:
-  test.nop

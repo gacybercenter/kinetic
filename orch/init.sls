@@ -25,6 +25,8 @@ release_{{ type }}_ip:
     - tgt: '{{ type }}-*'
     - arg:
       - 'dhclient -r'
+    - onlyif:
+      - salt-key -l acc | grep -q "{{ type }}"
 
 init_{{ type }}_poweroff:
   salt.function:

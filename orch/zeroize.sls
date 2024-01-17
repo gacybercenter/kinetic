@@ -31,6 +31,8 @@ release_{{ type }}_ip:
     - pillar:
         type: {{ type }}
     - concurrent: True
+    - onlyif:
+      - salt-key -l acc | grep -q "{{ type }}"
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
