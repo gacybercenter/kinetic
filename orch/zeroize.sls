@@ -22,6 +22,13 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
 
+release_{{ type }}_ip:
+  salt.function:
+    - name: cmd.run
+    - tgt: '{{ type }}-*'
+    - arg:
+      - 'dhclient -r'
+
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
 

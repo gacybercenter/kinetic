@@ -19,12 +19,21 @@
 ## everything except salt and pxe
 
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
+release_{{ type }}_ip:
+  salt.function:
+    - name: cmd.run
+    - tgt: '{{ type }}-*'
+    - arg:
+      - 'dhclient -r'
+
 init_{{ type }}_poweroff:
   salt.function:
     - name: system.poweroff
     - tgt: '{{ type }}-*'
+    - require:
+      - salt: release_{{ type }}_ip
 
-## This gives hosts that were givena shutdown order the ability to shut down
+## This gives hosts that were given a shutdown order the ability to shut down
 ## There have been cases where a zeroize reset command was issued before a
 ## successful shutdown
 init_{{ type }}_sleep:
