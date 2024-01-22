@@ -45,12 +45,16 @@ def application (environ, start_response):
 
     d = parse_qs(environ['QUERY_STRING'])
     uuid = escape(d.get('uuid', [''])[0]).upper()
+    print(f'recieved checking for {uuid}')
 
     if path.exists(f'/var/www/html/assignments/{uuid}'):
-        uuid = uuid
+        uuid = uuid.upper()
     else:
         uuid = f'{endian(uuid[0:8])}-{endian(uuid[9:13])}-{endian(uuid[14:18])}-{uuid[19:]}'
+        uuid = uuid.upper()
+        print(f'swaped endianess of {uuid}')
 
+    print(f'Validating that {uuid} directory exists')
     host_data = open(f'/var/www/html/assignments/{uuid}', "r")
     host_type = host_data.readline().strip()
     hostname_assignment = host_data.readline().strip()
