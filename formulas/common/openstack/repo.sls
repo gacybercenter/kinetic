@@ -16,9 +16,9 @@
 
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Caracal
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu jammy-updates/caracal main
-    - file: /etc/apt/sources.list.d/cloudarchive-caracal.list
+    - humanname: Ubuntu Cloud Archive - Bobcat
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu jammy-updates/bobcat main
+    - file: /etc/apt/sources.list.d/cloudarchive-bobcat.list
     - keyid: EC4926EA
     - keyserver: keyserver.ubuntu.com
 
