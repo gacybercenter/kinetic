@@ -102,8 +102,6 @@ set haproxy group:
     - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
-    - kwargs: 
-        test: True
 
 set haproxy static-mapping:
   tnsr.unbound_updated:
@@ -141,8 +139,6 @@ set haproxy static-mapping:
     - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
-    - kwargs: 
-        test: True
 {% endif %}
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
