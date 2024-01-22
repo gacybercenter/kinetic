@@ -35,7 +35,26 @@ def nat_updated(name,
     Update NAT entries on the TNSR platform.
 
     :param name: The name of the state.
-    :param new_entries: The new NAT entries in YAML format.
+    :param new_entries: The new NAT entries in YAML format, below is the raw json format from https://docs.netgate.com/tnsr/en/22.02/api.
+
+    {
+        "netgate-nat:mapping-table": {
+            "mapping-entry": [
+                {
+                    "route-table-name": "string",
+                    "external-if-name": "string",
+                    "external-port": "string",
+                    "local-port": "string",
+                    "external-address": "string",
+                    "transport-protocol": "icmp",
+                    "out-to-in-only": true,
+                    "twice-nat": true,
+                    "local-address": "string"
+                }
+            ]
+        }
+    }
+
     :param cert: The path to the client certificate file.
     :param key: The path to the client private key file.
     :param cacert: The path to the CA certificate file.
@@ -122,7 +141,27 @@ def unbound_updated(name,
     Update the Unbound zones.
 
     :param name: The name of the state.
-    :new_zones: The new Unbound zones in YAML format.
+    :new_zones: The new Unbound zones in YAML format, below is the raw json format from https://docs.netgate.com/tnsr/en/22.02/api.
+
+    {
+        "zone": [
+            {
+            "description": "string",
+            "type": "deny",
+            "hosts": {
+                "host": [
+                    {
+                        "description": "string",
+                        "ip-address": "string",
+                        "host-name": "string"
+                    }
+                ]
+            },
+            "zone-name": "string"
+            }
+        ]
+    }
+
     :cert: The path to the certificate file.
     :key: The path to the private key file.
     :cacert: The path to the CA certificate file.

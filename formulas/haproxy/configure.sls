@@ -72,43 +72,77 @@ include:
 
 ## Gateway configuration
 {% if salt['pillar.get']('tnsr:enabled', False) == True %}
-/etc/haproxy/tnsr_cert:
+/etc/haproxy/tnsr.crt:
   file.managed:
     - contents: |
         {{ pillar['tnsr_cert'] }}
-    {# - mode: "0640"
+    - mode: "0640"
     - user: root
-    - group: designate #}
 
-/etc/haproxy/tnsr_key:
+/etc/haproxy/tnsr.pem:
   file.managed:
     - contents: |
         {{ pillar['tnsr_key'] }}
-    {# - mode: "0640"
+    - mode: "0640"
     - user: root
-    - group: designate #}
+
+{% set haproxy_ip = "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}" %}
+{% set zone_name = "{{ pillar['haproxy']['group'] }}.{{ pillar['haproxy']['zone_name'] }}" %}
 
 set haproxy group:
   tnsr.nat_updated:
     - name: nat_updated
-    - new_entries: {{json}}
-    - cert: /etc/haproxy/tnsr_cert
-    - key: /etc/haproxy/tnsr_key
+    - new_entries:
+      - transport-protocol: "any"
+        local-address: "{{ haproxy_ip }}"
+        local-port: "any"
+        external-address: "{{ pillar['haproxy']['external_address'] }}"
+        route-table-name: "{{ pillar['haproxy']['route_table'] }}"
+    - cert: /etc/haproxy/tnsr.crt
+    - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
     - kwargs: 
-        delete: ""
+        test: True
 
 set haproxy static-mapping:
   tnsr.unbound_updated:
     - name: unbound_updated
-    - new_zones: {{zones}}
-    - cert: /etc/haproxy/tnsr_cert
-    - key: /etc/haproxy/tnsr_key
+    - new_zones:
+      - description: "Sub-domain"
+        type: "transparent"
+        hosts:
+          host:
+            - ip-address: "{{ haproxy_ip }}"
+              host-name: "{{ pillar['haproxy']['group'] }}"
+        zone-name: "{{ pillar['haproxy']['zone_name'] }}"
+      - description: "Dashboard-URL"
+        type: "transparent"
+        hosts:
+          host:
+            - ip-address: "{{ haproxy_ip }}"
+              host-name: "{{ pillar['haproxy']['dashboard_domain'] }}"
+        zone-name: "{{ zone_name }}"
+      - description: "Console-URL"
+        type: "transparent"
+        hosts:
+          host:
+            - ip-address: "{{ haproxy_ip }}"
+              host-name: "{{ pillar['haproxy']['console_domain'] }}"
+        zone-name: "{{ zone_name }}"
+      - description: "Guacamole-URL"
+        type: "transparent"
+        hosts:
+          host:
+            - ip-address: "{{ haproxy_ip }}"
+              host-name: "{{ pillar['haproxy']['guacamole_domain'] }}"
+        zone-name: "{{ zone_name }}"
+    - cert: /etc/haproxy/tnsr.crt
+    - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
     - kwargs: 
-        delete: ""
+        test: True
 {% endif %}
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
