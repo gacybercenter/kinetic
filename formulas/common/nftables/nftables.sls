@@ -69,8 +69,9 @@ omapi_block:
     - jump: drop
     - match: state
     - connstate: new
-    - source: '0.0.0.0/0'
     - dport: 7911
+    - proto: tcp
+    - source: '0.0.0.0/0'
     - save: True
     - unless:
       - nft list table inet filter | grep -q '0.0.0.0/0 tcp dport 7911 drop'
