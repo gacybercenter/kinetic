@@ -182,14 +182,14 @@ tftp_conf:
 /srv/tftp/jammy/ubuntu2204-amd64.iso:
   file.managed:
     - makedirs: True
-    - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
-    - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
+    - source: https://cdimage.ubuntu.com/releases/jammy/release/inteliot/ubuntu-22.04-live-server-amd64+intel-iot.iso
+    - source_hash: https://cdimage.ubuntu.com/releases/jammy/release/inteliot/SHA256SUMS
 
 /srv/tftp/jammy/ubuntu2204-arm64.iso:
   file.managed:
     - makedirs: True
-    - source: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-arm64.iso
-    - source_hash: https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/SHA256SUMS
+    - source: https://cdimage.ubuntu.com/releases/jammy/release/ubuntu-22.04.3-live-server-arm64.iso
+    - source_hash: https://cdimage.ubuntu.com/releases/jammy/release/SHA256SUMS
 
 clean_dir:
   file.directory:
@@ -225,6 +225,7 @@ apache2_service:
       - file: /etc/apache2/sites-available/wsgi.conf
       - file: /etc/apache2/sites-available/tftp.conf
       - file: /etc/apache2/apache2.conf
+      - file: /var/www/html/index.py
       - apache_site: tftp
       - apache_site: wsgi
       - apache_site: 000-default
