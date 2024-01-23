@@ -43,7 +43,7 @@ public_block:
     - unless:
       - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} drop'
 
-{% if grains['role'] != 'pxe' %}
+{% if grains['role'] = 'pxe' %}
 omapi_dhcp:
   nftables.append:
     - position: 1
