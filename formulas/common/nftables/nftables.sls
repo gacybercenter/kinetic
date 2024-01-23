@@ -42,3 +42,36 @@ public_block:
     - save: True
     - unless:
       - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} drop'
+
+{% if grains['role'] != 'pxe' %}
+omapi_dhcp:
+  nftables.append:
+    - position: 1
+    - table: filter
+    - family: inet
+    - chain: input
+    - jump: accept
+    - match: state
+    - connstate: new
+    - dports: 7911
+    - proto: tcp
+    - source: '127.0.0.1'
+    - save: True
+    - unless:
+      - nft list table inet filter | grep -q '127.0.0.1 tcp dport'
+
+omapi_block:
+  nftables.append:
+    - position: 2
+    - table: filter
+    - family: inet
+    - chain: input
+    - jump: drop
+    - match: state
+    - connstate: new
+    - dports: 7911
+    - save: True
+    - unless:
+      - nft list table inet filter | grep -q 'dport 7911 drop'
+
+{% endif %}
