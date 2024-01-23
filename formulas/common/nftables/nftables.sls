@@ -60,20 +60,4 @@ omapi_dhcp:
     - unless:
       - nft list table inet filter | grep -q '127.0.0.1 tcp dport 7911 accept'
 
-omapi_block:
-  nftables.append:
-    - position: 2
-    - table: filter
-    - family: inet
-    - chain: input
-    - jump: drop
-    - match: state
-    - connstate: new
-    - dport: 7911
-    - proto: tcp
-    - source: '0.0.0.0/0'
-    - save: True
-    - unless:
-      - nft list table inet filter | grep -q '0.0.0.0/0 tcp dport 7911 drop'
-
 {% endif %}
