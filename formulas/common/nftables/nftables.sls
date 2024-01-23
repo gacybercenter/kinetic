@@ -53,7 +53,7 @@ omapi_dhcp:
     - jump: accept
     - match: state
     - connstate: new
-    - dports: 7911
+    - dport: 7911
     - proto: tcp
     - source: '127.0.0.1'
     - save: True
@@ -69,7 +69,7 @@ omapi_block:
     - jump: drop
     - match: state
     - connstate: new
-    - dports: 7911
+    - dport: 7911
     - save: True
     - unless:
       - nft list table inet filter | grep -q 'dport 7911 drop'
