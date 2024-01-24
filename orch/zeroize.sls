@@ -24,7 +24,7 @@
 
 release_{{ type }}_ip:
   salt.state:
-    - tgt: 'role:salt'
+    - tgt: 'role:pxe'
     - tgt_type: grain
     - sls:
       - orch/states/ip_release

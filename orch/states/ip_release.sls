@@ -15,8 +15,13 @@
 {% set type = pillar['type'] %}
 
 release_{{ type }}_ip:
-  salt.function:
-    - name: cmd.run
-    - tgt: '{{ type }}-*'
-    - arg:
-      - 'dhclient -r'
+  cmd.run:
+    - namet: "sed -i '/{{ type }}-/d' /var/lib/kea/kea-leases4.csv"
+    - onlyif:
+      - 'cat /var/lib/kea/kea-leases4.csv | grep -q "{{ type }}-"'
+
+kea-dhcp4-server:
+  cmd.run:
+    - name: systemctl restart kea-dhcp4-server
+    - require:
+      - cmd: release_{{ type }}_ip
