@@ -74,7 +74,7 @@ conf-files:
       - /var/www/html/index.py:
         - source: salt://formulas/pxe/files/index.py
       - /etc/kea/kea-dhcp4.conf:
-        - source: salt://formulas/pxe/files/dhcp4.conf
+        - source: salt://formulas/pxe/files/dhcp4.json
 
 create_x86_64_efi_module:
   cmd.run:
