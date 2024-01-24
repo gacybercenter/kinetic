@@ -25,7 +25,8 @@ pxe_packages:
       - apache2
       - libapache2-mod-wsgi-py3
       - gcc-aarch64-linux-gnu
-      - isc-dhcp-server
+      - kea-dhcp4-server
+      - kea-ctrl-agent
       - git
       - tftpd-hpa
     - reload_modules: True
@@ -37,7 +38,6 @@ pxe_pip:
     - names:
       - redfish
       - pyghmi
-      - pypureomapi
 
 salt-pip_installs:
   pip.installed:
@@ -46,7 +46,6 @@ salt-pip_installs:
       - tornado
       - pyghmi
       - redfish
-      - pypureomapi
     - reload_modules: true
     - require:
       - pip: pxe_pip

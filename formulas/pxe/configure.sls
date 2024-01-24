@@ -46,26 +46,20 @@ conf-files:
     - defaults:
         pxe_record: {{ pillar['pxe']['record'] }}
         pxe_name: {{ pillar['pxe']['name'] }}
-        private: {{ salt['network.convert_cidr'](pillar['networking']['subnets']['private'])['network'] }}
-        private_netmask: {{ salt['network.convert_cidr'](pillar['networking']['subnets']['private'])['netmask'] }}
+        private: {{ pillar['networking']['subnets']['private'] }}
         private_range: {{ pillar['networking']['subnets']['private']|replace('0/24', '') }}
-        sfe: {{ salt['network.convert_cidr'](pillar['networking']['subnets']['sfe'])['network'] }}
-        sfe_netmask: {{ salt['network.convert_cidr'](pillar['networking']['subnets']['sfe'])['netmask'] }}
+        sfe: {{ pillar['networking']['subnets']['sfe'] }}
         sfe_range: {{ pillar['networking']['subnets']['sfe']|replace('0/24', '') }}
-        sbe: {{ salt['network.convert_cidr'](pillar['networking']['subnets']['sbe'])['network'] }}
-        sbe_netmask: {{ salt['network.convert_cidr'](pillar['networking']['subnets']['sbe'])['netmask'] }}
+        sbe: {{ pillar['networking']['subnets']['sbe'] }}
         sbe_range: {{ pillar['networking']['subnets']['sbe']|replace('0/24', '') }}
-        mgmt: {{ pillar['networking']['subnets']['management'].split('/')[0] }}
-        mgmt_start: {{ pillar['dhcp-options']['mgmt_start'] }}
-        mgmt_end: {{ pillar['dhcp-options']['mgmt_end'] }}
+        mgmt: {{ pillar['networking']['subnets']['management'] }}
+        mgmt_range: {{ pillar['networking']['subnets']['management']|replace('0/24', '') }}
         mgmt_gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-        mgmt_netmask: {{ pillar['dhcp-options']['mgmt_netmask'] }}
-        mgmt_dns: {{ pillar['dhcp-options']['mgmt_dns'] }}
+        dns: {{ pillar['dhcp-options']['dns'] }}
         domain: {{ pillar['dhcp-options']['domain'] }}
         tftp: {{ pillar['dhcp-options']['tftp'] }}
         arm_efi: {{ pillar['dhcp-options']['arm_efi'] }}
         x86_efi: {{ pillar['dhcp-options']['x86_efi'] }}
-        omapi_port: {{ pillar['omapi.server_port'] }}
     - names:
       - /var/www/html/ipxe/src/kinetic.ipxe:
         - source: salt://formulas/pxe/files/kinetic.ipxe
@@ -221,6 +215,7 @@ kernel_extract:
 apache2_service:
   service.running:
     - name: apache2
+    - enable: True
     - watch:
       - apache_module: wsgi_module
       - file: /etc/apache2/sites-available/wsgi.conf
@@ -233,9 +228,10 @@ apache2_service:
 
 dhcp_service:
   service.running:
-    - name: isc-dhcp-server
+    - name: kea-dhcp4-server
+    - enable: True
     - watch:
-      - file: /etc/dhcp/dhcpd.conf
+      - file: /etc/kea/kea-dhcp4.conf
 
 build_phase_final:
   grains.present:
