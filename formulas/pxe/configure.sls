@@ -65,6 +65,7 @@ conf-files:
         tftp: {{ pillar['dhcp-options']['tftp'] }}
         arm_efi: {{ pillar['dhcp-options']['arm_efi'] }}
         x86_efi: {{ pillar['dhcp-options']['x86_efi'] }}
+        omapi_port: {{ pillar['omapi.server_port'] }}
     - names:
       - /var/www/html/ipxe/src/kinetic.ipxe:
         - source: salt://formulas/pxe/files/kinetic.ipxe

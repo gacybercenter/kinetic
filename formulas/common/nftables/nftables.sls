@@ -53,11 +53,11 @@ omapi_dhcp:
     - jump: accept
     - match: state
     - connstate: new
-    - dport: 7911
+    - dport: {{ pillar['omapi.server_port'] }}
     - proto: tcp
-    - source: '127.0.0.1'
+    - source: '{{ pillar['omapi.server_ip'] }}'
     - save: True
     - unless:
-      - nft list table inet filter | grep -q '127.0.0.1 tcp dport 7911 accept'
+      - nft list table inet filter | grep -q '{{ pillar['omapi.server_ip'] }} tcp dport {{ pillar['omapi.server_port'] }} accept'
 
 {% endif %}

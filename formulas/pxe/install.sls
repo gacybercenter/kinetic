@@ -37,6 +37,7 @@ pxe_pip:
     - names:
       - redfish
       - pyghmi
+      - pypureomapi
 
 salt-pip_installs:
   pip.installed:
@@ -45,6 +46,7 @@ salt-pip_installs:
       - tornado
       - pyghmi
       - redfish
+      - pypureomapi
     - reload_modules: true
     - require:
       - pip: pxe_pip

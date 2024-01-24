@@ -57,7 +57,7 @@ wipe_adminkey:
 
 ## Journal Creation
 ## Read in the model and respective quantities of each disk
-## identified to be a journal in the pillar (see environmen/osd_mappings in your pillar)
+## identified to be a journal in the pillar (see environmen/storage in your pillar)
 ## This section will identify unused disks of the correct model in the correct quantity,
 ## create a pv, and write a unique single-line file with the path to the device
 ## in /etc/ceph/journals/( model of device)/(number representing order in which it was made into a pv)
