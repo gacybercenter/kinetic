@@ -15,7 +15,7 @@
       "max-reclaim-leases": 100,
       "max-reclaim-time": 250,
       "unwarned-reclaim-cycles": 5
-  },
+    },
     "client-classes": [
       {
         "name": "arm64",
@@ -85,13 +85,13 @@
         "interface": "ens3",
         "pools": [
           {
-            "pool": "{{ mgmt_range }}50 - {{ mgmt_range }}200"
+            "pool": "{{ mgmt_range }}50 - {{ mgmt_range }}200",
             "client-class": "all",
           }
         ],
         "require-client-classes": [
-            "arm64",
-            "amd64"
+          "arm64",
+          "amd64"
         ],
         "option-data": [
           {
