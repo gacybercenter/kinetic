@@ -46,20 +46,30 @@ cyborg_packages:
     - require:
       - pkg: gpu-keyring
 
-pymysql_sa:
+gpu_pips:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
+    - reload_modules: True
+    - names:
+      - pymysql_sa
+      - eventlet
+      - python-cyborgclient
+      - memcache
+      - python-openstackclient
+      - pymysql
 
-eventlet:
+salt-pip_installs:
   pip.installed:
-    - bin_env: '/usr/bin/pip3'
+    - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
-
-python-cyborgclient:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - memcache
+      - pymysql
+      - etcd3gw
+      - eventlet
+    - require:
+      - pip: gpu_pips
 
 cyborg:
   group.present:

@@ -14,7 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/fluentd
+  - /formulas/common/fluentd/configure
   - /formulas/common/ceph/configure
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
@@ -104,27 +104,57 @@ libvirt_secrets:
     - user: root
     - group: root
 
-/root/.ssh/config:
+###
+## Nova Live Migration Setup
+/var/lib/nova/.ssh/config:
   file.managed:
-    - user: root
-    - group: root
+    - makedirs: True
+    - user: nova
+    - group: nova
     - mode: '0400'
     - source: salt://formulas/compute/files/config
+
+/var/lib/nova/.ssh/id_rsa:
+  file.managed:
+    - makedirs: True
+    - contents_pillar: nova_private_key
+    - user: nova
+    - group: nova
+    - mode: '0600'
+    - replace: False
+
+/etc/pam.d/sshd:
+  file.managed:
+    - makedirs: True
+    - source: salt://formulas/compute/files/sshd
+
+/etc/ssh/sshd.allow:
+  file.managed:
+    - makedirs: True
+    - content: |
+        nova
+        root
+
+nova:
+  group.present:
+    - system: True
+  user.present:
+    - shell: /bin/bash
+    - createhome: True
+    - home: /var/lib/nova
+    - system: True
+    - groups:
+      - nova
+      - libvirt
 
 {% for key in pillar['nova_live_migration_auth_key'] %}
 {{ key }}:
   ssh_auth.present:
-    - user: root
+    - user: nova
     - enc: {{ pillar['nova_live_migration_auth_key'][ key ]['encoding'] }}
 {% endfor %}
 
-/root/.ssh/id_rsa:
-  file.managed:
-    - contents_pillar: nova_private_key
-    - user: root
-    - group: root
-    - mode: '0600'
-    - replace: False
+###
 
 {% if grains['os_family'] == 'RedHat' %}
 spice-html5:

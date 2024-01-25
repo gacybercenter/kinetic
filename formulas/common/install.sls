@@ -65,12 +65,6 @@ upgraded:
       - update_all
 {% endif %}
 
-common_install:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-    - reload_modules: True
-
 {% if grains['virtual'] == "physical" %}
 ## temporary patch for pyopenssl that exists on physical nodes
 ## https://stackoverflow.com/questions/73830524/attributeerror-module-lib-has-no-attribute-x509-v-flag-cb-issuer-check
@@ -90,7 +84,6 @@ pyghmi_pip:
       - pyopenssl
       - pyghmi
     - require:
-      - pkg: common_install
       - OpenSSL_dir_remove
       - pyOpenSSL_dir_remove
   pkg.installed:
@@ -98,10 +91,18 @@ pyghmi_pip:
       - ipmitool
       - vim
 
+pyghmi_salt_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - pyopenssl
+      - pyghmi
+    - require:
+      - pyghmi_pip
+
 rdma-core:
   pkg.installed:
     - onlyif:
       - lshw | grep -qi rdma
-    - require:
-      - pkg: common_install
 {% endif %}

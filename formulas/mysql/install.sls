@@ -37,3 +37,17 @@ mariadb_packages:
     - reload_modules: True
 
 {% endif %}
+
+pymysql_pip:
+  pip.installed:
+    - name: pymysql
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - name: pymysql
+    - require:
+      - pip: pymysql_pip

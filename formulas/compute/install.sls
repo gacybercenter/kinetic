@@ -45,6 +45,24 @@ compute_packages:
 #      - frr
 #      - frr-pythontools
 
+compute_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - tornado
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - tornado
+      - etcd3gw
+    - require:
+      - pip: compute_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 compute_packages:
   pkg.installed:
@@ -54,8 +72,6 @@ compute_packages:
       - python3-tornado
       - ceph-common
       - spice-html5
-      - python3-rbd
-      - python3-rados
       - python3-etcd3gw
       - qemu-system
       - nvme-cli
@@ -78,5 +94,23 @@ compute_packages:
   {% endif %}
 #      - frr
 #      - frr-pythontools
+
+compute_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - tornado
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - tornado
+      - etcd3gw
+    - require:
+      - pip: compute_pip
 
 {% endif %}

@@ -14,60 +14,10 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/fluentd
+  - /formulas/common/fluentd/configure
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
-
-{% if grains['spawning'] == 0 %}
-
-designate-manage database sync:
-  cmd.run:
-    - runas: designate
-    - require:
-      - file: conf-files
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
-
-### salt state service.running doesn't seem to restart the designate_central_service
-### must perform cmd.run to restart as a fix
-
-designate-central:
-  service.running:
-    - enable: True
-    - reload: True
-    - watch:
-      - file: conf-files
-    - require:
-      - cmd: designate-manage database sync
-
-designate-manage pool update:
-  cmd.run:
-    - runas: designate
-    - require:
-      - file: /etc/designate/pools.yaml
-      - service: designate-central
-    - onchanges:
-      - file: /etc/designate/pools.yaml
-
-designate-manage tlds import --input_file /etc/designate/tlds.conf:
-  cmd.run:
-    - runas: designate
-    - require:
-      - file: /etc/designate/tlds.conf
-      - cmd: designate-manage pool update
-    - onchanges:
-      - file: /etc/designate/tlds.conf
-
-{{ spawn.spawnzero_complete() }}
-
-{% else %}
-
-{{ spawn.check_spawnzero_status(grains['type']) }}
-
-{% endif %}
 
 conf-files:
   file.managed:
@@ -138,6 +88,52 @@ conf-files:
               {%- endif -%}
             {% endfor %}
           {%- endfor %}
+
+{% if grains['spawning'] == 0 %}
+
+designate-manage database sync:
+  cmd.run:
+    - runas: designate
+    - require:
+      - file: conf-files
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
+
+designate-central:
+  service.running:
+    - enable: True
+    - watch:
+      - file: conf-files
+    - require:
+      - cmd: designate-manage database sync
+
+designate-manage pool update:
+  cmd.run:
+    - runas: designate
+    - require:
+      - file: /etc/designate/pools.yaml
+      - service: designate-central
+    - onchanges:
+      - file: /etc/designate/pools.yaml
+
+designate-manage tlds import --input_file /etc/designate/tlds.conf:
+  cmd.run:
+    - runas: designate
+    - require:
+      - file: /etc/designate/tlds.conf
+      - cmd: designate-manage pool update
+    - onchanges:
+      - file: /etc/designate/tlds.conf
+
+{{ spawn.spawnzero_complete() }}
+
+{% else %}
+
+{{ spawn.check_spawnzero_status(grains['type']) }}
+
+{% endif %}
 
 /etc/designate/rndc.key:
   file.managed:

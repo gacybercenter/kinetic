@@ -14,7 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/fluentd
+  - /formulas/common/fluentd/configure
   - /formulas/common/ceph/configure
 
 get_adminkey:

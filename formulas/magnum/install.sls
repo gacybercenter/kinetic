@@ -29,6 +29,26 @@ magnum_packages:
       - python3-openstackclient
       - python3-etcd3gw
 
+magnum_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-magnumclient
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-magnumclient
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pip: magnum_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 magnum_packages:
@@ -38,5 +58,23 @@ magnum_packages:
       - openstack-magnum-conductor
       - python3-magnumclient
       - python3-openstackclient
+
+magnum_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-magnumclient
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-magnumclient
+      - python-openstackclient
+    - require:
+      - pip: magnum_pip
 
 {% endif %}

@@ -22,7 +22,7 @@ jproxy_packages:
     - pkgs:
       - python3-pip
 
-jproxy_pip_packages:
+jproxy_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: true
@@ -31,3 +31,15 @@ jproxy_pip_packages:
       - jxmlease
       - yamlordereddictloader
       - pyOpenSSL
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - junos-eznc
+      - jxmlease
+      - yamlordereddictloader
+      - pyOpenSSL
+    - require:
+      - pip: jproxy_pip

@@ -40,6 +40,28 @@ container_packages:
       - open-iscsi
       - ceph-common
 
+container.pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
+      - tornado
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+      - etcd3gw
+      - tornado
+    - require:
+      - pip: container_pip
+
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 container_packages:
   pkg.installed:
@@ -59,6 +81,28 @@ container_packages:
       - open-iscsi
       - ceph-common
 
+container.pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
+      - tornado
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+      - etcd3gw
+      - tornado
+    - require:
+      - pip: container_pip
+
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
 container_packages:
@@ -77,6 +121,28 @@ container_packages:
       - python3-etcd3gw
       - open-iscsi
       - ceph-common
+
+container.pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
+      - tornado
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+      - etcd3gw
+      - tornado
+    - require:
+      - pip: container_pip
 
     {% endif %}
 
@@ -101,6 +167,24 @@ container_packages:
       - kata-proxy
       - kata-shim
 
+container.pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+    - require:
+      - pip: container_pip
+
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
 container_packages:
@@ -120,6 +204,24 @@ container_packages:
       - kata-runtime
       - kata-proxy
       - kata-shim
+
+container.pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+    - require:
+      - pip: container_pip
 
   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
@@ -142,6 +244,24 @@ container_packages:
       - kata-proxy
       - kata-shim
     - reload_modules: True
+
+container.pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - python-openstackclient
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+    - require:
+      - pip: container_pip
 
   {% endif %}
 

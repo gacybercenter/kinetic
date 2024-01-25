@@ -33,6 +33,26 @@ network_packages:
       - python3-tornado
       - python3-etcd3gw
 
+network_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - tornado
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - tornado
+      - etcd3gw
+    - require:
+      - pip: network_packages
+
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
 network_packages:
@@ -45,6 +65,24 @@ network_packages:
       - neutron-metadata-agent
       - python3-openstackclient
       - python3-tornado
+
+network_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - tornado
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - tornado
+    - require:
+      - pip: network_pip
 
     {% endif %}
 
@@ -60,6 +98,21 @@ network_packages:
       - iptables-ebtables
       - python3-openstackclient
 
+network_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+    - require:
+      - pip: network_pip
+
   {% elif pillar['neutron']['backend'] == "openvswitch" %}
 
 network_packages:
@@ -70,6 +123,21 @@ network_packages:
       - openstack-neutron-openvswitch
       - iptables-ebtables
       - python3-openstackclient
+
+network_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+    - require:
+      - pip: network_pip
 
   {% endif %}
 {% endif %}
