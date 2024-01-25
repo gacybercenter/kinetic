@@ -56,7 +56,7 @@ tnsr_nat_updates:
         route-table-name: "{{ pillar['haproxy']['route_table'] }}"
     - cert: /etc/haproxy/tnsr.crt
     - key: /etc/haproxy/tnsr.pem
-    - hostname: {{ pillar['tnsr']['endpoint'] }}
+    - hostname: "https://{{ pillar['tnsr']['endpoint'] }}"
     - cacert: False
 
 tnsr_unbound_updates:
@@ -93,7 +93,7 @@ tnsr_unbound_updates:
         zone-name: "{{ zone_name }}"
     - cert: /etc/haproxy/tnsr.crt
     - key: /etc/haproxy/tnsr.pem
-    - hostname: {{ pillar['tnsr']['endpoint'] }}
+    - hostname: "https://{{ pillar['tnsr']['endpoint'] }}"
     - cacert: False
 {% endif %}
 
