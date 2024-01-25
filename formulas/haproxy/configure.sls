@@ -32,15 +32,13 @@ include:
 {% if salt['pillar.get']('tnsr:enabled', False) == True %}
 /etc/haproxy/tnsr.crt:
   file.managed:
-    - contents: |
-        {{ pillar['tnsr_cert'] }}
+    - contents_pillar: tnsr_cert
     - mode: "0640"
     - user: root
 
 /etc/haproxy/tnsr.pem:
   file.managed:
-    - contents: |
-        {{ pillar['tnsr_key'] }}
+    - contents_pillar: tnsr_key
     - mode: "0640"
     - user: root
 
