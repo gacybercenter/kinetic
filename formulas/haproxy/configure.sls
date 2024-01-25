@@ -126,8 +126,6 @@ acme_certs:
 
 haproxy:
   service.dead:
-    - require_in:
-      - acme: acme_certs
 
 create_master_pem:
   cmd.run:
