@@ -42,15 +42,12 @@ include:
     - mode: "0640"
     - user: root
 
-{% set haproxy_ip = "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}" %}
-{% set zone_name = "{{ pillar['haproxy']['group'] }}.{{ pillar['haproxy']['zone_name'] }}" %}
-
 tnsr_nat_updates:
   tnsr.nat_updated:
     - name: tnsr_nat_updates
     - new_entries:
       - transport-protocol: "any"
-        local-address: "{{ haproxy_ip }}"
+        local-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
         local-port: "any"
         external-address: "{{ pillar['haproxy']['external_address'] }}"
         route-table-name: "{{ pillar['haproxy']['route_table'] }}"
@@ -67,30 +64,30 @@ tnsr_unbound_updates:
         type: "transparent"
         hosts:
           host:
-            - ip-address: "{{ haproxy_ip }}"
+            - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['group'] }}"
         zone-name: "{{ pillar['haproxy']['zone_name'] }}"
       - description: "Dashboard-URL"
         type: "transparent"
         hosts:
           host:
-            - ip-address: "{{ haproxy_ip }}"
+            - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['dashboard_domain'] }}"
-        zone-name: "{{ zone_name }}"
+        zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
       - description: "Console-URL"
         type: "transparent"
         hosts:
           host:
-            - ip-address: "{{ haproxy_ip }}"
+            - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['console_domain'] }}"
-        zone-name: "{{ zone_name }}"
+        zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
       - description: "Guacamole-URL"
         type: "transparent"
         hosts:
           host:
-            - ip-address: "{{ haproxy_ip }}"
+            - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['guacamole_domain'] }}"
-        zone-name: "{{ zone_name }}"
+        zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
     - cert: /etc/haproxy/tnsr.crt
     - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}

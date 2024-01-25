@@ -17,7 +17,7 @@ Tnsr State Module
 """
 
 import json
-import yaml
+from collections import OrderedDict
 
 __virtualname__ = 'tnsr'
 
@@ -78,9 +78,6 @@ def nat_updated(name,
         "comment": ""
     }
 
-    print('New Entries:')
-    print(new_entries)
-
     # Get current NAT entries
     current_entries = __salt__["tnsr.nat_entries_request"]("GET",
                                                             cert,
@@ -88,26 +85,20 @@ def nat_updated(name,
                                                             hostname,
                                                             cacert=cacert)
 
-    print('Current Entries:')
-    print(current_entries)
-
     # Parse current JSON and new YAML data
     current_entries = json.loads(current_entries)
 
     print('Current Entries JSON:')
     print(current_entries)
 
-    new_entries = {'netgate-nat:mapping-table': {'mapping-entry': yaml.safe_load(new_entries)}}
+    new_entries = {'netgate-nat:mapping-table': {'mapping-entry': json.dumps(new_entries)}}
 
-    print('New Entries:')
+    print('New Entries JSON:')
     print(new_entries)
 
     merged_entries = __salt__["tnsr.merge_entries"](current_entries,
                                                     new_entries,
                                                     remove)
-
-    print('Merged Entries:')
-    print(merged_entries)
 
     # If item to be removed does not exist
     if remove and merged_entries == current_entries:
@@ -205,8 +196,6 @@ def unbound_updated(name,
         "comment": ""
     }
 
-    print('New Zones:')
-    print(new_zones)
 
     # Get current NAT entries
     current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
@@ -215,8 +204,6 @@ def unbound_updated(name,
                                                             hostname,
                                                             cacert=cacert)
 
-    print('Current Zones:')
-    print(current_zones)
 
     # Parse current JSON and new YAML data
     current_zones = json.loads(current_zones)
@@ -224,17 +211,14 @@ def unbound_updated(name,
     print('Current Zones JSON:')
     print(current_zones)
 
-    new_zones = {'netgate-unbound:local-zones': {'zone': yaml.safe_load(new_zones)}}
+    new_zones = {'netgate-unbound:local-zones': {'zone': json.dumps(new_zones)}}
 
-    print('New Zones:')
+    print('New Zones JSON:')
     print(new_zones)
 
     merged_zones = __salt__["tnsr.merge_zones"](current_zones,
                                                 new_zones,
                                                 remove)
-
-    print('Merged Zones:')
-    print(merged_zones)
 
     # If item to be removed does not exist
     if remove and merged_zones == current_zones:
