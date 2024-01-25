@@ -38,6 +38,30 @@ share_packages:
       - sqlite3
       - python3-etcd3gw
 
+share_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-manilaclient
+      - memcache
+      - pymysql
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin-env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+      - python-manilaclient
+      - memcache
+      - etcd3gw
+    - require:
+      - pip: share_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 share_packages:
@@ -64,5 +88,27 @@ ganesha_packages:
       - nfs-ganesha-rados-grace
     - require:
       - pkg: share_packages
+
+share_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-manilaclient
+      - python-memcached
+      - pymysql
+
+salt-pip_installs:
+  pip.installed:
+    - bin-env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-openstackclient
+      - python-manilaclient
+      - python-memcached
+    - require:
+      - pip: share_pip
 
 {% endif %}

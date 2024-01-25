@@ -14,7 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/fluentd
+  - /formulas/common/fluentd/configure
 
 /etc/salt/minion.d/mine_functions.conf:
   file.managed:
@@ -37,6 +37,8 @@ https://github.com/ipxe/ipxe.git:
     - user: root
     - require:
       - sls: /formulas/pxe/install
+    - unless:
+      - ls /var/www/html/ipxe/src | grep -q kinetic.ipxe
 
 conf-files:
   file.managed:

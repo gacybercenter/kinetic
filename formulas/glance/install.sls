@@ -33,6 +33,27 @@ glance_packages:
     - bin_env: '/usr/bin/pip3'
     - name: boto3
 
+glance_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - etcd3gw
+      - boto3
+    - require:
+      - pkg: glance_packages
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pip: glance_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 glance_packages:
@@ -46,5 +67,24 @@ glance_packages:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - name: boto3
+
+glance_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python3-memcached
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - python-openstackclient
+      - python3-memcached
+      - boto3
+    - require:
+      - pip: glance_pip
 
 {% endif %}

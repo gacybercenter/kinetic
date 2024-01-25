@@ -31,10 +31,29 @@ zun_packages:
       - python3-pymysql
       - python3-etcd3gw
 
-pymysql_sa:
+zun_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - pymysql_sa
+      - memcache
+      - python-openstackclient
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
+    - pkgs:
+      - pymysql
+      - pymysql_sa
+      - memcache
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pip: zun_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 
@@ -52,6 +71,26 @@ zun_packages:
       - python3-PyMySQL
       - python3-memcached
       - python3-openstackclient
+
+zun_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - python-memcached
+      - python-openstackclient
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-memcached
+      - python-openstackclient
+    - require:
+      - pip: zun_pip
 
 {% endif %}
 

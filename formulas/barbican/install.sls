@@ -29,6 +29,26 @@ barbican_packages:
       - python3-openstackclient
       - python3-etcd3gw
 
+barbican_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pkg: barbican_packages
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pip: barbican_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 barbican_packages:
@@ -41,5 +61,25 @@ barbican_packages:
       - python3-openstackclient
       - httpd
       - python3-mod_wsgi
+
+barbican_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - mod_wsgi
+    - require:
+      - pkg: barbican_packages
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - python-openstackclient
+      - mod_wsgi
+    - require:
+      - pip: barbican_pip
 
 {% endif %}

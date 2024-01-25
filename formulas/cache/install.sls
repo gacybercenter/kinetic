@@ -16,7 +16,7 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/common/docker/repo
+  #- /formulas/common/docker/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -26,11 +26,32 @@ cache_packages:
       - apt-cacher-ng
       - python3-pip
       - apache2
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
+      - docker.io
       - docker-compose
+      - containerd
     - reload_modules: True
+
+## Install docker pip module version 5.0.3 due to bug in 6.0.0, as seen here related to saltstack
+## https://github.com/saltstack/salt/issues/62602
+cache_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - pkgs:
+      - docker == 5.0.3
+    - reload_modules: true
+    - require:
+      - pkg: cache_packages
+
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - pkgs:
+      - docker == 5.0.3
+    - reload_modules: true
+    - require:
+      - pkg: cache_packages
+      - pip: cache_pip
 
 {% elif grains['os_family'] == 'RedHat' %}
 

@@ -31,6 +31,24 @@ nova_packages:
       - python3-openstackclient
       - python3-etcd3gw
 
+nova_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - pkgs:
+      - python-openstackclient
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pip: nova_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 nova_packages:
@@ -42,5 +60,20 @@ nova_packages:
       - openstack-nova-scheduler
       - python3-openstackclient
       - git
+
+nova_pip:
+  pip.installed:
+    - name: python-openstackclient
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+    - require:
+      - pip: nova_pip
 
 {% endif %}

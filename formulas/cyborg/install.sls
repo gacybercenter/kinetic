@@ -30,6 +30,30 @@ cyborg_packages:
       - python3-pymysql
       - python3-etcd3gw
 
+cyborg_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - memcache
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pkg: cyborg_packages
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - memcache
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pip: cyborg_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 cyborg_packages:
@@ -45,6 +69,26 @@ cyborg_packages:
       - python3-PyMySQL
       - python3-memcached
       - python3-openstackclient
+
+cyborg_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - pymysql
+      - python-memcached
+      - python-openstackclient
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - python-memcached
+      - python-openstackclient
+    - require:
+      - pip: cyborg_pip
 
 {% endif %}
 

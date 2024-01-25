@@ -28,6 +28,26 @@ placement_packages:
       - python3-pymysql
       - python3-etcd3gw
 
+placement_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - etcd3gw
+      - pymysql
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - pymysql
+      - etcd3gw
+    - require:
+      - pip: placement_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 placement_packages:
@@ -36,5 +56,23 @@ placement_packages:
       - python3-openstackclient
       - openstack-placement-api
       - python3-PyMySQL
+
+placement_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - etcd3gw
+      - pymysql
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - pymysql
+      - etcd3gw
+    - require:
+      - pip: placement_pip
 
 {% endif %}

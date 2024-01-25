@@ -14,7 +14,7 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/fluentd
+  - /formulas/common/fluentd/configure
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 
@@ -54,10 +54,10 @@ conf-files:
 get_centos_mirros:
   cmd.run:
 {% if grains['os_family'] == 'Debian' %}
-    - name: curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/etc/apt-cacher-ng/centos_mirrors
+    - name: curl https://git.centos.org/centos/centos.org/raw/3dc5ae396b4fa849fc03fd07ed01d831b0de9ef8/f/_data/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/etc/apt-cacher-ng/centos_mirrors
     - creates: /etc/apt-cacher-ng/centos_mirrors
 {% elif grains['os_family'] == 'RedHat' %}
-    - name: curl https://www.centos.org/download/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors
+    - name: curl https://git.centos.org/centos/centos.org/raw/3dc5ae396b4fa849fc03fd07ed01d831b0de9ef8/f/_data/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors
     - creates: /root/centos_mirrors
 {% endif %}
 
@@ -138,7 +138,7 @@ lancachenet_dns:
       - 53:53/udp
     - environment:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
-      - WSUSCACHE_IP: {{ salt['mine.get']('role:cache', 'network.ip_addrs', 'ens3').items() }}
+      - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - require:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith

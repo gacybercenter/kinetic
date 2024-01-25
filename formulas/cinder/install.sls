@@ -29,6 +29,26 @@ cinder_packages:
       - python3-memcache
       - python3-etcd3gw
 
+cinder_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pkg: cinder_packages
+
+salt-pip_install:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pip: cinder_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 cinder_packages:
@@ -37,5 +57,23 @@ cinder_packages:
       - openstack-cinder
       - python3-openstackclient
       - python3-memcached
+
+cinder_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-memcached
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: True
+    - pkgs:
+      - python-openstackclient
+      - python-memcached
+    - require:
+      - pip: cinder_pip
 
 {% endif %}

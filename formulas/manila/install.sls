@@ -30,6 +30,28 @@ manila_packages:
       - python3-memcache
       - python3-etcd3gw
 
+manila_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-manilaclient
+      - etcd3gw
+      - memcache
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - python-manilaclient
+      - memcache
+      - etcd3gw
+    - require:
+      - pip: manila_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 manila_packages:
@@ -39,5 +61,25 @@ manila_packages:
       - python3-openstackclient
       - python3-manilaclient
       - python3-memcached
+
+manila_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-manilaclient
+      - python-memcached
+
+salt-pip_install:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - python-manilaclient
+      - python-memcached
+    - require:
+      - pip: manila_pip
 
 {% endif %}

@@ -17,7 +17,7 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
- #  - /formulas/common/ceph/repo
+#  - /formulas/common/ceph/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -32,6 +32,24 @@ volume_packages:
       - python3-rados
       - python3-etcd3gw
 
+volume_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - etcd3gw
+
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pip: volume_pip
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 volume_packages:
@@ -43,5 +61,23 @@ volume_packages:
       - ceph-common
       - python3-rbd
       - python3-rados
+
+volume_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - python-memcached
+
+salt-pip_installs:
+  pip.installed:
+    bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - pkgs:
+      - python-openstackclient
+      - python-memcached
+    - require:
+      - pip: volume_pip
 
 {% endif %}

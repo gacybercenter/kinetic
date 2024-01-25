@@ -16,15 +16,6 @@
 spawnzero_complete:
   grains.present:
     - value: True
-  module.run:
-    - mine.send:
-      - name: spawnzero_complete
-      - args:
-        - spawnzero_complete
-      - kwargs:
-          mine_function: grains.item
-    - onchanges:
-      - grains: spawnzero_complete
 
 spawnzero_update:
   module.run:

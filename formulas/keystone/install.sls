@@ -45,17 +45,11 @@ keystone_packages:
       - python3-mod_wsgi
 
 {% endif %}
-
-shade:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-## the shade module is affected by https://github.com/saltstack/salt/issues/24925
-## this is an attempt at a workaround
-Restart Salt Minion:
-  cmd.run:
-    - name: 'salt-call service.restart salt-minion'
-    - bg: True
-    - onchanges:
-      - pip: shade
+# ## the shade module is affected by https://github.com/saltstack/salt/issues/24925
+# ## this is an attempt at a workaround
+# Restart Salt Minion:
+#   cmd.run:
+#     - name: 'salt-call service.restart salt-minion'
+#     - bg: True
+#     - onchanges:
+#       - pkg: shade
