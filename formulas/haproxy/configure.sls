@@ -29,48 +29,6 @@ include:
 
 {% endif %}
 
-### Gateway configuration
-#{% if salt['pillar.get']('danos:enabled', False) == True %}
-#set haproxy group:
-#  danos.set_resourcegroup:
-#    - name: haproxy-{{ pillar['haproxy']['group'] }}
-#    - type: address-group
-#    - description: current haproxy servers for {{ pillar['haproxy']['group'] }}
-#    - values:
-#      - {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-#    - username: {{ pillar['danos']['username'] }}
-#    - password: {{ pillar['danos_password'] }}
-#  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
-#    - host: {{ grains['ip4_gw'] }}
-#  {% else %}
-#    - host: {{ pillar['danos']['endpoint'] }}
-#  {% endif %}
-#    - unless:
-#      - fun: grains.equals
-#        key: build_phase
-#        value: configure
-
-#set haproxy static-mapping:
-#  danos.set_statichostmapping:
-#    - name: {{ pillar['haproxy']['dashboard_domain'] }}
-#    - address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-#    - aliases:
-#      - {{ pillar['haproxy']['console_domain'] }}
-#      - {{ pillar['haproxy']['guacamole_domain'] }}
-#    - username: {{ pillar['danos']['username'] }}
-#    - password: {{ pillar['danos_password'] }}
-#  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
-#    - host: {{ grains['ip4_gw'] }}
-#  {% else %}
-#    - host: {{ pillar['danos']['endpoint'] }}
-#  {% endif %}
-#    - unless:
-#      - fun: grains.equals
-#        key: build_phase
-#        value: configure
-#{% endif %}
-
-## Gateway configuration
 {% if salt['pillar.get']('tnsr:enabled', False) == True %}
 /etc/haproxy/tnsr.crt:
   file.managed:
@@ -89,9 +47,9 @@ include:
 {% set haproxy_ip = "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}" %}
 {% set zone_name = "{{ pillar['haproxy']['group'] }}.{{ pillar['haproxy']['zone_name'] }}" %}
 
-set haproxy group:
+tnsr_nat_updates:
   tnsr.nat_updated:
-    - name: nat_updated
+    - name: tnsr_nat_updates
     - new_entries:
       - transport-protocol: "any"
         local-address: "{{ haproxy_ip }}"
@@ -103,9 +61,9 @@ set haproxy group:
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
 
-set haproxy static-mapping:
+tnsr_unbound_updates:
   tnsr.unbound_updated:
-    - name: unbound_updated
+    - name: tnsr_unbound_updates
     - new_zones:
       - description: "Sub-domain"
         type: "transparent"
@@ -161,12 +119,12 @@ acme_certs:
 {% if salt['pillar.get']('development:test_certs', False) == True %}
     - test_cert: True
 {% endif %}
-#{% if salt['pillar.get']('danos:enabled', False) == True %}
-#    - require:
-#      - service: haproxy_service_stop
-#      - danos: set haproxy group
-#      - danos: set haproxy static-mapping
-#{% endif %}
+{% if salt['pillar.get']('tnsr:enabled', False) == True %}
+    - require:
+      - systemctl stop haproxy
+      - tnsr: tnsr_nat_updates
+      - tnsr: tnsr_unbound_updates
+{% endif %}
 
 create_master_pem:
   cmd.run:
