@@ -85,13 +85,29 @@ def nat_updated(name,
                                                             hostname,
                                                             cacert=cacert)
 
+    print('New Entries:')
+    print(new_entries)
+
+    print('Current Entries:')
+    print(current_entries)
+
     # Parse current JSON and new YAML data
     current_entries = json.loads(current_entries)
+
+    print('Current Entries JSON:')
+    print(current_entries)
+
     new_entries = {'netgate-nat:mapping-table': {'mapping-entry': yaml.safe_load(new_entries)}}
+
+    print('New Entries:')
+    print(new_entries)
 
     merged_entries = __salt__["tnsr.merge_entries"](current_entries,
                                                     new_entries,
                                                     remove)
+
+    print('Merged Entries:')
+    print(merged_entries)
 
     # If item to be removed does not exist
     if remove and merged_entries == current_entries:
@@ -198,13 +214,29 @@ def unbound_updated(name,
                                                             hostname,
                                                             cacert=cacert)
 
+    print('New Zones:')
+    print(new_zones)
+
+    print('Current Zones:')
+    print(current_zones)
+
     # Parse current JSON and new YAML data
     current_zones = json.loads(current_zones)
+
+    print('Current Zones JSON:')
+    print(current_zones)
+
     new_zones = {'netgate-unbound:local-zones': {'zone': yaml.safe_load(new_zones)}}
+
+    print('New Zones:')
+    print(new_zones)
 
     merged_zones = __salt__["tnsr.merge_zones"](current_zones,
                                                 new_zones,
                                                 remove)
+
+    print('Merged Zones:')
+    print(merged_zones)
 
     # If item to be removed does not exist
     if remove and merged_zones == current_zones:

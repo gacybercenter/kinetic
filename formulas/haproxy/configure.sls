@@ -119,10 +119,15 @@ acme_certs:
 {% endif %}
 {% if salt['pillar.get']('tnsr:enabled', False) == True %}
     - require:
-      - systemctl stop haproxy
+      - service: haproxy
       - tnsr: tnsr_nat_updates
       - tnsr: tnsr_unbound_updates
 {% endif %}
+
+haproxy:
+  service.dead:
+    - require_in:
+      - acme: acme_certs
 
 create_master_pem:
   cmd.run:
