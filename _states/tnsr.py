@@ -78,15 +78,15 @@ def nat_updated(name,
         "comment": ""
     }
 
+    print('New Entries:')
+    print(new_entries)
+
     # Get current NAT entries
     current_entries = __salt__["tnsr.nat_entries_request"]("GET",
                                                             cert,
                                                             key,
                                                             hostname,
                                                             cacert=cacert)
-
-    print('New Entries:')
-    print(new_entries)
 
     print('Current Entries:')
     print(current_entries)
@@ -205,17 +205,15 @@ def unbound_updated(name,
         "comment": ""
     }
 
-    hostname = f"https://{hostname}"
-    
+    print('New Zones:')
+    print(new_zones)
+
     # Get current NAT entries
     current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
                                                             cert,
                                                             key,
                                                             hostname,
                                                             cacert=cacert)
-
-    print('New Zones:')
-    print(new_zones)
 
     print('Current Zones:')
     print(current_zones)
