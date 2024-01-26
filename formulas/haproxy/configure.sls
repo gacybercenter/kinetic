@@ -77,7 +77,6 @@ tnsr_unbound_updates:
               host-name: "{{ pillar['haproxy']['console_domain'] }}"
             - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['guacamole_domain'] }}"
-        zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
     - cert: /etc/haproxy/tnsr.crt
     - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}
