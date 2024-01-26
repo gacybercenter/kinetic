@@ -88,7 +88,6 @@ def nat_updated(name,
     # Parse current JSON and new YAML data
     current_entries = json.loads(current_entries)
     new_entries = {'netgate-nat:mapping-table': {'mapping-entry': json.dumps(new_entries) }}
-    new_entries = json.loads(new_entries)
 
     merged_entries = __salt__["tnsr.merge_entries"](current_entries,
                                                     new_entries,
@@ -214,7 +213,6 @@ def unbound_updated(name,
     # Parse current JSON and new YAML data
     current_zones = json.loads(current_zones)
     new_zones = {'netgate-unbound:local-zones': {'zone': json.dumps(new_zones)}}
-    new_zones = json.loads(new_zones)
 
     merged_zones = __salt__["tnsr.merge_zones"](current_zones,
                                                 new_zones,
