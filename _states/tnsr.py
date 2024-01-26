@@ -87,14 +87,8 @@ def nat_updated(name,
 
     # Parse current JSON and new YAML data
     current_entries = json.loads(current_entries)
-
-    print('Current Entries JSON:')
-    print(current_entries)
-
-    new_entries = {'netgate-nat:mapping-table': {'mapping-entry': json.dumps(new_entries)}}
-
-    print('New Entries JSON:')
-    print(new_entries)
+    new_entries = {'netgate-nat:mapping-table': {'mapping-entry': json.dumps(new_entries) }}
+    new_entries = json.loads(new_entries)
 
     merged_entries = __salt__["tnsr.merge_entries"](current_entries,
                                                     new_entries,
@@ -121,21 +115,35 @@ def nat_updated(name,
         return ret
 
     # Update NAT mapping entries
-    __salt__["tnsr.nat_entries_request"]("PUT",
+    response = __salt__["tnsr.nat_entries_request"]("PUT",
                                         cert,
                                         key,
                                         hostname,
                                         cacert=cacert,
                                         payload=json.dumps(merged_entries))
 
-    # Return successful update
-    ret["changes"] = {
-            "old": current_entries,
-            "new": merged_entries,
-        }
-    ret["comment"] = "Successfully updated NAT entries"
-    ret["result"] = True
-    return ret
+    print(response.status_code)
+    print(response.text)
+
+    current_entries = __salt__["tnsr.nat_entries_request"]("GET",
+                                                            cert,
+                                                            key,
+                                                            hostname,
+                                                            cacert=cacert)
+    current_entries = json.loads(current_entries)
+
+    if merged_entries == current_entries:
+        # Return successful update
+        ret["changes"] = {
+                "old": current_entries,
+                "new": merged_entries,
+            }
+        ret["comment"] = "Successfully updated NAT entries"
+        ret["result"] = True
+        return ret
+    else:
+        ret["comment"] = f"Unable to apply NAT entries: {response.status_code}"
+        return ret
 
 def unbound_updated(name,
                     new_zones,
@@ -207,14 +215,8 @@ def unbound_updated(name,
 
     # Parse current JSON and new YAML data
     current_zones = json.loads(current_zones)
-
-    print('Current Zones JSON:')
-    print(current_zones)
-
     new_zones = {'netgate-unbound:local-zones': {'zone': json.dumps(new_zones)}}
-
-    print('New Zones JSON:')
-    print(new_zones)
+    new_zones = json.loads(new_zones)
 
     merged_zones = __salt__["tnsr.merge_zones"](current_zones,
                                                 new_zones,
@@ -241,18 +243,32 @@ def unbound_updated(name,
         return ret
 
     # Update DNS zones
-    __salt__["tnsr.unbound_zones_request"]("PUT",
+    response =__salt__["tnsr.unbound_zones_request"]("PUT",
                                             cert,
                                             key,
                                             hostname,
                                             cacert=cacert,
                                             payload=json.dumps(merged_zones))
 
-    # Return successful update
-    ret["changes"] = {
-            "old": current_zones,
-            "new": merged_zones,
-        }
-    ret["comment"] = "Successfully updated Unbound zones"
-    ret["result"] = True
-    return ret
+    print(response.status_code)
+    print(response.text)
+
+    current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
+                                                            cert,
+                                                            key,
+                                                            hostname,
+                                                            cacert=cacert)
+    current_zones = json.loads(current_zones)
+
+    if merged_zones == current_zones:
+        # Return successful update
+        ret["changes"] = {
+                "old": current_zones,
+                "new": merged_zones,
+            }
+        ret["comment"] = "Successfully updated Unbound zones"
+        ret["result"] = True
+        return ret
+    else:
+        ret["comment"] = f"Unable to apply Zone entries: {response.status_code}"
+        return ret
