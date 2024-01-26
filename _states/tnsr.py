@@ -252,7 +252,7 @@ def unbound_updated(name,
         ret["result"] = None
         return ret
 
-    print{f'cert: {cert}, key: {key}, hostname: {hostname}, cacert: {cacert}, payload: {json.dumps(merged_zones)}'}
+    print(f'cert: {cert}, key: {key}, hostname: {hostname}, cacert: {cacert}, payload: {json.dumps(merged_zones)}')
 
     # Update DNS zones
     #response =__salt__["tnsr.unbound_zones_request"]("PUT",
