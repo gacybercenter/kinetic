@@ -87,7 +87,9 @@ def nat_updated(name,
 
     # Parse current JSON and new YAML data
     current_entries = json.loads(current_entries)
-    new_entries = {'netgate-nat:mapping-table': {'mapping-entry': json.dumps(new_entries) }}
+    new_entries = json.dumps(new_entries)
+    new_entries = json.loads(new_entries)
+    new_entries = {'netgate-nat:mapping-table': {'mapping-entry': new_entries }}
 
     merged_entries = __salt__["tnsr.merge_entries"](current_entries,
                                                     new_entries,
@@ -219,6 +221,17 @@ def unbound_updated(name,
                                                 new_zones,
                                                 remove)
 
+    print(type(current_zones))
+    print(type(new_zones))
+
+    print("Current Entries: ")
+    print(current_zones)
+    print("New Entries: ")
+    print(new_zones)
+    print("Merged Entries: ")
+    print(merged_zones)
+
+
     # If item to be removed does not exist
     if remove and merged_zones == current_zones:
         ret["comment"] = "Unbound zones to be removed do not exist"
@@ -239,15 +252,17 @@ def unbound_updated(name,
         ret["result"] = None
         return ret
 
+    print{f'cert: {cert}, key: {key}, hostname: {hostname}, cacert: {cacert}, payload: {json.dumps(merged_zones)}'}
+
     # Update DNS zones
-    response =__salt__["tnsr.unbound_zones_request"]("PUT",
-                                            cert,
-                                            key,
-                                            hostname,
-                                            cacert=cacert,
-                                            payload=json.dumps(merged_zones))
-    print(response.status_code)
-    print(response.text)
+    #response =__salt__["tnsr.unbound_zones_request"]("PUT",
+                                            # cert,
+                                            # key,
+                                            # hostname,
+                                            # cacert=cacert,
+                                            # payload=json.dumps(merged_zones))
+    #print(response.status_code)
+    #print(response.text)
 
     current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
                                                             cert,

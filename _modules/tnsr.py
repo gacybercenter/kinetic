@@ -90,14 +90,11 @@ def merge_entries(current_entries,
     current_entries = current_entries['netgate-nat:mapping-table']['mapping-entry']
     new_entries = new_entries['netgate-nat:mapping-table']['mapping-entry']
     # If get_difference is True, return current entries - new entries
-    if get_difference:
-        different = [entry for entry in current_entries if entry not in new_entries]
-        merged_entries['netgate-nat:mapping-table']['mapping-entry'] = different
-    # If get_difference is False, return current entries + new entries
-    else:
-        same = [entry for entry in new_entries if entry not in current_entries]
-        same += current_entries
-        merged_entries['netgate-nat:mapping-table']['mapping-entry'] = same
+
+    new_external_addresses = [entry['external-address'] for entry in new_entries]
+    entries = [entry for entry in current_entries if entry['external-address'] not in new_external_addresses]
+    entries += new_entries
+    merged_entries['netgate-nat:mapping-table']['mapping-entry'] = entries
     # Return the merged entries
     return merged_entries
 

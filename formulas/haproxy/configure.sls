@@ -50,6 +50,7 @@ tnsr_nat_updates:
         local-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
         local-port: "any"
         external-address: "{{ pillar['haproxy']['external_address'] }}"
+        external-port: "any"
         route-table-name: "{{ pillar['haproxy']['route_table'] }}"
     - cert: /etc/haproxy/tnsr.crt
     - key: /etc/haproxy/tnsr.pem
