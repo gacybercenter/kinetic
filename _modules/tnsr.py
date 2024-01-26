@@ -59,6 +59,8 @@ def nat_entries_request(method,
                                 headers=headers,
                                 data=payload,
                                 timeout=timeout)
+    if method != 'GET':
+        return response
     return response.text
 
 
@@ -129,6 +131,8 @@ def unbound_zones_request(method,
                                 headers=headers,
                                 data=payload,
                                 timeout=timeout)
+    if method != 'GET':
+        return response
     return response.text
 
 def merge_zones(current_zones,
