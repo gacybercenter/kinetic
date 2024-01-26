@@ -61,31 +61,20 @@ tnsr_unbound_updates:
   tnsr.unbound_updated:
     - name: tnsr_unbound_updates
     - new_zones:
-      - description: "Sub-domain"
+      - zone-name: "{{ pillar['haproxy']['zone_name'] }}"
         type: "transparent"
         hosts:
           host:
             - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['group'] }}"
-        zone-name: "{{ pillar['haproxy']['zone_name'] }}"
-      - description: "Dashboard-URL"
+      - zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
         type: "transparent"
         hosts:
           host:
             - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['dashboard_domain'] }}"
-        zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
-      - description: "Console-URL"
-        type: "transparent"
-        hosts:
-          host:
             - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['console_domain'] }}"
-        zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
-      - description: "Guacamole-URL"
-        type: "transparent"
-        hosts:
-          host:
             - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['guacamole_domain'] }}"
         zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
