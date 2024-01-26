@@ -50,7 +50,7 @@ def nat_entries_request(method,
     Returns:
     str: The response text from the API endpoint.
     """
-    url = f"https://{hostname}/restconf/data/netgate-nat:nat-config/static/mapping-table"
+    url = f"https://{hostname}/restconf/data/netgate-nat:nat-config/netgate-nat:static/netgate-nat:mapping-table"
     headers={'Content-Type': 'application/yang-data+json'}
     response = requests.request(method,
                                 url,
@@ -122,7 +122,7 @@ def unbound_zones_request(method,
     :param hostname: (optional) The URL of the REST endpoint to request.
     :return: The response text from the server.
     """
-    url = f"https://{hostname}/restconf/data/netgate-unbound:unbound-config/daemon/server/local-zones"
+    url = f"https://{hostname}/restconf/data/netgate-unbound:unbound-config/netgate-unbound:daemon/netgate-unbound:server/netgate-unbound:local-zones"
     headers={'Content-Type': 'application/yang-data+json'}
     response = requests.request(method,
                                 url,
