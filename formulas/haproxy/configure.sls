@@ -66,17 +66,15 @@ tnsr_unbound_updates:
         hosts:
           host:
             - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
-              host-name: "{{ pillar['haproxy']['group'] }}"
+              host-name: "{{ pillar['haproxy']['group'] }}.split('.')[0]"
       - zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
         type: "transparent"
         hosts:
           host:
             - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
-              host-name: "{{ pillar['haproxy']['dashboard_domain'] }}"
+              host-name: "{{ pillar['haproxy']['dashboard_domain'] }}.split('.')[0]"
             - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
-              host-name: "{{ pillar['haproxy']['console_domain'] }}"
-            - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
-              host-name: "{{ pillar['haproxy']['guacamole_domain'] }}"
+              host-name: "{{ pillar['haproxy']['console_domain'] }}.split('.')[0]"
     - cert: /etc/haproxy/tnsr.crt
     - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}

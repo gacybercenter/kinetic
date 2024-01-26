@@ -157,14 +157,23 @@ def merge_zones(current_zones,
     # Extract zones from their wrappers
     current_zones = current_zones['netgate-unbound:local-zones']['zone']
     new_zones = new_zones['netgate-unbound:local-zones']['zone']
-    # If get_difference is True, return current zones - new zones
-    if get_difference:
-        different = [entry for entry in current_zones if entry not in new_zones]
-        merged_zones['netgate-unbound:local-zones']['zone'] = different
-    # If get_difference is False, return current zones + new zones
-    else:
-        same = [entry for entry in new_zones if entry not in current_zones]
-        same += current_zones
-        merged_zones['netgate-unbound:local-zones']['zone'] = same
+
+    # This will only update existing records and not add additional new ones
+    new_zone_names = {
+        zone['zone-name']: 
+            zone for zone in new_zones
+    }
+
+    for zone in current_zones:
+        if zone['zone-name'] in new_zone_names.keys():
+            hostnames = {
+                host['host-name']:
+                    host for host in new_zone_names[zone['zone-name']]['hosts']['host']
+            }
+            for host in zone['hosts']['host']:
+                if host['host-name'] in hostnames.keys():
+                    host.update(hostnames[host['host-name']])
+
+    merged_zones['netgate-unbound:local-zones']['zone'] = current_zones
     # Return the merged zones
     return merged_zones
