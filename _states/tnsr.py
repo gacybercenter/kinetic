@@ -121,9 +121,7 @@ def nat_updated(name,
                                         hostname,
                                         cacert=cacert,
                                         payload=json.dumps(merged_entries))
-
-    print(response.status_code)
-    print(response.text)
+    print(response)
 
     current_entries = __salt__["tnsr.nat_entries_request"]("GET",
                                                             cert,
@@ -142,7 +140,7 @@ def nat_updated(name,
         ret["result"] = True
         return ret
     else:
-        ret["comment"] = f"Unable to apply NAT entries: {response.status_code}"
+        ret["comment"] = "Unable to apply NAT entries"
         return ret
 
 def unbound_updated(name,
@@ -249,9 +247,7 @@ def unbound_updated(name,
                                             hostname,
                                             cacert=cacert,
                                             payload=json.dumps(merged_zones))
-
-    print(response.status_code)
-    print(response.text)
+    print(response)
 
     current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
                                                             cert,
@@ -270,5 +266,5 @@ def unbound_updated(name,
         ret["result"] = True
         return ret
     else:
-        ret["comment"] = f"Unable to apply Zone entries: {response.status_code}"
+        ret["comment"] = "Unable to apply Zone entries"
         return ret
