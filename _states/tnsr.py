@@ -215,7 +215,9 @@ def unbound_updated(name,
 
     # Parse current JSON and new YAML data
     current_zones = json.loads(current_zones)
-    new_zones = {'netgate-unbound:local-zones': {'zone': json.dumps(new_zones)}}
+    new_zones = json.dumps(new_zones)
+    new_zones = json.loads(new_zones)
+    new_zones = {'netgate-unbound:local-zones': {'zone': new_zones}}
 
     merged_zones = __salt__["tnsr.merge_zones"](current_zones,
                                                 new_zones,
