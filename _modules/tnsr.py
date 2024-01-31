@@ -102,6 +102,7 @@ def merge_entries(current_entries,
 
 def update_hostnames(current_hosts, new_hosts):
     current_hosts_dict = {host['host-name']: host for host in current_hosts}
+    print(f'current_hosts_dict: {current_hosts_dict}')
     for new_host in new_hosts:
         host_name = new_host['host-name']
         if host_name in current_hosts_dict:
@@ -114,6 +115,7 @@ def update_hostnames(current_hosts, new_hosts):
 
 def update_zones(type, current_zones, new_zones):
     new_zones_dict = {zone['zone-name']: zone for zone in new_zones}
+    print(f'new_zones_dict: {new_zones_dict}')
     updated_zones = []  # Create a new list to hold the updated zones
     for current_zone in current_zones:
         zone_name = current_zone['zone-name']
@@ -134,6 +136,7 @@ def update_zones(type, current_zones, new_zones):
     # Add any completely new zones not in current_zones
     updated_zones.extend(new_zones_dict.values())  # Add remaining new zones
 
+    print(f'updated_zones: {updated_zones}')
     return updated_zones
 
 def unbound_zones_request(method,

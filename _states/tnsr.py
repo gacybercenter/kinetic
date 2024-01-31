@@ -88,7 +88,6 @@ def nat_updated(name,
     """
     # Checks for "test" and "delete" keyword arguments, default to False if not provided
     test = kwargs.get("test", __opts__.get("test", False))
-    remove = kwargs.get("delete", __opts__.get("remove", False))
 
     ret = {
         "name": name,
@@ -114,12 +113,6 @@ def nat_updated(name,
                                                     new_entries,
                                                     remove)
 
-    # If item to be removed does not exist
-    if merged_entries == current_entries:
-        ret["result"] = True
-        ret["comment"] = "NAT entries already updated"
-        return ret
-
     # If test, return old and new entries
     if test:
         ret["changes"] = {
@@ -128,6 +121,12 @@ def nat_updated(name,
         }
         ret["comment"] = "NAT entries would have been updated"
         ret["result"] = None
+        return ret
+
+    # If item to be removed does not exist
+    if merged_entries == current_entries:
+        ret["result"] = True
+        ret["comment"] = "NAT entries already updated"
         return ret
 
     # Update NAT mapping entries
@@ -292,17 +291,18 @@ def unbound_updated(name,
     current_zones = json.loads(current_zones)
     new_zones = json.dumps(new_zones)
     new_zones = json.loads(new_zones)
-    new_zones = {'netgate-unbound:local-zones': {'zone': new_zones}}
+    if type == "local-zone":
+        new_zones = {'netgate-unbound:local-zones': {'zone': new_zones}}
+    elif type == "forward-zone":
+        new_zones = {'netgate-unbound:forward-zones': {'zone': new_zones}}
+    print(f'new zones: {new_zones}')
+    print(f'current zones: {current_zones}')
 
     merged_zones = __salt__["tnsr.merge_zones"](type,
                                                 current_zones,
                                                 new_zones)
 
-    # If item to be added already exists
-    if merged_zones == current_zones:
-        ret["result"] = True
-        ret["comment"] = "Unbound zones already updated"
-        return ret
+    print(f'merged zones: {merged_zones}')
 
     # If test, return old and new zones
     if test:
@@ -312,6 +312,13 @@ def unbound_updated(name,
         }
         ret["comment"] = "Unbound zones would have been updated"
         ret["result"] = None
+        return ret
+
+
+    # If item to be added already exists
+    if merged_zones == current_zones:
+        ret["result"] = True
+        ret["comment"] = "Unbound zones already updated"
         return ret
 
     # Update DNS zones
