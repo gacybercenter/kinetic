@@ -278,7 +278,7 @@ def unbound_updated(name,
 
 
     # Get current NAT entries
-    current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
+    current_zones_request = __salt__["tnsr.unbound_zones_request"]("GET",
                                                             type,
                                                             cert,
                                                             key,
@@ -287,8 +287,8 @@ def unbound_updated(name,
 
 
     # Parse current JSON and new YAML data
-    current_zones = json.loads(current_zones)
-    compare_zones = current_zones.copy()
+    current_zones = json.loads(current_zones_request)
+    compare_zones = json.loads(current_zones_request)
     new_zones = json.dumps(new_zones)
     new_zones = json.loads(new_zones)
     if type == "local-zone":
@@ -326,13 +326,13 @@ def unbound_updated(name,
                                             cacert=cacert,
                                             payload=json.dumps(merged_zones))
 
-    current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
+    current_zones_request = __salt__["tnsr.unbound_zones_request"]("GET",
                                                             type,
                                                             cert,
                                                             key,
                                                             hostname,
                                                             cacert=cacert)
-    current_zones = json.loads(current_zones)
+    current_zones = json.loads(current_zones_request)
 
     if json.dumps(merged_zones) == json.dumps(current_zones):
         # Return successful update
