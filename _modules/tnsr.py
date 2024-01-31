@@ -217,7 +217,7 @@ def merge_zones(type,
                                      new_zones)
 
         merged_zones['netgate-unbound:forward-zones']['zone'] = updated_zones
-        print(f'current_zones: {current_zones}')
-        print(f'updated_zones: {merged_zones}')
+    print(f'current_zones: {current_zones}')
+    print(f'updated_zones: {merged_zones}')
     # Return the merged zones
     return merged_zones
