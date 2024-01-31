@@ -115,13 +115,9 @@ def nat_updated(name,
                                                     remove)
 
     # If item to be removed does not exist
-    if remove and merged_entries == current_entries:
-        ret["comment"] = "NAT entries to be removed do not exist"
-        return ret
-
-    # If item to be added already exists
-    if not remove and merged_entries == current_entries:
-        ret["comment"] = "NAT entries to be added already exist"
+    if merged_entries == current_entries:
+        ret["result"] = True
+        ret["comment"] = "NAT entries already updated"
         return ret
 
     # If test, return old and new entries
@@ -304,7 +300,8 @@ def unbound_updated(name,
 
     # If item to be added already exists
     if merged_zones == current_zones:
-        ret["comment"] = "Unbound zones to be added already exist"
+        ret["result"] = True
+        ret["comment"] = "Unbound zones already updated"
         return ret
 
     # If test, return old and new zones
