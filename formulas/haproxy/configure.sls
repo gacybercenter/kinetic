@@ -57,9 +57,10 @@ tnsr_nat_updates:
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
 
-tnsr_unbound_updates:
+tnsr_local_zones_updates:
   tnsr.unbound_updated:
-    - name: tnsr_unbound_updates
+    - name: tnsr_local_zones_updates
+    - type: "local-zone"
     - new_zones:
       - zone-name: "{{ pillar['haproxy']['zone_name'] }}"
         type: "transparent"
@@ -79,6 +80,26 @@ tnsr_unbound_updates:
     - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
+
+  {% if salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain')|length != 0 %}
+tnsr_forward_zones_updates:
+  tnsr.unbound_updated:
+    - name: tnsr_forward_zones_updates
+    - type: "forward-zone"
+    - new_zones:
+      - zone-name: "{{ pillar['designate']['tld'] }}"
+        forward-addresses:
+          address:
+    {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+            - ip-address: "{{ address }}"
+      {% endfor %}
+    {% endfor %}
+    - cert: /etc/haproxy/tnsr.crt
+    - key: /etc/haproxy/tnsr.pem
+    - hostname: {{ pillar['tnsr']['endpoint'] }}
+    - cacert: False
+  {% endif %}
 {% endif %}
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
@@ -104,7 +125,7 @@ acme_certs:
 {% if salt['pillar.get']('tnsr:enabled', False) == True %}
     - require:
       - tnsr: tnsr_nat_updates
-      - tnsr: tnsr_unbound_updates
+      - tnsr: tnsr_local_zones_updates
 {% endif %}
 
 create_master_pem:

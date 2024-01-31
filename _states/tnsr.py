@@ -66,6 +66,25 @@ def nat_updated(name,
         :changes: A dictionary with the old and new NAT entries.
         :result: True if the update was successful, None if in test mode, and False otherwise.
         :comment: A string describing the result of the update.
+
+
+    Example sls state notation:
+    tnsr_nat:
+      tnsr.nat_updated:
+        - name: tnsr_nat_updates
+        - new_entries:
+          - transport-protocol: "any"
+            local-address: "<internal ip for nat termination>"
+            local-port: "any"
+            external-address: "<public ip>"
+            external-port: "any"
+            route-table-name: "<route table name>"
+          - cert: <path to cert>
+          - key: <path to key>
+          - hostname: <tnsr API endpoint>
+          - cacert: False
+        
+
     """
     # Checks for "test" and "delete" keyword arguments, default to False if not provided
     test = kwargs.get("test", __opts__.get("test", False))
@@ -146,6 +165,7 @@ def nat_updated(name,
     return ret
 
 def unbound_updated(name,
+                    type,
                     new_zones,
                     cert,
                     key,
@@ -158,6 +178,7 @@ def unbound_updated(name,
     :param name: The name of the state.
     :new_zones: The new Unbound zones in YAML format, below is the raw json format from https://docs.netgate.com/tnsr/en/22.02/api.
 
+    local zone:
     {
         "zone": [
             {
@@ -166,13 +187,31 @@ def unbound_updated(name,
             "hosts": {
                 "host": [
                     {
-                        "description": "string",
+                        "ip-address": "string",
+                        "host-name": "string"
+                    },
+                    {
                         "ip-address": "string",
                         "host-name": "string"
                     }
                 ]
             },
             "zone-name": "string"
+            }
+        ]
+    }
+
+    forward zone:
+    {
+        "zone": [
+            {
+            "zone-name": "<zone name>",
+            "forward-addresses": {
+                "address": [
+                        {
+                            "ip-address": "<ip address>"
+                        }
+                ]
             }
         ]
     }
@@ -191,11 +230,50 @@ def unbound_updated(name,
         :changes: A dictionary with the old and new Unbound zones.
         :result: A boolean value indicating the success or failure of the update.
         :comment: A string with a summary of the operation and the result.
+
+    Example sls state notation:
+    tnsr_local_zone:
+      tnsr.unbound_updated:
+        - name: tnsr_unbound_updates
+        - type: "local-zone|forward-zone"
+        - new_zones:
+          - zone-name: "<zone name>"
+            type: "transparent"
+            hosts:
+              host:
+                - ip-address: "<ip address>"
+                  host-name: "<host name>"
+          - zone-name: "<zone name>"
+            type: "transparent"
+            hosts:
+              host:
+                - ip-address: "<ip address>"
+                  host-name: "<host name>"
+                - ip-address: "<ip address>"
+                  host-name: "<host name>"
+        - cert: <path to cert>
+        - key: <path to key>
+        - hostname: <tnsr API endpoint>
+        - cacert: False
+
+    tnsr_forward_zone:
+      tnsr.unbound_updated:
+        - name: tnsr_unbound_updates
+        - type: "local-zone|forward-zone"
+        - new_zones:
+          - zone-name: "<zone name>"
+            forward-addresses:
+              address:
+                - ip-address: "<ip address>"
+                - ip-address: "<ip address>"
+        - cert: <path to cert>
+        - key: <path to key>
+        - hostname: <tnsr API endpoint>
+        - cacert: False
     """
 
     # Checks for "test" and "delete" keyword arguments, default to False if not provided
     test = kwargs.get("test", __opts__.get("test", False))
-    remove = kwargs.get("delete", __opts__.get("remove", False))
 
     ret = {
         "name": name,
@@ -207,6 +285,7 @@ def unbound_updated(name,
 
     # Get current NAT entries
     current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
+                                                            type,
                                                             cert,
                                                             key,
                                                             hostname,
@@ -219,28 +298,12 @@ def unbound_updated(name,
     new_zones = json.loads(new_zones)
     new_zones = {'netgate-unbound:local-zones': {'zone': new_zones}}
 
-    merged_zones = __salt__["tnsr.merge_zones"](current_zones,
-                                                new_zones,
-                                                remove)
-
-    print(type(current_zones))
-    print(type(new_zones))
-
-    print("Current Entries: ")
-    print(current_zones)
-    print("New Entries: ")
-    print(new_zones)
-    print("Merged Entries: ")
-    print(merged_zones)
-
-
-    # If item to be removed does not exist
-    if remove and merged_zones == current_zones:
-        ret["comment"] = "Unbound zones to be removed do not exist"
-        return ret
+    merged_zones = __salt__["tnsr.merge_zones"](type,
+                                                current_zones,
+                                                new_zones)
 
     # If item to be added already exists
-    if not remove and merged_zones == current_zones:
+    if merged_zones == current_zones:
         ret["comment"] = "Unbound zones to be added already exist"
         return ret
 
@@ -254,19 +317,17 @@ def unbound_updated(name,
         ret["result"] = None
         return ret
 
-    print(f'cert: {cert}, key: {key}, hostname: {hostname}, cacert: {cacert}, payload: {json.dumps(merged_zones)}')
-
     # Update DNS zones
-    #response =__salt__["tnsr.unbound_zones_request"]("PUT",
-                                            # cert,
-                                            # key,
-                                            # hostname,
-                                            # cacert=cacert,
-                                            # payload=json.dumps(merged_zones))
-    #print(response.status_code)
-    #print(response.text)
+    __salt__["tnsr.unbound_zones_request"]("PUT",
+                                            type,
+                                            cert,
+                                            key,
+                                            hostname,
+                                            cacert=cacert,
+                                            payload=json.dumps(merged_zones))
 
     current_zones = __salt__["tnsr.unbound_zones_request"]("GET",
+                                                            type,
                                                             cert,
                                                             key,
                                                             hostname,
@@ -283,5 +344,5 @@ def unbound_updated(name,
         ret["result"] = True
         return ret
 
-    ret["comment"] = "Unable to apply Zone entries"
+    ret["comment"] = "Applied Zone entries dont match expected entries"
     return ret

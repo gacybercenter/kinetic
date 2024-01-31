@@ -100,7 +100,44 @@ def merge_entries(current_entries,
 
 ### UNBOUND SECTION ###
 
+def update_hostnames(current_hosts, new_hosts):
+    current_hosts_dict = {host['host-name']: host for host in current_hosts}
+    for new_host in new_hosts:
+        host_name = new_host['host-name']
+        if host_name in current_hosts_dict:
+            # Update existing host
+            current_hosts_dict[host_name].update(new_host)
+        else:
+            # Add new host
+            current_hosts.append(new_host)
+    return current_hosts
+
+def update_zones(type, current_zones, new_zones):
+    new_zones_dict = {zone['zone-name']: zone for zone in new_zones}
+    updated_zones = []  # Create a new list to hold the updated zones
+    for current_zone in current_zones:
+        zone_name = current_zone['zone-name']
+        if zone_name in new_zones_dict:
+            if type == "local-zone":
+                # Update hosts within the zone
+                new_hosts = new_zones_dict[zone_name]['hosts']['host']
+                current_hosts = current_zone['hosts']['host']
+                current_zone['hosts']['host'] = update_hostnames(current_hosts, new_hosts)
+                updated_zones.append(current_zone)  # Add updated current zone
+                # Remove the zone from new_zones_dict to avoid re-adding it later
+                del new_zones_dict[zone_name]
+            elif type == "forward-zone":
+                updated_zones.append(new_zones_dict[zone_name])
+        else:
+            updated_zones.append(current_zone)  # Add current zone as is
+
+    # Add any completely new zones not in current_zones
+    updated_zones.extend(new_zones_dict.values())  # Add remaining new zones
+
+    return updated_zones
+
 def unbound_zones_request(method,
+                        type,
                         cert,
                         key,
                         hostname,
@@ -119,7 +156,10 @@ def unbound_zones_request(method,
     :param hostname: (optional) The URL of the REST endpoint to request.
     :return: The response text from the server.
     """
-    url = f"https://{hostname}/restconf/data/netgate-unbound:unbound-config/netgate-unbound:daemon/netgate-unbound:server/netgate-unbound:local-zones"
+    if type == "local-zone":
+        url = f"https://{hostname}/restconf/data/netgate-unbound:unbound-config/netgate-unbound:daemon/netgate-unbound:server/netgate-unbound:local-zones"
+    elif type == "forward-zone":
+        url = f"https://{hostname}/restconf/data/netgate-unbound:unbound-config/netgate-unbound:daemon/netgate-unbound:forward-zones"
     headers={'Content-Type': 'application/yang-data+json'}
     response = requests.request(method,
                                 url,
@@ -132,9 +172,9 @@ def unbound_zones_request(method,
         return response
     return response.text
 
-def merge_zones(current_zones,
-                new_zones,
-                get_difference=False):
+def merge_zones(type,
+                current_zones,
+                new_zones):
     """Merges two dictionaries containing DNS zones.
 
     This function takes two dictionaries containing DNS zones and merges them
@@ -152,28 +192,30 @@ def merge_zones(current_zones,
     Returns:
         dict: A dictionary containing the merged DNS zones.
     """
-    # Initialize the dictionary that will store the merged zones
-    merged_zones = {'netgate-unbound:local-zones': {'zone': []}}
-    # Extract zones from their wrappers
-    current_zones = current_zones['netgate-unbound:local-zones']['zone']
-    new_zones = new_zones['netgate-unbound:local-zones']['zone']
 
-    # This will only update existing records and not add additional new ones
-    new_zone_names = {
-        zone['zone-name']: 
-            zone for zone in new_zones
-    }
+    if type == "local-zone":
+        # Initialize the dictionary that will store the merged zones
+        merged_zones = {'netgate-unbound:local-zones': {'zone': []}}
+        # Extract zones from their wrappers
+        current_zones = current_zones['netgate-unbound:local-zones']['zone']
+        new_zones = new_zones['netgate-unbound:local-zones']['zone']
 
-    for zone in current_zones:
-        if zone['zone-name'] in new_zone_names.keys():
-            hostnames = {
-                host['host-name']:
-                    host for host in new_zone_names[zone['zone-name']]['hosts']['host']
-            }
-            for host in zone['hosts']['host']:
-                if host['host-name'] in hostnames.keys():
-                    host.update(hostnames[host['host-name']])
+        updated_zones = update_zones(type,
+                                     current_zones,
+                                     new_zones)
 
-    merged_zones['netgate-unbound:local-zones']['zone'] = current_zones
+        merged_zones['netgate-unbound:local-zones']['zone'] = updated_zones
+    elif type == "forward-zone":
+        # Initialize the dictionary that will store the merged zones
+        merged_zones = {'netgate-unbound:forward-zones': {'zone': []}}
+        # Extract zones from their wrappers
+        current_zones = current_zones['netgate-unbound:forward-zones']['zone']
+        new_zones = new_zones['netgate-unbound:forward-zones']['zone']
+
+        updated_zones = update_zones(type,
+                                     current_zones,
+                                     new_zones)
+
+        merged_zones['netgate-unbound:forward-zones']['zone'] = updated_zones
     # Return the merged zones
     return merged_zones
