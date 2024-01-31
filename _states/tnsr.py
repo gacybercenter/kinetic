@@ -314,7 +314,7 @@ def unbound_updated(name,
 
 
     # If item to be added already exists
-    if merged_zones == compare_zones:
+    if json.dumps(merged_zones) == json.dumps(compare_zones):
         ret["result"] = True
         ret["comment"] = "Unbound zones already updated"
         return ret
