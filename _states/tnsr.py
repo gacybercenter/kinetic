@@ -18,6 +18,7 @@ Tnsr State Module
 
 import json
 from collections import OrderedDict
+from time import sleep
 
 __virtualname__ = 'tnsr'
 
@@ -135,9 +136,8 @@ def nat_updated(name,
                                         hostname,
                                         cacert=cacert,
                                         payload=json.dumps(merged_entries))
-    print(response.status_code)
-    print(response.text)
 
+    sleep(5)
     current_entries = __salt__["tnsr.nat_entries_request"]("GET",
                                                             cert,
                                                             key,
@@ -326,6 +326,7 @@ def unbound_updated(name,
                                             cacert=cacert,
                                             payload=json.dumps(merged_zones))
 
+    sleep(5)
     current_zones_request = __salt__["tnsr.unbound_zones_request"]("GET",
                                                             type,
                                                             cert,
