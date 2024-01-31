@@ -289,14 +289,13 @@ def unbound_updated(name,
 
     # Parse current JSON and new YAML data
     current_zones = json.loads(current_zones)
+    compare_zones = current_zones.copy()
     new_zones = json.dumps(new_zones)
     new_zones = json.loads(new_zones)
     if type == "local-zone":
         new_zones = {'netgate-unbound:local-zones': {'zone': new_zones}}
     elif type == "forward-zone":
         new_zones = {'netgate-unbound:forward-zones': {'zone': new_zones}}
-    print(f'new zones: {new_zones}')
-    print(f'current zones: {current_zones}')
 
     merged_zones = __salt__["tnsr.merge_zones"](type,
                                                 current_zones,
@@ -316,7 +315,7 @@ def unbound_updated(name,
 
 
     # If item to be added already exists
-    if merged_zones == current_zones:
+    if merged_zones == compare_zones:
         ret["result"] = True
         ret["comment"] = "Unbound zones already updated"
         return ret

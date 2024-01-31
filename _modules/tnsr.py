@@ -136,7 +136,6 @@ def update_zones(type, current_zones, new_zones):
     # Add any completely new zones not in current_zones
     updated_zones.extend(new_zones_dict.values())  # Add remaining new zones
 
-    print(f'updated_zones: {updated_zones}')
     return updated_zones
 
 def unbound_zones_request(method,
