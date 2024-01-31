@@ -110,8 +110,7 @@ def nat_updated(name,
     new_entries = {'netgate-nat:mapping-table': {'mapping-entry': new_entries }}
 
     merged_entries = __salt__["tnsr.merge_entries"](current_entries,
-                                                    new_entries,
-                                                    remove)
+                                                    new_entries)
 
     # If test, return old and new entries
     if test:
