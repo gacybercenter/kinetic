@@ -137,7 +137,7 @@ def nat_updated(name,
                                         cacert=cacert,
                                         payload=json.dumps(merged_entries))
 
-    sleep(5)
+    sleep(10)
     current_entries = __salt__["tnsr.nat_entries_request"]("GET",
                                                             cert,
                                                             key,
@@ -326,7 +326,7 @@ def unbound_updated(name,
                                             cacert=cacert,
                                             payload=json.dumps(merged_zones))
 
-    sleep(5)
+    sleep(10)
     current_zones_request = __salt__["tnsr.unbound_zones_request"]("GET",
                                                             type,
                                                             cert,
