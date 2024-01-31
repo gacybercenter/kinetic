@@ -300,12 +300,10 @@ def unbound_updated(name,
                                                 current_zones,
                                                 new_zones)
 
-    print(f'merged zones: {merged_zones}')
-
     # If test, return old and new zones
     if test:
         ret["changes"] = {
-            "old": current_zones,
+            "old": compare_zones,
             "new": merged_zones
         }
         ret["comment"] = "Unbound zones would have been updated"
@@ -336,7 +334,7 @@ def unbound_updated(name,
                                                             cacert=cacert)
     current_zones = json.loads(current_zones)
 
-    if merged_zones == current_zones:
+    if json.dumps(merged_zones) == json.dumps(current_zones):
         # Return successful update
         ret["changes"] = {
                 "old": current_zones,
