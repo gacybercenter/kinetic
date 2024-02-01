@@ -90,7 +90,7 @@ tnsr_forward_zones_updates:
       - zone-name: "{{ pillar['designate']['tld'] }}"
         forward-addresses:
           address:
-    {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort() -%}
+    {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort(reverse=True) -%}
       {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
             - ip-address: "{{ address }}"
       {% endfor %}
