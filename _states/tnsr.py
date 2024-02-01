@@ -310,6 +310,8 @@ def unbound_updated(name,
         ret["result"] = None
         return ret
 
+    print(f'current_zones: {compare_zones}')
+    print(f'merged_zones: {merged_zones}')
 
     # If item to be added already exists
     if json.dumps(merged_zones) == json.dumps(compare_zones):
