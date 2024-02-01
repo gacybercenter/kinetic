@@ -36,7 +36,7 @@ guacamole_pip:
     - reload_modules: True
     - pkgs:
       - mysql-connector-python
-      - mysqlclient
+      #- mysqlclient
       - docker == 5.0.3
     - require:
       - pkg: guacamole_packages
@@ -47,7 +47,7 @@ salt-pip_installs:
     - reload_modules: true
     - pkgs:
       - mysql-connector-python
-      - mysqlclient
+      #- mysqlclient
       - docker == 5.0.3
     - require:
       - pkg: guacamole_packages
