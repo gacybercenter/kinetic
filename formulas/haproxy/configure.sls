@@ -56,6 +56,10 @@ tnsr_nat_updates:
     - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
 
 tnsr_local_zones_updates:
   tnsr.unbound_updated:
@@ -80,6 +84,10 @@ tnsr_local_zones_updates:
     - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
 
   {% if salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain')|length != 0 %}
 tnsr_forward_zones_updates:
@@ -99,6 +107,10 @@ tnsr_forward_zones_updates:
     - key: /etc/haproxy/tnsr.pem
     - hostname: {{ pillar['tnsr']['endpoint'] }}
     - cacert: False
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
   {% endif %}
 {% endif %}
 
