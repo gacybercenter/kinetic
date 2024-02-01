@@ -44,6 +44,11 @@ role:
   timezone.system:
     - utc: True
 
+# Allow for minion result checkin randomization
+/etc/salt/minion.d/98-tunning.conf:
+  file.managed:
+    - source: salt://formulas/common/minion/98-tunning.conf
+
 {% if grains['os_family'] == 'Debian' %}
 /etc/systemd/timesyncd.conf:
   file.managed:
