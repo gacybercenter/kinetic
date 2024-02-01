@@ -59,8 +59,6 @@ role:
         ntp_fallback: {{ pillar['ntp']['ntp_fallback'] }}
   cmd.wait:
     - name: timedatectl set-ntp true
-    - unless:
-      - timedatectl --property=ntp | grep -q 'active'
 
 /etc/sysctl.conf:
   file.managed:
