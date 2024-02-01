@@ -132,7 +132,8 @@ def update_zones(type, current_zones, new_zones):
             updated_zones.append(current_zone)  # Add current zone as is
 
     # Add any completely new zones not in current_zones
-    updated_zones.extend(new_zones_dict.values())  # Add remaining new zones
+    if type == "local-zone":
+        updated_zones.extend(new_zones_dict.values())  # Add remaining new zones
 
     return updated_zones
 
