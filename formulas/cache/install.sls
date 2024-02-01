@@ -37,6 +37,7 @@ cache_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - pkgs:
+      - pyinotify
       - docker == 5.0.3
     - reload_modules: true
     - require:
@@ -47,6 +48,7 @@ salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - pkgs:
+      - pyinotify
       - docker == 5.0.3
     - reload_modules: true
     - require:
@@ -64,8 +66,3 @@ cache_packages:
     - reload_modules: True
 
 {% endif %}
-
-pyinotify:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
