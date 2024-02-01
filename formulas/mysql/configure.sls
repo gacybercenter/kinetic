@@ -43,6 +43,7 @@ bootstrap_mariadb_start:
 
 /etc/galera_init_done:
   file.managed:
+    - replace: False
     - require:
       - cmd: bootstrap_mariadb_start
     - require_in:
