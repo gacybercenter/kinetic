@@ -28,6 +28,7 @@ def check_all(type, needs):
             current_status = __salt__['mine.get'](
                 tgt='role:'+dep, tgt_type='grain', fun='build_phase')
             if len(current_status) == 0:
+                __context__["retcode"] = 1
                 phase_ok = False
                 ret["result"] = False
                 ret["comment"].append(
@@ -35,11 +36,13 @@ def check_all(type, needs):
                 break
             for endpoint in current_status:
                 if current_status[endpoint] != needs[phase][dep]:
+                    __context__["retcode"] = 1
                     phase_ok = False
                     ret["result"] = False
                     ret["comment"].append(
                         endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[phase][dep])
         if phase_ok is True:
+            __context__["retcode"] = 0
             ret["comment"] = type+" orchestration routine may proceed"
             return ret
     return ret
