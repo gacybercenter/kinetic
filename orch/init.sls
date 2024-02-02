@@ -74,7 +74,6 @@ create_{{ type }}_exec_runner:
           needs: {{ salt['pillar.get']('hosts:'+role+':needs', {}) }}
     - parallel: true
 
-  {% do salt.log.info("{{ pillar['salt']['name'] }} is sleeping") %}
 {{ type }}_origin_phase_runner_delay:
   salt.function:
     - name: test.sleep

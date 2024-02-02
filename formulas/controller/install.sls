@@ -30,6 +30,20 @@ controller_packages:
       - libguestfs-tools
     - reload_modules: true
 
+pin_pip_version:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - name: pip=={{ pillar['pip']['version'] }}
+    - require:
+      - pkg: controller_packages
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - name: pip=={{ pillar['pip_version'] }}
+    - require:
+      - pkg: controller_packages
+
 controller_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
