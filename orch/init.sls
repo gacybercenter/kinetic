@@ -19,6 +19,7 @@
 ## everything except salt and pxe
 
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
+  {% if salt.saltutil.runner('manage.status',tgt=type+'*') %}
 release_{{ type }}_ip:
   salt.function:
     - name: cmd.run
@@ -49,6 +50,7 @@ wipe_{{ type }}_keys:
   salt.wheel:
     - name: key.delete
     - match: '{{ type }}-*'
+  {% endif %}
 {% endfor %}
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
