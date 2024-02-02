@@ -40,7 +40,7 @@ pin_pip_version:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
-    - name: pip=={{ pillar['pip_version'] }}
+    - name: pip=={{ pillar['pip']['version'] }}
     - require:
       - pkg: controller_packages
 
