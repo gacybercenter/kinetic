@@ -50,6 +50,18 @@ cache_target:
   {% endfor %}
 {% endif %}
 
+pin_pip_version:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - name: pip=={{ pillar['pip']['version'] }}
+
+pin_salt_pip_version:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - name: pip=={{ pillar['pip']['version'] }}
+
 {% if salt['grains.get']('upgraded') != True %}
 update_all:
   pkg.uptodate:
@@ -86,6 +98,7 @@ pyghmi_pip:
     - require:
       - OpenSSL_dir_remove
       - pyOpenSSL_dir_remove
+      - pin_pip_version
   pkg.installed:
     - pkgs:
       - ipmitool
@@ -100,6 +113,7 @@ pyghmi_salt_pip:
       - pyghmi
     - require:
       - pyghmi_pip
+      - pin_salt_pip_version
 
 rdma-core:
   pkg.installed:
