@@ -19,7 +19,8 @@
 ## everything except salt and pxe
 
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
-  {% if salt.saltutil.runner('manage.status',tgt=type+'*') %}
+  {% do salt.log.info("Checking if "+type+" host type is enabled") %}
+  {% if salt.saltutil.runner('manage.up',tgt=type+'*') %}
 release_{{ type }}_ip:
   salt.function:
     - name: cmd.run
@@ -62,6 +63,7 @@ wipe_{{ type }}_keys:
     {% set role = type %}
   {% endif %}
 
+  {% do salt.log.info("Creating Execution Runner for Host Type: "+type) %}
 create_{{ type }}_exec_runner:
   salt.runner:
     - name: state.orchestrate
@@ -72,11 +74,11 @@ create_{{ type }}_exec_runner:
           needs: {{ salt['pillar.get']('hosts:'+role+':needs', {}) }}
     - parallel: true
 
+  {% do salt.log.info("{{ pillar['salt']['name'] }} is sleeping") %}
 {{ type }}_origin_phase_runner_delay:
   salt.function:
     - name: test.sleep
     - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
         length: 1
-
 {% endfor %}
