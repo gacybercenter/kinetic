@@ -139,6 +139,9 @@ lancachenet_dns:
     - environment:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - LINUXCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - CACHE_DOMAINS_REPO: {{ pillar['lncache']['repo'] }}
+      - CACHE_DOMAINS_BRANCH:  {{ pillar['lncache']['branch'] }}
     - require:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith
