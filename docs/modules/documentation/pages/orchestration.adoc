@@ -1,0 +1,306 @@
+= Kinetic Service Orchestration
+
+[#orchestration]
+== Automated Orchestration of Openstack Infrastructure Services
+
+To initiate a full orchestration of the Openstack environment:
+
+----
+salt-run state.orch orch
+----
+
+This rebuilds the environment based on if `[type]` is enabled in
+*kinetic-pillar* in the `/environment/hosts.sls` file.
+
+Example:
+
+----
+hosts:
+  cache: <1>
+    style: virtual
+    enabled: False <2>
+    count: 1
+    ram: 8192000
+    cpu: 2
+    os: ubuntu2004
+    disk: 512G
+    networks:
+      management:
+        interfaces: [ens3]
+----
+
+<1> This is the `[type]` value +
+<2> If the `enabled` parameter is set to the value `True` the virtual +
+    machine or physical host will rebuild/build. If `enabled` is set to +
+    the value `False` it will not rebuild/build.
+
+[#build]
+== Manual Orchestration of Openstack Infrastructure Services
+
+CAUTION: Destroying the entire environment isn't always a necessity +
+during rebuild, and make sure you are in the correct salt master +
+before proceeding with these steps
+
+[#destroy_ceph]
+=== Zeroize Storage Nodes
+
+NOTE: If not rebuilding storage, you will only need to destroy Ceph pools
+
+.Destroying Ceph Pools
+[%collapsible%open]
+====
+
+[,bash]
+----
+include::example$destroy_ceph_pools.sh[]
+----
+
+====
+
+IMPORTANT: If rebuilding Ceph, this will power off all of the
+           physical storage nodes as well as remove their public keys.
+
+[,bash]
+----
+salt 'controller*' state.apply /orch/states/virtual_zero pillar='{"type":"cephmon"}'; salt-key -d cephmon* -y
+
+salt 'storage*' system.poweroff
+salt-key -d 'storage*' -y
+----
+
+
+=== Zeroize Virtual OpenStack Service Nodes:
+All currently running Openstack services must be zeriozed. This will
+vary based on the currently deployed services:
+
+[,bash]
+----
+include::example$destroy_env.sh[]
+----
+
+[#destroy_compute]
+=== Zeroize Compute Nodes
+
+NOTE: This will power off all of the physical compute and container
+      nodes and remove their public keys
+
+[,bash]
+----
+salt 'compute*' system.poweroff
+salt-key -d 'compute*' -y
+
+salt 'container*' system.poweroff
+salt-key -d 'container*' -y
+----
+
+
+[#destroy_controller]
+=== Zeroize Controller Nodes
+
+IMPORTANT: If rebuilding the entire environment, this will power off +
+           all of the physical controller nodes as well as remove their public keys.
+
+[,bash]
+----
+salt 'controller*' system.poweroff
+salt-key -d 'controller*' -y
+----
+
+Our next step will be to clear any and all cached data leveraging our 
+salt master:
+
+[,bash]
+----
+#!/bin/bash
+# clear any cached assignments for physical pxe boots
+salt pxe* cmd.run 'rm -f /var/www/html/assignments/*'
+salt pxe* cmd.run 'rm -rf /srv/tftp/assignments/*'
+rm -rf /var/cache/salt/master/*
+
+# These system restarts will ensure that Salt pulls up-to-data code
+systemctl restart salt-master
+systemctl restart salt-minion
+
+# this will ensure all proper salt values are populated
+salt '*' saltutil.sync_all
+salt '*' saltutil.refresh_pillar
+salt '*' mine.update
+salt 'salt*' mine.get pxe* redfish.gather_endpoints
+----
+
+[#build_services]
+=== Provision Openstack Services
+
+NOTE: Ensure everything has been high stated before building the services
+
+[,bash]
+----
+salt \* state.highstate
+----
+
+NOTE: Order of operations matter to meet dependency requirements that are +
+      built into the automation
+
+==== Phase 0
+If this is an initial build, the physical controller node will be need to
+be built first. 
+
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"controller"}'
+----
+
+This step requires building of cache first to help save bandwidth for
+package installations
+
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"cache"}'
+salt-run state.orch orch.generate pillar='{"type":"haproxy"}'
+----
+
+NOTE: Due to current development for a *TNSR* the your NAT configurations +
+      may need to be manually pointed to the correct internal address for +
+      the haproxy service.
+
+==== Phase 1
+
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"mysql"}'
+----
+
+IMPORTANT: If you are rebuilding CEPH, the cephmon nodes need to be rebuilt during this phase.
+
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"cephmon"}'
+----
+
+.If using network-ovn as the network backend, the ovsdb node needs to be created
+[%collapsible]
+====
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"ovsdb"}'
+----
+====
+
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"etcd"}'
+salt-run state.orch orch.generate pillar='{"type":"rabbitmq"}'
+salt-run state.orch orch.generate pillar='{"type":"memcached"}'
+salt-run state.orch orch.generate pillar='{"type":"bind"}'
+----
+
+NOTE: These four services can be provisioned simultaneously
+
+==== Phase 2
+
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"keystone"}'
+----
+
+// haproxy needs highstated
+
+IMPORTANT: If you are rebuilding CEPH, then storage node needs to be rebuilt during this phase.
+
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"storage"}'
+----
+
+==== Phase 3
+
+// need to add an item here in relation to the network service...
+
+[,bash]
+----
+# Dependincies Completed in Prior Phases
+salt-run state.orch orch.generate pillar='{"type":"glance"}'
+salt-run state.orch orch.generate pillar='{"type":"horizon"}'
+salt-run state.orch orch.generate pillar='{"type":"guacamole"}'
+salt-run state.orch orch.generate pillar='{"type":"heat"}'
+salt-run state.orch orch.generate pillar='{"type":"designate"}'
+salt-run state.orch orch.generate pillar='{"type":"swift"}'
+salt-run state.orch orch.generate pillar='{"type":"zun"}'
+
+# Dependancy Order Group
+salt-run state.orch orch.generate pillar='{"type":"cinder"}'
+salt-run state.orch orch.generate pillar='{"type":"volume"}'
+
+# Dependancy Order Group
+salt-run state.orch orch.generate pillar='{"type":"placement"}'
+salt-run state.orch orch.generate pillar='{"type":"nova"}'
+----
+
+.Optional Kinetic Services
+[%collapsible]
+====
+The following services are optional integrated services that can be used
+within the environment for additional capabilities, but are not routinely
+validated for functionality through orchestration.
+
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"sahara"}'
+salt-run state.orch orch.generate pillar='{"type":"barbican"}'
+salt-run state.orch orch.generate pillar='{"type":"magnum"}'
+salt-run state.orch orch.generate pillar='{"type":"share"}'
+salt-run state.orch orch.generate pillar='{"type":"mds"}'
+salt-run state.orch orch.generate pillar='{"type":"cyborg"}'
+salt-run state.orch orch.generate pillar='{"type":"jproxy"}'
+salt-run state.orch orch.generate pillar='{"type":"gpu"}'
+----
+====
+
+
+.If using network-ovn as the network backend
+[%collapsible]
+====
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"neutron"}'
+----
+====
+
+.If using openvswitch as the network backend
+[%collapsible%open]
+====
+[,bash]
+----
+# Dependancy Order Group
+salt-run state.orch orch.generate pillar='{"type":"neutron"}'
+salt-run state.orch orch.generate pillar='{"type":"network"}'
+----
+====
+
+==== Phase 4
+
+[,bash]
+----
+salt-run state.orch orch.generate pillar='{"type":"compute"}'
+salt-run state.orch orch.generate pillar='{"type":"container"}'
+----
+
+[#troubleshooting]
+=== Troubleshooting
+Outlined are just a few examples and is not meant to be a full troubleshooting guide.
+
+*Dependancy Errors* +
+This is simply showing that a dependancy for the service was not met. This may happen when a service doesn't complete a build phase.
+
+[,bash]
+----
+[ERROR   ] {'return': {'ready': False, 'type': 'neutron', 'comment': ['ovsdb-b5111677-cd25-5af8-8f04-f9169bbd685c is install but needs to be configure', 'ovsdb-c3906691-96df-5818-a688-eac4edd3d939 is install but needs to be configure', 'ovsdb-e1346c3d-b25e-5ade-b539-a659d208af6c is install but needs to be configure']}}
+----
+
+Alternatively this may happen if a service was started too early after troubleshooting issues with a broken build. The build_phase can be set manually with the following commands:
+
+[,bash]
+----
+salt '<service>' grains.setval build_phase configure
+salt '<service>' mine.update
+----

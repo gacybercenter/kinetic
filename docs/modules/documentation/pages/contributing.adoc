@@ -1,0 +1,252 @@
+= Contributing
+
+[#introduction]
+== Introduction
+
+This contribution guide will lay out how to do common tasks like report issues,
+update code,
+and submit requests to merge your changes back into the master branch of the https://github.com/GeorgiaCyber/kinetic[kinetic framework].
+
+If you have never used Git or feel a bit rusty,
+please spend soem time reading the https://www.atlassian.com/git/tutorials[Atlassian Git Guru Tutorials].
+
+If you have not used Git in a professional environment (i.e. only for personal side projects), the following resources
+are worth reading:
+
+* https://jameschambers.co/writing/git-team-workflow-cheatsheet/[Git Team Workflow Cheatsheet]
+* https://chris.beams.io/posts/git-commit/[How to Write a Git Commit Message]
+* https://randyfay.com/content/rebase-workflow-git[A Rebase Workflow for Git]
+
+If you prefer a more hands-on experience learning git, there is an interactive git tutorial at:
+
+* https://learngitbranching.js.org/[Learn Git Branching]
+
+All Georgia Cyber Center repositories (include kinetic),
+unless explicitly specified otherwise,
+will observe the https://guides.github.com/introduction/flow/[Github Flow]
+
+[#submitting-issues]
+== Submitting Issues
+
+To report problems or suggest features, go https://github.com/GeorgiaCyber/kinetic/issues[here].
+
+A core component of the feature branch workflow is to use a different branch for each individual feature or issue.
+This implies that every branch should be mapped to an issue.
+
+For example,
+if you want to add an OpenStack project to the kinetic framework that is currently unsupported (e.g. https://docs.openstack.org/barbican/latest/[barbican]),
+create a new issue (specifically, a feature request) entitled 
+`[FEATURE] Add barbican to kinetic framework`
+Titles should be specific and begin with the action taken (create, update, delete, etc.).
+
+The body of the issue should reference any code,
+logs,
+or thoughts on the issue.
+It should NOT simply just restate the title.
+
+Issues are automatically assigned a number when created.
+**Your branch should begin with this number**,
+followed by a dash.
+To build off the barbican example,
+the feature branch should be named *13-Add-barbican-to-kinetic-framework* if the issue created was #13.
+
+[#professional-git-usage]
+== Professional Git Usage
+
+Git can quickly become a real pain if contributors do not use it correctly.
+Please read the Git Team Workflow Cheatsheet in the Introduction for a good example of standard workflow.
+
+=== DO NOT
+
+* Commit directly to the master branch unless it is a very minor change (i.e fix typo, change file name, etc.)
+* Have multiple significant changes take place in a single commit
+** Use your best judgment on commit frequency.
+A good rule of thumb is make a change,
+test that change,
+make sure nothing broke,
+& commit.
+* Submit a merge request on a feature branch that is not in sync with the master branch
+** Once you believe you are complete with a feature branch,
+make sure your local feature branch is rebased on top of the head of the remote master branch,
+then submit your merge request.
+Read the Your First Contribution section for more details.
+
+=== DO
+* Write meaningful commit messages. More details on this can be found https://chris.beams.io/posts/git-commit/[in this blog post].
+* Use the .gitignore file to ignore unnecessary files like compiled executables,
+temporary files,
+IDE configurations,
+and other files that do not contain code or documentation.
+https://www.atlassian.com/git/tutorials/saving-changes/gitignore[here is a good list] of files that should be ignored.
+* Use social platforms like Slack,
+GitLab,
+GitHub,
+or face-to-face meetings to discuss changes,
+de-conflict pull requests,
+and other work that is necessary to develop software when working as a team.
+
+[#your-first-contribution]
+== Your First Contribution
+
+Let's walk through a simple example of how you go from an idea to a solution fully merged into the master branch.
+
+The first step is putting the changes into words through the GitHub issue tracker.
+Read the xref:contributing.adoc#submitting-issues[submitting issues] section for more information.
+
+Once you do this,
+create a new branch in GitHub by going to the repository home page and clicking on the fork button in the top right.
+Once you do this, you will be able to create a branch in your forked copy of the project.
+Make sure the branch name starts with the issue number and then succinctly paraphrases the issue title.
+
+Next, you will need to run ```git pull``` on your local machine to pull down the new branch.
+Then you run ```git checkout <feature-branch-name>``` to start working in the new feature branch.
+
+As you start making changes to your specific feature,
+at some point you will determine you've reached a good point to stop,
+test your changes,
+make sure nothing broke,
+and commit.
+To do so,
+first run ```git status``` to see what files have changed.
+If there are files listed that you don't believe should be included in the remote repository (temporary files, local IDE configurations, compiled binaries, etc.),
+add them manually to the .gitignore file.
+From here you can add the files to git by running ```git add -A```.
+
+After your files have been added,
+you need to commit your changes to the feature branch.
+https://chris.beams.io/posts/git-commit/[Please read this first] before you make your first commit.
+A well-written commit can save a lot of time in the future when something inevitably breaks or needs to change and you want to find
+the source of the problem or a good place to start over and try again.
+And above all,
+do not be lazy and use the ```-m``` flag unless you are fixing a simple typo or some other very minor change that doesn't warrant a description.
+
+Once you commit your changes,
+you need to make sure your changes are on top of an up-to-date version of the master branch.
+To do this,
+run the following commands in succession:
+
+* ```git checkout master```
+* ```git pull```
+* ```git checkout -```
+** the dash is a built-in git variable that represents the previous branch/commit you were working on.
+In this case,
+it is the name of our feature branch.
+* ```git rebase master```
+** Depending on what changes have been made to master since you started working on your feature,
+there may be merge conflicts that you need to resolve.
+An easy way to avoid this is to separate responsibilities and understand who is doing what so only one person at a time is modifying any given file.
+* ```git push``` the local feature branch to the remote feature branch.
+
+Now that your remote feature branch is based on top of an up-to-date master branch,
+you can submit a pull request in GitHub.
+
+To do this,
+navigate to the kinetic project in GitHub abd click on the _Create pull request_ button.
+You will be able to choose the target branch and the source branch for the pull request,
+and be given an opportunity to describe what your work does.
+You should explain how everything turned out,
+what was tested,
+and what to expect.
+
+Once you verify everything,
+submit the pull request.
+If everything looks good and one other person associated with kinetic looks over the changes and verifies that you didn't "break the build",
+then it will be merged into master.
+
+If something needs to be changed in the feature branch before merging,
+then make the changes,
+commit them to the feature branch,
+and execute the above commands again to ensure your changes are always on top of an up-to-date master branch.
+Rinse and repeat as many times as necessary.
+
+[#bugs-and-features]
+== Bugs and Features
+
+When reporting bugs or requesting features,
+please be sure to use the issue templates on https://github.com/GeorgiaCyber/kinetic/[GitHub]!
+
+They will help you properly format your request and ensure that the developers can fully understand what you're asking for/need help with.
+
+[#asciidoc]
+== Asciidoc
+
+All contributed material that isn't source code,
+supporting assets (images, etc.),
+or explicitly required by a build system (e.g. custom GitHub issue templates) *must* be in asciidoc format and end with the ```.adoc``` file extension.
+This requirement covers documents,
+https://asciidoctor.org/docs/asciidoctor-revealjs/[slide decks],
+and more.
+
+[#workflow]
+== Workflow
+
+As previously mentioned,
+we use the https://guides.github.com/introduction/flow/[github flow] as the workflow across all Georgia Cyber Center repositories.
+The only branch that is offical (and deployable) is master.
+All other branches should be considered developmental,
+not suitable for usage,
+and unofficial.
+
+When there is a particular point in the development history of the master branch that is of note (e.g. the exact commit where a significant upgrade was implemented in kinetic),
+https://help.github.com/en/articles/viewing-your-repositorys-tags[tags] are to be used to keep track of it for future reference.
+Using tags allows us to keep track of changes over time and correlate various changesets to differences in stability and performance,
+among other things.
+
+Each feature/bugfix that someone wishes to implement should be its own branch.
+Branches should never be long running,
+and should be deleted as soon as they are either merged in to master or rejected by the maintainers.
+
+[#sentences]
+== Sentences
+
+When writing in asciidoc,
+you *must* adhere to the https://asciidoctor.org/docs/asciidoc-recommended-practices/#one-sentence-per-line[one sentence per line] style.
+Because asciidoc does not interpret single line breaks as actual line breaks,
+you can do things like this:
+
+[source, asciidoc]
+----
+The quick brown fox
+jumped over
+the lazy
+dog
+----
+
+and have it render like this:
+
+The quick brown fox jumped over the lazy dog.
+
+[#code]
+== Code
+
+When writing code (salt, yaml, etc.) that you with to be included in the kinetic project,
+you should adhere to the following guidelines
+
+[#yaml]
+=== YAML
+
+* YAML documents will always use two spaces as its indentation mechanism
+* YAML documents will have the file extension of ```.yaml```
+* YAML documents will represent lists across multiple lines, e.g.
+[source, yaml]
+----
+foo:
+  - bar
+  - baz
+----
+
+not
+
+[source, yaml]
+----
+foo: [bar, baz]
+----
+
+[#salt]
+=== Salt
+
+* salt state files will always use two spaces as its indentation mechanism
+* salt state files will have the file extension of ```.sls```
+* salt state files will always use the jinja templating engine,
+when templating is required
+* salt state files will be idempotent when executed repeatedly
