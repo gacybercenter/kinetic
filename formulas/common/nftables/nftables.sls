@@ -23,9 +23,9 @@ openstack_api:
     - match: state
     - connstate: new
 {% if pillar['lancache']['port'] == '80' %}
-    - dports: 80,443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517
+    - dports: 53,80,443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517
 {% else %}
-    - dports: {{ pillar['lancache']['port'] }},443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517
+    - dports: 53,{{ pillar['lancache']['port'] }},443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517
 {% endif %}
     - proto: tcp
     - source: '{{ pillar['networking']['subnets']['public'] }}'

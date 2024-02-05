@@ -22,7 +22,8 @@ set_package_proxy:
     {% if grains['os_family'] == 'Debian' %}
     - name: /etc/apt/apt.conf.d/02proxy
     - contents: |
-        Acquire::http { Proxy "http://{{ address }}:{{ pillar['lancache']['port'] }}"; };
+        Acquire::http:Proxy "http://{{ address }}:{{ pillar['lancache']['port'] }}\";
+        Acquire::https:Proxy "https://{{ address }}:{{ pillar['lancache']['port'] }}\";
     {% elif grains['os_family'] == 'RedHat' %}
     - name: /etc/yum.conf
     - contents: |
