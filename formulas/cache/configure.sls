@@ -120,6 +120,12 @@ lancachenet_monolith:
     - port_bindings:
       - 80:80
       - 443:443
+    - environment:
+      - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
+      - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - LINUXCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - CACHE_DOMAINS_REPO: {{ pillar['lancache']['repo'] }}
+      - CACHE_DOMAINS_BRANCH:  {{ pillar['lancache']['branch'] }}
     - require:
       - service: apache2_service
       - file: /opt/cache/windows/data
