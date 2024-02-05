@@ -37,7 +37,7 @@ pin_pip_version:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-    - names: 
+    - names:
       - pip=={{ pillar['pip']['version'] }}
 
 pin_salt_pip_version:

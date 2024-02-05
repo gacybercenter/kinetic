@@ -22,6 +22,7 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
 
+{% if salt.saltutil.runner('manage.up',tgt=type+'*') %}
 release_{{ type }}_ip:
   salt.state:
     - tgt: 'role:pxe'
@@ -31,8 +32,7 @@ release_{{ type }}_ip:
     - pillar:
         type: {{ type }}
     - concurrent: True
-    - onlyif:
-      - salt-key -l acc | grep -q "{{ type }}"
+{% endif %}
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
