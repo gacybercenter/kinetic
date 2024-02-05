@@ -140,8 +140,8 @@ lancachenet_dns:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
       - LINUXCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-      - CACHE_DOMAINS_REPO: {{ pillar['lncache']['repo'] }}
-      - CACHE_DOMAINS_BRANCH:  {{ pillar['lncache']['branch'] }}
+      - CACHE_DOMAINS_REPO: {{ pillar['lancache']['repo'] }}
+      - CACHE_DOMAINS_BRANCH:  {{ pillar['lancache']['branch'] }}
     - require:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith
