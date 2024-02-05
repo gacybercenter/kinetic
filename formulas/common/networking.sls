@@ -33,11 +33,19 @@ ifwatch:
 {% endif %}
     - force: True
 
-python3_pip:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
+pin_pip_version:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
     - reload_modules: True
+    - names: 
+      - pip=={{ pillar['pip']['version'] }}
+
+pin_salt_pip_version:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - names:
+      - pip=={{ pillar['pip']['version'] }}
 
 pyroute2_pip:
   pip.installed:
@@ -48,7 +56,7 @@ pyroute2_pip:
       - pyroute2.ndb
       - pyroute2.ipdb
     - require:
-      - pkg: python3_pip
+      - pin_pip_version
 
 pyroute2_salt_pip:
   pip.installed:
@@ -59,7 +67,7 @@ pyroute2_salt_pip:
       - pyroute2.ndb
       - pyroute2.ipdb
     - require:
-      - pip: pyroute2_pip
+      - pin_salt_pip_version
 
 ## Patch pyroute2 to fix a bug in the compat module until it is fixed upstream
 ## https://github.com/svinota/pyroute2/issues/1132
