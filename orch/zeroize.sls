@@ -22,17 +22,17 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
 
-{% if salt.saltutil.runner('manage.up',tgt=type+'*') %}
-release_{{ type }}_ip:
-  salt.state:
-    - tgt: 'role:pxe'
-    - tgt_type: grain
-    - sls:
-      - orch/states/ip_release
-    - pillar:
-        type: {{ type }}
-    - concurrent: True
-{% endif %}
+# {% if salt.saltutil.runner('manage.up',tgt=type+'*') %}
+# release_{{ type }}_ip:
+#   salt.state:
+#     - tgt: 'role:pxe'
+#     - tgt_type: grain
+#     - sls:
+#       - orch/states/ip_release
+#     - pillar:
+#         type: {{ type }}
+#     - concurrent: True
+# {% endif %}
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
