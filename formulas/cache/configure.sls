@@ -79,7 +79,7 @@ apt-cacher-ng_service:
       - cmd: get_centos_mirros
 
 {% for dir in ['data', 'logs'] %}
-/opt/cache/windows/{{ dir }}:
+/cache/{{ dir }}:
   file.directory:
     - user: root
     - group: root
@@ -112,14 +112,20 @@ lancachenet_monolith:
     - image: lancachenet/monolithic:latest
     - restart_policy: unless-stopped
     - volumes:
-      - /opt/cache/windows/data:/data/cache
-      - /opt/cache/windows/logs:/data/logs
+      - /cache/data:/data/cache
+      - /cache/logs:/data/logs
     - ports:
       - 80
       - 443
     - port_bindings:
       - 80:80
       - 443:443
+    - environment:
+      - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
+      - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - LINUXCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - CACHE_DOMAINS_REPO: {{ pillar['lancache']['repo'] }}
+      - CACHE_DOMAINS_BRANCH:  {{ pillar['lancache']['branch'] }}
     - require:
       - service: apache2_service
       - file: /opt/cache/windows/data

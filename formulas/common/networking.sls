@@ -109,8 +109,9 @@ install_networkd:
 NetworkManager:
   service.disabled
 
-systemd-resolved:
-  service.enabled
+# In favor of setting dns to cache
+#systemd-resolved:
+#  service.enabled
 
 systemd-networkd.socket:
   service.enabled

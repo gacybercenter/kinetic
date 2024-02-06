@@ -17,6 +17,20 @@
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
+systemd-resolved_service:
+  service.dead:
+    - name: systemd-resolved
+    - unless:
+      - 'systemctl status systemd-resolved.service | grep -q "Active: inactive (dead)"'
+
+/run/systemd/resolve/resolv.conf:
+  file.managed:
+    - makedirs: True
+    - contents: |
+        nameserver {{ address }}
+    - require:
+      - service: systemd-resolved_service
+
 set_package_proxy:
   file.managed:
     {% if grains['os_family'] == 'Debian' %}
