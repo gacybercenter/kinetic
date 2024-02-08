@@ -110,6 +110,8 @@ user_data_{{ id }}:
       - '#cloud-config'
       - 'autoinstall:'
       - '  version: 1'
+      - '  refresh-installer:'
+      - '    update: yes'
       - '  early-commands:'
       - "    - |"
       - "      vgs --separator=: --noheadings | cut -f1 -d: | while read vg ; do vgchange -an $vg ; done"

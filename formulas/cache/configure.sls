@@ -128,8 +128,8 @@ lancachenet_monolith:
       - CACHE_DOMAINS_BRANCH:  {{ pillar['lancache']['branch'] }}
     - require:
       - service: apache2_service
-      - file: /opt/cache/windows/data
-      - file: /opt/cache/windows/logs
+      - file: /cache/data
+      - file: /cache/logs
 
 # NOTE(chateaulav): should apply a better filter to target whatever ip is
 #                   assigned as the management interface
