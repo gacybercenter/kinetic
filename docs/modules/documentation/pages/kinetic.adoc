@@ -4,6 +4,7 @@
 == Architecture Overview
 image::kinetic.png[]
 
+
 ==  Orchestration Overview
 This outlines the overall *Orchestration* philosophy that the the
 Kinetic Framework was designed to follow. In order to allow for rapid

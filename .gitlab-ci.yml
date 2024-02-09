@@ -46,7 +46,7 @@ pages:
     name: antora/antora:latest
     entrypoint: [/bin/sh, -c]
   script:
-    - echo'  - modules/documentation/nav.adoc' >> docs/antora.yml
+    - echo '  - modules/documentation/nav.adoc' >> docs/antora.yml
     - antora site.yml --stacktrace
     - echo '<html><meta http-equiv="refresh" content="0; url=./docs/latest/index.html"/></html>' > public/documentation/kinetic.html
   artifacts:
