@@ -1,0 +1,15 @@
+site:
+  title: Kinetic Documentation
+urls:
+  html_extension_style: drop
+content:
+  sources:
+  - url: .
+    branches: HEAD
+    start_path: docs
+ui:
+  bundle:
+    url: https://gitlab.com/gacybercenter/branding/antora_range/-/jobs/artifacts/main/raw/build/ui-bundle.zip?job=build
+    snapshot: true
+output:
+  dir: ./public

@@ -2,6 +2,7 @@ image: python:3.9.1-alpine3.12
 
 stages:
   - lint
+  - pages
 
 salt-lint:
   stage: lint
@@ -10,6 +11,11 @@ salt-lint:
   script:
     - pip install salt-lint
     - salt-lint $(find . -name \*.sls)
+  only:
+    changes:
+      - formulas/**/*
+      - orch/**/*
+      - reactor/**/*
 
 pylint:
   stage: lint
@@ -25,3 +31,28 @@ pylint:
     reports:
       codequality: codeclimate.json
     when: always
+  only:
+    changes:
+      - _grains/**/*
+      - _modules/**/*
+      - _runners/**/*
+      - _states/**/*
+
+pages:
+  tags:
+    - docker-gcc
+  stage: pages
+  image:
+    name: antora/antora:latest
+    entrypoint: [/bin/sh, -c]
+  script:
+    - antora site.yml --stacktrace
+    - echo '<html><meta http-equiv="refresh" content="0; url=./docs/latest/index.html"/></html>' > public/index.html
+  artifacts:
+    expire_in: 3 month
+    paths:
+      - public
+  only:
+    changes:
+      - site.yml
+      - docs/**/*

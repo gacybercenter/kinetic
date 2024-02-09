@@ -115,7 +115,7 @@ salt master:
 # clear any cached assignments for physical pxe boots
 salt pxe* cmd.run 'rm -f /var/www/html/assignments/*'
 salt pxe* cmd.run 'rm -rf /srv/tftp/assignments/*'
-rm -rf /var/cache/salt/master/*
+salt \* saltutil.clear_cache
 
 # These system restarts will ensure that Salt pulls up-to-data code
 systemctl restart salt-master
