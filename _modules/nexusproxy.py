@@ -31,7 +31,7 @@ def list_users(host: str,
                port: str,
                username: str,
                password: str,
-               timeout: 60
+               timeout=60
                ):
     '''
     This function is used to list all repositories in Nexus Proxy.
@@ -51,7 +51,7 @@ def change_user_password(host: str,
                          password: str,
                          user: str,
                          new_password: str,
-                         timeout: 60
+                         timeout=60
                          ):
     '''
     This function is used to change a user's password in Nexus Proxy.
@@ -73,7 +73,7 @@ def list_repositories(host: str,
                       port: str,
                       username: str,
                       password: str,
-                      timeout: 60
+                      timeout=60
                       ):
     '''
     This function is used to list all repositories in Nexus Proxy.
@@ -92,7 +92,7 @@ def list_repository(host: str,
                     username: str,
                     password: str,
                     name: str,
-                    timeout: 60
+                    timeout=60
                     ):
     '''
     This function is used to list a specific repository in Nexus Proxy.
@@ -127,7 +127,7 @@ def delete_repository(host: str,
                       username: str,
                       password: str,
                       name: str,
-                      timeout: 60
+                      timeout=60
                       ):
     '''
     This function is used to delete a specific repository in Nexus Proxy.
@@ -149,7 +149,7 @@ def add_proxy_repository(host: str,
                          name: str,
                          repoType: str,
                          remoteUrl: str,
-                         timeout: 60,
+                         timeout=60,
                          **kwargs
                          ):
     '''
