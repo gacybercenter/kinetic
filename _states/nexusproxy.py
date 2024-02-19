@@ -17,7 +17,7 @@ def update_user_password(name, host, port, username, password, user, new_passwor
     @param password: Nexus password
     @param user: User to change password for
     @param new_password: New password for user
-    ''' 
+    '''
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
     if "test" not in kwargs:
         kwargs["test"] = __opts__.get("test", False)

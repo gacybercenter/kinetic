@@ -15,24 +15,23 @@
 ## could potentially be fleshed out and become formal fully-featured
 ## salt module
 
-import socket
-import requests
-import urllib3
 import json
+import requests
+import socket
+import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-socket.setdefaulttimeout(0.5)
 
 __virtualname__ = "nexusproxy"
 
 def __virtual__():
     return __virtualname__
-    
 
 def list_users(host: str,
                port: str,
                username: str,
                password: str,
+               timeout: 60
                ):
     '''
     This function is used to list all repositories in Nexus Proxy.
@@ -43,7 +42,7 @@ def list_users(host: str,
     '''
     response = json.dumps(requests.get(f"{host}:{port}/service/rest/v1/security/users",
                             auth=(username, password),
-                            verify=False).json(), indent=4)
+                            verify=False, timeout=timeout).json(), indent=4)
     return response
 
 def change_user_password(host: str,
@@ -52,6 +51,7 @@ def change_user_password(host: str,
                          password: str,
                          user: str,
                          new_password: str,
+                         timeout: 60
                          ):
     '''
     This function is used to change a user's password in Nexus Proxy.
@@ -66,13 +66,14 @@ def change_user_password(host: str,
                             auth=(username, password),
                             headers={"Content-Type": "text/plain"},
                             data=new_password,
-                            verify=False)
+                            verify=False, timeout=timeout)
     return response.status_code
 
 def list_repositories(host: str,
                       port: str,
                       username: str,
                       password: str,
+                      timeout: 60
                       ):
     '''
     This function is used to list all repositories in Nexus Proxy.
@@ -83,7 +84,7 @@ def list_repositories(host: str,
     '''
     response = json.dumps(requests.get(f"{host}:{port}/service/rest/v1/repositories",
                             auth=(username, password),
-                            verify=False).json(), indent=4)
+                            verify=False, timeout=timeout).json(), indent=4)
     return response
 
 def list_repository(host: str,
@@ -91,6 +92,7 @@ def list_repository(host: str,
                     username: str,
                     password: str,
                     name: str,
+                    timeout: 60
                     ):
     '''
     This function is used to list a specific repository in Nexus Proxy.
@@ -114,7 +116,7 @@ def list_repository(host: str,
     '''
     response = requests.get(f"{host}:{port}/service/rest/v1/repositories/{name}",
                             auth=(username, password),
-                            verify=False)
+                            verify=False, timeout=timeout)
     if response.status_code == 200:
         response = json.dumps(response.json(), indent=4)
         return response
@@ -125,6 +127,7 @@ def delete_repository(host: str,
                       username: str,
                       password: str,
                       name: str,
+                      timeout: 60
                       ):
     '''
     This function is used to delete a specific repository in Nexus Proxy.
@@ -136,7 +139,7 @@ def delete_repository(host: str,
     '''
     response = json.dumps(requests.delete(f"{host}:{port}/service/rest/v1/repositories/{name}",
                             auth=(username, password),
-                            verify=False).json(), indent=4)
+                            verify=False, timeout=timeout).json(), indent=4)
     return response
 
 def add_proxy_repository(host: str,
@@ -146,6 +149,7 @@ def add_proxy_repository(host: str,
                          name: str,
                          repoType: str,
                          remoteUrl: str,
+                         timeout: 60,
                          **kwargs
                          ):
     '''
@@ -243,5 +247,5 @@ def add_proxy_repository(host: str,
                             auth=(username, password),
                             headers={"Content-Type": "application/json"},
                             json=payload,
-                            verify=False)
+                            verify=False, timeout=timeout)
     return response.status_code
