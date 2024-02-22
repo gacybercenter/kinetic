@@ -164,6 +164,8 @@ nexusproxy_update_user_password:
     - user:  {{ pillar['cache']['nexusproxy']['username'] }}
     - new_password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
     - require:
+      - file: /etc/nexus/admin.password
+      - cmd: admin.password
       - docker_container: nexusproxy
       - module: nexusproxy_startup_sleep
       - module: nexusproxy_connection
