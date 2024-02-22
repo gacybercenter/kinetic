@@ -61,6 +61,46 @@ salt-pip_installs:
     - replace: False
     - contents: placeholder
 
+nexusproxy:
+  docker_container.running:
+    - name: nexusproxy
+    - image: sonatype/nexus3:latest
+    - restart_policy: unless-stopped
+    - ports:
+      - 8081
+    - port_bindings:
+      - {{ pillar['cache']['nexusproxy']['port'] }}:8081
+
+nexusproxy_startup_sleep:
+  module.run:
+    - test.sleep:
+      - length: 60
+    - require:
+      - docker_container: nexusproxy
+
+nexusproxy_connection:
+  module.run:
+    - network.connect:
+      - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - port: {{ pillar['cache']['nexusproxy']['port'] }}
+    - retry:
+      - attempts: 30
+      - delay: 10
+    - require:
+      - docker_container: nexusproxy
+      - module: nexusproxy_startup_sleep
+
+admin_password:
+  cmd.run:
+    - name: salt-call grains.setval original_password $(docker exec nexusproxy cat /nexus-data/admin.password)
+    - require:
+      - docker_container: nexusproxy
+      - module: nexusproxy_connection
+      - module: nexusproxy_startup_sleep
+    - onlyif:
+      - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
+
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 cache_packages:

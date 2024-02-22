@@ -112,57 +112,15 @@ lancachenet_dns:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith
 
-nexusproxy:
-  docker_container.running:
-    - name: nexusproxy
-    - image: sonatype/nexus3:latest
-    - restart_policy: unless-stopped
-    - ports:
-      - 8081
-    - port_bindings:
-      - {{ pillar['cache']['nexusproxy']['port'] }}:8081
-
-nexusproxy_startup_sleep:
-  module.run:
-    - test.sleep:
-      - length: 60
-    - require:
-      - docker_container: nexusproxy
-
-nexusproxy_connection:
-  module.run:
-    - network.connect:
-      - host: {{ address }}
-      - port: {{ pillar['cache']['nexusproxy']['port'] }}
-    - retry:
-      - attempts: 30
-      - delay: 10
-    - require:
-      - docker_container: nexusproxy
-      - module: nexusproxy_startup_sleep
-
-admin.password:
-  cmd.run:
-    - name: docker exec nexusproxy cat /nexus-data/admin.password > /etc/nexus/admin.password
-    - require:
-      - docker_container: nexusproxy
-    - onlyif:
-      - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
-
 nexusproxy_update_user_password:
   nexusproxy.update_user_password:
     - name: nexusproxy_update_user_password
     - host: http://{{ address }}
     - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
-    - password: {{ salt['cmd.run']('cat /etc/nexus/admin.password') }}
+    - password: {{ grains['original_password'] }}
     - user:  {{ pillar['cache']['nexusproxy']['username'] }}
     - new_password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
-    - require:
-      - cmd: admin.password
-      - docker_container: nexusproxy
-      - module: nexusproxy_startup_sleep
-      - module: nexusproxy_connection
     - onlyif:
       - docker ps |grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
       - fun: network.connect
@@ -180,9 +138,6 @@ nexusproxy_update_user_password:
     - repoType: {{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}
     - remoteUrl: {{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}
     - require:
-      - docker_container: nexusproxy
-      - module: nexusproxy_startup_sleep
-      - module: nexusproxy_connection
     - onlyif:
       - fun: network.connect
         host: {{ address }}
