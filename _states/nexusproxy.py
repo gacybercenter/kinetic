@@ -34,8 +34,8 @@ def update_user_password(name, host, port, username, password, user, new_passwor
                                                                  username,
                                                                  password))
     userList = []
-    for user in current_users:
-        userList.append(user['userId'])
+    for cu in current_users:
+        userList.append(cu['userId'])
     if user not in userList:
         ret["comment"] = f'User: "{user}" is not present.'
         ret["result"] = False
