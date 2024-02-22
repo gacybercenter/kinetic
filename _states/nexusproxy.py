@@ -35,7 +35,7 @@ def update_user_password(name, host, port, username, password, user, new_passwor
                                                                  password))
     userList = []
     for user in current_users:
-        userList += user['userId']
+        userList.append(user['userId'])
     if user not in userList:
         ret["comment"] = f'User: "{user}" is not present.'
         ret["result"] = False
@@ -74,7 +74,7 @@ def add_proxy_repository(name, host, port, username, password, repoType, remoteU
                                                                         port,
                                                                         username,
                                                                         password,
-                                                                        name))['name']
+                                                                        name))
     if test == True:
         ret["comment"] = f'The state of "{name}" will be changed.'
         ret["changes"] = {
@@ -83,7 +83,7 @@ def add_proxy_repository(name, host, port, username, password, repoType, remoteU
         }
         ret["result"] = None
         return ret
-    if current_state == name:
+    if current_state['name'] == name:
         ret["comment"] = f'Repository: "{name}" is already present.'
         ret["result"] = True
         return ret
