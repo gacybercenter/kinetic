@@ -112,12 +112,6 @@ lancachenet_dns:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith
 
-/etc/nexus/admin.password:
-  file.managed:
-    - makedirs: True
-    - replace: False
-    - contents: placeholder
-
 nexusproxy:
   docker_container.running:
     - name: nexusproxy
@@ -152,7 +146,6 @@ admin.password:
     - name: docker exec nexusproxy cat /nexus-data/admin.password
     - require:
       - docker_container: nexusproxy
-      - file: /etc/nexus/admin.password
     - onlyif:
       - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 
@@ -166,7 +159,6 @@ nexusproxy_update_user_password:
     - user:  {{ pillar['cache']['nexusproxy']['username'] }}
     - new_password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
     - require:
-      - file: /etc/nexus/admin.password
       - cmd: admin.password
       - docker_container: nexusproxy
       - module: nexusproxy_startup_sleep

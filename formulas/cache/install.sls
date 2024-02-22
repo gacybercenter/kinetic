@@ -55,6 +55,12 @@ salt-pip_installs:
       - pkg: cache_packages
       - pip: cache_pip
 
+/etc/nexus/admin.password:
+  file.managed:
+    - makedirs: True
+    - replace: False
+    - contents: placeholder
+
 {% elif grains['os_family'] == 'RedHat' %}
 
 cache_packages:
