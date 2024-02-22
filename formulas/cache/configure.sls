@@ -146,7 +146,7 @@ nexusproxy_update_user_password:
     - host: {{ address }}
     - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
-    - password: {{ salt['cmd.run']('docker exec nexusproxy cat /nexus-data/admin.password').stript() }}
+    - password: {{ salt['cmd.run']('docker exec nexusproxy cat /nexus-data/admin.password').strip() }}
     - user:  {{ pillar['cache']['nexusproxy']['username'] }}
     - new_password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
     - require:
