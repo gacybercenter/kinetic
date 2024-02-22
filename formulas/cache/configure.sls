@@ -115,12 +115,12 @@ lancachenet_dns:
 nexusproxy_update_user_password:
   nexusproxy.update_user_password:
     - name: nexusproxy_update_user_password
-    - host: http://{{ address }}
-    - port: {{ pillar['cache']['nexusproxy']['port'] }}
-    - username: {{ pillar['cache']['nexusproxy']['username'] }}
-    - password: {{ grains['original_password'] }}
-    - user:  {{ pillar['cache']['nexusproxy']['username'] }}
-    - new_password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
+    - host: "http://{{ address }}"
+    - port: "{{ pillar['cache']['nexusproxy']['port'] }}"
+    - username: "{{ pillar['cache']['nexusproxy']['username'] }}"
+    - password: "{{ grains['original_password'] }}"
+    - user:  "{{ pillar['cache']['nexusproxy']['username'] }}"
+    - new_password: "{{ pillar['nexusproxy']['nexusproxy_password'] }}"
     - onlyif:
       - docker ps |grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
       - fun: network.connect
@@ -137,13 +137,13 @@ nexusproxy_sleep:
 {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
 {{ repo }}_add_proxy_repository:
   nexusproxy.add_proxy_repository:
-    - name: {{ repo }}
-    - host: http:// {{ address }}
-    - port: {{ pillar['cache']['nexusproxy']['port'] }}
-    - username: {{ pillar['cache']['nexusproxy']['username'] }}
-    - password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
-    - repoType: {{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}
-    - remoteUrl: {{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}
+    - name: "{{ repo }}"
+    - host: "http:// {{ address }}"
+    - port: "{{ pillar['cache']['nexusproxy']['port'] }}"
+    - username: "{{ pillar['cache']['nexusproxy']['username'] }}"
+    - password: "{{ pillar['nexusproxy']['nexusproxy_password'] }}"
+    - repoType: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}"
+    - remoteUrl: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}"
     - require:
       - module: nexusproxy_sleep
     - onlyif:
