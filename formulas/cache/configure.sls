@@ -114,7 +114,6 @@ lancachenet_dns:
 
 /etc/nexus/admin.password:
   file.managed:
-    - replace: False
     - makedirs: True
 
 nexusproxy:
@@ -151,6 +150,7 @@ admin.password:
     - name: docker exec nexusproxy cat /nexus-data/admin.password
     - require:
       - docker_container: nexusproxy
+      - file: /etc/nexus/admin.password
     - onlyif:
       - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 
