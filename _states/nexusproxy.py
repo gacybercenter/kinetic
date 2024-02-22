@@ -1,8 +1,8 @@
-### Guacamole State Module
-"""Guacamole is State Module"""
+### nexusproxy State Module
+"""nexusproxy is State Module"""
 import json
 
-__virtualname__ = "guacamole"
+__virtualname__ = "nexusproxy"
 
 def __virtual__():
     return __virtualname__
