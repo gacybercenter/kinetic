@@ -128,16 +128,16 @@ nexusproxy_startup_sleep:
     - require:
       - docker_container: nexusproxy
 
-nexusproxy_running:
-  grains.present:
-    - value: True
+nexusproxy_connection:
+  module.run:
+    - network.connect:
+      - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - port: {{ pillar['cache']['nexusproxy']['port'] }}
+    - retry:
+      - attempts: 30
+      - delay: 10
     - require:
       - module: nexusproxy_startup_sleep
-
-{% if grains['nexusproxy_running'] %}
-  {% if salt['cmd.run']('docker exec nexusproxy ls -al /nexus-data/ | grep -q "admin.password"') %}
-    {% set initial_password = salt['cmd.run']('docker exec nexusproxy cat /nexus-data/admin.password') %}
-    {% set initial_password = initial_password.strip() %}
 
 nexusproxy_update_user_password:
   nexusproxy.update_user_password:
@@ -145,19 +145,17 @@ nexusproxy_update_user_password:
     - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
     - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
-    - password: {{ initial_password }}
+    - password: {{ salt['cmd.run']('docker exec nexusproxy cat /nexus-data/admin.password').stript() }}
     - user:  {{ pillar['cache']['nexusproxy']['username'] }}
     - new_password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
     - require:
       - docker_container: nexusproxy
-      - module: nexusproxy_startup_sleep
+      - module: nexusproxy_connection
     - onlyif:
-      - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
+      - docker ps |grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
       - fun: network.connect
         host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         port: {{ pillar['cache']['nexusproxy']['port'] }}
-  {% endif %}
-{% endif %}
 
 {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
 {{ repo }}_add_proxy_repository:
@@ -171,7 +169,7 @@ nexusproxy_update_user_password:
     - remoteUrl: {{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}
     - require:
       - docker_container: nexusproxy
-      - module: nexusproxy_startup_sleep
+      - module: nexusproxy_connection
     - onlyif:
       - fun: network.connect
         host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
