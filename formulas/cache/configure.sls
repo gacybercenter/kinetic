@@ -17,6 +17,7 @@ include:
   - /formulas/common/fluentd/configure
 
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{% set address = salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] %}
 
 {% if grains['spawning'] == 0 %}
 
@@ -83,8 +84,8 @@ lancachenet_monolith:
       - {{ pillar['cache']['lancache']['https_port'] }}:443
     - environment:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
-      - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-      - LINUXCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - WSUSCACHE_IP: {{ address }}
+      - LINUXCACHE_IP: {{ address }}
       - CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
       - CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
     - require:
@@ -103,8 +104,8 @@ lancachenet_dns:
       - {{ pillar['cache']['lancache']['dns_port'] }}:53/udp
     - environment:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
-      - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-      - LINUXCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - WSUSCACHE_IP: {{ address }}
+      - LINUXCACHE_IP: {{ address }}
       - CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
       - CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
     - require:
@@ -131,7 +132,7 @@ nexusproxy_startup_sleep:
 nexusproxy_connection:
   module.run:
     - network.connect:
-      - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - host: {{ address }}
       - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - retry:
       - attempts: 30
@@ -142,7 +143,7 @@ nexusproxy_connection:
 nexusproxy_update_user_password:
   nexusproxy.update_user_password:
     - name: nexusproxy_update_user_password
-    - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+    - host: {{ address }}
     - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
     - password: {{ salt['cmd.run']('docker exec nexusproxy cat /nexus-data/admin.password').stript() }}
@@ -154,14 +155,14 @@ nexusproxy_update_user_password:
     - onlyif:
       - docker ps |grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
       - fun: network.connect
-        host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        host: {{ address }}
         port: {{ pillar['cache']['nexusproxy']['port'] }}
 
 {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
 {{ repo }}_add_proxy_repository:
   nexusproxy.add_proxy_repository:
     - name: {{ repo }}
-    - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+    - host: {{ address }}
     - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
     - password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
@@ -172,7 +173,7 @@ nexusproxy_update_user_password:
       - module: nexusproxy_connection
     - onlyif:
       - fun: network.connect
-        host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        host: {{ address }}
         port: {{ pillar['cache']['nexusproxy']['port'] }}
     - unless:
       - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
