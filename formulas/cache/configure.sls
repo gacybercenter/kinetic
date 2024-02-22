@@ -115,6 +115,8 @@ lancachenet_dns:
 /etc/nexus/admin.password:
   file.managed:
     - makedirs: True
+    - replace: False
+    - contents: placeholder
 
 nexusproxy:
   docker_container.running:
