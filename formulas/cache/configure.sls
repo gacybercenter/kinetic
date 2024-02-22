@@ -127,6 +127,13 @@ nexusproxy_update_user_password:
         host: {{ address }}
         port: {{ pillar['cache']['nexusproxy']['port'] }}
 
+nexusproxy_sleep:
+  module.run:
+    - test.sleep:
+      - length: 30
+    - require:
+      - nexusproxy: nexusproxy_update_user_password
+
 {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
 {{ repo }}_add_proxy_repository:
   nexusproxy.add_proxy_repository:
@@ -138,6 +145,7 @@ nexusproxy_update_user_password:
     - repoType: {{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}
     - remoteUrl: {{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}
     - require:
+      - module: nexusproxy_sleep
     - onlyif:
       - fun: network.connect
         host: {{ address }}
