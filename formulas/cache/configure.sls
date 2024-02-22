@@ -138,7 +138,7 @@ nexusproxy_sleep:
 {{ repo }}_add_proxy_repository:
   nexusproxy.add_proxy_repository:
     - name: "{{ repo }}"
-    - host: "http:// {{ address }}"
+    - host: "http://{{ address }}"
     - port: "{{ pillar['cache']['nexusproxy']['port'] }}"
     - username: "{{ pillar['cache']['nexusproxy']['username'] }}"
     - password: "{{ pillar['nexusproxy']['nexusproxy_password'] }}"
