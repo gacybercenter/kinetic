@@ -177,6 +177,10 @@ passwords:
             guacamole:
               guacamole_mysql_password: {{ salt['random.get_str']('64', punctuation=False) }}
               guacadmin_password: {{ salt['random.get_str']('16', punctuation=False) }}
+      - /srv/dynamic_pillar/cache.sls:
+        - contents: |
+            nexusproxy:
+              nexusproxy_password: {{ salt['random.get_str']('16', punctuation=False) }}
 
 {% set adminkey = salt['generate.cephx_key']() %}
 {% set volumeskey = salt['generate.cephx_key']() %}

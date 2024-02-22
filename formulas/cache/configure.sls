@@ -28,38 +28,6 @@ include:
 
 {% endif %}
 
-conf-files:
-  file.managed:
-    - makedirs: True
-    - template: jinja
-    - defaults:
-        cache_password: {{ pillar['cache']['maintenance_password'] }}
-    - names:
-{% if grains['os_family'] == 'Debian' %}
-      - /etc/apt-cacher-ng/acng.conf:
-        - source: salt://formulas/cache/files/acng.conf
-      - /etc/apt-cacher-ng/security.conf:
-        - source: salt://formulas/cache/files/security.conf
-      - /etc/apt-cacher-ng/curl:
-        - source: salt://formulas/cache/files/curl
-{% elif grains['os_family'] == 'RedHat' %}
-      - /root/acng.conf:
-        - source: salt://formulas/cache/files/acng.conf
-      - /root/security.conf:
-        - source: salt://formulas/cache/files/security.conf
-      - /root/curl:
-        - source: salt://formulas/cache/files/curl
-{% endif %}
-
-get_centos_mirros:
-  cmd.run:
-{% if grains['os_family'] == 'Debian' %}
-    - name: curl https://git.centos.org/centos/centos.org/raw/3dc5ae396b4fa849fc03fd07ed01d831b0de9ef8/f/_data/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/etc/apt-cacher-ng/centos_mirrors
-    - creates: /etc/apt-cacher-ng/centos_mirrors
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: curl https://git.centos.org/centos/centos.org/raw/3dc5ae396b4fa849fc03fd07ed01d831b0de9ef8/f/_data/full-mirrorlist.csv | sed 's/^.*"http:/http:/' | sed 's/".*$//' | grep ^http >/root/centos_mirrors
-    - creates: /root/centos_mirrors
-{% endif %}
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 container_manage_cgroup:
@@ -70,13 +38,6 @@ container_manage_cgroup:
 
 {% if grains['os_family'] == 'Debian' %}
 
-apt-cacher-ng_service:
-  service.running:
-    - name: apt-cacher-ng
-    - enable: True
-    - watch:
-      - file: conf-files
-      - cmd: get_centos_mirros
 
 {% for dir in ['data', 'logs'] %}
 /cache/{{ dir }}:
@@ -115,79 +76,80 @@ lancachenet_monolith:
       - /cache/data:/data/cache
       - /cache/logs:/data/logs
     - ports:
-      - 80
-      - 443
+      - {{ pillar['cache']['lancache']['http_port'] }}
+      - {{ pillar['cache']['lancache']['https_port'] }}
     - port_bindings:
-      - 80:80
-      - 443:443
+      - {{ pillar['cache']['lancache']['http_port'] }}:80
+      - {{ pillar['cache']['lancache']['https_port'] }}:443
     - environment:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
       - LINUXCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-      - CACHE_DOMAINS_REPO: {{ pillar['lancache']['repo'] }}
-      - CACHE_DOMAINS_BRANCH:  {{ pillar['lancache']['branch'] }}
+      - CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
+      - CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
     - require:
       - service: apache2_service
       - file: /cache/data
       - file: /cache/logs
 
-# NOTE(chateaulav): should apply a better filter to target whatever ip is
-#                   assigned as the management interface
 lancachenet_dns:
   docker_container.running:
     - name: lancache-dns
     - image: lancachenet/lancache-dns:latest
     - restart_policy: unless-stopped
     - ports:
-      - 53/udp
+      - {{ pillar['cache']['lancache']['dns_port'] }}/udp
     - port_bindings:
-      - 53:53/udp
+      - {{ pillar['cache']['lancache']['dns_port'] }}:53/udp
     - environment:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
       - LINUXCACHE_IP: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-      - CACHE_DOMAINS_REPO: {{ pillar['lancache']['repo'] }}
-      - CACHE_DOMAINS_BRANCH:  {{ pillar['lancache']['branch'] }}
+      - CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
+      - CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
     - require:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith
 
-{% elif grains['os_family'] == 'RedHat' %}
+nexusproxy:
+  docker_container.running:
+    - name: nexusproxy
+    - image: sonatype/nexus3:latest
+    - restart_policy: unless-stopped
+    - ports:
+      - 8081
+    - port_bindings:
+      - {{ pillar['cache']['nexusproxy']['https_port'] }}:8081
 
-/root/acng.dockerfile:
-  file.managed:
-    - source: salt://formulas/cache/files/acng.dockerfile
+{% if salt['cmd.run']('docker exec nexusproxy ls -al /nexus-data/ | grep -q "admin.password"') %}
+  {% set initial_password = salt['cmd.run']('docker exec nexusproxy cat /nexus-data/admin.password') %}
+  {% set initial_password = initial_password.strip() %}
 
-build acng container image:
-  cmd.run:
-    - name: buildah bud -t acng acng.dockerfile
-    - onchanges:
-      - file: /root/acng.dockerfile
-      - file: conf-files
-
-## working around https://github.com/containers/libpod/issues/4605 by temporarily removing volumes
-## podman create -d -p 3142:3142 --name apt-cacher-ng --volume apt-cacher-ng:/var/cache/apt-cacher-ng acng
-create acng container:
-  cmd.run:
-    - name: podman create -d -p 3142:3142 --name apt-cacher-ng acng
+nexusproxy_update_user_password:
+  nexusproxy.update_user_password:
+    - name: nexusproxy_update_user_password
+    - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+    - port: 3142
+    - username: {{ pillar['cache']['nexusproxy']['username'] }}
+    - password: {{ initial_password }}
+    - user:  {{ pillar['cache']['nexusproxy']['username'] }}
+    - new_password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
     - require:
-      - cmd: build acng container image
-    - unless:
-      - podman container ls -a | grep -q apt-cacher-ng
-
-/etc/systemd/system/apt-cacher-ng-container.service:
-  file.managed:
-    - source: salt://formulas/cache/files/apt-cacher-ng-container.service
-    - mode: "0644"
-    - require:
-      - cmd: create acng container
-
-apt-cacher-ng-container:
-  service.running:
-    - enable: True
-    - require:
-      - file: /etc/systemd/system/apt-cacher-ng-container.service
-    - watch:
-      - file: /etc/systemd/system/apt-cacher-ng-container.service
-
+      - docker_container: nexusproxy
 {% endif %}
+
+{% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+{{ repo }}_add_proxy_repository:
+  nexusproxy.add_proxy_repository:
+    - name: {{ repo }}
+    - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+    - port: 3142
+    - username: {{ pillar['cache']['nexusproxy']['username'] }}
+    - password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
+    - repoType: {{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}
+    - remoteUrl: {{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}
+    - require:
+      - docker_container: nexusproxy
+    - unless:
+      - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
+{% endfor %}
