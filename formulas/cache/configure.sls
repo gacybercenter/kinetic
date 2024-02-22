@@ -125,7 +125,7 @@ nexusproxy:
 nexusproxy_startup_sleep:
   module.run:
     - test.sleep:
-      - seconds: 60
+      - length: 60
     - require:
       - docker_container: nexusproxy
 
