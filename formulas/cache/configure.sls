@@ -157,3 +157,4 @@ nexusproxy_update_user_password:
     - unless:
       - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 {% endfor %}
+{% endif %}
