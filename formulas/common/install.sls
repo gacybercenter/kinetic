@@ -36,8 +36,8 @@ set_package_proxy:
     {% if grains['os_family'] == 'Debian' %}
     - name: /etc/apt/apt.conf.d/02proxy
     - contents: |
-        Acquire::http:Proxy "http://{{ address }}:{{ pillar['lancache']['port'] }}\";
-        Acquire::https:Proxy "https://{{ address }}:{{ pillar['lancache']['port'] }}\";
+        Acquire::http:Proxy "http://{{ address }}:{{ pillar['cache']['lancache']['http_port'] }}\";
+        Acquire::https:Proxy "https://{{ address }}:{{ pillar['cache']['lancache']['https_port'] }}\";
     {% elif grains['os_family'] == 'RedHat' %}
     - name: /etc/yum.conf
     - contents: |
@@ -47,15 +47,15 @@ set_package_proxy:
         clean_requirements_on_remove=True
         best=True
         skip_if_unavailable=False
-        proxy=http://{{ address }}:{{ pillar['lancache']['port'] }}
+        proxy=http://{{ address }}:{{ pillar['cache']['lancache']['http_port'] }}
     {% endif %}
-    {% if salt['network']['connect'](host=salt['grains.get']('cache_target', '127.0.0.1'), port="pillar['lancache']['port']")['result'] == True %}
+    {% if salt['network']['connect'](host=salt['grains.get']('cache_target', '127.0.0.1'), port="pillar['cache']['lancache']['http_port']")['result'] == True %}
     - replace: False
     {% endif %}
     - onlyif:
       - fun: network.connect
         host: {{ address }}
-        port: {{ pillar['lancache']['port'] }}
+        port: {{ pillar['cache']['lancache']['http_port'] }}
 
 cache_target:
   grains.present:

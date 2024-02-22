@@ -22,10 +22,10 @@ openstack_api:
     - jump: accept
     - match: state
     - connstate: new
-{% if pillar['lancache']['port'] == '80' %}
+{% if pillar['cache']['lancache']['http_port'] == '80' %}
     - dports: 53,80,443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517
 {% else %}
-    - dports: 53,{{ pillar['lancache']['port'] }},443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517
+    - dports: 53,{{ pillar['cache']['lancache']['http_port'] }},443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517,{{ pillar['cache']['nexusproxy']['port'] }}
 {% endif %}
     - proto: tcp
     - source: '{{ pillar['networking']['subnets']['public'] }}'

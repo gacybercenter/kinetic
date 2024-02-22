@@ -153,7 +153,7 @@ wsgi_module:
       ##pick a random cache and iterate through its addresses, choosing only the management address
       {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () %}
         {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-        proxy: http://{{ address }}:{{ pillar['lancache']['port'] }}
+        proxy: http://{{ address }}:{{ pillar['cache']['lancache']['http_port'] }}
         {% endif %}
       {% endfor %}
     {% endif %}

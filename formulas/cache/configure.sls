@@ -150,6 +150,10 @@ nexusproxy_update_user_password:
     - remoteUrl: {{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}
     - require:
       - docker_container: nexusproxy
+    - onlyif:
+      - fun: network.connect
+        host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        port: {{ pillar['cache']['nexusproxy']['port'] }}
     - unless:
       - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 {% endfor %}
