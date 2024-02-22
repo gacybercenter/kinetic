@@ -143,7 +143,7 @@ nexusproxy_connection:
 
 admin.password:
   cmd.run:
-    - name: docker exec nexusproxy cat /nexus-data/admin.password
+    - name: docker exec nexusproxy cat /nexus-data/admin.password > /etc/nexus/admin.password
     - require:
       - docker_container: nexusproxy
     - onlyif:
@@ -152,7 +152,7 @@ admin.password:
 nexusproxy_update_user_password:
   nexusproxy.update_user_password:
     - name: nexusproxy_update_user_password
-    - host: {{ address }}
+    - host: http://{{ address }}
     - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
     - password: {{ salt['cmd.run']('cat /etc/nexus/admin.password') }}
@@ -173,7 +173,7 @@ nexusproxy_update_user_password:
 {{ repo }}_add_proxy_repository:
   nexusproxy.add_proxy_repository:
     - name: {{ repo }}
-    - host: {{ address }}
+    - host: http:// {{ address }}
     - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
     - password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
