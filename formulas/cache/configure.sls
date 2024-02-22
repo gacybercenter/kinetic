@@ -112,6 +112,11 @@ lancachenet_dns:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith
 
+/etc/nexus/admin.password:
+  file.managed:
+    - replace: False
+    - makedirs: True
+
 nexusproxy:
   docker_container.running:
     - name: nexusproxy
@@ -138,7 +143,16 @@ nexusproxy_connection:
       - attempts: 30
       - delay: 10
     - require:
+      - docker_container: nexusproxy
       - module: nexusproxy_startup_sleep
+
+admin.password:
+  cmd.run:
+    - name: docker exec nexusproxy cat /nexus-data/admin.password
+    - require:
+      - docker_container: nexusproxy
+    - onlyif:
+      - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 
 nexusproxy_update_user_password:
   nexusproxy.update_user_password:
@@ -146,11 +160,12 @@ nexusproxy_update_user_password:
     - host: {{ address }}
     - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
-    - password: {{ salt['cmd.run']('docker exec nexusproxy cat /nexus-data/admin.password').strip() }}
+    - password: {{ salt['cmd.run']('cat /etc/nexus/admin.password') }}
     - user:  {{ pillar['cache']['nexusproxy']['username'] }}
     - new_password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
     - require:
       - docker_container: nexusproxy
+      - module: nexusproxy_startup_sleep
       - module: nexusproxy_connection
     - onlyif:
       - docker ps |grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
@@ -170,6 +185,7 @@ nexusproxy_update_user_password:
     - remoteUrl: {{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}
     - require:
       - docker_container: nexusproxy
+      - module: nexusproxy_startup_sleep
       - module: nexusproxy_connection
     - onlyif:
       - fun: network.connect
