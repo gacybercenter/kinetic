@@ -119,7 +119,7 @@ nexusproxy:
     - ports:
       - 8081
     - port_bindings:
-      - {{ pillar['cache']['nexusproxy']['https_port'] }}:8081
+      - {{ pillar['cache']['nexusproxy']['port'] }}:8081
 
 {% if salt['cmd.run']('docker exec nexusproxy ls -al /nexus-data/ | grep -q "admin.password"') %}
   {% set initial_password = salt['cmd.run']('docker exec nexusproxy cat /nexus-data/admin.password') %}
@@ -129,7 +129,7 @@ nexusproxy_update_user_password:
   nexusproxy.update_user_password:
     - name: nexusproxy_update_user_password
     - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-    - port: 3142
+    - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
     - password: {{ initial_password }}
     - user:  {{ pillar['cache']['nexusproxy']['username'] }}
@@ -143,7 +143,7 @@ nexusproxy_update_user_password:
   nexusproxy.add_proxy_repository:
     - name: {{ repo }}
     - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-    - port: 3142
+    - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - username: {{ pillar['cache']['nexusproxy']['username'] }}
     - password: {{ pillar['nexusproxy']['nexusproxy_password'] }}
     - repoType: {{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}
