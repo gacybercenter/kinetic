@@ -31,16 +31,6 @@ systemd-resolved_service:
     - require:
       - service: systemd-resolved_service
 
-update_sources_list:
-  file.replace:
-    - name: /etc/apt/sources.list
-    - pattern: '\/\/[^\/]*'
-    - repl: "//{{ address }}:{{ pillar['cache']['nexusproxy']['port'] }}"
-    - onlyif:
-      - fun: network.connect
-        host: {{ address }}
-        port: {{ pillar['cache']['nexusproxy']['port'] }}
-
     {% for source in [ '/etc/apt/sources', '/etc/apt/sources.list.d/fluentd', '/etc/apt/sources.list.d/salt', '/etc/apt/sources.list.d/cloudarchive-bobcat' ] %}
       {% if salt['file.file_exists'](source + '.list') %}
         {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
@@ -60,12 +50,6 @@ update_{{ source }}_for_{{ repo }}:
         {% endfor %}
       {% endif %}
     {% endfor %}
-
-cache_target:
-  grains.present:
-    - value: {{ address }}
-    - onchanges:
-      - file: set_package_proxy
   {% endfor %}
 {% endif %}
 

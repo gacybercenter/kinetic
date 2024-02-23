@@ -170,7 +170,7 @@ tftp_conf:
 /srv/tftp/jammy/ubuntu2204-arm64.iso:
   file.managed:
     - makedirs: True
-    - source: https://cdimage.ubuntu.com/releases/jammy/release/ubuntu-22.04.3-live-server-arm64.iso
+    - source: https://cdimage.ubuntu.com/releases/jammy/release/ubuntu-22.04.4-live-server-arm64.iso
     - source_hash: https://cdimage.ubuntu.com/releases/jammy/release/SHA256SUMS
 
 clean_dir:
