@@ -71,13 +71,6 @@ nexusproxy:
     - port_bindings:
       - {{ pillar['cache']['nexusproxy']['port'] }}:8081
 
-nexusproxy_startup_sleep:
-  module.run:
-    - test.sleep:
-      - length: 60
-    - require:
-      - docker_container: nexusproxy
-
 nexusproxy_connection:
   module.run:
     - network.connect:
@@ -88,15 +81,18 @@ nexusproxy_connection:
       - delay: 10
     - require:
       - docker_container: nexusproxy
-      - module: nexusproxy_startup_sleep
+    - onlyif:
+      - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 
 admin_password:
   cmd.run:
     - name: salt-call grains.setval original_password $(docker exec nexusproxy cat /nexus-data/admin.password)
+    - retry:
+      - attempts: 30
+      - delay: 10
     - require:
       - docker_container: nexusproxy
       - module: nexusproxy_connection
-      - module: nexusproxy_startup_sleep
     - onlyif:
       - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 

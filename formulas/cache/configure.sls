@@ -127,14 +127,14 @@ nexusproxy_update_user_password:
         host: {{ address }}
         port: {{ pillar['cache']['nexusproxy']['port'] }}
 
-nexusproxy_sleep:
+{% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+{{ repo }}_sleep:
   module.run:
     - test.sleep:
-      - length: 30
-    - require:
-      - nexusproxy: nexusproxy_update_user_password
+      - length: 5
+    - unless:
+      - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 
-{% for repo in pillar['cache']['nexusproxy']['repositories'] %}
 {{ repo }}_add_proxy_repository:
   nexusproxy.add_proxy_repository:
     - name: "{{ repo }}"
@@ -145,7 +145,7 @@ nexusproxy_sleep:
     - repoType: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}"
     - remoteUrl: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}"
     - require:
-      - module: nexusproxy_sleep
+      - module: {{ repo }}_sleep
     - onlyif:
       - fun: network.connect
         host: {{ address }}

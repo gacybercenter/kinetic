@@ -27,6 +27,10 @@ __virtualname__ = "nexusproxy"
 def __virtual__():
     return __virtualname__
 
+# TODO(chateaulav): Add support for additional Nexus Proxy API endpoints
+#                   to include the following:
+#                   - enable anonymous search
+
 def list_users(host: str,
                port: str,
                username: str,
@@ -119,8 +123,10 @@ def list_repository(host: str,
                             verify=False, timeout=timeout)
     if response.status_code == 200:
         response = json.dumps(response.json(), indent=4)
-        return response
-    return response.status_code
+    elif response.status_code == 404:
+        response = { "name": "None", "status_code": "404" }
+        response = json.dumps(response, indent=4)
+    return response
 
 def delete_repository(host: str,
                       port: str,

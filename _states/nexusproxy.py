@@ -33,10 +33,10 @@ def update_user_password(name, host, port, username, password, user, new_passwor
                                                                  port,
                                                                  username,
                                                                  password))
-    userList = []
-    for cu in current_users:
-        userList.append(cu['userId'])
-    if user not in userList:
+    currentUserList = []
+    for current_user in current_users:
+        currentUserList.append(current_user['userId'])
+    if user not in currentUserList:
         ret["comment"] = f'User: "{user}" is not present.'
         ret["result"] = False
         return ret
@@ -88,13 +88,13 @@ def add_proxy_repository(name, host, port, username, password, repoType, remoteU
         ret["result"] = True
         return ret
     new_state = __salt__["nexusproxy.add_proxy_repository"](host,
-                                                                       port,
-                                                                       username,
-                                                                       password,
-                                                                       name,
-                                                                       repoType,
-                                                                       remoteUrl,
-                                                                       **kwargs)
+                                                            port,
+                                                            username,
+                                                            password,
+                                                            name,
+                                                            repoType,
+                                                            remoteUrl,
+                                                            **kwargs)
     if new_state == 201:
         repository = json.loads(__salt__["nexusproxy.list_repository"](host,
                                                                         port,
