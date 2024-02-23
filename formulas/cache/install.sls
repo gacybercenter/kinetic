@@ -73,8 +73,9 @@ nexusproxy_connection:
       - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
       - port: {{ pillar['cache']['nexusproxy']['port'] }}
     - retry:
-      - attempts: 30
-      - delay: 10
+        attempts: 30
+        delay: 10
+        splay: 5
     - require:
       - docker_container: nexusproxy
     - onlyif:
@@ -84,8 +85,9 @@ admin_password:
   cmd.run:
     - name: salt-call grains.setval original_password $(docker exec nexusproxy cat /nexus-data/admin.password)
     - retry:
-      - attempts: 30
-      - delay: 10
+        attempts: 30
+        delay: 10
+        splay: 5
     - require:
       - docker_container: nexusproxy
       - module: nexusproxy_connection
