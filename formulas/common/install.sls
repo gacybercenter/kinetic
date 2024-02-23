@@ -31,31 +31,35 @@ systemd-resolved_service:
     - require:
       - service: systemd-resolved_service
 
-set_package_proxy:
-  file.managed:
-    {% if grains['os_family'] == 'Debian' %}
-    - name: /etc/apt/apt.conf.d/02proxy
-    - contents: |
-        Acquire::http:Proxy "http://{{ address }}:{{ pillar['cache']['lancache']['http_port'] }}\";
-        Acquire::https:Proxy "https://{{ address }}:{{ pillar['cache']['lancache']['https_port'] }}\";
-    {% elif grains['os_family'] == 'RedHat' %}
-    - name: /etc/yum.conf
-    - contents: |
-        [main]
-        gpgcheck=1
-        installonly_limit=3
-        clean_requirements_on_remove=True
-        best=True
-        skip_if_unavailable=False
-        proxy=http://{{ address }}:{{ pillar['cache']['lancache']['http_port'] }}
-    {% endif %}
-    {% if salt['network']['connect'](host=salt['grains.get']('cache_target', '127.0.0.1'), port="pillar['cache']['lancache']['http_port']")['result'] == True %}
-    - replace: False
-    {% endif %}
+update_sources_list:
+  file.replace:
+    - name: /etc/apt/sources.list
+    - pattern: '\/\/[^\/]*'
+    - repl: "//{{ address }}:{{ pillar['cache']['nexusproxy']['port'] }}"
     - onlyif:
       - fun: network.connect
         host: {{ address }}
-        port: {{ pillar['cache']['lancache']['http_port'] }}
+        port: {{ pillar['cache']['nexusproxy']['port'] }}
+
+    {% for source in [ '/etc/apt/sources', '/etc/apt/sources.list.d/fluentd', '/etc/apt/sources.list.d/salt', '/etc/apt/sources.list.d/cloudarchive-bobcat' ] %}
+      {% if salt['file.file_exists'](source + '.list') %}
+        {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+update_{{ source }}_for_{{ repo }}:
+  file.replace:
+    - name: {{ source }}.list
+    - pattern: {{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] | regex_escape }}
+        {% if pillar['cache']['nexusproxy']['repositories'][repo]['proto'] == 'http' %}
+    - repl: "http://{{ address }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }}"
+        {% else %}
+    - repl: "https://{{ address }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }}"
+        {% endif %}
+    - onlyif:
+      - fun: network.connect
+        host: {{ address }}
+        port: {{ pillar['cache']['nexusproxy']['port'] }}
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
 
 cache_target:
   grains.present:

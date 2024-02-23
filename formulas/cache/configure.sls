@@ -81,8 +81,8 @@ lancachenet_monolith:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ address }}
       - LINUXCACHE_IP: {{ address }}
-      - CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
-      - CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
+      #- CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
+      #- CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
     - require:
       - file: /cache/data
       - file: /cache/logs
@@ -100,8 +100,8 @@ lancachenet_dns:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ address }}
       - LINUXCACHE_IP: {{ address }}
-      - CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
-      - CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
+      #- CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
+      #- CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
     - require:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith
