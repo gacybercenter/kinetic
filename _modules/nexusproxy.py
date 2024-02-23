@@ -27,9 +27,68 @@ __virtualname__ = "nexusproxy"
 def __virtual__():
     return __virtualname__
 
-# TODO(chateaulav): Add support for additional Nexus Proxy API endpoints
-#                   to include the following:
-#                   - enable anonymous search
+#TODO: fix the response we get: '{\n    "enabled": true,\n    "userId": "anonymous",\n    "realmName": "NexusAuthorizingRealm"\n}'
+def list_anonymous_search(host: str,
+                          port: str,
+                          username: str,
+                          password: str,
+                          enable: bool = None,
+                          timeout=60):
+    '''
+    This function checks the status of anonymous search in Nexus Proxy.
+    If 'enable' is specified, it updates the anonymous access configuration.
+    If 'enable' is None, it retrieves the current anonymous access configuration.
+    @param host: Nexus host ip or dns name to inlude the http:// or https://
+    @param port: Nexus listening port
+    @param username: Nexus username
+    @param password: Nexus password
+    @param enable: Specify True to enable, False to disable, None to check status
+    @param timeout: Request timeout in seconds 
+    '''
+    url = f"{host}:{port}/service/rest/v1/security/anonymous"
+    response = json.dumps(requests.get(url, auth=(username, password), verify=False, 
+                                       timeout=timeout).json(), indent=4)
+    return response
+
+    # TODO: fix the error for enabling search
+    """
+    list_anonymous_search("http://localhost", "8081", "admin", "newpass")
+    '{\n    "enabled": true,\n    "userId": "anonymous",\n    "realmName": "NexusAuthorizingRealm"\n}'
+    >>> enable_anonymous_search("http://localhost", "8081", "admin", "newpass")
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+    File "<stdin>", line 27, in enable_anonymous_search
+    UnboundLocalError: cannot access local variable 'response' where it is not associated with a value
+    >>>
+    """
+
+def enable_anonymous_search(host: str,
+                            port: str,
+                            username: str,
+                            password: str,
+                            enable: bool = None,
+                            timeout=60):
+    '''
+    This function enables the status of anonymous search in Nexus Proxy.
+    If 'enable' is specified, it updates the anonymous access configuration.
+    If 'enable' is None, it retrieves the current anonymous access configuration.
+    @param host: Nexus host ip or dns name to inlude the http:// or https://
+    @param port: Nexus listening port
+    @param username: Nexus username
+    @param password: Nexus password
+    @param enable: Specify True to enable, False to disable, None to check status
+    @param timeout: Request timeout in seconds 
+    '''
+    url = f"{host}:{port}/service/rest/v1/security/anonymous"
+    if enable is not None:
+        data = {
+            "enabled": enable,
+            "userId": "anonymous",
+            "rName": "NexusAuthorizingRealm"
+        }
+        response = requests.put(url, auth=(username, password), verify=False, 
+                                           timeout=timeout)
+    return response.status_code
 
 def list_users(host: str,
                port: str,
