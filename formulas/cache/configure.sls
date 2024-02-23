@@ -49,11 +49,6 @@ container_manage_cgroup:
     - makedirs: True
 {% endfor %}
 
-apache2_service:
-  service.dead:
-    - name: apache2
-    - enable: false
-
 systemd-resolved_service:
   service.dead:
     - name: systemd-resolved
@@ -132,6 +127,8 @@ nexusproxy_update_user_password:
   module.run:
     - test.sleep:
       - length: 5
+    - onlyif:
+      - salt-call nexusproxy.list_repository "http://{{ address }}" "{{ pillar['cache']['nexusproxy']['port'] }}" "{{ pillar['cache']['nexusproxy']['username'] }}" "{{ pillar['nexusproxy']['nexusproxy_password'] }}" "{{ repo }}" | grep -q "{{ repo }}"
     - unless:
       - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 

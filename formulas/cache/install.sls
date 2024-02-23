@@ -23,9 +23,7 @@ include:
 cache_packages:
   pkg.installed:
     - pkgs:
-      - apt-cacher-ng
       - python3-pip
-      - apache2
       - docker.io
       - docker-compose
       - containerd
@@ -37,7 +35,6 @@ cache_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - pkgs:
-      - pyinotify
       - docker == 5.0.3
     - reload_modules: true
     - require:
@@ -48,7 +45,6 @@ salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - pkgs:
-      - pyinotify
       - docker == 5.0.3
     - reload_modules: true
     - require:
