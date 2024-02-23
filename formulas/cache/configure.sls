@@ -84,7 +84,6 @@ lancachenet_monolith:
       - CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
       - CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
     - require:
-      - service: apache2_service
       - file: /cache/data
       - file: /cache/logs
 
