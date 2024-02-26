@@ -41,7 +41,7 @@ update_{{ source }}_for_{{ repo }}:
         {% if pillar['cache']['nexusproxy']['repositories'][repo]['proto'] == 'http' %}
     - repl: "http://{{ address }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }}"
         {% else %}
-    - repl: "https://{{ address }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }}"
+    - repl: "http://{{ address }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }}"
         {% endif %}
     - onlyif:
       - fun: network.connect
