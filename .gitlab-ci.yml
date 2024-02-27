@@ -10,12 +10,16 @@ salt-lint:
     - docker
   script:
     - pip install salt-lint
-    - salt-lint $(find . -name \*.sls)
+    - salt-lint --json --severity $(find . -name \*.sls) > saltcodeclimate.json
   only:
     changes:
       - formulas/**/*
       - orch/**/*
       - reactor/**/*
+  artifacts:
+    reports:
+      codequality: saltcodeclimate.json
+    when: always
 
 pylint:
   stage: lint
@@ -26,7 +30,7 @@ pylint:
     - pip install pylint_gitlab
   script:
     - pylint --exit-zero --output-format=text $(find ./_modules ./_runners ./_states -type f -name "*.py") | tee /tmp/pylint.txt
-    - pylint --exit-zero --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find ./_modules ./_runners ./_states -type f -name "*.py") > codeclimate.json
+    - pylint --exit-zero --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find ./_modules ./_runners ./_states -type f -name "*.py") >> codeclimate.json
   artifacts:
     reports:
       codequality: codeclimate.json
