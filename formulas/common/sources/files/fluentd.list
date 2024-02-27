@@ -1,2 +1,2 @@
 # deb https://packages.treasuredata.com/4/ubuntu/jammy jammy contrib # disabled on upgrade to jammy
-deb {{ fluentd-ubuntu-jammy }} {{ ubuntu_name }} contrib
+deb {{ fluentd_ubuntu_jammy }} {{ ubuntu_name }} contrib

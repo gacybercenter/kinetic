@@ -1,4 +1,4 @@
 # deb https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/ jammy main'
 # deb http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu jammy main'
-deb {{ rabbitmq-server }} {{ ubuntu_name }} main'
-deb {{ rabbitmq-erlang }} {{ ubuntu_name }} main'
+deb {{ rabbitmq_server }} {{ ubuntu_name }} main'
+deb {{ rabbitmq_erlang }} {{ ubuntu_name }} main'

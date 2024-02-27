@@ -1,2 +1,2 @@
 # deb http://ubuntu-cloud.archive.canonical.com/ubuntu jammy-updates/bobcat main
-deb {{ ubuntu-cloud }} {{ ubuntu_name }}-updates/{{ openstack_version }} main
+deb {{ ubuntu_cloud }} {{ ubuntu_name }}-updates/{{ openstack_version }} main

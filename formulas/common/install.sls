@@ -39,7 +39,7 @@ update_sources_list:
         ubuntu_name: {{ pillar['ubuntu']['name'] }}
         openstack_version: {{ pillar['openstack']['version'] }}
       {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-        {{ repo }}: http://cache.{{ pillar['haproxy']['sub_zone_name'] }}/repository/{{ repo }}
+        {{ repo | replace('-', '_') }}: http://cache.{{ pillar['haproxy']['sub_zone_name'] }}/repository/{{ repo }}
       {% endfor %}
     - names:
       {% if grains['type'] == 'arm' %}

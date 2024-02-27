@@ -9,13 +9,13 @@
 # deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security universe
 # deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security multiverse
 
-deb {{ ubuntu-ports }} {{ ubuntu_name }} main restricted
-deb {{ ubuntu-ports }} {{ ubuntu_name }}-updates main restricted
-deb {{ ubuntu-ports }} {{ ubuntu_name }} universe
-deb {{ ubuntu-ports }} {{ ubuntu_name }}-updates universe
-deb {{ ubuntu-ports }} {{ ubuntu_name }} multiverse
-deb {{ ubuntu-ports }} {{ ubuntu_name }}-updates multiverse
-deb {{ ubuntu-ports }} {{ ubuntu_name }}-backports main restricted universe multiverse
-deb {{ ubuntu-ports }} {{ ubuntu_name }}-security main restricted
-deb {{ ubuntu-ports }} {{ ubuntu_name }}-security universe
-deb {{ ubuntu-ports }} {{ ubuntu_name }}-security multiverse
+deb {{ ubuntu_ports }} {{ ubuntu_name }} main restricted
+deb {{ ubuntu_ports }} {{ ubuntu_name }}-updates main restricted
+deb {{ ubuntu_ports }} {{ ubuntu_name }} universe
+deb {{ ubuntu_ports }} {{ ubuntu_name }}-updates universe
+deb {{ ubuntu_ports }} {{ ubuntu_name }} multiverse
+deb {{ ubuntu_ports }} {{ ubuntu_name }}-updates multiverse
+deb {{ ubuntu_ports }} {{ ubuntu_name }}-backports main restricted universe multiverse
+deb {{ ubuntu_ports }} {{ ubuntu_name }}-security main restricted
+deb {{ ubuntu_ports }} {{ ubuntu_name }}-security universe
+deb {{ ubuntu_ports }} {{ ubuntu_name }}-security multiverse

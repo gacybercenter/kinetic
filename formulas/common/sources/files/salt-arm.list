@@ -1,2 +1,2 @@
 #deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.gpg arch=amd64] https://repo.saltproject.io/salt/py3/ubuntu/22.04/amd64/minor/3006.3 jammy main
-deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.gpg arch=amd64] {{ salt-arm-2204 }} jammy main
+deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.gpg arch=amd64] {{ salt_arm_2204 }} jammy main
