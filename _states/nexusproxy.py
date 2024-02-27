@@ -40,12 +40,12 @@ def update_user_password(name, host, port, username, password, user, new_passwor
         ret["comment"] = f'User: "{user}" is not present.'
         ret["result"] = False
         return ret
-    new_state = json.loads(__salt__["nexusproxy.change_user_password"](host,
+    new_state = __salt__["nexusproxy.change_user_password"](host,
                                                                        port,
                                                                        username,
                                                                        password,
                                                                        user,
-                                                                       new_password))
+                                                                       new_password)
     if new_state == 204:
         ret["comment"] = f'The state of "{name}" was changed successfully!'
         ret["changes"] = {

@@ -31,25 +31,39 @@ systemd-resolved_service:
     - require:
       - service: systemd-resolved_service
 
-    {% for source in [ '/etc/apt/sources', '/etc/apt/sources.list.d/fluentd', '/etc/apt/sources.list.d/salt', '/etc/apt/sources.list.d/cloudarchive-bobcat' ] %}
-      {% if salt['file.file_exists'](source + '.list') %}
-        {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-update_{{ source }}_for_{{ repo }}:
-  file.replace:
-    - name: {{ source }}.list
-    - pattern: {{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] | regex_escape }}
-        {% if pillar['cache']['nexusproxy']['repositories'][repo]['proto'] == 'http' %}
-    - repl: "http://{{ address }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }}"
-        {% else %}
-    - repl: "http://{{ address }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }}"
-        {% endif %}
-    - onlyif:
-      - fun: network.connect
-        host: {{ address }}
-        port: {{ pillar['cache']['nexusproxy']['port'] }}
-        {% endfor %}
+update_{{ source }}:
+  file.managed:
+    - template: jinja
+    - defaults:
+        ubuntu_name: {{ pillar['ubuntu']['name'] }}
+        openstack_version: {{ pillar['openstack']['version'] }}
+      {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+        {{ repo }}: http://cache.{{ pillar['haproxy']['sub_zone_name'] }}/repository/{{ repo }} 
+      {% endfor %}
+    - names:
+      {% if grains['type'] == 'arm' %}
+      - /etc/apt/sources.list:
+        - source: salt://formulas/common/files/sources-arm.list
+      - /etc/apt/sources.list.d/salt.list:
+        - source: salt://formulas/common/files/salt-arm.list
+      {% else %}
+      - /etc/apt/sources.list:
+        - source: salt://formulas/common/files/sources.list
+      - /etc/apt/sources.list.d/salt.list:
+        - source: salt://formulas/common/files/salt.list
       {% endif %}
-    {% endfor %}
+      - /etc/apt/sources.list.d/fluentd.list:
+        - source: salt://formulas/common/files/fluentd.list
+      - /etc/apt/sources.list.d/cloudarchive.list:
+        - source: salt://formulas/common/files/cloudarchive.list
+      {% if grains['type'] == 'rabbitmq' %}
+      - /etc/apt/sources.list.d/rabbitmq.list:
+        - source: salt://formulas/common/files/rabbitmq.list
+      {% endif %}
+      {% if grains['type'] == [ 'ceph', 'storage', 'storagev2' ] %}
+      - /etc/apt/sources.list.d/ceph.list:
+        - source: salt://formulas/common/files/ceph.list
+      {% endif %}
   {% endfor %}
 {% endif %}
 

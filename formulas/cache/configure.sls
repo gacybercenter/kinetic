@@ -39,6 +39,43 @@ container_manage_cgroup:
 
 {% if grains['os_family'] == 'Debian' %}
 
+/etc/cache/tnsr.crt:
+  file.managed:
+    - contents_pillar: tnsr_cert
+    - mode: "0640"
+    - user: root
+
+/etc/cache/tnsr.pem:
+  file.managed:
+    - contents_pillar: tnsr_key
+    - mode: "0640"
+    - user: root
+
+tnsr_local_zones_updates:
+  tnsr.unbound_updated:
+    - name: tnsr_local_zones_updates
+    - type: "local-zone"
+    - new_zones:
+      - zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
+        type: "transparent"
+        hosts:
+          host:
+            - ip-address: 
+              - "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
+              host-name: "cache"
+    - cert: /etc/cache/tnsr.crt
+    - key: /etc/cache/tnsr.pem
+    - hostname: {{ pillar['tnsr']['endpoint'] }}
+    - cacert: False
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - require:
+      - file: /etc/cache/tnsr.crt
+      - file: /etc/cache/tnsr.pem
+
+{% set cache_dns = 'cache.' + pillar['haproxy']['sub_zone_name'] %}
 
 {% for dir in ['data', 'logs'] %}
 /cache/{{ dir }}:
@@ -81,8 +118,6 @@ lancachenet_monolith:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ address }}
       - LINUXCACHE_IP: {{ address }}
-      #- CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
-      #- CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
     - require:
       - file: /cache/data
       - file: /cache/logs
@@ -100,8 +135,6 @@ lancachenet_dns:
       - UPSTREAM_DNS: {{ pillar['networking']['addresses']['float_dns'] }}
       - WSUSCACHE_IP: {{ address }}
       - LINUXCACHE_IP: {{ address }}
-      #- CACHE_DOMAINS_REPO: {{ pillar['cache']['lancache']['cache_domains']['repo'] }}
-      #- CACHE_DOMAINS_BRANCH:  {{ pillar['cache']['lancache']['cache_domains']['branch'] }}
     - require:
       - service: systemd-resolved_service
       - docker_container: lancachenet_monolith

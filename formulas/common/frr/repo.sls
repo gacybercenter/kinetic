@@ -17,7 +17,7 @@
 frr_repo:
   pkgrepo.managed:
     - humanname: frr-stable
-    - name: deb https://deb.frrouting.org/frr jammy frr-stable
+    - name: deb https://deb.frrouting.org/frr {{ pillar['ubuntu']['name'] }} frr-stable
     - file: /etc/apt/sources.list.d/frr-stable.list
     - key_url: https://deb.frrouting.org/frr/keys.asc
 

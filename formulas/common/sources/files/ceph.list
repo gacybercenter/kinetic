@@ -1,0 +1,2 @@
+# deb https://download.ceph.com/debian-quincy jammy main
+deb {{ ceph }} {{ ubuntu_name }} main

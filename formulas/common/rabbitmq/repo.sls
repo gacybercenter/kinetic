@@ -19,7 +19,7 @@ repo-setup.sh:
     - name: repo-setup.sh
     - source: salt://formulas/common/rabbitmq/files/repo-setup.sh
     - unless:
-      - cat /etc/apt/sources.list.d/rabbitmq.list | grep -q 'https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/ jammy main'
-      - cat /etc/apt/sources.list.d/rabbitmq.list | grep -q 'http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu jammy main'
+      - cat /etc/apt/sources.list.d/rabbitmq.list | grep -q 'https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/ {{ pillar['ubuntu']['name'] }} main'
+      - cat /etc/apt/sources.list.d/rabbitmq.list | grep -q 'http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu {{ pillar['ubuntu']['name'] }} main'
 
 {% endif %}

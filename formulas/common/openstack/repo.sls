@@ -16,9 +16,9 @@
 
 uca:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Bobcat
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu jammy-updates/bobcat main
-    - file: /etc/apt/sources.list.d/cloudarchive-bobcat.list
+    - humanname: Ubuntu Cloud Archive - {{ pillar['openstack']['version'] }}
+    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+    - file: /etc/apt/sources.list.d/cloudarchive.list
     - keyid: EC4926EA
     - keyserver: keyserver.ubuntu.com
 

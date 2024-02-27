@@ -16,7 +16,6 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  #- /formulas/common/docker/repo
 
 {% if grains['os_family'] == 'Debian' %}
 
@@ -67,6 +66,16 @@ nexusproxy:
     - port_bindings:
       - {{ pillar['cache']['nexusproxy']['port'] }}:8081
 
+nexusproxy_online:
+  cmd.run:
+    - name: docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
+    - retry:
+        attempts: 30
+        delay: 10
+        splay: 5
+    - require:
+      - docker_container: nexusproxy
+
 nexusproxy_connection:
   module.run:
     - network.connect:
@@ -78,6 +87,7 @@ nexusproxy_connection:
         splay: 5
     - require:
       - docker_container: nexusproxy
+      - cmd: nexusproxy_online
     - onlyif:
       - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 
@@ -90,6 +100,7 @@ admin_password:
         splay: 5
     - require:
       - docker_container: nexusproxy
+      - cmd: nexusproxy_online
       - module: nexusproxy_connection
     - onlyif:
       - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'

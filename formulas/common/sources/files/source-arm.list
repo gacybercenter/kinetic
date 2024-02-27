@@ -1,0 +1,21 @@
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy universe
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy-updates universe
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy multiverse
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy-updates multiverse
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy-backports main restricted universe multiverse
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security main restricted
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security universe
+# deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security multiverse
+
+deb {{ ubuntu-ports }} {{ ubuntu_name }} main restricted
+deb {{ ubuntu-ports }} {{ ubuntu_name }}-updates main restricted
+deb {{ ubuntu-ports }} {{ ubuntu_name }} universe
+deb {{ ubuntu-ports }} {{ ubuntu_name }}-updates universe
+deb {{ ubuntu-ports }} {{ ubuntu_name }} multiverse
+deb {{ ubuntu-ports }} {{ ubuntu_name }}-updates multiverse
+deb {{ ubuntu-ports }} {{ ubuntu_name }}-backports main restricted universe multiverse
+deb {{ ubuntu-ports }} {{ ubuntu_name }}-security main restricted
+deb {{ ubuntu-ports }} {{ ubuntu_name }}-security universe
+deb {{ ubuntu-ports }} {{ ubuntu_name }}-security multiverse
