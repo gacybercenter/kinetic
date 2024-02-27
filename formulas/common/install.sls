@@ -33,6 +33,7 @@ systemd-resolved_service:
 
 update_sources_list:
   file.managed:
+    - makedirs: True
     - template: jinja
     - defaults:
         ubuntu_name: {{ pillar['ubuntu']['name'] }}
@@ -43,26 +44,26 @@ update_sources_list:
     - names:
       {% if grains['type'] == 'arm' %}
       - /etc/apt/sources.list:
-        - source: salt://formulas/common/files/sources-arm.list
+        - source: salt://formulas/common/sources/files/sources-arm.list
       - /etc/apt/sources.list.d/salt.list:
-        - source: salt://formulas/common/files/salt-arm.list
+        - source: salt://formulas/common/sources/files/salt-arm.list
       {% else %}
       - /etc/apt/sources.list:
-        - source: salt://formulas/common/files/sources.list
+        - source: salt://formulas/common/sources/files/sources.list
       - /etc/apt/sources.list.d/salt.list:
-        - source: salt://formulas/common/files/salt.list
+        - source: salt://formulas/common/sources/files/salt.list
       {% endif %}
       - /etc/apt/sources.list.d/fluentd.list:
-        - source: salt://formulas/common/files/fluentd.list
+        - source: salt://formulas/common/sources/files/fluentd.list
       - /etc/apt/sources.list.d/cloudarchive.list:
-        - source: salt://formulas/common/files/cloudarchive.list
+        - source: salt://formulas/common/sources/files/cloudarchive.list
       {% if grains['type'] == 'rabbitmq' %}
       - /etc/apt/sources.list.d/rabbitmq.list:
-        - source: salt://formulas/common/files/rabbitmq.list
+        - source: salt://formulas/common/sources/files/rabbitmq.list
       {% endif %}
       {% if grains['type'] == [ 'ceph', 'storage', 'storagev2' ] %}
       - /etc/apt/sources.list.d/ceph.list:
-        - source: salt://formulas/common/files/ceph.list
+        - source: salt://formulas/common/sources/files/ceph.list
       {% endif %}
   {% endfor %}
 {% endif %}
