@@ -62,7 +62,7 @@ tnsr_local_zones_updates:
         type: "transparent"
         hosts:
           host:
-            - ip-address: 
+            - ip-address:
               - "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "cache"
     - cert: /etc/cache/tnsr.crt
