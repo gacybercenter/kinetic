@@ -76,7 +76,6 @@ tnsr_local_zones_updates:
     - require:
       - file: /etc/cache/tnsr.crt
       - file: /etc/cache/tnsr.pem
-      - cmd: tnsr_name_resolution
 
 {% set cache_dns = 'cache.' + pillar['haproxy']['sub_zone_name'] %}
 
