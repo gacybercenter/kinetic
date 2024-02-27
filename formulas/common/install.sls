@@ -31,7 +31,7 @@ systemd-resolved_service:
     - require:
       - service: systemd-resolved_service
 
-update_{{ source }}:
+update_sources_list:
   file.managed:
     - template: jinja
     - defaults:
