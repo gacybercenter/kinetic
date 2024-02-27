@@ -41,12 +41,14 @@ container_manage_cgroup:
 
 /etc/cache/tnsr.crt:
   file.managed:
+    - makedirs: True
     - contents_pillar: tnsr_cert
     - mode: "0640"
     - user: root
 
 /etc/cache/tnsr.pem:
   file.managed:
+    - makedirs: True
     - contents_pillar: tnsr_key
     - mode: "0640"
     - user: root

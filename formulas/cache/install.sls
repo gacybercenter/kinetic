@@ -68,7 +68,7 @@ nexusproxy:
 
 nexusproxy_online:
   cmd.run:
-    - name: docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/
+    - name: docker exec nexusproxy ls -al /nexus-data/
     - retry:
         attempts: 30
         delay: 10
