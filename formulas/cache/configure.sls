@@ -164,15 +164,6 @@ nexusproxy_update_user_password:
         port: {{ pillar['cache']['nexusproxy']['port'] }}
 
 {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-{{ repo }}_sleep:
-  module.run:
-    - test.sleep:
-      - length: 5
-    - onlyif:
-      - salt-call nexusproxy.list_repository "http://{{ address }}" "{{ pillar['cache']['nexusproxy']['port'] }}" "{{ pillar['cache']['nexusproxy']['username'] }}" "{{ pillar['nexusproxy']['nexusproxy_password'] }}" "{{ repo }}" | grep -q "{{ repo }}"
-    - unless:
-      - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
-
 {{ repo }}_add_proxy_repository:
   nexusproxy.add_proxy_repository:
     - name: "{{ repo }}"
