@@ -173,8 +173,6 @@ nexusproxy_update_user_password:
     - password: "{{ pillar['nexusproxy']['nexusproxy_password'] }}"
     - repoType: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}"
     - remoteUrl: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}"
-    - require:
-      - module: {{ repo }}_sleep
     - onlyif:
       - fun: network.connect
         host: {{ address }}
