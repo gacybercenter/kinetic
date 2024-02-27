@@ -53,6 +53,14 @@ container_manage_cgroup:
     - mode: "0640"
     - user: root
 
+tnsr_name_resolution:
+  cmd.run:
+    - name: salt-call dnsutil.A '{{ pillar['tnsr']['endpoint'] }}'
+    - retry:
+        attempts: 5
+        delay: 10
+        splay: 5
+
 tnsr_local_zones_updates:
   tnsr.unbound_updated:
     - name: tnsr_local_zones_updates
@@ -76,6 +84,7 @@ tnsr_local_zones_updates:
     - require:
       - file: /etc/cache/tnsr.crt
       - file: /etc/cache/tnsr.pem
+      - cmd: tnsr_name_resolution
 
 {% set cache_dns = 'cache.' + pillar['haproxy']['sub_zone_name'] %}
 

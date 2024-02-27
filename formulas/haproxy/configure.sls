@@ -42,6 +42,14 @@ include:
     - mode: "0640"
     - user: root
 
+tnsr_name_resolution:
+  cmd.run:
+    - name: salt-call dnsutil.A '{{ pillar['tnsr']['endpoint'] }}'
+    - retry:
+        attempts: 5
+        delay: 10
+        splay: 5
+
 tnsr_nat_updates:
   tnsr.nat_updated:
     - name: tnsr_nat_updates
@@ -60,6 +68,10 @@ tnsr_nat_updates:
         attempts: 3
         interval: 10
         splay: 5
+    - require:
+      - file: /etc/haproxy/tnsr.crt
+      - file: /etc/haproxy/tnsr.pem
+      - cmd: tnsr_name_resolution
 
 tnsr_local_zones_updates:
   tnsr.unbound_updated:
@@ -89,6 +101,10 @@ tnsr_local_zones_updates:
         attempts: 3
         interval: 10
         splay: 5
+    - require:
+      - file: /etc/haproxy/tnsr.crt
+      - file: /etc/haproxy/tnsr.pem
+      - cmd: tnsr_name_resolution
 
   {% if salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain')|length != 0 %}
 tnsr_forward_zones_updates:
@@ -112,6 +128,10 @@ tnsr_forward_zones_updates:
         attempts: 3
         interval: 10
         splay: 5
+    - require:
+      - file: /etc/haproxy/tnsr.crt
+      - file: /etc/haproxy/tnsr.pem
+      - cmd: tnsr_name_resolution
   {% endif %}
 {% endif %}
 
