@@ -40,6 +40,7 @@ guacamole_default:
   docker_network.present:
     - name: guacamole_default
 
+# Convert to guacd binary package
 guacamole_guacd:
   docker_container.running:
     - name: guacd
@@ -67,7 +68,6 @@ guacamole_guacamole:
     - binds:
       - /opt/guacamole/guacamole:/data
       - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
-      # - /opt/guacamole/tomcat/webapps/ROOT/:/usr/local/tomcat/webapps/ROOT
     - ports:
       - 8080
     - port_bindings:

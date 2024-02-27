@@ -35,21 +35,6 @@ bootstrap_packages_deb:
     - onchanges_in:
       - pkg: update_packages_bootstrap
 
-{% elif grains['os_family'] == 'RedHat' %}
-
-bootstrap_packages_rpm:
-  pkg.installed:
-    - pkgs:
-      - libvirt-client
-      - libvirt-daemon-kvm
-    - reload_modules: true
-    - onchanges_in:
-      - pkg: update_packages_bootstrap
-    - onchanges_in:
-      - pkg: update_packages_bootstrap
-
-{% endif %}
-
 update_packages_bootstrap:
   pkg.uptodate:
     - refresh: True

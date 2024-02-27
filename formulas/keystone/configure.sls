@@ -19,11 +19,7 @@ include:
 {% import 'formulas/common/macros/spawn.sls' as spawn with context %}
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
-{% if grains['os_family'] == 'Debian' %}
-  {% set webserver = 'apache2' %}
-{% elif grains['os_family'] == 'RedHat' %}
-  {% set webserver = 'httpd' %}
-{% endif %}
+{% set webserver = 'apache2' %}
 
 {% if grains['spawning'] == 0 %}
   {% set keystone_conf = pillar['openstack_services']['keystone']['configuration']['services']['keystone']['endpoints'] %}
@@ -265,22 +261,14 @@ keystone_domain_files:
         - source: salt://formulas/keystone/files/keystone-ldap.conf
       - /etc/keystone/ldap_ca.crt:
         - contents_pillar: ldap_ca
-  {% if grains['os_family'] == 'Debian' %}
       - /usr/local/share/ca-certificates/ldap_ca.crt:
-  {% elif grains['os_family'] == 'RedHat' %}
-      - /etc/pki/ca-trust/source/anchors/ldap_ca.crt
-  {% endif %}
         - contents_pillar: ldap_ca
     - require_in:
       - service: wsgi_service
 
 update_certificate_store:
   cmd.run:
-  {% if grains['os_family'] == 'Debian' %}
     - name: update-ca-certificates
-  {% elif grains['os_family'] == 'RedHat' %}
-    - name: update-ca-trust extract
-  {% endif %}
     - onchanges:
       - file: keystone_domain_files
 {% endif %}
@@ -308,17 +296,10 @@ conf-files:
         - source: salt://formulas/keystone/files/keystone.policy.yaml
       - /etc/openstack/clouds.yml:
         - source: salt://formulas/common/openstack/files/clouds.yml
-      {% if grains['os_family'] == 'Debian' %}
       - /etc/apache2/sites-available/keystone.conf:
         - source: salt://formulas/keystone/files/apache-keystone.conf
       - /etc/apache2/apache2.conf:
         - source: salt://formulas/keystone/files/apache2.conf
-      {% elif grains['os_family'] == 'RedHat' %}
-      - /etc/httpd/conf.d/keystone.conf:
-        - source: salt://formulas/keystone/files/apache-keystone.conf
-      - /etc/httpd/conf/httpd.conf:
-        - source: salt://formulas/keystone/files/httpd.conf
-      {% endif %}
 
 fernet-keys:
   file.managed:

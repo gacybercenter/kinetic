@@ -68,22 +68,14 @@ set_volumes_pool_pgs:
 
 cinder_api_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: apache2
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-cinder-api
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/cinder/cinder.conf
 
 cinder_scheduler_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: cinder-scheduler
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-cinder-scheduler
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/cinder/cinder.conf

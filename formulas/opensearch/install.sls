@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/docker/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 opensearch_packages:
   pkg.installed:
     - pkgs:
@@ -27,11 +25,6 @@ opensearch_packages:
       - docker-ce-cli
       - containerd.io
       - docker-compose
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-
-{% endif %}
 
 /opt/opensearch/docker-compose.yml:
   file.managed:

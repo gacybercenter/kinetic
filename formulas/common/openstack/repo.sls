@@ -12,8 +12,6 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-{% if grains['os_family'] == 'Debian' %}
-
 uca:
   pkgrepo.managed:
     - humanname: Ubuntu Cloud Archive - {{ pillar['openstack']['version'] }}
@@ -29,39 +27,3 @@ update_packages_uca:
       - pkgrepo: uca
     - dist_upgrade: True
 
-{% elif grains['os_family'] == 'RedHat' %}
-
-## added per https://www.rdoproject.org/install/packstack/
-## official upstream docs do not reflect this yet
-crb:
-  pkgrepo.managed:
-    - humanname: crb
-    - name: crb
-    - baseurl: https://download.rockylinux.org/pub/rocky/9/CRB/x86_64/os/
-    - gpgcheck: 1
-    - enabled: 1
-    - gpgkey: https://download.rockylinux.org/pub/rocky/9/RPM-GPG-KEY-rockylinux-release
-
-crb-install:
-  pkg.installed:
-    - name: powertools
-
-rdo:
-  pkg.installed:
-    - name: centos-release-openstack-antelope
-
-update_packages_rdo:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkg: rdo
-      - pkgrepo: crb
-
-openstack-selinux:
-  pkg.installed:
-    - require:
-      - pkg: rdo
-      - pkg: update_packages_rdo
-      - pkgrepo: crb
-
-{% endif %}

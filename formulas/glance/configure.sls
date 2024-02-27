@@ -79,11 +79,7 @@ set_images_pool_pgs:
 
 glance_api_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: glance-api
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-glance-api
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/glance/glance-api.conf

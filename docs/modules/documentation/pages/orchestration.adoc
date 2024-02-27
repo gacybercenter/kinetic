@@ -251,7 +251,6 @@ salt-run state.orch orch.generate pillar='{"type":"magnum"}'
 salt-run state.orch orch.generate pillar='{"type":"share"}'
 salt-run state.orch orch.generate pillar='{"type":"mds"}'
 salt-run state.orch orch.generate pillar='{"type":"cyborg"}'
-salt-run state.orch orch.generate pillar='{"type":"jproxy"}'
 salt-run state.orch orch.generate pillar='{"type":"gpu"}'
 ----
 ====

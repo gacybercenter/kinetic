@@ -342,13 +342,6 @@ hosts:
         controller: configure
         haproxy: configure
         mysql: configure
-  jproxy:
-    needs:
-      install:
-        cache: configure
-      configure:
-        controller: configure
-        haproxy: configure
   cyborg:
     needs:
       install:

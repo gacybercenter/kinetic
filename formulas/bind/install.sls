@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 bind_packages:
   pkg.installed:
     - pkgs:
@@ -27,12 +25,3 @@ bind_packages:
       - bind9utils
       - bind9-doc
 
-{% elif grains['os_family'] == 'RedHat' %}
-
-bind_packages:
-  pkg.installed:
-    - pkgs:
-      - bind
-      - bind-utils
-
-{% endif %}

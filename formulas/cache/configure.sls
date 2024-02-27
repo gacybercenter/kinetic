@@ -37,8 +37,6 @@ container_manage_cgroup:
     - persist: True
 {% endif %}
 
-{% if grains['os_family'] == 'Debian' %}
-
 /etc/cache/tnsr.crt:
   file.managed:
     - makedirs: True
@@ -193,4 +191,3 @@ nexusproxy_update_user_password:
     - unless:
       - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 {% endfor %}
-{% endif %}

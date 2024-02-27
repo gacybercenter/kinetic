@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 nova_packages:
   pkg.installed:
     - pkgs:
@@ -48,32 +46,3 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: nova_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-nova_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-nova-api
-      - openstack-nova-conductor
-      - openstack-nova-spicehtml5proxy
-      - openstack-nova-scheduler
-      - python3-openstackclient
-      - git
-
-nova_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-openstackclient
-    - require:
-      - pip: nova_pip
-
-{% endif %}

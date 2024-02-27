@@ -17,8 +17,6 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
 
-{% if grains['os_family'] == 'Debian' %}
-
 cache_packages:
   pkg.installed:
     - pkgs:
@@ -104,16 +102,3 @@ admin_password:
       - module: nexusproxy_connection
     - onlyif:
       - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
-
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-cache_packages:
-  pkg.installed:
-    - pkgs:
-      - podman
-      - httpd
-      - buildah
-    - reload_modules: True
-
-{% endif %}

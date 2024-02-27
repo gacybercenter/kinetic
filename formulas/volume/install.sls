@@ -17,9 +17,6 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
-#  - /formulas/common/ceph/repo
-
-{% if grains['os_family'] == 'Debian' %}
 
 volume_packages:
   pkg.installed:
@@ -50,34 +47,3 @@ salt-pip_installs:
     - require:
       - pip: volume_pip
 
-{% elif grains['os_family'] == 'RedHat' %}
-
-volume_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-cinder
-      - python3-openstackclient
-      - python3-memcached
-      - ceph-common
-      - python3-rbd
-      - python3-rados
-
-volume_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - python-openstackclient
-      - python-memcached
-
-salt-pip_installs:
-  pip.installed:
-    bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-openstackclient
-      - python-memcached
-    - require:
-      - pip: volume_pip
-
-{% endif %}

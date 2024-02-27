@@ -21,11 +21,7 @@ ifwatch:
   grains.present:
     - value:
 {% if grains['type'] in ['salt','pxe'] %}
-  {% if grains['os_family'] == 'RedHat' %}
-      - eth0
-  {% elif grains['os_family'] == 'Debian' %}
       - ens3
-  {% endif %}
 {% else %}
   {% for network in pillar['hosts'][grains['type']]['networks'] %}
       - {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
@@ -92,13 +88,6 @@ pyroute2_patch:
 ##
 netplan.io:
   pkg.removed
-
-  {% if grains['os_family'] == 'RedHat' %}
-install_networkd:
-  pkg.installed:
-    - pkgs:
-      - systemd-networkd
-  {% endif %}
 
 /etc/netplan:
   file.absent

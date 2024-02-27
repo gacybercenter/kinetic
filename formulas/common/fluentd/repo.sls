@@ -12,8 +12,6 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-{% if grains['os_family'] == 'Debian' %}
-
 fluentd_repo:
   pkgrepo.managed:
     - humanname: Treasure Data
@@ -27,8 +25,3 @@ update_packages_fluentd:
     - onchanges:
       - fluentd_repo
     - dist_upgrade: True
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-
-{% endif %}

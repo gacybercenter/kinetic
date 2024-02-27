@@ -170,8 +170,6 @@ base:
   'guacamole*':
     - guacamole
     - integrated_services
-  'jproxy*':
-    - junos
   'cyborg*':
     - cyborg
     - openstack

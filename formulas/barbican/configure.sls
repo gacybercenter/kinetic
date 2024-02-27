@@ -53,40 +53,24 @@ conf-files:
     - names:
       - /etc/barbican/barbican.conf:
         - source: salt://formulas/barbican/files/barbican.conf
-{% if grains['os_family'] == 'RedHat' %}
-      - /etc/httpd/conf.d/wsgi-barbican.conf:
-        - source: salt://formulas/barbican/files/wsgi-barbican.conf
-{% endif %}
 
 barbican_keystone_listener_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: barbican-keystone-listener
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-barbican-keystone-listener
-{% endif %}
     - enable: True
     - watch:
       - file: conf-files
 
 barbican_worker_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: barbican-worker
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-barbican-worker
-{% endif %}
     - enable: True
     - watch:
       - file: conf-files
 
 barbican_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: apache2
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: httpd
-{% endif %}
     - enable: true
     - watch:
       - file: conf-files

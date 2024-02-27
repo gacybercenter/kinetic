@@ -154,22 +154,9 @@ nova:
     - enc: {{ pillar['nova_live_migration_auth_key'][ key ]['encoding'] }}
 {% endfor %}
 
-###
-
-{% if grains['os_family'] == 'RedHat' %}
-spice-html5:
-  git.latest:
-    - name: https://github.com/freedesktop/spice-html5.git
-    - target: /usr/share/spice-html5
-{% endif %}
-
 nova_compute_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: nova-compute
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-nova-compute
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/nova/nova.conf
@@ -197,18 +184,6 @@ create_port:
     - name: {{ public_interface }}
     - bridge: public_br
   {% endif %}
-  {% if grains['os_family'] == 'RedHat' %}
-    {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
-## this used to be a default but was changed to a boolean here:
-## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
-os_neutron_dac_override:
-  selinux.boolean:
-    - value: on
-    - persist: True
-    - watch_in:
-      - service: neutron_{{ neutron_backend }}_agent_service
-    {% endif %}
-  {% endif %}
 
 neutron_{{ neutron_backend }}_agent_service:
   service.running:
@@ -231,11 +206,7 @@ neutron-ovn-metadata-agent.ini:
 
 openvswitch_service:
   service.running:
-  {% if grains['os_family'] == 'Debian' %}
     - name: openvswitch-switch
-  {% elif grains['os_family'] == 'RedHat' %}
-    - name: openvswitch
-  {% endif %}
     - enable: true
     - watch:
       - file: conf-files
@@ -329,11 +300,7 @@ enable_bridge:
 
 ovn_controller_service:
   service.running:
-  {% if grains['os_family'] == 'Debian' %}
     - name: ovn-host
-  {% elif grains['os_family'] == 'RedHat' %}
-    - name: ovn-controller
-  {% endif %}
     - enable: true
     - require:
       - service: openvswitch_service

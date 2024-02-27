@@ -119,18 +119,6 @@ create_port:
     - name: {{ public_interface }}
     - bridge: public_br
   {% endif %}
-  {% if grains['os_family'] == 'RedHat' %}
-    {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
-## this used to be a default but was changed to a boolean here:
-## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
-os_neutron_dac_override:
-  selinux.boolean:
-    - value: on
-    - persist: True
-    - watch_in:
-      - service: neutron_{{ neutron_backend }}_agent_service
-    {% endif %}
-  {% endif %}
 
 ### temporary patch for jinja.py on salt-minion reference https://github.com/saltstack/salt/issues/61848
 ### ref fix https://github.com/NixOS/nixpkgs/pull/172129/commits/bddee7b008a2f3a961fa31601defca34119ae148, https://github.com/NixOS/nixpkgs/pull/172129
@@ -162,11 +150,7 @@ neutron-ovn-metadata-agent.ini:
 
 openvswitch_service:
   service.running:
-  {% if grains['os_family'] == 'Debian' %}
     - name: openvswitch-switch
-  {% elif grains['os_family'] == 'RedHat' %}
-    - name: openvswitch
-  {% endif %}
     - enable: true
     - watch:
       - file: conf-files
@@ -272,11 +256,7 @@ enable_bridge:
 
 ovn_controller_service:
   service.running:
-  {% if grains['os_family'] == 'Debian' %}
     - name: ovn-host
-  {% elif grains['os_family'] == 'RedHat' %}
-    - name: ovn-controller
-  {% endif %}
     - enable: true
     - require:
       - service: openvswitch_service

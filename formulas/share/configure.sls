@@ -105,11 +105,7 @@ wipe_adminkey:
 
 manila_share_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: manila-share
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-manila-share
-{% endif %}
     - enable: true
     - retry:
         attempts: 3
@@ -120,11 +116,7 @@ manila_share_service:
 
 nfs_ganesha_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: nfs-ganesha
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: nfs-ganesha
-{% endif %}
     - enable: true
     - retry:
         attempts: 3

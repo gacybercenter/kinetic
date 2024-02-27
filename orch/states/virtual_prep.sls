@@ -35,11 +35,7 @@
             <address type='pci' domain='0x0000' bus='0x00' slot='0x{{ slot }}' function='0x0'/>
           </interface>
         {% endfor %}
-        {% if grains['os_family'] == 'Debian' %}
         seclabel: <seclabel type='dynamic' model='apparmor' relabel='yes'/>
-        {% elif grains['os_family'] == 'RedHat' %}
-        seclabel: <seclabel type='dynamic' model='selinux' relabel='yes'/>
-        {% endif %}
 
 /kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:

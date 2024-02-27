@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 horizon_packages:
   pkg.installed:
     - pkgs:
@@ -29,12 +27,12 @@ horizon_packages:
       - python3-setuptools
       - python3-designate-dashboard
       - openstack-dashboard
-  {% if salt['pillar.get']('hosts:sahara:enabled', 'False') == True %}
+{% if salt['pillar.get']('hosts:sahara:enabled', 'False') == True %}
       - python3-sahara-dashboard
-  {% endif %}
-  {% if salt['pillar.get']('hosts:manila:enabled', 'False') == True %}
+{% endif %}
+{% if salt['pillar.get']('hosts:manila:enabled', 'False') == True %}
       - python3-manila-ui
-  {% endif %}
+{% endif %}
       - python3-cffi
       - git
       - build-essential
@@ -42,7 +40,7 @@ horizon_packages:
       - python3-etcd3gw
     - reload_modules: True
 
-  {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
+{% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
 magnum_latest:
   git.latest:
     - name: https://opendev.org/openstack/magnum-ui.git
@@ -71,33 +69,6 @@ install_magnum_ui:
     - cwd: /usr/share/openstack-dashboard/magnum-ui/
     - onchanges:
       - cmd: magnum_ui_requirements
-  {% endif %}
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-horizon_packages:
-  pkg.installed:
-    - pkgs:
-      - python3-openstackclient
-      - openstack-heat-ui
-      - python3-pip
-      - python3-setuptools
-      - openstack-designate-ui
-      - openstack-dashboard
-  {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
-      - openstack-magnum-ui
-  {% endif %}
-  {% if salt['pillar.get']('hosts:sahara:enabled', 'False') == True %}
-      - openstack-sahara-ui
-  {% endif %}
-  {% if salt['pillar.get']('hosts:manila:enabled', 'False') == True %}
-      - openstack-manila-ui
-  {% endif %}
-      - gcc
-      - git
-      - platform-python-devel
-    - reload_modules: True
-
 {% endif %}
 
 ## zun-ui installation routine

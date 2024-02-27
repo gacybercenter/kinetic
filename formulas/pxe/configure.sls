@@ -131,8 +131,6 @@ wsgi_module:
     - source: salt://formulas/pxe/files/container.preseed
   {% elif 'ubuntu' in pillar['hosts'][type]['os'] %}
     - source: salt://formulas/pxe/files/common.preseed
-  {% elif 'centos' in pillar['hosts'][type]['os'] %}
-    - source: salt://formulas/pxe/files/common.kickstart
   {% endif %}
     - makedirs: True
     - template: jinja
