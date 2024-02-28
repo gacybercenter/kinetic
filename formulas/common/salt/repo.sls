@@ -19,11 +19,11 @@ salt_repo:
   {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
     {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
       {% if grains['type'] == 'arm' %}
-        {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/arm64/3006/" + pillar['ubuntu']['name'] %}
+        {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/arm64/3006/" %}
     - name: deb http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
         {% endif %}
       {% else %}
-        {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/amd64/3006/" + pillar['ubuntu']['name'] %}
+        {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/amd64/3006/" %}
     - name: deb http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
         {% endif %}
       {% endif %}
