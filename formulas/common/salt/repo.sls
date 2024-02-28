@@ -44,5 +44,5 @@ update_packages_salt:
   pkg.uptodate:
     - refresh: true
     - onchanges:
-      - salt_repo
+      - pkgrepo: salt_repo
     - dist_upgrade: True

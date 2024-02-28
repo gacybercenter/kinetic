@@ -34,5 +34,5 @@ update_packages_fluentd:
   pkg.uptodate:
     - refresh: true
     - onchanges:
-      - fluentd_repo
+      - pkgrepo: fluentd_repo
     - dist_upgrade: True

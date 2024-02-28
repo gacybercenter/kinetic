@@ -12,18 +12,28 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-uca:
+{{ pillar['openstack']['version'] }}_repo:
   pkgrepo.managed:
     - humanname: Ubuntu Cloud Archive - {{ pillar['openstack']['version'] }}
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
-    - file: /etc/apt/sources.list.d/cloudarchive.list
-    - keyid: 5EDB1B62EC4926EA
-    - keyserver: keyserver.ubuntu.com
+{% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
+  {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ubuntu-cloud.archive.canonical.com/ubuntu" + pillar['ubuntu']['name'] %}
+    - name: deb [signed-by=/etc/apt/keyrings/Release.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% else %}
+    - name: deb [signed-by=/etc/apt/keyrings/Release.gpg arch=amd64] http://ubuntu-cloud.archive.canonical.com/ubuntu {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+{% endif %}
+    - file: /etc/apt/sources.list.d/{{ pillar['openstack']['version'] }}.list
+    - key_url: http://ubuntu-cloud.archive.canonical.com/ubuntu/dists/{{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }}/Release.gpg
+    - aptkey: False
 
-update_packages_uca:
+update_packages_{{ pillar['openstack']['version'] }}:
   pkg.uptodate:
     - refresh: true
     - onchanges:
-      - pkgrepo: uca
+      - pkgrepo: {{ pillar['openstack']['version'] }}_repo
     - dist_upgrade: True
 
