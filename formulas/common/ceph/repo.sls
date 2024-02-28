@@ -15,13 +15,24 @@
 ceph_repo:
   pkgrepo.managed:
     - humanname: Ceph Quincy
-    - name: deb https://download.ceph.com/debian-quincy {{ pillar['ubuntu']['name'] }} main
+{% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
+  {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-quincy" %}
+    - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% else %}
+    - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=amd64] https://download.ceph.com/debian-quincy {{ pillar['ubuntu']['name'] }} main
+{% endif %}
     - file: /etc/apt/sources.list.d/ceph.list
     - key_url: https://download.ceph.com/keys/release.asc
+    - aptkey: False
 
 update_packages_ceph:
   pkg.uptodate:
     - refresh: true
     - onchanges:
-      - ceph_repo
+      - pkgrepo: ceph_repo
     - dist_upgrade: True

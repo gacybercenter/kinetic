@@ -16,15 +16,13 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/common/docker/repo
 
 opensearch_packages:
   pkg.installed:
     - pkgs:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
+      - docker.io
       - docker-compose
+      - containerd
 
 /opt/opensearch/docker-compose.yml:
   file.managed:

@@ -53,14 +53,6 @@ update_sources_list:
       - /etc/apt/sources.list:
         - source: salt://formulas/common/sources/files/sources.list
       {% endif %}
-      {% if grains['type'] == 'rabbitmq' %}
-      - /etc/apt/sources.list.d/rabbitmq.list:
-        - source: salt://formulas/common/sources/files/rabbitmq.list
-      {% endif %}
-      {% if grains['type'] == [ 'ceph', 'storage', 'storagev2' ] %}
-      - /etc/apt/sources.list.d/ceph.list:
-        - source: salt://formulas/common/sources/files/ceph.list
-      {% endif %}
   {% endfor %}
 {% endif %}
 

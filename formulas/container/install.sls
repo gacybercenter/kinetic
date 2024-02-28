@@ -17,8 +17,6 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
- #  - /formulas/common/ceph/repo
-  - /formulas/common/docker/repo
   - /formulas/common/kata/repo
 
 {% if pillar['neutron']['backend'] == "linuxbridge" %}
@@ -28,7 +26,8 @@ container_packages:
       - python3-pip
       - git
       - python3-openstackclient
-      - docker-ce
+      - docker.io
+      - containerd
       - neutron-linuxbridge-agent
       - python3-tornado
       - python3-pymysql
@@ -68,7 +67,8 @@ container_packages:
       - python3-pip
       - git
       - python3-openstackclient
-      - docker-ce
+      - docker.io
+      - containerd
       - neutron-openvswitch-agent
       - python3-tornado
       - python3-pymysql
@@ -110,7 +110,8 @@ container_packages:
       - python3-pip
       - git
       - python3-openstackclient
-      - docker-ce
+      - docker.io
+      - containerd
       - ovn-host
       - python3-tornado
       - python3-pymysql
