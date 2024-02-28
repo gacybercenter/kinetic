@@ -82,9 +82,11 @@ tnsr_local_zones_updates:
         type: "transparent"
         hosts:
           host:
-            - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
+            - ip-address:
+              - "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['dashboard_domain'].split('.')[0] }}"
-            - ip-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
+            - ip-address:
+              - "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
               host-name: "{{ pillar['haproxy']['console_domain'].split('.')[0] }}"
     - cert: /etc/haproxy/tnsr.crt
     - key: /etc/haproxy/tnsr.pem
