@@ -17,6 +17,10 @@
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
+include:
+  - /formulas/common/salt/repo
+  - /formulas/common/fluentd/repo
+
 systemd-resolved_service:
   service.dead:
     - name: systemd-resolved
