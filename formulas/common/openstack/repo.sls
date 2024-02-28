@@ -22,10 +22,10 @@
     {% endif %}
   {% endfor %}
 {% else %}
-    - name: deb [signed-by=/etc/apt/keyrings/Release.gpg arch=amd64] http://ubuntu-cloud.archive.canonical.com/ubuntu {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+    - name: deb [signed-by=/etc/apt/keyrings/cloudarchive.gpg arch=amd64] http://ubuntu-cloud.archive.canonical.com/ubuntu {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
 {% endif %}
     - file: /etc/apt/sources.list.d/{{ pillar['openstack']['version'] }}.list
-    - key_url: http://ubuntu-cloud.archive.canonical.com/ubuntu/dists/{{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }}/Release.gpg
+    - key_url: salt://formulas/common/openstack/files/cloudarchive.gpg
     - aptkey: False
 
 update_packages_{{ pillar['openstack']['version'] }}:
