@@ -37,7 +37,8 @@ salt_repo:
   {% endif %}
 {% endif %}
     - file: /etc/apt/sources.list.d/salt.list
-    - key_url: https://repo.saltproject.io/salt/py3/ubuntu/22.04/arm64/3006/SALT-PROJECT-GPG-PUBKEY-2023.pub
+    - keyid: 64CBBC8173D76B3F
+    - keyserver: keyserver.ubuntu.com
 
 update_packages_salt:
   pkg.uptodate:

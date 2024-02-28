@@ -17,7 +17,7 @@ uca:
     - humanname: Ubuntu Cloud Archive - {{ pillar['openstack']['version'] }}
     - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
     - file: /etc/apt/sources.list.d/cloudarchive.list
-    - keyid: EC4926EA
+    - keyid: 5EDB1B62EC4926EA
     - keyserver: keyserver.ubuntu.com
 
 update_packages_uca:
