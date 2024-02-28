@@ -17,7 +17,7 @@ rabbitmq_erlang_repo:
     - humanname: RabbitMQ Erlang
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu/" + pillar['ubuntu']['name'] %}
+    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu/" %}
     - name: deb [signed-by=/etc/apt/keyrings/net.launchpad.ppa.rabbitmq.erlang.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
     {% endif %}
   {% endfor %}
@@ -33,7 +33,7 @@ rabbitmq_erlang_src_repo:
     - humanname: RabbitMQ Erlang - Source
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu/" + pillar['ubuntu']['name'] %}
+    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu/" %}
     - name: deb-src [signed-by=/etc/apt/keyrings/net.launchpad.ppa.rabbitmq.erlang.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
     {% endif %}
   {% endfor %}
@@ -49,7 +49,7 @@ rabbitmq_server_repo:
     - humanname: RabbitMQ Server
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/" + pillar['ubuntu']['name'] %}
+    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/" %}
     - name: deb [signed-by=/etc/apt/keyrings/io.packagecloud.rabbitmq.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
     {% endif %}
   {% endfor %}
@@ -65,7 +65,7 @@ rabbitmq_server_src_repo:
     - humanname: RabbitMQ Server
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/" + pillar['ubuntu']['name'] %}
+    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/" %}
     - name: deb-src [signed-by=/etc/apt/keyrings/io.packagecloud.rabbitmq.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
     {% endif %}
   {% endfor %}
