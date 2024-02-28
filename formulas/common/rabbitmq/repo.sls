@@ -18,7 +18,7 @@ rabbitmq_erlang_repo:
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
     {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu" + pillar['ubuntu']['name'] %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu/" + pillar['ubuntu']['name'] %}
     - name: deb [signed-by=/etc/apt/keyrings/net.launchpad.ppa.rabbitmq.erlang.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
       {% endif %}
     {% endfor %}
@@ -36,7 +36,7 @@ rabbitmq_erlang_src_repo:
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
     {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu" + pillar['ubuntu']['name'] %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu/" + pillar['ubuntu']['name'] %}
     - name: deb-src [signed-by=/etc/apt/keyrings/net.launchpad.ppa.rabbitmq.erlang.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
       {% endif %}
     {% endfor %}
