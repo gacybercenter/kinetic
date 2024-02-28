@@ -76,9 +76,7 @@ update_sources_list:
 update_all:
   pkg.uptodate:
     - refresh: true
-  {% if grains['os_family'] == 'Debian' %}
     - dist_upgrade: True
-  {% endif %}
 
 upgraded:
   grains.present:

@@ -52,7 +52,6 @@ python3_pip:
   file.managed:
     - source: salt://formulas/common/minion/98-tunning.conf
 
-{% if grains['os_family'] == 'Debian' %}
 /etc/systemd/timesyncd.conf:
   file.managed:
     - source: salt://formulas/common/ntp/timesyncd.conf
@@ -73,7 +72,6 @@ sysctl -p:
       - file: /etc/sysctl.conf
     - unless:
       - sysctl -n 'net.core.netdev_max_backlog' | grep -q 10000
-{% endif %}
 
 {% for key in pillar['authorized_keys'] %}
 {{ key }}:
@@ -99,15 +97,12 @@ hosts_name_resolution:
     - defaults:
         logger: 127.0.0.1:5514
 
-
-{% if grains['os_family'] == 'Debian' %}
 timesyncd:
   service.running:
     - name: systemd-timesyncd
     - enable: True
     - onchanges:
       - /etc/systemd/timesyncd.conf
-{% endif %}
 
 rsyslog:
   service.running:

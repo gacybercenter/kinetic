@@ -12,8 +12,6 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-{% if grains['os_family'] == 'Debian' %}
-
 repo-setup.sh:
   cmd.script:
     - name: repo-setup.sh
@@ -21,5 +19,3 @@ repo-setup.sh:
     - unless:
       - cat /etc/apt/sources.list.d/rabbitmq.list | grep -q 'https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/ {{ pillar['ubuntu']['name'] }} main'
       - cat /etc/apt/sources.list.d/rabbitmq.list | grep -q 'http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu {{ pillar['ubuntu']['name'] }} main'
-
-{% endif %}

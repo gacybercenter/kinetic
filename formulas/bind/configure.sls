@@ -28,8 +28,6 @@ include:
 
 {% endif %}
 
-{% if grains['os_family'] == 'Debian' %}
-
 bind_apparmor_modification:
   file.managed:
     - name: /etc/apparmor.d/local/usr.sbin.named
@@ -40,8 +38,6 @@ apparmor_service:
     - name: apparmor
     - watch:
       - file: bind_apparmor_modification
-
-{% endif %}
 
 bind_conf:
   file.managed:
