@@ -73,6 +73,10 @@ nexusproxy_online:
         splay: 5
     - require:
       - docker_container: nexusproxy
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 nexusproxy_connection:
   module.run:
@@ -88,6 +92,10 @@ nexusproxy_connection:
       - cmd: nexusproxy_online
     - onlyif:
       - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 admin_password:
   cmd.run:
@@ -102,3 +110,7 @@ admin_password:
       - module: nexusproxy_connection
     - onlyif:
       - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure

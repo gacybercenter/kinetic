@@ -155,6 +155,10 @@ nexusproxy_update_user_password:
       - fun: network.connect
         host: {{ address }}
         port: {{ pillar['cache']['nexusproxy']['port'] }}
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
 {{ repo }}_add_proxy_repository:
