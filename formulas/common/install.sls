@@ -53,8 +53,6 @@ update_sources_list:
       - /etc/apt/sources.list:
         - source: salt://formulas/common/sources/files/sources.list
       {% endif %}
-      - /etc/apt/sources.list.d/cloudarchive.list:
-        - source: salt://formulas/common/sources/files/cloudarchive.list
       {% if grains['type'] == 'rabbitmq' %}
       - /etc/apt/sources.list.d/rabbitmq.list:
         - source: salt://formulas/common/sources/files/rabbitmq.list
