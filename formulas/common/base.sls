@@ -16,6 +16,7 @@
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 
 include:
+  - /formulas/common/salt/repo
   - /formulas/common/fluentd/repo
 
 initial_module_sync:
