@@ -14,33 +14,44 @@
 
 mariadb_repo:
   pkgrepo.managed:
-    - humanname: mariadb10.10
-    - name: deb http://downloads.mariadb.com/MariaDB/mariadb-10.10/repo/ubuntu {{ pillar['ubuntu']['name'] }} main
+    - humanname: MariaDB 10.10
+{% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
+  {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://downloads.mariadb.com/MariaDB/mariadb-10.10/repo/ubuntu" %}
+    - name: deb [signed-by=/etc/apt/keyrings/MariaDB-Server-GPG-KEY arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% else %}
+    - name: deb [signed-by=/etc/apt/keyrings/MariaDB-Server-GPG-KEY arch=amd64] http://downloads.mariadb.com/MariaDB/mariadb-10.10/repo/ubuntu {{ pillar['ubuntu']['name'] }} main
+{% endif %}
     - file: /etc/apt/sources.list.d/mariadb.list
-    - keyid: F1656F24C74CD1D8
-    - keyserver: keyserver.ubuntu.com
-
-#mariadb_maxscale_repo:
-#  pkgrepo.managed:
-#    - humanname: mariadb_maxscale
-#    - name: deb http://downloads.mariadb.com/MaxScale/2.4/ubuntu {{ pillar['ubuntu']['name'] }} main
-#    - file: /etc/apt/sources.list.d/mariadb_maxscale.list
-#    - keyid: 135659E928C12247
-#    - keyserver: keyserver.ubuntu.com
+    - key_url: https://supplychain.mariadb.com/MariaDB-Server-GPG-KEY
+    - aptkey: False
 
 mariadb_tools_repo:
   pkgrepo.managed:
-    - humanname: mariadb_tools
-    - name: deb http://downloads.mariadb.com/Tools/ubuntu {{ pillar['ubuntu']['name'] }} main
+    - humanname: MariaDB Tools
+{% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
+  {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+    {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://downloads.mariadb.com/Tools/ubuntu" %}
+    - name: deb [signed-by=/etc/apt/keyrings/MariaDB-Enterprise-GPG-KEY arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% else %}
+    - name: deb [signed-by=/etc/apt/keyrings/MariaDB-Enterprise-GPG-KEY arch=amd64] http://downloads.mariadb.com/Tools/ubuntu {{ pillar['ubuntu']['name'] }} main
+{% endif %}
     - file: /etc/apt/sources.list.d/mariadb_tools.list
-    - keyid: CE1A3DD5E3C94F49
-    - keyserver: keyserver.ubuntu.com
+    - key_url: https://supplychain.mariadb.com/MariaDB-Enterprise-GPG-KEY
+    - aptkey: False
 
 update_packages_mariadb:
   pkg.uptodate:
     - refresh: true
     - onchanges:
-      - mariadb_tools_repo
-#      - mariadb_maxscale_repo
-      - mariadb_repo
+      - pkgrepo: mariadb_repo
+      - pkgrepo: mariadb_tools_repo
     - dist_upgrade: True
