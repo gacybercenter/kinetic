@@ -328,7 +328,7 @@ def unbound_updated(name,
                                             cacert=cacert,
                                             payload=json.dumps(merged_zones))
 
-    sleep(10)
+    sleep(60)
     current_zones_request = __salt__["tnsr.unbound_zones_request"]("GET",
                                                             type,
                                                             cert,
