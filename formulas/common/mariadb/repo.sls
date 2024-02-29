@@ -16,12 +16,10 @@ mariadb_repo:
   pkgrepo.managed:
     - humanname: MariaDB 10.10
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
-  {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-    {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://downloads.mariadb.com/MariaDB/mariadb-10.10/repo/ubuntu/" %}
+  {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://downloads.mariadb.com/MariaDB/mariadb-10.10/repo/ubuntu/" %}
     - name: deb [signed-by=/etc/apt/keyrings/MariaDB-Server-GPG-KEY arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
-      {% endif %}
-    {% endfor %}
+    {% endif %}
   {% endfor %}
 {% else %}
     - name: deb [signed-by=/etc/apt/keyrings/MariaDB-Server-GPG-KEY arch=amd64] http://downloads.mariadb.com/MariaDB/mariadb-10.10/repo/ubuntu {{ pillar['ubuntu']['name'] }} main
@@ -34,12 +32,10 @@ mariadb_tools_repo:
   pkgrepo.managed:
     - humanname: MariaDB Tools
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
-  {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-    {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://downloads.mariadb.com/Tools/ubuntu/" %}
+  {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://downloads.mariadb.com/Tools/ubuntu/" %}
     - name: deb [signed-by=/etc/apt/keyrings/MariaDB-Enterprise-GPG-KEY arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
-      {% endif %}
-    {% endfor %}
+    {% endif %}
   {% endfor %}
 {% else %}
     - name: deb [signed-by=/etc/apt/keyrings/MariaDB-Enterprise-GPG-KEY arch=amd64] http://downloads.mariadb.com/Tools/ubuntu {{ pillar['ubuntu']['name'] }} main

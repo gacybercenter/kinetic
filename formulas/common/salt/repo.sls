@@ -16,18 +16,16 @@ salt_repo:
   pkgrepo.managed:
     - humanname: SaltStack Repository
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
-  {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-    {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-      {% if grains['type'] == 'arm' %}
-        {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/arm64/3006/" %}
+  {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+    {% if grains['type'] == 'arm' %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/arm64/3006/" %}
     - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=arm64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
-        {% endif %}
-      {% else %}
-        {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/amd64/3006/" %}
-    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
-        {% endif %}
       {% endif %}
-    {% endfor %}
+    {% else %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/amd64/3006/" %}
+    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
+      {% endif %}
+    {% endif %}
   {% endfor %}
 {% else %}
   {% if grains['type'] == 'arm' %}
