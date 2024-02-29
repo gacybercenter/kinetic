@@ -22,18 +22,6 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
 
-# {% if salt.saltutil.runner('manage.up',tgt=type+'*') %}
-# release_{{ type }}_ip:
-#   salt.state:
-#     - tgt: 'role:pxe'
-#     - tgt_type: grain
-#     - sls:
-#       - orch/states/ip_release
-#     - pillar:
-#         type: {{ type }}
-#     - concurrent: True
-# {% endif %}
-
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
 
@@ -184,7 +172,7 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
       - orch/states/virtual_prep
     - pillar:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
-    - concurrent: true
+    #- concurrent: true
     - require:
       - wipe_{{ type }}_domains
   {% endfor %}
