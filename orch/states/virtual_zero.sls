@@ -19,9 +19,9 @@
 ## and https://libvirt.org/formatdomain.html#elementsMetadata
 ## we can define custom metadata which is then checked before taking action on a domain (e.g. we set roles/types rather than calcualting them)
 {% for domain in salt['virt.list_domains']() if type == domain.split('-')[0] %}
-test.ping:
+minion_check:
   module.run:
-    - name: test.ping
+    - test.ping:
     - retry:
         attempts: 60
         delay: 10
