@@ -23,7 +23,7 @@ test.ping:
   module.run:
     - name: test.ping
     - retry:
-        attempts: 15
+        attempts: 60
         delay: 10
         splay: 5
 
