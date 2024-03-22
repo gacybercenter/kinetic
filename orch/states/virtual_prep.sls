@@ -64,7 +64,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
         master_record: {{ pillar['salt']['record'] }}
         salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
 
-minion_check_virtual_prep:
+minion_check_virtual_prep_{{ hostname }}:
   module.run:
     - test.ping:
     - retry:
