@@ -104,10 +104,8 @@ tnsr_local_zones_updates:
 
   {% if salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain')|length != 0 %}
     {% set bind_ips = [] %}
-    {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') -%}
-      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-        {{ bind_ips.append( address ) }}
-      {% endfor %}
+    {% for address in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') %}
+      {{ bind_ips.append( address ) }}
     {% endfor %}
 tnsr_forward_zones_updates:
   tnsr.unbound_updated:
