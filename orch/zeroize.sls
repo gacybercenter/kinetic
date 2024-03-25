@@ -175,10 +175,6 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
     #- concurrent: true
     - require:
       - wipe_{{ type }}_domains
-    - retry:
-        attempts: 30
-        delay: 10
-        splay: 5
     - check_cmd:
       - virsh list | grep -q '{{ type }}-{{ targets[id]['uuid'] }}'
   {% endfor %}

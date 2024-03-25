@@ -36,15 +36,21 @@
           </interface>
         {% endfor %}
         seclabel: <seclabel type='dynamic' model='apparmor' relabel='yes'/>
+    - require_in:
+      - report_build_success
 
 /kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:
     - source: /kvm/images/{{ pillar['hosts'][type]['os'] }}-latest
+    - require_in:
+      - report_build_success
 
 qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type]['disk'] }}:
   cmd.run:
     - onchanges:
       - /kvm/vms/{{ hostname }}/disk0.raw
+    - require_in:
+      - report_build_success
 
 /kvm/vms/{{ hostname }}/data/meta-data:
   file.managed:
@@ -53,6 +59,8 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
     - template: jinja
     - defaults:
         hostname: {{ hostname }}
+    - require_in:
+      - report_build_success
 
 /kvm/vms/{{ hostname }}/data/user-data:
   file.managed:
@@ -63,6 +71,8 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
         hostname: {{ hostname }}
         master_record: {{ pillar['salt']['record'] }}
         salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
+    - require_in:
+      - report_build_success
 
 minion_check_virtual_prep_{{ hostname }}:
   module.run:
@@ -77,8 +87,15 @@ genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ ho
     - onchanges:
       - /kvm/vms/{{ hostname }}/data/meta-data
       - /kvm/vms/{{ hostname }}/data/user-data
+    - require_in:
+      - report_build_success
 
 virsh create /kvm/vms/{{ hostname }}/config.xml:
   cmd.run:
     - onchanges:
       - /kvm/vms/{{ hostname }}/config.xml
+    - require_in:
+      - report_build_success
+
+report_build_success:
+  test.nop
