@@ -175,6 +175,8 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
     #- concurrent: true
     - require:
       - wipe_{{ type }}_domains
+    - check_cmd:
+      - /bin/true
   {% endfor %}
 {% endif %}
 
