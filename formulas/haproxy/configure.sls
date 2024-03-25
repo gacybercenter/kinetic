@@ -107,6 +107,7 @@ tnsr_local_zones_updates:
     {% for address in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') %}
       {{ bind_ips.append( address ) }}
     {% endfor %}
+    {% do salt.log.info("bind ips: "+bind_ips) %}
 tnsr_forward_zones_updates:
   tnsr.unbound_updated:
     - name: tnsr_forward_zones_updates
@@ -115,8 +116,8 @@ tnsr_forward_zones_updates:
       - zone-name: "{{ pillar['designate']['tld'] }}"
         forward-addresses:
           address:
-    {% for a in bind_ips | a('int') | sort %}
-            - ip-address: "{{ a }}"
+    {% for address in bind_ips | address('int') | sort %}
+            - ip-address: "{{ address }}"
     {% endfor %}
     - cert: /etc/haproxy/tnsr.crt
     - key: /etc/haproxy/tnsr.pem
