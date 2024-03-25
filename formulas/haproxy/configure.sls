@@ -110,9 +110,6 @@ tnsr_local_zones_updates:
       {% endfor %}
     {% endfor %}
     {% set bind_ips = bind_ips | list | sort %}
-    {% for address in bind_ips %}
-        {% do salt.log.info("bind ips: "+address) %}
-    {% endfor %}
 tnsr_forward_zones_updates:
   tnsr.unbound_updated:
     - name: tnsr_forward_zones_updates
