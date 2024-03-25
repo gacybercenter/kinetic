@@ -103,6 +103,12 @@ tnsr_local_zones_updates:
       - salt-call dnsutil.A '{{ pillar['tnsr']['endpoint'] }}'
 
   {% if salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain')|length != 0 %}
+    {% set bind_ips = [] %}
+    {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | list | addresses('int') | sort -%}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+        {{ bind_ips.append( address ) }}
+      {% endfor %}
+    {% endfor %}
 tnsr_forward_zones_updates:
   tnsr.unbound_updated:
     - name: tnsr_forward_zones_updates
@@ -111,10 +117,8 @@ tnsr_forward_zones_updates:
       - zone-name: "{{ pillar['designate']['tld'] }}"
         forward-addresses:
           address:
-    {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort(reverse=True) -%}
-      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-            - ip-address: "{{ address }}"
-      {% endfor %}
+    {% for a in bind_ips | a('int') | sort %}
+            - ip-address: "{{ a }}"
     {% endfor %}
     - cert: /etc/haproxy/tnsr.crt
     - key: /etc/haproxy/tnsr.pem
