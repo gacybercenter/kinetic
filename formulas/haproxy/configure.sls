@@ -106,8 +106,11 @@ tnsr_local_zones_updates:
     {% set bind_ips = [] %}
     {% for address in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') %}
       {{ bind_ips.append( address ) }}
+      {% do salt.log.info("bind ip: "+address) %}
     {% endfor %}
-    {% do salt.log.info("bind ips: "+bind_ips) %}
+    {% for address in bind_ips | address('int') | sort %}
+        {% do salt.log.info("bind ips: "+bind_ips) %}
+    {% endfor %}
 tnsr_forward_zones_updates:
   tnsr.unbound_updated:
     - name: tnsr_forward_zones_updates
