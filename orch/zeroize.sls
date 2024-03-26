@@ -183,6 +183,7 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
     #- concurrent: true
     - require:
       - wipe_{{ type }}_domains
+      - minion_check_prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}
   {% endfor %}
 {% endif %}
 
