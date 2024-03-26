@@ -165,6 +165,14 @@ wipe_{{ type }}_domains:
     - concurrent: True
 
   {% for id in targets %}
+minion_check_prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
+  module.run:
+    - test.ping:
+    - retry:
+        attempts: 60
+        delay: 10
+        splay: 5
+
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
     - tgt: {{ targets[id]['controller'] }}
