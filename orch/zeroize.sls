@@ -180,7 +180,7 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
       - orch/states/virtual_prep
     - pillar:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
-    #- concurrent: true
+    - concurrent: true
     - require:
       - wipe_{{ type }}_domains
       - minion_check_prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}
