@@ -76,7 +76,7 @@ wipe_adminkey:
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
 db_pv_{{ device }}_{{ loop.index }}:
   lvm.pv_present:
-    - name: __slot__:salt:cmd.shell("ceph-volume inventory --format json | jq -r '.[] | .sys_api | select(.model==\"{{ device }}\") | select(.locked==0) | .path' | sed -n '{{ loop.index }}p'")
+    - name: __slot__:salt:cmd.shell("ceph-volume inventory --format json | jq -r '.[] | .sys_api | select(.model==\"{{ device }}\") | .path' | sed -n '{{ loop.index }}p'")
     - unless:
       - test -d /dev/db_vg
     - require:
@@ -93,7 +93,7 @@ db_vg:
     - devices:
 {% for device in pillar['osd_mappings'][grains['type']]['journals'] %}
   {% for qty in range(pillar['osd_mappings'][grains['type']]['journals'][device]['qty']) %}
-      - {{ salt['cmd.shell']("ceph-volume inventory --format json | jq -r '.[] | .sys_api | select(.model==\""+device+"\") | select(.locked==0) | .path' | sed -n '"+loop.index|string+"p'") }}
+      - {{ salt['cmd.shell']("ceph-volume inventory --format json | jq -r '.[] | .sys_api | select(.model==\""+device+"\") | .path' | sed -n '"+loop.index|string+"p'") }}
   {% endfor %}
 {% endfor %}
 
