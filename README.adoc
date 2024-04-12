@@ -1,5 +1,8 @@
 = kinetic
 
+*Documentation URL:* https://docs.gacyberrange.org/docs/latest/index.html +
+*Project Pages URL:* https://gacybercenter.gitlab.io/open/kinetic/kinetic
+
 Kinetic is a deployment and maintenance tool for Cyber Ranges originally developed at the US Army Cyber School at Fort Gordon, Georgia.
 A Cyber Range as envisioned by the https://www.gacybercenter.org/[Georgia Cyber Center] is a private cloud that brings significant capabilities to bear beyond clouds that are focused on enterprise information technology.
 Instead of delivering enterprise IT services, a kinetic Cyber Range is focused on providing an environment to hack on, in, and with https://youtu.be/5Ofjr_-rsOg?t=1860[operational technology] (OT).
