@@ -98,6 +98,8 @@ user_data_{{ id }}:
       - '#cloud-config'
       - 'autoinstall:'
       - '  version: 1'
+      - '  refresh-installer:'
+      - '    update: yes'
       - '  early-commands:'
       - "    - |"
       - "      vgs --separator=: --noheadings | cut -f1 -d: | while read vg ; do vgchange -an $vg ; done"
@@ -125,26 +127,11 @@ user_data_{{ id }}:
       - '      sizing-policy: all'
       - '      match:'
       - '        model: "{{ pillar['hosts'][type]['disk'] }}"'
-    {% if type not in ['controller', 'controllerV2'] %}
-      {% if pillar['hosts'][type]['proxy'] == 'pull_from_mine' %}
-        {% if salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length == 0 %}
-      - '  proxy: ""'
-        {% else %}
-          ##pick a random cache and iterate through its addresses, choosing only the management address
-          {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () %}
-            {%- if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
-      - '  proxy: http://{{ address }}:3142'
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-      {% endif %}
-    {% endif %}
       - '  user-data:'
       - '    disable_root: false'
       - '    runcmd:'
       - '      - curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
       - '      - /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
-      - '      - printf "use_superseded:\n  - module.run\n" > /etc/salt/minion.d/98-supersede.conf'
       - '  late-commands:'
       - '    - |'
       - '      hostnamectl set-hostname {{ type }}-{{ targets[id]['uuid'] }}'
@@ -178,6 +165,14 @@ wipe_{{ type }}_domains:
     - concurrent: True
 
   {% for id in targets %}
+minion_check_prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
+  module.run:
+    - test.ping:
+    - retry:
+        attempts: 60
+        delay: 10
+        splay: 5
+
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
     - tgt: {{ targets[id]['controller'] }}
@@ -188,6 +183,7 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
     - concurrent: true
     - require:
       - wipe_{{ type }}_domains
+      - minion_check_prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}
   {% endfor %}
 {% endif %}
 
@@ -195,11 +191,6 @@ delete_{{ type }}_key:
   salt.wheel:
     - name: key.delete
     - match: '{{ type }}*'
-
-expire_{{ type }}_dead_hosts:
-  salt.function:
-    - name: address.expire_dead_hosts
-    - tgt: {{ pillar['salt']['name'] }}
 
 ## There should be some kind of retry mechanism here if this event never fires
 ## to deal with transient problems.  Re-exec zeroize for the given target?
@@ -213,7 +204,7 @@ wait_for_provisioning_{{ type }}:
 {% if style == 'virtual' %}
     - timeout: 600
 {% elif style == 'physical' %}
-    - timeout: 1500
+    - timeout: 2000
 {% endif %}
 
 accept_minion_{{ type }}:

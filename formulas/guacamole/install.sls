@@ -16,9 +16,6 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  # - /formulas/common/docker/repo
-
-{% if grains['os_family'] == 'Debian' %}
 
 guacamole_packages:
   pkg.installed:
@@ -36,7 +33,6 @@ guacamole_pip:
     - reload_modules: True
     - pkgs:
       - mysql-connector-python
-      - mysqlclient
       - docker == 5.0.3
     - require:
       - pkg: guacamole_packages
@@ -47,55 +43,10 @@ salt-pip_installs:
     - reload_modules: true
     - pkgs:
       - mysql-connector-python
-      - mysqlclient
       - docker == 5.0.3
     - require:
       - pkg: guacamole_packages
       - pip: guacamole_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-# CentOS-PowerTools:
-#   pkgrepo.managed:
-#     - humanname: CentOS-PowerTools
-#     - name: CentOS-PowerTools
-#     - mirrorlist: http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=PowerTools&infra=$infra
-#     - file: /etc/yum.repos.d/CentOS-PowerTools.repo
-#     - gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-
-# guacamole_packages:
-#   pkg.installed:
-#     - pkgs:
-#       - epel-release
-#       - cairo-devel
-#       - libjpeg-turbo-devel
-#       - libjpeg-devel
-#       - libpng-devel
-#       - libtool
-#       - uuid-devel
-#       - freerdp-devel
-#       - ffmpeg-devel
-#       - pango-devel
-#       - libssh2-devel
-#       - libtelnet-devel
-#       - libvncserver-devel
-#       - libwebsockets-devel
-#       - pulseaudio-libs-devel
-#       - openssl-devel
-#       - libvorbis-devel
-#       - libwebp-devel
-#       - tomcat
-
-{% endif %}
-
-# guacamole_redirect:
-#   file.managed:
-#     - makedirs: True
-#     - names:
-#       - /opt/guacamole/tomcat/webapps/ROOT/index.jsp:
-#         - source: salt://formulas/guacamole/files/index.jsp
-#       - /opt/guacamole/tomcat/webapps/ROOT/WEB-INF/web.xml:
-#         - source: salt://formulas/guacamole/files/web.xml
 
 guacamole_extensions:
   file.managed:

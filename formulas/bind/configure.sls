@@ -28,8 +28,6 @@ include:
 
 {% endif %}
 
-{% if grains['os_family'] == 'Debian' %}
-
 bind_apparmor_modification:
   file.managed:
     - name: /etc/apparmor.d/local/usr.sbin.named
@@ -41,15 +39,9 @@ apparmor_service:
     - watch:
       - file: bind_apparmor_modification
 
-{% endif %}
-
 bind_conf:
   file.managed:
-{% if grains['os_family'] == 'Debian' %}
     - name: /etc/bind/named.conf.options
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /etc/named.conf
-{% endif %}
     - source: salt://formulas/bind/files/named.conf.options
     - template: jinja
     - defaults:
@@ -67,11 +59,7 @@ bind_conf:
           {% else %}
         designate_hosts: 127.0.0.1;
           {% endif %}
-{% if grains['os_family'] == 'Debian' %}
         directory: /var/cache/bind
-{% elif grains['os_family'] == 'RedHat' %}
-        directory: /var/named
-{% endif %}
 
 /etc/designate/rndc.key:
   file.managed:
@@ -79,19 +67,11 @@ bind_conf:
     - contents_pillar: designate:designate_rndc_key
     - mode: "0640"
     - user: root
-{% if grains['os_family'] == 'Debian' %}
     - group: bind
-{% elif grains['os_family'] == 'RedHat' %}
-    - group: named
-{% endif %}
 
 designate_bind9_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: bind9
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: named
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/designate/rndc.key

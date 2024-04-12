@@ -22,37 +22,6 @@ include:
   file.directory:
     - makedirs: true
 
-/srv/addresses/addresses.db:
-  file.managed:
-    - replace: False
-    - makedirs: True
-
-addresses:
-  sqlite3.table_present:
-    - db: /srv/addresses/addresses.db
-    - schema:
-      - address TEXT UNIQUE
-      - network TEXT
-      - host TEXT
-    - require:
-      - file: /srv/addresses/addresses.db
-
-{% for network in ['sfe', 'sbe', 'private'] %}
-  {% for address in pillar['networking']['subnets'][network] | network_hosts %}
-address_population_{{ address }}:
-  sqlite3.row_present:
-    - db: /srv/addresses/addresses.db
-    - table: addresses
-    - where_sql: address='{{ address }}'
-    - data:
-        address: {{ address }}
-        network: {{ network }}
-    - update: True
-    - require:
-      - sqlite3: addresses
-  {% endfor %}
-{% endfor %}
-
 /srv/runners:
   file.directory:
     - makedirs: True
@@ -201,8 +170,8 @@ passwords:
               user_password: {{ salt['random.get_str']('64', punctuation=False) }}
       - /srv/dynamic_pillar/cache.sls:
         - contents: |
-            cache:
-              maintenance_password: {{ salt['random.get_str']('64', punctuation=False) }}
+            nexusproxy:
+              nexusproxy_password: {{ salt['random.get_str']('16', punctuation=False) }}
       - /srv/dynamic_pillar/guacamole.sls:
         - contents: |
             guacamole:
@@ -311,13 +280,6 @@ passwords:
 {% else %}
       ovsdb: ""
 {% endif %}
-
-/srv/dynamic_pillar/junos.sls:
-  file.managed:
-    - replace: false
-    - contents: |
-        junos:
-          switch_password: {{ salt['random.get_str']('64', punctuation=False) }}
 
 /etc/salt/master:
   file.managed:

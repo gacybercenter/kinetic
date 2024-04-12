@@ -1,6 +1,7 @@
-image:https://cloud.drone.io/api/badges/GeorgiaCyber/kinetic/status.svg["Georgia Cyber", link="https://cloud.drone.io/GeorgiaCyber/kinetic"]
+= kinetic
 
-# kinetic
+*Documentation URL:* https://docs.gacyberrange.org/docs/latest/index.html +
+*Project Pages URL:* https://gacybercenter.gitlab.io/open/kinetic/kinetic
 
 Kinetic is a deployment and maintenance tool for Cyber Ranges originally developed at the US Army Cyber School at Fort Gordon, Georgia.
 A Cyber Range as envisioned by the https://www.gacybercenter.org/[Georgia Cyber Center] is a private cloud that brings significant capabilities to bear beyond clouds that are focused on enterprise information technology.
@@ -21,7 +22,11 @@ You set the configuration data for your local environment, start the salt orches
 The various heat templates that power the scenarios that ship with kinetic all use a standard naming convention.
 Sticking to this naming convention (instances, networks, images, etc.) mean that templates can be shared across organizations.
 
-## Prerequisites
+== Architecture
+
+image::kinetic.png["Kinetic Architecture"]
+
+== Prerequisites
 
 There are two critical repositories that are required for a successful kinetic deployment:
 
@@ -56,7 +61,7 @@ Your system will automatically compile a fresh copy of this for you from source.
 The freshly compiled version will be located at /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi on your pxe server once it is fully highstated.
 See formulas/pxe/files/kinetic.ipxe in this repository for the source.
 
-## Recommendations
+== Recommendations
 
 Kinetic is desiged to be used on larger environments that have multiples of the same type of hardware performing the same purpose,
 e.g. your purchasing department bought 50 compute nodes, 50 storage nodes, and 6 controller nodes at the same time, so they all have the same configuration amongst themselves.
@@ -71,7 +76,7 @@ This information should be extracted and stored on the enterprise storage system
 While the cache is optional, it is *highly* recommended that you use it.
 Large, simultaneous operations will almost certainly get you throttled upstream as you download and install packages.
 
-## Quick Start
+== Quick Start
 
 On your configured foundational host, run:
 ```

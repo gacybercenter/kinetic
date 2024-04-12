@@ -78,22 +78,14 @@ make_nfs_share_type:
 
 manila_api_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: manila-api
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-manila-api
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/manila/manila.conf
 
 manila_scheduler_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: manila-scheduler
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-manila-scheduler
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/manila/manila.conf

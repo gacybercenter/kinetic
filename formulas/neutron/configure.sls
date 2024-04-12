@@ -131,15 +131,6 @@ conf-files:
       - /etc/sudoers.d/neutron_sudoers:
         - source: salt://formulas/neutron/files/neutron_sudoers
 
-{% if grains['os_family'] == 'RedHat' %}
-plugin_symlink:
-  file.symlink:
-    - name: /etc/neutron/plugin.ini
-    - target: /etc/neutron/plugins/ml2/ml2_conf.ini
-    - require_in:
-      - service: neutron_server_service
-{% endif %}
-
 fs.inotify.max_user_instances:
   sysctl.present:
     - value: 1024

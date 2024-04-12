@@ -19,12 +19,25 @@
 ## everything except salt and pxe
 
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
+  {% do salt.log.info("Checking if "+type+" host type is enabled") %}
+  {% if salt.saltutil.runner('manage.up',tgt=type+'*') %}
+release_{{ type }}_ip:
+  salt.function:
+    - name: cmd.run
+    - tgt: '{{ type }}-*'
+    - arg:
+      - 'dhclient -r'
+    - onlyif:
+      - salt-key -l acc | grep -q "{{ type }}"
+
 init_{{ type }}_poweroff:
   salt.function:
     - name: system.poweroff
     - tgt: '{{ type }}-*'
+    - require:
+      - salt: release_{{ type }}_ip
 
-## This gives hosts that were givena shutdown order the ability to shut down
+## This gives hosts that were given a shutdown order the ability to shut down
 ## There have been cases where a zeroize reset command was issued before a
 ## successful shutdown
 init_{{ type }}_sleep:
@@ -38,6 +51,7 @@ wipe_{{ type }}_keys:
   salt.wheel:
     - name: key.delete
     - match: '{{ type }}-*'
+  {% endif %}
 {% endfor %}
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
@@ -49,6 +63,7 @@ wipe_{{ type }}_keys:
     {% set role = type %}
   {% endif %}
 
+  {% do salt.log.info("Creating Execution Runner for Host Type: "+type) %}
 create_{{ type }}_exec_runner:
   salt.runner:
     - name: state.orchestrate
@@ -65,5 +80,4 @@ create_{{ type }}_exec_runner:
     - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
         length: 1
-
 {% endfor %}

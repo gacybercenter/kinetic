@@ -25,11 +25,11 @@
         needs: {{ needs }}
         type: {{ type }}
     - retry:
-        interval: 30
+        interval: 60
         attempts: 240
         splay: 60
 
-{% do salt.log.info(type+" initialization routine is aboue to begin!") %}
+{% do salt.log.info(type+" initialization routine is about to begin!") %}
 
 orch_{{ type }}_init_exec_runner:
   salt.runner:

@@ -76,9 +76,10 @@ conf-files:
         nova_metadata_host: {{ pillar['endpoints']['public'] }}
         metadata_proxy_shared_secret: {{ pillar['neutron']['metadata_proxy_shared_secret'] }}
         explicitly_egress_direct: True
-{% if salt['pillar.get']('neutron:l3ha', 'False') == True %}
+        dns_domain: {{ pillar['designate']['tld'] }}
+  {% if salt['pillar.get']('neutron:l3ha', 'False') == True %}
         max_l3_agents_per_router: {{ pillar['neutron']['max_l3_agents_per_router'] }}
-{% endif %}
+  {% endif %}
         dhcp_agents_per_network: {{ pillar['neutron']['dhcp_agents_per_network'] }}
     - names:
       - /etc/neutron/neutron.conf:
@@ -101,32 +102,6 @@ conf-files:
 fs.inotify.max_user_instances:
   sysctl.present:
     - value: 1024
-
-  {% if grains['os_family'] == 'RedHat' %}
-plugin_symlink:
-  file.symlink:
-    - name: /etc/neutron/plugin.ini
-    - target: /etc/neutron/plugins/ml2/ml2_conf.ini
-
-    {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
-## this used to be a default but was changed to a boolean here:
-## https://github.com/redhat-openstack/openstack-selinux/commit/9cfdb0f0aa681d57ca52948f632ce679d9e1f465
-os_neutron_dac_override:
-  selinux.boolean:
-    - value: on
-    - persist: True
-    - watch_in:
-      - service: neutron_{{ neutron_backend }}_agent_service
-
-## ref: https://github.com/redhat-openstack/openstack-selinux/commit/9460342f3e5a7214bd05b9cfa73a1896478d8785
-os_dnsmasq_dac_override:
-  selinux.boolean:
-    - value: on
-    - persist: True
-    - watch_in:
-      - service: neutron_dhcp_agent_service
-    {% endif %}
-  {% endif %}
 
   {% if neutron_backend == "openvswitch" %}
 create_bridge:

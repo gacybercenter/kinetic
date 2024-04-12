@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 glance_packages:
   pkg.installed:
     - pkgs:
@@ -53,38 +51,3 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: glance_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-glance_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-glance
-      - python3-memcached
-      - python3-rbd
-      - python3-rados
-      - python3-openstackclient
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - name: boto3
-
-glance_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - python-openstackclient
-      - python3-memcached
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: True
-    - pkgs:
-      - python-openstackclient
-      - python3-memcached
-      - boto3
-    - require:
-      - pip: glance_pip
-
-{% endif %}

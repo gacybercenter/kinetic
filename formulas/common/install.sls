@@ -17,36 +17,42 @@
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for address in salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain') | dictsort() | random() | last () if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
-set_package_proxy:
-  file.managed:
-    {% if grains['os_family'] == 'Debian' %}
-    - name: /etc/apt/apt.conf.d/02proxy
-    - contents: |
-        Acquire::http { Proxy "http://{{ address }}:3142"; };
-    {% elif grains['os_family'] == 'RedHat' %}
-    - name: /etc/yum.conf
-    - contents: |
-        [main]
-        gpgcheck=1
-        installonly_limit=3
-        clean_requirements_on_remove=True
-        best=True
-        skip_if_unavailable=False
-        proxy=http://{{ address }}:3142
-    {% endif %}
-    {% if salt['network']['connect'](host=salt['grains.get']('cache_target', '127.0.0.1'), port="3142")['result'] == True %}
-    - replace: False
-    {% endif %}
-    - onlyif:
-      - fun: network.connect
-        host: {{ address }}
-        port: 3142
+include:
+  - /formulas/common/salt/repo
+  - /formulas/common/fluentd/repo
 
-cache_target:
-  grains.present:
-    - value: {{ address }}
-    - onchanges:
-      - file: set_package_proxy
+systemd-resolved_service:
+  service.dead:
+    - name: systemd-resolved
+    - unless:
+      - 'systemctl status systemd-resolved.service | grep -q "Active: inactive (dead)"'
+
+/run/systemd/resolve/resolv.conf:
+  file.managed:
+    - makedirs: True
+    - contents: |
+        nameserver {{ address }}
+    - require:
+      - service: systemd-resolved_service
+
+update_sources_list:
+  file.managed:
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        ubuntu_name: {{ pillar['ubuntu']['name'] }}
+        openstack_version: {{ pillar['openstack']['version'] }}
+      {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+        {{ repo | replace('-', '_') }}: http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }}
+      {% endfor %}
+    - names:
+      {% if grains['type'] == 'arm' %}
+      - /etc/apt/sources.list:
+        - source: salt://formulas/common/sources/files/sources-arm.list
+      {% else %}
+      - /etc/apt/sources.list:
+        - source: salt://formulas/common/sources/files/sources.list
+      {% endif %}
   {% endfor %}
 {% endif %}
 
@@ -54,9 +60,7 @@ cache_target:
 update_all:
   pkg.uptodate:
     - refresh: true
-  {% if grains['os_family'] == 'Debian' %}
     - dist_upgrade: True
-  {% endif %}
 
 upgraded:
   grains.present:
@@ -86,6 +90,7 @@ pyghmi_pip:
     - require:
       - OpenSSL_dir_remove
       - pyOpenSSL_dir_remove
+      - pin_pip_version
   pkg.installed:
     - pkgs:
       - ipmitool
@@ -100,6 +105,7 @@ pyghmi_salt_pip:
       - pyghmi
     - require:
       - pyghmi_pip
+      - pin_salt_pip_version
 
 rdma-core:
   pkg.installed:

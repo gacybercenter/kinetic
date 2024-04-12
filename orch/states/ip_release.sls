@@ -12,9 +12,16 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-acng_maintenance:
-  local.state.single:
-    - tgt: {{ data['id'] }}
-    - args:
-      - fun: cmd.run
-      - name: 'curl -s -K /etc/apt-cacher-ng/curl "http://localhost:3142/acng-report.html?byPath=bP&byChecksum=bS&truncNow=tN&incomAsDamaged=iad&purgeNow=pN&doExpire=Start+Scan+and%2For+Expiration&calcSize=cs&asNeeded=an#bottom" > /dev/null'
+{% set type = pillar['type'] %}
+
+release_{{ type }}_ip:
+  cmd.run:
+    - namet: "sed -i '/{{ type }}-/d' /var/lib/kea/kea-leases4.csv"
+    - onlyif:
+      - 'cat /var/lib/kea/kea-leases4.csv | grep -q "{{ type }}-"'
+
+kea-dhcp4-server:
+  cmd.run:
+    - name: systemctl restart kea-dhcp4-server
+    - require:
+      - cmd: release_{{ type }}_ip

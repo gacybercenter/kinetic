@@ -22,7 +22,6 @@ salt_pkgs:
     - pkgs:
       - python3-tornado
       - salt-api
-      - sqlite3
       - haveged
       - curl
       - python3-pygit2
@@ -37,13 +36,17 @@ salt_pip:
       - pyghmi
       - pygit2
       - tornado
+      - redfish
 
 salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - pkgs:
-      - tornado
+      - cryptography
+      - pyghmi
       - pygit2
+      - tornado
+      - redfish
     - reload_modules: true
     - require:
       - pkg: salt_pkgs

@@ -28,8 +28,6 @@ include:
 
 {% endif %}
 
-{% if grains['os_family'] == 'Debian' %}
-
 memcached_config:
   file.managed:
     - name: /etc/memcached.conf
@@ -37,18 +35,6 @@ memcached_config:
     - template: jinja
     - defaults:
         listen_addr: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-memcached_config:
-  file.managed:
-    - name: /etc/sysconfig/memcached
-    - source: salt://formulas/memcached/files/memcached
-    - template: jinja
-    - defaults:
-        listen_addr: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-
-{% endif %}
 
 ## This is necessary because the upstream mcd unit file has a race condition where the network interface
 ## may not fully be up when src=dhcp prior to memcached starting when network.target is the prereq.

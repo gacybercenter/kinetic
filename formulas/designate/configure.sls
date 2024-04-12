@@ -90,20 +90,30 @@ conf-files:
           {%- endfor %}
 
 {% if grains['spawning'] == 0 %}
+designate-central-restart-1:
+  service.running:
+    - name: designate-central
+    - enable: True
+    - reload: True
+    - watch:
+      - file: conf-files
 
 designate-manage database sync:
   cmd.run:
     - runas: designate
     - require:
       - file: conf-files
+      - service: designate-central-restart-1
     - unless:
       - fun: grains.equals
         key: build_phase
         value: configure
 
-designate-central:
+designate-central-restart-2:
   service.running:
+    - name: designate-central
     - enable: True
+    - reload: True
     - watch:
       - file: conf-files
     - require:
@@ -146,6 +156,7 @@ designate_api_service:
   service.running:
     - name: designate-api
     - enable: True
+    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -156,6 +167,7 @@ designate_central_service:
   service.running:
     - name: designate-central
     - enable: True
+    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -166,6 +178,7 @@ designate_worker_service:
   service.running:
     - name: designate-worker
     - enable: True
+    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -176,6 +189,7 @@ designate_producer_service:
   service.running:
     - name: designate-producer
     - enable: True
+    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:
@@ -186,6 +200,7 @@ designate_mdns_service:
   service.running:
     - name: designate-mdns
     - enable: True
+    - reload: True
     - watch:
       - file: /etc/designate/designate.conf
     - require:

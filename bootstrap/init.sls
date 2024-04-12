@@ -23,8 +23,6 @@ bootstrap_packages:
     - onchanges_in:
       - pkg: update_packages_bootstrap
 
-{% if grains['os_family'] == 'Debian' %}
-
 bootstrap_packages_deb:
   pkg.installed:
     - pkgs:
@@ -34,21 +32,6 @@ bootstrap_packages_deb:
     - reload_modules: true
     - onchanges_in:
       - pkg: update_packages_bootstrap
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-bootstrap_packages_rpm:
-  pkg.installed:
-    - pkgs:
-      - libvirt-client
-      - libvirt-daemon-kvm
-    - reload_modules: true
-    - onchanges_in:
-      - pkg: update_packages_bootstrap
-    - onchanges_in:
-      - pkg: update_packages_bootstrap
-
-{% endif %}
 
 update_packages_bootstrap:
   pkg.uptodate:
@@ -130,18 +113,18 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
     - makedirs: True
     - template: jinja
     - defaults:
-{% for key, encoding in pillar['authorized_keys'].items() %}
-  {% if loop.index0 == 0 %}
+  {% for key, encoding in pillar['authorized_keys'].items() %}
+    {% if loop.index0 == 0 %}
         ssh_key: ssh-{{ encoding['encoding'] }} {{ key }}
-  {% endif %}
-{% endfor %}
-{% if hostname == 'pxe' %}
+    {% endif %}
+  {% endfor %}
+  {% if hostname == 'pxe' %}
         salt_opts: -x python3 -X -i pxe
         salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
         extra_commands: |
             salt-call --local grains.setval type pxe
             salt-call --local grains.setval role pxe
-{% elif hostname == 'salt' %}
+  {% elif hostname == 'salt' %}
         salt_opts: |
             -M -x python3 -X -i salt -J '{ "default_top": "base", "fileserver_backend": [ "git" ], "ext_pillar": [ { "git": [ { "{{ pillar['kinetic_pillar_configuration']['branch'] }} {{ pillar['kinetic_pillar_configuration']['url'] }}": [ { "env": "base" } ] } ] } ], "ext_pillar_first": true, "gitfs_remotes": [ { "{{ pillar['kinetic_remote_configuration']['url'] }}": [ { "saltenv": [ { "base": [ { "ref": "{{ pillar['kinetic_remote_configuration']['branch'] }}" } ] } ] } ] } ], "gitfs_saltenv_whitelist": [ "base" ] }'
         salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
@@ -165,7 +148,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar[hostname]['co
             gpg --export --homedir /etc/salt/gpgkeys -a > /root/key.gpg
             salt-call --local grains.setval type salt
             salt-call --local grains.setval role salt
-{% endif %}
+  {% endif %}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:

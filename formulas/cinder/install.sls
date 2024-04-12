@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 cinder_packages:
   pkg.installed:
     - pkgs:
@@ -48,32 +46,3 @@ salt-pip_install:
       - etcd3gw
     - require:
       - pip: cinder_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-cinder_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-cinder
-      - python3-openstackclient
-      - python3-memcached
-
-cinder_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - python-openstackclient
-      - python-memcached
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: True
-    - pkgs:
-      - python-openstackclient
-      - python-memcached
-    - require:
-      - pip: cinder_pip
-
-{% endif %}

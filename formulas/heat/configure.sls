@@ -57,33 +57,21 @@ heat-manage db_sync:
 
 heat_api_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: heat-api
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-heat-api
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/heat/heat.conf
 
 heat_api_cfn_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: heat-api-cfn
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-heat-api-cfn
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/heat/heat.conf
 
 heat_engine_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: heat-engine
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-heat-engine
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/heat/heat.conf

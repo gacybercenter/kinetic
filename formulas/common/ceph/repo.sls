@@ -12,43 +12,25 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-{% if grains['os_family'] == 'Debian' %}
-
 ceph_repo:
   pkgrepo.managed:
     - humanname: Ceph Quincy
-    - name: deb https://download.ceph.com/debian-quincy jammy main
+{% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
+  {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-quincy" %}
+    - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+    {% endif %}
+  {% endfor %}
+{% else %}
+    - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=amd64] https://download.ceph.com/debian-quincy {{ pillar['ubuntu']['name'] }} main
+{% endif %}
     - file: /etc/apt/sources.list.d/ceph.list
     - key_url: https://download.ceph.com/keys/release.asc
-
-update_packages_ceph:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - ceph_repo
-    - dist_upgrade: True
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-ceph_repo:
-  pkgrepo.managed:
-    - name: ceph
-    - baseurl: https://download.ceph.com/rpm-quincy/el9/noarch
-    - file: /etc/yum.repos.d/ceph.repo
-    - gpgkey: https://download.ceph.com/keys/release.asc
-
-ceph_repo_noarch:
-  pkgrepo.managed:
-    - name: ceph_noarch
-    - baseurl: https://download.ceph.com/rpm-quincy/el9/noarch
-    - file: /etc/yum.repos.d/ceph_noarch.repo
-    - gpgkey: https://download.ceph.com/keys/release.asc
+    - aptkey: False
 
 update_packages_ceph:
   pkg.uptodate:
     - refresh: true
     - onchanges:
       - pkgrepo: ceph_repo
-      - pkgrepo: ceph_repo_noarch
-
-{% endif %}
+    - dist_upgrade: True

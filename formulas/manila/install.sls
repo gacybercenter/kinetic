@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 manila_packages:
   pkg.installed:
     - pkgs:
@@ -51,35 +49,3 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: manila_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-manila_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-manila
-      - python3-openstackclient
-      - python3-manilaclient
-      - python3-memcached
-
-manila_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - python-openstackclient
-      - python-manilaclient
-      - python-memcached
-
-salt-pip_install:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-openstackclient
-      - python-manilaclient
-      - python-memcached
-    - require:
-      - pip: manila_pip
-
-{% endif %}

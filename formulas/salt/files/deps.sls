@@ -53,6 +53,13 @@ hosts:
       configure:
         nova: configure
         neutron: configure
+  arm:
+    needs:
+      install:
+        cache: configure
+      configure:
+        nova: configure
+        neutron: configure
   container:
     needs:
       install:
@@ -335,13 +342,6 @@ hosts:
         controller: configure
         haproxy: configure
         mysql: configure
-  jproxy:
-    needs:
-      install:
-        cache: configure
-      configure:
-        controller: configure
-        haproxy: configure
   cyborg:
     needs:
       install:

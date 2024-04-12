@@ -30,11 +30,7 @@ include:
 
 etcd_conf:
   file.managed:
-{% if grains['os_family'] == 'Debian' %}
     - name: /etc/default/etcd
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /etc/etcd/etcd.conf
-{% endif %}
     - source: salt://formulas/etcd/files/etcd
     - template: jinja
     - defaults:

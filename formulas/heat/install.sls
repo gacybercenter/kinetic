@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 heat_packages:
   pkg.installed:
     - pkgs:
@@ -60,39 +58,3 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: heat_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-heat_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-heat-api
-      - openstack-heat-api-cfn
-      - openstack-heat-engine
-      - python3-openstackclient
-      - uwsgi-plugin-python3-tornado
-      - python3-designateclient
-      - python3-pip
-    - reload_modules: true
-
-heat_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: true
-    - names:
-      - python-openstackclient
-      - tornado
-      - python-designateclient
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-openstackclient
-      - tornado
-      - python-designateclient
-    - require:
-      - pip: heat_pip
-
-{% endif %}

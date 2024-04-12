@@ -15,9 +15,6 @@
 {% set type = opts.id.split('-')[0] %}
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 
-include:
-  - /formulas/common/fluentd/repo
-
 initial_module_sync:
   saltutil.sync_all:
     - refresh: True
@@ -44,7 +41,17 @@ role:
   timezone.system:
     - utc: True
 
-{% if grains['os_family'] == 'Debian' %}
+python3_pip:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+    - reload_modules: True
+
+# Allow for minion result checkin randomization
+/etc/salt/minion.d/98-tunning.conf:
+  file.managed:
+    - source: salt://formulas/common/minion/98-tunning.conf
+
 /etc/systemd/timesyncd.conf:
   file.managed:
     - source: salt://formulas/common/ntp/timesyncd.conf
@@ -54,7 +61,17 @@ role:
         ntp_fallback: {{ pillar['ntp']['ntp_fallback'] }}
   cmd.wait:
     - name: timedatectl set-ntp true
-{% endif %}
+
+/etc/sysctl.conf:
+  file.managed:
+    - source: salt://formulas/common/sysctl/files/sysctl.conf
+
+sysctl -p:
+  cmd.run:
+    - require:
+      - file: /etc/sysctl.conf
+    - unless:
+      - sysctl -n 'net.core.netdev_max_backlog' | grep -q 10000
 
 {% for key in pillar['authorized_keys'] %}
 {{ key }}:
@@ -80,15 +97,12 @@ hosts_name_resolution:
     - defaults:
         logger: 127.0.0.1:5514
 
-
-{% if grains['os_family'] == 'Debian' %}
 timesyncd:
   service.running:
     - name: systemd-timesyncd
     - enable: True
     - onchanges:
       - /etc/systemd/timesyncd.conf
-{% endif %}
 
 rsyslog:
   service.running:
