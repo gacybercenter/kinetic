@@ -73,6 +73,7 @@ set_build_phase_{{ phase }}_mine_{{ type }}:
 ## This macro executes a reboot-and-wait routine
 {%- macro reboot_and_wait(type, targets, phase) -%}
 
+{% do salt.log.info("Rebooting host type "+type+" for phase "+phase) %}
 reboot_{{ type }}_{{ phase }}:
   salt.function:
     - tgt:

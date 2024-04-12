@@ -18,3 +18,5 @@ set_images_pool_pgs:
     - tgt_type: compound
     - arg:
       - ceph osd pool set images pg_num {{ data['data']['pgs'] }}
+    - unless:
+      - ceph osd dump | grep images | grep -q 'pg_num {{ data['data']['pgs'] }}'

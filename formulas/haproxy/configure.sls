@@ -29,46 +29,113 @@ include:
 
 {% endif %}
 
-### Gateway configuration
-#{% if salt['pillar.get']('danos:enabled', False) == True %}
-#set haproxy group:
-#  danos.set_resourcegroup:
-#    - name: haproxy-{{ pillar['haproxy']['group'] }}
-#    - type: address-group
-#    - description: current haproxy servers for {{ pillar['haproxy']['group'] }}
-#    - values:
-#      - {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-#    - username: {{ pillar['danos']['username'] }}
-#    - password: {{ pillar['danos_password'] }}
-#  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
-#    - host: {{ grains['ip4_gw'] }}
-#  {% else %}
-#    - host: {{ pillar['danos']['endpoint'] }}
-#  {% endif %}
-#    - unless:
-#      - fun: grains.equals
-#        key: build_phase
-#        value: configure
+{% if salt['pillar.get']('tnsr:enabled', False) == True %}
+/etc/haproxy/tnsr.crt:
+  file.managed:
+    - contents_pillar: tnsr_cert
+    - mode: "0640"
+    - user: root
 
-#set haproxy static-mapping:
-#  danos.set_statichostmapping:
-#    - name: {{ pillar['haproxy']['dashboard_domain'] }}
-#    - address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-#    - aliases:
-#      - {{ pillar['haproxy']['console_domain'] }}
-#      - {{ pillar['haproxy']['guacamole_domain'] }}
-#    - username: {{ pillar['danos']['username'] }}
-#    - password: {{ pillar['danos_password'] }}
-#  {% if salt['pillar.get']('danos:endpoint', "gateway") == "gateway" %}
-#    - host: {{ grains['ip4_gw'] }}
-#  {% else %}
-#    - host: {{ pillar['danos']['endpoint'] }}
-#  {% endif %}
-#    - unless:
-#      - fun: grains.equals
-#        key: build_phase
-#        value: configure
-#{% endif %}
+/etc/haproxy/tnsr.pem:
+  file.managed:
+    - contents_pillar: tnsr_key
+    - mode: "0640"
+    - user: root
+
+tnsr_nat_updates:
+  tnsr.nat_updated:
+    - name: tnsr_nat_updates
+    - new_entries:
+      - transport-protocol: "any"
+        local-address: "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
+        local-port: "any"
+        external-address: "{{ pillar['haproxy']['external_address'] }}"
+        external-port: "any"
+        route-table-name: "{{ pillar['haproxy']['route_table'] }}"
+    - cert: /etc/haproxy/tnsr.crt
+    - key: /etc/haproxy/tnsr.pem
+    - hostname: {{ pillar['tnsr']['endpoint'] }}
+    - cacert: False
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - require:
+      - file: /etc/haproxy/tnsr.crt
+      - file: /etc/haproxy/tnsr.pem
+    - onlyif:
+      - salt-call dnsutil.A '{{ pillar['tnsr']['endpoint'] }}'
+
+tnsr_local_zones_updates:
+  tnsr.unbound_updated:
+    - name: tnsr_local_zones_updates
+    - type: "local-zone"
+    - new_zones:
+      - zone-name: "{{ pillar['haproxy']['zone_name'] }}"
+        type: "transparent"
+        hosts:
+          host:
+            - ip-address:
+              - "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
+              host-name: "{{ pillar['haproxy']['sub_zone_name'].split('.')[0] }}"
+      - zone-name: "{{ pillar['haproxy']['sub_zone_name'] }}"
+        type: "transparent"
+        hosts:
+          host:
+            - ip-address:
+              - "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
+              host-name: "{{ pillar['haproxy']['dashboard_domain'].split('.')[0] }}"
+            - ip-address:
+              - "{{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}"
+              host-name: "{{ pillar['haproxy']['console_domain'].split('.')[0] }}"
+    - cert: /etc/haproxy/tnsr.crt
+    - key: /etc/haproxy/tnsr.pem
+    - hostname: {{ pillar['tnsr']['endpoint'] }}
+    - cacert: False
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - require:
+      - file: /etc/haproxy/tnsr.crt
+      - file: /etc/haproxy/tnsr.pem
+    - onlyif:
+      - salt-call dnsutil.A '{{ pillar['tnsr']['endpoint'] }}'
+
+  {% if salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain')|length != 0 %}
+    {% set bind_ips = [] %}
+    {% for host, addresses in salt['mine.get']('role:bind', 'network.ip_addrs', tgt_type='grain') | dictsort(reverse=True) -%}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+        {{ bind_ips.append( address ) }}
+      {% endfor %}
+    {% endfor %}
+    {% set bind_ips = bind_ips | list | sort %}
+tnsr_forward_zones_updates:
+  tnsr.unbound_updated:
+    - name: tnsr_forward_zones_updates
+    - type: "forward-zone"
+    - new_zones:
+      - zone-name: "{{ pillar['designate']['tld'] }}"
+        forward-addresses:
+          address:
+    {% for address in bind_ips %}
+            - ip-address: "{{ address }}"
+    {% endfor %}
+    - cert: /etc/haproxy/tnsr.crt
+    - key: /etc/haproxy/tnsr.pem
+    - hostname: {{ pillar['tnsr']['endpoint'] }}
+    - cacert: False
+    - retry:
+        attempts: 3
+        interval: 10
+        splay: 5
+    - require:
+      - file: /etc/haproxy/tnsr.crt
+      - file: /etc/haproxy/tnsr.pem
+    - onlyif:
+      - salt-call dnsutil.A '{{ pillar['tnsr']['endpoint'] }}'
+  {% endif %}
+{% endif %}
 
 {% if (salt['grains.get']('selinux:enabled', False) == True) and (salt['grains.get']('selinux:enforced', 'Permissive') == 'Enforcing')  %}
 haproxy_connect_any:
@@ -90,12 +157,11 @@ acme_certs:
 {% if salt['pillar.get']('development:test_certs', False) == True %}
     - test_cert: True
 {% endif %}
-#{% if salt['pillar.get']('danos:enabled', False) == True %}
-#    - require:
-#      - service: haproxy_service_stop
-#      - danos: set haproxy group
-#      - danos: set haproxy static-mapping
-#{% endif %}
+{% if salt['pillar.get']('tnsr:enabled', False) == True %}
+    - require:
+      - tnsr: tnsr_nat_updates
+      - tnsr: tnsr_local_zones_updates
+{% endif %}
 
 create_master_pem:
   cmd.run:

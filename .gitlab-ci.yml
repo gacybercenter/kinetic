@@ -2,6 +2,7 @@ image: python:3.9.1-alpine3.12
 
 stages:
   - lint
+  - pages
 
 salt-lint:
   stage: lint
@@ -9,7 +10,16 @@ salt-lint:
     - docker
   script:
     - pip install salt-lint
-    - salt-lint $(find . -name \*.sls)
+    - salt-lint --json --severity $(find . -name \*.sls) > saltcodeclimate.json
+  only:
+    changes:
+      - formulas/**/*
+      - orch/**/*
+      - reactor/**/*
+  artifacts:
+    reports:
+      codequality: saltcodeclimate.json
+    when: always
 
 pylint:
   stage: lint
@@ -20,8 +30,36 @@ pylint:
     - pip install pylint_gitlab
   script:
     - pylint --exit-zero --output-format=text $(find ./_modules ./_runners ./_states -type f -name "*.py") | tee /tmp/pylint.txt
-    - pylint --exit-zero --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find ./_modules ./_runners ./_states -type f -name "*.py") > codeclimate.json
+    - pylint --exit-zero --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find ./_modules ./_runners ./_states -type f -name "*.py") >> codeclimate.json
   artifacts:
     reports:
       codequality: codeclimate.json
     when: always
+  only:
+    changes:
+      - _grains/**/*
+      - _modules/**/*
+      - _runners/**/*
+      - _states/**/*
+
+pages:
+  tags:
+    - docker-gcc
+  stage: pages
+  image:
+    name: antora/antora:latest
+    entrypoint: [/bin/sh, -c]
+  script:
+    - echo 'nav:' >> docs/antora.yml
+    - echo '  - modules/ROOT/nav.adoc' >> docs/antora.yml
+    - echo '  - modules/documentation/nav.adoc' >> docs/antora.yml
+    - antora site.yml --stacktrace
+    - echo '<html><meta http-equiv="refresh" content="0; url=./docs/latest/index.html"/></html>' > public/documentation/kinetic.html
+  artifacts:
+    expire_in: 3 month
+    paths:
+      - public
+  only:
+    changes:
+      - site.yml
+      - docs/**/*

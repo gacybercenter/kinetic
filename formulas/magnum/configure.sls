@@ -55,22 +55,14 @@ magnum-db-manage upgrade:
 
 magnum_conductor_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: magnum-conductor
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-magnum-conductor
-{% endif %}
     - enable: True
     - watch:
       - file: /etc/magnum/magnum.conf
 
 magnum_api_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: magnum-api
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-magnum-api
-{% endif %}
     - enable: true
     - watch:
       - file: /etc/magnum/magnum.conf

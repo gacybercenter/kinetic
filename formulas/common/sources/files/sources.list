@@ -1,0 +1,21 @@
+# deb http://archive.ubuntu.com/ubuntu jammy main restricted
+# deb http://archive.ubuntu.com/ubuntu jammy-updates main restricted
+# deb http://archive.ubuntu.com/ubuntu jammy universe
+# deb http://archive.ubuntu.com/ubuntu jammy-updates universe
+# deb http://archive.ubuntu.com/ubuntu jammy multiverse
+# deb http://archive.ubuntu.com/ubuntu jammy-updates multiverse
+# deb http://archive.ubuntu.com/ubuntu jammy-backports main restricted universe multiverse
+# deb http://security.ubuntu.com/ubuntu jammy-security main restricted
+# deb http://security.ubuntu.com/ubuntu jammy-security universe
+# deb http://security.ubuntu.com/ubuntu jammy-security multiverse
+
+deb {{ ubuntu_archive }} {{ ubuntu_name }} main restricted
+deb {{ ubuntu_archive }} {{ ubuntu_name }}-updates main restricted
+deb {{ ubuntu_archive }} {{ ubuntu_name }} universe
+deb {{ ubuntu_archive }} {{ ubuntu_name }}-updates universe
+deb {{ ubuntu_archive }} {{ ubuntu_name }} multiverse
+deb {{ ubuntu_archive }} {{ ubuntu_name }}-updates multiverse
+deb {{ ubuntu_archive }} {{ ubuntu_name }}-backports main restricted universe multiverse
+deb {{ ubuntu_security }} {{ ubuntu_name }}-security main restricted
+deb {{ ubuntu_security }} {{ ubuntu_name }}-security universe
+deb {{ ubuntu_security }} {{ ubuntu_name }}-security multiverse

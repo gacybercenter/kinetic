@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 keystone_packages:
   pkg.installed:
     - pkgs:
@@ -31,25 +29,3 @@ keystone_packages:
       - apache2
       - libapache2-mod-wsgi-py3
       - python3-etcd3gw
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-keystone_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-keystone
-      - python3-ldap3 ## version agnostic
-      - python3-openstackclient ## version agnostic
-      - openldap-clients
-      - httpd
-      - python3-mod_wsgi
-
-{% endif %}
-# ## the shade module is affected by https://github.com/saltstack/salt/issues/24925
-# ## this is an attempt at a workaround
-# Restart Salt Minion:
-#   cmd.run:
-#     - name: 'salt-call service.restart salt-minion'
-#     - bg: True
-#     - onchanges:
-#       - pkg: shade

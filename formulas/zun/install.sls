@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 zun_packages:
   pkg.installed:
     - pkgs:
@@ -54,45 +52,6 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: zun_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-zun_packages:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-      - git
-      - platform-python-devel
-      - libffi-devel
-      - gcc
-      - gcc-c++
-      - openssl-devel
-      - numactl
-      - python3-PyMySQL
-      - python3-memcached
-      - python3-openstackclient
-
-zun_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - pymysql
-      - python-memcached
-      - python-openstackclient
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - pymysql
-      - python-memcached
-      - python-openstackclient
-    - require:
-      - pip: zun_pip
-
-{% endif %}
 
 zun:
   group.present:

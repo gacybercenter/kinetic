@@ -17,19 +17,17 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
- #  - /formulas/common/ceph/repo
-  - /formulas/common/docker/repo
   - /formulas/common/kata/repo
 
-{% if grains['os_family'] == 'Debian' %}
-  {% if pillar['neutron']['backend'] == "linuxbridge" %}
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 container_packages:
   pkg.installed:
     - pkgs:
       - python3-pip
       - git
       - python3-openstackclient
-      - docker-ce
+      - docker.io
+      - containerd
       - neutron-linuxbridge-agent
       - python3-tornado
       - python3-pymysql
@@ -62,14 +60,15 @@ salt-pip_installs:
     - require:
       - pip: container_pip
 
-  {% elif pillar['neutron']['backend'] == "openvswitch" %}
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
 container_packages:
   pkg.installed:
     - pkgs:
       - python3-pip
       - git
       - python3-openstackclient
-      - docker-ce
+      - docker.io
+      - containerd
       - neutron-openvswitch-agent
       - python3-tornado
       - python3-pymysql
@@ -103,7 +102,7 @@ salt-pip_installs:
     - require:
       - pip: container_pip
 
-  {% elif pillar['neutron']['backend'] == "networking-ovn" %}
+{% elif pillar['neutron']['backend'] == "networking-ovn" %}
 
 container_packages:
   pkg.installed:
@@ -111,7 +110,8 @@ container_packages:
       - python3-pip
       - git
       - python3-openstackclient
-      - docker-ce
+      - docker.io
+      - containerd
       - ovn-host
       - python3-tornado
       - python3-pymysql
@@ -143,132 +143,6 @@ salt-pip_installs:
       - tornado
     - require:
       - pip: container_pip
-
-    {% endif %}
-
-{% elif grains['os_family'] == 'RedHat' %}
-  {% if pillar['neutron']['backend'] == "linuxbridge" %}
-
-container_packages:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-      - git
-      - platform-python-devel
-      - libffi-devel
-      - gcc
-      - openssl-devel
-      - openstack-neutron-linuxbridge
-      - python3-PyMySQL
-      - numactl
-      - python3-openstackclient
-      - gcc-c++
-      - kata-runtime
-      - kata-proxy
-      - kata-shim
-
-container.pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - pymysql
-      - python-openstackclient
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - pymysql
-      - python-openstackclient
-    - require:
-      - pip: container_pip
-
-  {% elif pillar['neutron']['backend'] == "openvswitch" %}
-
-container_packages:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-      - git
-      - platform-python-devel
-      - libffi-devel
-      - gcc
-      - openssl-devel
-      - openstack-neutron-openvswitch
-      - python3-PyMySQL
-      - numactl
-      - python3-openstackclient
-      - gcc-c++
-      - kata-runtime
-      - kata-proxy
-      - kata-shim
-
-container.pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - pymysql
-      - python-openstackclient
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - pymysql
-      - python-openstackclient
-    - require:
-      - pip: container_pip
-
-  {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-
-container_packages:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-      - git
-      - platform-python-devel
-      - libffi-devel
-      - gcc
-      - openssl-devel
-      - rdo-ovn-host
-      - python3-PyMySQL
-      - libibverbs
-      - numactl
-      - python3-openstackclient
-      - gcc-c++
-      - kata-runtime
-      - kata-proxy
-      - kata-shim
-    - reload_modules: True
-
-container.pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - pymysql
-      - python-openstackclient
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - pymysql
-      - python-openstackclient
-    - require:
-      - pip: container_pip
-
-  {% endif %}
-
-docker-ce:
-  pkg.installed:
-    - setopt:
-      - best=False
 
 {% endif %}
 

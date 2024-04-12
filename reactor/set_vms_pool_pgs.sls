@@ -18,3 +18,5 @@ set_vms_pool_pgs:
     - tgt_type: compound
     - arg:
       - ceph osd pool set vms pg_num {{ data['data']['pgs'] }}
+    - unless:
+      - ceph osd dump | grep vms | grep -q 'pg_num {{ data['data']['pgs'] }}'

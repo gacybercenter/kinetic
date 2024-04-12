@@ -54,22 +54,14 @@ sahara-db-manage --config-file /etc/sahara/sahara.conf upgrade head:
 
 sahara_api_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: apache2
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-sahara-api
-{% endif %}
     - enable: True
     - watch:
       - file: /etc/sahara/sahara.conf
 
 sahara_engine_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: sahara-engine
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-sahara-engine
-{% endif %}
     - enable: True
     - watch:
       - file: /etc/sahara/sahara.conf

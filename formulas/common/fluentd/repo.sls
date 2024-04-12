@@ -12,23 +12,25 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-{% if grains['os_family'] == 'Debian' %}
-
 fluentd_repo:
   pkgrepo.managed:
     - humanname: Treasure Data
-    - name: deb https://packages.treasuredata.com/4/ubuntu/jammy jammy contrib
+{% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
+  {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://packages.treasuredata.com/4/ubuntu/" + pillar['ubuntu']['name'] + "/" %}
+    - name: deb [signed-by=/etc/apt/keyrings/GPG-KEY-td-agent arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} contrib
+    {% endif %}
+  {% endfor %}
+{% else %}
+    - name: deb [signed-by=/etc/apt/keyrings/GPG-KEY-td-agent arch=amd64] https://packages.treasuredata.com/4/ubuntu/{{ pillar['ubuntu']['name'] }} {{ pillar['ubuntu']['name'] }} contrib
+{% endif %}
     - file: /etc/apt/sources.list.d/fluentd.list
     - key_url: https://packages.treasuredata.com/GPG-KEY-td-agent
+    - aptkey: False
 
 update_packages_fluentd:
   pkg.uptodate:
     - refresh: true
     - onchanges:
-      - fluentd_repo
+      - pkgrepo: fluentd_repo
     - dist_upgrade: True
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-
-{% endif %}

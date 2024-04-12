@@ -17,10 +17,7 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
-#  - /formulas/common/ceph/repo
-#  - /formulas/common/frr/repo
 
-{% if grains['os_family'] == 'Debian' %}
 compute_packages:
   pkg.installed:
     - pkgs:
@@ -32,6 +29,9 @@ compute_packages:
       - python3-rados
       - python3-etcd3gw
       - qemu-system-x86
+      - qemu-system-arm
+      - qemu-system-ppc
+      - qemu-system-s390x
       - nvme-cli
   {% if pillar['neutron']['backend'] == "linuxbridge" %}
       - neutron-linuxbridge-agent
@@ -45,55 +45,38 @@ compute_packages:
 #      - frr
 #      - frr-pythontools
 
-compute_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - tornado
-      - etcd3gw
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: True
-    - pkgs:
-      - tornado
-      - etcd3gw
-    - require:
-      - pip: compute_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-compute_packages:
+## NOTE(chateaux): This is a temporary workaround for the arm64 compute nodes
+##                 to compile libvirtd from source due to newer neoverse-n1
+##                 processors not being supported by libvirt version 8.X
+##
+##                 Reference https://libvirt.org/compiling.html, and
+##                 https://download.libvirt.org/
+{% if grains['type'] == 'arm' %}
+compile_libvirt_pkgs:
   pkg.installed:
     - pkgs:
-      - openstack-nova-compute
-      - python3-tornadonova-compute
-      - python3-tornado
-      - ceph-common
-      - spice-html5
-      - python3-etcd3gw
-      - qemu-system
-      - nvme-cli
-      - ceph-common
-      - python3-rbd
-      - python3-rados
-      - conntrack-tools
-      - qemu-system-arm
-      - qemu-system-mips
-      - nvme-cli
-  {% if pillar['neutron']['backend'] == "linuxbridge" %}
-      - openstack-neutron-linuxbridge
-  {% elif pillar['neutron']['backend'] == "openvswitch" %}
-      - openstack-openvswitch-agent
-   {% elif pillar['neutron']['backend'] == "networking-ovn" %}
-      - rdo-ovn-host
-      - openstack-neutron-ovn-metadata-agent
-      - openstack-neutron-common
-      - haproxy
-  {% endif %}
-#      - frr
-#      - frr-pythontools
+      - meson
+      - xsltproc
+      - pkg-config
+      - libglib2.0-dev
+      - libgnutls28-dev
+      - libxml2-dev
+      - libyajl-dev
+
+/root/libvirtd-10-rc-patch.sh:
+  file.managed:
+    - mode: "0755"
+    - source: salt://formulas/compute/files/libvirtd-10-rc-patch.sh
+
+compile_libvirt:
+  cmd.run:
+    - name: /root/libvirtd-10-rc-patch.sh
+    - cwd: /root
+    - require:
+      - pkg: compile_libvirt_pkgs
+      - file: /root/libvirtd-10-rc-patch.sh
+    - unless: libvirtd --version | grep '10.0'
+{% endif %}
 
 compute_pip:
   pip.installed:
@@ -112,5 +95,3 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: compute_pip
-
-{% endif %}

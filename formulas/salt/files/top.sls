@@ -28,6 +28,13 @@ base:
     - rabbitmq
     - placement
     - swift
+  'arm*':
+    - ceph
+    - nova
+    - neutron
+    - rabbitmq
+    - placement
+    - swift
   'gpu*':
     - ceph
     - nova
@@ -163,8 +170,6 @@ base:
   'guacamole*':
     - guacamole
     - integrated_services
-  'jproxy*':
-    - junos
   'cyborg*':
     - cyborg
     - openstack

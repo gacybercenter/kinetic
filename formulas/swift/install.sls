@@ -19,8 +19,6 @@ include:
   - /formulas/common/openstack/repo
  #  - /formulas/common/ceph/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 swift_packages:
   pkg.installed:
     - pkgs:
@@ -45,28 +43,3 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: swift_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-swift_packages:
-  pkg.installed:
-    - pkgs:
-      - ceph-radosgw
-      - python3-openstackclient
-
-swift_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-salt-pip_installs:
-  pip.installed:
-    bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-openstackclient
-    - require:
-      - pip: swift_pip
-
-{% endif %}

@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 cyborg_packages:
   pkg.installed:
     - pkgs:
@@ -53,44 +51,6 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: cyborg_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-cyborg_packages:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-      - git
-      - platform-python-devel
-      - libffi-devel
-      - gcc
-      - gcc-c++
-      - openssl-devel
-      - python3-PyMySQL
-      - python3-memcached
-      - python3-openstackclient
-
-cyborg_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - pymysql
-      - python-memcached
-      - python-openstackclient
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - pymysql
-      - python-memcached
-      - python-openstackclient
-    - require:
-      - pip: cyborg_pip
-
-{% endif %}
 
 pymysql_sa:
   pip.installed:

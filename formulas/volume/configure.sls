@@ -60,11 +60,7 @@ include:
 ## This can be removed once universal retries are implemented
 cinder_volume_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: cinder-volume
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-cinder-volume
-{% endif %}
     - enable: true
     - retry:
         attempts: 3

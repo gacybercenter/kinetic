@@ -1,0 +1,165 @@
+= Kinetic Orchestration
+:imagesdir: ../assets/images
+
+== Architecture Overview
+image::kinetic.png[]
+
+
+==  Orchestration Overview
+This outlines the overall *Orchestration* philosophy that the the
+Kinetic Framework was designed to follow. In order to allow for rapid
+recovery in cases of compromise to Confidentiality, Integrity, and
+Availability (CIA), the Kinetic Framework was designed to be as
+modular as possible. This allows for the system to be easily
+reconfigured and redeployed to support integrations of a variety of
+services.
+
+image::simple_orch.png[]
+
+=== Orchestration `salt-run state.orch orch`
+
+To start the provisioning process, any previously created services
+must be removed. Within the init stage, enabled services are powered
+off and their keys are deleted. Then, a salt runner is created for
+every endpoint type. These runners will be utilized during the
+provisioning process. After the runners have been created, each service
+type is sent to the "waiting room" by calling `orch/waiting_room.sls``. 
+
+.Understanding `orch/init.sls`
+[%collapsible]
+====
+For each enabled host in the pillar, the system is powered off and
+the keys are deleted. After this, the state iterates through each of
+these hosts and creates a variable called 'role'. For any physical
+systems, their 'role' attribute is changed to 'physical'. For all other
+systems, the 'role' attribute is set to the type found in the pillar. 
+====
+=== orch/waiting_room.sls
+
+The aptly named `orch/waiting_room.sls` acts as a lobby for all
+services waiting to be provisioned. Because of the complex dependencies
+across all service types, they cannot be provisioned at the same time.
+Once all dependencies are met, the service is released from the waiting
+room and calls `orch/generate.sls` for each endpoint's runner. 
+
+.Understanding `orch/waiting_room.sls` and `runners/needs.py`
+[%collapsible]
+====
+Within the salt runner, there is a Python module called `needs.py`.
+This state routinely calls `needs.check_all` until this function returns
+true. `Needs.check_all` iterates through the given array of needs to
+check the current status. If the dependency's status is not complete or
+available for assessment, the variable 'phase_ok' is set to false. If
+the function gets through the iteration without setting 'phase_ok' to
+false, it will change the 'ready' value in the return dicitonary to true.
+At that point, the service is released from the waiting room and continues
+provisioning by calling `orch/generate.sls` for each endpoint's runner. 
+====
+
+=== orch/generate.sls
+
+The generate module prepares the salt runners to provision each service
+type. It creates a dictionary called `targets`, which is populated with
+the ID of each endpoint. The style of each service (physical or virtual)
+is taken directly from the kinetic-pillar and the course of action differs
+accordingly. 
+
+.Understanding `orch/generate.sls`
+[%collapsible]
+====
+
+[.lead]
+Physical Services:
+
+* References the pillar to find the UUID using a `redfish.py` function
+called `redfish.gather_endpoints`. This Python function iterates over IP
+addresses in the network range and attempts to establish a Redfish
+connection to each IP address. If this is successful it will retrieve
+the endpoints information. The systems are stored in a dictionary with
+the UUIDs as keys and IP addresses as values. 
+
+[.lead]
+Virtual Services:
+
+* Because the virtual services do not have UUIDs, this code path generates
+its target IDs by finding the controllers, calculating an offset, and then
+assigning values based on the ID. Specific values assigned depend on the
+loop index, controllers discovered and generated UUIDs. 
+
+Now, there is a dictionary of target UUIDs. For the rest of the process,
+this dictionary is referenced to provision each endpoint.
+
+==== 
+=== orch/zeroize.sls
+
+This module has two code paths, each depending on the style of the service.
+Physical services will call `redfish.set_bootonce` and `redfish.reset_host`,
+more functions within the redfish.py module. 
+
+[.lead]
+orch/states/virtualzero.sls
+
+* This state is only called when using `orch/zeroize.sls` on virtual
+endpoints. This state looks for endpoints matching the specified type.
+It then stops them and removes their files and logs.
+
+[.lead] 
+orch/states/virtualprep.sls
+
+* This state is only called when using `orch/zerioze.sls` on virtual
+endpoints. This state uses SaltStack's file management cappabilities
+to define each endpoint's configuration files.
+
+=== orch/provision
+
+This state was called by `orch/generate.sls` _after_ `orch/zeroize.sls`
+is completed. This state starts by importing the following modules. After
+each of them have been run, the endpoint will be successfully orchestrated.
+It is important to note that they are called in this order and each one
+requires the previous. 
+
+
+.Understanding `formulas/common/macros/orchestration.sls`
+[%collapsible]
+====
+This macro is used to construct needs-check routines. It will loop back
+until all networking dependancies have been met. This uses the same `needs.py`
+module used in `waiting_room.sls`. This macro calls `needs.check_one`,
+which checks if dependencies are met for a specific type or phase.  
+====
+
+.Understanding `formulas/common/base.sls`
+[%collapsible]
+====
+This module configures various settings on each endpoint based on its type,
+role, and operating system. First, the system time settings are set, SSH
+keys are managed, and Rsyslog is configured. 
+====
+
+.Understanding `formulas/common/networking.sls`
+[%collapsible]
+====
+This module is designed to configure and manage network interfaces for each
+endpoint. It provides configuration for all relevant types of interfaces:
+regular, bonded, bridged, and bonded & bridged. After installing Python3 and
+Pyroute2, this module ensures that only needed services are enabled. To create
+a bridge interface, the module creates a .netdev file making the bridged
+interface object. It then creates a .network file associating the physical
+interface with the bridged interface object. 
+====
+
+.Understanding `formulas/{{ role }}/install.sls`
+[%collapsible]
+====
+There is a specific `install.sls` module for each endpoint type. This module is
+used to install software packages and Python libraries based on what the endpoint
+needs.
+====
+
+.Understanding `formulas/{{ role }}//configure.sls`
+[%collapsible]
+====
+Similarly to the `install.sls` module, there is also a specific `configure.sls`
+module for each endpoint type. This module is used to configure the previously
+installed packages and libraries. 
+====

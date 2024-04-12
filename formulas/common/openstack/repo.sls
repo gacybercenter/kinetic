@@ -12,56 +12,26 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-{% if grains['os_family'] == 'Debian' %}
-
-uca:
+{{ pillar['openstack']['version'] }}_repo:
   pkgrepo.managed:
-    - humanname: Ubuntu Cloud Archive - Antelope
-    - name: deb http://ubuntu-cloud.archive.canonical.com/ubuntu jammy-updates/antelope main
-    - file: /etc/apt/sources.list.d/cloudarchive-antelope.list
-    - keyid: EC4926EA
-    - keyserver: keyserver.ubuntu.com
+    - humanname: Ubuntu Cloud Archive - {{ pillar['openstack']['version'] }}
+{% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
+  {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
+    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ubuntu-cloud.archive.canonical.com/ubuntu/" %}
+    - name: deb [signed-by=/etc/apt/keyrings/Release.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+    {% endif %}
+  {% endfor %}
+{% else %}
+    - name: deb [signed-by=/etc/apt/keyrings/cloudarchive.gpg arch=amd64] http://ubuntu-cloud.archive.canonical.com/ubuntu {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+{% endif %}
+    - file: /etc/apt/sources.list.d/{{ pillar['openstack']['version'] }}.list
+    - key_url: salt://formulas/common/openstack/files/cloudarchive.gpg
+    - aptkey: False
 
-update_packages_uca:
+update_packages_{{ pillar['openstack']['version'] }}:
   pkg.uptodate:
     - refresh: true
     - onchanges:
-      - pkgrepo: uca
+      - pkgrepo: {{ pillar['openstack']['version'] }}_repo
     - dist_upgrade: True
 
-{% elif grains['os_family'] == 'RedHat' %}
-
-## added per https://www.rdoproject.org/install/packstack/
-## official upstream docs do not reflect this yet
-crb:
-  pkgrepo.managed:
-    - humanname: crb
-    - name: crb
-    - baseurl: https://download.rockylinux.org/pub/rocky/9/CRB/x86_64/os/
-    - gpgcheck: 1
-    - enabled: 1
-    - gpgkey: https://download.rockylinux.org/pub/rocky/9/RPM-GPG-KEY-rockylinux-release
-
-crb-install:
-  pkg.installed:
-    - name: powertools
-
-rdo:
-  pkg.installed:
-    - name: centos-release-openstack-antelope
-
-update_packages_rdo:
-  pkg.uptodate:
-    - refresh: true
-    - onchanges:
-      - pkg: rdo
-      - pkgrepo: crb
-
-openstack-selinux:
-  pkg.installed:
-    - require:
-      - pkg: rdo
-      - pkg: update_packages_rdo
-      - pkgrepo: crb
-
-{% endif %}

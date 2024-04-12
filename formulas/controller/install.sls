@@ -46,8 +46,6 @@ salt-pip_installs:
     - require:
       - pip: controller_pip
 
-{% if grains['os_family'] == 'Debian' %}
-
 controller_packages_deb:
   pkg.installed:
     - pkgs:
@@ -55,14 +53,3 @@ controller_packages_deb:
       - libvirt-daemon-system
       - qemu-utils
     - reload_modules: true
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-controller_packages_rpm:
-  pkg.installed:
-    - pkgs:
-      - libvirt-client
-      - libvirt-daemon-kvm
-    - reload_modules: true
-
-{% endif %}

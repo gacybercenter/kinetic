@@ -24,6 +24,9 @@ pxe_packages:
       - python3-tornado
       - apache2
       - libapache2-mod-wsgi-py3
+      - gcc-aarch64-linux-gnu
+      - kea-dhcp4-server
+      - kea-ctrl-agent
       - git
       - tftpd-hpa
     - reload_modules: True

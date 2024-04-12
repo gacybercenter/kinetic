@@ -87,6 +87,10 @@ set_vms_pool_pgs:
     - name: set/vms/pool_pgs
     - data:
         pgs: {{ pillar['cephconf']['vms_pgs'] }}
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 {% endif %}
 
 {{ spawn.spawnzero_complete() }}
@@ -145,11 +149,7 @@ spice-html5:
 
 nova_api_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: nova-api
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-nova-api
-{% endif %}
     - enable: true
     - retry:
         attempts: 3
@@ -159,11 +159,7 @@ nova_api_service:
 
 nova_scheduler_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: nova-scheduler
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-nova-scheduler
-{% endif %}
     - enable: true
     - retry:
         attempts: 3
@@ -173,11 +169,7 @@ nova_scheduler_service:
 
 nova_conductor_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: nova-conductor
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-nova-conductor
-{% endif %}
     - enable: true
     - retry:
         attempts: 3
@@ -187,11 +179,7 @@ nova_conductor_service:
 
 nova_spiceproxy_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: nova-spiceproxy
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-nova-spicehtml5proxy
-{% endif %}
     - enable: true
     - retry:
         attempts: 3
@@ -201,11 +189,7 @@ nova_spiceproxy_service:
 
 nova_serialproxy_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: nova-serialproxy
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: openstack-nova-serialproxy
-{% endif %}
     - enable: true
     - retry:
         attempts: 3

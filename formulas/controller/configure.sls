@@ -26,9 +26,9 @@ kvm_array:
     - name: /dev/md/kvm_array
     - level: {{ raid_level[1] }}
     - devices:
-    {% for device in pillar['hosts'][type]['kvm_disk_config']['members'] %}
+  {% for device in pillar['hosts'][type]['kvm_disk_config']['members'] %}
       - {{ device }}
-    {% endfor %}
+  {% endfor %}
     - chunk: 512
     - run: true
 
@@ -72,12 +72,12 @@ fs:
 
 {% elif 'standard' in pillar['hosts'][type]['kvm_disk_config']['type'] %}
 {% set target_device = pillar['hosts'][type]['kvm_disk_config']['members'][0] %}
-{% if target_device == "rootfs" %}
+  {% if target_device == "rootfs" %}
 
 /kvm:
   file.directory
 
-{% else %}
+  {% else %}
 
 pv_config:
   lvm.pv_present:
@@ -115,7 +115,7 @@ fs:
     - require:
       - fs
 
-{% endif %}
+  {% endif %}
 {% endif %}
 
 /kvm/images:
@@ -130,13 +130,6 @@ fs:
     - require:
       - /kvm
 
-{% if grains['os_family'] == 'RedHat' %}
-libvirtd_service:
-  service.running:
-    - name: libvirtd
-    - enable: true
-{% endif %}
-
 {% for os, args in pillar.get('images', {}).items() %}
   {% if args['type'] == 'virt-builder' %}
 create_{{ args['name'] }}:
@@ -148,7 +141,6 @@ create_{{ args['name'] }}:
       - file: /kvm/images
 
   {% elif args['type'] == 'url' %}
-
 create_{{ args['name'] }}:
   file.managed:
     - name: /kvm/images/{{ os }}.original

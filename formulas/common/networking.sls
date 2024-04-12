@@ -21,11 +21,7 @@ ifwatch:
   grains.present:
     - value:
 {% if grains['type'] in ['salt','pxe'] %}
-  {% if grains['os_family'] == 'RedHat' %}
-      - eth0
-  {% elif grains['os_family'] == 'Debian' %}
       - ens3
-  {% endif %}
 {% else %}
   {% for network in pillar['hosts'][grains['type']]['networks'] %}
       - {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
@@ -33,11 +29,19 @@ ifwatch:
 {% endif %}
     - force: True
 
-python3_pip:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
+pin_pip_version:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
     - reload_modules: True
+    - names:
+      - pip=={{ pillar['pip']['version'] }}
+
+pin_salt_pip_version:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - names:
+      - pip=={{ pillar['pip']['version'] }}
 
 pyroute2_pip:
   pip.installed:
@@ -48,7 +52,7 @@ pyroute2_pip:
       - pyroute2.ndb
       - pyroute2.ipdb
     - require:
-      - pkg: python3_pip
+      - pin_pip_version
 
 pyroute2_salt_pip:
   pip.installed:
@@ -59,7 +63,7 @@ pyroute2_salt_pip:
       - pyroute2.ndb
       - pyroute2.ipdb
     - require:
-      - pip: pyroute2_pip
+      - pin_salt_pip_version
 
 ## Patch pyroute2 to fix a bug in the compat module until it is fixed upstream
 ## https://github.com/svinota/pyroute2/issues/1132
@@ -85,13 +89,6 @@ pyroute2_patch:
 netplan.io:
   pkg.removed
 
-  {% if grains['os_family'] == 'RedHat' %}
-install_networkd:
-  pkg.installed:
-    - pkgs:
-      - systemd-networkd
-  {% endif %}
-
 /etc/netplan:
   file.absent
 
@@ -101,8 +98,9 @@ install_networkd:
 NetworkManager:
   service.disabled
 
-systemd-resolved:
-  service.enabled
+# In favor of setting dns to cache
+#systemd-resolved:
+#  service.enabled
 
 systemd-networkd.socket:
   service.enabled
@@ -207,19 +205,15 @@ systemd-networkd:
       {% else %}
         Name={{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
       {% endif %}
-    {% if network == 'management' %}
+    {% if network =='public' %}
+        [Network]
+        DHCP=no
+    {% else %}
         [Network]
         DHCP=yes
         KeepConfiguration=dhcp-on-stop
         [DHCPv4]
         SendRelease=false
-    {% elif network =='public' %}
-        [Network]
-        DHCP=no
-    {% else %}
-        [Network]
-        DHCP=no
-        Address={{ salt['address.client_get_address']('api', pillar['api']['user_password'], network, grains['host'], pillar['salt']['record'], pillar['salt']['name']) }}/{{ pillar['networking']['subnets'][network].split('/')[1] }}
     {% endif %}
   {% endfor %}
 {% endif %}

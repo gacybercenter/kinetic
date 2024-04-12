@@ -31,19 +31,11 @@ include:
 
 local_settings:
   file.managed:
-{% if grains['os_family'] == 'Debian' %}
     - name: /etc/openstack-dashboard/local_settings.py
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: /etc/openstack-dashboard/local_settings
-{% endif %}
     - source: salt://formulas/horizon/files/local_settings.py
     - template: jinja
     - defaults:
-{% if grains['os_family'] == 'Debian' %}
         webroot: horizon
-{% elif grains['os_family'] == 'RedHat' %}
-        webroot: dashboard
-{% endif %}
         secret_key: /var/lib/openstack-dashboard/secret_key
         memcached_servers: {{ constructor.memcached_url_constructor()|yaml_encode }}
         keystone_url: {{ pillar['endpoints']['internal'] }}
@@ -70,26 +62,15 @@ local_settings:
 ### ref: https://bugs.launchpad.net/horizon/+bug/1880188
 swift_ceph_patch:
   file.line:
-{% if grains['os_family'] == 'RedHat' %}
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/site-packages/swiftclient/client.py
-{% elif grains['os_family'] == 'Debian' %}
     - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/swiftclient/client.py
-{% endif %}
     - content: parsed = urlparse(urljoin(url, '/swift/info'))
     - match: parsed = urlparse(urljoin(url, '/info'))
     - mode: replace
 
-{% if grains['os_family'] == 'Debian' %}
 apache_conf:
   file.managed:
     - name: /etc/apache2/conf-enabled/openstack-dashboard.conf
     - source: salt://formulas/horizon/files/uca-dashboard.conf
-{% elif grains['os_family'] == 'RedHat' %}
-apache_conf:
-  file.managed:
-    - name: /etc/httpd/conf.d/openstack-dashboard.conf
-    - source: salt://formulas/horizon/files/rdo-dashboard.conf
-{% endif %}
 
 /var/www/html/index.html:
   file.managed:
@@ -97,22 +78,13 @@ apache_conf:
     - template: jinja
     - defaults:
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
-{% if grains['os_family'] == 'Debian' %}
         alias: horizon
-{% elif grains['os_family'] == 'RedHat' %}
-        alias: dashboard
-{% endif %}
 
 secret_key:
   file.managed:
     - name: /var/lib/openstack-dashboard/secret_key
-{% if grains['os_family'] == 'Debian' %}
     - user: horizon
     - group: horizon
-{% elif grains['os_family'] == 'RedHat' %}
-    - user: apache
-    - group: apache
-{% endif %}
     - mode: "0600"
     - contents_pillar: horizon:horizon_secret_key
 
@@ -124,22 +96,15 @@ install_theme:
     - branch: {{ salt['pillar.get']('horizon:theme:branch') }}
 {% endif %}
 
-### temporary patches for pyScss
+# TODO(chateaulav): Need to validate continued need for pyScss patch
 pyScss_deprecation_patch:
   file.managed:
     - names:
-{% if grains['os_family'] == 'RedHat' %}
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/dist-packages/scss/namespace.py:
-        - source: salt://formulas/horizon/files/namespace.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}.{{ grains['pythonversion'][1] }}/dist-packages/scss/types.py:
-        - source: salt://formulas/horizon/files/types.py
-{% elif grains['os_family'] == 'Debian' %}
       - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/namespace.py:
         - source: salt://formulas/horizon/files/namespace.py
       - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/types.py:
         - source: salt://formulas/horizon/files/types.py
-{% endif %}
-### /temporary patches for pyScss
+# /temporary patches for pyScss
 
 configure-collect-static:
   cmd.run:
@@ -166,11 +131,7 @@ configure-compress-static:
 
 apache2_service:
   service.running:
-{% if grains['os_family'] == 'Debian' %}
     - name: apache2
-{% elif grains['os_family'] == 'RedHat' %}
-    - name: httpd
-{% endif %}
     - enable: true
     - watch:
       - file: local_settings

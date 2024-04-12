@@ -18,9 +18,7 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-  {% if pillar['neutron']['backend'] == "linuxbridge" %}
-
+{% if pillar['neutron']['backend'] == "linuxbridge" %}
 network_packages:
   pkg.installed:
     - pkgs:
@@ -53,7 +51,7 @@ salt-pip_installs:
     - require:
       - pip: network_packages
 
-  {% elif pillar['neutron']['backend'] == "openvswitch" %}
+{% elif pillar['neutron']['backend'] == "openvswitch" %}
 
 network_packages:
   pkg.installed:
@@ -84,60 +82,4 @@ salt-pip_installs:
     - require:
       - pip: network_pip
 
-    {% endif %}
-
-{% elif grains['os_family'] == 'RedHat' %}
-  {% if pillar['neutron']['backend'] == "linuxbridge" %}
-
-network_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-neutron
-      - openstack-neutron-ml2
-      - openstack-neutron-linuxbridge
-      - iptables-ebtables
-      - python3-openstackclient
-
-network_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-openstackclient
-    - require:
-      - pip: network_pip
-
-  {% elif pillar['neutron']['backend'] == "openvswitch" %}
-
-network_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-neutron
-      - openstack-neutron-ml2
-      - openstack-neutron-openvswitch
-      - iptables-ebtables
-      - python3-openstackclient
-
-network_pip:
-  pip.installed:
-    - name: python-openstackclient
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-openstackclient
-    - require:
-      - pip: network_pip
-
-  {% endif %}
 {% endif %}

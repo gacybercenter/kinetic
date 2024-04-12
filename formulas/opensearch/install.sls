@@ -16,22 +16,13 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/common/docker/repo
-
-{% if grains['os_family'] == 'Debian' %}
 
 opensearch_packages:
   pkg.installed:
     - pkgs:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
+      - docker.io
       - docker-compose
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-
-{% endif %}
+      - containerd
 
 /opt/opensearch/docker-compose.yml:
   file.managed:

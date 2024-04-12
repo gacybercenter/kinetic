@@ -21,7 +21,7 @@ def check_all(type, needs):
     the orch routine.  Use chceck_one to ensure
     that individual per-phase dependencies are met.
     """
-    ret = {"ready": True, "type": type, "comment": []}
+    ret = {"result": True, "type": type, "comment": []}
     for phase in needs:
         phase_ok = True
         for dep in needs[phase]:
@@ -30,7 +30,7 @@ def check_all(type, needs):
             if len(current_status) == 0:
                 __context__["retcode"] = 1
                 phase_ok = False
-                ret["ready"] = False
+                ret["result"] = False
                 ret["comment"].append(
                     "No endpoints of type "+dep+" available for assessment")
                 break
@@ -38,12 +38,11 @@ def check_all(type, needs):
                 if current_status[endpoint] != needs[phase][dep]:
                     __context__["retcode"] = 1
                     phase_ok = False
-                    ret["ready"] = False
+                    ret["result"] = False
                     ret["comment"].append(
                         endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[phase][dep])
         if phase_ok is True:
             __context__["retcode"] = 0
-            ret["ready"] = True
             ret["comment"] = type+" orchestration routine may proceed"
             return ret
     return ret
@@ -54,22 +53,20 @@ def check_one(type, needs):
     Check whether or not dependencies are
     satisfied for a specific type and phase.
     """
-    ret = {"ready": True, "type": type, "comment": []}
+    ret = {"result": True, "type": type, "comment": []}
     for dep in needs:
         current_status = __salt__['mine.get'](
             tgt='role:'+dep, tgt_type='grain', fun='build_phase')
         if len(current_status) == 0:
-            __context__["retcode"] = 1
             ret["comment"].append(
                 "No endpoints of type "+dep+" available for assessment")
             ret["ready"] = False
             break
         for endpoint in current_status:
             if current_status[endpoint] != needs[dep]:
-                __context__["retcode"] = 1
-                ret["ready"] = False
+                ret["result"] = False
                 ret["comment"].append(
                     endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
-    if ret["ready"] is True:
+    if ret["result"] is True:
         ret["comment"] = type+" orchestration routine may proceed"
     return ret

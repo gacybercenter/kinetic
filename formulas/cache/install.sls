@@ -16,16 +16,11 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  #- /formulas/common/docker/repo
-
-{% if grains['os_family'] == 'Debian' %}
 
 cache_packages:
   pkg.installed:
     - pkgs:
-      - apt-cacher-ng
       - python3-pip
-      - apache2
       - docker.io
       - docker-compose
       - containerd
@@ -53,19 +48,69 @@ salt-pip_installs:
       - pkg: cache_packages
       - pip: cache_pip
 
-{% elif grains['os_family'] == 'RedHat' %}
+/etc/nexus/admin.password:
+  file.managed:
+    - makedirs: True
+    - replace: False
+    - contents: placeholder
 
-cache_packages:
-  pkg.installed:
-    - pkgs:
-      - podman
-      - httpd
-      - buildah
-    - reload_modules: True
+nexusproxy:
+  docker_container.running:
+    - name: nexusproxy
+    - image: sonatype/nexus3:latest
+    - restart_policy: unless-stopped
+    - ports:
+      - 8081
+    - port_bindings:
+      - {{ pillar['cache']['nexusproxy']['port'] }}:8081
 
-{% endif %}
+nexusproxy_online:
+  cmd.run:
+    - name: docker exec nexusproxy ls -al /nexus-data/ | grep -q 'log'
+    - retry:
+        attempts: 30
+        delay: 10
+        splay: 5
+    - require:
+      - docker_container: nexusproxy
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
-pyinotify:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
+nexusproxy_connection:
+  module.run:
+    - network.connect:
+      - host: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+      - port: {{ pillar['cache']['nexusproxy']['port'] }}
+    - retry:
+        attempts: 30
+        delay: 10
+        splay: 5
+    - require:
+      - docker_container: nexusproxy
+      - cmd: nexusproxy_online
+    - onlyif:
+      - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
+
+admin_password:
+  cmd.run:
+    - name: salt-call grains.setval original_password $(docker exec nexusproxy cat /nexus-data/admin.password)
+    - retry:
+        attempts: 30
+        delay: 10
+        splay: 5
+    - require:
+      - docker_container: nexusproxy
+      - cmd: nexusproxy_online
+      - module: nexusproxy_connection
+    - onlyif:
+      - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure

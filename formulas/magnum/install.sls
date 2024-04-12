@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 magnum_packages:
   pkg.installed:
     - pkgs:
@@ -48,33 +46,3 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: magnum_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-magnum_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-magnum-api
-      - openstack-magnum-conductor
-      - python3-magnumclient
-      - python3-openstackclient
-
-magnum_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - python-openstackclient
-      - python-magnumclient
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-magnumclient
-      - python-openstackclient
-    - require:
-      - pip: magnum_pip
-
-{% endif %}

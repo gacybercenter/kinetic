@@ -29,6 +29,20 @@ def set_resourcegroup(name,
                       password,
                       host,
                       **kwargs):
+    """
+    Example state for sls file
+
+    set haproxy group:
+      danos.set_resourcegroup:
+        - name: haproxy-{{ pillar['haproxy']['group'] }}
+        - type: address-group
+        - description: current haproxy servers for {{ pillar['haproxy']['group'] }}
+        - values:
+            - {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        - username: {{ pillar['danos']['username'] }}
+        - password: {{ pillar['danos_password'] }}
+        - host: {{ pillar['danos']['endpoint'] }}
+    """
 
     groupmap = {"address-group": "address",
                 "dscp-group": "dscp",
@@ -116,6 +130,21 @@ def set_statichostmapping(name,
                           host,
                           aliases=None,
                           **kwargs):
+    """
+    Example state for sls file
+
+    set haproxy static-mapping:
+      danos.set_statichostmapping:
+        - name: {{ pillar['haproxy']['dashboard_domain'] }}
+        - address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
+        - aliases:
+            - {{ pillar['haproxy']['console_domain'] }}
+            - {{ pillar['haproxy']['guacamole_domain'] }}
+        - username: {{ pillar['danos']['username'] }}
+        - password: {{ pillar['danos_password'] }}
+        - host: {{ pillar['danos']['endpoint'] }}
+    """
+
 
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 

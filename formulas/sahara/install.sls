@@ -18,8 +18,6 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-{% if grains['os_family'] == 'Debian' %}
-
 sahara_packages:
   pkg.installed:
     - pkgs:
@@ -50,33 +48,3 @@ salt-pip_installs:
       - etcd3gw
     - require:
       - pip: sahara_pip
-
-{% elif grains['os_family'] == 'RedHat' %}
-
-sahara_packages:
-  pkg.installed:
-    - pkgs:
-      - openstack-sahara-api
-      - openstack-sahara-engine
-      - openstack-sahara
-      - python3-saharaclient
-      - python3-openstackclient
-
-sahara_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - python-openstackclient
-      - python-saharaclient
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-saharaclient
-      - python-openstackclient
-    - require:
-      - pip: sahara_pip
-{% endif %}

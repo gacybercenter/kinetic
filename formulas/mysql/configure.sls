@@ -43,6 +43,7 @@ bootstrap_mariadb_start:
 
 /etc/galera_init_done:
   file.managed:
+    - replace: False
     - require:
       - cmd: bootstrap_mariadb_start
     - require_in:
@@ -83,13 +84,8 @@ systemctl daemon-reload:
 
 openstack.conf:
   file.managed:
-{% if grains['os_family'] == 'Debian' %}
   {% set sock = "/var/run/mysqld/mysqld.sock" %}
     - name: /etc/mysql/mariadb.conf.d/99-openstack.cnf
-{% elif grains['os_family'] == 'RedHat' %}
-  {% set sock = "/var/lib/mysql/mysql.sock" %}
-    - name: /etc/my.cnf.d/openstack.cnf
-{% endif %}
     - source: salt://formulas/mysql/files/openstack.conf
     - makedirs: True
     - template: jinja
@@ -100,11 +96,7 @@ openstack.conf:
         wsrep_on: OFF
 {% endif %}
         ip_address: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-{% if grains['os_family'] == 'Debian' %}
         wsrep_provider: /usr/lib/libgalera_smm.so
-{% elif grains['os_family'] == 'RedHat' %}
-        wsrep_provider: /usr/lib64/galera-4/libgalera_smm.so
-{% endif %}
         wsrep_cluster_name: {{ pillar['mysql']['wsrep_cluster_name'] }}
         wsrep_cluster_address: |-
           gcomm://
@@ -125,9 +117,9 @@ mariadb_service:
       - file: openstack.conf
 
 {% for service in pillar['openstack_services'] if grains['spawning'] == 0 %}
-{% if pillar['openstack_services'][service]['configuration']['dbs'] is defined %}
-  {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+  {% if pillar['openstack_services'][service]['configuration']['dbs'] is defined %}
+    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
 create_{{ service }}_user_{{ address }}:
   mysql_user.present:
@@ -140,7 +132,7 @@ create_{{ service }}_user_{{ address }}:
     {% endfor %}
   {% endfor %}
 
-  {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
+    {% for db in pillar['openstack_services'][service]['configuration']['dbs'] %}
 
 create_{{ db }}_db:
   mysql_database.present:
@@ -149,8 +141,8 @@ create_{{ db }}_db:
     - require:
       - service: mariadb_service
 
-    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+      {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
 grant_{{ service }}_privs_{{ db }}_{{ address }}:
   mysql_grants.present:
@@ -164,16 +156,16 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
       - mysql_user: create_{{ service }}_user_{{ address }}
       - mysql_database: create_{{ db }}_db
 
+        {% endfor %}
       {% endfor %}
     {% endfor %}
-  {% endfor %}
-{% endif %}
+  {% endif %}
 {% endfor %}
 
 {% for service in pillar['integrated_services'] if grains['spawning'] == 0 %}
-{% if pillar['integrated_services'][service]['configuration']['dbs'] is defined %}
-  {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-    {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+  {% if pillar['integrated_services'][service]['configuration']['dbs'] is defined %}
+    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
 create_{{ service }}_user_{{ address }}:
   mysql_user.present:
@@ -187,7 +179,7 @@ create_{{ service }}_user_{{ address }}:
     {% endfor %}
   {% endfor %}
 
-  {% for db in pillar['integrated_services'][service]['configuration']['dbs'] %}
+    {% for db in pillar['integrated_services'][service]['configuration']['dbs'] %}
 
 create_{{ db }}_db:
   mysql_database.present:
@@ -196,8 +188,8 @@ create_{{ db }}_db:
     - require:
       - service: mariadb_service
 
-    {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
-      {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
+      {% for host, addresses in salt['mine.get']('role:haproxy', 'network.ip_addrs', tgt_type='grain') | dictsort() %}
+        {% for address in addresses if salt['network']['ip_in_subnet'](address, pillar['networking']['subnets']['management']) %}
 
     {% if db == 'guacamole' %}
 # Need to further investigate issue with initilizing a db using a file
@@ -228,10 +220,10 @@ grant_{{ service }}_privs_{{ db }}_{{ address }}:
       - mysql_user: create_{{ service }}_user_{{ address }}
       - mysql_database: create_{{ db }}_db
 
+        {% endfor %}
       {% endfor %}
     {% endfor %}
-  {% endfor %}
-{% endif %}
+  {% endif %}
 {% endfor %}
 
 {% if pillar['hosts']['mysql']['count'] > 1 %}
