@@ -165,14 +165,6 @@ wipe_{{ type }}_domains:
     - concurrent: True
 
   {% for id in targets %}
-minion_check_prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
-  module.run:
-    - test.ping:
-    - retry:
-        attempts: 60
-        delay: 10
-        splay: 5
-
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
     - tgt: {{ targets[id]['controller'] }}
@@ -180,17 +172,16 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
       - orch/states/virtual_prep
     - pillar:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
-    - concurrent: true
+    - queue: true
     - require:
       - wipe_{{ type }}_domains
-      - minion_check_prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}
   {% endfor %}
 {% endif %}
 
 delete_{{ type }}_key:
   salt.wheel:
     - name: key.delete
-    - match: '{{ type }}*'
+    - match: '{{ type }}-*'
 
 ## There should be some kind of retry mechanism here if this event never fires
 ## to deal with transient problems.  Re-exec zeroize for the given target?
