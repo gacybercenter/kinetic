@@ -60,12 +60,12 @@ local_settings:
 {% endif %}
 
 ### ref: https://bugs.launchpad.net/horizon/+bug/1880188
-swift_ceph_patch:
-  file.line:
-    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/swiftclient/client.py
-    - content: parsed = urlparse(urljoin(url, '/swift/info'))
-    - match: parsed = urlparse(urljoin(url, '/info'))
-    - mode: replace
+#swift_ceph_patch:
+#  file.line:
+#    - name: /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/swiftclient/client.py
+#    - content: parsed = urlparse(urljoin(url, '/swift/info'))
+#    - match: parsed = urlparse(urljoin(url, '/info'))
+#    - mode: replace
 
 apache_conf:
   file.managed:
@@ -97,13 +97,13 @@ install_theme:
 {% endif %}
 
 # TODO(chateaulav): Need to validate continued need for pyScss patch
-pyScss_deprecation_patch:
-  file.managed:
-    - names:
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/namespace.py:
-        - source: salt://formulas/horizon/files/namespace.py
-      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/types.py:
-        - source: salt://formulas/horizon/files/types.py
+#pyScss_deprecation_patch:
+#  file.managed:
+#    - names:
+#      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/namespace.py:
+#        - source: salt://formulas/horizon/files/namespace.py
+#      - /usr/lib/python{{ grains['pythonversion'][0] }}/dist-packages/scss/types.py:
+#        - source: salt://formulas/horizon/files/types.py
 # /temporary patches for pyScss
 
 configure-collect-static:
