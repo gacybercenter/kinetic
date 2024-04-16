@@ -26,7 +26,6 @@ horizon_packages:
       - python3-pip
       - python3-setuptools
       - python3-designate-dashboard
-      - python3-memcached
       - openstack-dashboard
 {% if salt['pillar.get']('hosts:sahara:enabled', 'False') == True %}
       - python3-sahara-dashboard
@@ -40,6 +39,13 @@ horizon_packages:
       - python3-dev
       - python3-etcd3gw
     - reload_modules: True
+
+horizon_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python3-memcached
 
 {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
 magnum_latest:
