@@ -44,7 +44,7 @@ horizon_packages:
 magnum_latest:
   git.latest:
     - name: https://opendev.org/openstack/magnum-ui.git
-    - branch: stable/antelope
+    - branch: stable/{{ pillar['openstack']['version'] }}
     - target: /usr/share/openstack-dashboard/magnum-ui/
     - force_clone: true
 
@@ -75,7 +75,7 @@ install_magnum_ui:
 zun_latest:
   git.latest:
     - name: https://opendev.org/openstack/zun-ui.git
-    - branch: stable/antelope
+    - branch: stable/{{ pillar['openstack']['version'] }}
     - target: /usr/share/openstack-dashboard/zun-ui/
     - force_clone: true
 
