@@ -139,4 +139,4 @@ apache2_service:
       - file: apache_conf
       - git: install_theme
       - cmd: configure-compress-static
-      - file: swift_ceph_patch
+      #- file: swift_ceph_patch
