@@ -13,6 +13,6 @@ echo net${idx} is a ${net${idx}/chip} with MAC ${net${idx}/mac}
 
 isset ${next-server} && echo next-server is ${next-server}
 inc idx && goto loop
-
 :loop_done
+
 chain http://{{ pxe_record }}/?uuid=${uuid}
