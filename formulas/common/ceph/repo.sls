@@ -22,7 +22,9 @@ ceph_repo:
     - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=arm64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
       {% endif %}
     {% else %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-{{ pillar['ceph']['version'] }}" %}
     - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
+      {% endif %}
     {% endif %}
   {% endfor %}
 {% else %}
