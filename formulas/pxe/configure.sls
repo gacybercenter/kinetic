@@ -82,7 +82,6 @@ create_x86_64_efi_module:
     - name: |
         rm -f /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi && make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
     - cwd: /var/www/html/ipxe/src/
-    - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
     - require:
       - git: https://github.com/ipxe/ipxe.git
       - file: conf-files
@@ -108,7 +107,6 @@ create_aarch64_efi_module:
     - name: |
         rm -f /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi && make bin-arm64-efi/ipxe.efi CROSS=aarch64-linux-gnu- EMBED=kinetic.ipxe
     - cwd: /var/www/html/ipxe/src/
-    - creates: /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
     - require:
       - git: https://github.com/ipxe/ipxe.git
       - file: conf-files
