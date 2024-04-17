@@ -1,18 +1,3 @@
 #!ipxe
 
-set idx:int32 0
-
-echo Starting Loop to find a network interface to boot from based on next-server being set...
-:loop isset ${next-server} || goto loop_done
-
-echo Trying to boot from net${idx}...
-dhcp net${idx}
-
-echo Received DHCP response on net${idx}
-echo net${idx} is a ${net${idx}/chip} with MAC ${net${idx}/mac}
-
-isset ${next-server} && echo next-server is ${next-server}
-inc idx && goto loop
-:loop_done
-
-chain http://{{ pxe_record }}/?uuid=${uuid}
+shell
