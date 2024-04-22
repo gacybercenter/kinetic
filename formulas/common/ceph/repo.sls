@@ -17,13 +17,12 @@ ceph_repo:
     - humanname: Ceph {{ pillar['ceph']['version'] }}
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-    {% do salt.log.info("Checking if https://download.ceph.com/debian-" + pillar['ceph']['version'] + "/ matches: " + pillar['cache']['nexusproxy']['repositories'][repo]['url']) %}
     {% if grains['type'] == 'arm' %}
-      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-{{ pillar['ceph']['version'] }}/" %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-" + pillar['ceph']['version'] + "/" %}
     - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=arm64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
       {% endif %}
     {% else %}
-      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-{{ pillar['ceph']['version'] }}/" %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-" + pillar['ceph']['version'] + "/"  %}
     - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
       {% endif %}
     {% endif %}
