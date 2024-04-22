@@ -78,6 +78,8 @@ nexusproxy_online:
         key: build_phase
         value: configure
 
+## Need to add stability in requiring the next two states to run before moving on.
+## Errors during first run as the container is not fully up and running.
 nexusproxy_connection:
   module.run:
     - network.connect:

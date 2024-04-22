@@ -47,7 +47,7 @@
       ],
       "dhcp-socket-type": "raw"
     },
-    "valid-lifetime": 604800,
+    "valid-lifetime": 3600,
     "renew-timer": 1000,
     "rebind-timer": 2000,
     "subnet4": [

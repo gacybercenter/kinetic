@@ -16,13 +16,13 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
- #  - /formulas/common/ceph/repo
+  - /formulas/common/ceph/repo
 
 install_ceph:
   pkg.installed:
     - name: ceph
-#    - require:
-#      - sls: /formulas/common/ceph/repo
+    - require:
+      - sls: /formulas/common/ceph/repo
 
 ## This is for the current method of dealing with dynamic journal Creation
 ## this should eventually be dropped and the current __slot__ mechanism
