@@ -63,6 +63,14 @@ wipe_{{ type }}_keys:
     {% set role = type %}
   {% endif %}
 
+{{ type }}_origin_phase_runner_delay:
+  salt.function:
+    - name: test.sleep
+    - tgt: '{{ pillar['salt']['name'] }}'
+    - kwarg:
+        length: 30
+    - parallel: true
+
   {% do salt.log.info("Creating Execution Runner for Host Type: "+type) %}
 create_{{ type }}_exec_runner:
   salt.runner:
@@ -72,12 +80,7 @@ create_{{ type }}_exec_runner:
         pillar:
           type: {{ type }}
           needs: {{ salt['pillar.get']('hosts:'+role+':needs', {}) }}
-    - queue: true
-
-{{ type }}_origin_phase_runner_delay:
-  salt.function:
-    - name: test.sleep
-    - tgt: '{{ pillar['salt']['name'] }}'
-    - kwarg:
-        length: 1
+    - parallel: true
+    - require:
+      - salt: {{ type }}_origin_phase_runner_delay
 {% endfor %}
