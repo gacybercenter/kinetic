@@ -22,6 +22,7 @@ master_setup:
     - highstate: true
     - fail_minions:
       - '{{ pillar['salt']['name'] }}'
+    - queue: true
 
 pxe_setup:
   salt.state:
@@ -29,6 +30,7 @@ pxe_setup:
     - highstate: true
     - fail_minions:
       - '{{ pillar['pxe']['name'] }}'
+    - queue: true
 {% endif %}
 
 ## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
