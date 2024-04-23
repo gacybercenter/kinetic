@@ -26,7 +26,7 @@
   {% set role = type %}
 {% endif %}
 
-{% do salt.log.info("Applying Base for: "+type) %}
+{% do salt.log.info("****** Applying Base for: " + type) %}
 apply_base_{{ type }}:
   salt.state:
     - tgt:
@@ -45,7 +45,7 @@ apply_base_{{ type }}:
 ### This macro renders to a block if there are unmet dependencies
 {{ orchestration.needs_check_one(type=type, phase='networking') }}
 
-{% do salt.log.info("Applying Networking for: "+type) %}
+{% do salt.log.info("****** Applying Networking for: " + type) %}
 apply_networking_{{ type }}:
   salt.state:
     - tgt:
@@ -72,7 +72,7 @@ apply_networking_{{ type }}:
 ### This macro renders to a block if there are unmet dependencies
 {{ orchestration.needs_check_one(type=type, phase='install') }}
 
-{% do salt.log.info("Applying Install for: "+type) %}
+{% do salt.log.info("****** Applying Install for: " + type) %}
 apply_install_{{ type }}:
   salt.state:
     - tgt:
@@ -96,7 +96,7 @@ apply_install_{{ type }}:
 ### This macro renders to a block if there are unmet dependencies
 {{ orchestration.needs_check_one(type=type, phase='configure') }}
 
-{% do salt.log.info("Applying Configure for: "+type) %}
+{% do salt.log.info("****** Applying Configure for: " + type) %}
 apply_configure_{{ type }}:
   salt.state:
     - tgt:

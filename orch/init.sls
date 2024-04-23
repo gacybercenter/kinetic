@@ -19,8 +19,9 @@
 ## everything except salt and pxe
 
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
-  {% do salt.log.info("Checking if "+type+" host type is enabled") %}
+  {% do salt.log.info("****** Service is set to Enabled for: " + type) %}
   {% if salt.saltutil.runner('manage.up',tgt=type+'*') %}
+  {% do salt.log.info("****** Triggering DHCP IP Address Release for: " + type) %}
 release_{{ type }}_ip:
   salt.function:
     - name: cmd.run
@@ -30,6 +31,7 @@ release_{{ type }}_ip:
     - onlyif:
       - salt-key -l acc | grep -q "{{ type }}"
 
+  {% do salt.log.info("****** Powering Off systems for Service: " + type) %}
 init_{{ type }}_poweroff:
   salt.function:
     - name: system.poweroff
@@ -47,6 +49,8 @@ init_{{ type }}_sleep:
     - kwarg:
         length: 10
 
+
+  {% do salt.log.info("****** Deleting Salt Keys for: " + type) %}
 wipe_{{ type }}_keys:
   salt.wheel:
     - name: key.delete
@@ -71,7 +75,7 @@ wipe_{{ type }}_keys:
         length: 60
     - parallel: true
 
-  {% do salt.log.info("Creating Execution Runner for Host Type: "+type) %}
+  {% do salt.log.info("****** Creating Execution Runner for: " + type) %}
 create_{{ type }}_exec_runner:
   salt.runner:
     - name: state.orchestrate

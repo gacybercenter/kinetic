@@ -18,6 +18,8 @@
 ## This is the maximum amount of time an endpoint should wait for the start
 ## signal. It will need to be at least two hours (generally).  Less is
 ## fine for testing
+
+{% do salt.log.info("****** Executing Needs Check for: " + type) %}
 {{ type }}_phase_check_init:
   salt.runner:
     - name: needs.check_all
@@ -29,8 +31,7 @@
         attempts: 240
         splay: 60
 
-{% do salt.log.info(type+" initialization routine is about to begin!") %}
-
+{% do salt.log.info("****** Creating Orchestration Runner for: " + type) %}
 orch_{{ type }}_init_exec_runner:
   salt.runner:
     - name: state.orchestrate
