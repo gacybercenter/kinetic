@@ -25,7 +25,7 @@ def check_all(type, needs):
     for phase in needs:
         for dep in needs[phase]:
             current_status = __salt__['mine.get'](
-                tgt='role:'+dep, tgt_type='compound', fun='build_phase')
+                tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
             if len(current_status) == 0:
                 __context__["retcode"] = 1
                 ret["result"] = False
@@ -52,7 +52,7 @@ def check_one(type, needs):
     ret = {"result": True, "type": type, "comment": []}
     for dep in needs:
         current_status = __salt__['mine.get'](
-            tgt='role:'+dep, tgt_type='compound', fun='build_phase')
+            tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
         if len(current_status) == 0:
             ret["comment"].append(
                 "No endpoints of type "+dep+" available for assessment")
