@@ -216,7 +216,7 @@ wait_for_minion_first_start_{{ type }}:
 {% for id in targets %}
       - {{ type }}-{{ targets[id]['uuid'] }}
 {% endfor %}
-    - timeout: 60
+    - timeout: 600
     - require:
       - accept_minion_{{ type }}
 
