@@ -55,7 +55,7 @@ def check_all(type, needs):
 
         if ret["result"] is True:
             __context__["retcode"] = 0
-            ret["comment"] = type+" orchestration routine may proceed, All Dependent Services are Available"
+            ret["comment"] = type+" orchestration routine may proceed, all Dependent Services are Available"
             return ret
 
     except Exception as exc:
@@ -83,7 +83,7 @@ def check_one(type, needs):
 
             for endpoint in current_status:
                 if current_status[endpoint] != needs[dep]:
-                    log.info("****** endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep]")
+                    log.info("****** "+endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
                     __context__["retcode"] = 1
                     ret["result"] = False
                     ret["comment"].append(endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
