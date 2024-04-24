@@ -28,34 +28,39 @@ def __virtual__():
 
 def check_all(type, needs):
     """
-    Check whether or not dependencies are
-    satisfied.  This function will return True
-    as soon as there is a single successful check
-    on any phase.  It should be used to kick off
-    the orch routine.  Use chceck_one to ensure
-    that individual per-phase dependencies are met.
+    Check whether or not required services in dependencies exist,
+    and then will trigger the orchestration routine.
     """
     ret = {"result": True, "type": type, "comment": []}
-    log.info("****** Validating Dependencies For: "+type)
-    for phase in needs:
-        for dep in needs[phase]:
-            log.info("****** Checking Build Phase For: "+dep)
-            current_status = __salt__['mine.get'](tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
+    log.info("****** Validating Dependencies For Service: "+type)
+
+    needs_list = []
+    try:
+        for phase in needs:
+            for dep in needs[phase]:
+                log.info("****** Adding Dependency "+dep+" to 'needs_list': ")
+                needs_list.append(dep)
+        log.info("****** "+type+" has the following Dependencies: "+str(needs_list))
+
+        for service in needs_list:
+            log.info("****** Checking if Service [ "+service+" ] is Available")
+            current_status = __salt__['manage.up'](tgt=service+"-*")
+
             if len(current_status) == 0:
+                log.info("****** Dependent Serivce "+service+" is not Available")
                 __context__["retcode"] = 1
                 ret["result"] = False
-                ret["comment"].append("No endpoints of type "+dep+" available for assessment")
+                ret["comment"].append("Dependent Serivce "+service+" is not Available")
                 return ret
-            for endpoint in current_status:
-                if current_status[endpoint] != needs[phase][dep]:
-                    __context__["retcode"] = 1
-                    ret["result"] = False
-                    ret["comment"].append(endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[phase][dep])
-                    return ret
+
         if ret["result"] is True:
             __context__["retcode"] = 0
-            ret["comment"] = type+" orchestration routine may proceed"
+            ret["comment"] = type+" orchestration routine may proceed, All Dependent Services are Available"
             return ret
+
+    except Exception as exc:
+        log.error("Exception encountered: %s", exc)
+        return False
 
 def check_one(type, needs):
     """
@@ -63,19 +68,32 @@ def check_one(type, needs):
     satisfied for a specific type and phase.
     """
     ret = {"result": True, "type": type, "comment": []}
-    log.info("****** Validating Dependencies For: "+type)
-    for dep in needs:
-        log.info("****** Checking Build Phase For: "+dep)
-        current_status = __salt__['mine.get'](tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
-        if len(current_status) == 0:
-            ret["comment"].append("No endpoints of type "+dep+" available for assessment")
-            ret["ready"] = False
-            return ret
-        for endpoint in current_status:
-            if current_status[endpoint] != needs[dep]:
-                ret["result"] = False
-                ret["comment"].append(endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
+    log.info("****** Validating Dependencies For Service: "+type)
+    try:
+        for dep in needs:
+            log.info("****** Checking Current Build Phase For Service: "+dep)
+            current_status = __salt__['mine.get'](tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
+
+            if len(current_status) == 0:
+                log.info("****** No endpoints of type "+dep+" available for assessment")
+                __context__["retcode"] = 1
+                ret["comment"].append("No endpoints of type "+dep+" available for assessment")
+                ret["ready"] = False
                 return ret
-    if ret["result"] is True:
-        ret["comment"] = type+" orchestration routine may proceed"
-        return ret
+
+            for endpoint in current_status:
+                if current_status[endpoint] != needs[dep]:
+                    log.info("****** endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep]")
+                    __context__["retcode"] = 1
+                    ret["result"] = False
+                    ret["comment"].append(endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
+                    return ret
+
+        if ret["result"] is True:
+            __context__["retcode"] = 0
+            ret["comment"] = type+" orchestration routine may proceed"
+            return ret
+
+    except Exception as exc:
+        log.error("Exception encountered: %s", exc)
+        return False
