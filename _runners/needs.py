@@ -38,16 +38,16 @@ def check_all(type, needs):
     try:
         for phase in needs:
             for dep in needs[phase]:
-                log.info("****** Adding Dependency "+dep+" to 'needs_list': ")
+
                 needs_list.append(dep)
         log.info("****** "+type+" has the following Dependencies: "+str(needs_list))
 
         for service in needs_list:
-            log.info("****** Checking if Service [ "+service+" ] is Available")
+            log.info("****** Checking Service [ "+service+" ]")
             current_status = __salt__['manage.up'](tgt=service+"-*")
 
             if len(current_status) == 0:
-                log.info("****** Dependent Serivce "+service+" is not Available")
+                log.info("****** Dependent Serivce [ "+service+" ] is not Available")
                 __context__["retcode"] = 1
                 ret["result"] = False
                 ret["comment"].append("Dependent Serivce "+service+" is not Available")
