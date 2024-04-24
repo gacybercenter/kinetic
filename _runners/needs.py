@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
+
+log = logging.getLogger(__name__)
+
+__virtualname__ = "needs"
+
+def __virtual__():
+    """
+    Return virtual name of the module.
+    :return: The virtual name of the module.
+    """
+    return __virtualname__
+
 def check_all(type, needs):
     """
     Check whether or not dependencies are
@@ -22,27 +36,26 @@ def check_all(type, needs):
     that individual per-phase dependencies are met.
     """
     ret = {"result": True, "type": type, "comment": []}
+    log.info("****** Validating Dependencies For: "+type)
     for phase in needs:
         for dep in needs[phase]:
-            current_status = __salt__['mine.get'](
-                tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
+            log.info("****** Checking Build Phase For: "+dep)
+            current_status = __salt__['mine.get'](tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
             if len(current_status) == 0:
                 __context__["retcode"] = 1
                 ret["result"] = False
-                ret["comment"].append(
-                    "No endpoints of type "+dep+" available for assessment")
-                break
+                ret["comment"].append("No endpoints of type "+dep+" available for assessment")
+                return ret
             for endpoint in current_status:
                 if current_status[endpoint] != needs[phase][dep]:
                     __context__["retcode"] = 1
                     ret["result"] = False
-                    ret["comment"].append(
-                        endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[phase][dep])
+                    ret["comment"].append(endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[phase][dep])
+                    return ret
         if ret["result"] is True:
             __context__["retcode"] = 0
             ret["comment"] = type+" orchestration routine may proceed"
             return ret
-    return ret
 
 def check_one(type, needs):
     """
@@ -50,19 +63,19 @@ def check_one(type, needs):
     satisfied for a specific type and phase.
     """
     ret = {"result": True, "type": type, "comment": []}
+    log.info("****** Validating Dependencies For: "+type)
     for dep in needs:
-        current_status = __salt__['mine.get'](
-            tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
+        log.info("****** Checking Build Phase For: "+dep)
+        current_status = __salt__['mine.get'](tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
         if len(current_status) == 0:
-            ret["comment"].append(
-                "No endpoints of type "+dep+" available for assessment")
+            ret["comment"].append("No endpoints of type "+dep+" available for assessment")
             ret["ready"] = False
-            break
+            return ret
         for endpoint in current_status:
             if current_status[endpoint] != needs[dep]:
                 ret["result"] = False
-                ret["comment"].append(
-                    endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
+                ret["comment"].append(endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
+                return ret
     if ret["result"] is True:
         ret["comment"] = type+" orchestration routine may proceed"
-    return ret
+        return ret
