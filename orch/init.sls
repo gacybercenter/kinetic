@@ -20,7 +20,7 @@
 
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
   {% do salt.log.info("****** Service is set to Enabled for: " + type) %}
-  {% if salt.saltutil.runner('manage.up',tgt=type+'*') %}
+  {% if salt.saltutil.runner('manage.up',tgt=type+'-*') %}
   {% do salt.log.info("****** Triggering DHCP IP Address Release for: " + type) %}
 release_{{ type }}_ip:
   salt.function:
@@ -72,7 +72,7 @@ wipe_{{ type }}_keys:
     - name: test.sleep
     - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
-        length: 10
+        length: 60
     - parallel: true
 
   {% do salt.log.info("****** Creating Execution Runner for: " + type) %}
@@ -93,5 +93,5 @@ create_{{ type }}_exec_runner:
     - name: test.sleep
     - tgt: salt
     - kwarg:
-        length: 10
+        length: 30
 {% endfor %}

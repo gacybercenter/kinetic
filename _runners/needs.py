@@ -46,10 +46,10 @@ def check_all(type, needs):
             current_status = __salt__['manage.up'](tgt=service+"-*")
 
             if len(current_status) == 0:
-                log.info("****** Dependent Serivce [ "+service+" ] is not Available")
+                log.info("****** Dependent Service [ "+service+" ] is not Available")
                 __context__["retcode"] = 1
                 ret["result"] = False
-                ret["comment"].append("Dependent Serivce "+service+" is not Available")
+                ret["comment"].append("Dependent Service "+service+" is not Available")
                 return ret
 
         if ret["result"] is True:
