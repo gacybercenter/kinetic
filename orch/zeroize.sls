@@ -22,7 +22,7 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
 
-{% do salt.log.info("****** Zeroing hosts: " + type) %}
+{% do salt.log.info("****** Zeroing hosts [ "+type+" ] ******") %}
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
@@ -147,4 +147,4 @@ delete_{{ type }}_key:
     - name: key.delete
     - match: '{{ type }}-*'
     - require:
-      - salt: {{ type }}_wheel_removal_delay
+      - {{ type }}_wheel_removal_delay

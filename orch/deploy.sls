@@ -22,7 +22,7 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
 
-{% do salt.log.info("****** Deploying hosts: " + type) %}
+{% do salt.log.info("****** Deploying hosts [ "+type+" ] ******") %}
 
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
@@ -54,7 +54,6 @@ reset_host_{{ id }}:
 
   {% endfor %}
 {% elif style == 'virtual' %}
-
   {% for id in targets %}
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
@@ -64,8 +63,6 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
     - pillar:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
     - queue: true
-    - require:
-      - wipe_{{ type }}_domains
   {% endfor %}
 {% endif %}
 
