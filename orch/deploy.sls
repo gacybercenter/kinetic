@@ -50,7 +50,7 @@ reset_host_{{ id }}:
       - {{ api_user }}
       - {{ api_pass }}
 
-## Follow this codepath if host is virtual
+  {% endfor %}
 {% elif style == 'virtual' %}
 
   {% for id in targets %}
