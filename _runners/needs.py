@@ -32,7 +32,7 @@ def check_all(type, needs):
     and then will trigger the orchestration routine.
     """
     ret = {"result": True, "type": type, "comment": []}
-    log.info("****** Validating Dependencies For Service: "+type)
+    log.info("****** Validating Dependencies For Service [ "+type+" ]")
 
     needs_list = []
     try:
@@ -40,10 +40,9 @@ def check_all(type, needs):
             for dep in needs[phase]:
 
                 needs_list.append(dep)
-        log.info("****** "+type+" has the following Dependencies: "+str(needs_list))
+        log.info("****** [ "+type+" ] has the following Dependencies: "+str(needs_list))
 
         for service in needs_list:
-            log.info("****** Checking Service [ "+service+" ]")
             current_status = __salt__['manage.up'](tgt=service+"-*")
 
             if len(current_status) == 0:
@@ -68,14 +67,13 @@ def check_one(type, needs):
     satisfied for a specific type and phase.
     """
     ret = {"result": True, "type": type, "comment": []}
-    log.info("****** Validating Dependencies For Service: "+type)
+    log.info("****** Validating Dependencies For Service [ "+type+" ]")
     try:
         for dep in needs:
-            log.info("****** Checking Current Build Phase For Service: "+dep)
             current_status = __salt__['mine.get'](tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
 
             if len(current_status) == 0:
-                log.info("****** No endpoints of type "+dep+" available for assessment")
+                log.info("****** No endpoints of type [ "+dep+" ] available for assessment")
                 __context__["retcode"] = 1
                 ret["comment"].append("No endpoints of type "+dep+" available for assessment")
                 ret["ready"] = False

@@ -67,6 +67,18 @@ zeroize_{{ type }}:
           type: {{ type }}
           targets: {{ targets }}
 
+{% do salt.log.info("****** Deploying hosts: " + type) %}
+deploy_{{ type }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/deploy
+        pillar:
+          type: {{ type }}
+          targets: {{ targets }}
+    - require:
+      - salt: zeroize_{{ type }}
+
 {% do salt.log.info("****** Running provision for: " + type) %}
 provision_{{ type }}:
   salt.runner:
@@ -77,4 +89,5 @@ provision_{{ type }}:
           type: {{ type }}
           targets: {{ targets }}
     - require:
-      - zeroize_{{ type }}
+      - salt: zeroize_{{ type }}
+      - salt: deploy_{{ type }}

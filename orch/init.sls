@@ -72,7 +72,7 @@ wipe_{{ type }}_keys:
     - name: test.sleep
     - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
-        length: 30
+        length: 10
     - parallel: true
 
   {% do salt.log.info("****** Creating Execution Runner for: " + type) %}
@@ -93,5 +93,5 @@ create_{{ type }}_exec_runner:
     - name: test.sleep
     - tgt: salt
     - kwarg:
-        length: 2
+        length: 10
 {% endfor %}
