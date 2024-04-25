@@ -86,7 +86,7 @@ create_{{ type }}_exec_runner:
           needs: {{ salt['pillar.get']('hosts:'+role+':needs', {}) }}
     - parallel: true
     - require:
-      - salt: {{ type }}_exec_runner_delay
+      - {{ type }}_exec_runner_delay
 
 {{ type }}_create_exec_runner_delay:
   salt.function:

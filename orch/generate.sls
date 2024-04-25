@@ -56,8 +56,6 @@ pxe_setup:
 # type is the type of host (compute, controller, etc.)
 # provision determines whether or not zeroize will just create a blank minion,
 # or fully configure it
-
-{% do salt.log.info("****** Zeroing hosts: " + type) %}
 zeroize_{{ type }}:
   salt.runner:
     - name: state.orchestrate
@@ -67,7 +65,6 @@ zeroize_{{ type }}:
           type: {{ type }}
           targets: {{ targets }}
 
-{% do salt.log.info("****** Deploying hosts: " + type) %}
 deploy_{{ type }}:
   salt.runner:
     - name: state.orchestrate
@@ -77,9 +74,8 @@ deploy_{{ type }}:
           type: {{ type }}
           targets: {{ targets }}
     - require:
-      - salt: zeroize_{{ type }}
+      - zeroize_{{ type }}
 
-{% do salt.log.info("****** Running provision for: " + type) %}
 provision_{{ type }}:
   salt.runner:
     - name: state.orchestrate
@@ -89,5 +85,5 @@ provision_{{ type }}:
           type: {{ type }}
           targets: {{ targets }}
     - require:
-      - salt: zeroize_{{ type }}
-      - salt: deploy_{{ type }}
+      - zeroize_{{ type }}
+      - deploy_{{ type }}

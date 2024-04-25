@@ -22,6 +22,8 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
 
+{% do salt.log.info("****** Deploying hosts: " + type) %}
+
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
 

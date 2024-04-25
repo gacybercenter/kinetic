@@ -20,6 +20,8 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
 
+{% do salt.log.info("****** Running provision for: " + type) %}
+
 {% if pillar['hosts'][type]['style'] == 'physical' %}
   {% set role = pillar['hosts'][type]['role'] %}
 {% else %}

@@ -22,6 +22,8 @@
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
 
+{% do salt.log.info("****** Zeroing hosts: " + type) %}
+
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
 
@@ -138,7 +140,7 @@ wipe_{{ type }}_domains:
     - name: test.sleep
     - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
-        length: 10
+        length: 5
 
 delete_{{ type }}_key:
   salt.wheel:
