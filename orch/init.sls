@@ -60,7 +60,6 @@ wipe_{{ type }}_keys:
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
 ## in the waiting room
-{% set targets = {} %}
 {% set endpoints = salt.saltutil.runner('mine.get',tgt=pillar['pxe']['name'],fun='redfish.gather_endpoints')[pillar['pxe']['name']] %}
 {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
 
@@ -68,6 +67,7 @@ wipe_{{ type }}_keys:
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
   {% if pillar['hosts'][type]['style'] == 'physical' %}
     {% set role = pillar['hosts'][type]['role'] %}
+    {% set targets = {} %}
     {% for id in pillar['hosts'][type]['uuids'] %}
       {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
       {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64', punctuation=False)|uuid) %}
@@ -78,6 +78,7 @@ wipe_{{ type }}_keys:
   {% else %}
     {% set role = type %}
     {% set offset = range(controllers|length)|random %}
+    {% set targets = {} %}
     {% for id in range(pillar['hosts'][type]['count']) %}
       {% set targets = targets|set_dict_key_value(id|string+':spawning', loop.index0) %}
       {% set targets = targets|set_dict_key_value(id|string+':controller', controllers[(loop.index0 + offset) % controllers|length]) %}
