@@ -39,8 +39,8 @@ apply_base_{{ type }}:
       - formulas/common/base
     - timeout: 1200
     - retry:
-        interval: 10
-        attempts: 2
+        interval: 60
+        attempts: 5
         splay: 0
 
 ### This macro renders to a block if there are unmet dependencies
@@ -57,8 +57,8 @@ apply_networking_{{ type }}:
       - formulas/common/networking
     - timeout: 1200
     - retry:
-        interval: 10
-        attempts: 2
+        interval: 60
+        attempts: 5
         splay: 0
     - require:
       - apply_base_{{ type }}
@@ -83,8 +83,8 @@ apply_install_{{ type }}:
       - formulas/{{ role }}/install
     - timeout: 1200
     - retry:
-        interval: 10
-        attempts: 2
+        interval: 60
+        attempts: 5
         splay: 0
     - require:
       - wait_for_{{ type }}_networking_reboot
@@ -104,12 +104,12 @@ apply_configure_{{ type }}:
     - tgt_type: list
     - sls:
       - formulas/{{ role }}/configure
-#    - highstate: True
+    - highstate: True
     - timeout: 1200
-    # - retry:
-    #     interval: 10
-    #     attempts: 2
-    #     splay: 0
+    - retry:
+        interval: 10
+        attempts: 2
+        splay: 0
     - require:
       - apply_install_{{ type }}
 

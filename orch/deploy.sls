@@ -76,7 +76,7 @@ wait_for_provisioning_{{ type }}:
       - {{ type }}-{{ targets[id]['uuid'] }}
 {% endfor %}
 {% if style == 'virtual' %}
-    - timeout: 600
+    - timeout: 2000
 {% elif style == 'physical' %}
     - timeout: 2000
 {% endif %}
@@ -99,7 +99,7 @@ wait_for_minion_first_start_{{ type }}:
 {% for id in targets %}
       - {{ type }}-{{ targets[id]['uuid'] }}
 {% endfor %}
-    - timeout: 600
+    - timeout: 2000
     - require:
       - accept_minion_{{ type }}
 

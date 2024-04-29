@@ -59,6 +59,15 @@ deploy_{{ type }}:
     - require:
       - {{ type }}_phase_check_init
 
+{{ type }}_provision_delay:
+  salt.function:
+    - name: test.sleep
+    - tgt: '{{ pillar['salt']['name'] }}'
+    - kwarg:
+        length: 60
+    - require:
+      - deploy_{{ type }}
+
 provision_{{ type }}:
   salt.runner:
     - name: state.orchestrate
@@ -68,5 +77,4 @@ provision_{{ type }}:
           type: {{ type }}
           targets: {{ targets }}
     - require:
-      - {{ type }}_phase_check_init
-      - deploy_{{ type }}
+      - {{ type }}_provision_delay

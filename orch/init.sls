@@ -117,7 +117,7 @@ create_{{ type }}_exec_runner:
 {{ type }}_create_exec_runner_delay:
   salt.function:
     - name: test.sleep
-    - tgt: salt
+    - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
         length: 2
 {% endfor %}
