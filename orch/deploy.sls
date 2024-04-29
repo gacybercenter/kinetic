@@ -62,7 +62,7 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
       - orch/states/virtual_prep
     - pillar:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
-    - queue: true
+    - concurrent: true
   {% endfor %}
 {% endif %}
 
