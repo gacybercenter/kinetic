@@ -72,9 +72,6 @@ wipe_{{ type }}_keys:
       {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
       {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64', punctuation=False)|uuid) %}
     {% endfor %}
-    {% for id in targets %}
-      {% do salt.log.info("****** Target for [ "+type+" ] includes: "+id) %}
-    {% endfor %}
   {% else %}
     {% set role = type %}
     {% set offset = range(controllers|length)|random %}
@@ -83,9 +80,6 @@ wipe_{{ type }}_keys:
       {% set targets = targets|set_dict_key_value(id|string+':spawning', loop.index0) %}
       {% set targets = targets|set_dict_key_value(id|string+':controller', controllers[(loop.index0 + offset) % controllers|length]) %}
       {% set targets = targets|set_dict_key_value(id|string+':uuid', salt['random.get_str']('64', punctuation=False)|uuid) %}
-    {% endfor %}
-    {% for id in targets %}
-      {% do salt.log.info("****** Target for [ "+type+" ] includes: "+id) %}
     {% endfor %}
   {% endif %}
 
