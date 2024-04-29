@@ -64,6 +64,7 @@ wipe_{{ type }}_keys:
 {% set endpoints = salt.saltutil.runner('mine.get',tgt=pillar['pxe']['name'],fun='redfish.gather_endpoints')[pillar['pxe']['name']] %}
 {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
 
+{% do salt.log.info("****** Building Orchestration Targets") %}
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
   {% if pillar['hosts'][type]['style'] == 'physical' %}
     {% set role = pillar['hosts'][type]['role'] %}
@@ -71,6 +72,7 @@ wipe_{{ type }}_keys:
       {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
       {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64', punctuation=False)|uuid) %}
     {% endfor %}
+    {% do salt.log.info("****** Targets for [ "+type+" ] include "+targets) %}
   {% else %}
     {% set role = type %}
     {% set offset = range(controllers|length)|random %}
@@ -79,6 +81,7 @@ wipe_{{ type }}_keys:
       {% set targets = targets|set_dict_key_value(id|string+':controller', controllers[(loop.index0 + offset) % controllers|length]) %}
       {% set targets = targets|set_dict_key_value(id|string+':uuid', salt['random.get_str']('64', punctuation=False)|uuid) %}
     {% endfor %}
+    {% do salt.log.info("****** Targets for [ "+type+" ] include "+targets) %}
   {% endif %}
 
 {{ type }}_exec_runner_delay:
