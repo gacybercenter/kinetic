@@ -47,14 +47,6 @@ pxe_setup:
         attempts: 240
         splay: 60
 
-zeroize_{{ type }}:
-  salt.runner:
-    - name: state.orchestrate
-    - kwarg:
-        mods: orch/zeroize
-        pillar:
-          type: {{ type }}
-          targets: {{ targets }}
 
 deploy_{{ type }}:
   salt.runner:
@@ -66,7 +58,6 @@ deploy_{{ type }}:
           targets: {{ targets }}
     - require:
       - {{ type }}_phase_check_init
-      - zeroize_{{ type }}
 
 provision_{{ type }}:
   salt.runner:
@@ -78,5 +69,4 @@ provision_{{ type }}:
           targets: {{ targets }}
     - require:
       - {{ type }}_phase_check_init
-      - zeroize_{{ type }}
       - deploy_{{ type }}

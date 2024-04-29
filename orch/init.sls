@@ -83,12 +83,22 @@ wipe_{{ type }}_keys:
     {% endfor %}
   {% endif %}
 
+zeroize_{{ type }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/zeroize
+        pillar:
+          type: {{ type }}
+          targets: {{ targets }}
+    - parallel: true
+
 {{ type }}_exec_runner_delay:
   salt.function:
     - name: test.sleep
     - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
-        length: 60
+        length: 30
     - parallel: true
 
   {% do salt.log.info("****** Creating Execution Runner for: " + type) %}
@@ -104,11 +114,12 @@ create_{{ type }}_exec_runner:
     - parallel: true
     - require:
       - {{ type }}_exec_runner_delay
+      - zeroize_{{ type }}
 
 {{ type }}_create_exec_runner_delay:
   salt.function:
     - name: test.sleep
     - tgt: salt
     - kwarg:
-        length: 30
+        length: 2
 {% endfor %}
