@@ -123,7 +123,7 @@ user_data_{{ id }}:
       - assignments_dir_{{ id }}
   {% endfor %}
 {% elif style == 'virtual' %}
-
+  {% if salt.saltutil.runner('manage.up',tgt=type+'-*') %}
 wipe_{{ type }}_domains:
   salt.state:
     - tgt: 'role:controller'
@@ -133,6 +133,7 @@ wipe_{{ type }}_domains:
     - pillar:
         type: {{ type }}
     - queue: True
+  {% endif %}
 {% endif %}
 
 {{ type }}_wheel_removal_delay:

@@ -17,6 +17,8 @@
 {% set targets = pillar['targets'] %}
 {% set style = pillar['hosts'][type]['style'] %}
 
+{% do salt.log.info("****** Created Execution Runner for: " + type) %}
+
 {% if salt['pillar.get']('universal', False) == False %}
 master_setup:
   salt.state:

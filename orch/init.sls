@@ -100,7 +100,6 @@ zeroize_{{ type }}:
         length: 30
     - parallel: true
 
-  {% do salt.log.info("****** Creating Execution Runner for: " + type) %}
 create_{{ type }}_exec_runner:
   salt.runner:
     - name: state.orchestrate
