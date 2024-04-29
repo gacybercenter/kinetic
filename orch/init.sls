@@ -91,7 +91,6 @@ zeroize_{{ type }}:
         pillar:
           type: {{ type }}
           targets: {{ targets }}
-    - parallel: true
 
 {{ type }}_exec_runner_delay:
   salt.function:

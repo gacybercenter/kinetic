@@ -35,7 +35,6 @@ pxe_setup:
     - queue: true
 {% endif %}
 
-{% do salt.log.info("****** Executing Needs Check for: " + type) %}
 {{ type }}_phase_check_init:
   salt.runner:
     - name: needs.check_all
@@ -46,7 +45,6 @@ pxe_setup:
         interval: 60
         attempts: 240
         splay: 60
-
 
 deploy_{{ type }}:
   salt.runner:
