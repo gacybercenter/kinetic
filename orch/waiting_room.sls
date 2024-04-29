@@ -14,10 +14,26 @@
 
 {% set type = pillar['type'] %}
 {% set needs = pillar['needs'] %}
+{% set targets = pillar['targets'] %}
+{% set style = pillar['hosts'][type]['style'] %}
 
-## This is the maximum amount of time an endpoint should wait for the start
-## signal. It will need to be at least two hours (generally).  Less is
-## fine for testing
+{% if salt['pillar.get']('universal', False) == False %}
+master_setup:
+  salt.state:
+    - tgt: '{{ pillar['salt']['name'] }}'
+    - highstate: true
+    - fail_minions:
+      - '{{ pillar['salt']['name'] }}'
+    - queue: true
+
+pxe_setup:
+  salt.state:
+    - tgt: '{{ pillar['pxe']['name'] }}'
+    - highstate: true
+    - fail_minions:
+      - '{{ pillar['pxe']['name'] }}'
+    - queue: true
+{% endif %}
 
 {% do salt.log.info("****** Executing Needs Check for: " + type) %}
 {{ type }}_phase_check_init:
@@ -31,13 +47,36 @@
         attempts: 240
         splay: 60
 
-{% do salt.log.info("****** Creating Orchestration Runner for: " + type) %}
-orch_{{ type }}_init_exec_runner:
+zeroize_{{ type }}:
   salt.runner:
     - name: state.orchestrate
     - kwarg:
-        mods: orch/generate
+        mods: orch/zeroize
         pillar:
           type: {{ type }}
+          targets: {{ targets }}
+
+deploy_{{ type }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/deploy
+        pillar:
+          type: {{ type }}
+          targets: {{ targets }}
     - require:
       - {{ type }}_phase_check_init
+      - zeroize_{{ type }}
+
+provision_{{ type }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/provision
+        pillar:
+          type: {{ type }}
+          targets: {{ targets }}
+    - require:
+      - {{ type }}_phase_check_init
+      - zeroize_{{ type }}
+      - deploy_{{ type }}
