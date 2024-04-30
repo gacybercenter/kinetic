@@ -2,11 +2,12 @@
 # This script is used to bootstrap a new minion to connect to a SaltStack master
 echo "Downloading and running the SaltStack bootstrap script"
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
-/bin/sh /tmp/bootstrap_salt.sh -i {{ hostname }} -x python3 -A {{ master_record }} {{ salt_version }}
+/bin/sh /tmp/bootstrap_salt.sh -i {{ hostname }} -X -x python3 -A {{ master_record }} {{ salt_version }}
 # Basic housekeeping to ensure the minion is reporting properly
 echo "Configuring SaltStack minion to connect to the master"
 mkdir -p /etc/salt/minion.d
 echo master: {{ master_record }} > /etc/salt/minion.d/99-master-address.conf
 # Restart the minion to ensure it connects to the master
 echo "Restarting the Minion System"
+sleep 60
 reboot
