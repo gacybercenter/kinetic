@@ -74,14 +74,6 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
     - require_in:
       - report_build_success
 
-minion_check_virtual_prep_{{ hostname }}:
-  module.run:
-    - test.ping:
-    - retry:
-        attempts: 60
-        delay: 10
-        splay: 5
-
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:
     - onchanges:

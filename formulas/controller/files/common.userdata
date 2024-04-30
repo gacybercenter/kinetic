@@ -1,6 +1,6 @@
 #!/bin/sh
 
 curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
-/bin/sh /tmp/bootstrap_salt.sh -x python3 -A {{ master_record }} stable {{ salt_version }}
+/bin/sh /tmp/bootstrap_salt.sh -i {{ hostname }} -x python3 -A {{ master_record }} stable {{ salt_version }}
 echo master: {{ master_record }} > /etc/salt/minion.d/99-master-address.conf
 reboot
