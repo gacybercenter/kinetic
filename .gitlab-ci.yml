@@ -1,4 +1,4 @@
-image: python:3.9.1-alpine3.12
+image: python:slim
 
 stages:
   - lint
@@ -25,7 +25,7 @@ pylint:
   stage: lint
   tags:
     - docker
-  image: python:3.7-slim
+  image: python:slim
   before_script:
     - pip install pylint_gitlab
   script:

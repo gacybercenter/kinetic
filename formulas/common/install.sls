@@ -90,7 +90,7 @@ pyghmi_pip:
     - require:
       - OpenSSL_dir_remove
       - pyOpenSSL_dir_remove
-      - pin_pip_version
+
   pkg.installed:
     - pkgs:
       - ipmitool
@@ -105,7 +105,6 @@ pyghmi_salt_pip:
       - pyghmi
     - require:
       - pyghmi_pip
-      - pin_salt_pip_version
 
 rdma-core:
   pkg.installed:
