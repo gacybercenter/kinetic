@@ -55,6 +55,13 @@ reset_host_{{ id }}:
   {% endfor %}
 {% elif style == 'virtual' %}
   {% for id in targets %}
+prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}_sleep:
+  salt.function:
+    - name: test.sleep
+    - tgt: '{{ pillar['salt']['name'] }}'
+    - kwarg:
+        length: 20
+
 prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
   salt.state:
     - tgt: {{ targets[id]['controller'] }}
@@ -63,13 +70,8 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
     - pillar:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
     - concurrent: true
-
-prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}_sleep:
-  salt.function:
-    - name: test.sleep
-    - tgt: '{{ pillar['salt']['name'] }}'
-    - kwarg:
-        length: 20
+    - require:
+      - prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}_sleep
   {% endfor %}
 {% endif %}
 
