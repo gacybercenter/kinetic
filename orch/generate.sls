@@ -22,6 +22,7 @@ master_setup:
     - highstate: true
     - fail_minions:
       - '{{ pillar['salt']['name'] }}'
+    - queue: true
 
 pxe_setup:
   salt.state:
@@ -29,6 +30,7 @@ pxe_setup:
     - highstate: true
     - fail_minions:
       - '{{ pillar['pxe']['name'] }}'
+    - queue: true
 {% endif %}
 
 ## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
@@ -54,8 +56,6 @@ pxe_setup:
 # type is the type of host (compute, controller, etc.)
 # provision determines whether or not zeroize will just create a blank minion,
 # or fully configure it
-
-{% do salt.log.info("Zeroing hosts: "+type) %}
 zeroize_{{ type }}:
   salt.runner:
     - name: state.orchestrate
@@ -65,7 +65,17 @@ zeroize_{{ type }}:
           type: {{ type }}
           targets: {{ targets }}
 
-{% do salt.log.info("Running provision for: "+type) %}
+deploy_{{ type }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/deploy
+        pillar:
+          type: {{ type }}
+          targets: {{ targets }}
+    - require:
+      - zeroize_{{ type }}
+
 provision_{{ type }}:
   salt.runner:
     - name: state.orchestrate
@@ -76,3 +86,4 @@ provision_{{ type }}:
           targets: {{ targets }}
     - require:
       - zeroize_{{ type }}
+      - deploy_{{ type }}

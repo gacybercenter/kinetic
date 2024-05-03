@@ -25,60 +25,14 @@ hosts:
       configure:
         salt: configure
         pxe: configure
-  storage:
-    needs:
-      install:
-        cache: configure
-      configure:
-        cephmon: configure
-        pxe: configure
-  storagev2:
-    needs:
-      install:
-        cache: configure
-      configure:
-        cephmon: configure
-        pxe: configure
-  compute:
-    needs:
-      install:
-        cache: configure
-      configure:
-        nova: configure
-        neutron: configure
-  computev2:
-    needs:
-      install:
-        cache: configure
-      configure:
-        nova: configure
-        neutron: configure
-  arm:
-    needs:
-      install:
-        cache: configure
-      configure:
-        nova: configure
-        neutron: configure
-  container:
-    needs:
-      install:
-        cache: configure
-      configure:
-        nova: configure
-        neutron: configure
-        zun: configure
-        etcd: configure
-  gpu:
-    needs:
-      install:
-        cache: configure
-      configure:
-        nova: configure
-        neutron: configure
-        cyborg: configure
   cache:
     needs:
+      configure:
+        controller: configure
+  haproxy:
+    needs:
+      install:
+        cache: configure
       configure:
         controller: configure
   cephmon:
@@ -87,14 +41,7 @@ hosts:
         cache: configure
       configure:
         controller: configure
-  mds:
-    needs:
-      install:
-        cache: configure
-      configure:
-        cephmon: configure
-        controller: configure
-  haproxy:
+  etcd:
     needs:
       install:
         cache: configure
@@ -118,6 +65,61 @@ hosts:
         cache: configure
       configure:
         controller: configure
+  bind:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+  storage:
+    needs:
+      install:
+        cache: configure
+      configure:
+        cephmon: configure
+        pxe: configure
+  storagev2:
+    needs:
+      install:
+        cache: configure
+      configure:
+        cephmon: configure
+        pxe: configure
+  mds:
+    needs:
+      install:
+        cache: configure
+      configure:
+        cephmon: configure
+        controller: configure
+  opensearch:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+  ovsdb:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+  guacamole:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+        haproxy: configure
+        mysql: configure
+  horizon:
+    needs:
+      install:
+        cache: configure
+      configure:
+        controller: configure
+        haproxy: configure
+        memcached: configure
   keystone:
     needs:
       install:
@@ -173,14 +175,44 @@ hosts:
         rabbitmq: configure
         keystone: configure
         neutron: configure
-  horizon:
+  compute:
     needs:
       install:
         cache: configure
       configure:
-        controller: configure
-        haproxy: configure
-        memcached: configure
+        nova: configure
+        neutron: configure
+  computev2:
+    needs:
+      install:
+        cache: configure
+      configure:
+        nova: configure
+        neutron: configure
+  arm:
+    needs:
+      install:
+        cache: configure
+      configure:
+        nova: configure
+        neutron: configure
+  container:
+    needs:
+      install:
+        cache: configure
+      configure:
+        nova: configure
+        neutron: configure
+        zun: configure
+        etcd: configure
+  gpu:
+    needs:
+      install:
+        cache: configure
+      configure:
+        nova: configure
+        neutron: configure
+        cyborg: configure
   heat:
     needs:
       install:
@@ -225,12 +257,6 @@ hosts:
         rabbitmq: configure
         keystone: configure
         bind: configure
-  bind:
-    needs:
-      install:
-        cache: configure
-      configure:
-        controller: configure
   swift:
     needs:
       install:
@@ -259,18 +285,6 @@ hosts:
         memcached: configure
         rabbitmq: configure
         keystone: configure
-  opensearch:
-    needs:
-      install:
-        cache: configure
-      configure:
-        controller: configure
-  ovsdb:
-    needs:
-      install:
-        cache: configure
-      configure:
-        controller: configure
   barbican:
     needs:
       install:
@@ -328,20 +342,6 @@ hosts:
         cephmon: configure
         mds: configure
         storage: configure
-  etcd:
-    needs:
-      install:
-        cache: configure
-      configure:
-        controller: configure
-  guacamole:
-    needs:
-      install:
-        cache: configure
-      configure:
-        controller: configure
-        haproxy: configure
-        mysql: configure
   cyborg:
     needs:
       install:

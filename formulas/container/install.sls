@@ -182,7 +182,7 @@ kuryr:
 kuryr_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/kuryr-libnetwork.git
-    - branch: stable/antelope
+    - branch: stable/{{ pillar['openstack']['version'] }}
     - target: /var/lib/kuryr
     - force_clone: true
     - require:
@@ -232,7 +232,7 @@ zun:
 zun_latest:
   git.latest:
     - name: https://git.openstack.org/openstack/zun.git
-    - branch: stable/antelope
+    - branch: stable/{{ pillar['openstack']['version'] }}
     - target: /var/lib/zun
     - force_clone: true
     - require:

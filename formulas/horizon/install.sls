@@ -40,11 +40,18 @@ horizon_packages:
       - python3-etcd3gw
     - reload_modules: True
 
+horizon_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python3-memcached
+
 {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
 magnum_latest:
   git.latest:
     - name: https://opendev.org/openstack/magnum-ui.git
-    - branch: stable/antelope
+    - branch: stable/{{ pillar['openstack']['version'] }}
     - target: /usr/share/openstack-dashboard/magnum-ui/
     - force_clone: true
 
@@ -75,7 +82,7 @@ install_magnum_ui:
 zun_latest:
   git.latest:
     - name: https://opendev.org/openstack/zun-ui.git
-    - branch: stable/antelope
+    - branch: stable/{{ pillar['openstack']['version'] }}
     - target: /usr/share/openstack-dashboard/zun-ui/
     - force_clone: true
 

@@ -1,4 +1,26 @@
 #!ipxe
 
-dhcp
-chain http://{{ pxe_record }}/?uuid=${uuid}
+set idx:int32 0
+echo Clearing default DHCP Options from previous boot...
+clear net4.dhcp/next-server:ipv4
+clear net4.dhcp/filename:string
+
+echo Starting Loop to find a network interface to boot from based on next-server being set...
+:loop
+echo Trying to boot from net${idx}...
+ifconf --configurator dhcp net${idx} || goto loop_inc
+isset ${next-server} || goto loop_inc && goto loop_done
+
+:loop_inc
+ifclose net${idx}
+inc idx && echo Incrementing Interface index to ${idx}
+iseq ${idx} 7 || goto loop && echo Interface index has reached Max limit of 7 && goto shell
+
+:loop_done
+echo Next Server value is set to ${next-server}
+echo Boot File value is set to ${filename}
+echo Chainloading from interface net${idx} net${idx}/chip net${idx}/ip net${idx}/mac
+chain http://{{ pxe_record }}/?uuid=${uuid} || goto shell
+
+:shell
+prompt --key s --timeout 10000 iPXE Boot Process failed, hit 's' for the iPXE shell; reboot in 10 seconds && shell || reboot

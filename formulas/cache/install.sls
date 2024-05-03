@@ -66,9 +66,9 @@ nexusproxy:
 
 nexusproxy_online:
   cmd.run:
-    - name: docker exec nexusproxy ls -al /nexus-data/ | grep -q 'log'
+    - name: docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
     - retry:
-        attempts: 30
+        attempts: 60
         delay: 10
         splay: 5
     - require:
@@ -90,8 +90,6 @@ nexusproxy_connection:
     - require:
       - docker_container: nexusproxy
       - cmd: nexusproxy_online
-    - onlyif:
-      - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
     - unless:
       - fun: grains.equals
         key: build_phase
@@ -108,8 +106,6 @@ admin_password:
       - docker_container: nexusproxy
       - cmd: nexusproxy_online
       - module: nexusproxy_connection
-    - onlyif:
-      - docker ps | grep nexusproxy && docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
     - unless:
       - fun: grains.equals
         key: build_phase

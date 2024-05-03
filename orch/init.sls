@@ -19,8 +19,9 @@
 ## everything except salt and pxe
 
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
-  {% do salt.log.info("Checking if "+type+" host type is enabled") %}
-  {% if salt.saltutil.runner('manage.up',tgt=type+'*') %}
+  {% do salt.log.info("****** Service is set to Enabled for: " + type) %}
+  {% if salt.saltutil.runner('manage.up',tgt=type+'-*') %}
+  {% do salt.log.info("****** Triggering DHCP IP Address Release for: " + type) %}
 release_{{ type }}_ip:
   salt.function:
     - name: cmd.run
@@ -30,6 +31,9 @@ release_{{ type }}_ip:
     - onlyif:
       - salt-key -l acc | grep -q "{{ type }}"
 
+  {% do salt.log.info("****** Powering Off systems for Service: " + type) %}
+    {% if pillar['hosts'][type]['style'] == 'physical' %}
+    
 init_{{ type }}_poweroff:
   salt.function:
     - name: system.poweroff
@@ -37,6 +41,18 @@ init_{{ type }}_poweroff:
     - require:
       - salt: release_{{ type }}_ip
 
+    {% else %}
+
+wipe_{{ type }}_domains:
+  salt.state:
+    - tgt: 'role:controller'
+    - tgt_type: grain
+    - sls:
+      - orch/states/virtual_zero
+    - pillar:
+        type: {{ type }}
+    - concurrent: True
+    {% endif %}
 ## This gives hosts that were given a shutdown order the ability to shut down
 ## There have been cases where a zeroize reset command was issued before a
 ## successful shutdown
@@ -47,6 +63,8 @@ init_{{ type }}_sleep:
     - kwarg:
         length: 10
 
+
+  {% do salt.log.info("****** Deleting Salt Keys for: " + type) %}
 wipe_{{ type }}_keys:
   salt.wheel:
     - name: key.delete
@@ -56,14 +74,46 @@ wipe_{{ type }}_keys:
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
 ## in the waiting room
+{% set endpoints = salt.saltutil.runner('mine.get',tgt=pillar['pxe']['name'],fun='redfish.gather_endpoints')[pillar['pxe']['name']] %}
+{% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
+
+{% do salt.log.info("****** Building Orchestration Targets") %}
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
   {% if pillar['hosts'][type]['style'] == 'physical' %}
     {% set role = pillar['hosts'][type]['role'] %}
+    {% set targets = {} %}
+    {% for id in pillar['hosts'][type]['uuids'] %}
+      {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
+      {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64', punctuation=False)|uuid) %}
+    {% endfor %}
   {% else %}
     {% set role = type %}
+    {% set offset = range(controllers|length)|random %}
+    {% set targets = {} %}
+    {% for id in range(pillar['hosts'][type]['count']) %}
+      {% set targets = targets|set_dict_key_value(id|string+':spawning', loop.index0) %}
+      {% set targets = targets|set_dict_key_value(id|string+':controller', controllers[(loop.index0 + offset) % controllers|length]) %}
+      {% set targets = targets|set_dict_key_value(id|string+':uuid', salt['random.get_str']('64', punctuation=False)|uuid) %}
+    {% endfor %}
   {% endif %}
 
-  {% do salt.log.info("Creating Execution Runner for Host Type: "+type) %}
+zeroize_{{ type }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/zeroize
+        pillar:
+          type: {{ type }}
+          targets: {{ targets }}
+
+{{ type }}_exec_runner_delay:
+  salt.function:
+    - name: test.sleep
+    - tgt: '{{ pillar['salt']['name'] }}'
+    - kwarg:
+        length: 30
+    - parallel: true
+
 create_{{ type }}_exec_runner:
   salt.runner:
     - name: state.orchestrate
@@ -72,12 +122,16 @@ create_{{ type }}_exec_runner:
         pillar:
           type: {{ type }}
           needs: {{ salt['pillar.get']('hosts:'+role+':needs', {}) }}
+          targets: {{ targets }}
     - parallel: true
+    - require:
+      - {{ type }}_exec_runner_delay
+      - zeroize_{{ type }}
 
-{{ type }}_origin_phase_runner_delay:
+{{ type }}_create_exec_runner_delay:
   salt.function:
     - name: test.sleep
     - tgt: '{{ pillar['salt']['name'] }}'
     - kwarg:
-        length: 1
+        length: 2
 {% endfor %}

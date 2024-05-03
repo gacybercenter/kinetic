@@ -35,10 +35,11 @@ https://github.com/ipxe/ipxe.git:
   git.latest:
     - target: /var/www/html/ipxe
     - user: root
+    - force_fetch: True
     - require:
       - sls: /formulas/pxe/install
-    - unless:
-      - ls /var/www/html/ipxe/src | grep -q kinetic.ipxe
+    - onchanges:
+      - file: /var/www/html/ipxe/src/kinetic.ipxe
 
 conf-files:
   file.managed:
@@ -79,38 +80,52 @@ conf-files:
 create_x86_64_efi_module:
   cmd.run:
     - name: |
-        make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
+        rm -f /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi && make bin-x86_64-efi/ipxe.efi EMBED=kinetic.ipxe
     - cwd: /var/www/html/ipxe/src/
-    - creates: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+    - require:
+      - git: https://github.com/ipxe/ipxe.git
+      - file: conf-files
+    - onchanges:
+      - file: /var/www/html/ipxe/src/kinetic.ipxe
 
 copy_x86_64_efi_module:
   file.copy:
-      - makedirs: True
-      - names:
-        - /var/www/html/{{ pillar['dhcp-options']['x86_efi'] }}:
-          - source: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
-        - /srv/tftp/{{ pillar['dhcp-options']['x86_efi'] }}:
-          - source: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
-      - require:
-        - cmd: create_x86_64_efi_module
+    - makedirs: True
+    - force: True
+    - names:
+      - /var/www/html/{{ pillar['dhcp-options']['x86_efi'] }}:
+        - source: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+      - /srv/tftp/{{ pillar['dhcp-options']['x86_efi'] }}:
+        - source: /var/www/html/ipxe/src/bin-x86_64-efi/ipxe.efi
+    - require:
+      - cmd: create_x86_64_efi_module
+    - onchanges:
+      - file: /var/www/html/ipxe/src/kinetic.ipxe
 
 create_aarch64_efi_module:
   cmd.run:
     - name: |
-        make bin-arm64-efi/ipxe.efi CROSS=aarch64-linux-gnu- EMBED=kinetic.ipxe
+        rm -f /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi && make bin-arm64-efi/ipxe.efi CROSS=aarch64-linux-gnu- EMBED=kinetic.ipxe
     - cwd: /var/www/html/ipxe/src/
-    - creates: /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
+    - require:
+      - git: https://github.com/ipxe/ipxe.git
+      - file: conf-files
+    - onchanges:
+      - file: /var/www/html/ipxe/src/kinetic.ipxe
 
 copy_aarch64_efi_module:
   file.copy:
-      - makedirs: True
-      - names:
-        - /var/www/html/{{ pillar['dhcp-options']['arm_efi'] }}:
-          - source: /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
-        - /srv/tftp/{{ pillar['dhcp-options']['arm_efi'] }}:
-          - source: /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
-      - require:
-        - cmd: create_aarch64_efi_module
+    - makedirs: True
+    - force: True
+    - names:
+      - /var/www/html/{{ pillar['dhcp-options']['arm_efi'] }}:
+        - source: /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
+      - /srv/tftp/{{ pillar['dhcp-options']['arm_efi'] }}:
+        - source: /var/www/html/ipxe/src/bin-arm64-efi/ipxe.efi
+    - require:
+      - cmd: create_aarch64_efi_module
+    - onchanges:
+      - file: /var/www/html/ipxe/src/kinetic.ipxe
 
 Disable default site:
   apache_site.disabled:

@@ -12,41 +12,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
+
+log = logging.getLogger(__name__)
+
+__virtualname__ = "needs"
+
+def __virtual__():
+    """
+    Return virtual name of the module.
+    :return: The virtual name of the module.
+    """
+    return __virtualname__
+
 def check_all(type, needs):
     """
-    Check whether or not dependencies are
-    satisfied.  This function will return True
-    as soon as there is a single successful check
-    on any phase.  It should be used to kick off
-    the orch routine.  Use chceck_one to ensure
-    that individual per-phase dependencies are met.
+    Check whether or not required services in dependencies exist,
+    and then will trigger the orchestration routine.
     """
     ret = {"result": True, "type": type, "comment": []}
-    for phase in needs:
-        phase_ok = True
-        for dep in needs[phase]:
-            current_status = __salt__['mine.get'](
-                tgt='role:'+dep, tgt_type='grain', fun='build_phase')
-            if len(current_status) == 0:
-                __context__["retcode"] = 1
-                phase_ok = False
-                ret["result"] = False
-                ret["comment"].append(
-                    "No endpoints of type "+dep+" available for assessment")
-                break
-            for endpoint in current_status:
-                if current_status[endpoint] != needs[phase][dep]:
-                    __context__["retcode"] = 1
-                    phase_ok = False
-                    ret["result"] = False
-                    ret["comment"].append(
-                        endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[phase][dep])
-        if phase_ok is True:
-            __context__["retcode"] = 0
-            ret["comment"] = type+" orchestration routine may proceed"
-            return ret
-    return ret
+    log.info("****** Validating Dependencies For Service [ "+type+" ]")
 
+    needs_list = []
+    try:
+        for phase in needs:
+            for dep in needs[phase]:
+
+                needs_list.append(dep)
+        log.info("****** [ "+type+" ] has the following Dependencies: "+str(needs_list))
+
+        for service in needs_list:
+            current_status = __salt__['manage.up'](tgt=service+"-*")
+
+            if len(current_status) == 0:
+                log.info("****** Dependent Service [ "+service+" ] is not Available")
+                __context__["retcode"] = 1
+                ret["result"] = False
+                ret["comment"].append("Dependent Service "+service+" is not Available")
+                return ret
+
+        if ret["result"] is True:
+            __context__["retcode"] = 0
+            ret["comment"] = type+" orchestration routine may proceed, all Dependent Services are Available"
+            return ret
+
+    except Exception as exc:
+        log.error("Exception encountered: %s", exc)
+        return False
 
 def check_one(type, needs):
     """
@@ -54,19 +67,31 @@ def check_one(type, needs):
     satisfied for a specific type and phase.
     """
     ret = {"result": True, "type": type, "comment": []}
-    for dep in needs:
-        current_status = __salt__['mine.get'](
-            tgt='role:'+dep, tgt_type='grain', fun='build_phase')
-        if len(current_status) == 0:
-            ret["comment"].append(
-                "No endpoints of type "+dep+" available for assessment")
-            ret["ready"] = False
-            break
-        for endpoint in current_status:
-            if current_status[endpoint] != needs[dep]:
-                ret["result"] = False
-                ret["comment"].append(
-                    endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
-    if ret["result"] is True:
-        ret["comment"] = type+" orchestration routine may proceed"
-    return ret
+    log.info("****** Validating Dependencies For Service [ "+type+" ]")
+    try:
+        for dep in needs:
+            current_status = __salt__['mine.get'](tgt='G@role:'+dep, tgt_type='compound', fun='build_phase')
+
+            if len(current_status) == 0:
+                log.info("****** No endpoints of type [ "+dep+" ] available for assessment")
+                __context__["retcode"] = 1
+                ret["comment"].append("No endpoints of type "+dep+" available for assessment")
+                ret["ready"] = False
+                return ret
+
+            for endpoint in current_status:
+                if current_status[endpoint] != needs[dep]:
+                    log.info("****** "+endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
+                    __context__["retcode"] = 1
+                    ret["result"] = False
+                    ret["comment"].append(endpoint+" is "+current_status[endpoint]+" but needs to be "+needs[dep])
+                    return ret
+
+        if ret["result"] is True:
+            __context__["retcode"] = 0
+            ret["comment"] = type+" orchestration routine may proceed"
+            return ret
+
+    except Exception as exc:
+        log.error("Exception encountered: %s", exc)
+        return False

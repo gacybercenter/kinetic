@@ -14,18 +14,28 @@
 
 ceph_repo:
   pkgrepo.managed:
-    - humanname: Ceph Quincy
+    - humanname: Ceph {{ pillar['ceph']['version'] }}
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
-    {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-quincy" %}
-    - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+    {% if grains['type'] == 'arm' %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-" + pillar['ceph']['version'] + "/" %}
+    - name: deb [signed-by=/etc/apt/keyrings/release.gpg arch=arm64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
+      {% endif %}
+    {% else %}
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://download.ceph.com/debian-" + pillar['ceph']['version'] + "/"  %}
+    - name: deb [signed-by=/etc/apt/keyrings/release.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
+      {% endif %}
     {% endif %}
   {% endfor %}
 {% else %}
-    - name: deb [signed-by=/etc/apt/keyrings/release.asc arch=amd64] https://download.ceph.com/debian-quincy {{ pillar['ubuntu']['name'] }} main
+  {% if grains['type'] == 'arm' %}
+    - name: deb [signed-by=/etc/apt/keyrings/release.gpg arch=arm64] https://download.ceph.com/debian-{{ pillar['ceph']['version'] }} {{ pillar['ubuntu']['name'] }} main
+  {% else %}
+    - name: deb [signed-by=/etc/apt/keyrings/release.gpg arch=amd64] https://download.ceph.com/debian-{{ pillar['ceph']['version'] }} {{ pillar['ubuntu']['name'] }} main
+  {% endif %}
 {% endif %}
     - file: /etc/apt/sources.list.d/ceph.list
-    - key_url: https://download.ceph.com/keys/release.asc
+    - key_url: https://download.ceph.com/keys/release.gpg
     - aptkey: False
 
 update_packages_ceph:

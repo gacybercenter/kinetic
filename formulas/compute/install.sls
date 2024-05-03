@@ -17,6 +17,7 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
+  - /formulas/common/ceph/repo
 
 compute_packages:
   pkg.installed:
