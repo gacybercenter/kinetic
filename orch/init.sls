@@ -32,6 +32,8 @@ release_{{ type }}_ip:
       - salt-key -l acc | grep -q "{{ type }}"
 
   {% do salt.log.info("****** Powering Off systems for Service: " + type) %}
+    {% if pillar['hosts'][type]['style'] == 'physical' %}
+    
 init_{{ type }}_poweroff:
   salt.function:
     - name: system.poweroff
@@ -39,6 +41,18 @@ init_{{ type }}_poweroff:
     - require:
       - salt: release_{{ type }}_ip
 
+    {% else %}
+
+wipe_{{ type }}_domains:
+  salt.state:
+    - tgt: 'role:controller'
+    - tgt_type: grain
+    - sls:
+      - orch/states/virtual_zero
+    - pillar:
+        type: {{ type }}
+    - concurrent: True
+    {% endif %}
 ## This gives hosts that were given a shutdown order the ability to shut down
 ## There have been cases where a zeroize reset command was issued before a
 ## successful shutdown

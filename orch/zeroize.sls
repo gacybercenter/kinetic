@@ -132,7 +132,7 @@ wipe_{{ type }}_domains:
       - orch/states/virtual_zero
     - pillar:
         type: {{ type }}
-    - queue: True
+    - concurrent: True
   {% endif %}
 {% endif %}
 

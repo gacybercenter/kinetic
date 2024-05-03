@@ -63,6 +63,13 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
     - pillar:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
     - concurrent: true
+
+prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}_sleep:
+  salt.function:
+    - name: test.sleep
+    - tgt: '{{ pillar['salt']['name'] }}'
+    - kwarg:
+        length: 20
   {% endfor %}
 {% endif %}
 
@@ -137,7 +144,7 @@ set_spawning_{{ type }}-{{ targets[id]['uuid'] }}:
     - require:
       - wait_for_minion_first_start_{{ type }}
     - retry:
-        interval: 5
-        attempts: 3
+        interval: 20
+        attempts: 10
   {% endfor %}
 {% endif %}
