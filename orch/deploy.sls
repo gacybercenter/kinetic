@@ -70,8 +70,6 @@ prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
     - pillar:
         hostname: {{ type }}-{{ targets[id]['uuid'] }}
     - concurrent: true
-    - require:
-      - prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}_sleep
   {% endfor %}
 {% endif %}
 
