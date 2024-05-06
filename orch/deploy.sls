@@ -21,6 +21,7 @@
 {% set type = pillar['type'] %}
 {% set style = pillar['hosts'][type]['style'] %}
 {% set targets = pillar['targets'] %}
+{% set controllers = pillar['controllers'] %}
 
 {% do salt.log.info("****** Deploying hosts [ "+type+" ] ******") %}
 
@@ -54,21 +55,22 @@ reset_host_{{ id }}:
 
   {% endfor %}
 {% elif style == 'virtual' %}
-  {% for id in targets %}
-prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}_sleep:
-  salt.function:
-    - name: test.sleep
-    - tgt: '{{ pillar['salt']['name'] }}'
-    - kwarg:
-        length: 20
+  {% for controller in controllers %}
+    {% set controller_targets = {} %}
+    {% for id in targets %}
+      {% if targets[id]['controller'] == controller %}
+        {% set controller_targets = targets[id] }
+      {% endif %}
+    {% endfor %}
 
-prepare_vm_{{ type }}-{{ targets[id]['uuid'] }}:
+prepare_vm_{{ type }}-{{ controller }}:
   salt.state:
-    - tgt: {{ targets[id]['controller'] }}
+    - tgt: {{ controller }}
     - sls:
       - orch/states/virtual_prep
     - pillar:
-        hostname: {{ type }}-{{ targets[id]['uuid'] }}
+        type: {{ type }}
+        controller_targets: {{ controller_targets }}
     - queue: true
   {% endfor %}
 {% endif %}

@@ -35,16 +35,17 @@ pxe_setup:
 
 ## Create the special targets dictionary and populate it with the 'id' of the target (either the physical uuid or the spawning)
 ## as well as its ransomized 'uuid'.
+{% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
+{% set endpoints = salt.saltutil.runner('mine.get',tgt=pillar['pxe']['name'],fun='redfish.gather_endpoints')[pillar['pxe']['name']] %}
 {% set targets = {} %}
+
 {% if style == 'physical' %}
 ## create and endpoints dictionary of all physical uuids
-  {% set endpoints = salt.saltutil.runner('mine.get',tgt=pillar['pxe']['name'],fun='redfish.gather_endpoints')[pillar['pxe']['name']] %}
   {% for id in pillar['hosts'][type]['uuids'] %}
     {% set targets = targets|set_dict_key_value(id+':api_host', endpoints[id]) %}
     {% set targets = targets|set_dict_key_value(id+':uuid', salt['random.get_str']('64', punctuation=False)|uuid) %}
   {% endfor %}
 {% elif style == 'virtual' %}
-  {% set controllers = salt.saltutil.runner('manage.up',tgt='role:controller',tgt_type='grain') %}
   {% set offset = range(controllers|length)|random %}
   {% for id in range(pillar['hosts'][type]['count']) %}
     {% set targets = targets|set_dict_key_value(id|string+':spawning', loop.index0) %}
@@ -73,6 +74,7 @@ deploy_{{ type }}:
         pillar:
           type: {{ type }}
           targets: {{ targets }}
+          controllers: {{ controllers }}
     - require:
       - zeroize_{{ type }}
 

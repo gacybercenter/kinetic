@@ -10,7 +10,7 @@ salt-lint:
     - docker
   script:
     - pip install salt-lint
-    - salt-lint --json --severity $(find . -name \*.sls) > saltcodeclimate.json
+    - salt-lint --json --severity $(find . -name \*.sls) > codeclimate.json
   only:
     changes:
       - formulas/**/*
@@ -18,7 +18,7 @@ salt-lint:
       - reactor/**/*
   artifacts:
     reports:
-      codequality: saltcodeclimate.json
+      codequality: codeclimate.json
     when: always
 
 pylint:

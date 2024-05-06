@@ -12,8 +12,11 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-{% set hostname = pillar['hostname'] %}
-{% set type = hostname.split('-')[0] %}
+{% set controller_targets = pillar['controller_targets'] %}
+{% set type = pillar['type'] %}
+{% for id in controller_targets %}
+
+  {% set hostname = {{ type }}-{{ controller_targets[id]['uuid'] }} %}
 
 /kvm/vms/{{ hostname }}/config.xml:
   file.managed:
@@ -37,20 +40,20 @@
         {% endfor %}
         seclabel: <seclabel type='dynamic' model='apparmor' relabel='yes'/>
     - require_in:
-      - report_build_success
+      - report_build_success_{{ hostname }}
 
 /kvm/vms/{{ hostname }}/disk0.raw:
   file.copy:
     - source: /kvm/images/{{ pillar['hosts'][type]['os'] }}-latest
     - require_in:
-      - report_build_success
+      - report_build_success_{{ hostname }}
 
 qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type]['disk'] }}:
   cmd.run:
     - onchanges:
       - /kvm/vms/{{ hostname }}/disk0.raw
     - require_in:
-      - report_build_success
+      - report_build_success_{{ hostname }}
 
 /kvm/vms/{{ hostname }}/data/meta-data:
   file.managed:
@@ -60,7 +63,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
     - defaults:
         hostname: {{ hostname }}
     - require_in:
-      - report_build_success
+      - report_build_success_{{ hostname }}
 
 /kvm/vms/{{ hostname }}/data/user-data:
   file.managed:
@@ -72,7 +75,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
         master_record: {{ pillar['salt']['record'] }}
         salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
     - require_in:
-      - report_build_success
+      - report_build_success_{{ hostname }}
 
 genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ hostname }}/data/meta-data /kvm/vms/{{ hostname }}/data/user-data:
   cmd.run:
@@ -80,14 +83,15 @@ genisoimage -o /kvm/vms/{{ hostname }}/config.iso -V cidata -r -J /kvm/vms/{{ ho
       - /kvm/vms/{{ hostname }}/data/meta-data
       - /kvm/vms/{{ hostname }}/data/user-data
     - require_in:
-      - report_build_success
+      - report_build_success_{{ hostname }}
 
 virsh create /kvm/vms/{{ hostname }}/config.xml:
   cmd.run:
     - onchanges:
       - /kvm/vms/{{ hostname }}/config.xml
     - require_in:
-      - report_build_success
+      - report_build_success_{{ hostname }}
 
-report_build_success:
+report_build_success_{{ hostname }}:
   test.nop
+{% endfor %}
