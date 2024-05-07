@@ -64,7 +64,6 @@ zeroize_{{ type }}:
         mods: orch/zeroize
         pillar:
           type: {{ type }}
-          targets: {{ targets }}
 
 deploy_{{ type }}:
   salt.runner:

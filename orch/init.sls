@@ -20,56 +20,15 @@
 
 {% for type in pillar['hosts'] if salt['pillar.get']('hosts:'+type+':enabled', 'True') == True %}
   {% do salt.log.info("****** Service is set to Enabled for: " + type) %}
-  {% if salt.saltutil.runner('manage.up',tgt=type+'-*') %}
-  {% do salt.log.info("****** Triggering DHCP IP Address Release for: " + type) %}
-release_{{ type }}_ip:
-  salt.function:
-    - name: cmd.run
-    - tgt: '{{ type }}-*'
-    - arg:
-      - 'dhclient -r'
-    - onlyif:
-      - salt-key -l acc | grep -q "{{ type }}"
 
-  {% do salt.log.info("****** Powering Off systems for Service: " + type) %}
-    {% if pillar['hosts'][type]['style'] == 'physical' %}
-    
-init_{{ type }}_poweroff:
-  salt.function:
-    - name: system.poweroff
-    - tgt: '{{ type }}-*'
-    - require:
-      - salt: release_{{ type }}_ip
-
-    {% else %}
-
-wipe_{{ type }}_domains:
-  salt.state:
-    - tgt: 'role:controller'
-    - tgt_type: grain
-    - sls:
-      - orch/states/virtual_zero
-    - pillar:
-        type: {{ type }}
-    - concurrent: True
-    {% endif %}
-## This gives hosts that were given a shutdown order the ability to shut down
-## There have been cases where a zeroize reset command was issued before a
-## successful shutdown
-init_{{ type }}_sleep:
-  salt.function:
-    - name: test.sleep
-    - tgt: '{{ pillar['salt']['name'] }}'
+zeroize_{{ type }}:
+  salt.runner:
+    - name: state.orchestrate
     - kwarg:
-        length: 10
+        mods: orch/zeroize
+        pillar:
+          type: {{ type }}
 
-
-  {% do salt.log.info("****** Deleting Salt Keys for: " + type) %}
-wipe_{{ type }}_keys:
-  salt.wheel:
-    - name: key.delete
-    - match: '{{ type }}-*'
-  {% endif %}
 {% endfor %}
 
 ## Start a runner for every endpoint type.  Whether or not this runner actually does anything is determined
@@ -96,15 +55,6 @@ wipe_{{ type }}_keys:
       {% set targets = targets|set_dict_key_value(id|string+':uuid', salt['random.get_str']('64', punctuation=False)|uuid) %}
     {% endfor %}
   {% endif %}
-
-zeroize_{{ type }}:
-  salt.runner:
-    - name: state.orchestrate
-    - kwarg:
-        mods: orch/zeroize
-        pillar:
-          type: {{ type }}
-          targets: {{ targets }}
 
 {{ type }}_exec_runner_delay:
   salt.function:

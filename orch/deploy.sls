@@ -28,10 +28,18 @@
 ## Follow this codepath if host is physical
 {% if style == 'physical' %}
 
+prepare_physical_{{ type }}:
+  salt.runner:
+    - name: state.orchestrate
+    - kwarg:
+        mods: orch/states/physical_prep.sls
+        pillar:
+          type: {{ type }}
+          targets: {{ targets }}
+
 ## Pull the current bmc configuration data from the pillar
   {% set api_pass = pillar['bmc_password'] %}
   {% set api_user = pillar['api_user'] %}
-
   {% for id in targets %}
 set_bootonce_host_{{ id }}:
   salt.function:
