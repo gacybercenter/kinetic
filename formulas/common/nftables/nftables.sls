@@ -20,7 +20,7 @@ openstack_api:
     - ports: [53/tcp,{{ pillar['cache']['lancache']['http_port'] }}/tcp,443/tcp,9292/tcp,7480/tcp,5000/tcp,8774/tcp,8778/tcp,8776/tcp,9696/tcp,8004/tcp,8000/tcp,9001/tcp,9517/tcp,{{ pillar['cache']['nexusproxy']['port'] }}/tcp]
 openstack_zone:
   firewalld.present:
-    - name: openstack_zone
+    - name: public
     - services:
       - openstack_api
     - sources:
@@ -45,7 +45,7 @@ openstack_zone:
 
 firewalld_public_drop:
   firewalld.present:
-    - name: public_drop
+    - name: public
     - rich_rules:
       - rule family=ipv4 source address='{{ pillar['networking']['subnets']['public'] }}' drop
 
