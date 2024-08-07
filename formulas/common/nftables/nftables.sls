@@ -47,7 +47,7 @@ firewalld_public_drop:
   firewalld.present:
     - name: public
     - rich_rules:
-      - rule family=ipv4 source address='{{ pillar['networking']['subnets']['public'] }}' drop
+      - rule family="ipv4" source address="{{ pillar['networking']['subnets']['public'] }}" drop
 
 #public_block:
 #  nftables.append:
