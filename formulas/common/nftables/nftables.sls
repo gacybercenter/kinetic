@@ -27,6 +27,7 @@ salt_pxe_ports:
     - name: public
     - ports:
       - 80/tcp
+      - 67-69/tcp
 {% endif %}
 openstack_api:
   firewalld.service:
