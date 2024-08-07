@@ -1,4 +1,4 @@
-{% set type = pillar['type'] %}
+{% set type = grains['type'] %}
 
 {% if type != 'pxe' or type != 'salt' %}
 include:
