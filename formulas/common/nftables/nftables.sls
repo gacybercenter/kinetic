@@ -21,7 +21,7 @@ openstack_api:
 openstack_zone:
   firewalld.present:
     - name: openstack_zone
-    - services: openstack_zone
+    - services:
       - openstack_api
     - sources:
       - '{{ pillar['networking']['subnets']['public'] }}'
