@@ -17,7 +17,7 @@ openstack_api:
   nftables.append:
     - position: 1
     - table: filter
-    - family: inet
+    - family: ipv4
     - chain: input
     - jump: accept
     - match: state
@@ -33,7 +33,7 @@ public_block:
   nftables.append:
     - position: 2
     - table: filter
-    - family: inet
+    - family: ipv4
     - chain: input
     - jump: drop
     - match: state
