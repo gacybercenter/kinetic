@@ -18,7 +18,7 @@ openstack_api:
   firewalld.service:
     - name: openstack_api
     - protocols: tcp
-    - ports: [53,{{ pillar['cache']['lancache']['http_port'] }},443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517,{{ pillar['cache']['nexusproxy']['port'] }}]
+    - ports: [53/tcp,{{ pillar['cache']['lancache']['http_port'] }}/tcp,443/tcp,9292/tcp,7480/tcp,5000/tcp,8774/tcp,8778/tcp,8776/tcp,9696/tcp,8004/tcp,8000/tcp,9001/tcp,9517/tcp,{{ pillar['cache']['nexusproxy']['port'] }}]/tcp
 
 #openstack_api:
 #  nftables.append:
