@@ -1,6 +1,6 @@
 nftables:
   pkg.installed:
-    - name: firwalld
+    - name: firewalld
 
 nftables_service:
   service.running:
