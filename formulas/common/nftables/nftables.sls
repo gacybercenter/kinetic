@@ -42,6 +42,13 @@ openstack_zone:
 #    - unless:
 #      - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} tcp dport'
 
+
+firewalld_public_drop:
+  firewalld.present:
+    - name: public_drop
+    - rich_rules:
+      - rule family=ipv4 source address='{{ pillar['networking']['subnets']['public'] }}' drop
+
 #public_block:
 #  nftables.append:
 #    - position: 2
