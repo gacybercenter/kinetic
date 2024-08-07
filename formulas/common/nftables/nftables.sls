@@ -21,7 +21,13 @@ salt_master_ports:
     - ports:
       - 4505-4506/tcp
 {% endif %}
-
+{% if grains['type'] == 'pxe' %}
+salt_master_ports:
+  firewalld.present:
+    - name: public
+    - ports:
+      - 80/tcp
+{% endif %}
 openstack_api:
   firewalld.service:
     - name: openstack_api
