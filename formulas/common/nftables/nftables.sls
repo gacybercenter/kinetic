@@ -14,6 +14,14 @@ common_remove:
     - pkgs:
       - nftables
 
+{% if grains['type'] == 'salt' %}
+salt_master_ports:
+  firewalld.present:
+    - name: public
+    - ports:
+      - 4505-4506/tcp
+{% endif %}
+
 openstack_api:
   firewalld.service:
     - name: openstack_api
