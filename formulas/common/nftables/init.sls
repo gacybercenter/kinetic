@@ -2,5 +2,5 @@
 
 {% if type != 'pxe' or type != 'salt' %}
 include:
-  .nftables
+  - .nftables
 {% endif %}
