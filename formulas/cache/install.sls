@@ -12,10 +12,10 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-include:
-  - /formulas/common/base
-  - /formulas/common/networking
-  - /formulas/common/install
+# include:
+#   - /formulas/common/base
+#   - /formulas/common/networking
+#   - /formulas/common/install
 
 cache_packages:
   pkg.installed:
