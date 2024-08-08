@@ -12,8 +12,8 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 
-include:
-  - /formulas/common/nftables/nftables
+# include:
+#   - /formulas/common/nftables/nftables
 
 ### Set custom ifwatch grain that contains list of interfaces that I want to monitor with the network
 ### beacon
