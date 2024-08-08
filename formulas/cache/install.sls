@@ -57,7 +57,7 @@ salt-pip_installs:
 nexusproxy:
   docker_container.running:
     - name: nexusproxy
-    - image: sonatype/nexus3:latest
+    - image: sonatype/nexus3:3.69.0
     - restart_policy: unless-stopped
     - ports:
       - 8081
