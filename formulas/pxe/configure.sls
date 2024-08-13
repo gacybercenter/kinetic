@@ -31,8 +31,9 @@ include:
 /var/www/html/index.html:
   file.absent
 
-https://github.com/ipxe/ipxe.git:
+ipxe_git:
   git.latest:
+    - name: https://github.com/ipxe/ipxe.git
     - target: /var/www/html/ipxe
     - user: root
     - force_fetch: True
@@ -43,6 +44,8 @@ https://github.com/ipxe/ipxe.git:
 
 conf-files:
   file.managed:
+    - require:
+      - git: ipxe_git
     - template: jinja
     - makedirs: True
     - defaults:
