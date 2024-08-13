@@ -44,7 +44,7 @@ https://github.com/ipxe/ipxe.git:
 conf-files:
   file.managed:
     - template: jinja
-    - mkdirs: True
+    - makedirs: True
     - defaults:
         pxe_record: {{ pillar['pxe']['record'] }}
         pxe_name: {{ pillar['pxe']['name'] }}
