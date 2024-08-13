@@ -37,6 +37,7 @@ ipxe_git:
     - target: /var/www/html/ipxe
     - user: root
     - force_fetch: True
+    - force_clone: True
     - require:
       - sls: /formulas/pxe/install
     - onchanges:
