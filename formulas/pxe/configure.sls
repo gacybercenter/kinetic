@@ -44,8 +44,6 @@ ipxe_git:
 
 conf-files:
   file.managed:
-    - require:
-      - git: ipxe_git
     - template: jinja
     - makedirs: True
     - defaults:
