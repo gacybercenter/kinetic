@@ -154,7 +154,7 @@ unzip_{{ args ['name'] }}:
     - name: zcat /kvm/images/{{ os }}.original > /kvm/images/{{ os }}
     - name: cp /kvm/images/{{ os }} /kvm/images/{{ os }}.original
     - creates:
-      - /kvm/images/{{ os }}.original
+      - /kvm/images/{{ os }}
   {% endif %}
 
 set_format_{{ os }}:
