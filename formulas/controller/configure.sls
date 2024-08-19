@@ -153,6 +153,8 @@ unzip_{{ args ['name'] }}:
   cmd.run:
     - name: xz -d -S original /kvm/images/{{ os }}.original
     - name: mv /kvm/images/{{ os }}. /kvm/images/{{ os }}.original
+    - creates:
+      - /kvm/images/{{ os }}.original
   {% endif %}
 
 set_format_{{ os }}:
