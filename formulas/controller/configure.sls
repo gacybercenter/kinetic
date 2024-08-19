@@ -151,8 +151,9 @@ create_{{ args['name'] }}:
   {% if args['name'] == 'fcore40' %}
 unzip_{{ args ['name'] }}:
   cmd.run:
-    - name: xz -d -S original /kvm/images/{{ os }}.original
-    - name: mv /kvm/images/{{ os }}. /kvm/images/{{ os }}.original
+    - name: mv /kvm/images/{{ os }}.original /kvm/images/{{ os }}.xz
+    - name: xz -d /kvm/images/{{ os }}.xz
+    - name: mv /kvm/images/{{ os }} /kvm/images/{{ os }}.original
     - creates:
       - /kvm/images/{{ os }}.original
   {% endif %}
