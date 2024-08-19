@@ -152,7 +152,7 @@ create_{{ args['name'] }}:
 unzip_{{ args ['name'] }}:
   cmd.run:
     - name: mv /kvm/images/{{ os }}.original /kvm/images/{{ os }}.xz
-    - name: xz -d /kvm/images/{{ os }}.xz
+    - name: xz -d -k /kvm/images/{{ os }}.xz
     - name: mv /kvm/images/{{ os }} /kvm/images/{{ os }}.original
     - creates:
       - /kvm/images/{{ os }}.original
