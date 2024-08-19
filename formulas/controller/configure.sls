@@ -147,6 +147,12 @@ create_{{ args['name'] }}:
     - source: {{ args['url'] }}
     - skip_verify: True
 
+  {% if args['name'] == 'fcore40' %}
+unzip_{{ args ['name'] }}:
+  cmd.run:
+    - name: xz -d -S original /kvm/images/{{ os }}.original -c > {{ os }}.original
+  {% endif %}
+
 set_format_{{ os }}:
   cmd.run:
     - cwd: /kvm/images
