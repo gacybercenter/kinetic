@@ -152,7 +152,7 @@ create_{{ args['name'] }}:
 unzip_{{ args ['name'] }}:
   cmd.run:
     - name: zcat /kvm/images/{{ os }}.original > /kvm/images/{{ os }}
-    - name: mv /kvm/images/{{ os }} /kvm/images/{{ os }}.original
+    - name: cp /kvm/images/{{ os }} /kvm/images/{{ os }}.original
     - creates:
       - /kvm/images/{{ os }}.original
   {% endif %}
