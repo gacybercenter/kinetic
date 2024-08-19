@@ -149,12 +149,17 @@ create_{{ args['name'] }}:
 
 #Vendor compresses fcos images
   {% if args['name'] == 'fcore40' %}
-unzip_{{ args ['name'] }}:
+unzip_{{ args['name'] }}:
   cmd.run:
     - name: zcat /kvm/images/{{ os }}.original > /kvm/images/{{ os }}
-    - name: cp /kvm/images/{{ os }} /kvm/images/{{ os }}.original
+    - name: rm /kvm/images/{{ os }}.original
     - creates:
       - /kvm/images/{{ os }}
+create_{{ args['name'] }}_file:
+  cmd.run:
+    - name: cp /kvm/images/{{ os }} /kvm/images/{{ os }}.original
+    - creates:
+      - /kvm/images/{{ os }}.original
   {% endif %}
 
 set_format_{{ os }}:
