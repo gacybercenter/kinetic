@@ -45,7 +45,7 @@ python3_pip:
   pkg.installed:
     - pkgs:
       - python3-pip
-    - reload_modules: True
+#    - reload_modules: True
 
 # Allow for minion result checkin randomization
 /etc/salt/minion.d/98-tunning.conf:
