@@ -42,18 +42,6 @@ apply_base_{{ type }}:
         interval: 60
         attempts: 5
         splay: 0
-#compensate for bad pkg above(?)
-fix_bad_patch:
-  salt.function:
-    - name: cmd.run
-    - tgt:
-{% for id in targets %}
-      - {{ type }}-{{ targets[id]['uuid'] }}
-{% endfor %}
-    - arg:
-      - dpkg --configure -a
-    - onfail_any:
-      - apply_base_{{ type }}
 
 ### This macro renders to a block if there are unmet dependencies
 {{ orchestration.needs_check_one(type=type, phase='networking') }}

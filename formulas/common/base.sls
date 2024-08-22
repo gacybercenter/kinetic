@@ -46,6 +46,12 @@ python3_pip:
     - pkgs:
       - python3-pip
     - reload_modules: True
+#compensate for race condition during pkg install
+bad_patch_fix:
+  cmd.run:
+    - name: dpkg --configure -a
+  onlyif:
+    - apt install python3-pip
 
 # Allow for minion result checkin randomization
 /etc/salt/minion.d/98-tunning.conf:
