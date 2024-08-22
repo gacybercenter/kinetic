@@ -45,7 +45,6 @@ python3_pip:
   pkg.installed:
     - pkgs:
       - python3-pip
-    - reload_modules: True
 #compensate for race condition during pkg install
 bad_patch_fix:
   cmd.run:
