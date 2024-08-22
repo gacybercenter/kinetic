@@ -51,7 +51,7 @@ bad_patch_fix:
   cmd.run:
     - name: dpkg --configure -a
   onlyif:
-    - apt install python3-pip
+    - dpkg -l | grep -E '^[A-Za-z][A-Z]'
 
 # Allow for minion result checkin randomization
 /etc/salt/minion.d/98-tunning.conf:
