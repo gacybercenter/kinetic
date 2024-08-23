@@ -17,15 +17,15 @@ common_remove:
 nft_ipv4_table:
   nftables.table_present:
     - name: filter
-    - family: ipv4
+    - family: inet
 nft_ipv4_input_chain:
   nftables.chain_present:
     - name: input
     - table: filter
-    - family: ipv4
+    - family: inet
 
 openstack_api:
-  nftables.insert:
+  nftables.append:
     - position: 1
     - table: filter
 #    - family: inet
@@ -41,7 +41,7 @@ openstack_api:
       - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} tcp dport'
 
 public_block:
-  nftables.insert:
+  nftables.append:
     - position: 2
     - table: filter
 #    - family: inet
