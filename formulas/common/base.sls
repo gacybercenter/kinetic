@@ -14,8 +14,7 @@
 
 {% set type = opts.id.split('-')[0] %}
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
-{% set targets = pillar['targets'] %}
-{% import 'formulas/common/macros/orchestration.sls' as orchestration with context %}
+
 
 initial_module_sync:
   saltutil.sync_all:
@@ -131,5 +130,3 @@ rsyslog:
     - group: root
     - mode: "0644"
 {% endif %}
-
-{{ orchestration.build_phase_update(type=type, targets=targets, phase='networking') }}

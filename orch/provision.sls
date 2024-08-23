@@ -42,6 +42,7 @@ apply_base_{{ type }}:
         interval: 60
         attempts: 5
         splay: 0
+{{ orchestration.build_phase_update(type=type, targets=targets, phase='networking') }}
 
 ### This macro renders to a block if there are unmet dependencies
 {{ orchestration.needs_check_one(type=type, phase='networking') }}
