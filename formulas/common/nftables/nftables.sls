@@ -25,7 +25,7 @@ nft_ipv4_input_chain:
     - family: ipv4
 
 openstack_api:
-  nftables.append:
+  nftables.insert:
     - position: 1
     - table: filter
 #    - family: inet
@@ -41,7 +41,7 @@ openstack_api:
       - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} tcp dport'
 
 public_block:
-  nftables.append:
+  nftables.insert:
     - position: 2
     - table: filter
 #    - family: inet
