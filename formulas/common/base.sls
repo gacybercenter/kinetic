@@ -130,3 +130,6 @@ rsyslog:
     - group: root
     - mode: "0644"
 {% endif %}
+next_build_phase:
+  grains.present:
+    - value: networking
