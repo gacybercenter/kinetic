@@ -41,9 +41,6 @@ apply_base_{{ type }}:
         attempts: 2
         splay: 0
 
-### This macro renders to a block if there are unmet dependencies
-{{ orchestration.needs_check_one(type=type, phase='networking') }}
-
 apply_networking_{{ type }}:
   salt.state:
     - tgt:
@@ -60,6 +57,9 @@ apply_networking_{{ type }}:
         splay: 0
     - require:
       - apply_base_{{ type }}
+
+### This macro renders to a block if there are unmet dependencies
+{{ orchestration.needs_check_one(type=type, phase='networking') }}
 
 ## This macro updates the build_phase grain and forces a mine update
 {{ orchestration.reboot_and_wait(type=type, targets=targets, phase='networking') }}
