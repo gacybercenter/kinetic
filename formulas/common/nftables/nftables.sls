@@ -20,7 +20,7 @@ nft_inet_table_absent:
 nft_ipv4_table:
   nftables.table_present:
     - name: filter
-{% set chains == ["input", "output", "forward"] %}
+{% set chains = ["input", "output", "forward"] %}
 {% for chain  in chains %}
 nft_ipv4_{{ chain }}_chain:
   nftables.chain_present:
