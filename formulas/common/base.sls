@@ -14,6 +14,7 @@
 
 {% set type = opts.id.split('-')[0] %}
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
+{% set targets = pillar['targets'] %}
 {% import 'formulas/common/macros/orchestration.sls' as orchestration with context %}
 
 initial_module_sync:
