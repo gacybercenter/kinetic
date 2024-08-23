@@ -28,7 +28,6 @@ nft_ipv4_{{ chain }}_chain:
     - table: filter
 nft_ipv4_{{ chain }}_policy:
   nftables.set_policy:
-    - name: {{ chain }}
     - table: filter
     - policy: accept
 {% endfor %}
