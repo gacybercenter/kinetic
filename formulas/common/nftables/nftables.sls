@@ -14,6 +14,11 @@ common_remove:
     - pkgs:
       - firewalld
 
+nft_table_ipv4:
+  nftables.table_present:
+    - name: ipv4
+    - family: ipv4
+
 openstack_api:
   nftables.append:
     - position: 1
