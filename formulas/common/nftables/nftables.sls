@@ -16,7 +16,7 @@ common_remove:
 
 nft_table_ipv4:
   nftables.table_present:
-    - name: ipv4
+    - name: filter
     - family: ipv4
 
 openstack_api:
