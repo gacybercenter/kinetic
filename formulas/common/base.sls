@@ -46,6 +46,7 @@ python3_pip:
   pkg.installed:
     - pkgs:
       - python3-pip
+    - failhard: True
 #compensate for race condition during pkg install
 bad_patch_fix:
   cmd.run:
