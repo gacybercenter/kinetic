@@ -13,22 +13,27 @@ common_remove:
   pkg.removed:
     - pkgs:
       - firewalld
-
 nft_ipv4_table:
   nftables.table_present:
     - name: filter
-    - family: inet
-nft_ipv4_input_chain:
+{% set chains == ["input", "output", "forward"] %}
+{% for chain  in chains %}
+nft_ipv4_{{ chain }}_chain:
   nftables.chain_present:
-    - name: input
+    - name: {{ chain }}
     - table: filter
-    - family: inet
+nft_ipv4_{{ chain }}_policy:
+  nftables.set_policy:
+    - name: {{ chain }}
+    - table: filter
+    - policy: accept
+{% endfor %}
 
 openstack_api:
   nftables.append:
     - position: 1
     - table: filter
-    - family: inet
+#    - family: inet
     - chain: input
     - jump: accept
     - match: state
@@ -38,13 +43,13 @@ openstack_api:
     - source: '{{ pillar['networking']['subnets']['public'] }}'
     - save: True
     - unless:
-      - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} tcp dport'
+      - nft list table ip filter | grep -q '{{ pillar['networking']['subnets']['public'] }} tcp dport'
 
 public_block:
   nftables.append:
     - position: 2
     - table: filter
-    - family: inet
+#    - family: inet
     - chain: input
     - jump: drop
     - match: state
@@ -52,4 +57,4 @@ public_block:
     - source: '{{ pillar['networking']['subnets']['public'] }}'
     - save: True
     - unless:
-      - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} drop'
+      - nft list table ip filter | grep -q '{{ pillar['networking']['subnets']['public'] }} drop'
