@@ -42,16 +42,12 @@ role:
   timezone.system:
     - utc: True
 
-python3_pip:
-  pkg.installed:
-    - pkgs:
-      - python3-pip
-#compensate for race condition during pkg install
-bad_patch_fix:
-  cmd.run:
-    - name: dpkg --configure -a
-    - onlyif:
-      - dpkg -l | grep -E '^[A-Za-z][A-Z]'
+## This package has issues installing here.  Orch seems to kill it prematurely.  Handling this in cloud-init
+#python3_pip:
+#  pkg.installed:
+#    - pkgs:
+#      - python3-pip
+#
 
 # Allow for minion result checkin randomization
 /etc/salt/minion.d/98-tunning.conf:
