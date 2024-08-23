@@ -81,9 +81,9 @@ apply_install_{{ type }}:
     - tgt_type: list
     - sls:
       - formulas/{{ role }}/install
-    - timeout: 1200
+    - timeout: 300
     - retry:
-        interval: 60
+        interval: 30
         attempts: 5
         splay: 0
     - require:
@@ -105,7 +105,7 @@ apply_configure_{{ type }}:
     - sls:
       - formulas/{{ role }}/configure
     - highstate: True
-    - timeout: 1200
+    - timeout: 300
     - retry:
         interval: 10
         attempts: 2
