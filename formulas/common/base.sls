@@ -132,4 +132,5 @@ rsyslog:
 {% endif %}
 next_build_phase:
   grains.present:
+    - name: build_phase
     - value: networking
