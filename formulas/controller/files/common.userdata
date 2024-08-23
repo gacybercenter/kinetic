@@ -7,7 +7,8 @@ do
     sleep 10
 done
 echo "****** Install support packages"
-apt install python3-pip -y
+apt-get update
+apt-get install python3-pip -y
 
 # Running the SaltStack bootstrap script
 echo "****** Running SaltStack bootstrap script"
