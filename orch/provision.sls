@@ -37,12 +37,11 @@ apply_base_{{ type }}:
     - tgt_type: list
     - sls:
       - formulas/common/base
-    - timeout: 1200
-#    - retry:
-#        interval: 60
-#        attempts: 5
-#        splay: 0
-    - failhard: True
+    - timeout: 300
+    - retry:
+        interval: 30
+        attempts: 5
+        splay: 0
 
 ### This macro renders to a block if there are unmet dependencies
 {{ orchestration.needs_check_one(type=type, phase='networking') }}
