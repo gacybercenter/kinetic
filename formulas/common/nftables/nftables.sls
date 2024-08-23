@@ -13,6 +13,10 @@ common_remove:
   pkg.removed:
     - pkgs:
       - firewalld
+nft_inet_table_absent:
+  nftables.table_absent:
+    - name: filter
+    - family: inet
 nft_ipv4_table:
   nftables.table_present:
     - name: filter
