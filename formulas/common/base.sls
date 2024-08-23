@@ -42,20 +42,17 @@ role:
   timezone.system:
     - utc: True
 
-{% for key in pillar['authorized_keys'] %}
-{{ key }}:
-  ssh_auth.present:
-    - user: root
-    - enc: {{ pillar['authorized_keys'][ key ]['encoding'] }}
-{% endfor %}
-
-
 python3_pip:
   pkg.installed:
     - pkgs:
       - python3-pip
     - failhard: True
-
+#compensate for race condition during pkg install
+bad_patch_fix:
+  cmd.run:
+    - name: dpkg --configure -a
+    - onlyif:
+      - dpkg -l | grep -E '^[A-Za-z][A-Z]'
 
 # Allow for minion result checkin randomization
 /etc/salt/minion.d/98-tunning.conf:
@@ -82,6 +79,13 @@ sysctl -p:
       - file: /etc/sysctl.conf
     - unless:
       - sysctl -n 'net.core.netdev_max_backlog' | grep -q 10000
+
+{% for key in pillar['authorized_keys'] %}
+{{ key }}:
+  ssh_auth.present:
+    - user: root
+    - enc: {{ pillar['authorized_keys'][ key ]['encoding'] }}
+{% endfor %}
 
 {% if opts.id not in ['salt', 'pxe'] %}
 hosts_name_resolution:
