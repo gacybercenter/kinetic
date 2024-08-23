@@ -15,12 +15,12 @@ common_remove:
       - firewalld
 
 openstack_api_cmd:
-  - cmd.run: 
+  cmd.run: 
     - name: nft add rule inet filter input ct state { new } ip saddr 10.201.0.0/16 tcp dport { 53,{{ pillar['cache']['lancache']['http_port'] }},443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517,{{ pillar['cache']['nexusproxy']['port'] }} } accept
     - unless:
       - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} tcp dport'
 public_block_cmd:
-  - cmd.run:
+  cmd.run:
     - name: nft add rule inet filter input ct state { new } ip saddr {{ pillar['networking']['subnets']['public'] }} drop
     - unless:
       - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} drop'
