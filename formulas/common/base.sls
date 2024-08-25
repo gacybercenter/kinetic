@@ -43,11 +43,11 @@ role:
     - utc: True
 
 ## This package has issues installing here.  Orch seems to kill it prematurely.  Handling this in cloud-init
-#python3_pip:
-#  pkg.installed:
-#    - pkgs:
-#      - python3-pip
-#
+python3_pip:
+  pkg.installed:
+    - pkgs:
+      - python3-pip
+    - reload_modules: True
 
 # Allow for minion result checkin randomization
 /etc/salt/minion.d/98-tunning.conf:

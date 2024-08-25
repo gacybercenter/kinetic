@@ -8,7 +8,6 @@ do
 done
 echo "****** Install support packages"
 apt-get update
-apt-get install python3-pip -y
 
 # Running the SaltStack bootstrap script
 echo "****** Running SaltStack bootstrap script"
