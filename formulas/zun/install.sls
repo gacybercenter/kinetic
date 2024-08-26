@@ -96,7 +96,7 @@ zun_latest:
 
 zun_requirements:
   cmd.run:
-    - name: pip3 install --ignore-installed -r /var/lib/zun/requirements.txt
+    - name: pip3 install -r /var/lib/zun/requirements.txt
     - unless:
       - systemctl is-active zun-api
     - require:
