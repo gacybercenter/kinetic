@@ -47,12 +47,13 @@ python3_pip:
     - pkgs:
       - python3-pip
     - reload_modules: True
+
 ## Fix pkg if previous failed/timedout
 bad_patch_fix:
   cmd.run:
     - name: dpkg --configure -a
-  onlyif:
-    - dpkg -l | grep -E '^[A-Za-z][A-Z]'
+    - onlyif:
+      - dpkg -l | grep -E '^[A-Za-z][A-Z]'
 
 # Allow for minion result checkin randomization
 /etc/salt/minion.d/98-tunning.conf:
