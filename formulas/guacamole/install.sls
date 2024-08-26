@@ -33,7 +33,7 @@ guacamole_pip:
     - reload_modules: True
     - pkgs:
       - mysql-connector-python
-      - docker == 7.1.0
+      - docker == {% pillar['docker']['version'] %}
     - require:
       - pkg: guacamole_packages
 
@@ -43,7 +43,7 @@ salt-pip_installs:
     - reload_modules: true
     - pkgs:
       - mysql-connector-python
-      - docker == 7.1.0
+      - docker == {% pillar['docker']['version'] %}
     - require:
       - pkg: guacamole_packages
       - pip: guacamole_pip
