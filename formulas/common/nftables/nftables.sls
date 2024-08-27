@@ -16,7 +16,7 @@ common_remove:
 
 nft_init:
   cmd.run:
-    - name: nft -f /etc/nftables
+    - name: nft -f /etc/nftables.conf
     - unless:
       - nft list table inet filter |grep inet
 
