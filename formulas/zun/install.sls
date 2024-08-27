@@ -86,10 +86,12 @@ git_config_email:
   git.config_set:
     - name: user.email
     - value: "gacyberrange@augusta.edu"
+    - global: True
 git_config_user:
   git.config_set:
     - name: user.name
     - value: "gacyberrange"
+    - global: True
 
 
 ##git_config:
