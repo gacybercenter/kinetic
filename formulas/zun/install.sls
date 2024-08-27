@@ -108,7 +108,7 @@ zun_latest:
     - force_clone: true
     - rev: stable/{{ pillar['openstack']['version'] }}
     - require:
-      - git.config_set: git_config_safe_dir
+      - git: git_config_safe_dir
 
 zun_virtenv:
   virtualenv.managed:
