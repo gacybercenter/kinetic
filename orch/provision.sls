@@ -55,9 +55,9 @@ apply_networking_{{ type }}:
     - tgt_type: list
     - sls:
       - formulas/common/networking
-    - timeout: 1200
+    - timeout: 300
     - retry:
-        interval: 60
+        interval: 30
         attempts: 5
         splay: 0
     - require:
