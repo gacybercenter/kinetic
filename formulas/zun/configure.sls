@@ -21,8 +21,9 @@ include:
 
 {% if grains['spawning'] == 0 %}
 
-zun-db-manage upgrade:
+zun-db-manage_upgrade:
   cmd.run:
+    - name: /var/lib/zun/bin/zun-db-manage upgrade
     - runas: zun
     - require:
       - file: /etc/zun/zun.conf
