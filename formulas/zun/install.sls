@@ -114,7 +114,7 @@ zun_latest:
 zun_virtenv:
   virtualenv.managed:
     - name: /var/lib/zun
-    - systems_site_packages: true
+    - systems_site_packages: True
     - requirements: /var/lib/zun/requirements.txt
 
 #zun_requirements:
