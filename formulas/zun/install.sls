@@ -77,13 +77,28 @@ zun:
     - group: root
     - makedirs: True
 
-git_config:
-  cmd.run:
-    - name: git config --system --add safe.directory "/var/lib/zun"
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
+git_config_safe_dir:
+  git.config_set:
+    - name: safe.directory
+    - value: "/var/lib/zun"
+    - global: True
+git_config_email:
+  git.config_set:
+    - name: user.email
+    - value: "gacyberrange@augusta.edu"
+git_config_user:
+  git.config_set:
+    - name: user.name
+    - value: "gacyberrange"
+
+
+##git_config:
+#  cmd.run:
+#    - name: git config --system --add safe.directory "/var/lib/zun"
+#    - unless:
+#      - fun: grains.equals
+#        key: build_phase
+#        value: configure
 
 zun_latest:
   git.latest:
@@ -91,8 +106,9 @@ zun_latest:
     - branch: stable/{{ pillar['openstack']['version'] }}
     - target: /var/lib/zun
     - force_clone: true
+    - rev: stable/{{ pillar['openstack']['version'] }}
     - require:
-      - cmd: git_config
+      - git.config_set: git_config_safe_dir
 
 zun_virtenv:
   virtualenv.managed:
