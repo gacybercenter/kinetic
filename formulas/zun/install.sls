@@ -115,4 +115,4 @@ installzun:
     - unless:
       - systemctl is-active zun-api
     - require:
-      - virtualenv: zun_requirements
+      - virtualenv: zun_virtenv
