@@ -42,12 +42,12 @@ role:
   timezone.system:
     - utc: True
 
-pin_pip_version:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - pip=={{ pillar['pip']['version'] }}
+python3_pip:
+  pkg.installed:
+    - name: python3-pip
+test_module_sync:
+  saltutil.sync_all:
+    - refresh: True
 
 # Allow for minion result checkin randomization
 /etc/salt/minion.d/98-tunning.conf:
