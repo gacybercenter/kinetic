@@ -94,19 +94,25 @@ zun_latest:
     - require:
       - cmd: git_config
 
-zun_requirements:
-  cmd.run:
-    - name: pip3 install -r /var/lib/zun/requirements.txt
-    - unless:
-      - systemctl is-active zun-api
-    - require:
-      - git: zun_latest
+zun_virtenv:
+  virtualenv.managed:
+    - name: /var/lib/zun
+    - systems_site_packages: false
+    - requirements: /var/lib/zun/requirements.txt
+
+#zun_requirements:
+#  cmd.run:
+#    - name: pip3 install -r /var/lib/zun/requirements.txt
+#    - unless:
+#      - systemctl is-active zun-api
+#    - require:
+#      - git: zun_latest
 
 installzun:
   cmd.run:
-    - name: python3 setup.py install
+    - name: /var/lib/zun/bin/python3 setup.py install
     - cwd : /var/lib/zun/
     - unless:
       - systemctl is-active zun-api
     - require:
-      - cmd: zun_requirements
+      - virtualenv: zun_requirements
