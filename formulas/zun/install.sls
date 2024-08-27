@@ -106,6 +106,7 @@ zun_latest:
     - branch: stable/{{ pillar['openstack']['version'] }}
     - target: /var/lib/zun
     - force_clone: true
+    - force_reset: true
     - rev: stable/{{ pillar['openstack']['version'] }}
     - require:
       - git: git_config_safe_dir
