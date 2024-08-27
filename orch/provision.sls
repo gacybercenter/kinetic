@@ -55,7 +55,7 @@ apply_networking_{{ type }}:
     - tgt_type: list
     - sls:
       - formulas/common/networking
-    - timeout: 300
+    - timeout: 180
     - retry:
         interval: 30
         attempts: 5
@@ -81,7 +81,7 @@ apply_install_{{ type }}:
     - tgt_type: list
     - sls:
       - formulas/{{ role }}/install
-    - timeout: 300
+    - timeout: 180
     - retry:
         interval: 30
         attempts: 5
@@ -105,7 +105,7 @@ apply_configure_{{ type }}:
     - sls:
       - formulas/{{ role }}/configure
     - highstate: True
-    - timeout: 300
+    - timeout: 180
     - retry:
         interval: 10
         attempts: 2
