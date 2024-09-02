@@ -3,7 +3,7 @@
 echo "****** Downloading SaltStack bootstrap retry script"
 while [ ! -f "/tmp/bootstrap_salt.sh" ]
 do
-    curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
+    curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltproject.io
     sleep 10
 done
 echo "****** Install support packages"
