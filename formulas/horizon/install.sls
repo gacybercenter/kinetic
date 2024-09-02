@@ -38,16 +38,15 @@ horizon_packages:
       - build-essential
       - python3-dev
       - python3-etcd3gw
-      - python3-memcache
     - reload_modules: True
 
-### current error in pip installed memcache
-#horizon_pip:
-#  pip.installed:
-#    - bin_env: '/usr/bin/pip3'
-#    - reload_modules: True
-#    - names:
-#      - python3-memcached
+## current error in pip installed memcache
+horizon_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-memcached==1.59
 
 {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
 magnum_latest:
