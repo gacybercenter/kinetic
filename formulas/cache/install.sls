@@ -32,7 +32,7 @@ cache_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - pkgs:
-      - docker == 5.0.3
+      - docker == {% pillar['docker']['version'] %}
     - reload_modules: true
     - require:
       - pkg: cache_packages
@@ -42,7 +42,7 @@ salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - pkgs:
-      - docker == 5.0.3
+      - docker == {% pillar['docker']['version'] %}
     - reload_modules: true
     - require:
       - pkg: cache_packages
