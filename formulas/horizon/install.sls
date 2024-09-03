@@ -45,7 +45,7 @@ horizon_pip:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
     - names:
-      - python3-memcached
+      - python-memcached == 1.59
 
 {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
 magnum_latest:
