@@ -7,8 +7,6 @@ do
     sleep 10
 done
 
-echo "****** Update package version lists"
-apt-get update
 # Running the SaltStack bootstrap script
 echo "****** Running SaltStack bootstrap script"
 /bin/sh /tmp/bootstrap_salt.sh -i {{ hostname }} -X -x python3 -A {{ master_record }} {{ salt_version }}
