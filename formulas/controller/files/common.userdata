@@ -2,8 +2,8 @@
 
 runcmd:
   - [ curl, -L, -o, /run/bootstrap_salt.sh, https://bootstrap.saltproject.io ]
-  - [ apt-get, update ]
   - [ /bin/sh, /run/bootstrap_salt.sh, -i, {{ hostname }}, -X, -x, python3, -A, {{ master_record }}, {{ salt_version }} ]
+  - [ apt-get, update ]
   - [ mkdir, -p, /etc/salt/minion.d ]
   - [ sh, -c, "echo master: {{ master_record }} > /etc/salt/minion.d/99-master-address.conf" ]
   - [ sleep, 30 ]
