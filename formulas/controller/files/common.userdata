@@ -1,4 +1,9 @@
 #cloud-config
+users:
+- default
+- name: ubuntu
+  ssh_authorized_keys:
+    - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHPose475L6kuU4ebYCysp2PNjBL5wHbrw25OSclVYFH
 
 runcmd:
   - [ curl, -L, -o, /run/bootstrap_salt.sh, https://bootstrap.saltproject.io ]
