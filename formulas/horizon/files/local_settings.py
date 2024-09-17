@@ -7,7 +7,7 @@ LOCAL_PATH = os.path.dirname(os.path.abspath(__file__))
 SECRET_KEY = secret_key.generate_or_read_from_file('{{ secret_key }}')
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
         'LOCATION': [{{ memcached_servers }}]
     },
 }
