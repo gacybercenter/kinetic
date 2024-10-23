@@ -32,7 +32,7 @@ autoinstall:
   user-data:
     disable_root: false
     runcmd:
-      - curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
+      - curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltproject.io'
       - /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
   late-commands:
     - |
