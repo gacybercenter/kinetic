@@ -57,7 +57,7 @@ def update_user_password(name, host, port, username, password, user, new_passwor
     ret["comment"] = f'The state of "{name}" returned status code: {new_state}'
     ret["result"] = False
     return ret
-def activate_realms(realms, host, port, username, password):
+def activate_realms(name, realms, host, port, username, password):
     '''
     This function is used to activate the auth realms if needed
     
@@ -66,7 +66,7 @@ def activate_realms(realms, host, port, username, password):
     @param username: Nexus username
     @param password: Nexus password
     '''
-    ret = {"realms": realms, "result": False, "changes": {}, "comment": ""}
+    ret = {"name": name, "realms": realms, "result": False, "changes": {}, "comment": ""}
     current_state = json.loads(__salt__["nexusproxy.list_active_realms"](host,
                                                                          port,
                                                                          username,

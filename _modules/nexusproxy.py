@@ -155,11 +155,11 @@ def list_realms(host: str,
     return response
 
 def activate_realms(host: str,
-                   port: str,
-                   username: str,
-                   password: str,
-                   realms: list,
-                   timeout=60
+                    port: str,
+                    username: str,
+                    password: str,
+                    realms: list,
+                    timeout=60
                     ):
     '''
     This function is used to activate an authenication realm. 
