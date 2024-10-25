@@ -131,7 +131,7 @@ def change_user_password(host: str,
                             data=new_password,
                             verify=False, timeout=timeout)
     return response.status_code
-def list_activate_realms(host: str,
+def list_active_realms(host: str,
                 port: str,
                 username: str,
                 password: str,
