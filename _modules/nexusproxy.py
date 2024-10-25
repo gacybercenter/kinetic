@@ -152,7 +152,7 @@ def list_active_realms(host: str,
     elif response.status_code == 404:
         response = { "name": "None", "status_code": "404" }
         response = json.dumps(response, indent=4)
-    return response.json()
+    return response
 
 def activate_realms(host: str,
                     port: str,
