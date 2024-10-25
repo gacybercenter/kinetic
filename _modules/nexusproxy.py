@@ -214,6 +214,7 @@ def add_proxy_repository(host: str,
                          name: str,
                          repoType: str,
                          remoteUrl: str,
+                         indexUrl: str = None,
                          timeout=60,
                          **kwargs
                          ):
@@ -292,15 +293,14 @@ def add_proxy_repository(host: str,
     elif repoType == "docker":
         payload.update({
             "docker": { 
-                "v1Enabled": False,
-                "forceBasicAuth": True,
+                "v1Enabled": True,
+                "forceBasicAuth": False,
                 "httpPort": 8082,
-                "httpsPort": 8083,
                 "subdomain": "docker-a"
                 },
             "dockerProxy": {
                 "indexType": "HUB",
-                "indexUrl": "string",
+                "indexUrl": indexUrl,
                 "cacheForeignLayers": True,
                 "foreignLayerUrlWhitelist": [
                     "string"
