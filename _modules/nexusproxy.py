@@ -147,7 +147,7 @@ def list_realms(host: str,
     response = requests.get(f"{host}:{port}/service/rest/v1/security/realms/active",
                             auth=(username, password),
                             verify=False, timeout=timeout)
-    if response.status_code = 200:
+    if response.status_code == 200:
       response = json.dumps(response.json(), indent=4)
     elif response.status_code == 404:
         response = { "name": "None", "status_code": "404" }
