@@ -29,10 +29,10 @@ def update_user_password(name, host, port, username, password, user, new_passwor
         }
         ret["result"] = None
         return ret
-    current_users = json.loads(__salt__["nexusproxy.list_users"](host,
+    current_users = __salt__["nexusproxy.list_users"](host,
                                                                  port,
                                                                  username,
-                                                                 password))
+                                                                 password)
     currentUserList = []
     for current_user in current_users:
         currentUserList.append(current_user['userId'])
@@ -148,3 +148,5 @@ def add_proxy_repository(name, host, port, username, password, repoType, remoteU
     ret["comment"] = f'The state of "{name}" returned status code: {new_state}'
     ret["result"] = False
     return ret
+
+
