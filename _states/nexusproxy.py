@@ -107,11 +107,11 @@ def add_proxy_repository(name, host, port, username, password, repoType, remoteU
     @param kwargs: Dictionary of repository parameters
     '''
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
-    current_state = __salt__["nexusproxy.list_repository"](host,
+    current_state = json.loads(__salt__["nexusproxy.list_repository"](host,
                                                                         port,
                                                                         username,
                                                                         password,
-                                                                        name)
+                                                                        name))
     if test == True:
         ret["comment"] = f'The state of "{name}" will be changed.'
         ret["changes"] = {
@@ -120,7 +120,7 @@ def add_proxy_repository(name, host, port, username, password, repoType, remoteU
         }
         ret["result"] = None
         return ret
-    if current_state == name:
+    if current_state['name'] == name:
         ret["comment"] = f'Repository: "{name}" is already present.'
         ret["result"] = True
         return ret
