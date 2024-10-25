@@ -161,7 +161,7 @@ nexusproxy_update_user_password:
         value: configure
 
 nexus_enable_realms:
-  nexuproxy.activate_realms:
+  nexusproxy.activate_realms:
     - name: nexus_activate_realms
     - host: "http://{{ address }}"
     - port: "{{ pillar['cache']['nexusproxy']['port'] }}"
