@@ -136,9 +136,10 @@ def activate_realms(host: str,
                    port: str,
                    username: str,
                    password: str,
-                   realms,
-                   timeout=60
-                         ):
+                   realms: list,
+                   timeout=60,
+                   **kwargs
+                    ):
     '''
     This function is used to activate an authenication realm. 
     @param host: Nexus host ip or dns name to inlude the http:// or https://
@@ -147,10 +148,12 @@ def activate_realms(host: str,
     @param password: Nexus password
     @param realm: Realm name (NexusAuthenticatingRealm, DockerToken, etc) 
     '''
+    payload = json.dumps(realms)
+    
     response = requests.put(f"{host}:{port}/service/rest/v1/security/realms/active",
                             auth=(username, password),
-                            headers={"Content-Type": "text/plain"},
-                            data=realms,
+                            headers={"Content-Type": "application/json"},
+                            json=payload,
                             verify=False, timeout=timeout)
     return response.status_code
 
