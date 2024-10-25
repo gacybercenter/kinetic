@@ -215,6 +215,7 @@ def add_proxy_repository(host: str,
                          repoType: str,
                          remoteUrl: str,
                          indexUrl: str = None,
+                         conn_port: str = None,
                          timeout=60,
                          **kwargs
                          ):
@@ -295,7 +296,7 @@ def add_proxy_repository(host: str,
             "docker": { 
                 "v1Enabled": True,
                 "forceBasicAuth": False,
-                "httpPort": 8082,
+                "httpPort": conn_port,
                 "subdomain": "docker-a"
                 },
             "dockerProxy": {

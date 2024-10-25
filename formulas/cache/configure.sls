@@ -171,7 +171,8 @@ nexusproxy_update_user_password:
     - repoType: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}"
     - remoteUrl: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}"
 {% if pillar['cache']['nexusproxy']['repositories'][repo]['index'] is defined %}
-    - indexUrl: " {{ pillar['cache']['nexusproxy']['repositories'][repo]['index'] }}"
+    - indexUrl: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['index'] }}"
+    - conn_port: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['conn_port'] }}"
 {% endif %}
     - onlyif:
       - fun: network.connect
