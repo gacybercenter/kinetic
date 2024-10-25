@@ -92,7 +92,7 @@ def activate_realms(name, realms, host, port, username, password):
         }
         ret["result"] = True
         return ret
-    ret["comment"] = f'The state of "{realms}" returned status code: {new_state}'
+    ret["comment"] = f'The state of "{realms}" returned status code: {new_realms}'
     ret["result"] = False
     return ret
 def add_proxy_repository(name, host, port, username, password, repoType, remoteUrl, test: bool = False, **kwargs):
@@ -107,11 +107,11 @@ def add_proxy_repository(name, host, port, username, password, repoType, remoteU
     @param kwargs: Dictionary of repository parameters
     '''
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
-    current_state = json.loads(__salt__["nexusproxy.list_repository"](host,
+    current_state = __salt__["nexusproxy.list_repository"](host,
                                                                         port,
                                                                         username,
                                                                         password,
-                                                                        name))
+                                                                        name)
     if test == True:
         ret["comment"] = f'The state of "{name}" will be changed.'
         ret["changes"] = {
