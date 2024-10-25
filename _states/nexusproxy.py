@@ -29,10 +29,10 @@ def update_user_password(name, host, port, username, password, user, new_passwor
         }
         ret["result"] = None
         return ret
-    current_users = json.loads(__salt__["nexusproxy.list_users"](host,
-                                                                 port,
-                                                                 username,
-                                                                 password))
+    current_users = __salt__["nexusproxy.list_users"](host,
+                                                      port,
+                                                      username,
+                                                      password)
     currentUserList = []
     for current_user in current_users:
         currentUserList.append(current_user['userId'])
