@@ -160,7 +160,7 @@ nexusproxy_update_user_password:
         key: build_phase
         value: configure
 
-nexus_enable_realms:
+nexus_activate_realms:
   nexusproxy.activate_realms:
     - name: nexus_activate_realms
     - host: "http://{{ address }}"
