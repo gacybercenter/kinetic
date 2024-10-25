@@ -132,6 +132,26 @@ def change_user_password(host: str,
                             verify=False, timeout=timeout)
     return response.status_code
 
+def activate_realms(host: str,
+                   port: str,
+                   username: str,
+                   password: str,
+                   realms: list,
+                   timeout=60
+                         ):
+    '''
+    This function is used to activate an authenication realm. 
+    @param host: Nexus host ip or dns name to inlude the http:// or https://
+    @param port: Nexus listening port
+    @param username: Nexus username
+    @param password: Nexus password
+    @param realm: Realm name (NexusAuthenticatingRealm, DockerToken, etc) 
+    '''
+    response = requests.put(f"{host}:{port}/service/rest/v1/security/realms/active",
+                            auth=(username, password),
+                            headers={"Content-Type": "text/plain"},
+                            data=realms,
+                            verify=False, timeout=timeout)
 def list_repositories(host: str,
                       port: str,
                       username: str,

@@ -159,7 +159,20 @@ nexusproxy_update_user_password:
       - fun: grains.equals
         key: build_phase
         value: configure
-
+nexus_enable_realms:
+  nexuproxy.activate_realms:
+    - name: nexus_activate_realms
+    - host: "http://{{ address }}
+    - port: "{{ pillar['cache']['nexusproxy']['port'] }}"
+    - username: "{{ pillar['cache']['nexusproxy']['username'] }}"
+    - password: "{{ grains['original_password'] }}"
+    - realms:  "{{ pillar['cache']['nexusproxy']['realms'] }}"
+    - onlyif:
+      - fun: network.connect
+        host: {{ address }}
+        port: {{ pillar['cache']['nexusproxy']['port'] }}
+    - unless:
+      - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
 {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
 {{ repo }}_add_proxy_repository:
   nexusproxy.add_proxy_repository:
