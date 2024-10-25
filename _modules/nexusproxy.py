@@ -136,7 +136,7 @@ def activate_realms(host: str,
                    port: str,
                    username: str,
                    password: str,
-                   realms: list,
+                   realms,
                    timeout=60
                          ):
     '''
