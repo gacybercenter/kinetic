@@ -214,6 +214,7 @@ def add_proxy_repository(host: str,
                          name: str,
                          repoType: str,
                          remoteUrl: str,
+                         indexType: str = None,
                          indexUrl: str = None,
                          conn_port: str = None,
                          timeout=60,
@@ -300,7 +301,7 @@ def add_proxy_repository(host: str,
                 "subdomain": "docker-a"
                 },
             "dockerProxy": {
-                "indexType": "HUB",
+                "indexType": indexType,
                 "indexUrl": indexUrl,
                 "cacheForeignLayers": True,
                 "foreignLayerUrlWhitelist": [
