@@ -144,14 +144,9 @@ def list_active_realms(host: str,
     @param username: Nexus username
     @param password: Nexus password
     '''
-    response = requests.get(f"{host}:{port}/service/rest/v1/security/realms/active",
+    response = json.dumps(requests.get(f"{host}:{port}/service/rest/v1/security/realms/active",
                             auth=(username, password),
-                            verify=False, timeout=timeout)
-    if response.status_code == 200:
-      response = json.dumps(response.json(), indent=4)
-    elif response.status_code == 404:
-        response = { "name": "None", "status_code": "404" }
-        response = json.dumps(response, indent=4)
+                            verify=False, timeout=timeout).json(), indent=4)
     return response
 
 def activate_realms(host: str,
