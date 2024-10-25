@@ -120,7 +120,7 @@ def add_proxy_repository(name, host, port, username, password, repoType, remoteU
         }
         ret["result"] = None
         return ret
-    if current_state['name'] == name:
+    if current_state == name:
         ret["comment"] = f'Repository: "{name}" is already present.'
         ret["result"] = True
         return ret
