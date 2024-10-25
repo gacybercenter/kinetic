@@ -152,6 +152,8 @@ def activate_realms(host: str,
                             headers={"Content-Type": "text/plain"},
                             data=realms,
                             verify=False, timeout=timeout)
+    return response.status_code
+
 def list_repositories(host: str,
                       port: str,
                       username: str,
