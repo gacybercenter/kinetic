@@ -148,7 +148,7 @@ def list_active_realms(host: str,
                             auth=(username, password),
                             verify=False, timeout=timeout)
     if response.status_code == 200:
-      response = json.dumps(response.json(), indent=4)
+      response = response.json()
     elif response.status_code == 404:
         response = { "name": "None", "status_code": "404" }
         response = json.dumps(response, indent=4)
