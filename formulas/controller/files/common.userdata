@@ -8,7 +8,7 @@ chown root:root /root/.ssh/authorized_keys
 echo "****** Downloading SaltStack bootstrap retry script"
 while [ ! -f "/tmp/bootstrap_salt.sh" ]
 do
-    curl -o /tmp/bootstrap-salt.sh -L https://bootstrap.saltproject.io/bootstrap-salt.sh
+    curl -o /tmp/bootstrap-salt.sh -L https://github.com/saltstack/salt-bootstrap/releases/download/v2024.07.23/bootstrap-salt.sh
     sleep 10
 done
 
