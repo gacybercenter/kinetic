@@ -67,11 +67,11 @@ def activate_realms(name, realms, host, port, username, password):
     @param password: Nexus password
     '''
     ret = {"name": name, "realms": realms, "result": False, "changes": {}, "comment": ""}
-    current_state =json.loads(__salt__["nexusproxy.list_active_realms"](host,
+    current_state = __salt__["nexusproxy.list_active_realms"](host,
                                                                          port,
                                                                          username,
-                                                                         password))
-    if current_state['name'] == realms:
+                                                                         password)
+    if current_state == realms:
         ret["comment"] = f'Realms: "{current_state}" is already set'
         ret["result"] = True
         return ret
