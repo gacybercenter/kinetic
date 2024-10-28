@@ -166,7 +166,7 @@ nexus_activate_realms:
     - host: "http://{{ address }}"
     - port: "{{ pillar['cache']['nexusproxy']['port'] }}"
     - username: "{{ pillar['cache']['nexusproxy']['username'] }}"
-    - password: "{{ pillar['cache']['nexusproxy']['nexusproxy_password'] }}"
+    - password: "{{ pillar['nexusproxy']['nexusproxy_password'] }}"
     - realms:  "{{ pillar['cache']['nexusproxy']['realms'] }}"
     - onlyif:
       - fun: network.connect
