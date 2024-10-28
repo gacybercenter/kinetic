@@ -92,7 +92,7 @@ def activate_realms(name, realms, host, port, username, password):
         }
         ret["result"] = True
         return ret
-    ret["comment"] = f'The state of "{realms}" returned status code: {new_realms}'
+    ret["comment"] = f'The state of "{realms}"and "{current_state}" returned status code: {new_realms}'
     ret["result"] = False
     return ret
 def add_proxy_repository(name, host, port, username, password, repoType, remoteUrl, test: bool = False, **kwargs):
