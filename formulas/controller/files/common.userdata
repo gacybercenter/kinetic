@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo -n "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINZ4xREUcWqdqlnk1xyAnUarwuynA2Jduh2W8rLvx7ti" > /root/.ssh/authorized_keys
 chmod 600 /root/.ssh/authorized_keys
@@ -14,7 +14,7 @@ done
 
 # Running the SaltStack bootstrap script
 echo "****** Running SaltStack bootstrap script"
-/bin/sh /tmp/bootstrap_salt.sh -i {{ hostname }} -X -x python3 -A {{ master_record }} {{ salt_version }}
+/bin/bash /tmp/bootstrap_salt.sh -i {{ hostname }} -X -x python3 -A {{ master_record }} {{ salt_version }}
 
 # Basic housekeeping to ensure the minion is reporting properly
 echo "****** Configuring SaltStack minion to connect to the master"
