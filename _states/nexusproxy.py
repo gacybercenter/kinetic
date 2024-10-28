@@ -71,7 +71,7 @@ def activate_realms(name, realms, host, port, username, password):
                                                                          port,
                                                                          username,
                                                                          password)
-    if current_state == json.loads(realms):
+    if current_state == realms:
         ret["comment"] = f'Realms: "{current_state}" is already set'
         ret["result"] = True
         return ret
@@ -88,7 +88,7 @@ def activate_realms(name, realms, host, port, username, password):
         ret["comment"] = f'Realms: "{current_realms}" have been added!'
         ret["changes"] = {
             "old": '',
-            "new": current_state
+            "new": current_realms
         }
         ret["result"] = True
         return ret
