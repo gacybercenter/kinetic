@@ -66,7 +66,7 @@ def activate_realms(name, realms, host, port, username, password):
     @param username: Nexus username
     @param password: Nexus password
     '''
-    realms = set(realms.split())
+    realms = json.dumps(realms)
     ret = {"name": name, "realms": realms, "result": False, "changes": {}, "comment": ""}
     current_state = __salt__["nexusproxy.list_active_realms"](host,
                                                                          port,
@@ -80,7 +80,7 @@ def activate_realms(name, realms, host, port, username, password):
                                                        port,
                                                        username,
                                                        password,
-                                                       realms)
+                                                       json.dumps(realms))
     if new_realms == 204:
         current_realms = __salt__["nexusproxy.list_active_realms"](host,
                                                                               port,
