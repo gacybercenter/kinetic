@@ -66,7 +66,6 @@ def activate_realms(name, realms, host, port, username, password):
     @param username: Nexus username
     @param password: Nexus password
     '''
-    realms = json.loads(realms)
     ret = {"name": name, "realms": realms, "result": False, "changes": {}, "comment": ""}
     current_state = json.loads(__salt__["nexusproxy.list_active_realms"](host,
                                                                          port,
