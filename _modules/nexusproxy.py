@@ -169,7 +169,7 @@ def activate_realms(host: str,
     @param password: Nexus password
     @param realm: Realm name (NexusAuthenticatingRealm, DockerToken, etc) 
     '''
-    payload = json.dumps(realms)
+    payload = json.loads(realms)
     
     response = requests.put(f"{host}:{port}/service/rest/v1/security/realms/active",
                             auth=(username, password),
