@@ -80,11 +80,11 @@ def activate_realms(name, realms, host, port, username, password):
                                                        username,
                                                        password,
                                                        json.dumps(realms))
-    if new_realms == 201:
-        current_realms = json.loads(__salt__["nexusproxy.list_active_realms"](host,
+    if new_realms == 204:
+        current_realms = __salt__["nexusproxy.list_active_realms"](host,
                                                                               port,
                                                                               username,
-                                                                              password))
+                                                                              password)
         ret["comment"] = f'Realms: "{current_realms}" have been added!'
         ret["changes"] = {
             "old": '',
