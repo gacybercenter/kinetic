@@ -71,7 +71,7 @@ def activate_realms(name, realms, host, port, username, password):
                                                                          port,
                                                                          username,
                                                                          password)
-    if current_state == realms:
+    if set(current_state) == set(realms):
         ret["comment"] = f'Realms: "{current_state}" is already set'
         ret["result"] = True
         return ret
