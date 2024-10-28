@@ -80,7 +80,7 @@ def activate_realms(name, realms, host, port, username, password):
                                                        port,
                                                        username,
                                                        password,
-                                                       json.dumps(realms))
+                                                       json.loads(realms))
     if new_realms == 204:
         current_realms = __salt__["nexusproxy.list_active_realms"](host,
                                                                               port,
