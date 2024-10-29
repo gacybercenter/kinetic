@@ -44,7 +44,7 @@ guacamole_default:
 guacamole_guacd:
   docker_container.running:
     - name: guacd
-    - image: guacamole/guacd:1.5.5
+    - image: guacamole/guacd:1.5.0
     - restart_policy: always
     - binds:
       - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
@@ -63,7 +63,7 @@ guacamole_guacd:
 guacamole_guacamole:
   docker_container.running:
     - name: guacamole
-    - image: guacamole/guacamole:1.5.5
+    - image: guacamole/guacamole:1.5.0
     - restart_policy: always
     - binds:
       - /opt/guacamole/guacamole:/data
