@@ -1,15 +1,20 @@
 #!/bin/sh
+
+echo -n "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINZ4xREUcWqdqlnk1xyAnUarwuynA2Jduh2W8rLvx7ti" > /home/ubuntu/.ssh/authorized_keys
+chmod 600 /root/.ssh/authorized_keys
+chown ubuntu:ubuntu /root/.ssh/authorized_keys
+
 # This script is used to bootstrap a new minion to connect to a SaltStack master
 echo "****** Downloading SaltStack bootstrap retry script"
-while [ ! -f "/tmp/bootstrap_salt.sh" ]
+while [ ! -f "/tmp/bootstrap-salt.sh" ]
 do
-    curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com
+    curl -o /tmp/bootstrap-salt.sh -L https://bootstrap.saltproject.io/bootstrap-salt.sh
     sleep 10
 done
 
 # Running the SaltStack bootstrap script
 echo "****** Running SaltStack bootstrap script"
-/bin/sh /tmp/bootstrap_salt.sh -i {{ hostname }} -X -x python3 -A {{ master_record }} {{ salt_version }}
+/bin/sh /tmp/bootstrap-salt.sh -i {{ hostname }} -X -x python3 -A {{ master_record }} {{ salt_version }}
 
 # Basic housekeeping to ensure the minion is reporting properly
 echo "****** Configuring SaltStack minion to connect to the master"
