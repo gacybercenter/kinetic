@@ -31,11 +31,13 @@ include:
 /var/www/html/index.html:
   file.absent
 
-https://github.com/ipxe/ipxe.git:
+ipxe_git:
   git.latest:
+    - name: https://github.com/ipxe/ipxe.git
     - target: /var/www/html/ipxe
     - user: root
     - force_fetch: True
+    - force_clone: True
     - require:
       - sls: /formulas/pxe/install
     - onchanges:
@@ -44,6 +46,7 @@ https://github.com/ipxe/ipxe.git:
 conf-files:
   file.managed:
     - template: jinja
+    - makedirs: True
     - defaults:
         pxe_record: {{ pillar['pxe']['record'] }}
         pxe_name: {{ pillar['pxe']['name'] }}

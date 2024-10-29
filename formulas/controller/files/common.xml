@@ -38,4 +38,5 @@
     </rng>
   </devices>
   {{ seclabel }}
+  {{ cmdline }}
 </domain>
