@@ -6,11 +6,8 @@ chown ubuntu:ubuntu /root/.ssh/authorized_keys
 
 # This script is used to bootstrap a new minion to connect to a SaltStack master
 echo "****** Downloading SaltStack bootstrap retry script"
-while [ ! -f "/tmp/bootstrap_salt.sh" ]
-do
-    curl -o /tmp/bootstrap-salt.sh -L https://github.com/saltstack/salt-bootstrap/releases/download/v2024.07.23/bootstrap-salt.sh
-    sleep 10
-done
+
+curl -o bootstrap-salt.sh -L https://bootstrap.saltproject.io
 
 #execute
 chmod 700 /tmp/bootstrap_salt.sh
