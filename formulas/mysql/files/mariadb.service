@@ -36,5 +36,5 @@ RestartSec=5s
 UMask=007
 TimeoutStartSec=900
 TimeoutStopSec=900
-LimitNOFILE=302400
+LimitNOFILE=102400
 PrivateTmp=true
