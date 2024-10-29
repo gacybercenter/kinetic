@@ -50,7 +50,6 @@
     "valid-lifetime": 3600,
     "renew-timer": 1000,
     "rebind-timer": 2000,
-    "match-client-id": false,
     "subnet4": [
       {
         "id": 1,
