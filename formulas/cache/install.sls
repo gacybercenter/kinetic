@@ -32,7 +32,7 @@ cache_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - pkgs:
-      - docker == {{ pillar['docker']['version'] }}
+      - docker == 5.0.3
     - reload_modules: true
     - require:
       - pkg: cache_packages
@@ -42,7 +42,7 @@ salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - pkgs:
-      - docker == {{ pillar['docker']['version'] }}
+      - docker == 5.0.3
     - reload_modules: true
     - require:
       - pkg: cache_packages
@@ -61,12 +61,8 @@ nexusproxy:
     - restart_policy: unless-stopped
     - ports:
       - 8081
-      - 8082
-      - 8083
     - port_bindings:
       - {{ pillar['cache']['nexusproxy']['port'] }}:8081
-      - {{ pillar['cache']['nexusproxy']['docker'] }}:8082
-      - {{ pillar['cache']['nexusproxy']['quay'] }}:8083
 
 nexusproxy_online:
   cmd.run:

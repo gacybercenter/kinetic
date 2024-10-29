@@ -131,52 +131,6 @@ def change_user_password(host: str,
                             data=new_password,
                             verify=False, timeout=timeout)
     return response.status_code
-def list_active_realms(host: str,
-                port: str,
-                username: str,
-                password: str,
-                timeout=60
-                ):
-    '''
-    This functions is used to list current active Auth Realms
-    @param host: Nexus host ip or dns name to inlude the http:// or https://
-    @param port: Nexus listening port
-    @param username: Nexus username
-    @param password: Nexus password
-    '''
-    response = requests.get(f"{host}:{port}/service/rest/v1/security/realms/active",
-                            auth=(username, password),
-                            verify=False, timeout=timeout)
-    if response.status_code == 200:
-      response = response.json()
-    elif response.status_code == 404:
-        response = { "name": "None", "status_code": "404" }
-        response = json.dumps(response, indent=4)
-    return response
-
-def activate_realms(host: str,
-                    port: str,
-                    username: str,
-                    password: str,
-                    realms: list,
-                    timeout=60
-                    ):
-    '''
-    This function is used to activate an authenication realm. 
-    @param host: Nexus host ip or dns name to inlude the http:// or https://
-    @param port: Nexus listening port
-    @param username: Nexus username
-    @param password: Nexus password
-    @param realm: Realm name (NexusAuthenticatingRealm, DockerToken, etc) 
-    '''
-    payload = json.loads(realms)
-    
-    response = requests.put(f"{host}:{port}/service/rest/v1/security/realms/active",
-                            auth=(username, password),
-                            headers={"Content-Type": "application/json"},
-                            json=payload,
-                            verify=False, timeout=timeout)
-    return response.status_code
 
 def list_repositories(host: str,
                       port: str,
@@ -260,9 +214,6 @@ def add_proxy_repository(host: str,
                          name: str,
                          repoType: str,
                          remoteUrl: str,
-                         indexType: str = None,
-                         indexUrl: str = None,
-                         conn_port: str = None,
                          timeout=60,
                          **kwargs
                          ):
@@ -341,14 +292,15 @@ def add_proxy_repository(host: str,
     elif repoType == "docker":
         payload.update({
             "docker": { 
-                "v1Enabled": True,
-                "forceBasicAuth": False,
-                "httpPort": conn_port,
+                "v1Enabled": False,
+                "forceBasicAuth": True,
+                "httpPort": 8082,
+                "httpsPort": 8083,
                 "subdomain": "docker-a"
                 },
             "dockerProxy": {
-                "indexType": indexType,
-                "indexUrl": indexUrl,
+                "indexType": "HUB",
+                "indexUrl": "string",
                 "cacheForeignLayers": True,
                 "foreignLayerUrlWhitelist": [
                     "string"
