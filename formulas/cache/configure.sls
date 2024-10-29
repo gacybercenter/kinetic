@@ -160,6 +160,21 @@ nexusproxy_update_user_password:
         key: build_phase
         value: configure
 
+nexus_activate_realms:
+  nexusproxy.activate_realms:
+    - name: nexus_activate_realms
+    - host: "http://{{ address }}"
+    - port: "{{ pillar['cache']['nexusproxy']['port'] }}"
+    - username: "{{ pillar['cache']['nexusproxy']['username'] }}"
+    - password: "{{ pillar['nexusproxy']['nexusproxy_password'] }}"
+    - realms:  {{ pillar['cache']['nexusproxy']['realms'] }}
+    - onlyif:
+      - fun: network.connect
+        host: {{ address }}
+        port: {{ pillar['cache']['nexusproxy']['port'] }}
+    - unless:
+      - docker exec nexusproxy ls -al /nexus-data/ | grep -q 'admin.password'
+
 {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
 {{ repo }}_add_proxy_repository:
   nexusproxy.add_proxy_repository:
@@ -170,6 +185,11 @@ nexusproxy_update_user_password:
     - password: "{{ pillar['nexusproxy']['nexusproxy_password'] }}"
     - repoType: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}"
     - remoteUrl: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}"
+{% if pillar['cache']['nexusproxy']['repositories'][repo]['index'] is defined %}
+    - indexType: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['indextype'] }}"
+    - indexUrl: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['index'] }}"
+    - conn_port: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['conn_port'] }}"
+{% endif %}
     - onlyif:
       - fun: network.connect
         host: {{ address }}
