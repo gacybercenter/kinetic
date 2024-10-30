@@ -61,12 +61,8 @@ nexusproxy:
     - restart_policy: unless-stopped
     - ports:
       - 8081
-      - 8082
-      - 8083
     - port_bindings:
       - {{ pillar['cache']['nexusproxy']['port'] }}:8081
-      - {{ pillar['cache']['nexusproxy']['docker'] }}:8082
-      - {{ pillar['cache']['nexusproxy']['quay'] }}:8083
 
 nexusproxy_online:
   cmd.run:
