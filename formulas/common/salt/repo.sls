@@ -18,25 +18,33 @@ salt_repo:
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
     {% if grains['type'] == 'arm' %}
-      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/arm64/3006/" %}
-    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=arm64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://packages.broadcom.com/artifactory/saltproject-deb/" %}
+    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=arm64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} stable main
       {% endif %}
     {% else %}
-      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://repo.saltproject.io/salt/py3/ubuntu/22.04/amd64/3006/" %}
-    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }} main
+      {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://packages.broadcom.com/artifactory/saltproject-deb/" %}
+    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} stable main
       {% endif %}
     {% endif %}
   {% endfor %}
 {% else %}
   {% if grains['type'] == 'arm' %}
-    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=arm64] https://repo.saltproject.io/salt/py3/ubuntu/{{ pillar['ubuntu']['version'] }}/arm64/{{ pillar['salt']['version'] }}/ {{ pillar['ubuntu']['name'] }} main
+    - name: deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=arm64] https://packages.broadcom.com/artifactory/saltproject-deb/ stable main
   {% else %}
-    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=amd64] https://repo.saltproject.io/salt/py3/ubuntu/{{ pillar['ubuntu']['version'] }}/amd64/{{ pillar['salt']['version'] }}/ {{ pillar['ubuntu']['name'] }} main
+    - name: deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=amd64] https://packages.broadcom.com/artifactory/saltproject-deb/ stable main
   {% endif %}
 {% endif %}
     - file: /etc/apt/sources.list.d/salt.list
-    - key_url: https://repo.saltproject.io/salt/py3/ubuntu/22.04/arm64/3006/SALT-PROJECT-GPG-PUBKEY-2023.gpg
+    - key_url: https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public
     - aptkey: False
+
+salt_pin_version:
+  file.managed:
+    - name: /etc/apt/preferences.d/salt-pin-1001
+    - contents: |
+        Package: salt-*
+        Pin: version {{ pillar['salt']['version'] }}
+        Pin-Priority: 1001
 
 update_packages_salt:
   pkg.uptodate:
