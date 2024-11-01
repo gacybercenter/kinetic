@@ -31,7 +31,7 @@ salt_repo:
   {% if grains['type'] == 'arm' %}
     - name: deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=arm64] https://packages.broadcom.com/artifactory/saltproject-deb/dists/stable/main/binary-arm64/ stable main
   {% else %}
-    - name: deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=amd64] https://packages.broadcom.com/artifactory/saltproject-deb/dists/stable/main/binary-amd64/ satable main
+    - name: deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=amd64] https://packages.broadcom.com/artifactory/saltproject-deb/dists/stable/main/binary-amd64/ stable main
   {% endif %}
 {% endif %}
     - file: /etc/apt/sources.list.d/salt.list
