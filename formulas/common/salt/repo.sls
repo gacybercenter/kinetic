@@ -41,7 +41,7 @@ salt_repo:
 salt_pin_version:
   file.managed:
     - name: /etc/apt/preferences.d/salt-pin-1001
-    - content: |
+    - contents: |
         Pin: version {{ pillar['salt']['version'] }}
         Pin-Priority: 1001
 
