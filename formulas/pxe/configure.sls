@@ -187,7 +187,7 @@ tftp_conf:
   file.managed:
     - makedirs: True
     - source: https://cdimage.ubuntu.com/releases/jammy/release/ubuntu-22.04.4-live-server-arm64.iso
-    - source_hash: https://cdimage.ubuntu.com/releases/jammy/release/inteliot/SHA256SUMSw
+    - source_hash: https://cdimage.ubuntu.com/releases/jammy/release/inteliot/SHA256SUMS
 
 clean_dir:
   file.directory:
