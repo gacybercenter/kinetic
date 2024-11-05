@@ -180,7 +180,7 @@ tftp_conf:
 /srv/tftp/jammy/ubuntu2204-amd64.iso:
   file.managed:
     - makedirs: True
-    - source: https://cdimage.ubuntu.com/releases/jammy/release/inteliot/ubuntu-22.04-live-server-amd64+intel-iot.iso
+    - source: https://cdimage.ubuntu.com/releases/jammy/release/ubuntu-22.04.5-live-server-arm64.iso
     - source_hash: https://cdimage.ubuntu.com/releases/jammy/release/inteliot/SHA256SUMS
 
 /srv/tftp/jammy/ubuntu2204-arm64.iso:
