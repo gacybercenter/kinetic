@@ -160,7 +160,7 @@ wsgi_module:
         disk: {{ pillar['hosts'][type]['disk'] }}
         interface: {{ pillar['hosts'][type]['interface'] }}
         master_record: {{ pillar['salt']['record'] }}
-        salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
+        salt_version: {{ salt['pillar.get']('salt:version', 'latest') }}
 {% endfor %}
 
 tftp_dirs:
