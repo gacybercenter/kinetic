@@ -64,6 +64,7 @@ compile_libvirt_pkgs:
       - libxml2-dev
       - libxml2-utils
       - libyajl-dev
+      - docutils-common
 
 /root/libvirtd-10-rc-patch.sh:
   file.managed:
