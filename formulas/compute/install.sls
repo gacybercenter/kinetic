@@ -21,6 +21,7 @@ include:
 
 compute_packages:
   pkg.installed:
+    - fromrepo: stable
     - pkgs:
       - nova-compute
       - python3-tornado
