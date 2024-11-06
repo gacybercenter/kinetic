@@ -112,7 +112,7 @@ user_data_{{ id }}:
       - '  user-data:'
       - '    disable_root: false'
       - '    runcmd:'
-      - '      - curl -L -o /tmp/bootstrap_salt.sh https://bootstrap.saltstack.com'
+      - '      - curl -L -o /tmp/bootstrap_salt.sh https://gitlab.com/gacybercenter/open/salt-bootstrap/-/raw/develop/bootstrap-salt.sh'
       - '      - /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ pillar['salt']['record'] }} stable {{ salt['pillar.get']('salt:version', 'latest') }}'
       - '  late-commands:'
       - '    - |'
