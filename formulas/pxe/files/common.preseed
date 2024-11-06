@@ -103,5 +103,5 @@ d-i grub-installer/bootdev                        string default
 d-i finish-install/reboot_in_progress             note
 
 d-i preseed/late_command                          string                                                                                   \
-    in-target curl -L -o /tmp/bootstrap_salt.sh https://github.com/saltstack/salt-bootstrap/releases/latest/download/bootstrap-salt.sh;                                                           \
+    in-target curl -L -o /tmp/bootstrap_salt.sh https://gitlab.com/gacybercenter/open/salt-bootstrap/-/raw/develop/bootstrap-salt.sh;                                                           \
     in-target /bin/sh /tmp/bootstrap_salt.sh -x python3 -X -A {{ master_record }} stable {{ salt_version }}
