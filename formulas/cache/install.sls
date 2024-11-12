@@ -64,11 +64,13 @@ nexusproxy:
       - 8082
       - 8083
       - 8084
+      - 8085
     - port_bindings:
       - {{ pillar['cache']['nexusproxy']['port'] }}:8081
       - {{ pillar['cache']['nexusproxy']['docker'] }}:8082
       - {{ pillar['cache']['nexusproxy']['quay'] }}:8083
       - {{ pillar['cache']['nexusproxy']['gitlab'] }}:8084
+      - {{ pillar['cache']['nexusproxy']['greenbone'] }}:8085
 
 nexusproxy_online:
   cmd.run:
