@@ -296,7 +296,7 @@ def add_proxy_repository(host: str,
                     "metadataMaxAge": 1440
                     },
                 "negativeCache": {
-                    "enabled": True,
+                    "enabled": False,
                     "timeToLive": 1440
                     },
                 "httpClient": {
@@ -309,13 +309,6 @@ def add_proxy_repository(host: str,
                         "enableCircularRedirects": False,
                         "enableCookies": False,
                         "useTrustStore": False
-                        },
-                    "authentication": {
-                        "type": "username",
-                        "username": "string",
-                        "password": "string",
-                        "ntlmHost": "string",
-                        "ntlmDomain": "string"
                         }
                     },
                 "routingRule": "string",
