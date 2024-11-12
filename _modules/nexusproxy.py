@@ -299,18 +299,6 @@ def add_proxy_repository(host: str,
                     "enabled": False,
                     "timeToLive": 1440
                     },
-                "httpClient": {
-                    "blocked": False,
-                    "autoBlock": True,
-                    "connection": {
-                        "retries": 0,
-                        "userAgentSuffix": "string",
-                        "timeout": 60,
-                        "enableCircularRedirects": False,
-                        "enableCookies": False,
-                        "useTrustStore": False
-                        }
-                    },
                 "routingRule": "string",
                 "replication": {
                     "preemptivePullEnabled": False,
