@@ -63,6 +63,7 @@ compile_libvirt_pkgs:
       - libgnutls28-dev
       - libxml2-dev
       - libyajl-dev
+      - libudev-dev
 
 /root/libvirtd-10-rc-patch.sh:
   file.managed:
