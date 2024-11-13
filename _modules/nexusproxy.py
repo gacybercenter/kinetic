@@ -305,8 +305,7 @@ def add_proxy_repository(host: str,
                     },
                 "routingRule": "string",
                 "replication": {
-                    "preemptivePullEnabled": False,
-                    "assetPathRegex": "string"
+                    "preemptivePullEnabled": False
                     }
                 }
     if repoType == "apt":
