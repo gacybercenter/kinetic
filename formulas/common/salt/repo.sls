@@ -19,11 +19,11 @@ salt_repo:
   {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
     {% if grains['type'] == 'arm' %}
       {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://packages.broadcom.com/artifactory/saltproject-deb/" %}
-    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=arm64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} stable main
+    - name: deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=arm64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} stable main
       {% endif %}
     {% else %}
       {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "https://packages.broadcom.com/artifactory/saltproject-deb/" %}
-    - name: deb [signed-by=/etc/apt/keyrings/SALT-PROJECT-GPG-PUBKEY-2023.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} stable main
+    - name: deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} stable main
       {% endif %}
     {% endif %}
   {% endfor %}
