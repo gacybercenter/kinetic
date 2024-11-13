@@ -302,21 +302,6 @@ def add_proxy_repository(host: str,
                 "httpClient": {
                     "blocked": False,
                     "autoBlock": True,
-                    "connection": {
-                        "retries": 0,
-                        "userAgentSuffix": "string",
-                        "timeout": 60,
-                        "enableCircularRedirects": False,
-                        "enableCookies": False,
-                        "useTrustStore": False
-                        },
-                    "authentication": {
-                        "type": "username",
-                        "username": "string",
-                        "password": "string",
-                        "ntlmHost": "string",
-                        "ntlmDomain": "string"
-                        }
                     },
                 "routingRule": "string",
                 "replication": {
