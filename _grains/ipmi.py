@@ -19,7 +19,7 @@ if exists:
         ipmi["mac_address"] = config["mac_address"]
 
         try:
-            cpu_temp = command.get_sensor_reading("CPU1 Temp")
+            cpu_temp = command.get_sensor_reading("System Temp")
             ipmi["cpu_temp"] = cpu_temp.simplestring()
         except Exception as e:
           ipmi["cpu_temp"] = f"Error: {str(e)}"
