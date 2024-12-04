@@ -17,8 +17,14 @@ if exists:
         config = command.get_net_configuration()
         ipmi["ipv4_address"] = config["ipv4_address"]
         ipmi["mac_address"] = config["mac_address"]
-        grains["ipmi"] = ipmi
 
+        try:
+            cpu_temp = command.get_sensor_reading("CPU Temp")
+            ipmi["cpu_temp"] = cpu_temp.simplestring()
+        except Exception as e:
+          ipmi["cpu_temp"] = f"Error: {str(e)}"
+
+        grains["ipmi"] = ipmi
         return grains
 
 
