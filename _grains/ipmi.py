@@ -18,17 +18,14 @@ if exists:
         ipmi["ipv4_address"] = config["ipv4_address"]
         ipmi["mac_address"] = config["mac_address"]
 
-        possible_sensor_names = ["CPU Temp", "CPU1 Temp", "Processor Temp", "Core Temp"]
-        for sensor_name in possible_sensor_names:
-          try:
-              cpu_temp = command.get_sensor_reading(sensor_name)
-              ipmi[sensor_name] = cpu_temp.simplestring()
-          except Exception as e:
-            ipmi[sensor_name] = f"Error: {str(e)}"
+        try:
+            cpu_temp = command.get_sensor_reading("CPU1 Temp")
+            ipmi["cpu_temp"] = cpu_temp.simplestring()
+        except Exception as e:
+          ipmi["cpu_temp"] = f"Error: {str(e)}"
 
         grains["ipmi"] = ipmi
         return grains
-
 
 if __name__ == "__main__":
     if exists:
