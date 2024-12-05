@@ -21,14 +21,14 @@ if exists:
         try:
             cpu_temp = command.get_sensor_reading("CPU1 Temp")
             ipmi["cpu_temp"] = cpu_temp.simplestring()
-        except Exception as e:
-          ipmi["cpu_temp"] = f"Error: {str(e)}"
+        except Exception:
+          pass
 
         try:
             system_temp = command.get_sensor_reading("System Temp")
             ipmi["system_temp"] = system_temp.simplestring()
-        except Exception as e:
-          ipmi["system_temp"] = f"Error: {str(e)}"
+        except Exception:
+          pass
 
         grains["ipmi"] = ipmi
         return grains
