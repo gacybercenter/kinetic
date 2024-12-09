@@ -30,6 +30,12 @@ if exists:
         except Exception as e:
           ipmi["system_temp"] = f"Error: {str(e)}"
 
+        try:
+            peripheral_temp = command.get_sensor_reading("Peripheral Temp")
+            ipmi["peripheral_temp"] = peripheral_temp.simplestring()
+        except Exception as e:
+          ipmi["peripheral_temp"] = f"Error: {str(e)}"
+
         grains["ipmi"] = ipmi
         return grains
 
