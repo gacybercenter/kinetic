@@ -16,7 +16,7 @@ include:
   - /formulas/common/base
   - /formulas/common/networking
   - /formulas/common/install
-  - /formulas/common/mariadb/repo
+#  - /formulas/common/mariadb/repo
 
 mariadb_packages:
   pkg.installed:
