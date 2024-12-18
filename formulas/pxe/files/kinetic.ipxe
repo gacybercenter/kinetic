@@ -12,7 +12,7 @@ isset ${next-server} || goto clear_inc && goto loop
 :clear_inc
 ifclose net${idy}
 inc idy && echo Incrementing interface to ${idy}
-iseq ${idy} 7 || goto clear
+iseq ${idy} 7 || goto clear && echo Interface index has reached Max limit of 7 && goto shell
 
 echo Starting Loop to find a network interface to boot from based on next-server being set...
 :loop
