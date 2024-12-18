@@ -1,13 +1,13 @@
 #!ipxe
 
 set idx:int32 0
+set idy:int32 0
 
 echo Clearing default DHCP Options from previous boot...
 :clear
-clear net${idx}.dhcp/next-server:ipv4
-clear net${idx}.dhcp/filename
-inc idx
-isset ${next-server} && goto clear || goto loop && set idx:int32 0
+clear net${idy}.dhcp/next-server:ipv4
+clear net${idy}.dhcp/filename
+isset ${next-server} || goto loop && goto clear && set idx:int32 0
 
 
 echo Starting Loop to find a network interface to boot from based on next-server being set...
