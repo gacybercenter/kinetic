@@ -9,7 +9,7 @@ echo Starting Loop to find a network interface to boot from based on next-server
 :loop
 echo Trying to boot from net${idx}...
 ifconf --configurator dhcp net${idx} || goto loop_inc
-isset ${tftp-server-name} || goto loop_inc && goto loop_done
+isset ${next-server} || goto loop_inc && goto loop_done
 
 :loop_inc
 ifclose net${idx}
