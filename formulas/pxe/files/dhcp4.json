@@ -83,6 +83,7 @@
       {
         "id": 4,
         "subnet": "{{ mgmt }}",
+        "next-server": "{{ tftp }}",
         "interface": "ens3",
         "pools": [
           {
