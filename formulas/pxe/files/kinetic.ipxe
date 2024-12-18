@@ -7,8 +7,12 @@ echo Clearing default DHCP Options from previous boot...
 :clear
 clear net${idy}.dhcp/next-server:ipv4
 clear net${idy}.dhcp/filename
-isset ${next-server} || goto loop && goto clear && set idx:int32 0
+isset ${next-server} || goto clear_inc && goto loop
 
+:clear_inc
+ifclose net${idy}
+inc idy && echo Incrementing interface to ${idy}
+iseq ${idy} 7 || goto clear
 
 echo Starting Loop to find a network interface to boot from based on next-server being set...
 :loop
