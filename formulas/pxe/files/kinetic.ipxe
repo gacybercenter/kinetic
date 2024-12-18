@@ -1,8 +1,8 @@
 #!ipxe
 
 set idx:int32 0
-:loop_clear
-echo Clearing default DHCP Options from previous boot...:
+
+echo Clearing default DHCP Options from previous boot...
 clear netX.dhcp/next-server:ipv4
 clear netX.dhcp/filename
 
