@@ -21,7 +21,6 @@
         "name": "arm64",
         "test": "substring(option[60].hex,0,9) == 'PXEClient' and option[93].hex == 0x000b",
         "only-if-required": true,
-        "next-server": "{{ tftp }}",
         "server-hostname": "{{ pxe_record }}",
         "boot-file-name": "{{ arm_efi }}"
       },
@@ -29,7 +28,6 @@
         "name": "amd64",
         "test": "substring(option[60].hex,0,9) == 'PXEClient' and not member('arm64')",
         "only-if-required": true,
-        "next-server": "{{ tftp }}",
         "server-hostname": "{{ pxe_record }}",
         "boot-file-name": "{{ x86_efi }}"
       },
