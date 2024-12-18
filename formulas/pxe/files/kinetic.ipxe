@@ -1,9 +1,10 @@
 #!ipxe
 
 set idx:int32 0
-echo Clearing default DHCP Options from previous boot...
-clear net4.dhcp/next-server:ipv4
-clear net4.dhcp/filename:string
+:loop_clear
+echo Clearing default DHCP Options from previous boot...:
+clear netX.dhcp/next-server:ipv4
+clear netX.dhcp/filename
 
 echo Starting Loop to find a network interface to boot from based on next-server being set...
 :loop
