@@ -6,7 +6,7 @@ set idy:int32 0
 :loop
 echo Trying to boot from net${idx}...
 ifconf --configurator dhcp net${idx} || goto loop_inc
-iseq net${idx}/gateway 10.100.1.254 || goto loop_inc && goto loop_done
+iseq ${net${idx}/gateway} 10.100.1.254 || goto loop_inc && goto loop_done
 
 :loop_inc
 ifclose net${idx}
