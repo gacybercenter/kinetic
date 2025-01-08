@@ -59,11 +59,14 @@ compile_libvirt_pkgs:
       - meson
       - xsltproc
       - pkg-config
+      - python3-docutils
+      - libpciaccess-dev
       - libglib2.0-dev
       - libgnutls28-dev
       - libxml2-dev
       - libyajl-dev
       - libudev-dev
+      - libxml2-utils
 
 /root/libvirtd-10-rc-patch.sh:
   file.managed:
