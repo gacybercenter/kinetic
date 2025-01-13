@@ -69,6 +69,7 @@ nexusproxy:
       - {{ pillar['cache']['nexusproxy']['docker'] }}:8082
       - {{ pillar['cache']['nexusproxy']['quay'] }}:8083
       - {{ pillar['cache']['nexusproxy']['gitlab'] }}:8084
+      - {{ pillar['cache']['nexusproxy']['greenbone']}}:8085
 
 nexusproxy_online:
   cmd.run:
