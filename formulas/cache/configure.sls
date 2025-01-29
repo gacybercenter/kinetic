@@ -186,7 +186,7 @@ nexus_activate_realms:
     - repoType: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['type'] }}"
     - remoteUrl: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['url'] }}"
 {% if {{ pillar['cache']['nexusproxy']['repositories'][repo]['dist'] }} %}
-    - dist: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['dist'] }}"
+    - dist: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['dist'] is defined }}"
 {% endif %}
 {% if pillar['cache']['nexusproxy']['repositories'][repo]['index'] is defined %}
     - indexType: "{{ pillar['cache']['nexusproxy']['repositories'][repo]['indextype'] }}"
