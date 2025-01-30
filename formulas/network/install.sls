@@ -114,17 +114,10 @@ taas_latest:
     - require:
       - git: git_config_safe_dir
 
-virtualenv_bin_dir:
-  file.directory:
-    - name: /var/lib/taas/vbin
-    - user: root
-    - group: root
-    
 taas_virtenv:
   virtualenv.managed:
     - name: /var/lib/taas
     - systems_site_packages: True
-    - venv_bin: /var/lib/taas/vbin
     - requirements: /var/lib/taas/requirements.txt
 
 install_taas:
