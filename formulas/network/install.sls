@@ -71,6 +71,7 @@ network_pip:
     - names:
       - python-openstackclient
       - tornado
+      - virtualenv
 
 salt-pip_installs:
   pip.installed:
@@ -79,6 +80,7 @@ salt-pip_installs:
     - pkgs:
       - python-openstackclient
       - tornado
+      - virtualenv
     - require:
       - pip: network_pip
 
