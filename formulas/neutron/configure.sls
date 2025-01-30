@@ -93,7 +93,7 @@ conf-files:
         ovn_metadata_enabled: True
         enable_distributed_floating_ip: False
 {% else %}
-        service_plugins: router
+        service_plugins: router,taas
         type_drivers: {{ pillar['neutron']['openvswitch']['type_drivers'] }}
         tenant_network_types: {{ pillar['neutron']['openvswitch']['tenant_network_types'] }}
         mechanism_drivers: {{ pillar['neutron']['openvswitch']['mechanism_drivers'] }}
@@ -131,6 +131,22 @@ conf-files:
       - /etc/sudoers.d/neutron_sudoers:
         - source: salt://formulas/neutron/files/neutron_sudoers
 
+neutron_taas_rootwrap_filter:
+  file.managed:
+    - source: salt://formulas/neutron/files/taas_rootwrap_filter
+    - template: jinja
+    - name: /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters
+    - user: root
+    - group: root
+    - mode: 660
+neutron_taas_plugin:
+  file.managed:
+    - source: salt://formulas/neutron/files/taas_plugin.ini
+    - template: jinja
+    - name: /etc/neutron/taas_plugin.ini
+    - user: root
+    - group: root
+    - mode: 660
 fs.inotify.max_user_instances:
   sysctl.present:
     - value: 1024
@@ -142,6 +158,7 @@ neutron_server_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
+      - file: /etc/neutron/taas_plugin.ini
     - require:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
