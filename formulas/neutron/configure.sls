@@ -40,6 +40,16 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
       - fun: grains.equals
         key: build_phase
         value: configure
+taas-db-manage_upgrade:
+  cmd.run:
+    - name: neutron-db-manage --subproject tap-as-a-service upgrade head
+    - runas: zun
+    - require:
+      - file: /etc/zun/zun.conf
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {% set start = pillar['networking']['addresses']['float_start'] %}
 {% set end = pillar['networking']['addresses']['float_end'] %}

@@ -139,12 +139,11 @@ taas_virtenv:
   virtualenv.managed:
     - name: /var/lib/taas
     - systems_site_packages: True
-    - venv_bin: /var/lib/taas/vbin
     - requirements: /var/lib/taas/requirements.txt
 
 install_taas:
   cmd.run:
-    - name: /var/lib/taas/vbin/python3 setup.py install
+    - name: /var/lib/taas/bin/python3 setup.py install
     - cwd : /var/lib/taas/
     - require:
-      - virtualenv: taas_virtenv
+      - virtualenv: taas_virtenv      
