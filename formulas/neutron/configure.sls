@@ -43,9 +43,9 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
 taas-db-manage_upgrade:
   cmd.run:
     - name: neutron-db-manage --subproject tap-as-a-service upgrade head
-    - runas: zun
+    - runas: neutron
     - require:
-      - file: /etc/zun/zun.conf
+      - file: /etc/neutron/neutron.conf
     - unless:
       - fun: grains.equals
         key: build_phase
