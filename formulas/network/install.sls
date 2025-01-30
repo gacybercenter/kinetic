@@ -122,7 +122,7 @@ taas_virtenv:
 
 install_taas:
   cmd.run:
-    - name: /var/lib/taas/vbin/python3 setup.py install
+    - name: /var/lib/taas/bin/python3 setup.py install
     - cwd : /var/lib/taas/
     - require:
       - virtualenv: taas_virtenv
