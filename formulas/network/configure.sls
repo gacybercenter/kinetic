@@ -99,7 +99,7 @@ conf-files:
       - /etc/neutron/metadata_agent.ini:
         - source: salt://formulas/network/files/metadata_agent.ini
       - /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters:
-        - source: salt://formulas/neutron/taas_rootwrap_filter
+        - source: salt://formulas/neutron/files/taas_rootwrap_filter
 
 fs.inotify.max_user_instances:
   sysctl.present:
