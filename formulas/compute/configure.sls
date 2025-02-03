@@ -68,6 +68,8 @@ conf-files:
         - source: salt://formulas/compute/files/neutron.conf
       - /etc/hosts:
         - source: salt://formulas/compute/files/hosts
+      - /etc/neutron/plugins/ml2/ml2_conf.ini
+        - source: salt://formulas/compute/files/ml2_conf.ini
 
 ceph_keyrings:
   file.managed:
