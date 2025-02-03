@@ -67,7 +67,7 @@ conf-files:
       - /etc/neutron/neutron.conf:
         - source: salt://formulas/compute/files/neutron.conf
       - /etc/hosts:
-        - source: salt://formulas/compute/files/host_file_constructor
+        - source: salt://formulas/compute/files/hosts
 
 ceph_keyrings:
   file.managed:
