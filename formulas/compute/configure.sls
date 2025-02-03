@@ -152,15 +152,17 @@ nova:
     - enc: {{ pillar['nova_live_migration_auth_key'][ key ]['encoding'] }}
 {% endfor %}
 
+{% set neutron_backend = pillar['neutron']['backend'] %}
+{% if neutron_backend != "networking-ovn" %}
+
 nova_compute_service:
   service.running:
     - name: nova-compute
     - enable: true
     - watch:
       - file: /etc/nova/nova.conf
+      - service: neutron_{{ neutron_backend }}_agent_service
 
-{% set neutron_backend = pillar['neutron']['backend'] %}
-{% if neutron_backend != "networking-ovn" %}
 /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/{{ neutron_backend }}_agent.ini
