@@ -140,7 +140,7 @@ conf-files:
         - source: salt://formulas/neutron/files/ml2_conf.ini
       - /etc/sudoers.d/neutron_sudoers:
         - source: salt://formulas/neutron/files/neutron_sudoers
-      - /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters
+      - /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters:
         - source: salt://formulas/neutron/taas_rootwrap_filter
 
 fs.inotify.max_user_instances:
