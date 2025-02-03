@@ -57,6 +57,7 @@ neutron_packages:
       - neutron-plugin-ml2
       - python3-openstackclient
       - python3-tornado
+      - python3-neutron-taas
 
 neutron_pip:
   pip.installed:
@@ -107,43 +108,3 @@ salt-pip_installs:
       - pip: neutron_pip
 
 {% endif %}
-## taas
-git_config_safe_dir:
-  git.config_set:
-    - name: safe.directory
-    - value: "/var/lib/taas"
-    - global: True
-git_config_email:
-  git.config_set:
-    - name: user.email
-    - value: "gacyberrange@augusta.edu"
-    - global: True
-git_config_user:
-  git.config_set:
-    - name: user.name
-    - value: "gacyberrange"
-    - global: True
-
-taas_latest:
-  git.latest:
-    - name: https://opendev.org/openstack/tap-as-a-service.git
-    - branch: stable/2024.1
-    - target: /var/lib/taas
-    - force_clone: true
-    - force_reset: true
-    - rev: stable/2024.1
-    - require:
-      - git: git_config_safe_dir
-
-taas_virtenv:
-  virtualenv.managed:
-    - name: /var/lib/taas
-    - systems_site_packages: True
-    - requirements: /var/lib/taas/requirements.txt
-
-install_taas:
-  cmd.run:
-    - name: /var/lib/taas/bin/python3 setup.py install
-    - cwd : /var/lib/taas/
-    - require:
-      - virtualenv: taas_virtenv      

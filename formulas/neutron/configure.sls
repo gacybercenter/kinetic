@@ -140,23 +140,9 @@ conf-files:
         - source: salt://formulas/neutron/files/ml2_conf.ini
       - /etc/sudoers.d/neutron_sudoers:
         - source: salt://formulas/neutron/files/neutron_sudoers
+      - /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters
+        - source: salt://formulas/neutron/taas_rootwrap_filter
 
-neutron_taas_rootwrap_filter:
-  file.managed:
-    - source: salt://formulas/neutron/files/taas_rootwrap_filter
-    - template: jinja
-    - name: /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters
-    - user: root
-    - group: root
-    - mode: 660
-neutron_taas_plugin:
-  file.managed:
-    - source: salt://formulas/neutron/files/taas_plugin.ini
-    - template: jinja
-    - name: /etc/neutron/taas_plugin.ini
-    - user: root
-    - group: root
-    - mode: 660
 fs.inotify.max_user_instances:
   sysctl.present:
     - value: 1024
@@ -168,7 +154,6 @@ neutron_server_service:
     - watch:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini
-      - file: /etc/neutron/taas_plugin.ini
     - require:
       - file: /etc/neutron/neutron.conf
       - file: /etc/neutron/plugins/ml2/ml2_conf.ini

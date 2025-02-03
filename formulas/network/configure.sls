@@ -98,23 +98,8 @@ conf-files:
         - source: salt://formulas/network/files/fwaas_driver.ini
       - /etc/neutron/metadata_agent.ini:
         - source: salt://formulas/network/files/metadata_agent.ini
-
-neutron_taas_rootwrap_filter:
-  file.managed:
-    - source: salt://formulas/neutron/files/taas_rootwrap_filter
-    - template: jinja
-    - name: /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters
-    - user: root
-    - group: root
-    - mode: 660
-neutron_taas_plugin:
-  file.managed:
-    - source: salt://formulas/neutron/files/taas_plugin.ini
-    - template: jinja
-    - name: /etc/neutron/taas_plugin.ini
-    - user: root
-    - group: root
-    - mode: 660
+      - /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters
+        - source: salt://formulas/neutron/taas_rootwrap_filter
 
 fs.inotify.max_user_instances:
   sysctl.present:

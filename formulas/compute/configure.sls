@@ -67,9 +67,7 @@ conf-files:
       - /etc/neutron/neutron.conf:
         - source: salt://formulas/compute/files/neutron.conf
       - /etc/hosts:
-        - source: salt://formulas/compute/files/hosts
-      # - /etc/frr/daemons:
-      #   - source: salt://formulas/common/frr/files/daemons
+        - source: salt://formulas/compute/files/host_file_constructor
 
 ceph_keyrings:
   file.managed:
@@ -171,7 +169,7 @@ nova_compute_service:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
   {% if neutron_backend == "openvswitch" %}
-        extensions: qos
+        extensions: qos,taas
         bridge_mappings: public_br
         explicitly_egress_direct: True
 
