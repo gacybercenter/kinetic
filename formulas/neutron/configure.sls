@@ -141,7 +141,7 @@ conf-files:
       - /etc/sudoers.d/neutron_sudoers:
         - source: salt://formulas/neutron/files/neutron_sudoers
       - /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters:
-        - source: salt://formulas/neutron/taas_rootwrap_filter
+        - source: salt://formulas/neutron/files/taas_rootwrap_filter
 
 fs.inotify.max_user_instances:
   sysctl.present:
