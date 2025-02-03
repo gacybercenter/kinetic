@@ -68,8 +68,6 @@ conf-files:
         - source: salt://formulas/compute/files/neutron.conf
       - /etc/hosts:
         - source: salt://formulas/compute/files/hosts
-      - /etc/neutron/plugins/ml2/ml2_conf.ini:
-        - source: salt://formulas/compute/files/ml2_conf.ini
 
 ceph_keyrings:
   file.managed:
@@ -192,7 +190,6 @@ neutron_{{ neutron_backend }}_agent_service:
     - name: neutron-{{ neutron_backend }}-agent
     - enable: true
     - watch:
-      - file: conf-files
       - file: /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini
 
 {% elif neutron_backend == "networking-ovn" %}
