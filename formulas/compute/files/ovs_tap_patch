@@ -1,0 +1,11 @@
+--- /usr/lib/python3/dist-packages/neutron_taas/services/taas/drivers/linux/ovs_taas.py 2025-02-04 09:31:24.001715853 -0500
++++ ovs_taas_patch.py   2025-02-04 09:34:02.856089079 -0500
+@@ -287,7 +287,7 @@
+             ovs_port_name = ovs_port.port_name
+             linux_br_name = ovs_port_name.replace('qvo', 'qbr')
+             utils.execute(['ip', 'link', 'set', linux_br_name,
+-                           'type', 'bridge', 'ageing_time', 0],
++                           'type', 'bridge'],
+                           run_as_root=True, privsep_exec=True)
+
+     @log_helpers.log_method_call

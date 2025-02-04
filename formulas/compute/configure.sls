@@ -191,6 +191,7 @@ neutron_{{ neutron_backend }}_agent_service:
     - enable: true
     - watch:
       - file: /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini
+      - file: ovs_bridge_patch
 
 {% elif neutron_backend == "networking-ovn" %}
 neutron-ovn-metadata-agent.ini:
@@ -315,6 +316,12 @@ ovn_metadata_service:
     - require:
       - cmd: ovsdb_listen
 {% endif %}
+
+ovs_bridge_patch:
+  file.patch:
+    - name: /usr/lib/python3/dist-packages/neutron_taas/services/taas/drivers/linux/ovs_taas.py
+    - source: salt://formulas/compute/files/ovs_tap_patch
+    - options: -u
 
 libvirtd_service:
   service.running:
