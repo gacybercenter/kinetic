@@ -191,6 +191,7 @@ neutron_{{ neutron_backend }}_agent_service:
     - enable: true
     - watch:
       - file: /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini
+      - file: ovs_bridge_patch
 
 {% elif neutron_backend == "networking-ovn" %}
 neutron-ovn-metadata-agent.ini:
