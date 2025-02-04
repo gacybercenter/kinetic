@@ -320,7 +320,7 @@ ovn_metadata_service:
 ovs_bridge_patch:
   file.patch:
     - name: /usr/lib/python3/dist-packages/neutron_taas/services/taas/drivers/linux/ovs_taas.py
-    - source: salt://ovs_tap_patch
+    - source: salt://formulas/compute/files/ovs_tap_patch
 
 libvirtd_service:
   service.running:
