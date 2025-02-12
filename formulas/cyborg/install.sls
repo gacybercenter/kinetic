@@ -98,7 +98,7 @@ git_config:
 cyborg_latest:
   git.latest:
     - name: https://opendev.org/openstack/cyborg.git
-    - branch: master
+    - branch: {{ pillar['openstack']['git_version'] }}
     - target: /var/lib/cyborg
     - force_clone: true
     - require:
