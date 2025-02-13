@@ -13,7 +13,7 @@ ifclose net${idx}
 clear net${idx}/ip
 clear net${idx}/netmask
 clear net${idx}/gateway
-clear net${idx/dns}
+clear net${idx}/dns
 inc idx && echo Incrementing Interface index to ${idx}
 iseq ${idx} 7 || goto loop && echo Interface index has reached Max limit of 7 && goto shell
 
