@@ -63,6 +63,7 @@ pci_passthrough_files:
         busid_gpu4: {{ pillar['hosts']['gpu']['busid_gpu'][3] }}
         gpu_vendor_id: {{ pillar['hosts']['gpu']['gpu_vendor_id'][0] }}
         gpu_product_id: {{ pillar['hosts']['gpu']['gpu_product_id'][0] }}
+        gpu_alias: {{ pillar['hosts']['gpu']['gpu_name'][0] }}
     - names:
       - /etc/default/grub.d/10-pci-passthrough.cfg:
         - source: salt://formulas/gpu/files/10-pci-passthrough.cfg
