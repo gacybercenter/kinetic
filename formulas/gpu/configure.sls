@@ -27,7 +27,7 @@ gpu-conf-files:
       - /etc/cyborg/cyborg.conf:
         - source: salt://formulas/gpu/files/cyborg.conf
       - /etc/nova/nova-compute.conf:
-        - source: salt://formulas/gpu/files/nova-compute.conf
+        - source: salt://formulas/gpu/files/nova-compute_cyborg.conf
 
 /etc/sudoers.d/cyborg_sudoers:
   file.managed:
@@ -68,6 +68,8 @@ pci_passthrough_files:
         - source: salt://formulas/gpu/files/10-pci-passthrough.cfg
       - /etc/initramfs-tools/scripts/init-top/vfio.sh:
         - source: salt://formulas/gpu/files/vfio.sh
+      - /etc/nova/nova-compute.conf:
+        - source: salt://formulas/gpu/files/nova-compute_passthrough.conf
 
 update-grub:
   cmd.run:
