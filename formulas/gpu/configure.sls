@@ -81,4 +81,11 @@ update-initramfs -u -k all:
     - onchanges:
       - file: /etc/initramfs-tools/scripts/init-top/vfio.sh
 
+nove_compute_service:
+  service.running:
+    - name: nova-compute
+    - enable: true
+    - watch:
+      - file: /etc/nova/nova-compute.conf
+
 {% endif %}
