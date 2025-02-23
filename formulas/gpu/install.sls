@@ -58,7 +58,7 @@ gpu_pips:
       - python-openstackclient
       - pymysql
 
-salt-pip_installs:
+salt-pip-gpu_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
