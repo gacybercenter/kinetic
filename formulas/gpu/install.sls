@@ -43,8 +43,8 @@ cyborg_packages:
       - xorg-dev
       - libvulkan1
     - refresh: True
-    - require:
-      - pkg: gpu-keyring
+#    - require:
+#      - pkg: gpu-keyring
 
 gpu_pips:
   pip.installed:
