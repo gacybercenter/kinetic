@@ -29,23 +29,6 @@ gpu-conf-files:
       - /etc/nova/nova-compute.conf:
         - source: salt://formulas/gpu/files/nova-compute_cyborg.conf
 
-/etc/sudoers.d/cyborg_sudoers:
-  file.managed:
-    - source: salt://formulas/gpu/files/cyborg_sudoers
-
-/etc/systemd/system/cyborg-agent.service:
-  file.managed:
-    - source: salt://formulas/gpu/files/cyborg-agent.service
-    - require:
-      - sls: /formulas/gpu/install
-
-cyborg_agent_service:
-  service.running:
-    - name: cyborg-agent
-    - enable: true
-    - watch:
-      - file: /etc/cyborg/cyborg.conf
-
 {% endif %}
 
 {% if pillar['gpu']['backend'] == "pci-passthrough" %}
