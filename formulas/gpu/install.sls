@@ -28,7 +28,7 @@ cyborg_packages:
       - python3-etcd3gw
       - xorg-dev
       - libvulkan1
-    - refresh: true
+    - refresh: True
 
 gpu_pips:
   pip.installed:
@@ -42,7 +42,7 @@ gpu_pips:
       - python-openstackclient
       - pymysql
 
-salt-pip-gpu_installs:
+salt-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -54,5 +54,65 @@ salt-pip-gpu_installs:
       - eventlet
     - require:
       - pip: gpu_pips
+
+cyborg:
+  group.present:
+    - system: True
+  user.present:
+    - shell: /bin/false
+    - createhome: True
+    - home: /var/lib/cyborg
+    - system: True
+    - groups:
+      - cyborg
+
+/etc/cyborg:
+  file.directory:
+    - user: cyborg
+    - group: cyborg
+    - mode: "0755"
+    - makedirs: True
+
+/var/log/cyborg:
+  file.directory:
+    - user: cyborg
+    - group: adm
+    - mode: "0755"
+    - makedirs: True
+
+git_config:
+  cmd.run:
+    - name: git config --system --add safe.directory "/var/lib/cyborg"
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
+
+cyborg_latest:
+  git.latest:
+    - name: https://opendev.org/openstack/cyborg.git
+    - branch: master
+    - target: /var/lib/cyborg
+    - force_clone: True
+    - force_reset: True
+    - require:
+      - cmd: git_config
+
+cyborg_requirements:
+  cmd.run:
+    - name: pip3 install -r /var/lib/cyborg/requirements.txt
+    - unless:
+      - systemctl is-active cyborg-agent
+    - require:
+      - git: cyborg_latest
+
+install_cyborg:
+  cmd.run:
+    - name: python3 setup.py install
+    - cwd : /var/lib/cyborg/
+    - unless:
+      - systemctl is-active cyborg-agent
+    - require:
+      - cmd: cyborg_requirements
 
 {% endif %}
