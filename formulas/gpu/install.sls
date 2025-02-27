@@ -15,20 +15,6 @@
 include:
   - /formulas/compute/install
 
-# gpu-keyring:
-#   pkg.installed:
-#     - sources:
-#       - cuda-keyring: https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo
-
-# nvidia_pkgs:
-#   pkg.installed:
-#     - pkgs:
-#       - nvidia-driver:latest-dkms
-#       - cuda
-#     - refresh: True
-#     - require:
-#       - pkg: gpu-keyring
-
 {% if pillar['gpu']['backend'] == "cyborg" %}
 cyborg_packages:
   pkg.installed:
@@ -42,9 +28,7 @@ cyborg_packages:
       - python3-etcd3gw
       - xorg-dev
       - libvulkan1
-    - refresh: True
-#    - require:
-#      - pkg: gpu-keyring
+    - refresh: true
 
 gpu_pips:
   pip.installed:
@@ -72,4 +56,3 @@ salt-pip-gpu_installs:
       - pip: gpu_pips
 
 {% endif %}
-
