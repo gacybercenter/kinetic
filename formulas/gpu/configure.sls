@@ -4,6 +4,7 @@ include:
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
 {% if pillar['gpu']['backend'] == "cyborg" %}
+
 gpu-conf-files:
   file.managed:
     - template: jinja
@@ -38,6 +39,7 @@ gpu-conf-files:
     - source: salt://formulas/gpu/files/cyborg-agent.service
     - require:
       - sls: /formulas/gpu/install
+
 {% endif %}
 
 {% if pillar['gpu']['backend'] == "pci-passthrough" %}
@@ -63,16 +65,15 @@ pci_passthrough_files:
         - source: salt://formulas/gpu/files/vfio.sh
       - /etc/nova/nova-compute.conf:
         - source: salt://formulas/gpu/files/nova-compute_passthrough.conf
-
 update-grub:
   cmd.run:
     - onchanges:
       - file: /etc/default/grub.d/10-pci-passthrough.cfg
-
 update-initramfs -u -k all:
   cmd.run:
     - onchanges:
       - file: /etc/initramfs-tools/scripts/init-top/vfio.sh
+{% endif %}
 
 nove_compute_service:
   service.running:
@@ -80,5 +81,3 @@ nove_compute_service:
     - enable: true
     - watch:
       - file: /etc/nova/nova-compute.conf
-
-{% endif %}
