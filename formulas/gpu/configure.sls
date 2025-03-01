@@ -3,6 +3,15 @@ include:
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
+/etc/openstack/clouds.yaml:
+  file.managed:
+    - source: salt://formulas/common/openstack/files/clouds.yml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        password: {{ pillar['openstack']['admin_password'] }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+
 {% if pillar['gpu']['backend'] == "cyborg" %}
 
 gpu-conf-files:
@@ -29,6 +38,8 @@ gpu-conf-files:
         - source: salt://formulas/gpu/files/cyborg.conf
       - /etc/nova/nova-compute.conf:
         - source: salt://formulas/gpu/files/nova-compute_cyborg.conf
+      - /root/rp.sh
+        - source: salt://formulas/gpu/files/rp.sh
 
 /etc/sudoers.d/cyborg_sudoers:
   file.managed:
@@ -39,6 +50,12 @@ gpu-conf-files:
     - source: salt://formulas/gpu/files/cyborg-agent.service
     - require:
       - sls: /formulas/gpu/install
+sriov_manage:
+  cron.present:
+    - name: sh -c "/usr/lib/nvidia/sriov-manage -e ALL"
+    - user: root
+    - special: '@reboot'
+
 
 {% endif %}
 
