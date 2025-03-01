@@ -54,4 +54,19 @@ gpu-pip_installs:
       - eventlet
     - require:
       - pip: gpu_pips
+
+/etc/cyborg:
+  file.directory:
+    - user: cyborg
+    - group: cyborg
+    - mode: "0755"
+    - makedirs: True
+
+/var/log/cyborg:
+  file.directory:
+    - user: cyborg
+    - group: adm
+    - mode: "0755"
+    - makedirs: True
+
 {% endif %}
