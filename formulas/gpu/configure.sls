@@ -21,7 +21,7 @@ gpu-conf-files:
         api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         nova_password: {{ pillar['nova']['nova_service_password'] }}
-        mdev_type: {{ pillar['hosts']['gpu']['mdev_type'][0] }}
+        mdev_type: {{ pillar['hosts']['gpu']['mdev_type'] }}
         busid: {{ constructor.gpu_busid_constructor() }}
     - names:
       - /etc/cyborg/cyborg.conf:
