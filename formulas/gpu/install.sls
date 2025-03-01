@@ -55,6 +55,17 @@ gpu-pip_installs:
     - require:
       - pip: gpu_pips
 
+cyborg:
+  group.present:
+    - system: True
+  user.present:
+    - shell: /bin/false
+    - createhome: True
+    - home: /var/lib/cyborg
+    - system: True
+    - groups:
+      - cyborg
+
 /etc/cyborg:
   file.directory:
     - user: cyborg
