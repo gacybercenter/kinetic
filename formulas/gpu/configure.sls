@@ -3,7 +3,7 @@ include:
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
-/etc/openstack/clouds.yaml:
+/root/clouds.yaml:
   file.managed:
     - source: salt://formulas/common/openstack/files/clouds.yml
     - makedirs: True
