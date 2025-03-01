@@ -38,13 +38,6 @@ gpu-conf-files:
     - source: salt://formulas/gpu/files/cyborg-agent.service
     - require:
       - sls: /formulas/gpu/install
-
-cyborg_agent_service:
-  service.running:
-    - name: cyborg-agent
-    - enable: true
-    - watch:
-      - file: /etc/cyborg/cyborg.conf
 {% endif %}
 
 {% if pillar['gpu']['backend'] == "pci-passthrough" %}
