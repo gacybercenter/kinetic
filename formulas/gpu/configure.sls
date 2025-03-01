@@ -38,7 +38,7 @@ gpu-conf-files:
         - source: salt://formulas/gpu/files/cyborg.conf
       - /etc/nova/nova-compute.conf:
         - source: salt://formulas/gpu/files/nova-compute_cyborg.conf
-      - /root/rp.sh
+      - /root/rp.sh:
         - source: salt://formulas/gpu/files/rp.sh
 
 /etc/sudoers.d/cyborg_sudoers:
