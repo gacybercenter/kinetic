@@ -147,6 +147,20 @@ create_{{ args['name'] }}:
     - source: {{ args['url'] }}
     - skip_verify: True
 
+#Vendor compresses fcos images
+  {% if args['name'] == 'fcore40' %}
+unzip_{{ args['name'] }}:
+  cmd.run:
+    - name: xz -d -S.original /kvm/images/{{ os }}.original
+    - creates:
+      - /kvm/images/{{ os }}
+create_{{ args['name'] }}_file:
+  cmd.run:
+    - name: cp /kvm/images/{{ os }} /kvm/images/{{ os }}.original
+    - creates:
+      - /kvm/images/{{ os }}.original
+  {% endif %}
+
 set_format_{{ os }}:
   cmd.run:
     - cwd: /kvm/images
@@ -156,6 +170,12 @@ set_format_{{ os }}:
 
   {% endif %}
 
+ {% if args['name'] == 'fcore40' %}
+/kvm/images/{{ os }}-latest:
+  file.symlink:
+    - target: /kvm/images/{{ os }}.raw
+    - force: True
+ {% else %}
 sysprep_{{ args['name'] }}:
   cmd.run:
     - name: virt-sysprep -a {{ os }}.raw --truncate /etc/machine-id
@@ -169,6 +189,7 @@ sysprep_{{ args['name'] }}:
     - force: True
     - require:
       - cmd: sysprep_{{ args['name'] }}
+ {% endif %}
 {% endfor %}
 
 haveged_service:

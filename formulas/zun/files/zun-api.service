@@ -4,7 +4,7 @@ After = network-online.target
 Wants = network-online.target
 
 [Service]
-ExecStart = /usr/local/bin/zun-api
+ExecStart = /var/lib/zun/bin/zun-api
 User = zun
 
 [Install]

@@ -40,12 +40,13 @@ horizon_packages:
       - python3-etcd3gw
     - reload_modules: True
 
+## current error in pip installed memcache
 horizon_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
     - names:
-      - python3-memcached
+      - python-memcached==1.59
 
 {% if salt['pillar.get']('hosts:magnum:enabled', 'False') == True %}
 magnum_latest:
@@ -79,41 +80,41 @@ install_magnum_ui:
 {% endif %}
 
 ## zun-ui installation routine
-zun_latest:
-  git.latest:
-    - name: https://opendev.org/openstack/zun-ui.git
-    - branch: stable/{{ pillar['openstack']['version'] }}
-    - target: /usr/share/openstack-dashboard/zun-ui/
-    - force_clone: true
+#zun_latest:
+#  git.latest:
+#    - name: https://opendev.org/openstack/zun-ui.git
+#    - branch: stable/{{ pillar['openstack']['version'] }}
+#    - target: /usr/share/openstack-dashboard/zun-ui/
+#    - force_clone: true
 
-copy_zun_panels:
-  module.run:
-    - file.copy:
-      - src: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/
-      - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
-      - recurse: True
-    - unless:
-      - test -f /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/_0330_cloud_shell.py
+#copy_zun_panels:
+#  module.run:
+#    - file.copy:
+#      - src: /usr/share/openstack-dashboard/zun-ui/zun_ui/enabled/
+#      - dst: /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+#      - recurse: True
+#    - unless:
+#      - test -f /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/_0330_cloud_shell.py
 
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_0330_cloud_shell_settings.py:
-  file.managed:
-    - source: salt://formulas/horizon/files/_0330_cloud_shell_settings.py
-    - template: jinja
-    - defaults:
-        cloud_shell_image: {{ pillar['zun']['cloud_shell_image'] }}
+#/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_0330_cloud_shell_settings.py:
+#  file.managed:
+#    - source: salt://formulas/horizon/files/_0330_cloud_shell_settings.py
+#    - template: jinja
+#    - defaults:
+#        cloud_shell_image: {{ pillar['zun']['cloud_shell_image'] }}
 
-zun_ui_requirements:
-  cmd.run:
-    - name: pip3 install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt
-    - onchanges:
-      - git: zun_latest
+#zun_ui_requirements:
+#  cmd.run:
+#    - name: pip3 install -r /usr/share/openstack-dashboard/zun-ui/requirements.txt
+#    - onchanges:
+#      - git: zun_latest
 
-install_zun_ui:
-  cmd.run:
-    - name: python3 setup.py install
-    - cwd: /usr/share/openstack-dashboard/zun-ui/
-    - onchanges:
-      - cmd: zun_ui_requirements
+#install_zun_ui:
+#  cmd.run:
+#    - name: python3 setup.py install
+#    - cwd: /usr/share/openstack-dashboard/zun-ui/
+#    - onchanges:
+#      - cmd: zun_ui_requirements
 
 set_module_permissions:
   file.directory:
