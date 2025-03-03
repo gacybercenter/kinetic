@@ -6,17 +6,21 @@ set idy:int32 0
 :loop
 echo Trying to boot from net${idx}...
 ifconf --configurator dhcp net${idx} || goto loop_inc
-iseq ${net${idx}/gateway} 10.100.1.254 || goto loop_inc && goto loop_done
+iseq ${net${idx}/gateway} {{ mgmt_gateway }} || goto loop_inc && goto loop_done
 
 :loop_inc
 ifclose net${idx}
+clear net${idx}/ip
+clear net${idx}/netmask
+clear net${idx}/gateway
+clear net${idx}/dns
 inc idx && echo Incrementing Interface index to ${idx}
 iseq ${idx} 7 || goto loop && echo Interface index has reached Max limit of 7 && goto shell
 
 :loop_done
 echo Next Server value is set to ${next-server}
 echo Boot File value is set to ${filename}
-echo Chainloading from interface net${idx} net${idx}/chip net${idx}/ip net${idx}/mac
+echo Chainloading from interface net${idx} ${net${idx}/chip} ${net${idx}/ip} ${net${idx}/mac}
 chain http://{{ pxe_record }}/?uuid=${uuid} || goto shell
 
 :shell
