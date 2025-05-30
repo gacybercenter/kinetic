@@ -9,5 +9,3 @@ certmanager_helm_install:
     - name: cert-manager
     - namespace: cert-manager
     - chart: certname/jetstack
-    - kvflags:
-        create-namespace
