@@ -8,4 +8,4 @@ certmanager_helm_install:
   helm.release_present:
     - name: cert-manager
     - namespace: cert-manager
-    - chart: certname/jetstack
+    - chart: cert-manager/jetstack
