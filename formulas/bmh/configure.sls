@@ -24,13 +24,23 @@ gitlab_helm_repo:
     - require:
       - cmd: helm_installed
 
+gitlab_agent_values:
+  file.managed:
+    - name: /tmp/agent_values.yaml
+    - source: salt://formulas/bmh/files/agent_values.yaml.j2
+    - template: jinja
+    - defaults:
+        token: {{ pillar['gitlab_agent_values']['token'] }}
+        kas: {{ pillar['kasAddress'] }} 
+
 # Install or upgrade GitLab Helm release
 gitlab_helm_release:
   helm.release_present:
     - name: {{ pillar['gitlab_release_name'] }}
     - chart: gitlab/gitlab
     - namespace: {{ pillar['gitlab_namespace'] }}
-    - update: True
+    - kvflags:
+        values: /tmp/agent_values.yaml
     - require:
       - helm: gitlab_helm_repo
       - cmd: gitlab_namespace
