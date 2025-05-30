@@ -8,6 +8,6 @@ certmanager_helm_install:
   helm.release_present:
     - name: cert-manager
     - namespace: cert-manager
-    - chat: certname/jetstack
+    - chart: certname/jetstack
     - kvglags:
         create-namespace
