@@ -1,5 +1,6 @@
 include:
 - /formulas/bmh/install
+- /formulas/common/k8s-certmanager/install
 
 # Ensure Helm is installed
 helm_installed:
