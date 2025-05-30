@@ -42,5 +42,6 @@ gitlab_helm_release:
     - kvflags:
         values: /tmp/agent_values.yaml
     - require:
+      - file: gitlab_agent_values
       - helm: gitlab_helm_repo
       - cmd: gitlab_namespace
