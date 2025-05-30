@@ -18,7 +18,7 @@ helm_download:
 # Verify checksum of downloaded file
 helm_verify_checksum:
   cmd.run:
-    - name: echo "{{ pillar['helm_checksum'] }} /tmp/helm-{{ pillar['helm_version'] }}.tar.gz" | sha256sum -c
+    - name: sha256sum /tmp/helm-{{ pillar['helm_version'] }}.tar.gz |grep {{ pillar['helm_checksum'] }} 
     - require:
       - cmd: helm_download
     - unless: test -f /usr/local/bin/helm && helm version --short | grep {{ pillar['helm_version'] }}
