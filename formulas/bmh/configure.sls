@@ -31,7 +31,7 @@ gitlab_agent_values:
     - template: jinja
     - defaults:
         token: {{ pillar['gitlab_agent_values']['token'] }}
-        kas: {{ pillar['kasAddress'] }} 
+        kas: {{ pillar['gitlab_agent_values']['kasAddress'] }} 
 
 # Install or upgrade GitLab Helm release
 gitlab_helm_release:
