@@ -41,6 +41,7 @@ gitlab_helm_release:
     - chart: gitlab/gitlab
     - namespace: {{ pillar['gitlab_namespace'] }}
     - kvflags:
+        certmanager-issuer.email: mdanielson@augusta.edu
         values: /tmp/agent_values.yaml
     - require:
       - file: gitlab_agent_values
