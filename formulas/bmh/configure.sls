@@ -18,7 +18,7 @@ gitlab_namespace:
 # Add GitLab Helm repository
 gitlab_helm_repo:
   helm.repo_managed:
-    present:
+    - present:
       - name: gitlab
         url: {{ pillar['gitlab_helm_repo_url'] }}
     - require:
