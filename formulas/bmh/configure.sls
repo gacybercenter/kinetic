@@ -1,0 +1,2 @@
+include:
+- /formulas/bmh/install
