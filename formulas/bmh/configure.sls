@@ -29,8 +29,6 @@ gitlab_helm_release:
     - name: {{ pillar['gitlab_release_name'] }}
     - chart: gitlab/gitlab
     - namespace: {{ pillar['gitlab_namespace'] }}
-    - version: {{ pillar['gitlab_chart_version'] }}
-    - values: {{ pillar['gitlab_helm_values'] | tojson }}
     - update: True
     - require:
       - helm: gitlab_helm_repo
