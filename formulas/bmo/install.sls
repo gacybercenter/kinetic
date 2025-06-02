@@ -43,4 +43,4 @@ bmo_ironic_helm_release:
     - require:
       - helm: metal3_helm_repo
       - cmd: bmo_ironic_namespace
-      - kubernetes: ironic_auth_secret
+      - cmd: ironic_auth_secret
