@@ -89,7 +89,7 @@ sysctl -p:
     - enc: {{ pillar['authorized_keys'][ key ]['encoding'] }}
 {% endfor %}
 
-{% if opts.id not in ['salt', 'pxe'] %}
+{% if opts.id not in ['salt', 'pxe', 'bmh'] %}
 hosts_name_resolution:
   host.present:
     - ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
