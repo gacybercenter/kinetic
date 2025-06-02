@@ -18,7 +18,7 @@ bmo_ironic_namespace:
 ironic_auth_secret:
   cmd.run:
     - name: kubectl create secret generic {{ pillar['ironic_auth_secret_name'] }} --from-literal=username={{ pillar['ironic_auth_username']  }} --from-literal=password={{ pillar['ironic_auth_password']  }} --namespace={{ pillar['bmo_namespace'] }} --dry-run=client -o yaml | kubectl apply -f -
-    - unless: kubectl get secret {{ pillar['ironic_auth_secret_name'] }}
+    - unless: kubectl get secret {{ pillar['ironic_auth_secret_name'] }} --namespace {{ pillar['bmo_namespace'] }}
     - require:
       - cmd: bmo_ironic_namespace
 
