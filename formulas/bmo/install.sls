@@ -21,8 +21,7 @@ ironic_auth_secret:
       data:
         username: {{ pillar['ironic_auth_username']  }}
         password: {{ pillar['ironic_auth_password']  }}
-    - namespace: {{ pillar['bmo_namespace'] }}
-
+      namespace: {{ pillar['bmo_namespace'] }}
     - require:
       - cmd: bmo_ironic_namespace
 
