@@ -18,10 +18,11 @@ bmo_ironic_namespace:
 ironic_auth_secret:
   kubernetes.secret_present:
     - name: {{ pillar['ironic_auth_secret_name'] }}
-    - namespace: {{ pillar['bmo_namespace'] }}
-    - data:
+      data:
         username: {{ pillar['ironic_auth_username']  }}
         password: {{ pillar['ironic_auth_password']  }}
+    - namespace: {{ pillar['bmo_namespace'] }}
+
     - require:
       - cmd: bmo_ironic_namespace
 
