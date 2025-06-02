@@ -16,12 +16,8 @@ bmo_ironic_namespace:
 
 # Create Secret for Ironic basic auth credentials
 ironic_auth_secret:
-  kubernetes.secret_present:
-    - name: {{ pillar['ironic_auth_secret_name'] }}
-      data:
-        username: {{ pillar['ironic_auth_username']  }}
-        password: {{ pillar['ironic_auth_password']  }}
-      namespace: {{ pillar['bmo_namespace'] }}
+  cmd.run:
+    - name: kubectl create secret generic {{ pillar['ironic_auth_secret_name'] }} --from-literal=username={{ pillar['ironic_auth_username']  }} --from-literal=password={{ pillar['ironic_auth_password']  }} --namespace: {{ pillar['bmo_namespace'] }}
     - require:
       - cmd: bmo_ironic_namespace
 
