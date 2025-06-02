@@ -29,7 +29,7 @@ ironic_auth_secret:
 metal3_helm_repo:
   helm.repo_managed:
     - name: metal3
-    - url: {{ pillar['bmo_helm_repo_url'] }}
+      url: {{ pillar['bmo_helm_repo_url'] }}
     - require:
       - cmd: helm_installed
 
