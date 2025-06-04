@@ -65,6 +65,13 @@ ironic_cacert_secret:
     - unless: kubectl get secret ironic-cacert --namespace {{ pillar['bmo_namespace'] }}
     - require:
       - cmd: bmo_ironic_namespace
+webhook_cert_secret:
+  cmd.run:
+    - name: kubectl create secret generic bmo-webhook-server-cert --from-literal=cert='' --namespace={{ pillar['bmo_namespace'] }}
+    - onlyif: ! {{ pillar['deploy_tls'] }}
+    - unless: kubectl get secret bmo-webhook-server-cert --namespace {{ pillar['bmo_namespace'] }}
+    - require:
+      - cmd: bmo_ironic_namespace
 # Generate Ironic credentials if basic auth is enabled
 {% if pillar['deploy_basic_auth'] %}
 ironic_credentials_username:
