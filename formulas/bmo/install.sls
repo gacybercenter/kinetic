@@ -59,8 +59,8 @@ temp_overlay_dirs:
       - file: ironic_directories
 
 ironic_cacert_secret:
-  kubernetes.secret_present:
-    - name: ironic-cacert
+  cmd.run:
+    - name: kubectl create secret generic ironic-cacert --from-literal=cacert=''
     - namespace: {{ pillar['bmo_namespace'] }}
     - data:
         cacert: ""  # Empty content to satisfy volume mount
