@@ -225,7 +225,6 @@ ironic_kustomize_overlay:
 ironic_bmo_configmap:
   file.managed:
     - name: {{ pillar['temp_ironic_overlay'] }}/ironic_bmo_configmap.env
-    - source: {{ pillar['script_dir'] }}/ironic-deployment/default/ironic_bmo_configmap.env
     - mode: 644
     - contents_pillar: |
         {% if pillar['restart_container_certificate_updated'] %}
