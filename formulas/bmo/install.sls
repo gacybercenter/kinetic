@@ -226,7 +226,7 @@ ironic_bmo_configmap:
   file.managed:
     - name: {{ pillar['temp_ironic_overlay'] }}/ironic_bmo_configmap.env
     - mode: 644
-    - contents_pillar: |
+    - contents: |
         {% if pillar['restart_container_certificate_updated'] %}
         RESTART_CONTAINER_CERTIFICATE_UPDATED: {{ pillar['restart_container_certificate_updated'] }}
         {% endif %}
