@@ -49,7 +49,7 @@ temp_overlay_dirs:
 
 # Generate Ironic credentials if basic auth is enabled
 {% if pillar['deploy_basic_auth'] %}
-ironic_credentials-username:
+ironic_credentials_username:
   file.managed:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-username
     - contents: {{ pillar.get('ironic_username', grains['id'] | uuid) }}
@@ -57,7 +57,7 @@ ironic_credentials-username:
     - unless: test -f {{ pillar['ironic_auth_dir'] }}/ironic-username
     - require:
       - file: ironic_directories
-ironic_credentials-password:
+ironic_credentials_password:
   file.managed:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-password
     - contents: {{ pillar.get('ironic_password', grains['id'] | uuid) }}
@@ -67,7 +67,7 @@ ironic_credentials-password:
       - file: ironic_directories
 
 # Copy credentials to BMO overlay
-bmo_credentials:
+bmo_credentials_username:
   file.managed:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic-username
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-username
@@ -75,6 +75,7 @@ bmo_credentials:
     - require:
       - file: ironic_credentials
       - file: temp_overlay_dirs
+bmo_credentials_password
   file.managed:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic-password
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-password
