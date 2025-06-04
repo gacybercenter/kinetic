@@ -1,4 +1,5 @@
-# /srv/salt/bmo_ironic_kustomize.sls
+include:
+  - /formulas/common/k8s-certmanager/install.sls
 
 # Validate deployment options
 validate_deployment_bmo_ironic:
