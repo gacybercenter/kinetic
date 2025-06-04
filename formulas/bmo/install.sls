@@ -58,16 +58,15 @@ temp_overlay_dirs:
     - require:
       - file: ironic_directories
 
-{% if ! pillar['deploy_tls'] %}
 ironic_cacert_secret:
   kubernetes.secret_present:
     - name: ironic-cacert
     - namespace: {{ pillar['bmo_namespace'] }}
     - data:
         cacert: ""  # Empty content to satisfy volume mount
+    - onlyif: ! {{ pillar['deploy_tls'] }}
     - require:
       - cmd: bmo_ironic_namespace
-{% endif %}
 # Generate Ironic credentials if basic auth is enabled
 {% if pillar['deploy_basic_auth'] %}
 ironic_credentials_username:
