@@ -139,7 +139,7 @@ bmo_kustomize_overlay:
         {% endif %}
         {% if pillar['deploy_tls'] %}
         components:
-          - ../../compoenants/tls
+          - ../../components/tls
         {% endif %}
         configMapGenerator:
           - name: ironic
