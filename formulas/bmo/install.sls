@@ -26,6 +26,13 @@ install_dependencies:
     - require:
       - pkg: install_dependencies
 
+clone_bmo_repo:
+  git.cloned:
+    - name: https://github.com/metal3-io/baremetal-operator.git
+    - target: {{ pillar['script_dir'] }}
+    - require:
+      - pkg: install_dependencies
+
 # Create directories for Ironic data and auth
 ironic_directories:
   file.directory:
