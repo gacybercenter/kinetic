@@ -75,7 +75,7 @@ bmo_credentials_username:
     - require:
       - file: ironic_credentials
       - file: temp_overlay_dirs
-bmo_credentials_password
+bmo_credentials_password:
   file.managed:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic-password
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-password
