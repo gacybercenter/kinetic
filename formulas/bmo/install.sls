@@ -142,7 +142,8 @@ bmo_kustomize_overlay:
     - require:
       - file: temp_overlay_dirs
       {% if pillar['deploy_basic_auth'] %}
-      - file: bmo_credentials
+      - file: bmo_credentials_username
+      - file: bmo_credentials_password
       {% endif %}
 
 bmo_ironic_env:
