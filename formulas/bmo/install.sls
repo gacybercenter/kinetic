@@ -57,7 +57,8 @@ temp_overlay_dirs:
     - clean: True
     - require:
       - file: ironic_directories
-{% if not pillar['deploy_tls'] %}
+
+{% if ! pillar['deploy_tls'] %}
 ironic_cacert_secret:
   kubernetes.secret_present:
     - name: ironic-cacert
