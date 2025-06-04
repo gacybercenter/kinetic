@@ -243,9 +243,9 @@ ironic_bmo_configmap:
     - mode: 644
     - contents: |
         {% if pillar['restart_container_certificate_updated'] %}
-        RESTART_CONTAINER_CERTIFICATE_UPDATED: {{ pillar['restart_container_certificate_updated'] }}
+        RESTART_CONTAINER_CERTIFICATE_UPDATED={{ pillar['restart_container_certificate_updated'] }}
         {% endif %}
-        IRONIC_EXTERNAL_IP: {{ pillar['ironic_endpoint_ip'] }}
+        IRONIC_EXTERNAL_IP={{ pillar['ironic_endpoint_ip'] }}
     - require:
       - file: temp_overlay_dirs
 
