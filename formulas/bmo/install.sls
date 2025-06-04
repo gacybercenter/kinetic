@@ -208,7 +208,7 @@ ironic_kustomize_overlay:
               - htpasswd=ironic-htpasswd
         {% if pillar['deploy_tls'] %}
         resources:
-          - ../../components/basic-auth_tls
+          - ../basic-auth_tls
         {% else %}
         resources:
           - ../../base
