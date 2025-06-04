@@ -1,12 +1,13 @@
 # /srv/salt/bmo_ironic_kustomize.sls
 
 # Validate deployment options
-validate_deployment:
+validate_deployment_bmo_ironic:
   test.fail_without_changes:
     - name: "Nothing to deploy: deploy_bmo and deploy_ironic are both false"
     - failhard: True
     - unless: {{ pillar['deploy_bmo'] or pillar['deploy_ironic'] }}
-  test.fail_without_changes2:
+valid_deployment_mariadb_tls:
+  test.fail_without_changes:
     - name: "MariaDB deployment requires TLS"
     - failhard: True
     - unless: {{ not pillar['deploy_mariadb'] or pillar['deploy_tls'] }}
