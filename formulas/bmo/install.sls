@@ -131,8 +131,6 @@ bmo_kustomize_overlay:
             behavior: create
             envs:
               - ironic.env
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 644
     - require:
       - file: temp_overlay_dirs
