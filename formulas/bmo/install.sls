@@ -18,7 +18,7 @@ install_dependencies:
     - pkgs:
         - kubectl
         - curl
-        - htpasswd
+        - apache2-utils
   cmd.run:
     - name: |
         curl -sL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.1/kustomize_v5.4.1_linux_amd64.tar.gz | tar xz -C /usr/local/bin/ && chmod +x /usr/local/bin/kustomize
