@@ -6,7 +6,7 @@ validate_deployment:
     - name: "Nothing to deploy: deploy_bmo and deploy_ironic are both false"
     - failhard: True
     - unless: {{ pillar['deploy_bmo'] or pillar['deploy_ironic'] }}
-  test.fail_without_changes:
+  test.fail_without_changes2:
     - name: "MariaDB deployment requires TLS"
     - failhard: True
     - unless: {{ not pillar['deploy_mariadb'] or pillar['deploy_tls'] }}
