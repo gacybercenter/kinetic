@@ -24,12 +24,6 @@ install_dependencies:
     - require:
       - pkg: install_dependencies
 
-# Ensure Helm is installed (for kube-vip)
-helm_installed:
-  cmd.run:
-    - name: helm version --short
-    - unless: test -f /usr/local/bin/helm
-
 # Create directories for Ironic data and auth
 ironic_directories:
   file.directory:
@@ -105,27 +99,6 @@ bmo_ironic_namespace:
     - unless: kubectl get namespace {{ pillar['bmo_namespace'] }}
     - require:
       - pkg: install_dependencies
-
-# Add kube-vip Helm repository
-kubevip_helm_repo:
-  helm.repo_managed:
-    - name: kube-vip
-    - url: {{ pillar['kubevip_helm_repo_url'] }}
-    - require:
-      - cmd: helm_installed
-
-# Install kube-vip Helm release
-kubevip_helm_release:
-  helm.release_present:
-    - name: {{ pillar['kubevip_release_name'] }}
-    - chart: kube-vip/kube-vip
-    - namespace: {{ pillar['bmo_namespace'] }}
-    - version: {{ pillar['kubevip_chart_version'] }}
-    - values: {{ pillar['kubevip_helm_values'] | tojson }}
-    - update: True
-    - require:
-      - helm: kubevip_helm_repo
-      - cmd: bmo_ironic_namespace
 
 # BMO kustomize overlay
 {% if pillar['deploy_bmo'] %}
