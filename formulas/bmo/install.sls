@@ -36,8 +36,6 @@ ironic_directories:
     - names:
         - {{ pillar['ironic_data_dir'] }}
         - {{ pillar['ironic_auth_dir'] }}
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 755
     - makedirs: True
     - require:
@@ -49,8 +47,6 @@ temp_overlay_dirs:
     - names:
         - {{ pillar['temp_bmo_overlay'] }}
         - {{ pillar['temp_ironic_overlay'] }}
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 755
     - makedirs: True
     - clean: True
@@ -63,8 +59,6 @@ ironic_credentials:
   file.managed:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-username
     - contents: {{ pillar.get('ironic_username', grains['id'] | uuid) }}
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 600
     - unless: test -f {{ pillar['ironic_auth_dir'] }}/ironic-username
     - require:
@@ -72,8 +66,6 @@ ironic_credentials:
   file.managed:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-password
     - contents: {{ pillar.get('ironic_password', grains['id'] | uuid) }}
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 600
     - unless: test -f {{ pillar['ironic_auth_dir'] }}/ironic-password
     - require:
@@ -84,8 +76,6 @@ bmo_credentials:
   file.managed:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic-username
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-username
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 600
     - require:
       - file: ironic_credentials
@@ -93,8 +83,6 @@ bmo_credentials:
   file.managed:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic-password
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-password
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 600
     - require:
       - file: ironic_credentials
@@ -183,8 +171,6 @@ bmo_ironic_env:
   file.managed:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic.env
     - source: {{ pillar['script_dir'] }}/config/default/ironic.env
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 644
     - require:
       - file: temp_overlay_dirs
@@ -242,8 +228,6 @@ ironic_kustomize_overlay:
             behavior: create
             envs:
               - ironic_bmo_configmap.env
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 644
     - require:
       - file: temp_overlay_dirs
@@ -255,8 +239,6 @@ ironic_bmo_configmap:
   file.managed:
     - name: {{ pillar['temp_ironic_overlay'] }}/ironic_bmo_configmap.env
     - source: {{ pillar['script_dir'] }}/ironic-deployment/default/ironic_bmo_configmap.env
-    - user: {{ pillar['user'] }}
-    - group: {{ pillar['group'] }}
     - mode: 644
     - contents_pillar: |
         {% if pillar['restart_container_certificate_updated'] %}
