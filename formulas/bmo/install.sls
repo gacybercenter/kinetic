@@ -30,6 +30,7 @@ clone_bmo_repo:
   git.latest:
     - name: https://github.com/metal3-io/baremetal-operator.git
     - target: {{ pillar['script_dir'] }}
+    - force_clone: true
     - require:
       - pkg: install_dependencies
 
