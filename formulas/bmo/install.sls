@@ -74,7 +74,8 @@ bmo_credentials_username:
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-username
     - mode: 600
     - require:
-      - file: ironic_credentials
+      - file: ironic_credentials_username
+      - file: ironic_credentials_password
       - file: temp_overlay_dirs
 bmo_credentials_password:
   file.managed:
@@ -82,7 +83,8 @@ bmo_credentials_password:
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-password
     - mode: 600
     - require:
-      - file: ironic_credentials
+      - file: ironic_credentials_username
+      - file: ironic_credentials_password
       - file: temp_overlay_dirs
 
 # Generate htpasswd for Ironic
@@ -91,7 +93,8 @@ ironic_htpasswd:
     - name: htpasswd -n -b -B {{ pillar['ironic_username'] }} {{ pillar['ironic_password'] }} > {{ pillar['temp_ironic_overlay'] }}/ironic-htpasswd
     - unless: test -f {{ pillar['temp_ironic_overlay'] }}/ironic-htpasswd
     - require:
-      - file: ironic_credentials
+      - file: ironic_credentials_username
+      - file: ironic_credentials_password
       - file: temp_overlay_dirs
 {% endif %}
 
