@@ -129,7 +129,7 @@ bmo_kustomize_overlay:
         namespace: {{ pillar['bmo_namespace'] }}
         {% if pillar['deploy_basic_auth'] %}
         components:
-          - ../../basic-auth
+          - ../../components/basic-auth
         secretGenerator:
           - name: ironic-credentials
             namespace: {{ pillar['bmo_namespace'] }}
@@ -139,7 +139,7 @@ bmo_kustomize_overlay:
         {% endif %}
         {% if pillar['deploy_tls'] %}
         components:
-          - ../../tls
+          - ../../compoenants/tls
         {% endif %}
         configMapGenerator:
           - name: ironic
@@ -193,22 +193,22 @@ ironic_kustomize_overlay:
               - htpasswd=ironic-htpasswd
         {% if pillar['deploy_tls'] %}
         resources:
-          - ../basic-auth_tls
+          - ../../components/basic-auth_tls
         {% else %}
         resources:
           - ../../base
         components:
-          - ../../basic-auth
+          - ../../components/basic-auth
         {% endif %}
         {% else %}
         {% if pillar['deploy_tls'] %}
         components:
-          - ../../tls
+          - ../../components/tls
         {% endif %}
         {% endif %}
         {% if pillar['deploy_mariadb'] %}
         components:
-          - ../../mariadb
+          - ../../components/mariadb
         {% endif %}
         configMapGenerator:
           - name: ironic-bmo-configmap
