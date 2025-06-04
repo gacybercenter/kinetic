@@ -246,6 +246,7 @@ ironic_bmo_configmap:
         RESTART_CONTAINER_CERTIFICATE_UPDATED={{ pillar['restart_container_certificate_updated'] }}
         {% endif %}
         IRONIC_EXTERNAL_IP={{ pillar['ironic_endpoint_ip'] }}
+        PROVISIONING_INTERFACE={{ pillar['ironic_interface'] }}
     - require:
       - file: temp_overlay_dirs
 
