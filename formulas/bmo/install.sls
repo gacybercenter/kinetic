@@ -1,5 +1,5 @@
 include:
-  - /formulas/common/k8s-certmanager/install.sls
+  - /formulas/common/k8s-certmanager/install
 
 # Validate deployment options
 validate_deployment_bmo_ironic:
