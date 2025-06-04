@@ -124,12 +124,12 @@ bmo_kustomize_overlay:
         apiVersion: kustomize.config.k8s.io/v1beta1
         kind: Kustomization
         resources:
-          - {{ pillar['script_dir'] }}/config/base
-          - {{ pillar['script_dir'] }}/config/namespace
+          - ../../config/base
+          - ../../config/namespace
         namespace: {{ pillar['bmo_namespace'] }}
         {% if pillar['deploy_basic_auth'] %}
         components:
-          - {{ pillar['script_dir'] }}/config/components/basic-auth
+          - ../../components/basic-auth
         secretGenerator:
           - name: ironic-credentials
             namespace: {{ pillar['bmo_namespace'] }}
@@ -139,7 +139,7 @@ bmo_kustomize_overlay:
         {% endif %}
         {% if pillar['deploy_tls'] %}
         components:
-          - {{ pillar['script_dir'] }}/config/components/tls
+          - ../../components/tls
         {% endif %}
         configMapGenerator:
           - name: ironic
@@ -182,7 +182,7 @@ ironic_kustomize_overlay:
         apiVersion: kustomize.config.k8s.io/v1beta1
         kind: Kustomization
         resources:
-          - {{ pillar['script_dir'] }}/ironic-deployment/config/namespace
+          - ../../config/namespace
         namespace: {{ pillar['bmo_namespace'] }}
         namePrefix: baremetal-operator-
         {% if pillar['deploy_basic_auth'] %}
@@ -193,22 +193,22 @@ ironic_kustomize_overlay:
               - htpasswd=ironic-htpasswd
         {% if pillar['deploy_tls'] %}
         resources:
-          - {{ pillar['script_dir'] }}/ironic-deployment/overlays/basic-auth_tls
+          - ../basic-auth_tls
         {% else %}
         resources:
-          - {{ pillar['script_dir'] }}/ironic-deployment/base
+          - ../../ironic-deployment/base
         components:
-          - {{ pillar['script_dir'] }}/ironic-deployment/components/basic-auth
+          - ../../components/basic-auth
         {% endif %}
         {% else %}
         {% if pillar['deploy_tls'] %}
         components:
-          - {{ pillar['script_dir'] }}/ironic-deployment/components/tls
+          - ../../components/tls
         {% endif %}
         {% endif %}
         {% if pillar['deploy_mariadb'] %}
         components:
-          - {{ pillar['script_dir'] }}/ironic-deployment/components/mariadb
+          - ../../components/mariadb
         {% endif %}
         configMapGenerator:
           - name: ironic-bmo-configmap
