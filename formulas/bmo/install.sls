@@ -186,7 +186,7 @@ ironic_kustomize_overlay:
         namespace: {{ pillar['bmo_namespace'] }}
         namePrefix: baremetal-operator-
         {% if pillar['deploy_basic_auth'] %}
-        secrets:
+        secretGenerator:
           - name: ironic-htpasswd
             namespace: {{ pillar['bmo_namespace'] }}
             files:
