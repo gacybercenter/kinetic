@@ -263,7 +263,6 @@ ironic_deploy:
     - require:
       - file: ironic_kustomize_overlay
       - file: ironic_bmo_configmap
-      - cmd: kubevip_helm_release
       {% if pillar['deploy_tls'] %}
       - file: update_tls_certificate
       {% endif %}
