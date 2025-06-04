@@ -130,7 +130,7 @@ bmo_kustomize_overlay:
         {% if pillar['deploy_basic_auth'] %}
         components:
           - {{ pillar['script_dir'] }}/config/components/basic-auth
-        secrets:
+        secretGenerator:
           - name: ironic-credentials
             namespace: {{ pillar['bmo_namespace'] }}
             literals:
