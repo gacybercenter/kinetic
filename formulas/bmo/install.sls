@@ -124,12 +124,12 @@ bmo_kustomize_overlay:
         apiVersion: kustomize.config.k8s.io/v1beta1
         kind: Kustomization
         resources:
-          - ../../config/base
-          - ../../config/namespace
+          - ../../base
+          - ../..//namespace
         namespace: {{ pillar['bmo_namespace'] }}
         {% if pillar['deploy_basic_auth'] %}
         components:
-          - ../../components/basic-auth
+          - ../../basic-auth
         secretGenerator:
           - name: ironic-credentials
             namespace: {{ pillar['bmo_namespace'] }}
@@ -139,7 +139,7 @@ bmo_kustomize_overlay:
         {% endif %}
         {% if pillar['deploy_tls'] %}
         components:
-          - ../../components/tls
+          - ../../tls
         {% endif %}
         configMapGenerator:
           - name: ironic
@@ -182,7 +182,7 @@ ironic_kustomize_overlay:
         apiVersion: kustomize.config.k8s.io/v1beta1
         kind: Kustomization
         resources:
-          - ../../config/namespace
+          - ../../namespace
         namespace: {{ pillar['bmo_namespace'] }}
         namePrefix: baremetal-operator-
         {% if pillar['deploy_basic_auth'] %}
@@ -196,19 +196,19 @@ ironic_kustomize_overlay:
           - ../basic-auth_tls
         {% else %}
         resources:
-          - ../../ironic-deployment/base
+          - ../../base
         components:
-          - ../../components/basic-auth
+          - ../../basic-auth
         {% endif %}
         {% else %}
         {% if pillar['deploy_tls'] %}
         components:
-          - ../../components/tls
+          - ../../tls
         {% endif %}
         {% endif %}
         {% if pillar['deploy_mariadb'] %}
         components:
-          - ../../components/mariadb
+          - ../../mariadb
         {% endif %}
         configMapGenerator:
           - name: ironic-bmo-configmap
