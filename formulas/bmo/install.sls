@@ -34,6 +34,7 @@ clone_bmo_repo:
     - force_clone: true
     - require:
       - pkg: install_dependencies
+    - unless: -f {{ pillar['script_dir'] }}
 
 # Create directories for Ironic data and auth
 ironic_directories:
