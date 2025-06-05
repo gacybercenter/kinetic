@@ -13,3 +13,4 @@ certmanager_helm_install:
       - create-namespace
     - kvflags:
         set: 'crds.enabled=true'
+    - unless: helm list -n cert-manager |grep cert-manager
