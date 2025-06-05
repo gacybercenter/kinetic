@@ -52,12 +52,8 @@ temp_overlay_dirs:
     - names:
         - {{ pillar['temp_bmo_overlay'] }}
         - {{ pillar['temp_ironic_overlay'] }}
-    - onchanges: 
-      - file: bmo_kustomize_overlay
-      - file: ironic_kustomize_overlay
     - mode: 755
     - makedirs: True
-    - clean: True
     - require:
       - file: ironic_directories
 
