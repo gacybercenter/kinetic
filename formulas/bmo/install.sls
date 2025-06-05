@@ -52,11 +52,17 @@ create_kustomization:
                             value: "basic"
                           - name: IRONIC_ENDPOINT
                             value: "{{ pillar['ironic_endpoint_ip'] }}:6385"
+                      - name: ironic
+                        env:
+                          - name: HTTP_BASIC_AUTH_USER
+                            value: "{{ pillar['ironic_auth_username'] | default('admin') }}"
+                          - name: HTTP_BASIC_AUTH_PASS
+                            value: "{{ pillar['ironic_auth_password'] | default('password') }}"
     - require:
         - git: clone_bmo_manifests
 
 # Apply kustomize manifests for BMO and Ironic
-apply_bmo_manifests:
+apply_bmo_manifests:  
   cmd.run:
     - name: kubectl apply -k /tmp/baremetal-operator
     - require:
