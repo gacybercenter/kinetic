@@ -258,7 +258,7 @@ bmo_service:
   cmd.run:
     - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/ironic-service.yaml
     - unless: kubectl get svc -n {{ pillar['bmo_namespace'] }} |grep ironic
-    - onchanges:
+    - watch:
       - file: ironic_service_template
   require:
     - cmd: ironic_deploy
