@@ -116,6 +116,7 @@ ironic_htpasswd:
     - onchanges: 
       - file: ironic_credentials_username
       - file: ironic_credentials_password
+      - file: ironic_bmo_configmap
     - require:
       - file: temp_overlay_dirs
 {% endif %}
