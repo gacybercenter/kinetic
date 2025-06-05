@@ -248,6 +248,7 @@ ironic_bmo_configmap:
 bmo_service:
   kubernetes.service_present:
     - name: bmo-ironic
+    - 
     
 
 # Update certificate.yaml for TLS and MariaDB
