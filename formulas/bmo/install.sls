@@ -183,10 +183,9 @@ bmo_deploy:
     - name: kustomize build {{ pillar['temp_bmo_overlay'] }} | kubectl apply -f -
     - cwd: {{ pillar['temp_bmo_overlay'] }}
     - onchanges:
-      - file: bmo_kustomize_overlay
+      - file: bmo_ironic_env
     - require:
       - file: bmo_kustomize_overlay
-      - file: bmo_ironic_env
       - cmd: bmo_ironic_namespace
 {% endif %}
 
@@ -235,11 +234,7 @@ ironic_kustomize_overlay:
     - mode: 644
     - require:
       - file: temp_overlay_dirs
-    - onchanges:
-      - file: ironic_bmo_configmap
-      {% if pillar['deploy_basic_auth'] %}
-      - cmd: ironic_htpasswd
-      {% endif %}
+
 
 ironic_bmo_configmap:
   file.managed:
@@ -266,7 +261,6 @@ bmo_service:
   require:
     - cmd: ironic_deploy
     
-
 # Update certificate.yaml for TLS and MariaDB
 {% if pillar['deploy_tls'] %}
 update_tls_certificate:
@@ -294,8 +288,11 @@ ironic_deploy:
     - unless: kubectl get deployment -n {{ pillar['bmo_namespace'] }} baremetal-operator-ironic
     - require:
       - file: ironic_kustomize_overlay
+    - onchanges:
       - file: ironic_bmo_configmap
-      {% if pillar['deploy_tls'] %}
+      {% if pillar['deploy_basic_auth'] %}
+      - cmd: ironic_htpasswd
+      {% endif %}      {% if pillar['deploy_tls'] %}
       - file: update_tls_certificate
       {% endif %}
       {% if pillar['deploy_mariadb'] %}
