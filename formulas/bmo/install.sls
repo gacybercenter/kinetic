@@ -112,7 +112,7 @@ bmo_credentials_password:
 # Generate htpasswd for Ironic
 ironic_htpasswd:
   cmd.run:
-    - name: htpasswd -n -b -B {{ pillar['ironic_username'] }} {{ pillar['ironic_password'] }} > {{ pillar['temp_ironic_overlay'] }}/ironic-ironic_htpasswd
+    - name: htpasswd -n -b -B {{ pillar['ironic_username'] }} {{ pillar['ironic_password'] }} > {{ pillar['temp_ironic_overlay'] }}/ironic-htpasswd
     - onchanges: 
       - file: ironic_credentials_username
       - file: ironic_credentials_password
