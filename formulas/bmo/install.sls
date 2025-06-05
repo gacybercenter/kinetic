@@ -52,6 +52,9 @@ temp_overlay_dirs:
     - names:
         - {{ pillar['temp_bmo_overlay'] }}
         - {{ pillar['temp_ironic_overlay'] }}
+    - onchanges: 
+      - file: bmo_kustomize_overlay
+      - file: ironic_kustomize_overlay
     - mode: 755
     - makedirs: True
     - clean: True
@@ -80,7 +83,9 @@ ironic_credentials_username:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-username
     - contents: {{ pillar.get('ironic_username', grains['id'] | uuid) }}
     - mode: 600
-    - unless: test -f {{ pillar['ironic_auth_dir'] }}/ironic-username
+    - onchanges: 
+      - file: bmo_kustomize_overlay
+      - file: ironic_kustomize_overlay
     - require:
       - file: ironic_directories
 ironic_credentials_password:
@@ -88,7 +93,9 @@ ironic_credentials_password:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-password
     - contents: {{ pillar.get('ironic_password', grains['id'] | uuid) }}
     - mode: 600
-    - unless: test -f {{ pillar['ironic_auth_dir'] }}/ironic-password
+    - onchanges: 
+      - file: bmo_kustomize_overlay
+      - file: ironic_kustomize_overlay
     - require:
       - file: ironic_directories
 
@@ -115,8 +122,10 @@ bmo_credentials_password:
 # Generate htpasswd for Ironic
 ironic_htpasswd:
   cmd.run:
-    - name: htpasswd -n -b -B {{ pillar['ironic_username'] }} {{ pillar['ironic_password'] }} > {{ pillar['temp_ironic_overlay'] }}/ironic-htpasswd
-    - unless: test -f {{ pillar['temp_ironic_overlay'] }}/ironic-htpasswd
+    - name: htpasswd -n -b -B {{ pillar['ironic_username'] }} {{ pillar['ironic_password'] }} > {{ pillar['temp_ironic_overlay'] }}/ironic-ironic_htpasswd
+    - onchanges: 
+      - file: bmo_kustomize_overlay
+      - file: ironic_kustomize_overlay
     - require:
       - file: ironic_credentials_username
       - file: ironic_credentials_password
