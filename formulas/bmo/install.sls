@@ -285,7 +285,6 @@ ironic_deploy:
   cmd.run:
     - name: kustomize build {{ pillar['temp_ironic_overlay'] }} | kubectl apply -f -
     - cwd: {{ pillar['temp_ironic_overlay'] }}
-    - unless: kubectl get deployment -n {{ pillar['bmo_namespace'] }} baremetal-operator-ironic
     - require:
       - file: ironic_kustomize_overlay
     - onchanges:
