@@ -292,7 +292,8 @@ ironic_deploy:
       - file: ironic_bmo_configmap
       {% if pillar['deploy_basic_auth'] %}
       - cmd: ironic_htpasswd
-      {% endif %}      {% if pillar['deploy_tls'] %}
+      {% endif %}      
+      {% if pillar['deploy_tls'] %}
       - file: update_tls_certificate
       {% endif %}
       {% if pillar['deploy_mariadb'] %}
