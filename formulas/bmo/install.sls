@@ -84,7 +84,7 @@ ironic_credentials_username:
 ironic_credentials_password:
   file.managed:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-password
-    - contents: {{ pillar.get('ironic_password', grains['id'] | uuid) }}
+    - contents: {{ pillar.get('ironic_password') }}
     - mode: 600
     - require:
       - file: ironic_directories
