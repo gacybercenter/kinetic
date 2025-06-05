@@ -79,9 +79,6 @@ ironic_credentials_username:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-username
     - contents: {{ pillar.get('ironic_username', grains['id'] | uuid) }}
     - mode: 600
-    - onchanges: 
-      - file: bmo_kustomize_overlay
-      - file: ironic_kustomize_overlay
     - require:
       - file: ironic_directories
 ironic_credentials_password:
@@ -89,9 +86,6 @@ ironic_credentials_password:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-password
     - contents: {{ pillar.get('ironic_password', grains['id'] | uuid) }}
     - mode: 600
-    - onchanges: 
-      - file: bmo_kustomize_overlay
-      - file: ironic_kustomize_overlay
     - require:
       - file: ironic_directories
 
