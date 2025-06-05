@@ -173,7 +173,7 @@ bmo_kustomize_overlay:
 bmo_ironic_env:
   file.managed:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic.env
-    - source: {{ pillar['script_dir'] }}/config/default/ironic.env
+    - source: salt://formulas/bmo/files/ironic.env.j2
     - mode: 644
     - require:
       - file: temp_overlay_dirs
@@ -241,13 +241,8 @@ ironic_kustomize_overlay:
 ironic_bmo_configmap:
   file.managed:
     - name: {{ pillar['temp_ironic_overlay'] }}/ironic_bmo_configmap.env
+    - source: salt://formulas/bmo/files/ironic.env.j2
     - mode: 644
-    - contents: |
-        {% if pillar['restart_container_certificate_updated'] %}
-        RESTART_CONTAINER_CERTIFICATE_UPDATED={{ pillar['restart_container_certificate_updated'] }}
-        {% endif %}
-        IRONIC_EXTERNAL_IP={{ pillar['ironic_endpoint_ip'] }}
-        PROVISIONING_INTERFACE={{ pillar['ironic_interface'] }}
     - require:
       - file: temp_overlay_dirs
 bmo_service:
