@@ -140,12 +140,12 @@ bmo_kustomize_overlay:
         apiVersion: kustomize.config.k8s.io/v1beta1
         kind: Kustomization
         resources:
-          - ../../base
-          - ../..//namespace
+          - ../../../../../metal3/baremetal-operator/config/base
+          - ../../../../../metal3/baremetal-operator/confignamespace
         namespace: {{ pillar['bmo_namespace'] }}
         {% if pillar['deploy_basic_auth'] %}
         components:
-          - ../../components/basic-auth
+          - ../../../../../metal3/baremetal-operator/config/basic-auth
         secretGenerator:
           - name: ironic-credentials
             namespace: {{ pillar['bmo_namespace'] }}
@@ -155,7 +155,7 @@ bmo_kustomize_overlay:
         {% endif %}
         {% if pillar['deploy_tls'] %}
         components:
-          - ../../components/tls
+          - ../../../../../metal3/baremetal-operator/config/components/tls
         {% endif %}
         configMapGenerator:
           - name: ironic
@@ -200,7 +200,7 @@ ironic_kustomize_overlay:
         apiVersion: kustomize.config.k8s.io/v1beta1
         kind: Kustomization
         resources:
-          - ../../namespace
+          - ../../../../metal3/baremetal-operator/ironic-deployment/namespace
         namespace: {{ pillar['bmo_namespace'] }}
         namePrefix: baremetal-operator-
         {% if pillar['deploy_basic_auth'] %}
@@ -211,22 +211,22 @@ ironic_kustomize_overlay:
               - htpasswd=ironic-htpasswd
         {% if pillar['deploy_tls'] %}
         resources:
-          - ../basic-auth_tls
+          - ../../../../metal3/baremetal-operator/ironic-deployment/overlays/basic-auth_tls
         {% else %}
         resources:
-          - ../../base
+          - ../../../../metal3/baremetal-operator/ironic-deployment/base
         components:
-          - ../../components/basic-auth
+          - ../../../../metal3/baremetal-operator/ironic-deployment/components/basic-auth
         {% endif %}
         {% else %}
         {% if pillar['deploy_tls'] %}
         components:
-          - ../../components/tls
+          - ../../../../metal3/baremetal-operator/ironic-deployment/components/tls
         {% endif %}
         {% endif %}
         {% if pillar['deploy_mariadb'] %}
         components:
-          - ../../components/mariadb
+          - ../../../../metal3/baremetal-operator/ironic-deployment/components/mariadb
         {% endif %}
         configMapGenerator:
           - name: ironic-bmo-configmap
