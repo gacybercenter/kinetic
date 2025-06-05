@@ -14,7 +14,7 @@ bmo_ironic_namespace:
     - name: kubectl create namespace {{ pillar['bmo_namespace'] }} --dry-run=client -o yaml | kubectl apply -f -
     - unless: kubectl get namespace {{ pillar['bmo_namespace'] }}
     - require:
-      - pkg: install_prerequisties
+      - pkg: install_prerequisites
 
 # Clone kustomize manifests for BMO and Ironic
 clone_bmo_manifests:
