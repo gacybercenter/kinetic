@@ -257,9 +257,9 @@ ironic_service_template:
       - file: temp_overlay_dirs
 
 bmo_service:
-  kubernetes.service_present:
-    - name: bmo-ironic
-    - source: {{ pillar['temp_ironic_overlay'] }}/ironic-service.yaml
+  cmd.run:
+    - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/ironic-service.yaml
+    - unless kubectl get service ironic
   require:
     - cmd: ironic_deploy
     - file: ironic_service_template
