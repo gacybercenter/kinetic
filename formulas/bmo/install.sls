@@ -120,11 +120,9 @@ ironic_htpasswd:
   cmd.run:
     - name: htpasswd -n -b -B {{ pillar['ironic_username'] }} {{ pillar['ironic_password'] }} > {{ pillar['temp_ironic_overlay'] }}/ironic-ironic_htpasswd
     - onchanges: 
-      - file: bmo_kustomize_overlay
-      - file: ironic_kustomize_overlay
-    - require:
       - file: ironic_credentials_username
       - file: ironic_credentials_password
+    - require:
       - file: temp_overlay_dirs
 {% endif %}
 
@@ -170,6 +168,8 @@ bmo_kustomize_overlay:
     - mode: 644
     - require:
       - file: temp_overlay_dirs
+    - onchanges:
+      - file: 
       {% if pillar['deploy_basic_auth'] %}
       - file: bmo_credentials_username
       - file: bmo_credentials_password
@@ -241,6 +241,8 @@ ironic_kustomize_overlay:
     - mode: 644
     - require:
       - file: temp_overlay_dirs
+    - onchanges:
+      - file: ironic_bmo_configmap
       {% if pillar['deploy_basic_auth'] %}
       - cmd: ironic_htpasswd
       {% endif %}
@@ -265,10 +267,10 @@ ironic_service_template:
 bmo_service:
   cmd.run:
     - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/ironic-service.yaml
-    - unless: kubectl get service ironic
+    - onchanges:
+      - file: ironic_service_template
   require:
     - cmd: ironic_deploy
-    - file: ironic_service_template
     
 
 # Update certificate.yaml for TLS and MariaDB
