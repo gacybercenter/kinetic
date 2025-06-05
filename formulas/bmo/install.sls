@@ -174,6 +174,7 @@ bmo_ironic_env:
   file.managed:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic.env
     - source: salt://formulas/bmo/files/ironic.env.j2
+    - template: jinja
     - mode: 644
     - require:
       - file: temp_overlay_dirs
@@ -243,6 +244,7 @@ ironic_bmo_configmap:
     - name: {{ pillar['temp_ironic_overlay'] }}/ironic_bmo_configmap.env
     - source: salt://formulas/bmo/files/ironic.env.j2
     - mode: 644
+    - template: jinja
     - require:
       - file: temp_overlay_dirs
 bmo_service:
