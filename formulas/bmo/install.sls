@@ -52,12 +52,30 @@ create_kustomization:
                             value: "basic"
                           - name: IRONIC_ENDPOINT
                             value: "{{ pillar['ironic_endpoint_ip'] }}:6385"
-                      - name: ironic
-                        env:
-                          - name: HTTP_BASIC_AUTH_USER
-                            value: "{{ pillar['ironic_auth_username'] | default('admin') }}"
-                          - name: HTTP_BASIC_AUTH_PASS
-                            value: "{{ pillar['ironic_auth_password'] | default('password') }}"
+        ---
+        apiVersion: kustomize.config.k8s.io/v1beta1
+        kind: Kustomization
+        resources:
+          - config/default
+        patches:
+          - target:
+              kind: Deployment
+              name: ironic
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: ironic
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - name: ironic
+                      env:
+                        - name: HTTP_BASIC_AUTH_USER
+                          value: "{{ pillar['ironic_auth_username'] | default('admin') }}"
+                        - name: HTTP_BASIC_AUTH_PASS
+                          value: "{{ pillar['ironic_auth_password'] | default('password') }}"
     - require:
         - git: clone_bmo_manifests
 
