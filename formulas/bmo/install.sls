@@ -54,7 +54,6 @@ apply_bmo_manifests:
     - name: kubectl apply -k /tmp/baremetal-operator
     - require:
         - file: create_kustomization
-        - cmd: install_kube_vip
         - pkg: install_prerequisites
 # Ensure Ironic service is exposed via kube-vip
 expose_ironic_service:
