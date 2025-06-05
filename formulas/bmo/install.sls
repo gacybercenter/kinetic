@@ -262,6 +262,7 @@ bmo_service:
     - source: {{ pillar['temp_ironic_overlay'] }}/ironic-service.yaml
   require:
     - cmd: ironic_deploy
+    - file: ironic_service_template
     
 
 # Update certificate.yaml for TLS and MariaDB
