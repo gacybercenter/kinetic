@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: ironic
+    namespace: {{ pillar['bmo_namespace'] }}
+spec:
+    selector:
+      app: baremetal-operator-ironic
+    ports:
+    - protocol: TCP
+        port: 6385
+        targetPort: 6385
+    type: LoadBalancer
+    loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}

@@ -247,10 +247,21 @@ ironic_bmo_configmap:
     - template: jinja
     - require:
       - file: temp_overlay_dirs
+ironic_service_template:
+  file.managed:
+    - name: {{ pillar['temp_ironic_overlay'] }}/ironic-service.yaml
+    - source: salt:://formulas/bmo/files/service.j2
+    - mode: 644
+    - template: jinja
+    - require:
+      - file: temp_overlay_dirs
+
 bmo_service:
   kubernetes.service_present:
     - name: bmo-ironic
-    - 
+    - source: {{ pillar['temp_ironic_overlay'] }}/ironic-service.yaml
+  require:
+    - cmd: ironic_deploy
     
 
 # Update certificate.yaml for TLS and MariaDB
