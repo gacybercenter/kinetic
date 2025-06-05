@@ -95,16 +95,18 @@ bmo_credentials_username:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic-username
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-username
     - mode: 600
-    - require:
+    - onchanges:
       - file: ironic_credentials_username
+    - require:
       - file: temp_overlay_dirs
 bmo_credentials_password:
   file.managed:
     - name: {{ pillar['temp_bmo_overlay'] }}/ironic-password
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-password
     - mode: 600
-    - require:
+    - onchanges:
       - file: ironic_credentials_password
+    - require:
       - file: temp_overlay_dirs
 
 # Generate htpasswd for Ironic
