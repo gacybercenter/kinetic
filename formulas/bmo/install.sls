@@ -97,7 +97,6 @@ bmo_credentials_username:
     - mode: 600
     - require:
       - file: ironic_credentials_username
-      - file: ironic_credentials_password
       - file: temp_overlay_dirs
 bmo_credentials_password:
   file.managed:
@@ -105,7 +104,6 @@ bmo_credentials_password:
     - source: {{ pillar['ironic_auth_dir'] }}/ironic-password
     - mode: 600
     - require:
-      - file: ironic_credentials_username
       - file: ironic_credentials_password
       - file: temp_overlay_dirs
 
