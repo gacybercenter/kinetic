@@ -141,7 +141,7 @@ bmo_kustomize_overlay:
         kind: Kustomization
         resources:
           - ../../../../../metal3/baremetal-operator/config/base
-          - ../../../../../metal3/baremetal-operator/confignamespace
+          - ../../../../../metal3/baremetal-operator/config/namespace
         namespace: {{ pillar['bmo_namespace'] }}
         {% if pillar['deploy_basic_auth'] %}
         components:
