@@ -183,7 +183,8 @@ bmo_deploy:
   cmd.run:
     - name: kustomize build {{ pillar['temp_bmo_overlay'] }} | kubectl apply -f -
     - cwd: {{ pillar['temp_bmo_overlay'] }}
-    - unless: kubectl get deployment -n {{ pillar['bmo_namespace'] }} baremetal-operator-controller-manager
+    - onchanges:
+      - file: bmo_kustomize_overlay
     - require:
       - file: bmo_kustomize_overlay
       - file: bmo_ironic_env
