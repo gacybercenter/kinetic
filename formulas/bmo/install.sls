@@ -77,7 +77,7 @@ temp_overlay_dirs:
 ironic_credentials_username:
   file.managed:
     - name: {{ pillar['ironic_auth_dir'] }}/ironic-username
-    - contents: {{ pillar.get('ironic_username', grains['id'] | uuid) }}
+    - contents: {{ pillar.get('ironic_username') }}
     - mode: 600
     - require:
       - file: ironic_directories
