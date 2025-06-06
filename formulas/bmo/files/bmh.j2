@@ -1,19 +1,19 @@
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
 metadata:
-  name: {{ pillar['bmh']['name']}}
-  namespace: {{ pillar['bmo_namespace'] }}
+  name: {{ name }}
+  namespace: {{ namespace }}
 spec:
-  online: {{ pillar['bmh']['online'] }}
+  online: {{ online }}
   bmc:
-    address: {{ pillar['bmh']['bmc']['address'] }}
+    address: {{ address }}
     credentialsName: bmc-auth
-  bootMACAddress: {{ pillar['bootMACAddress'] }}
+  bootMACAddress: {{ bootMACAddress }}
   bootMode: UEFI
   image:
-    checksum: {{ pillar['bmh']['image']['checksum'] }}
+    checksum: {{ checksum }}
     checksumType: auto
     format: raw
-    url: {{ pillar['bmh']['image']['url'] }}
+    url: {{ url }}
   rootDeviceHints:
-    deviceName: {{ pillar['bmh']['rootDeviceHints']['deviceName'] }}
+    deviceName: {{ rootdevice }}
