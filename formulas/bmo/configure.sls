@@ -23,7 +23,7 @@ bmh-host-{{ host['name'] }}-temp:
     - mode: 644
     - template: jinja
     - require:
-      - file: temp_overlays_dirs
+      - file: temp_overlay_dirs
 bmh-{{ host['name'] }}:
   cmd.run:
     - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/bmh-{{ host['name'] }}-temp.yaml
