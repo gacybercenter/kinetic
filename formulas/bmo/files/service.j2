@@ -7,10 +7,14 @@ metadata:
     namespace: {{ pillar['bmo_namespace'] }}
 spec:
     selector:
-      app: baremetal-operator-ironic
+      matchLabels:
+        name: ironic
     ports:
       - protocol: TCP
         port: 6385
         targetPort: 6385
+      - protocol: TCP
+        port: 67
+        targetPort: 67
     type: LoadBalancer
     loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}
