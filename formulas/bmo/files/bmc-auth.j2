@@ -3,7 +3,7 @@ kind: Secret
 metadata:
   name: bmc-auth
   namespace: {{ pillar['bmo_namespace'] }}
-type: kubernetes.io/basic-auth
-stringData:
+type: Opaque
+data:
   username: ADMIN
   password: {{ pillar['ipmi-password'] }}
