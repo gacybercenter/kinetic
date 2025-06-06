@@ -10,9 +10,11 @@ spec:
         name: ironic
     ports:
       - protocol: TCP
+        name: ironic
         port: 6385
         targetPort: 6385
       - protocol: TCP
+        name: ironic-dnsmasq
         port: 67
         targetPort: 67
     type: LoadBalancer
