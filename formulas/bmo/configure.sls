@@ -26,7 +26,7 @@ bmh-host['name']-temp:
       - file: temp_overlays_dirs
 bmh-host['name']:
   cmd.run:
-    - name: kubectl apply -f {{ pillar[temp_ironic_overlay] }}/bmh-host['name']-temp.yaml
+    - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/bmh-host['name']-temp.yaml
     - onchanges:
       - file: bmh-host['name']-temp
 {% endfor %}
