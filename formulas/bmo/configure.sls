@@ -18,7 +18,7 @@ bmc-auth-secret:
 {% for host in pillar['bmh'] %}
 bmh-host-{{ host['name'] }}-temp:
   file.managed:
-    - name: {{ pillar['temp_ironic_overlay'] }}/bmh-{{ host['name'] }} -temp.yaml
+    - name: {{ pillar['temp_ironic_overlay'] }}/bmh-{{ host['name'] }}-temp.yaml
     - source: salt://formulas/bmo/files/bmh.j2
     - mode: 644
     - template: jinja
@@ -28,5 +28,5 @@ bmh-{{ host['name'] }}:
   cmd.run:
     - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/bmh-{{ host['name'] }}-temp.yaml
     - onchanges:
-      - file: bmh-{{ host['name'] }}-temp
+      - file: bmh-host-{{ host['name'] }}-temp
 {% endfor %}
