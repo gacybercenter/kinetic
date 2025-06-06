@@ -16,7 +16,7 @@ bmc-auth-secret:
       - file: bmc-auth-secret-template
 
 {% for host in pillar['bmh'] %}
-bmh-host-{% host['name'] %}-temp:
+bmh-host-{{ host['name'] }}-temp:
   file.managed:
     - name: {{ pillar['temp_ironic_overlay'] }}/bmh-{& host['name'] &} -temp.yaml
     - source: salt://formulas/bmo/files/bmh.j2
