@@ -257,7 +257,7 @@ ironic_service_template:
 bmo_service:
   cmd.run:
     - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/ironic-service.yaml
-    - watch:
+    - onchanges:
       - file: ironic_service_template
   require:
     - cmd: ironic_deploy
