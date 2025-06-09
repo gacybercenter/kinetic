@@ -10,6 +10,10 @@ spec:
         name: ironic
     ports:
       - protocol: TCP
+        name: web
+        port: 80
+        targetPort: 80
+      - protocol: TCP
         name: ironic
         port: 6385
         targetPort: 6385
