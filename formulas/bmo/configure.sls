@@ -10,8 +10,10 @@ bmc-auth-secret-template:
 bmc-auth-secret:
   kubernetes.secret_present:
     - name: bmc-auth
-    - source: salt://formulas/bmo/files/bmc-auth.j2
-    - template: jinja
+      namespace: {{ pillar['bmo_namespace'] }}
+      data:
+        username: ADMIN
+        password: {{ pillar['ipmi-password'] }}
 
 
 {% for host in pillar['bmh'] %}
