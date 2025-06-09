@@ -13,7 +13,7 @@ bmc-auth-secret:
     - onlyif:
       - ! kubectl get secret bmc-auth
     - watch:
-      - file bmc-auth-secret-template
+      - file: bmc-auth-secret-template
 
 
 {% for host in pillar['bmh'] %}
