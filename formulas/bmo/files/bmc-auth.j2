@@ -4,6 +4,6 @@ metadata:
   name: bmc-auth
   namespace: {{ pillar['bmo_namespace'] }}
 type: Opaque
-data:
+stringData:
   username: ADMIN
   password: {{ pillar['ipmi-password'] }}
