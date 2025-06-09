@@ -12,8 +12,7 @@ bmc-auth-secret:
     - name: bmc-auth
     - source: salt://formulas/bmo/files/bmc-auth.j2
     - template: jinja
-    - onchanges:
-      - file: bmc-auth-secret-template
+
 
 {% for host in pillar['bmh'] %}
 bmh-host-{{ host['name'] }}-temp:
