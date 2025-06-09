@@ -8,8 +8,10 @@ bmc-auth-secret-template:
     - mode: 644
     - template: jinja
 bmc-auth-secret:
-  cmd.run:
-    - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/bmc-auth.yaml
+  kubernetes.secret_present:
+    - name: bmc-auth
+    - source: salt://formulas/bmo/files/bmc-auth.j2
+    - template: jinja
     - onchanges:
       - file: bmc-auth-secret-template
 
