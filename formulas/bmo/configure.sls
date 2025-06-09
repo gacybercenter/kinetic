@@ -8,11 +8,12 @@ bmc-auth-secret-template:
     - mode: 644
     - template: jinja
 bmc-auth-secret:
-  kubernetes.secret_present:
-    - name: bmc-auth
-      namespace: {{ pillar['bmo_namespace'] }}
-      source: salt://formulas/bmo/files/bmc-auth.j2
-      template: jinja
+  cmd.run:
+    - name: kubectl apply -n {{ pillar['bmo_namespace'] }} -f {{ pillar['temp_ironic_overlay'] }}/bmc-auth.yaml
+    - onlyif:
+      - ! kubectl get secret bmc-auth
+    - watch:
+      - file bmc-auth-secret-template
 
 
 {% for host in pillar['bmh'] %}
