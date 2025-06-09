@@ -10,9 +10,7 @@ bmc-auth-secret-template:
 bmc-auth-secret:
   cmd.run:
     - name: kubectl apply -n {{ pillar['bmo_namespace'] }} -f {{ pillar['temp_ironic_overlay'] }}/bmc-auth.yaml
-    - onlyif:
-      - kubectl get secret bmc-auth -n {{ pillar['bmo_namespace'] }}
-    - watch:
+    - onchanges:
       - file: bmc-auth-secret-template
 
 
