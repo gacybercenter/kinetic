@@ -28,3 +28,19 @@ spec:
 
     type: LoadBalancer
     loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: baremetal-controller
+    namespace: {{ pillar['bmo_namespace'] }}
+spec:
+  selector: 
+    name: control-plane=controller-manager
+  ports:
+    - protocol: TCP
+      name: controller
+      port: 8443
+      targetPort: 8443
+ type: LoadBalancer
+ loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}
