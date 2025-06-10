@@ -6,12 +6,12 @@ validate_deployment_bmo_ironic:
   test.fail_without_changes:
     - name: "Nothing to deploy: deploy_bmo and deploy_ironic are both false"
     - failhard: True
-    - unless: {{ pillar['deploy_bmo'] }} or {{ pillar['deploy_ironic'] }}
+    - unless: {{ pillar['deploy_bmo'] }} || {{ pillar['deploy_ironic'] }}
 valid_deployment_mariadb_tls:
   test.fail_without_changes:
     - name: "MariaDB deployment requires TLS"
     - failhard: True
-    - onlyif: ! {{ pillar['deploy_tls'] }} and {{ pillar['deploy_mariadb'] }}
+    - onlyif: ! {{ pillar['deploy_tls'] }} && {{ pillar['deploy_mariadb'] }}
 
 # Install dependencies (kustomize, kubectl)
 install_dependencies:
