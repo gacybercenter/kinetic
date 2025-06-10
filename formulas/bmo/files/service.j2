@@ -36,7 +36,7 @@ metadata:
     namespace: {{ pillar['bmo_namespace'] }}
 spec:
     selector: 
-      name: control-plane=controller-manager
+      control-plane: controller-manager
     ports:
       - protocol: TCP
         name: controller
