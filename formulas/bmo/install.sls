@@ -76,6 +76,10 @@ ironic_bmo_configmap:
     - template: jinja
     - require:
       - file: temp_overlay_dirs
+bmo_environment_variables:
+  environ.setenv:
+    - name: IRONIC_HOST_IP
+    - value: {{ pillar['ironic_endpoint_ip'] }}
 
 bmo_deploy:
   cmd.run:
