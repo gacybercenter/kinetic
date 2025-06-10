@@ -78,12 +78,7 @@ ironic_bmo_configmap:
 
 bmo_deploy:
   cmd.run:
-    - name: {{ pillar['script_dir'] }}/tools/deploy.sh -b -i -t -m
-bmo_deploy_status:
-  file.managed:
-    - name: {{ pillar['script_dir'] }}/toos/deployed
-    - unless: -f {{ pillar['script_dir'] }}/toos/deployed
-    - require_in:
-      - cmd: bmo_deploy
+    - name: {{ pillar['script_dir'] }}/tools/deploy.sh -b -i -t -m && touch {{ pillar['script_dir'] }}/tools/deployed
+    - unless: -f {{ pillar['script_dir'] }}/tools/deployed
     
 
