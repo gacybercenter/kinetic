@@ -11,7 +11,7 @@ valid_deployment_mariadb_tls:
   test.fail_without_changes:
     - name: "MariaDB deployment requires TLS"
     - failhard: True
-    - onlyif: if [ {{ pillar['deploy_mariadb'] }} == 'true' ] && if [ {{ pillar['deploy_tls'] }} == 'false' ]
+    - onlyif: {{ pillar['deploy_mariadb'] }} && ! {{ pillar['deploy_tls'] }}
 
 # Install dependencies (kustomize, kubectl)
 install_dependencies:
