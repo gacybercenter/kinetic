@@ -21,5 +21,10 @@ spec:
         name: ironic-dnsmasq
         port: 67
         targetPort: 67
+      - protocol: TCP
+        name: ironic_http
+        port: 6180
+        targetPort: 6180
+
     type: LoadBalancer
     loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}
