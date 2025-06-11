@@ -33,11 +33,12 @@ install_dependencies:
     - unless: test -x /usr/local/bin/kustomize && kustomize version | grep v5.4.1
     - require:
       - pkg: install_dependencies
-helm_ingress:
+helm_ingress_repo:
   helm.repo_managed:
     - present:
       - name: nginx-ingress
         url: https://kubernetes.github.io/ingress-nginx
+helm_ingress_release:
   helm.release_present:
     - name: nginx-ingress
     - chart: ingress-nginx/ingress-nginx
