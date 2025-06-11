@@ -43,8 +43,6 @@ bmo_ironic_env:
     - source: salt://formulas/bmo/files/ironic.env.j2
     - template: jinja
     - mode: 644
-    - require:
-      - file: temp_overlay_dirs
 
 ironic_bmo_configmap:
   file.managed:
@@ -52,6 +50,3 @@ ironic_bmo_configmap:
     - source: salt://formulas/bmo/files/ironic.env.j2
     - mode: 644
     - template: jinja
-    - require:
-      - file: temp_overlay_dirs
-
