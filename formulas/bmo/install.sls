@@ -42,6 +42,7 @@ helm_ingress_release:
   helm.release_present:
     - name: nginx-ingress
     - chart: ingress-nginx/ingress-nginx
+    - namespace: ingress
     - kvflags:
         values: /tmp/ingress-values.yaml
     - require:
