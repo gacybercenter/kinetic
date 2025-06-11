@@ -13,6 +13,12 @@ valid_deployment_mariadb_tls:
     - failhard: True
     - onlyif: {{ pillar['deploy_mariadb'] }} && ! {{ pillar['deploy_tls'] }}
 
+ingress_values:
+  file.managed:
+    - name: /tmp/ingress-values.yaml
+    - source: salt://formulas/bmo/files/ingress-values.j2
+    - template: jinja
+
 # Install dependencies (kustomize, kubectl)
 install_dependencies:
   pkg.installed:
@@ -27,6 +33,20 @@ install_dependencies:
     - unless: test -x /usr/local/bin/kustomize && kustomize version | grep v5.4.1
     - require:
       - pkg: install_dependencies
+  helm.repo_managed:
+    - present:
+      - name: nginx-ingress
+        url: https://kubernetes.github.io/ingress-nginx
+  helm.release_present:
+    - name: nginx-ingress
+    - chart: ingress-nginx/ingress-nginx
+    - kvflags:
+        values: /tmp/ingress-values.yaml
+    - require:
+      - file: ingress_values
+    - watch:
+      - file: ingress_values
+        
 
 clone_bmo_repo:
   git.cloned:
@@ -50,3 +70,10 @@ ironic_bmo_configmap:
     - source: salt://formulas/bmo/files/ironic.env.j2
     - mode: 644
     - template: jinja
+bmo_deploy_env:
+  file.managed:
+    - name: {{ pillar['script_dir'] }}/deploy_env.sh
+    - mode: 644
+    - contents: |
+        export IRONIC_HOST=bmo
+        export IRONIC_HOST_IP=10.150.1.41

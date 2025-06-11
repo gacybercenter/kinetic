@@ -13,7 +13,6 @@ bmc-auth-secret:
     - onchanges:
       - file: bmc-auth-secret-template
 
-
 {% for host in pillar['bmh'] %}
 bmh-host-{{ host['name'] }}-temp:
   file.managed:
@@ -30,6 +29,7 @@ bmh-host-{{ host['name'] }}-temp:
         checksum: {{ host['image']['checksum'] }}
         url: {{ host['image']['url'] }}
         rootdevice: {{ host['rootDeviceHints']['deviceName'] }}
+
 bmh-{{ host['name'] }}:
   cmd.run:
     - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/bmh-{{ host['name'] }}-temp.yaml
