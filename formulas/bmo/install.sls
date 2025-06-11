@@ -38,6 +38,7 @@ helm_ingress_repo:
     - present:
       - name: nginx-ingress
         url: https://kubernetes.github.io/ingress-nginx
+        repo_update: true
 helm_ingress_release:
   helm.release_present:
     - name: nginx-ingress
