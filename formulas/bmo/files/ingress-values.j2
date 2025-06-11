@@ -4,7 +4,7 @@ controller:
     lbClass: kube-vip.io/kube-vip-class
   extraArgs:
     enable-ssl-passthrough: 'true'
-    tcp-services-configmap: baremetal-operator-systemfs/tcp-services
+    tcp-services-configmap: baremetal-operator-system/tcp-services
   config:
     use-forwarded-headers: 'true'
     ssl-redirect: 'true'
