@@ -39,15 +39,11 @@ helm_ingress_repo:
       - name: nginx-ingress
         url: https://kubernetes.github.io/ingress-nginx
         repo_update: true
-ingress_namespace:
-  cmd.run: 
-    - name: kubectl create ns ingress
-    - unless: kubectl get ns ingress
 helm_ingress_release:
   helm.release_present:
     - name: nginx-ingress
     - chart: ingress-nginx/ingress-nginx
-    - namespace: ingress
+    - namespace: {{ pillar['bmo_namespace'] }}
     - kvflags:
         values: /tmp/ingress-values.yaml
     - unless: helm list -n ingress |grep nginx-ingress
@@ -55,7 +51,6 @@ helm_ingress_release:
       - file: ingress_values
     - watch:
       - file: ingress_values
-        
 
 clone_bmo_repo:
   git.cloned:
