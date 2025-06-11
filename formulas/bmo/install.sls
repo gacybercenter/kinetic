@@ -37,31 +37,9 @@ clone_bmo_repo:
       - pkg: install_dependencies
     - unless: -f {{ pillar['script_dir'] }}
 
-# Create directories for Ironic data and auth
-ironic_directories:
-  file.directory:
-    - names:
-        - {{ pillar['ironic_data_dir'] }}
-        - {{ pillar['ironic_auth_dir'] }}
-    - mode: 755
-    - makedirs: True
-    - require:
-      - pkg: install_dependencies
-
-# Create temporary overlay directories
-temp_overlay_dirs:
-  file.directory:
-    - names:
-        - {{ pillar['temp_bmo_overlay'] }}
-        - {{ pillar['temp_ironic_overlay'] }}
-    - mode: 755
-    - makedirs: True
-    - require:
-      - file: ironic_directories
-
 bmo_ironic_env:
   file.managed:
-    - name: {{ pillar['temp_bmo_overlay'] }}/ironic.env
+    - name: {{ pillar['script_dir'] }}/config/default/ironic.env
     - source: salt://formulas/bmo/files/ironic.env.j2
     - template: jinja
     - mode: 644
@@ -70,20 +48,10 @@ bmo_ironic_env:
 
 ironic_bmo_configmap:
   file.managed:
-    - name: {{ pillar['temp_ironic_overlay'] }}/ironic_bmo_configmap.env
+    - name: {{ pillar['script_dir'] }}/ironic-deployment/default/ironic_bmo_configmap.env
     - source: salt://formulas/bmo/files/ironic.env.j2
     - mode: 644
     - template: jinja
     - require:
       - file: temp_overlay_dirs
-bmo_environment_variables:
-  environ.setenv:
-    - name: IRONIC_HOST_IP
-    - value: {{ pillar['ironic_endpoint_ip'] }}
-
-bmo_deploy:
-  cmd.run:
-    - name: {{ pillar['script_dir'] }}/tools/deploy.sh -b -i -t -m && touch {{ pillar['script_dir'] }}/tools/deployed
-    - unless: -f {{ pillar['script_dir'] }}/tools/deployed
-    
 
