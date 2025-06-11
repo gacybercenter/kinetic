@@ -50,6 +50,7 @@ helm_ingress_release:
     - namespace: ingress
     - kvflags:
         values: /tmp/ingress-values.yaml
+    - unless: helm list -n ingress |grep nginx-ingress
     - require:
       - file: ingress_values
     - watch:
