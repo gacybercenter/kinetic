@@ -32,7 +32,7 @@ bmh-userdata-{{ host['name'] }}-temp:
 
 bmh-userdata-{{ host['name'] }}-secret:
   cmd.run:
-    - name: kubectl apply -f {{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
+    - name: kubectl create secret generic userData-{{ host['name'] }} --from-file=userData={{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
     - onchanges:
       - file: bmh-userdata-{{ host['name'] }}-temp
 
