@@ -1,0 +1,11 @@
+#cloud-config
+users:
+  - default
+  - name: gcr
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    ssh_pwauth: True
+    passwd: {{ pillar['node_pass'] }}
+    ssh_authorized_keys:
+      - {{ pillar['node_deploy_key'] }}

@@ -21,6 +21,19 @@ bmc-auth-secret:
       - file: bmc-auth-secret-template
 
 {% for host in pillar['bmh'] %}
+bmh-userdata-{{ host['name'] }}-temp:
+  file.managed:
+    - name: {{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
+    - source: salt://formulas/bmo/files/cloudinit.j2
+    - mode: 644
+    - template: jinja
+
+bmh-userdata-{{ host['name'] }}-secret:
+  cmd.run:
+    - name: kubectl apply -f {{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
+    - onchanges:
+      - file: bmh-userdata-{{ host['name'] }}-temp
+
 bmh-host-{{ host['name'] }}-temp:
   file.managed:
     - name: {{ pillar['script_dir'] }}/bmh-{{ host['name'] }}-temp.yaml
