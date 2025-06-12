@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export IRONIC_HOST_IP={{ pillar['ironic_endpoint_ip'] }}
+export IRONIC_HOST={{ grains['id'] }}
+/opt/metal3/baremetal-operator/tools/deploy.sh {{pillar['deploy_args'] }}

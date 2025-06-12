@@ -1,0 +1,69 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: baremetal-operator-system/baremetal-operator-serving-cert
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"admissionregistration.k8s.io/v1","kind":"ValidatingWebhookConfiguration","metadata":{"annotations":{"cert-manager.io/inject-ca-from":"baremetal-operator-system/baremetal-operator-serving-cert"},"name":"baremetal-operator-validating-webhook-configuration"},"webhooks":[{"admissionReviewVersions":["v1","v1beta"],"clientConfig":{"service":{"name":"baremetal-operator-webhook-service","namespace":"baremetal-operator-system","path":"/validate-metal3-io-v1alpha1-baremetalhost"}},"failurePolicy":"Fail","name":"baremetalhost.metal3.io","rules":[{"apiGroups":["metal3.io"],"apiVersions":["v1alpha1"],"operations":["CREATE","UPDATE"],"resources":["baremetalhosts"]}],"sideEffects":"None"},{"admissionReviewVersions":["v1","v1beta"],"clientConfig":{"service":{"name":"baremetal-operator-webhook-service","namespace":"baremetal-operator-system","path":"/validate-metal3-io-v1alpha1-bmceventsubscription"}},"failurePolicy":"Fail","name":"bmceventsubscription.metal3.io","rules":[{"apiGroups":["metal3.io"],"apiVersions":["v1alpha1"],"operations":["CREATE","UPDATE"],"resources":["bmceventsubscriptions"]}],"sideEffects":"None"}]}
+  creationTimestamp: "2025-06-09T17:06:18Z"
+  generation: 2
+  name: baremetal-operator-validating-webhook-configuration
+  resourceVersion: "22857"
+  uid: efe3dc64-6e0f-4235-9dd7-1644cf42afcb
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURVRENDQWppZ0F3SUJBZ0lSQUlOaU1oc055ckhGRmR6M3c4ZHhNMU13RFFZSktvWklodmNOQVFFTEJRQXcKQURBZUZ3MHlOVEEyTURreE56QTJNVGhhRncweU5UQTVNRGN4TnpBMk1UaGFNQUF3Z2dFaU1BMEdDU3FHU0liMwpEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUNlZnhoQnVrQStKbU10SUF5UmJwc1BYdTRlaXA0M0lVNjFyU1lQClZCSllMNXp2cU1qVmEvVXJVU24vNVl6aUNQS0pzL1BLUHEwYWtvZUhuWTd5dzlGUWtXSFd5VDVRUEJPYzlEQjAKUkExTldlUjI5THR6YXFYR0hjbEg0ZjRMOWZpUVV5VVhwUEpjcW12MnZMVnNEOTJ0RXJqbnFWc2NSOEFyTTluQwpZYzRSSGxWbGxmSFoxaGNHUHdpd2hPa0VIeTBvbUhOaUVSQlRlYVpETERhQk53OHczUEdjSGk1N1g2dlR0emNZClhjK0FzRjJoV2FVWjhYLzhyUXJZMDRON1kxYXZIVHNWYWtGSjFHMkw4U0IxeFhaK1llTXE2RnJWZ3NaaGtla2YKbDQvL3lhdXE1d1RKN0N6YWFqaFpqc0Y2WG9EK3VrTE9Vc3FyZzRaa3M3akxzSzI1QWdNQkFBR2pnY1F3Z2NFdwpEZ1lEVlIwUEFRSC9CQVFEQWdXZ01Bd0dBMVVkRXdFQi93UUNNQUF3Z2FBR0ExVWRFUUVCL3dTQmxUQ0Jrb0pBClltRnlaVzFsZEdGc0xXOXdaWEpoZEc5eUxYZGxZbWh2YjJzdGMyVnlkbWxqWlM1aVlYSmxiV1YwWVd3dGIzQmwKY21GMGIzSXRjM2x6ZEdWdExuTjJZNEpPWW1GeVpXMWxkR0ZzTFc5d1pYSmhkRzl5TFhkbFltaHZiMnN0YzJWeQpkbWxqWlM1aVlYSmxiV1YwWVd3dGIzQmxjbUYwYjNJdGMzbHpkR1Z0TG5OMll5NWpiSFZ6ZEdWeUxteHZZMkZzCk1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQS9ITHEvL0FtM0pBUjlESXJCTW0xQmc1T0lVa3RtNEhBODZrODAKSlFkVUxwU042OGtzbFRNZzhlU2pRNlp6MURXN3I4VHVMVFdsazBmbU1nd1JLWkVFcFROaVlJQnRTY24vU1FHaApOZDlhTS9uUnNOVExoY1hQNkh6Z3NPV1U1amRzLzhCeVo1ckc2aGc0NTU5NFpFT3VsWHZXcFBQMlpqRFdsdW1hClkyaFJ2OEJkV2NjZnBJdGtXV2c5MUFqaVNDQ3RCWWtaa2h0c0FhdnpTOVZpOHRPNGVFZnV3cFF3WGFpRUtRa0oKM2Jwc3Yxa3JhTTBOZmRRK0UyWERtWGp2TjBMWithN2lWMDJOYmF5ZDRqWGY5eU1aS05FaDRjZEk4UWNtWHlZbApzWEh2TUduRWpHQmlYOFhSYU9aWjZjc1ZyNTR4dEN2eTV0T3htWDJzMlZKSE9QbVMKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+    service:
+      name: baremetal-operator-webhook-service
+      namespace: baremetal-operator-system
+      path: /validate-metal3-io-v1alpha1-baremetalhost
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: baremetalhost.metal3.io
+  namespaceSelector: {}
+  objectSelector: {}
+  rules:
+  - apiGroups:
+    - metal3.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - baremetalhosts
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 10
+- admissionReviewVersions:
+  - v1
+  - v1beta
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURVRENDQWppZ0F3SUJBZ0lSQUlOaU1oc055ckhGRmR6M3c4ZHhNMU13RFFZSktvWklodmNOQVFFTEJRQXcKQURBZUZ3MHlOVEEyTURreE56QTJNVGhhRncweU5UQTVNRGN4TnpBMk1UaGFNQUF3Z2dFaU1BMEdDU3FHU0liMwpEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUNlZnhoQnVrQStKbU10SUF5UmJwc1BYdTRlaXA0M0lVNjFyU1lQClZCSllMNXp2cU1qVmEvVXJVU24vNVl6aUNQS0pzL1BLUHEwYWtvZUhuWTd5dzlGUWtXSFd5VDVRUEJPYzlEQjAKUkExTldlUjI5THR6YXFYR0hjbEg0ZjRMOWZpUVV5VVhwUEpjcW12MnZMVnNEOTJ0RXJqbnFWc2NSOEFyTTluQwpZYzRSSGxWbGxmSFoxaGNHUHdpd2hPa0VIeTBvbUhOaUVSQlRlYVpETERhQk53OHczUEdjSGk1N1g2dlR0emNZClhjK0FzRjJoV2FVWjhYLzhyUXJZMDRON1kxYXZIVHNWYWtGSjFHMkw4U0IxeFhaK1llTXE2RnJWZ3NaaGtla2YKbDQvL3lhdXE1d1RKN0N6YWFqaFpqc0Y2WG9EK3VrTE9Vc3FyZzRaa3M3akxzSzI1QWdNQkFBR2pnY1F3Z2NFdwpEZ1lEVlIwUEFRSC9CQVFEQWdXZ01Bd0dBMVVkRXdFQi93UUNNQUF3Z2FBR0ExVWRFUUVCL3dTQmxUQ0Jrb0pBClltRnlaVzFsZEdGc0xXOXdaWEpoZEc5eUxYZGxZbWh2YjJzdGMyVnlkbWxqWlM1aVlYSmxiV1YwWVd3dGIzQmwKY21GMGIzSXRjM2x6ZEdWdExuTjJZNEpPWW1GeVpXMWxkR0ZzTFc5d1pYSmhkRzl5TFhkbFltaHZiMnN0YzJWeQpkbWxqWlM1aVlYSmxiV1YwWVd3dGIzQmxjbUYwYjNJdGMzbHpkR1Z0TG5OMll5NWpiSFZ6ZEdWeUxteHZZMkZzCk1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQS9ITHEvL0FtM0pBUjlESXJCTW0xQmc1T0lVa3RtNEhBODZrODAKSlFkVUxwU042OGtzbFRNZzhlU2pRNlp6MURXN3I4VHVMVFdsazBmbU1nd1JLWkVFcFROaVlJQnRTY24vU1FHaApOZDlhTS9uUnNOVExoY1hQNkh6Z3NPV1U1amRzLzhCeVo1ckc2aGc0NTU5NFpFT3VsWHZXcFBQMlpqRFdsdW1hClkyaFJ2OEJkV2NjZnBJdGtXV2c5MUFqaVNDQ3RCWWtaa2h0c0FhdnpTOVZpOHRPNGVFZnV3cFF3WGFpRUtRa0oKM2Jwc3Yxa3JhTTBOZmRRK0UyWERtWGp2TjBMWithN2lWMDJOYmF5ZDRqWGY5eU1aS05FaDRjZEk4UWNtWHlZbApzWEh2TUduRWpHQmlYOFhSYU9aWjZjc1ZyNTR4dEN2eTV0T3htWDJzMlZKSE9QbVMKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+    service:
+      name: baremetal-operator-webhook-service
+      namespace: baremetal-operator-system
+      path: /validate-metal3-io-v1alpha1-bmceventsubscription
+      port: 443
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: bmceventsubscription.metal3.io
+  namespaceSelector: {}
+  objectSelector: {}
+  rules:
+  - apiGroups:
+    - metal3.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - bmceventsubscriptions
+    scope: '*'
+  sideEffects: None
+  timeoutSeconds: 10

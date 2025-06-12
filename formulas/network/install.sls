@@ -63,6 +63,7 @@ network_packages:
       - neutron-metadata-agent
       - python3-openstackclient
       - python3-tornado
+      - python3-neutron-taas
 
 network_pip:
   pip.installed:
@@ -71,6 +72,7 @@ network_pip:
     - names:
       - python-openstackclient
       - tornado
+      - virtualenv
 
 salt-pip_installs:
   pip.installed:
@@ -79,6 +81,7 @@ salt-pip_installs:
     - pkgs:
       - python-openstackclient
       - tornado
+      - virtualenv
     - require:
       - pip: network_pip
 

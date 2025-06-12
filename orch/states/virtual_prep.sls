@@ -71,6 +71,7 @@ qemu-img resize -f raw /kvm/vms/{{ hostname }}/disk0.raw {{ pillar['hosts'][type
         hostname: {{ hostname }}
         master_record: {{ pillar['salt']['record'] }}
         salt_version: stable {{ salt['pillar.get']('salt:version', 'latest') }}
+        salt_bootstrap: {{ pillar['salt']['bootstrap_url'] }}
     - require_in:
       - report_build_success
 

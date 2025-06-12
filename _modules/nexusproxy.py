@@ -263,6 +263,7 @@ def add_proxy_repository(host: str,
                          indexType: str = None,
                          indexUrl: str = None,
                          conn_port: str = None,
+                         dist: str = None,
                          timeout=60,
                          **kwargs
                          ):
@@ -302,21 +303,6 @@ def add_proxy_repository(host: str,
                 "httpClient": {
                     "blocked": False,
                     "autoBlock": True,
-                    "connection": {
-                        "retries": 0,
-                        "userAgentSuffix": "string",
-                        "timeout": 60,
-                        "enableCircularRedirects": False,
-                        "enableCookies": False,
-                        "useTrustStore": False
-                        },
-                    "authentication": {
-                        "type": "username",
-                        "username": "string",
-                        "password": "string",
-                        "ntlmHost": "string",
-                        "ntlmDomain": "string"
-                        }
                     },
                 "routingRule": "string",
                 "replication": {
@@ -324,13 +310,20 @@ def add_proxy_repository(host: str,
                     "assetPathRegex": "string"
                     }
                 }
-    if repoType == "apt":
+    if repoType == "apt" and dist is None:
         payload.update({
                     "apt": {
                         "distribution": "*",
                         "flat": False
                         }
                     })
+    elif repoType == "apt" and dist is not None:
+        payload.update({
+                     "apt": {
+                         "distribution": dist,
+                         "flat": False
+                     }
+        })
     elif repoType == "yum":
         payload.update({
             "yumSigning": {
