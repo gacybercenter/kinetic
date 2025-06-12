@@ -10,7 +10,7 @@ deploy_script:
 
 bmc-auth-secret-template:
   file.managed:
-    - name: {{ pillar['temp_ironic_overlay'] }}/bmc-auth.yaml
+    - name: {{ pillar['script_dir'] }}/bmc-auth.yaml
     - source: salt://formulas/bmo/files/bmc-auth.j2
     - mode: 644
     - template: jinja
@@ -23,7 +23,7 @@ bmc-auth-secret:
 {% for host in pillar['bmh'] %}
 bmh-host-{{ host['name'] }}-temp:
   file.managed:
-    - name: {{ pillar['temp_ironic_overlay'] }}/bmh-{{ host['name'] }}-temp.yaml
+    - name: {{ pillar['script_dir'] }}/bmh-{{ host['name'] }}-temp.yaml
     - source: salt://formulas/bmo/files/bmh.j2
     - mode: 644
     - template: jinja
