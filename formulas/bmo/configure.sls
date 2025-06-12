@@ -52,6 +52,7 @@ bmh-host-{{ host['name'] }}-temp:
         url: {{ host['image']['url'] }}
         format: {{ host['image']['format'] }}
         rootdevice: {{ host['rootDeviceHints']['deviceName'] }}
+        userdata: userdata-{{ host['name'] }}
 
 bmh-{{ host['name'] }}:
   cmd.run:
