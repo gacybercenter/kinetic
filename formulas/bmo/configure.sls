@@ -35,6 +35,7 @@ bmh-host-{{ host['name'] }}-temp:
         bootMACAddress: {{ host['bootMACAddress'] }}
         checksum: {{ host['image']['checksum'] }}
         url: {{ host['image']['url'] }}
+        format: {{ host['image']['format'] }}
         rootdevice: {{ host['rootDeviceHints']['deviceName'] }}
 
 bmh-{{ host['name'] }}:
