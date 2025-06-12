@@ -1,6 +1,13 @@
 include:
   - /formulas/bmo/install
 
+deploy_script:
+  file.managed:
+    - name: {{ pillar['script_dir'] }}/deploy_state.sh
+    - source: salt://formulas/bmo/files/deploy.j2
+    - mode: 700
+    - template: jinja
+
 bmc-auth-secret-template:
   file.managed:
     - name: {{ pillar['temp_ironic_overlay'] }}/bmc-auth.yaml
