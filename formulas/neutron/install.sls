@@ -57,6 +57,7 @@ neutron_packages:
       - neutron-plugin-ml2
       - python3-openstackclient
       - python3-tornado
+      - python3-neutron-taas
 
 neutron_pip:
   pip.installed:
@@ -65,6 +66,7 @@ neutron_pip:
     - names:
       - python-openstackclient
       - tornado
+      - virtualenv
 
 salt-pip_installs:
   pip.installed:
@@ -73,6 +75,7 @@ salt-pip_installs:
     - pkgs:
       - python-openstackclient
       - tornado
+      - virtualenv
     - require:
       - pip: neutron_pip
 
