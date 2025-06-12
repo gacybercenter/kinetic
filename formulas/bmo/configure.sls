@@ -16,7 +16,7 @@ bmc-auth-secret-template:
     - template: jinja
 bmc-auth-secret:
   cmd.run:
-    - name: kubectl apply -n {{ pillar['bmo_namespace'] }} -f {{ pillar['temp_ironic_overlay'] }}/bmc-auth.yaml
+    - name: kubectl apply -n {{ pillar['bmo_namespace'] }} -f {{ pillar['script_dir'] }}/bmc-auth.yaml
     - onchanges:
       - file: bmc-auth-secret-template
 
@@ -39,7 +39,7 @@ bmh-host-{{ host['name'] }}-temp:
 
 bmh-{{ host['name'] }}:
   cmd.run:
-    - name: kubectl apply -f {{ pillar['temp_ironic_overlay'] }}/bmh-{{ host['name'] }}-temp.yaml
+    - name: kubectl apply -f {{ pillar['script_dir'] }}/bmh-{{ host['name'] }}-temp.yaml
     - onchanges:
       - file: bmh-host-{{ host['name'] }}-temp
 {% endfor %}
