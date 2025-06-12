@@ -27,6 +27,8 @@ bmh-userdata-{{ host['name'] }}-temp:
     - source: salt://formulas/bmo/files/cloudinit.j2
     - mode: 644
     - template: jinja
+    - defaults:
+        name: {{ host['name'] }}
 
 bmh-userdata-{{ host['name'] }}-secret:
   cmd.run:
