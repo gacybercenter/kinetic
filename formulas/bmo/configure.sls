@@ -49,6 +49,7 @@ bmh-networkdata-{{ host['name'] }}-temp:
         ip: {{ host['network']['ip'] }}
         prefix: 24
         gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+        nameserver: {{ pillar['dhcp-options']['dns'] }}
 
 bmh-networkdata-{{ host['name'] }}-secret:
   cmd.run:
