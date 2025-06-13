@@ -36,6 +36,25 @@ bmh-userdata-{{ host['name'] }}-secret:
     - onchanges:
       - file: bmh-userdata-{{ host['name'] }}-temp
 
+bmh-networkdata-{{ host['name'] }}-temp:
+  file.managed:
+    - name: {{ pillar['script_dir'] }}/bmh-networkdata-{{ host['name'] }}.yaml
+    - source: salt://formulas/bmo/files/network-data.j2
+    - mode: 644
+    - template: jinja
+    - defaults:
+        name: {{ host['name'] }}
+        mac: {{ host['bootMACAddress'] }}
+        ip: {{ host['network']['ip'] }}
+        prefix: 24
+        gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+
+bmh-networkdata-{{ host['name'] }}-secret:
+  cmd.run:
+    - name: kubectl -n {{ pillar['bmo_namespace'] }} create secret generic networkdata-{{ host['name'] }} --from-file=networkData={{ pillar['script_dir'] }}/bmh-networkdata-{{ host['name'] }}.yaml
+    - onchanges:
+      - file: bmh-networkdata-{{ host['name'] }}-temp
+
 bmh-host-{{ host['name'] }}-temp:
   file.managed:
     - name: {{ pillar['script_dir'] }}/bmh-{{ host['name'] }}-temp.yaml
@@ -53,6 +72,7 @@ bmh-host-{{ host['name'] }}-temp:
         format: {{ host['image']['format'] }}
         rootdevice: {{ host['rootDeviceHints']['deviceName'] }}
         userdata: userdata-{{ host['name'] }}
+        networkdata: networkdata-{{ host[''name'] }}
 
 bmh-{{ host['name'] }}:
   cmd.run:
