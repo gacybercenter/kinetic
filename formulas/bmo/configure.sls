@@ -72,7 +72,7 @@ bmh-host-{{ host['name'] }}-temp:
         format: {{ host['image']['format'] }}
         rootdevice: {{ host['rootDeviceHints']['deviceName'] }}
         userdata: userdata-{{ host['name'] }}
-        networkdata: networkdata-{{ host[''name'] }}
+        networkdata: networkdata-{{ host['name'] }}
 
 bmh-{{ host['name'] }}:
   cmd.run:
