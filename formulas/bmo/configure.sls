@@ -47,7 +47,7 @@ bmh-networkdata-{{ host['name'] }}-temp:
         mac: {{ host['bootMACAddress'] }}
         domain: {{ pillar['dhcp-options']['domain'] }}
         ip: {{ host['network']['ip'] }}
-        prefix: 24
+        prefix: "24"
         gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
         nameserver: {{ pillar['dhcp-options']['dns'] }}
 

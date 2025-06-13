@@ -1,13 +1,25 @@
-network:
-  version: 2
-  ethernets:
-    enp1s0:
-      match:
-        macaddress: {{ mac }}
-      dhcp4: false
-      addresses:
-        - {{ ip }}/{{ prefix }}
-      gateway4: {{ gateway }}
-      nameservers:
-        search: [ {{ domain }} ]
-        addresses: [ {{nameserver}} ]
+{
+  "links": [
+    {
+      "id": "{{ pillar['hosts']['compute']['interface'] }}",
+      "type": "phy",
+      "ethernet_mac_address": "{{ mac }}"
+    }
+  ],
+  "networks": [
+    {
+      "id": "{{ pillar['hosts']['compute']['interface'] }}",
+      "link": "{{ pillar['hosts']['compute']['interface'] }}",
+      "type": "ipv4"
+      "host": "{{ ip }}"
+      "netmask": "{{ pillar['networking']['subnets']['management'] }}"
+      "gateway": "{{ gateway }}"
+    }
+  ],
+  "services": [
+    {
+      "type": "dns",
+      "address": "{{ nameservers }}"
+    }
+  ]
+}
