@@ -29,6 +29,7 @@ bmh-userdata-{{ host['name'] }}-temp:
     - template: jinja
     - defaults:
         name: {{ host['name'] }}
+        pass: {{ pillar['hosts']['compute']['root_password_crypted'] }}
 
 bmh-userdata-{{ host['name'] }}-secret:
   cmd.run:

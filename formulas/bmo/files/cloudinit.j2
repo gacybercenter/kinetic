@@ -6,6 +6,6 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: false
     ssh_pwauth: True
-    passwd: "{{ pillar['hosts'][type]['root_password_crypted'] }}"
+    passwd: "{{ pass }}"
     ssh_authorized_keys:
         - {{ pillar['node_deploy_key'] }}
