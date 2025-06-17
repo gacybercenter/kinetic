@@ -10,9 +10,9 @@
     {
       "id": "{{ pillar['hosts']['compute']['interface'] }}",
       "link": "{{ pillar['hosts']['compute']['interface'] }}",
-      "type": "ipv4"
-      "host": "{{ ip }}"
-      "netmask": "{{ pillar['networking']['subnets']['management'] }}"
+      "type": "ipv4",
+      "host": "{{ ip }}",
+      "netmask": "{{ pillar['networking']['subnets']['management'] }}",
       "gateway": "{{ gateway }}"
     }
   ],
