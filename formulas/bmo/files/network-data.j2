@@ -11,7 +11,7 @@
       "id": "{{ pillar['hosts']['compute']['interface'] }}",
       "link": "{{ pillar['hosts']['compute']['interface'] }}",
       "type": "ipv4",
-      "host": "{{ ip }}",
+      "ip_address": "{{ ip }}",
       "netmask": "{{ pillar['networking']['subnets']['management'] }}",
       "gateway": "{{ gateway }}"
     }
