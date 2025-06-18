@@ -21,6 +21,43 @@ bmc-auth-secret:
       - file: bmc-auth-secret-template
 
 {% for host in pillar['bmh'] %}
+bmh-userdata-{{ host['name'] }}-temp:
+  file.managed:
+    - name: {{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
+    - source: salt://formulas/bmo/files/cloudinit.j2
+    - mode: 644
+    - template: jinja
+    - defaults:
+        name: {{ host['name'] }}
+        pass: {{ pillar['hosts']['compute']['root_password_crypted'] }}
+
+bmh-userdata-{{ host['name'] }}-secret:
+  cmd.run:
+    - name: kubectl -n {{ pillar['bmo_namespace'] }} create secret generic userdata-{{ host['name'] }} --from-file=userData={{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
+    - onchanges:
+      - file: bmh-userdata-{{ host['name'] }}-temp
+
+bmh-networkdata-{{ host['name'] }}-temp:
+  file.managed:
+    - name: {{ pillar['script_dir'] }}/bmh-networkdata-{{ host['name'] }}.yaml
+    - source: salt://formulas/bmo/files/network-data.j2
+    - mode: 644
+    - template: jinja
+    - defaults:
+        name: {{ host['name'] }}
+        mac: {{ host['bootMACAddress'] }}
+        domain: {{ pillar['dhcp-options']['domain'] }}
+        ip: {{ host['network']['ip'] }}
+        prefix: {{ pillar['networking']['subnets']['management'].split("/")[1] }} 
+        gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+        nameserver: {{ pillar['dhcp-options']['dns'] }}
+
+bmh-networkdata-{{ host['name'] }}-secret:
+  cmd.run:
+    - name: kubectl -n {{ pillar['bmo_namespace'] }} create secret generic networkdata-{{ host['name'] }} --from-file=networkData={{ pillar['script_dir'] }}/bmh-networkdata-{{ host['name'] }}.yaml
+    - onchanges:
+      - file: bmh-networkdata-{{ host['name'] }}-temp
+
 bmh-host-{{ host['name'] }}-temp:
   file.managed:
     - name: {{ pillar['script_dir'] }}/bmh-{{ host['name'] }}-temp.yaml
@@ -37,6 +74,8 @@ bmh-host-{{ host['name'] }}-temp:
         url: {{ host['image']['url'] }}
         format: {{ host['image']['format'] }}
         rootdevice: {{ host['rootDeviceHints']['deviceName'] }}
+        userdata: userdata-{{ host['name'] }}
+        networkdata: networkdata-{{ host['name'] }}
 
 bmh-{{ host['name'] }}:
   cmd.run:

@@ -1,0 +1,25 @@
+{
+  "links": [
+    {
+      "id": "{{ pillar['hosts']['compute']['interface'] }}",
+      "type": "phy",
+      "ethernet_mac_address": "{{ mac }}"
+    }
+  ],
+  "networks": [
+    {
+      "id": "{{ pillar['hosts']['compute']['interface'] }}",
+      "link": "{{ pillar['hosts']['compute']['interface'] }}",
+      "type": "ipv4",
+      "ip_address": "{{ ip }}",
+      "netmask": "{{ prefix }}",
+      "gateway": "{{ gateway }}"
+    }
+  ],
+  "services": [
+    {
+      "type": "dns",
+      "address": "{{ nameserver }}"
+    }
+  ]
+}
