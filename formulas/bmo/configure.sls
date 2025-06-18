@@ -33,7 +33,7 @@ bmh-userdata-{{ host['name'] }}-temp:
 
 bmh-userdata-{{ host['name'] }}-secret:
   cmd.run:
-    - name: kubectl -n {{ pillar['bmo_namespace'] }} create secret generic userdata-{{ host['name'] }} --from-file=userData={{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
+    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete secret userdata-{{ host['name'] }} && kubectl -n {{ pillar['bmo_namespace'] }} create secret generic userdata-{{ host['name'] }} --from-file=userData={{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
     - onchanges:
       - file: bmh-userdata-{{ host['name'] }}-temp
 
@@ -54,7 +54,7 @@ bmh-networkdata-{{ host['name'] }}-temp:
 
 bmh-networkdata-{{ host['name'] }}-secret:
   cmd.run:
-    - name: kubectl -n {{ pillar['bmo_namespace'] }} create secret generic networkdata-{{ host['name'] }} --from-file=networkData={{ pillar['script_dir'] }}/bmh-networkdata-{{ host['name'] }}.yaml
+    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete secret networkdata-{{ host['name'] }} && kubectl -n {{ pillar['bmo_namespace'] }} create secret generic networkdata-{{ host['name'] }} --from-file=networkData={{ pillar['script_dir'] }}/bmh-networkdata-{{ host['name'] }}.yaml
     - onchanges:
       - file: bmh-networkdata-{{ host['name'] }}-temp
 
