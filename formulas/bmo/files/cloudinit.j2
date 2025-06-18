@@ -9,7 +9,7 @@ users:
     passwd: "{{ pass }}"
     ssh_authorized_keys:
         - {{ pillar['node_deploy_key'] }}
-run_cmd:
+runcmd:
   - ['curl', 'https://gitlab.com/gacybercenter/open/salt-bootstrap/-/raw/develop/bootstrap-salt.sh', '-o', 'bootstrap.sh' ]
   - ['chmod', '700', 'bootstrap.sh']
   - ['./bootstrap.sh', '-A', '10.150.1.31']
