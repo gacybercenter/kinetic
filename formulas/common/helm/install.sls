@@ -2,6 +2,10 @@ Install Salt Kubernetes extension:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - name: saltext-kubernetes
+Install k8s python sdk:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - name: kubernetes
 # Ensure wget is installed for downloading Helm
 install_wget:
   pkg.installed:
