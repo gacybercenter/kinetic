@@ -83,7 +83,7 @@ pyroute2_patch:
 ### for the bond should be created.  This is separate and a prereq for any
 ### other types of netdevs (e.g. bridge)
     {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-/etc/systemd/network/{{ network }}_bond.netdev:
+dd/etc/systemd/network/{{ network }}_bond.netdev:
   file.managed:
     - contents: |
         [NetDev]
@@ -106,44 +106,14 @@ pyroute2_patch:
       {% endfor %}
     {% endif %}
 
-### If the interface is a bridge, there are three different files
-### That need to be created
-### 1. a .netdev file creating the bridged interface object
-### 2. a .network file associating the physical interface with the bridged interface object
-### 3. a .network file configuring the bridge with address(es)
-###
-### 1. Create netdev
-    {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
-/etc/systemd/network/{{ network }}_br.netdev:
-  file.managed:
-    - contents: |
-        [NetDev]
-        Name={{ network }}_br
-        Kind=bridge
-
-### Associate bridge netdev with physical interface (it could either be an individual interface,
-### or a bond that was created above)
-/etc/systemd/network/{{ network }}_br.network:
-  file.managed:
-    - contents: |
-        [Match]
-        {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-        Name={{ network }}_bond
-        {% else %}
-        Name={{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
-        {% endif %}
-        [Network]
-        Bridge={{ network }}_br
-    {% endif %}
-
-  {{ interface }}_{{ network }}:
-    network.managed:
-      - enabled: True
-      - type: eth
-      - proto: static
-      - ipaddr: {{ ip_address }}
-      - netmask: {{ netmask }}
-      - dns:
-          - {{ pillar['dhcp-options']['dns'] | join(', ') }}
+{{ interface }}_{{ network }}:
+  network.managed:
+    - enabled: True
+    - type: eth
+    - proto: static
+    - ipaddr: {{ ip_address }}
+    - netmask: {{ netmask }}
+    - dns:
+        - {{ pillar['dhcp-options']['dns'] | join(', ') }}
 
 {% endfor %}
