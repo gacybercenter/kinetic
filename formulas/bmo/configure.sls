@@ -79,7 +79,7 @@ bmh-host-{{ name }}-temp:
 
 bmh-{{ name }}:
   cmd.run:
-    - name: kubectl apply -f {{ pillar['script_dir'] }}/bmh-{{ name }}-temp.yaml
+    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete bmh bmh-{{ name }}-temp && kubectl apply -f {{ pillar['script_dir'] }}/bmh-{{ name }}-temp.yaml
     - onchanges:
       - file: bmh-host-{{ name }}-temp
 {% endfor %}
