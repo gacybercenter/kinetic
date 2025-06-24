@@ -1,0 +1,18 @@
+{% set mac = salt['kinetic-k8s.get_mac_by_interface_name'](baremetal-operator-system host iface) %}
+network:
+  version: 2
+  ethernets:
+    {{ network }}-interface:
+      match:
+        macaddress: {{ mac }}
+      addresses:
+      - "{{ ip }}"
+      nameservers:
+        addresses:
+        - {{ dns }}
+        search:
+        - {{ domain }}
+    {% if network == 'management' %}
+      gateway4: {{ gw }}
+    {% endif %}
+      dhcp4: false 
