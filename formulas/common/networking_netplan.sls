@@ -69,7 +69,7 @@ pyroute2_patch:
     - target: /run/systemd/resolve/resolv.conf
     - force: True
 
-  {% for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
+{% for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
   {% set subnet_cidr = pillar['networking']['subnets'][network] %}
   {% set cidr_prefix = subnet_cidr.split('/')[1] %}
   {% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
@@ -79,41 +79,14 @@ pyroute2_patch:
   {% set ip_address = base_ip ~ '.' ~ host_id %}
   {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
 
-### Test for number of physical interfaces listed.  If >1, it is a bond and a netdev
-### for the bond should be created.  This is separate and a prereq for any
-### other types of netdevs (e.g. bridge)
-    {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-dd/etc/systemd/network/{{ network }}_bond.netdev:
-  file.managed:
-    - contents: |
-        [NetDev]
-        Name={{ network }}_bond
-        Kind=bond
-        [Bond]
-        Mode=802.3ad
-        MIIMonitorSec=100ms
-
-### For every physical interface that is supposed to be part of the bond,
-### create a network file that associates it accordingly
-      {% for interface in salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') %}
-/etc/systemd/network/{{ interface }}_bond.network:
-  file.managed:
-    - contents: |
-        [Match]
-        Name={{ interface }}
-        [Network]
-        Bond={{ network }}_bond
-      {% endfor %}
-    {% endif %}
-
 {{ interface }}:
   network.managed:
     - enabled: True
     - type: eth
-    - proto: static
   {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
     - bridge: {{ interface }}_br
   {% else %}
+    - proto: static
     - ipaddr: {{ ip_address }}
     - netmask: {{ netmask }}
     - dns:
