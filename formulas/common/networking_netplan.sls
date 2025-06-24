@@ -134,5 +134,5 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
     - require:
       - network: {{ interface }}
 
-    {% endif $}
+    {% endif %}
 {% endfor %}
