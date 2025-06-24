@@ -80,6 +80,32 @@ pyroute2_patch:
   {% set base_ip = subnet_cidr.split('.0/')[0] %}
   {% set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
   {% set ip_address = base_ip ~ '.' ~ host_id %}
+    {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+{{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}:
+  network.managed:
+    - enabled: True
+    - type: slave
+    - master: bond-{{ network }}
+{{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] }}:
+  network.managed:
+    - enabled: True
+    - type: slave
+    - master: bond-{{ network }}
+bond-{{ network }}:
+  network.managed:
+    - enabled: True
+    - type: bond
+    - proto: static
+    - ipaddr: {{ ip_address }}
+    - netmask: {{ netmask }}
+    - dns:
+        - {{ pillar['dhcp-options']['dns'] }}
+    - mtu: 9000
+      {% if network == 'management' %}
+    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+      {% endif %}
+    {% endif %}
+
   {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
 
 {{ interface }}:
@@ -93,6 +119,7 @@ pyroute2_patch:
     - proto: static
     - ipaddr: {{ ip_address }}
     - netmask: {{ netmask }}
+    - mtu: 9000
     - dns:
         - {{ pillar['dhcp-options']['dns'] }}
     {% if network == 'management' %}
@@ -105,6 +132,7 @@ pyroute2_patch:
     - enabled: True
     - proto: static
     - type: bridge
+    - mtu: 9000
     - bridge: {{ network }}_br
     - delay: 0
     - ports: {{ interface }}
