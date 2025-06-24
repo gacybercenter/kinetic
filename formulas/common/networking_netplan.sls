@@ -123,11 +123,11 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
     {% endif %}
   {% endif %}
     {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
-{{ interface }}_br:
+{{ network }}_br:
   network.managed:
     - enabled: True
     - type: bridge
-    - bridge: {{ interface }}_br
+    - bridge: {{ network }}_br
     - delay: 0
     - ports: {{ interface }}
     - ipaddr: {{ ip_address }}
