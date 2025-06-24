@@ -100,6 +100,7 @@ pyroute2_patch:
 {{ network }}_br:
   network.managed:
     - enabled: True
+    - proto: static
     - type: bridge
     - bridge: {{ network }}_br
     - delay: 0
