@@ -106,7 +106,7 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
       {% endfor %}
     {% endif %}
 
-{{ interface }}_{{ network }}:
+{{ interface }}:
   network.managed:
     - enabled: True
     - type: eth
@@ -115,5 +115,8 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
     - netmask: {{ netmask }}
     - dns:
         - {{ pillar['dhcp-options']['dns'] | join(', ') }}
+{% if network == 'management' %}
+    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+{% endif %}
 
 {% endfor %}
