@@ -15,6 +15,9 @@
 include:
   - /formulas/common/nftables/nftables
 
+network_util:
+  pkg.installed:
+    - name: ifupdown
 
 
 pin_salt_pip_version:
