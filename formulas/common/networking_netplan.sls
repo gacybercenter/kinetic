@@ -18,7 +18,17 @@ include:
 network_util:
   pkg.installed:
     - name: ifupdown
+netplan.io:
+  pkg.removed
 
+/etc/netplan:
+  file.absent
+
+/run/systemd/network:
+  file.absent
+
+NetworkManager:
+  service.disabled
 
 pin_salt_pip_version:
   pip.installed:
@@ -106,6 +116,9 @@ bond-{{ network }}:
       {% if network == 'management' %}
     - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
       {% endif %}
+    - require:
+      - network: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
+      - network: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] }}
     {% else %}
 
   {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
