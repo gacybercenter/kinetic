@@ -77,7 +77,7 @@ bmh-host-{{ name }}-temp:
         userdata: userdata-{{ name }}
         networkdata: networkdata-{{ name }}
 
-bmh-{{ host['name'] }}:
+bmh-{{ name }}:
   cmd.run:
     - name: kubectl apply -f {{ pillar['script_dir'] }}/bmh-{{ name }}-temp.yaml
     - onchanges:
