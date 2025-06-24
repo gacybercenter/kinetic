@@ -70,8 +70,14 @@ pyroute2_patch:
     - force: True
 
   {% for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
-
-
+  {% set subnet_cidr = pillar['networking']['subnets'][network] %}
+  {% set cidr_prefix = subnet_cidr.split('/')[1] %}
+  {% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
+  {% set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
+  {% set base_ip = subnet_cidr.split('.0/')[0] %}
+  {% set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
+  {% set ip_address = base_ip ~ '.' ~ host_id %}
+  {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
 
 ### Test for number of physical interfaces listed.  If >1, it is a bond and a netdev
 ### for the bond should be created.  This is separate and a prereq for any
@@ -129,14 +135,15 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
         [Network]
         Bridge={{ network }}_br
     {% endif %}
-{% set netmask = salt['network_utils.cidr_to_netmask'](pillar['networking']['subnets'][network].split("/")[1]) %}
-{% set addr = pillar['bmh'][grains['id']]['network']['management_ip'].split(".")[3] %}
-{{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}:
-  network.managed:
-    - enabled: true
-    - type: eth
-    - proto: static
-    - ip: {{ pillar['networking']['subnets'][network].split('.0/')[0] ~ "." ~ addr }}
-    - netmask: {{ netmask }}
-    - dns: {{ pillar['dhcp-options']['dns'] }}
+
+  {{ interface }}_{{ network }}:
+    network.managed:
+      - enabled: True
+      - type: eth
+      - proto: static
+      - ipaddr: {{ ip_address }}
+      - netmask: {{ netmask }}
+      - dns:
+          - {{ pillar['dhcp-options']['dns'] | join(', ') }}
+
 {% endfor %}
