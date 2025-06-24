@@ -136,6 +136,6 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
     - type: eth
     - proto: static
     - ip: {{ pillar['bmh'][grains['id']['ip']] }}
-    - netmask: {% salt['network_utils.cidr_to_netmask'](prefix | '255.255.255.0') %}
+    - netmask: {{ salt['network_utils.cidr_to_netmask'](prefix | '255.255.255.0') }}
     - dns: {{ pillar['dhcp-options']['dns'] }}
 {% endfor %}
