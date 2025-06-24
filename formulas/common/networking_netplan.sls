@@ -15,6 +15,8 @@
 include:
   - /formulas/common/nftables/nftables
 
+
+
 pin_salt_pip_version:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
@@ -128,22 +130,11 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
         Bridge={{ network }}_br
     {% endif %}
 
-netplan-{{ network }}-conf:
-  file.managed:
-    - name: /etc/netplan/{{ network }}.conf
-    - replace: true
-    - source: salt://formulas/common/sources/files/netplan-network.j2
-    - defaults:
-        iface: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
-        ip: {{ pillar['bmh'][grains['id']['ip']] }}
-        network: {{ network }}
-        dns: {{ pillar['dhcp-options']['dns'] }}
-        gw: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-
 {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}:
   network.managed:
     - enabled: true
     - type: eth
     - proto: static
-    - ipaddr: {{ pillar['bmh'][grains['id']['ip']] }}
-    - netmask: 
+    - ip: {{ pillar['bmh'][grains['id']['ip']] }}
+    - netmask: {% salt[]%}
+    - dns: {{ pillar['dhcp-options']['dns'] }}

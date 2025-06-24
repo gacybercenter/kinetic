@@ -6,7 +6,7 @@ network:
       match:
         macaddress: {{ mac }}
       addresses:
-      - "{{ ip }}"
+      - "{{ ip }}/{{ prefix }}"
       nameservers:
         addresses:
         - {{ dns }}
