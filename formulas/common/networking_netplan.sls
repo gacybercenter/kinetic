@@ -96,6 +96,7 @@ bond-{{ network }}:
     - enabled: True
     - type: bond
     - proto: static
+    - mode: 802.3ad
     - ipaddr: {{ ip_address }}
     - netmask: {{ netmask }}
     - slaves: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }} {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] }}
