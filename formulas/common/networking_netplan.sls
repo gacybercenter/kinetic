@@ -85,7 +85,7 @@ pyroute2_patch:
     - type: eth
   {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
     - proto: manual
-    - bridge: {{ interface }}_br
+    - bridge: {{ network }}_br
   {% else %}
     - proto: static
     - ipaddr: {{ ip_address }}
