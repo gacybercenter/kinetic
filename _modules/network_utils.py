@@ -55,3 +55,4 @@ def cidr_to_netmask(cidr):
             'success': False,
             'netmask': '',
             'message': f"Invalid CIDR value: {str(e)}"
+        }
