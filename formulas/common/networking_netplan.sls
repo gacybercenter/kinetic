@@ -134,12 +134,12 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
     - netmask: {{ netmask }}
     - dns:
         - {{ pillar['dhcp-options']['dns'] }}
-    {% if network == 'management' %}
+      {% if network == 'management' %}
     - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
     - use:
       - network: {{ interface }}
     - require:
       - network: {{ interface }}
-
+      {% endif %}
     {% endif %}
 {% endfor %}
