@@ -104,7 +104,7 @@ bond-{{ network }}:
       {% if network == 'management' %}
     - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
       {% endif %}
-    {% endif %}
+    {% else %}
 
   {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
 
@@ -148,4 +148,5 @@ bond-{{ network }}:
       - network: {{ interface }}
       {% endif %}
     {% endif %}
+  {% endif %}
 {% endfor %}
