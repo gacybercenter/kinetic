@@ -129,7 +129,7 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
         [Network]
         Bridge={{ network }}_br
     {% endif %}
-{% set prefix = {{ pillar['networking']['subnets'][network].split("/")[1] }} %}
+{% set prefix = pillar['networking']['subnets'][network].split("/")[1] %}
 {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}:
   network.managed:
     - enabled: true
