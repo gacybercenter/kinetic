@@ -98,6 +98,7 @@ bond-{{ network }}:
     - proto: static
     - ipaddr: {{ ip_address }}
     - netmask: {{ netmask }}
+    - slaves: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }} {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] }}
     - dns:
         - {{ pillar['dhcp-options']['dns'] }}
     - mtu: 9000
