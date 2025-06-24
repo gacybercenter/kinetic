@@ -130,12 +130,13 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
         Bridge={{ network }}_br
     {% endif %}
 {% set netmask = salt['network_utils.cidr_to_netmask'](pillar['networking']['subnets'][network].split("/")[1]) %}
+{% set addr = pillar['bmh'][grains['id']]['network']['management_ip'].split(".")[3] %}
 {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}:
   network.managed:
     - enabled: true
     - type: eth
     - proto: static
-    - ip: {{ pillar['bmh'][grains['id']]['network'][network ~ '_' ~ 'ip'] }}
+    - ip: {{ pillar['networking']['subnets'][network].split('.0/')[0] ~ "." ~ addr }}
     - netmask: {{ netmask }}
     - dns: {{ pillar['dhcp-options']['dns'] }}
 {% endfor %}
