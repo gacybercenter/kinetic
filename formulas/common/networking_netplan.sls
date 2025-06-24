@@ -135,7 +135,7 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
     - enabled: true
     - type: eth
     - proto: static
-    - ip: {{ pillar['bmh'][grains['id']['ip']] }}
+    - ip: {{ pillar['bmh'][grains['id']]['ip'] }}
     - netmask: {{ netmask }}
     - dns: {{ pillar['dhcp-options']['dns'] }}
 {% endfor %}
