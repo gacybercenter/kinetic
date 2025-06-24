@@ -83,7 +83,7 @@ pyroute2_patch:
 ### for the bond should be created.  This is separate and a prereq for any
 ### other types of netdevs (e.g. bridge)
     {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-dd/etc/systemd/network/{{ network }}_bond.netdev:
+/etc/systemd/network/{{ network }}_bond.netdev:
   file.managed:
     - contents: |
         [NetDev]
