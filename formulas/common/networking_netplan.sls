@@ -114,7 +114,7 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
     - ipaddr: {{ ip_address }}
     - netmask: {{ netmask }}
     - dns:
-        - {{ pillar['dhcp-options']['dns'] | join(', ') }}
+        - {{ pillar['dhcp-options']['dns'] }}
 {% if network == 'management' %}
     - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
 {% endif %}
