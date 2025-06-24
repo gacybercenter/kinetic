@@ -20,31 +20,31 @@ bmc-auth-secret:
     - onchanges:
       - file: bmc-auth-secret-template
 
-{% for host in pillar['bmh'] %}
-bmh-userdata-{{ host['name'] }}-temp:
+{% for name, host in pillar['bmh'].items() %}
+bmh-userdata-{{ name }}-temp:
   file.managed:
-    - name: {{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
+    - name: {{ pillar['script_dir'] }}/bmh-userdata-{{ name }}.yaml
     - source: salt://formulas/bmo/files/cloudinit.j2
     - mode: 644
     - template: jinja
     - defaults:
-        name: {{ host['name'] }}
+        name: {{ name }}
         pass: {{ pillar['hosts']['compute']['root_password_crypted'] }}
 
-bmh-userdata-{{ host['name'] }}-secret:
+bmh-userdata-{{ name }}-secret:
   cmd.run:
-    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete secret userdata-{{ host['name'] }} && kubectl -n {{ pillar['bmo_namespace'] }} create secret generic userdata-{{ host['name'] }} --from-file=userData={{ pillar['script_dir'] }}/bmh-userdata-{{ host['name'] }}.yaml
+    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete secret userdata-{{ name }} && kubectl -n {{ pillar['bmo_namespace'] }} create secret generic userdata-{{ name }} --from-file=userData={{ pillar['script_dir'] }}/bmh-userdata-{{ name }}.yaml
     - onchanges:
-      - file: bmh-userdata-{{ host['name'] }}-temp
+      - file: bmh-userdata-{{ name }}-temp
 
-bmh-networkdata-{{ host['name'] }}-temp:
+bmh-networkdata-{{ name }}-temp:
   file.managed:
-    - name: {{ pillar['script_dir'] }}/bmh-networkdata-{{ host['name'] }}.yaml
+    - name: {{ pillar['script_dir'] }}/bmh-networkdata-{{ name }}.yaml
     - source: salt://formulas/bmo/files/network-data.j2
     - mode: 644
     - template: jinja
     - defaults:
-        name: {{ host['name'] }}
+        name: {{ name }}
         mac: {{ host['bootMACAddress'] }}
         domain: {{ pillar['dhcp-options']['domain'] }}
         ip: {{ host['network']['ip'] }}
@@ -52,20 +52,20 @@ bmh-networkdata-{{ host['name'] }}-temp:
         gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
         nameserver: {{ pillar['dhcp-options']['dns'] }}
 
-bmh-networkdata-{{ host['name'] }}-secret:
+bmh-networkdata-{{ name }}-secret:
   cmd.run:
-    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete secret networkdata-{{ host['name'] }} && kubectl -n {{ pillar['bmo_namespace'] }} create secret generic networkdata-{{ host['name'] }} --from-file=networkData={{ pillar['script_dir'] }}/bmh-networkdata-{{ host['name'] }}.yaml
+    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete secret networkdata-{{ name }} && kubectl -n {{ pillar['bmo_namespace'] }} create secret generic networkdata-{{ name }} --from-file=networkData={{ pillar['script_dir'] }}/bmh-networkdata-{{ name }}.yaml
     - onchanges:
-      - file: bmh-networkdata-{{ host['name'] }}-temp
+      - file: bmh-networkdata-{{ name }}-temp
 
-bmh-host-{{ host['name'] }}-temp:
+bmh-host-{{ name }}-temp:
   file.managed:
-    - name: {{ pillar['script_dir'] }}/bmh-{{ host['name'] }}-temp.yaml
+    - name: {{ pillar['script_dir'] }}/bmh-{{ name }}-temp.yaml
     - source: salt://formulas/bmo/files/bmh.j2
     - mode: 644
     - template: jinja
     - defaults:
-        name: {{ host['name'] }}
+        name: {{ name }}
         namespace: {{ pillar['bmo_namespace'] }}
         online: {{ host['online'] }}
         address: {{ host['bmc']['address'] }}
@@ -74,12 +74,12 @@ bmh-host-{{ host['name'] }}-temp:
         url: {{ host['image']['url'] }}
         format: {{ host['image']['format'] }}
         rootdevice: {{ host['rootDeviceHints']['deviceName'] }}
-        userdata: userdata-{{ host['name'] }}
-        networkdata: networkdata-{{ host['name'] }}
+        userdata: userdata-{{ name }}
+        networkdata: networkdata-{{ name }}
 
 bmh-{{ host['name'] }}:
   cmd.run:
-    - name: kubectl apply -f {{ pillar['script_dir'] }}/bmh-{{ host['name'] }}-temp.yaml
+    - name: kubectl apply -f {{ pillar['script_dir'] }}/bmh-{{ name }}-temp.yaml
     - onchanges:
-      - file: bmh-host-{{ host['name'] }}-temp
+      - file: bmh-host-{{ name }}-temp
 {% endfor %}
