@@ -111,16 +111,17 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
     - enabled: True
     - type: eth
     - proto: static
-    {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
+  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
     - bridge: {{ interface }}_br
-    {% endif %}
+  {% else %}
     - ipaddr: {{ ip_address }}
     - netmask: {{ netmask }}
     - dns:
         - {{ pillar['dhcp-options']['dns'] }}
-{% if network == 'management' %}
+    {% if network == 'management' %}
     - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-{% endif %}
+    {% endif %}
+  {% endif %}
     {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
 {{ interface }}_br:
   network.managed:
@@ -129,6 +130,12 @@ dd/etc/systemd/network/{{ network }}_bond.netdev:
     - bridge: {{ interface }}_br
     - delay: 0
     - ports: {{ interface }}
+    - ipaddr: {{ ip_address }}
+    - netmask: {{ netmask }}
+    - dns:
+        - {{ pillar['dhcp-options']['dns'] }}
+    {% if network == 'management' %}
+    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
     - use:
       - network: {{ interface }}
     - require:
