@@ -21,65 +21,13 @@ bmc-auth-secret:
       - file: bmc-auth-secret-template
 
 {% for name, host in pillar['bmh'].items() %}
-bmh-userdata-{{ name }}-temp:
-  file.managed:
-    - name: {{ pillar['script_dir'] }}/bmh-userdata-{{ name }}.yaml
-    - source: salt://formulas/bmo/files/cloudinit.j2
-    - mode: 644
-    - template: jinja
-    - defaults:
-        name: {{ name }}
-        pass: {{ pillar['hosts']['compute']['root_password_crypted'] }}
-
-bmh-userdata-{{ name }}-secret:
-  cmd.run:
-    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete secret userdata-{{ name }} && kubectl -n {{ pillar['bmo_namespace'] }} create secret generic userdata-{{ name }} --from-file=userData={{ pillar['script_dir'] }}/bmh-userdata-{{ name }}.yaml
-    - onchanges:
-      - file: bmh-userdata-{{ name }}-temp
-
-bmh-networkdata-{{ name }}-temp:
-  file.managed:
-    - name: {{ pillar['script_dir'] }}/bmh-networkdata-{{ name }}.yaml
-    - source: salt://formulas/bmo/files/network-data.j2
-    - mode: 644
-    - template: jinja
-    - defaults:
-        name: {{ name }}
-        mac: {{ host['bootMACAddress'] }}
-        domain: {{ pillar['dhcp-options']['domain'] }}
-        ip: {{ host['network']['management_ip'] }}
-        prefix: {{ pillar['networking']['subnets']['management'].split("/")[1] }} 
-        gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-        nameserver: {{ pillar['dhcp-options']['dns'] }}
-
-bmh-networkdata-{{ name }}-secret:
-  cmd.run:
-    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete secret networkdata-{{ name }} && kubectl -n {{ pillar['bmo_namespace'] }} create secret generic networkdata-{{ name }} --from-file=networkData={{ pillar['script_dir'] }}/bmh-networkdata-{{ name }}.yaml
-    - onchanges:
-      - file: bmh-networkdata-{{ name }}-temp
-
-bmh-host-{{ name }}-temp:
-  file.managed:
-    - name: {{ pillar['script_dir'] }}/bmh-{{ name }}-temp.yaml
-    - source: salt://formulas/bmo/files/bmh.j2
-    - mode: 644
-    - template: jinja
-    - defaults:
-        name: {{ name }}
-        namespace: {{ pillar['bmo_namespace'] }}
-        online: {{ host['online'] }}
-        address: {{ host['bmc']['address'] }}
-        bootMACAddress: {{ host['bootMACAddress'] }}
-        checksum: {{ host['image']['checksum'] }}
-        url: {{ host['image']['url'] }}
-        format: {{ host['image']['format'] }}
-        rootdevice: {{ host['rootDeviceHints']['deviceName'] }}
-        userdata: userdata-{{ name }}
-        networkdata: networkdata-{{ name }}
-
-bmh-{{ name }}:
-  cmd.run:
-    - name: kubectl -n {{ pillar['bmo_namespace'] }} delete bmh {{ name }} && kubectl apply -f {{ pillar['script_dir'] }}/bmh-{{ name }}-temp.yaml
-    - onchanges:
-      - file: bmh-host-{{ name }}-temp
+ensure_bmh_{{ name }}present:
+  module.run:
+    - name: kinetic-k8s.bmh_replace
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - pillar_data: {{ pillar['bmh'].get(name) }}
+    - bmh_template_path: salt://formulas/bmo/files/bmh.j2
+    - network_template_path: salt://formulas/bmo/files/network-data.j2
+    - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
 {% endfor %}
