@@ -38,7 +38,7 @@ hosts:
       # - 00000000-0000-0000-0000-0CC47AFBF3CC
     interface: enp97s0f0
     proxy: pull_from_mine
-    root_password_crypted: $6$sSXsfvsKhwy$RrINorhH4lNeNdNbi/vHqCAApM8ID9Lhvmzs6OQMO4791igXZIrhWg6Kyi7XPRGhIZOgGUdCx4prarhaV62id0
+    root_password_crypted: 
     ntp_server: 0.us.pool.ntp.org
     disk: Micron_9200_MTFDHAL1T6TCU
     networks:
