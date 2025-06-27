@@ -155,7 +155,6 @@ def get_all_interfaces(namespace, resource_name):
             'interfaces': {},
             'message': f"An error occurred: {str(e)}"
         }
-
 def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
     """
     Ensure that the Bare Metal Host (BMH) object in Kubernetes matches the desired state
@@ -386,14 +385,17 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
         # Step 2: Render the desired network data configuration from pillar data using Jinja2 template in memory
         if 'network' in pillar_data:
             try:
-                # Prepare the context for rendering the network data template
-                full_pillar = __salt__['pillar.get']('hosts:compute', {})
+                # Infer the BMH type from bmh_name (e.g., compute, controller, storage)
+                bmh_type = bmh_name.split('-')[0].lower() if '-' in bmh_name else 'compute'
+                
+                # Fetch the appropriate hosts data based on the BMH type
+                full_pillar = __salt__['pillar.get'](f'hosts:{bmh_type}', {})
                 interface = full_pillar.get('interface') if full_pillar else ''
 
                 network_context = {
                     'pillar': {
                         'hosts': {
-                            'compute': {
+                            bmh_type: {
                                 'interface': interface
                             }
                         }
