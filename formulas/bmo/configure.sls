@@ -21,13 +21,30 @@ bmc-auth-secret:
       - file: bmc-auth-secret-template
 
 {% for name, host in pillar['bmh'].items() %}
-ensure_bmh_{{ name }}present:
+ensure_networkdata_present:
   module.run:
-    - name: kinetic-k8s.bmh_replace
+    - name: kinetic-k8s.networkdata_present
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - pillar_data: {{ pillar['bmh'].get(name) }}
+    - network_template_path: salt://formulas/bmo/files/network-data.j2
+ensure_userdata_present:
+  module.run:
+    - name: kinetic-k8s.userdata_present
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - pillar_data: {{ pillar['bmh'].get(name) }}
+    - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
+    - require:
+      - module: ensure_networkdata_present
+ensure_bmh_present:
+  module.run:
+    - name: kinetic-k8s.bmh_present
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - bmh_template_path: salt://formulas/bmo/files/bmh.j2
-    - network_template_path: salt://formulas/bmo/files/network-data.j2
-    - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
+    - require:
+      - module: ensure_networkdata_present
+      - module: ensure_userdata_present
 {% endfor %}
