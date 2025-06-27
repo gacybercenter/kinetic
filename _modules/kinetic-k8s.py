@@ -243,7 +243,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
 
             rendered_bmh = __salt__['slsutil.renderer'](
                 string=bmh_content,
-                default_renderer='jinja|yaml',
+                default_renderer='jinja',
                 context=bmh_context
             )
 
