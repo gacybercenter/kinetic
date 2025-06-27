@@ -156,52 +156,31 @@ def get_all_interfaces(namespace, resource_name):
             'message': f"An error occurred: {str(e)}"
         }
 
-def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2', network_template_path='salt://formulas/bmo/files/network-data.j2', userdata_template_path='salt://formulas/bmo/files/cloudinit.j2'):
+def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
     """
-    Ensure that the Bare Metal Host (BMH) object, network data, and userdata in Kubernetes match the desired state
-    defined by pillar data and Jinja2 templates. Deletes and recreates BMH if it needs updating or if network/userdata
-    are updated or created. Creates or replaces other objects as needed.
+    Ensure that the Bare Metal Host (BMH) object in Kubernetes matches the desired state
+    defined by pillar data and Jinja2 template. Deletes and recreates BMH if it needs updating.
 
     Args:
         namespace (str): The namespace of the Bare Metal Host resource in Kubernetes.
         bmh_name (str): The name of the Bare Metal Host resource.
-        pillar_data (dict): Pillar data containing the desired BMH, network, and userdata configuration.
+        pillar_data (dict): Pillar data containing the desired BMH configuration.
         bmh_template_path (str, optional): Salt URI to the Jinja2 template file for BMH.
-        network_template_path (str, optional): Salt URI to the Jinja2 template file for network data.
-        userdata_template_path (str, optional): Salt URI to the Jinja2 template file for userdata.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'bmh_updated' (bool), 'network_updated' (bool), 'userdata_updated' (bool),
-              'bmh_result' (dict), 'network_result' (dict), 'userdata_result' (dict), and 'message' (str for status or error).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
 
     CLI Example:
-        salt '*' kinetic-k8s.bmh_replace baremetal-operator-system compute-133-26 pillar_data
+        salt '*' kinetic-k8s.bmh_present baremetal-operator-system compute-133-26 pillar_data
     """
     try:
-        bmh_updated = False
-        network_updated = False
-        userdata_updated = False
-        bmh_result = {}
-        network_result = {}
-        userdata_result = {}
-
-        bmh_exists = False
-        bmh_matches = False
+        updated = False
+        result = {}
+        exists = False
+        matches = False
         current_bmh = {}
         desired_bmh = {}
-        bmh_differences = {}
-
-        network_exists = False
-        network_matches = False
-        current_network = {}
-        desired_network = {}
-        network_differences = {}
-
-        userdata_exists = False
-        userdata_matches = False
-        current_userdata = {}
-        desired_userdata = {}
-        userdata_differences = {}
+        differences = {}
 
         # Load Kubernetes configuration for updates
         try:
@@ -210,7 +189,6 @@ def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             config.load_kube_config()
 
         custom_api = client.CustomObjectsApi()
-        core_v1_api = client.CoreV1Api()
 
         # Step 1: Retrieve the existing BMH from Kubernetes
         try:
@@ -224,7 +202,7 @@ def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 plural=plural,
                 name=bmh_name
             )
-            bmh_exists = True
+            exists = True
             current_bmh = {
                 'name': resource.get('metadata', {}).get('name', ''),
                 'namespace': resource.get('metadata', {}).get('namespace', ''),
@@ -232,13 +210,13 @@ def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 'spec': resource.get('spec', {})
             }
         except ApiException as e:
-            bmh_exists = False
+            exists = False
             current_bmh = {}
-            bmh_message = f"BMH {bmh_name} not found: {str(e)}"
+            message = f"BMH {bmh_name} not found: {str(e)}"
         except Exception as e:
-            bmh_exists = False
+            exists = False
             current_bmh = {}
-            bmh_message = f"Error fetching BMH: {str(e)}"
+            message = f"Error fetching BMH: {str(e)}"
 
         # Step 2: Render the desired BMH configuration from pillar data using Jinja2 template in memory
         try:
@@ -278,50 +256,134 @@ def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             desired_bmh = yaml.safe_load(rendered_bmh)
 
             # Compare the existing BMH spec with the desired spec
-            if bmh_exists:
+            if exists:
                 current_bmh_spec = current_bmh.get('spec', {})
                 desired_bmh_spec = desired_bmh.get('spec', {})
                 for key in desired_bmh_spec:
                     if key not in current_bmh_spec or current_bmh_spec[key] != desired_bmh_spec[key]:
-                        bmh_differences[key] = {
+                        differences[key] = {
                             'current': current_bmh_spec.get(key, 'not set'),
                             'desired': desired_bmh_spec[key]
                         }
-                bmh_matches = len(bmh_differences) == 0
+                matches = len(differences) == 0
             else:
-                bmh_matches = False
+                matches = False
         except Exception as bmh_render_error:
             return {
                 'success': False,
-                'bmh_updated': False,
-                'network_updated': False,
-                'userdata_updated': False,
-                'bmh_result': {'error': str(bmh_render_error)},
-                'network_result': {},
-                'userdata_result': {},
+                'updated': False,
+                'result': {'error': str(bmh_render_error)},
                 'message': f"Failed to render BMH template: {str(bmh_render_error)}"
             }
 
-        # Step 3: Retrieve the existing network data ConfigMap from Kubernetes
+        # Step 3: Delete and recreate BMH if it doesn't exist or doesn't match
+        if not exists or not matches:
+            try:
+                group = "metal3.io"
+                version = "v1alpha1"
+                plural = "baremetalhosts"
+                body = desired_bmh
+
+                if exists:
+                    custom_api.delete_namespaced_custom_object(
+                        group=group,
+                        version=version,
+                        namespace=namespace,
+                        plural=plural,
+                        name=bmh_name,
+                        body=client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5)
+                    )
+                    message = f"BMH {bmh_name} deleted (to be recreated due to mismatch)"
+                else:
+                    message = f"BMH {bmh_name} does not exist, will be created"
+
+                result = custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body
+                )
+                updated = True
+                message += f"; BMH {bmh_name} created"
+            except ApiException as e:
+                updated = False
+                message = f"Failed to delete/recreate BMH {bmh_name}: {str(e)}"
+                result = {'error': str(e)}
+        else:
+            message = f"BMH {bmh_name} already matches desired state"
+            result = current_bmh
+
+        return {
+            'success': True,
+            'updated': updated,
+            'result': result,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'result': {},
+            'message': f"An error occurred during bmh_present operation: {str(e)}"
+        }
+
+def networkdata_present(namespace, bmh_name, pillar_data, network_template_path='salt://formulas/bmo/files/network-data.j2'):
+    """
+    Ensure that the network data ConfigMap in Kubernetes matches the desired state
+    defined by pillar data and Jinja2 template. Creates or replaces the ConfigMap if it needs updating.
+
+    Args:
+        namespace (str): The namespace of the network data ConfigMap in Kubernetes.
+        bmh_name (str): The name of the Bare Metal Host resource (used for ConfigMap naming).
+        pillar_data (dict): Pillar data containing the desired network configuration.
+        network_template_path (str, optional): Salt URI to the Jinja2 template file for network data.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
+
+    CLI Example:
+        salt '*' kinetic-k8s.networkdata_present baremetal-operator-system compute-133-26 pillar_data
+    """
+    try:
+        updated = False
+        result = {}
+        exists = False
+        matches = False
+        current_network = {}
+        desired_network = {}
+        differences = {}
+
+        # Load Kubernetes configuration for updates
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+
+        # Step 1: Retrieve the existing network data ConfigMap from Kubernetes
         if 'network' in pillar_data:
             try:
                 network_data_name = f"{bmh_name}-network-data"
                 network_cm = core_v1_api.read_namespaced_config_map(name=network_data_name, namespace=namespace)
-                network_exists = True
+                exists = True
                 current_network = network_cm.data if network_cm.data else {}
             except ApiException as ne:
-                network_exists = False
+                exists = False
                 current_network = {}
-                network_message = f"Network data ConfigMap {network_data_name} not found: {str(ne)}"
+                message = f"Network data ConfigMap {network_data_name} not found: {str(ne)}"
             except Exception as ne:
-                network_exists = False
+                exists = False
                 current_network = {}
-                network_message = f"Error fetching network data: {str(ne)}"
+                message = f"Error fetching network data: {str(ne)}"
         else:
-            network_exists = False
+            exists = False
             current_network = {}
+            message = f"Network data not applicable for {bmh_name}"
 
-        # Step 4: Render the desired network data configuration from pillar data using Jinja2 template in memory
+        # Step 2: Render the desired network data configuration from pillar data using Jinja2 template in memory
         if 'network' in pillar_data:
             try:
                 # Prepare the context for rendering the network data template
@@ -362,7 +424,7 @@ def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 desired_network = json.loads(rendered_network)
 
                 # Compare the existing network data with the desired network data
-                if network_exists:
+                if exists:
                     current_network_data = current_network
                     if isinstance(current_network, dict) and len(current_network) == 1 and 'networkData' in current_network:
                         try:
@@ -372,49 +434,128 @@ def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
 
                     for key in desired_network:
                         if key not in current_network_data or current_network_data[key] != desired_network[key]:
-                            network_differences[key] = {
+                            differences[key] = {
                                 'current': current_network_data.get(key, 'not set'),
                                 'desired': desired_network[key]
                             }
-                    network_matches = len(network_differences) == 0
+                    matches = len(differences) == 0
                 else:
-                    network_matches = False
+                    matches = False
             except Exception as network_render_error:
                 return {
                     'success': False,
-                    'bmh_updated': False,
-                    'network_updated': False,
-                    'userdata_updated': False,
-                    'bmh_result': {},
-                    'network_result': {'error': str(network_render_error)},
-                    'userdata_result': {},
+                    'updated': False,
+                    'result': {'error': str(network_render_error)},
                     'message': f"Failed to render network data template: {str(network_render_error)}"
                 }
         else:
             desired_network = {}
-            network_matches = False
-            network_message = f"Network data not applicable for {bmh_name}"
+            matches = False
+            message = f"Network data not applicable for {bmh_name}"
 
-        # Step 5: Retrieve the existing userdata ConfigMap from Kubernetes
+        # Step 3: Update or create network data ConfigMap if it doesn't exist or doesn't match
+        if 'network' in pillar_data and (not exists or not matches):
+            try:
+                network_data_name = f"{bmh_name}-network-data"
+                network_data_str = json.dumps(desired_network)
+                body = client.V1ConfigMap(
+                    metadata=client.V1ObjectMeta(name=network_data_name, namespace=namespace),
+                    data={'networkData': network_data_str}
+                )
+
+                if exists:
+                    result = core_v1_api.replace_namespaced_config_map(
+                        name=network_data_name,
+                        namespace=namespace,
+                        body=body
+                    )
+                    updated = True
+                    message = f"Network data ConfigMap {network_data_name} updated"
+                else:
+                    result = core_v1_api.create_namespaced_config_map(
+                        namespace=namespace,
+                        body=body
+                    )
+                    updated = True
+                    message = f"Network data ConfigMap {network_data_name} created"
+            except ApiException as e:
+                updated = False
+                message = f"Failed to update/create network data ConfigMap {network_data_name}: {str(e)}"
+                result = {'error': str(e)}
+        else:
+            message = f"Network data for {bmh_name} already matches desired state or not applicable"
+            result = current_network
+
+        return {
+            'success': True,
+            'updated': updated,
+            'result': result,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'result': {},
+            'message': f"An error occurred during networkdata_present operation: {str(e)}"
+        }
+
+def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='salt://formulas/bmo/files/cloudinit.j2'):
+    """
+    Ensure that the userdata ConfigMap in Kubernetes matches the desired state
+    defined by pillar data and Jinja2 template. Creates or replaces the ConfigMap if it needs updating.
+
+    Args:
+        namespace (str): The namespace of the userdata ConfigMap in Kubernetes.
+        bmh_name (str): The name of the Bare Metal Host resource (used for ConfigMap naming).
+        pillar_data (dict): Pillar data containing the desired userdata configuration.
+        userdata_template_path (str, optional): Salt URI to the Jinja2 template file for userdata.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
+
+    CLI Example:
+        salt '*' kinetic-k8s.userdata_present baremetal-operator-system compute-133-26 pillar_data
+    """
+    try:
+        updated = False
+        result = {}
+        exists = False
+        matches = False
+        current_userdata = {}
+        desired_userdata = {}
+        differences = {}
+
+        # Load Kubernetes configuration for updates
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+
+        # Step 1: Retrieve the existing userdata ConfigMap from Kubernetes
         if 'network' in pillar_data:
             try:
                 userdata_name = f"{bmh_name}-user-data"
                 userdata_cm = core_v1_api.read_namespaced_config_map(name=userdata_name, namespace=namespace)
-                userdata_exists = True
+                exists = True
                 current_userdata = userdata_cm.data if userdata_cm.data else {}
             except ApiException as ue:
-                userdata_exists = False
+                exists = False
                 current_userdata = {}
-                userdata_message = f"Userdata ConfigMap {userdata_name} not found: {str(ue)}"
+                message = f"Userdata ConfigMap {userdata_name} not found: {str(ue)}"
             except Exception as ue:
-                userdata_exists = False
+                exists = False
                 current_userdata = {}
-                userdata_message = f"Error fetching userdata: {str(ue)}"
+                message = f"Error fetching userdata: {str(ue)}"
         else:
-            userdata_exists = False
+            exists = False
             current_userdata = {}
+            message = f"Userdata not applicable for {bmh_name}"
 
-        # Step 6: Render the desired userdata configuration from pillar data using Jinja2 template in memory
+        # Step 2: Render the desired userdata configuration from pillar data using Jinja2 template in memory
         if 'network' in pillar_data:
             try:
                 # Prepare the context for rendering the userdata template (cloudinit.j2)
@@ -444,7 +585,7 @@ def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 desired_userdata = {'cloud-config': rendered_userdata}
 
                 # Compare the existing userdata with the desired userdata
-                if userdata_exists:
+                if exists:
                     current_userdata_data = current_userdata
                     if isinstance(current_userdata, dict) and 'cloud-config' in current_userdata:
                         current_userdata_data = current_userdata.get('cloud-config', '')
@@ -453,64 +594,27 @@ def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
 
                     desired_userdata_data = desired_userdata.get('cloud-config', '')
                     if current_userdata_data != desired_userdata_data:
-                        userdata_differences['cloud-config'] = {
+                        differences['cloud-config'] = {
                             'current': current_userdata_data if current_userdata_data else 'not set',
                             'desired': desired_userdata_data
                         }
-                    userdata_matches = len(userdata_differences) == 0
+                    matches = len(differences) == 0
                 else:
-                    userdata_matches = False
+                    matches = False
             except Exception as userdata_render_error:
                 return {
                     'success': False,
-                    'bmh_updated': False,
-                    'network_updated': False,
-                    'userdata_updated': False,
-                    'bmh_result': {},
-                    'network_result': {},
-                    'userdata_result': {'error': str(userdata_render_error)},
+                    'updated': False,
+                    'result': {'error': str(userdata_render_error)},
                     'message': f"Failed to render userdata template: {str(userdata_render_error)}"
                 }
         else:
             desired_userdata = {}
-            userdata_matches = False
-            userdata_message = f"Userdata not applicable for {bmh_name}"
+            matches = False
+            message = f"Userdata not applicable for {bmh_name}"
 
-        # Step 7: Update or create network data ConfigMap if it doesn't exist or doesn't match
-        if 'network' in pillar_data and (not network_exists or not network_matches):
-            try:
-                network_data_name = f"{bmh_name}-network-data"
-                network_data_str = json.dumps(desired_network)
-                body = client.V1ConfigMap(
-                    metadata=client.V1ObjectMeta(name=network_data_name, namespace=namespace),
-                    data={'networkData': network_data_str}
-                )
-
-                if network_exists:
-                    network_result = core_v1_api.replace_namespaced_config_map(
-                        name=network_data_name,
-                        namespace=namespace,
-                        body=body
-                    )
-                    network_updated = True
-                    network_message = f"Network data ConfigMap {network_data_name} updated"
-                else:
-                    network_result = core_v1_api.create_namespaced_config_map(
-                        namespace=namespace,
-                        body=body
-                    )
-                    network_updated = True
-                    network_message = f"Network data ConfigMap {network_data_name} created"
-            except ApiException as e:
-                network_updated = False
-                network_message = f"Failed to update/create network data ConfigMap {network_data_name}: {str(e)}"
-                network_result = {'error': str(e)}
-        else:
-            network_message = f"Network data for {bmh_name} already matches desired state or not applicable"
-            network_result = current_network
-
-        # Step 8: Update or create userdata ConfigMap if it doesn't exist or doesn't match
-        if 'network' in pillar_data and (not userdata_exists or not userdata_matches):
+        # Step 3: Update or create userdata ConfigMap if it doesn't exist or doesn't match
+        if 'network' in pillar_data and (not exists or not matches):
             try:
                 userdata_name = f"{bmh_name}-user-data"
                 userdata_str = desired_userdata.get('cloud-config', '')
@@ -519,86 +623,40 @@ def bmh_replace(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                     data={'cloud-config': userdata_str}
                 )
 
-                if userdata_exists:
-                    userdata_result = core_v1_api.replace_namespaced_config_map(
+                if exists:
+                    result = core_v1_api.replace_namespaced_config_map(
                         name=userdata_name,
                         namespace=namespace,
                         body=body
                     )
-                    userdata_updated = True
-                    userdata_message = f"Userdata ConfigMap {userdata_name} updated"
+                    updated = True
+                    message = f"Userdata ConfigMap {userdata_name} updated"
                 else:
-                    userdata_result = core_v1_api.create_namespaced_config_map(
+                    result = core_v1_api.create_namespaced_config_map(
                         namespace=namespace,
                         body=body
                     )
-                    userdata_updated = True
-                    userdata_message = f"Userdata ConfigMap {userdata_name} created"
+                    updated = True
+                    message = f"Userdata ConfigMap {userdata_name} created"
             except ApiException as e:
-                userdata_updated = False
-                userdata_message = f"Failed to update/create userdata ConfigMap {userdata_name}: {str(e)}"
-                userdata_result = {'error': str(e)}
+                updated = False
+                message = f"Failed to update/create userdata ConfigMap {userdata_name}: {str(e)}"
+                result = {'error': str(e)}
         else:
-            userdata_message = f"Userdata for {bmh_name} already matches desired state or not applicable"
-            userdata_result = current_userdata
-
-        # Step 9: Delete and recreate BMH if it doesn't exist, doesn't match, or if network/userdata were updated
-        if not bmh_exists or not bmh_matches or network_updated or userdata_updated:
-            try:
-                group = "metal3.io"
-                version = "v1alpha1"
-                plural = "baremetalhosts"
-                body = desired_bmh
-
-                if bmh_exists:
-                    custom_api.delete_namespaced_custom_object(
-                        group=group,
-                        version=version,
-                        namespace=namespace,
-                        plural=plural,
-                        name=bmh_name,
-                        body=client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5)
-                    )
-                    bmh_message = f"BMH {bmh_name} deleted (to be recreated due to mismatch or network/userdata update)"
-                else:
-                    bmh_message = f"BMH {bmh_name} does not exist, will be created"
-
-                bmh_result = custom_api.create_namespaced_custom_object(
-                    group=group,
-                    version=version,
-                    namespace=namespace,
-                    plural=plural,
-                    body=body
-                )
-                bmh_updated = True
-                bmh_message += f"; BMH {bmh_name} created"
-            except ApiException as e:
-                bmh_updated = False
-                bmh_message = f"Failed to delete/recreate BMH {bmh_name}: {str(e)}"
-                bmh_result = {'error': str(e)}
-        else:
-            bmh_message = f"BMH {bmh_name} already matches desired state"
-            bmh_result = current_bmh
+            message = f"Userdata for {bmh_name} already matches desired state or not applicable"
+            result = current_userdata
 
         return {
             'success': True,
-            'bmh_updated': bmh_updated,
-            'network_updated': network_updated,
-            'userdata_updated': userdata_updated,
-            'bmh_result': bmh_result,
-            'network_result': network_result,
-            'userdata_result': userdata_result,
-            'message': f"BMH: {bmh_message}; Network: {network_message}; Userdata: {userdata_message}"
+            'updated': updated,
+            'result': result,
+            'message': message
         }
 
     except Exception as e:
         return {
             'success': False,
-            'bmh_updated': False,
-            'network_updated': False,
-            'userdata_updated': False,
-            'bmh_result': {},
-            'network_result': {},
-            'userdata_result': {},
-            'message': f"An error occurred during bmh_replace operation: {str(e)}"
+            'updated': False,
+            'result': {},
+            'message': f"An error occurred during userdata_present operation: {str(e)}"
         }
