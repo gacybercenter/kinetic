@@ -21,14 +21,14 @@ bmc-auth-secret:
       - file: bmc-auth-secret-template
 
 {% for name, host in pillar['bmh'].items() %}
-ensure_networkdata_present:
+ensure_{{ name }}_networkdata_present:
   module.run:
     - name: kinetic-k8s.networkdata_present
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - network_template_path: salt://formulas/bmo/files/network-data.j2
-ensure_userdata_present:
+ensure_{{ name }}_userdata_present:
   module.run:
     - name: kinetic-k8s.userdata_present
     - namespace: baremetal-operator-system
@@ -37,7 +37,7 @@ ensure_userdata_present:
     - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
     - require:
       - module: ensure_networkdata_present
-ensure_bmh_present:
+ensure_{{ name }}_bmh_present:
   module.run:
     - name: kinetic-k8s.bmh_present
     - namespace: baremetal-operator-system
