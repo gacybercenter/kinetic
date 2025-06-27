@@ -36,7 +36,7 @@ ensure_{{ name }}_userdata_present:
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
     - require:
-      - module: ensure_networkdata_present
+      - module: ensure_{{ name }}_networkdata_present
 ensure_{{ name }}_bmh_present:
   module.run:
     - name: kinetic-k8s.bmh_present
@@ -45,6 +45,6 @@ ensure_{{ name }}_bmh_present:
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - bmh_template_path: salt://formulas/bmo/files/bmh.j2
     - require:
-      - module: ensure_networkdata_present
-      - module: ensure_userdata_present
+      - module: ensure_{{ name }}_networkdata_present
+      - module: ensure_{{ name }}_userdata_present
 {% endfor %}
