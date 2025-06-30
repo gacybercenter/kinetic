@@ -1,15 +1,16 @@
+{% set type = grains[type] %}
 {
   "links": [
     {
-      "id": "{{ pillar['hosts']['compute']['interface'] }}",
+      "id": "{{ pillar['hosts'][type]['interface'] }}",
       "type": "phy",
       "ethernet_mac_address": "{{ mac }}"
     }
   ],
   "networks": [
     {
-      "id": "{{ pillar['hosts']['compute']['interface'] }}",
-      "link": "{{ pillar['hosts']['compute']['interface'] }}",
+      "id": "{{ pillar['hosts'][type]]['interface'] }}",
+      "link": "{{ pillar['hosts'][type]['interface'] }}",
       "type": "ipv4",
       "ip_address": "{{ ip }}",
       "netmask": "{{ prefix }}",
