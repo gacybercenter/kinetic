@@ -9,7 +9,7 @@
   ],
   "networks": [
     {
-      "id": "{{ pillar['hosts'][type]]['interface'] }}",
+      "id": "{{ pillar['hosts'][type]['interface'] }}",
       "link": "{{ pillar['hosts'][type]['interface'] }}",
       "type": "ipv4",
       "ip_address": "{{ ip }}",
