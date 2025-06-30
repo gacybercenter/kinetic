@@ -2,8 +2,8 @@
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost #
 metadata:
-  name: {{ pillar['bmh'][grains.id] }}
-  namespace: {{ pillar['bmo_namespace'] }}
+  name: {{ name }}
+  namespace: {{ namespace }}
 spec:
   online: {{ online }}
   bmc:
