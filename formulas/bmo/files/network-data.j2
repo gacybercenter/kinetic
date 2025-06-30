@@ -1,16 +1,15 @@
-{% set type = bmh_type %}
 {
   "links": [
     {
-      "id": "{{ pillar['hosts'][type]['interface'] }}",
+      "id": "{{ interface }}",
       "type": "phy",
       "ethernet_mac_address": "{{ mac }}"
     }
   ],
   "networks": [
     {
-      "id": "{{ pillar['hosts'][type]['interface'] }}",
-      "link": "{{ pillar['hosts'][type]['interface'] }}",
+      "id": "{{ interface }}",
+      "link": "{{ interface }}",
       "type": "ipv4",
       "ip_address": "{{ ip }}",
       "netmask": "{{ prefix }}",
