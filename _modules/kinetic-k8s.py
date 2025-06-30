@@ -396,9 +396,9 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                     'interface': interface,
                     'mac': pillar_data.get('bootMACAddress', ''),
                     'ip': pillar_data.get('network', {}).get('management_ip', ''),
-                    'prefix': full_pillar.get('networks', {}).get('management', {}).get('netmask') if full_pillar else '',
-                    'gateway': full_pillar.get('networks', {}).get('management', {}).get('gateway') if full_pillar else '',
-                    'nameserver': full_pillar.get('ntp_server') if full_pillar else ''
+                    'prefix': full_pillar.get('networking', {}).get('subnets', {}).get('management') if full_pillar else '',
+                    'gateway': full_pillar.get('dhcp-options', {}).get('mgmt_gateway') if full_pillar else '',
+                    'nameserver': full_pillar.get('dhcp-options', {}).get('dns') if full_pillar else ''
                 }
 
                 # Use Salt's in-memory rendering for network data template
