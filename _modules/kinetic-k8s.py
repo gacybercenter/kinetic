@@ -393,13 +393,7 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 interface = full_pillar.get('interface') if full_pillar else ''
 
                 network_context = {
-                    'pillar': {
-                        'hosts': {
-                            bmh_type: {
-                                'interface': interface
-                            }
-                        }
-                    },
+                    'interface': interface,
                     'mac': pillar_data.get('bootMACAddress', ''),
                     'ip': pillar_data.get('network', {}).get('management_ip', ''),
                     'prefix': full_pillar.get('networks', {}).get('management', {}).get('netmask') if full_pillar else '',
