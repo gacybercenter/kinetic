@@ -38,7 +38,7 @@ ensure_{{ name }}_userdata_present:
     - require:
       - module: ensure_{{ name }}_networkdata_present
 ensure_{{ name }}_bmh_present:
-  module.run:
+  module.run: 
     - name: kinetic-k8s.bmh_present
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
