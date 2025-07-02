@@ -6,17 +6,17 @@ metadata:
 spec:
   online: {{ online }}
   bmc:
-    address: {{ bmc['address'] }}
+    address: {{ address }}
     credentialsName: bmc-auth
   bootMACAddress: {{ bootMACAddress }}
   bootMode: UEFI
   image:
-    checksum: {{ image['checksum'] }}
+    checksum: {{ checksum }}
     checksumType: auto
-    format: {{ image['format'] }}
-    url: {{ image['url'] }}
+    format: {{ format }}
+    url: {{ iurl }}
   rootDeviceHints:
-    deviceName: {{ rootDeviceHints['deviceName'] }}
+    deviceName: {{ deviceName }}
   networkData:
     name: {{ networkdata }}
   userData:
