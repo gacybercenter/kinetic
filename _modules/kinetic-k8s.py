@@ -434,7 +434,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             'recreated': False,
             'result': {},
             'message': f"An error occurred during bmh_present operation: {str(e)}"
-        }s
+        }
 
 def networkdata_present(namespace, bmh_name, pillar_data, network_template_path='salt://formulas/bmo/files/network-data.j2'):
     """
