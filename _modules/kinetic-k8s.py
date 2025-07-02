@@ -823,6 +823,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                 # If string_data is not available, decode data (base64 encoded)
                 import base64
                 current_secret = {k: base64.b64decode(v).decode('utf-8') for k, v in secret.data.items()}
+            message = f"Secret {secret_name} found in namespace {namespace}"
         except ApiException as e:
             exists = False
             current_secret = {}
@@ -839,7 +840,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
             bmc_auth_context = {
                 'pillar': {
                     'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
-                    'ipmi-password': full_pillar.get('ipmi-password')
+                    'ipmi_password': full_pillar.get('ipmi-password', '')
                 }
             }
 
@@ -925,6 +926,20 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                     )
                     updated = True
                     message = f"Secret {secret_name} created in namespace {namespace}"
+
+                # Step 4: Verify the Secret exists after creation/update
+                try:
+                    verified_secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+                    if verified_secret:
+                        message += f"; Verified Secret {secret_name} exists in namespace {namespace}"
+                    else:
+                        message += f"; WARNING: Secret {secret_name} reported as created/updated but verification returned empty result"
+                        updated = False
+                        result = {'error': 'Verification returned empty result'}
+                except ApiException as verify_error:
+                    message += f"; WARNING: Failed to verify Secret {secret_name} after creation/update: {str(verify_error)}"
+                    updated = False
+                    result = {'error': str(verify_error)}
             except ApiException as e:
                 updated = False
                 message = f"Failed to update/create Secret {secret_name}: {str(e)}"
@@ -934,7 +949,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
             result = current_secret
 
         return {
-            'success': True,
+            'success': True if updated or matches else False,
             'updated': updated,
             'result': result,
             'message': message
