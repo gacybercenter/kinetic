@@ -155,6 +155,7 @@ def get_all_interfaces(namespace, resource_name):
             'interfaces': {},
             'message': f"An error occurred: {str(e)}"
         }
+
 def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
     """
     Ensure that the Bare Metal Host (BMH) object in Kubernetes matches the desired state
@@ -237,13 +238,27 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             }
 
             # Use Salt's in-memory rendering for BMH template
-            bmh_content = __salt__['cp.get_file_str'](bmh_template_path)
-            if not bmh_content:
-                raise Exception(f"Failed to read BMH template from {bmh_template_path}: Content is empty or inaccessible")
+            try:
+                bmh_content = __salt__['cp.get_file_str'](bmh_template_path)
+                if not bmh_content:
+                    raise Exception(f"Failed to read BMH template from {bmh_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
+                # Strip shebang line if present to avoid rendering issues
+                if bmh_content.startswith('#!'):
+                    bmh_content_lines = bmh_content.splitlines()
+                    bmh_content = '\n'.join(bmh_content_lines[1:]) if len(bmh_content_lines) > 1 else ''
+                    if not bmh_content:
+                        raise Exception(f"BMH template at {bmh_template_path} is empty after removing shebang line.")
+            except Exception as file_error:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'result': {'error': str(file_error)},
+                    'message': f"Failed to retrieve BMH template file from {bmh_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
+                }
 
             rendered_bmh = __salt__['slsutil.renderer'](
                 string=bmh_content,
-                default_renderer='jinja',
+                default_renderer='jinja|yaml',
                 context=bmh_context
             )
 
@@ -402,9 +417,23 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 }
 
                 # Use Salt's in-memory rendering for network data template
-                network_content = __salt__['cp.get_file_str'](network_template_path)
-                if not network_content:
-                    raise Exception(f"Failed to read network template from {network_template_path}: Content is empty or inaccessible")
+                try:
+                    network_content = __salt__['cp.get_file_str'](network_template_path)
+                    if not network_content:
+                        raise Exception(f"Failed to read network template from {network_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
+                    # Strip shebang line if present to avoid rendering issues
+                    if network_content.startswith('#!'):
+                        network_content_lines = network_content.splitlines()
+                        network_content = '\n'.join(network_content_lines[1:]) if len(network_content_lines) > 1 else ''
+                        if not network_content:
+                            raise Exception(f"Network template at {network_template_path} is empty after removing shebang line.")
+                except Exception as file_error:
+                    return {
+                        'success': False,
+                        'updated': False,
+                        'result': {'error': str(file_error)},
+                        'message': f"Failed to retrieve network template file from {network_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
+                    }
 
                 rendered_network = __salt__['slsutil.renderer'](
                     string=network_content,
@@ -564,9 +593,23 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
                 }
 
                 # Use Salt's in-memory rendering for userdata template
-                userdata_content = __salt__['cp.get_file_str'](userdata_template_path)
-                if not userdata_content:
-                    raise Exception(f"Failed to read userdata template from {userdata_template_path}: Content is empty or inaccessible")
+                try:
+                    userdata_content = __salt__['cp.get_file_str'](userdata_template_path)
+                    if not userdata_content:
+                        raise Exception(f"Failed to read userdata template from {userdata_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
+                    # Strip shebang line if present to avoid rendering issues
+                    if userdata_content.startswith('#!'):
+                        userdata_content_lines = userdata_content.splitlines()
+                        userdata_content = '\n'.join(userdata_content_lines[1:]) if len(userdata_content_lines) > 1 else ''
+                        if not userdata_content:
+                            raise Exception(f"Userdata template at {userdata_template_path} is empty after removing shebang line.")
+                except Exception as file_error:
+                    return {
+                        'success': False,
+                        'updated': False,
+                        'result': {'error': str(file_error)},
+                        'message': f"Failed to retrieve userdata template file from {userdata_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
+                    }
 
                 rendered_userdata = __salt__['slsutil.renderer'](
                     string=userdata_content,
