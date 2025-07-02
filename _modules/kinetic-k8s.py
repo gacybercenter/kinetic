@@ -839,7 +839,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
             bmc_auth_context = {
                 'pillar': {
                     'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
-                    'ipmi-password': full_pillar.get('ipmi-password', '')
+                    'ipmi-password': full_pillar.get('ipmi-password')
                 }
             }
 
