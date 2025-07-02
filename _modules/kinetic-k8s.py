@@ -723,20 +723,20 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
                 if not rendered_userdata:
                     raise Exception("Failed to render userdata template: Empty or invalid output")
 
-                # Since cloudinit.j2 is plain text, store as a string in a dict for Secret
-                desired_userdata = {'cloud-config': rendered_userdata}
+                # Since cloudinit.j2 is plain text, store as a string in a dict for Secret with key 'userData'
+                desired_userdata = {'userData': rendered_userdata}
 
                 # Compare the existing userdata with the desired userdata
                 if exists:
                     current_userdata_data = current_userdata
-                    if isinstance(current_userdata, dict) and 'cloud-config' in current_userdata:
-                        current_userdata_data = current_userdata.get('cloud-config', '')
+                    if isinstance(current_userdata, dict) and 'userData' in current_userdata:
+                        current_userdata_data = current_userdata.get('userData', '')
                     elif isinstance(current_userdata, dict) and len(current_userdata) == 1:
                         current_userdata_data = list(current_userdata.values())[0]
 
-                    desired_userdata_data = desired_userdata.get('cloud-config', '')
+                    desired_userdata_data = desired_userdata.get('userData', '')
                     if current_userdata_data != desired_userdata_data:
-                        differences['cloud-config'] = {
+                        differences['userData'] = {
                             'current': current_userdata_data if current_userdata_data else 'not set',
                             'desired': desired_userdata_data
                         }
