@@ -876,6 +876,7 @@ def host_bmc_auth_present(namespace, bmh_name, pillar_data, bmc_auth_template_pa
             full_pillar = __salt__['pillar.get']('', {})
             bmc_auth_context = {
                 'pillar': {
+                    'name': bmh_name,
                     'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
                     'ipmi_password': pillar_data.get('bmc', {}).get('password', full_pillar.get('ipmi-password', 'default-password-if-not-set'))
                 }
