@@ -780,7 +780,7 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
             'message': f"An error occurred during userdata_present operation: {str(e)}"
         }
 
-def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
+def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
     """
     Ensure that the bmc-auth Secret in Kubernetes matches the desired state defined by pillar data
     and Jinja2 template. Creates the Secret if it doesn't exist, or updates it if it differs.
@@ -805,12 +805,15 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
         current_secret = {}
         desired_secret = {}
         differences = {}
+        debug_info = []
 
         # Load Kubernetes configuration for updates
         try:
             config.load_incluster_config()
+            debug_info.append("Loaded in-cluster config successfully")
         except config.ConfigException:
             config.load_kube_config()
+            debug_info.append("Loaded kubeconfig from file successfully")
 
         core_v1_api = client.CoreV1Api()
 
@@ -824,24 +827,29 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
                 import base64
                 current_secret = {k: base64.b64decode(v).decode('utf-8') for k, v in secret.data.items()}
             message = f"Secret {secret_name} found in namespace {namespace}"
+            debug_info.append(f"Secret {secret_name} exists in namespace {namespace} with keys: {list(current_secret.keys())}")
         except ApiException as e:
             exists = False
             current_secret = {}
             message = f"Secret {secret_name} not found in namespace {namespace}: {str(e)}"
+            debug_info.append(f"ApiException when fetching Secret: {str(e)}")
         except Exception as e:
             exists = False
             current_secret = {}
             message = f"Error fetching Secret {secret_name}: {str(e)}"
+            debug_info.append(f"General exception when fetching Secret: {str(e)}")
 
         # Step 2: Render the desired bmc-auth Secret configuration from pillar data using Jinja2 template in memory
         try:
             # Fetch pillar data for rendering
+            full_pillar = __salt__['pillar.get']('', {})
             bmc_auth_context = {
                 'pillar': {
-                    'bmo_namespace': namespace,
-                    'ipmi_password': ipmi,
+                    'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
+                    'ipmi_password': full_pillar.get('ipmi-password', '')
                 }
             }
+            debug_info.append(f"Pillar data for rendering: bmo_namespace={full_pillar.get('bmo_namespace', 'not set')}, ipmi-password={'***' if full_pillar.get('ipmi-password') else 'not set'}")
 
             # Use Salt's in-memory rendering for bmc-auth template
             try:
@@ -854,12 +862,14 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
                     bmc_auth_content = '\n'.join(bmc_auth_content_lines[1:]) if len(bmc_auth_content_lines) > 1 else ''
                     if not bmc_auth_content:
                         raise Exception(f"bmc-auth template at {bmc_auth_template_path} is empty after removing shebang line.")
+                debug_info.append(f"Successfully retrieved template content from {bmc_auth_template_path}")
             except Exception as file_error:
                 return {
                     'success': False,
                     'updated': False,
                     'result': {'error': str(file_error)},
-                    'message': f"Failed to retrieve bmc-auth template file from {bmc_auth_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
+                    'message': f"Failed to retrieve bmc-auth template file from {bmc_auth_template_path}: {str(file_error)}. Check if the file exists in Salt file roots.",
+                    'debug': debug_info
                 }
 
             rendered_bmc_auth = __salt__['slsutil.renderer'](
@@ -870,6 +880,7 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
 
             if not rendered_bmc_auth:
                 raise Exception("Failed to render bmc-auth template: Empty or invalid output")
+            debug_info.append("Template rendered successfully")
 
             # Handle the case where rendered_bmc_auth is already a dictionary (parsed YAML)
             import yaml
@@ -878,9 +889,11 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
             else:
                 # If it's a string, parse it as YAML
                 desired_secret_full = yaml.safe_load(rendered_bmc_auth)
+            debug_info.append(f"Rendered output type: {type(rendered_bmc_auth).__name__}")
 
             # Extract the stringData from the desired Secret for comparison
             desired_secret = desired_secret_full.get('stringData', {})
+            debug_info.append(f"Desired Secret keys: {list(desired_secret.keys())}")
 
             # Compare the existing Secret with the desired Secret
             if exists:
@@ -891,14 +904,17 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
                             'desired': desired_secret[key]
                         }
                 matches = len(differences) == 0
+                debug_info.append(f"Comparison result: matches={matches}, differences={differences}")
             else:
                 matches = False
+                debug_info.append("No existing Secret to compare, will create new")
         except Exception as bmc_auth_render_error:
             return {
                 'success': False,
                 'updated': False,
                 'result': {'error': str(bmc_auth_render_error)},
-                'message': f"Failed to render bmc-auth template: {str(bmc_auth_render_error)}"
+                'message': f"Failed to render bmc-auth template: {str(bmc_auth_render_error)}",
+                'debug': debug_info
             }
 
         # Step 3: Update or create bmc-auth Secret if it doesn't exist or doesn't match
@@ -909,6 +925,7 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
                     string_data=desired_secret,
                     type=desired_secret_full.get('type', 'Opaque')
                 )
+                debug_info.append(f"Preparing Secret {secret_name} in namespace {namespace} with type {body.type}")
 
                 if exists:
                     result = core_v1_api.replace_namespaced_secret(
@@ -918,6 +935,7 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
                     )
                     updated = True
                     message = f"Secret {secret_name} updated in namespace {namespace}"
+                    debug_info.append(f"API call to update Secret {secret_name} completed with result: {result}")
                 else:
                     result = core_v1_api.create_namespaced_secret(
                         namespace=namespace,
@@ -925,33 +943,63 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
                     )
                     updated = True
                     message = f"Secret {secret_name} created in namespace {namespace}"
+                    debug_info.append(f"API call to create Secret {secret_name} completed with result: {result}")
 
-                # Step 4: Verify the Secret exists after creation/update
+                # Step 4: Verify the Secret exists after creation/update (first attempt)
                 try:
                     verified_secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
                     if verified_secret:
-                        message += f"; Verified Secret {secret_name} exists in namespace {namespace}"
+                        message += f"; Verified Secret {secret_name} exists in namespace {namespace} (first attempt)"
+                        debug_info.append(f"First verification successful: Secret {secret_name} found with metadata: {verified_secret.metadata}")
                     else:
-                        message += f"; WARNING: Secret {secret_name} reported as created/updated but verification returned empty result"
+                        message += f"; WARNING: Secret {secret_name} reported as created/updated but verification returned empty result (first attempt)"
                         updated = False
-                        result = {'error': 'Verification returned empty result'}
+                        result = {'error': 'Verification returned empty result on first attempt'}
+                        debug_info.append("First verification returned empty result unexpectedly")
                 except ApiException as verify_error:
-                    message += f"; WARNING: Failed to verify Secret {secret_name} after creation/update: {str(verify_error)}"
+                    message += f"; WARNING: Failed to verify Secret {secret_name} after creation/update (first attempt): {str(verify_error)}"
                     updated = False
                     result = {'error': str(verify_error)}
+                    debug_info.append(f"First verification failed with ApiException: {str(verify_error)}")
+
+                # Step 5: If first verification failed, wait briefly and try again to account for eventual consistency
+                if not updated:
+                    import time
+                    time.sleep(2)  # Wait 2 seconds for potential eventual consistency
+                    debug_info.append("First verification failed, waiting 2 seconds before second attempt")
+                    try:
+                        verified_secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+                        if verified_secret:
+                            message += f"; Verified Secret {secret_name} exists in namespace {namespace} (second attempt after delay)"
+                            updated = True
+                            result = {'verified': True}
+                            debug_info.append(f"Second verification successful: Secret {secret_name} found with metadata: {verified_secret.metadata}")
+                        else:
+                            message += f"; ERROR: Secret {secret_name} still not found after delay (second attempt)"
+                            updated = False
+                            result = {'error': 'Verification returned empty result on second attempt'}
+                            debug_info.append("Second verification returned empty result unexpectedly")
+                    except ApiException as verify_error2:
+                        message += f"; ERROR: Failed to verify Secret {secret_name} after delay (second attempt): {str(verify_error2)}"
+                        updated = False
+                        result = {'error': str(verify_error2)}
+                        debug_info.append(f"Second verification failed with ApiException: {str(verify_error2)}")
             except ApiException as e:
                 updated = False
                 message = f"Failed to update/create Secret {secret_name}: {str(e)}"
                 result = {'error': str(e)}
+                debug_info.append(f"ApiException during update/create: {str(e)}")
         else:
             message = f"Secret {secret_name} already matches desired state in namespace {namespace}"
             result = current_secret
+            debug_info.append("No update needed, Secret matches desired state")
 
         return {
             'success': True if updated or matches else False,
             'updated': updated,
             'result': result,
-            'message': message
+            'message': message,
+            'debug': debug_info
         }
 
     except Exception as e:
@@ -959,5 +1007,6 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
             'success': False,
             'updated': False,
             'result': {},
-            'message': f"An error occurred during bmc_auth_present operation: {str(e)}"
+            'message': f"An error occurred during bmc_auth_present operation: {str(e)}",
+            'debug': debug_info if 'debug_info' in locals() else ['Exception occurred before debug_info initialization']
         }
