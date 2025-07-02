@@ -8,12 +8,6 @@ deploy_script:
     - mode: 700
     - template: jinja
 
-ensure_bmc_auth_present:
-  module.run:
-    - name: kinetic-k8s.bmc_auth_present
-    - namespace: {{ pillar['bmo_namespace'] }}
-    - ipmi: {{ pillar['ipmi-password'] }}
-
 {% for name, host in pillar['bmh'].items() %}
 ensure_{{ name }}_bmc_auth_present:
   module.run:
