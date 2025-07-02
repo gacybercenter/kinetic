@@ -156,6 +156,8 @@ def get_all_interfaces(namespace, resource_name):
             'message': f"An error occurred: {str(e)}"
         }
 
+d// ... existing code ...
+
 def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
     """
     Ensure that the Bare Metal Host (BMH) object in Kubernetes matches the desired state
@@ -265,9 +267,13 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             if not rendered_bmh:
                 raise Exception("Failed to render BMH template: Empty or invalid output")
 
-            # Parse the rendered YAML content into a dictionary
+            # Handle the case where rendered_bmh is already a dictionary (parsed YAML)
             import yaml
-            desired_bmh = yaml.safe_load(rendered_bmh)
+            if isinstance(rendered_bmh, dict):
+                desired_bmh = rendered_bmh
+            else:
+                # If it's a string, parse it as YAML
+                desired_bmh = yaml.safe_load(rendered_bmh)
 
             # Compare the existing BMH spec with the desired spec
             if exists:
@@ -342,6 +348,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             'result': {},
             'message': f"An error occurred during bmh_present operation: {str(e)}"
         }
+// ... existing code ...
 
 def networkdata_present(namespace, bmh_name, pillar_data, network_template_path='salt://formulas/bmo/files/network-data.j2'):
     """
