@@ -793,22 +793,22 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
             'message': f"An error occurred during userdata_present operation: {str(e)}"
         }
 
-def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
+def host_bmc_auth_present(namespace, bmh_name, pillar_data, bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
     """
-    Ensure that the bmc-auth Secret in Kubernetes matches the desired state defined by pillar data
-    and Jinja2 template. Creates the Secret if it doesn't exist, or updates it if it differs.
+    Ensure that a host-specific BMC authentication Secret in Kubernetes matches the desired state
+    defined by pillar data and Jinja2 template. Creates the Secret if it doesn't exist, or updates it if it differs.
 
     Args:
         namespace (str): The namespace of the Secret in Kubernetes.
-        secret_name (str, optional): The name of the Secret. Defaults to 'bmc-auth'.
-        bmc_auth_template_path (str, optional): Salt URI to the Jinja2 template file for bmc-auth Secret.
-            Defaults to the standard bmc-auth template location.
+        bmh_name (str): The name of the Bare Metal Host resource (used for Secret naming).
+        pillar_data (dict): Pillar data containing the desired BMC authentication configuration.
+        bmc_auth_template_path (str, optional): Salt URI to the Jinja2 template file for BMC auth Secret.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
 
     CLI Example:
-        salt '*' kinetic-k8s.bmc_auth_present baremetal-operator-system
+        salt '*' kinetic-k8s.host_bmc_auth_present baremetal-operator-system compute-133-26 pillar_data
     """
     try:
         updated = False
@@ -819,6 +819,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
         desired_secret = {}
         differences = {}
         debug_info = []
+        secret_name = f"{bmh_name}-bmc-auth"
 
         # Load Kubernetes configuration for updates
         try:
@@ -837,7 +838,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
         except Exception as e:
             debug_info.append(f"Could not determine Kubernetes API server: {str(e)}")
 
-        # Step 1: Retrieve the existing bmc-auth Secret from Kubernetes
+        # Step 1: Retrieve the existing host-specific BMC auth Secret from Kubernetes
         try:
             secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
             exists = True
@@ -855,6 +856,9 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
             debug_info.append(f"Deletion timestamp: {deletion_timestamp}")
             debug_info.append(f"Finalizers: {finalizers}")
             debug_info.append(f"Owner references: {owner_references}")
+            if deletion_timestamp:
+                message += f"; WARNING: Secret {secret_name} is marked for deletion at {deletion_timestamp}, possibly due to BMH deletion or controller policy"
+                debug_info.append(f"WARNING: Secret is marked for deletion, will attempt to recreate or update")
         except ApiException as e:
             exists = False
             current_secret = {}
@@ -866,36 +870,36 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
             message = f"Error fetching Secret {secret_name}: {str(e)}"
             debug_info.append(f"General exception when fetching Secret: {str(e)}")
 
-        # Step 2: Render the desired bmc-auth Secret configuration from pillar data using Jinja2 template in memory
+        # Step 2: Render the desired BMC auth Secret configuration from pillar data using Jinja2 template in memory
         try:
-            # Fetch pillar data for rendering
+            # Fetch pillar data for rendering, allow host-specific credentials if available
             full_pillar = __salt__['pillar.get']('', {})
             bmc_auth_context = {
                 'pillar': {
                     'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
-                    'ipmi_password': full_pillar.get('ipmi-password', 'default-password-if-not-set')
+                    'ipmi_password': pillar_data.get('bmc', {}).get('password', full_pillar.get('ipmi-password', 'default-password-if-not-set'))
                 }
             }
-            debug_info.append(f"Pillar data for rendering: bmo_namespace={full_pillar.get('bmo_namespace', 'not set')}, ipmi-password={'***' if full_pillar.get('ipmi-password') else 'not set'}")
+            debug_info.append(f"Pillar data for rendering: bmo_namespace={full_pillar.get('bmo_namespace', 'not set')}, ipmi-password={'***' if bmc_auth_context['pillar']['ipmi_password'] else 'not set'}")
 
-            # Use Salt's in-memory rendering for bmc-auth template
+            # Use Salt's in-memory rendering for BMC auth template
             try:
                 bmc_auth_content = __salt__['cp.get_file_str'](bmc_auth_template_path)
                 if not bmc_auth_content:
-                    raise Exception(f"Failed to read bmc-auth template from {bmc_auth_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
+                    raise Exception(f"Failed to read BMC auth template from {bmc_auth_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
                 # Strip shebang line if present to avoid rendering issues
                 if bmc_auth_content.startswith('#!'):
                     bmc_auth_content_lines = bmc_auth_content.splitlines()
                     bmc_auth_content = '\n'.join(bmc_auth_content_lines[1:]) if len(bmc_auth_content_lines) > 1 else ''
                     if not bmc_auth_content:
-                        raise Exception(f"bmc-auth template at {bmc_auth_template_path} is empty after removing shebang line.")
+                        raise Exception(f"BMC auth template at {bmc_auth_template_path} is empty after removing shebang line.")
                 debug_info.append(f"Successfully retrieved template content from {bmc_auth_template_path}")
             except Exception as file_error:
                 return {
                     'success': False,
                     'updated': False,
                     'result': {'error': str(file_error)},
-                    'message': f"Failed to retrieve bmc-auth template file from {bmc_auth_template_path}: {str(file_error)}. Check if the file exists in Salt file roots.",
+                    'message': f"Failed to retrieve BMC auth template file from {bmc_auth_template_path}: {str(file_error)}. Check if the file exists in Salt file roots.",
                     'debug': debug_info
                 }
 
@@ -906,7 +910,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
             )
 
             if not rendered_bmc_auth:
-                raise Exception("Failed to render bmc-auth template: Empty or invalid output")
+                raise Exception("Failed to render BMC auth template: Empty or invalid output")
             debug_info.append("Template rendered successfully")
 
             # Handle the case where rendered_bmc_auth is already a dictionary (parsed YAML)
@@ -917,6 +921,10 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                 # If it's a string, parse it as YAML
                 desired_secret_full = yaml.safe_load(rendered_bmc_auth)
             debug_info.append(f"Rendered output type: {type(rendered_bmc_auth).__name__}")
+
+            # Update the metadata name to be host-specific
+            if 'metadata' in desired_secret_full:
+                desired_secret_full['metadata']['name'] = secret_name
 
             # Extract the stringData from the desired Secret for comparison
             desired_secret = desired_secret_full.get('stringData', {})
@@ -940,11 +948,11 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                 'success': False,
                 'updated': False,
                 'result': {'error': str(bmc_auth_render_error)},
-                'message': f"Failed to render bmc-auth template: {str(bmc_auth_render_error)}",
+                'message': f"Failed to render BMC auth template: {str(bmc_auth_render_error)}",
                 'debug': debug_info
             }
 
-        # Step 3: Update or create bmc-auth Secret if it doesn't exist or doesn't match
+        # Step 3: Update or create host-specific BMC auth Secret if it doesn't exist or doesn't match
         if not exists or not matches:
             try:
                 body = client.V1Secret(
@@ -963,11 +971,6 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                     updated = True
                     message = f"Secret {secret_name} updated in namespace {namespace}"
                     debug_info.append(f"API call to update Secret {secret_name} completed with result metadata: {result.metadata if result else 'No metadata'}")
-                    # Check deletion timestamp in result
-                    deletion_timestamp = result.metadata.deletion_timestamp if result.metadata else None
-                    if deletion_timestamp:
-                        message += f"; WARNING: Secret {secret_name} marked for deletion at {deletion_timestamp} immediately after update"
-                        debug_info.append(f"WARNING: Deletion timestamp found in update result: {deletion_timestamp}")
                 else:
                     result = core_v1_api.create_namespaced_secret(
                         namespace=namespace,
@@ -976,28 +979,18 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                     updated = True
                     message = f"Secret {secret_name} created in namespace {namespace}"
                     debug_info.append(f"API call to create Secret {secret_name} completed with result metadata: {result.metadata if result else 'No metadata'}")
-                    # Check deletion timestamp in result
-                    deletion_timestamp = result.metadata.deletion_timestamp if result.metadata else None
-                    if deletion_timestamp:
-                        message += f"; WARNING: Secret {secret_name} marked for deletion at {deletion_timestamp} immediately after creation"
-                        debug_info.append(f"WARNING: Deletion timestamp found in creation result: {deletion_timestamp}")
 
                 # Step 4: Verify the Secret exists after creation/update with multiple retries
                 verified = False
-                max_retries = 5
-                retry_delay = 5  # seconds
+                max_retries = 3
+                retry_delay = 2  # seconds
                 for attempt in range(max_retries):
                     try:
                         verified_secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
                         if verified_secret:
                             verified = True
                             message += f"; Verified Secret {secret_name} exists in namespace {namespace} (attempt {attempt+1}/{max_retries})"
-                            debug_info.append(f"Verification successful on attempt {attempt+1}: Secret {secret_name} found with metadata: {verified_secret.metadata}")
-                            # Check deletion timestamp even on successful verification
-                            deletion_timestamp = verified_secret.metadata.deletion_timestamp if verified_secret.metadata else None
-                            if deletion_timestamp:
-                                message += f"; WARNING: Verified Secret {secret_name} is marked for deletion at {deletion_timestamp}"
-                                debug_info.append(f"WARNING: Verified Secret has deletion timestamp: {deletion_timestamp}")
+                            debug_info.append(f"Verification successful on attempt {attempt+1}: Secret {secret_name} found")
                             break
                     except ApiException as verify_error:
                         message += f"; WARNING: Failed to verify Secret {secret_name} after creation/update (attempt {attempt+1}/{max_retries}): {str(verify_error)}"
@@ -1013,7 +1006,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
 
                 if not verified:
                     updated = False
-                    message += f"; ERROR: Secret {secret_name} could not be verified after {max_retries} attempts. Possible deletion by external controller or policy."
+                    message += f"; ERROR: Secret {secret_name} could not be verified after {max_retries} attempts. Possible deletion by external controller."
                     result = {'error': f"Verification failed after {max_retries} attempts"}
                     debug_info.append(f"Failed to verify Secret after {max_retries} attempts")
             except ApiException as e:
@@ -1039,6 +1032,6 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
             'success': False,
             'updated': False,
             'result': {},
-            'message': f"An error occurred during bmc_auth_present operation: {str(e)}",
+            'message': f"An error occurred during host_bmc_auth_present operation: {str(e)}",
             'debug': debug_info if 'debug_info' in locals() else ['Exception occurred before debug_info initialization']
         }
