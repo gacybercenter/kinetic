@@ -159,7 +159,8 @@ def get_all_interfaces(namespace, resource_name):
 def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
     """
     Ensure that the Bare Metal Host (BMH) object in Kubernetes matches the desired state
-    defined by pillar data and Jinja2 template. Deletes and recreates BMH if it needs updating.
+    defined by pillar data and Jinja2 template. Deletes and recreates BMH if it needs updating
+    or if it is in an error state.
 
     Args:
         namespace (str): The namespace of the Bare Metal Host resource in Kubernetes.
@@ -178,6 +179,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
         result = {}
         exists = False
         matches = False
+        in_error_state = False
         current_bmh = {}
         desired_bmh = {}
         differences = {}
@@ -209,6 +211,11 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 'status': resource.get('status', {}),
                 'spec': resource.get('spec', {})
             }
+            # Check if BMH is in an error state
+            status = current_bmh.get('status', {})
+            error_message = status.get('errorMessage', '')
+            provisioning_state = status.get('provisioning', {}).get('state', '')
+            in_error_state = error_message != '' or provisioning_state == 'error'
         except ApiException as e:
             exists = False
             current_bmh = {}
@@ -294,8 +301,8 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 'message': f"Failed to render BMH template: {str(bmh_render_error)}"
             }
 
-        # Step 3: Delete and recreate BMH if it doesn't exist or doesn't match
-        if not exists or not matches:
+        # Step 3: Delete and recreate BMH if it doesn't exist, doesn't match, or is in an error state
+        if not exists or not matches or in_error_state:
             try:
                 group = "metal3.io"
                 version = "v1alpha1"
@@ -311,7 +318,12 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                         name=bmh_name,
                         body=client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5)
                     )
-                    message = f"BMH {bmh_name} deleted (to be recreated due to mismatch)"
+                    if in_error_state:
+                        message = f"BMH {bmh_name} deleted (to be recreated due to error state)"
+                    elif not matches:
+                        message = f"BMH {bmh_name} deleted (to be recreated due to mismatch)"
+                    else:
+                        message = f"BMH {bmh_name} deleted (reason unknown)"
                 else:
                     message = f"BMH {bmh_name} does not exist, will be created"
 
@@ -329,7 +341,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 message = f"Failed to delete/recreate BMH {bmh_name}: {str(e)}"
                 result = {'error': str(e)}
         else:
-            message = f"BMH {bmh_name} already matches desired state"
+            message = f"BMH {bmh_name} already matches desired state and is not in error state"
             result = current_bmh
 
         return {
