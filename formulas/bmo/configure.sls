@@ -14,6 +14,7 @@ ensure_{{ name }}_bmc_auth_present:
     - name: kinetic-k8s.host_bmc_auth_present
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
+    - ipmi: {{ pillar['ipmi-password'] }}
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - bmc_auth_template_path: salt://formulas/bmo/files/bmc-auth.j2
 
@@ -54,6 +55,7 @@ ensure_{{ name }}_bmc_auth_recreated_if_bmh_recreated:
     - name: kinetic-k8s.host_bmc_auth_present
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
+    - ipmi: {{ pillar['ipmi-password'] }}
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - bmc_auth_template_path: salt://formulas/bmo/files/bmc-auth.j2
     - require:
