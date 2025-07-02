@@ -15,6 +15,14 @@ ensure_bmc_auth_present:
     - ipmi: {{ pillar['ipmi-password'] }}
 
 {% for name, host in pillar['bmh'].items() %}
+ensure_{{ name }}_bmc_auth_present:
+  module.run:
+    - name: kinetic-k8s.host_bmc_auth_present
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - pillar_data: {{ pillar['bmh'].get(name) }}
+    - bmc_auth_template_path: salt://formulas/bmo/files/bmc-auth.j2
+
 ensure_{{ name }}_networkdata_present:
   module.run:
     - name: kinetic-k8s.networkdata_present
@@ -23,7 +31,8 @@ ensure_{{ name }}_networkdata_present:
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - network_template_path: salt://formulas/bmo/files/network-data.j2
     - require:
-      - module: ensure_bmc_auth_present
+      - module: ensure_{{ name }}_bmc_auth_present
+
 ensure_{{ name }}_userdata_present:
   module.run:
     - name: kinetic-k8s.userdata_present
@@ -33,6 +42,7 @@ ensure_{{ name }}_userdata_present:
     - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
     - require:
       - module: ensure_{{ name }}_networkdata_present
+
 ensure_{{ name }}_bmh_present:
   module.run: 
     - name: kinetic-k8s.bmh_present
@@ -43,4 +53,17 @@ ensure_{{ name }}_bmh_present:
     - require:
       - module: ensure_{{ name }}_networkdata_present
       - module: ensure_{{ name }}_userdata_present
+
+# If BMH was recreated, ensure the host-specific BMC auth Secret is recreated
+ensure_{{ name }}_bmc_auth_recreated_if_bmh_recreated:
+  module.run:
+    - name: kinetic-k8s.host_bmc_auth_present
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - pillar_data: {{ pillar['bmh'].get(name) }}
+    - bmc_auth_template_path: salt://formulas/bmo/files/bmc-auth.j2
+    - require:
+      - module: ensure_{{ name }}_bmh_present
+    - onchanges:
+      - module: ensure_{{ name }}_bmh_present
 {% endfor %}

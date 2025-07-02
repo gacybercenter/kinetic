@@ -156,95 +156,6 @@ def get_all_interfaces(namespace, resource_name):
             'message': f"An error occurred: {str(e)}"
         }
 
-def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
-    """
-    Ensure that the Bare Metal Host (BMH) object in Kubernetes matches the desired state
-    defined by pillar data and Jinja2 template. Updates BMH if possible, or deletes and recreates
-    if it needs updating and is in an error state, waiting for deletion to complete.
-
-    Args:
-        namespace (str): The namespace of the Bare Metal Host resource in Kubernetes.
-        bmh_name (str): The name of the Bare Metal Host resource.
-        pillar_data (dict): Pillar data containing the desired BMH configuration.
-        bmh_template_path (str, optional): Salt URI to the Jinja2 template file for BMH.
-
-    Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
-
-    CLI Example:
-        salt '*' kinetic-k8s.bmh_present baremetal-operator-system compute-133-26 pillar_data
-    """
-    try:
-        updated = False
-        result = {}
-        exists = False
-        matches = False
-        in_error_state = False
-        current_bmh = {}
-        desired_bmh = {}
-        differences = {}
-
-        # Load Kubernetes configuration for updates
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
-
-        custom_api = client.CustomObjectsApi()
-
-        # Step 1: Retrieve the existing BMH from Kubernetes
-        try:
-            group = "metal3.io"
-            version = "v1alpha1"
-            plural = "baremetalhosts"
-            resource = custom_api.get_namespaced_custom_object(
-                group=group,
-                version=version,
-                namespace=namespace,
-                plural=plural,
-                name=bmh_name
-            )
-            exists = True
-            current_bmh = {
-                'name': resource.get('metadata', {}).get('name', ''),
-                'namespace': resource.get('metadata', {}).get('namespace', ''),
-                'status': resource.get('status', {}),
-                'spec': resource.get('spec', {})
-            }
-            # Check if BMH is in an error state
-            status = current_bmh.get('status', {})
-            error_message = status.get('errorMessage', '')
-            provisioning_state = status.get('provisioning', {}).get('state', '')
-            in_error_state = error_message != '' or provisioning_state == 'error'
-        except ApiException as e:
-            exists = False
-            current_bmh = {}
-            message = f"BMH {bmh_name} not found: {str(e)}"
-        except Exception as e:
-            exists = False
-            current_bmh = {}
-            message = f"Error fetching BMH: {str(e)}"
-
-        # Step 2: Render the desired BMH configuration from pillar data using Jinja2 template in memory
-        try:
-            # Prepare the context for rendering the BMH template
-            network_data_name = f"{bmh_name}-network-data"
-            userdata_name = f"{bmh_name}-user-data"
-            bmh_context = {
-                'name': bmh_name,
-                'namespace': namespace,
-                'online': pillar_data.get('online', False),
-                'address': pillar_data.get('bmc', {}).get('address', ''),
-                'bootMACAddress': pillar_data.get('bootMACAddress', ''),
-                'checksum': pillar_data.get('image', {}).get('checksum', ''),
-                'format': pillar_data.get('image', {}).get('format', ''),
-                'url': pillar_data.get('image', {}).get('url', ''),
-                'rootdevice': pillar_data.get('rootDeviceHints', {}).get('deviceName', ''),
-                'networkdata': network_data_name if 'network' in pillar_data else '',
-                'userdata': userdata_name if 'network' in pillar_data else ''
-            }
-
-            # Use Salt's in-memory rendering for BMH template
             try:
                 bmh_content = __salt__['cp.get_file_str'](bmh_template_path)
                 if not bmh_content:
@@ -259,6 +170,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 return {
                     'success': False,
                     'updated': False,
+                    'recreated': False,
                     'result': {'error': str(file_error)},
                     'message': f"Failed to retrieve BMH template file from {bmh_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
                 }
@@ -297,6 +209,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             return {
                 'success': False,
                 'updated': False,
+                'recreated': False,
                 'result': {'error': str(bmh_render_error)},
                 'message': f"Failed to render BMH template: {str(bmh_render_error)}"
             }
@@ -317,9 +230,11 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                     body=body
                 )
                 updated = True
+                recreated = True  # Treat initial creation as recreation for triggering Secret creation
                 message = f"BMH {bmh_name} created (did not exist)"
             except ApiException as e:
                 updated = False
+                recreated = False
                 message = f"Failed to create BMH {bmh_name}: {str(e)}"
                 result = {'error': str(e)}
         elif not matches or in_error_state:
@@ -345,6 +260,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                         body=body
                     )
                     updated = True
+                    recreated = False
                     message = f"BMH {bmh_name} updated (direct replacement)"
                 except ApiException as update_error:
                     # If update fails and it's due to an error state requiring deletion, fall back to delete and recreate
@@ -395,22 +311,27 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                             body=body
                         )
                         updated = True
+                        recreated = True  # Indicate recreation for triggering Secret recreation
                         message += f"; BMH {bmh_name} recreated after deletion"
                     else:
                         updated = False
+                        recreated = False
                         message = f"Failed to update BMH {bmh_name}: {str(update_error)}"
                         result = {'error': str(update_error)}
             except ApiException as e:
                 updated = False
+                recreated = False
                 message = f"Failed to process BMH {bmh_name}: {str(e)}"
                 result = {'error': str(e)}
         else:
             message = f"BMH {bmh_name} already matches desired state and is not in error state"
             result = current_bmh
+            recreated = False
 
         return {
             'success': True,
             'updated': updated,
+            'recreated': recreated,  # Indicate if BMH was recreated to trigger Secret recreation
             'result': result,
             'message': message
         }
@@ -419,6 +340,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
         return {
             'success': False,
             'updated': False,
+            'recreated': False,
             'result': {},
             'message': f"An error occurred during bmh_present operation: {str(e)}"
         }
