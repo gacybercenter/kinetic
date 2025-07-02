@@ -835,6 +835,13 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                 current_secret = {k: base64.b64decode(v).decode('utf-8') for k, v in secret.data.items()}
             message = f"Secret {secret_name} found in namespace {namespace}"
             debug_info.append(f"Secret {secret_name} exists in namespace {namespace} with keys: {list(current_secret.keys())}")
+            # Check for deletion timestamp or finalizers
+            deletion_timestamp = secret.metadata.deletion_timestamp if secret.metadata else None
+            finalizers = secret.metadata.finalizers if secret.metadata else None
+            owner_references = secret.metadata.owner_references if secret.metadata else None
+            debug_info.append(f"Deletion timestamp: {deletion_timestamp}")
+            debug_info.append(f"Finalizers: {finalizers}")
+            debug_info.append(f"Owner references: {owner_references}")
         except ApiException as e:
             exists = False
             current_secret = {}
@@ -853,7 +860,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
             bmc_auth_context = {
                 'pillar': {
                     'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
-                    'ipmi_password': full_pillar.get('ipmi-password', '')
+                    'ipmi_password': full_pillar.get('ipmi-password', 'default-password-if-not-set')
                 }
             }
             debug_info.append(f"Pillar data for rendering: bmo_namespace={full_pillar.get('bmo_namespace', 'not set')}, ipmi-password={'***' if full_pillar.get('ipmi-password') else 'not set'}")
@@ -943,6 +950,11 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                     updated = True
                     message = f"Secret {secret_name} updated in namespace {namespace}"
                     debug_info.append(f"API call to update Secret {secret_name} completed with result metadata: {result.metadata if result else 'No metadata'}")
+                    # Check deletion timestamp in result
+                    deletion_timestamp = result.metadata.deletion_timestamp if result.metadata else None
+                    if deletion_timestamp:
+                        message += f"; WARNING: Secret {secret_name} marked for deletion at {deletion_timestamp} immediately after update"
+                        debug_info.append(f"WARNING: Deletion timestamp found in update result: {deletion_timestamp}")
                 else:
                     result = core_v1_api.create_namespaced_secret(
                         namespace=namespace,
@@ -951,11 +963,16 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                     updated = True
                     message = f"Secret {secret_name} created in namespace {namespace}"
                     debug_info.append(f"API call to create Secret {secret_name} completed with result metadata: {result.metadata if result else 'No metadata'}")
+                    # Check deletion timestamp in result
+                    deletion_timestamp = result.metadata.deletion_timestamp if result.metadata else None
+                    if deletion_timestamp:
+                        message += f"; WARNING: Secret {secret_name} marked for deletion at {deletion_timestamp} immediately after creation"
+                        debug_info.append(f"WARNING: Deletion timestamp found in creation result: {deletion_timestamp}")
 
                 # Step 4: Verify the Secret exists after creation/update with multiple retries
                 verified = False
-                max_retries = 3
-                retry_delay = 3  # seconds
+                max_retries = 5
+                retry_delay = 5  # seconds
                 for attempt in range(max_retries):
                     try:
                         verified_secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
@@ -963,6 +980,11 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
                             verified = True
                             message += f"; Verified Secret {secret_name} exists in namespace {namespace} (attempt {attempt+1}/{max_retries})"
                             debug_info.append(f"Verification successful on attempt {attempt+1}: Secret {secret_name} found with metadata: {verified_secret.metadata}")
+                            # Check deletion timestamp even on successful verification
+                            deletion_timestamp = verified_secret.metadata.deletion_timestamp if verified_secret.metadata else None
+                            if deletion_timestamp:
+                                message += f"; WARNING: Verified Secret {secret_name} is marked for deletion at {deletion_timestamp}"
+                                debug_info.append(f"WARNING: Verified Secret has deletion timestamp: {deletion_timestamp}")
                             break
                     except ApiException as verify_error:
                         message += f"; WARNING: Failed to verify Secret {secret_name} after creation/update (attempt {attempt+1}/{max_retries}): {str(verify_error)}"
@@ -978,7 +1000,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
 
                 if not verified:
                     updated = False
-                    message += f"; ERROR: Secret {secret_name} could not be verified after {max_retries} attempts"
+                    message += f"; ERROR: Secret {secret_name} could not be verified after {max_retries} attempts. Possible deletion by external controller or policy."
                     result = {'error': f"Verification failed after {max_retries} attempts"}
                     debug_info.append(f"Failed to verify Secret after {max_retries} attempts")
             except ApiException as e:
