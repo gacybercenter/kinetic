@@ -780,7 +780,7 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
             'message': f"An error occurred during userdata_present operation: {str(e)}"
         }
 
-def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
+def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
     """
     Ensure that the bmc-auth Secret in Kubernetes matches the desired state defined by pillar data
     and Jinja2 template. Creates the Secret if it doesn't exist, or updates it if it differs.
@@ -815,7 +815,14 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
             config.load_kube_config()
             debug_info.append("Loaded kubeconfig from file successfully")
 
+        # Get Kubernetes API client and server information for debugging context
         core_v1_api = client.CoreV1Api()
+        try:
+            api_client = core_v1_api.api_client
+            server = api_client.configuration.host
+            debug_info.append(f"Kubernetes API server: {server}")
+        except Exception as e:
+            debug_info.append(f"Could not determine Kubernetes API server: {str(e)}")
 
         # Step 1: Retrieve the existing bmc-auth Secret from Kubernetes
         try:
@@ -846,7 +853,7 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
             bmc_auth_context = {
                 'pillar': {
                     'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
-                    'ipmi_password': full_pillar.get('ipmi-password', ipmi)
+                    'ipmi_password': full_pillar.get('ipmi-password', '')
                 }
             }
             debug_info.append(f"Pillar data for rendering: bmo_namespace={full_pillar.get('bmo_namespace', 'not set')}, ipmi-password={'***' if full_pillar.get('ipmi-password') else 'not set'}")
@@ -935,7 +942,7 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
                     )
                     updated = True
                     message = f"Secret {secret_name} updated in namespace {namespace}"
-                    debug_info.append(f"API call to update Secret {secret_name} completed with result: {result}")
+                    debug_info.append(f"API call to update Secret {secret_name} completed with result metadata: {result.metadata if result else 'No metadata'}")
                 else:
                     result = core_v1_api.create_namespaced_secret(
                         namespace=namespace,
@@ -943,47 +950,37 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
                     )
                     updated = True
                     message = f"Secret {secret_name} created in namespace {namespace}"
-                    debug_info.append(f"API call to create Secret {secret_name} completed with result: {result}")
+                    debug_info.append(f"API call to create Secret {secret_name} completed with result metadata: {result.metadata if result else 'No metadata'}")
 
-                # Step 4: Verify the Secret exists after creation/update (first attempt)
-                try:
-                    verified_secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
-                    if verified_secret:
-                        message += f"; Verified Secret {secret_name} exists in namespace {namespace} (first attempt)"
-                        debug_info.append(f"First verification successful: Secret {secret_name} found with metadata: {verified_secret.metadata}")
-                    else:
-                        message += f"; WARNING: Secret {secret_name} reported as created/updated but verification returned empty result (first attempt)"
-                        updated = False
-                        result = {'error': 'Verification returned empty result on first attempt'}
-                        debug_info.append("First verification returned empty result unexpectedly")
-                except ApiException as verify_error:
-                    message += f"; WARNING: Failed to verify Secret {secret_name} after creation/update (first attempt): {str(verify_error)}"
-                    updated = False
-                    result = {'error': str(verify_error)}
-                    debug_info.append(f"First verification failed with ApiException: {str(verify_error)}")
-
-                # Step 5: If first verification failed, wait briefly and try again to account for eventual consistency
-                if not updated:
-                    import time
-                    time.sleep(2)  # Wait 2 seconds for potential eventual consistency
-                    debug_info.append("First verification failed, waiting 2 seconds before second attempt")
+                # Step 4: Verify the Secret exists after creation/update with multiple retries
+                verified = False
+                max_retries = 3
+                retry_delay = 3  # seconds
+                for attempt in range(max_retries):
                     try:
                         verified_secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
                         if verified_secret:
-                            message += f"; Verified Secret {secret_name} exists in namespace {namespace} (second attempt after delay)"
-                            updated = True
-                            result = {'verified': True}
-                            debug_info.append(f"Second verification successful: Secret {secret_name} found with metadata: {verified_secret.metadata}")
-                        else:
-                            message += f"; ERROR: Secret {secret_name} still not found after delay (second attempt)"
-                            updated = False
-                            result = {'error': 'Verification returned empty result on second attempt'}
-                            debug_info.append("Second verification returned empty result unexpectedly")
-                    except ApiException as verify_error2:
-                        message += f"; ERROR: Failed to verify Secret {secret_name} after delay (second attempt): {str(verify_error2)}"
-                        updated = False
-                        result = {'error': str(verify_error2)}
-                        debug_info.append(f"Second verification failed with ApiException: {str(verify_error2)}")
+                            verified = True
+                            message += f"; Verified Secret {secret_name} exists in namespace {namespace} (attempt {attempt+1}/{max_retries})"
+                            debug_info.append(f"Verification successful on attempt {attempt+1}: Secret {secret_name} found with metadata: {verified_secret.metadata}")
+                            break
+                    except ApiException as verify_error:
+                        message += f"; WARNING: Failed to verify Secret {secret_name} after creation/update (attempt {attempt+1}/{max_retries}): {str(verify_error)}"
+                        debug_info.append(f"Verification attempt {attempt+1} failed with ApiException: {str(verify_error)}")
+                    except Exception as verify_error:
+                        message += f"; WARNING: General error verifying Secret {secret_name} (attempt {attempt+1}/{max_retries}): {str(verify_error)}"
+                        debug_info.append(f"Verification attempt {attempt+1} failed with general exception: {str(verify_error)}")
+                    
+                    if attempt < max_retries - 1:
+                        import time
+                        time.sleep(retry_delay)
+                        debug_info.append(f"Waiting {retry_delay} seconds before retry {attempt+2}/{max_retries}")
+
+                if not verified:
+                    updated = False
+                    message += f"; ERROR: Secret {secret_name} could not be verified after {max_retries} attempts"
+                    result = {'error': f"Verification failed after {max_retries} attempts"}
+                    debug_info.append(f"Failed to verify Secret after {max_retries} attempts")
             except ApiException as e:
                 updated = False
                 message = f"Failed to update/create Secret {secret_name}: {str(e)}"
@@ -995,7 +992,7 @@ def bmc_auth_present(namespace, ipmi, secret_name='bmc-auth', bmc_auth_template_
             debug_info.append("No update needed, Secret matches desired state")
 
         return {
-            'success': True if updated or matches else False,
+            'success': True if (updated and verified) or matches else False,
             'updated': updated,
             'result': result,
             'message': message,
