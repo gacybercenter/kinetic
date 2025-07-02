@@ -793,7 +793,7 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
             'message': f"An error occurred during userdata_present operation: {str(e)}"
         }
 
-def host_bmc_auth_present(namespace, bmh_name, pillar_data, bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
+def host_bmc_auth_present(namespace, bmh_name, ipmi, pillar_data, bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
     """
     Ensure that a host-specific BMC authentication Secret in Kubernetes matches the desired state
     defined by pillar data and Jinja2 template. Creates the Secret if it doesn't exist, or updates it if it differs.
@@ -878,7 +878,7 @@ def host_bmc_auth_present(namespace, bmh_name, pillar_data, bmc_auth_template_pa
                 'pillar': {
                     'name': bmh_name,
                     'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
-                    'ipmi_password': pillar_data.get('bmc', {}).get('password', full_pillar.get('ipmi-password', 'default-password-if-not-set'))
+                    'ipmi_password': pillar_data.get('bmc', {}).get('password', full_pillar.get('ipmi-password', ipmi))
                 }
             }
             debug_info.append(f"Pillar data for rendering: bmo_namespace={full_pillar.get('bmo_namespace', 'not set')}, ipmi-password={'***' if bmc_auth_context['pillar']['ipmi_password'] else 'not set'}")
