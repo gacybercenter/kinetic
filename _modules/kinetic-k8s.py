@@ -780,7 +780,7 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
             'message': f"An error occurred during userdata_present operation: {str(e)}"
         }
 
-def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
+def bmc_auth_present(namespace, ipmi-password,secret_name='bmc-auth', bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
     """
     Ensure that the bmc-auth Secret in Kubernetes matches the desired state defined by pillar data
     and Jinja2 template. Creates the Secret if it doesn't exist, or updates it if it differs.
@@ -836,11 +836,10 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
         # Step 2: Render the desired bmc-auth Secret configuration from pillar data using Jinja2 template in memory
         try:
             # Fetch pillar data for rendering
-            full_pillar = __salt__['pillar.get']('', {})
             bmc_auth_context = {
                 'pillar': {
-                    'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
-                    'ipmi_password': full_pillar.get('ipmi-password')
+                    'bmo_namespace': namespace,
+                    'ipmi_password': ipmi-password
                 }
             }
 

@@ -12,6 +12,7 @@ ensure_bmc_auth_present:
   module.run:
     - name: kinetic-k8s.bmc_auth_present
     - namespace: {{ pillar['bmo_namespace'] }}
+    - ipmi-password: {{ pillar['ipmi-password'] }}
 
 {% for name, host in pillar['bmh'].items() %}
 ensure_{{ name }}_networkdata_present:
