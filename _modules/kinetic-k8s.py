@@ -159,8 +159,8 @@ def get_all_interfaces(namespace, resource_name):
 def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
     """
     Ensure that the Bare Metal Host (BMH) object in Kubernetes matches the desired state
-    defined by pillar data and Jinja2 template. Deletes and recreates BMH if it needs updating
-    or if it is in an error state.
+    defined by pillar data and Jinja2 template. Updates BMH if possible, or deletes and recreates
+    if it needs updating and is in an error state, waiting for deletion to complete.
 
     Args:
         namespace (str): The namespace of the Bare Metal Host resource in Kubernetes.
@@ -301,31 +301,13 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 'message': f"Failed to render BMH template: {str(bmh_render_error)}"
             }
 
-        # Step 3: Delete and recreate BMH if it doesn't exist, doesn't match, or is in an error state
-        if not exists or not matches or in_error_state:
+        # Step 3: Update or create BMH based on existence, match status, and error state
+        if not exists:
             try:
                 group = "metal3.io"
                 version = "v1alpha1"
                 plural = "baremetalhosts"
                 body = desired_bmh
-
-                if exists:
-                    custom_api.delete_namespaced_custom_object(
-                        group=group,
-                        version=version,
-                        namespace=namespace,
-                        plural=plural,
-                        name=bmh_name,
-                        body=client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5)
-                    )
-                    if in_error_state:
-                        message = f"BMH {bmh_name} deleted (to be recreated due to error state)"
-                    elif not matches:
-                        message = f"BMH {bmh_name} deleted (to be recreated due to mismatch)"
-                    else:
-                        message = f"BMH {bmh_name} deleted (reason unknown)"
-                else:
-                    message = f"BMH {bmh_name} does not exist, will be created"
 
                 result = custom_api.create_namespaced_custom_object(
                     group=group,
@@ -335,10 +317,92 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                     body=body
                 )
                 updated = True
-                message += f"; BMH {bmh_name} created"
+                message = f"BMH {bmh_name} created (did not exist)"
             except ApiException as e:
                 updated = False
-                message = f"Failed to delete/recreate BMH {bmh_name}: {str(e)}"
+                message = f"Failed to create BMH {bmh_name}: {str(e)}"
+                result = {'error': str(e)}
+        elif not matches or in_error_state:
+            try:
+                group = "metal3.io"
+                version = "v1alpha1"
+                plural = "baremetalhosts"
+                body = desired_bmh
+                # Preserve metadata like resourceVersion for update
+                if 'metadata' in current_bmh and 'resourceVersion' in current_bmh['metadata']:
+                    if 'metadata' not in body:
+                        body['metadata'] = {}
+                    body['metadata']['resourceVersion'] = current_bmh['metadata'].get('resourceVersion', '')
+
+                try:
+                    # First attempt to update the existing BMH
+                    result = custom_api.replace_namespaced_custom_object(
+                        group=group,
+                        version=version,
+                        namespace=namespace,
+                        plural=plural,
+                        name=bmh_name,
+                        body=body
+                    )
+                    updated = True
+                    message = f"BMH {bmh_name} updated (direct replacement)"
+                except ApiException as update_error:
+                    # If update fails and it's due to an error state requiring deletion, fall back to delete and recreate
+                    if in_error_state:
+                        import time
+                        # Delete the BMH
+                        custom_api.delete_namespaced_custom_object(
+                            group=group,
+                            version=version,
+                            namespace=namespace,
+                            plural=plural,
+                            name=bmh_name,
+                            body=client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5)
+                        )
+                        message = f"BMH {bmh_name} deleted (due to error state or update failure: {str(update_error)})"
+
+                        # Wait for deletion to complete
+                        max_wait = 60  # Wait up to 60 seconds
+                        wait_interval = 5  # Check every 5 seconds
+                        wait_time = 0
+                        while wait_time < max_wait:
+                            try:
+                                custom_api.get_namespaced_custom_object(
+                                    group=group,
+                                    version=version,
+                                    namespace=namespace,
+                                    plural=plural,
+                                    name=bmh_name
+                                )
+                                time.sleep(wait_interval)
+                                wait_time += wait_interval
+                            except ApiException as get_error:
+                                if get_error.status == 404:  # Not found, deletion complete
+                                    message += f"; Deletion of BMH {bmh_name} completed after {wait_time} seconds"
+                                    break
+                                else:
+                                    message += f"; Error checking deletion status for BMH {bmh_name}: {str(get_error)}"
+                                    break
+                        if wait_time >= max_wait:
+                            message += f"; Timeout waiting for deletion of BMH {bmh_name} after {max_wait} seconds"
+
+                        # Recreate after deletion
+                        result = custom_api.create_namespaced_custom_object(
+                            group=group,
+                            version=version,
+                            namespace=namespace,
+                            plural=plural,
+                            body=body
+                        )
+                        updated = True
+                        message += f"; BMH {bmh_name} recreated after deletion"
+                    else:
+                        updated = False
+                        message = f"Failed to update BMH {bmh_name}: {str(update_error)}"
+                        result = {'error': str(update_error)}
+            except ApiException as e:
+                updated = False
+                message = f"Failed to process BMH {bmh_name}: {str(e)}"
                 result = {'error': str(e)}
         else:
             message = f"BMH {bmh_name} already matches desired state and is not in error state"
