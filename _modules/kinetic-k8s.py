@@ -846,7 +846,7 @@ def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='
             bmc_auth_context = {
                 'pillar': {
                     'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
-                    'ipmi_password': full_pillar.get('ipmi-password', '')
+                    'ipmi_password': full_pillar.get('ipmi-password', ipmi)
                 }
             }
             debug_info.append(f"Pillar data for rendering: bmo_namespace={full_pillar.get('bmo_namespace', 'not set')}, ipmi-password={'***' if full_pillar.get('ipmi-password') else 'not set'}")
