@@ -703,3 +703,171 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
             'result': {},
             'message': f"An error occurred during userdata_present operation: {str(e)}"
         }
+
+def bmc_auth_present(namespace, secret_name='bmc-auth', bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
+    """
+    Ensure that the bmc-auth Secret in Kubernetes matches the desired state defined by pillar data
+    and Jinja2 template. Creates the Secret if it doesn't exist, or updates it if it differs.
+
+    Args:
+        namespace (str): The namespace of the Secret in Kubernetes.
+        secret_name (str, optional): The name of the Secret. Defaults to 'bmc-auth'.
+        bmc_auth_template_path (str, optional): Salt URI to the Jinja2 template file for bmc-auth Secret.
+            Defaults to the standard bmc-auth template location.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
+
+    CLI Example:
+        salt '*' kinetic-k8s.bmc_auth_present baremetal-operator-system
+    """
+    try:
+        updated = False
+        result = {}
+        exists = False
+        matches = False
+        current_secret = {}
+        desired_secret = {}
+        differences = {}
+
+        # Load Kubernetes configuration for updates
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+
+        # Step 1: Retrieve the existing bmc-auth Secret from Kubernetes
+        try:
+            secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+            exists = True
+            current_secret = secret.string_data if secret.string_data else {}
+            if not current_secret and secret.data:
+                # If string_data is not available, decode data (base64 encoded)
+                import base64
+                current_secret = {k: base64.b64decode(v).decode('utf-8') for k, v in secret.data.items()}
+        except ApiException as e:
+            exists = False
+            current_secret = {}
+            message = f"Secret {secret_name} not found in namespace {namespace}: {str(e)}"
+        except Exception as e:
+            exists = False
+            current_secret = {}
+            message = f"Error fetching Secret {secret_name}: {str(e)}"
+
+        # Step 2: Render the desired bmc-auth Secret configuration from pillar data using Jinja2 template in memory
+        try:
+            # Fetch pillar data for rendering
+            full_pillar = __salt__['pillar.get']('', {})
+            bmc_auth_context = {
+                'pillar': {
+                    'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
+                    'ipmi_password': full_pillar.get('ipmi-password', '')
+                }
+            }
+
+            # Use Salt's in-memory rendering for bmc-auth template
+            try:
+                bmc_auth_content = __salt__['cp.get_file_str'](bmc_auth_template_path)
+                if not bmc_auth_content:
+                    raise Exception(f"Failed to read bmc-auth template from {bmc_auth_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
+                # Strip shebang line if present to avoid rendering issues
+                if bmc_auth_content.startswith('#!'):
+                    bmc_auth_content_lines = bmc_auth_content.splitlines()
+                    bmc_auth_content = '\n'.join(bmc_auth_content_lines[1:]) if len(bmc_auth_content_lines) > 1 else ''
+                    if not bmc_auth_content:
+                        raise Exception(f"bmc-auth template at {bmc_auth_template_path} is empty after removing shebang line.")
+            except Exception as file_error:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'result': {'error': str(file_error)},
+                    'message': f"Failed to retrieve bmc-auth template file from {bmc_auth_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
+                }
+
+            rendered_bmc_auth = __salt__['slsutil.renderer'](
+                string=bmc_auth_content,
+                default_renderer='jinja|yaml',
+                context=bmc_auth_context
+            )
+
+            if not rendered_bmc_auth:
+                raise Exception("Failed to render bmc-auth template: Empty or invalid output")
+
+            # Handle the case where rendered_bmc_auth is already a dictionary (parsed YAML)
+            import yaml
+            if isinstance(rendered_bmc_auth, dict):
+                desired_secret_full = rendered_bmc_auth
+            else:
+                # If it's a string, parse it as YAML
+                desired_secret_full = yaml.safe_load(rendered_bmc_auth)
+
+            # Extract the stringData from the desired Secret for comparison
+            desired_secret = desired_secret_full.get('stringData', {})
+
+            # Compare the existing Secret with the desired Secret
+            if exists:
+                for key in desired_secret:
+                    if key not in current_secret or current_secret[key] != desired_secret[key]:
+                        differences[key] = {
+                            'current': current_secret.get(key, 'not set'),
+                            'desired': desired_secret[key]
+                        }
+                matches = len(differences) == 0
+            else:
+                matches = False
+        except Exception as bmc_auth_render_error:
+            return {
+                'success': False,
+                'updated': False,
+                'result': {'error': str(bmc_auth_render_error)},
+                'message': f"Failed to render bmc-auth template: {str(bmc_auth_render_error)}"
+            }
+
+        # Step 3: Update or create bmc-auth Secret if it doesn't exist or doesn't match
+        if not exists or not matches:
+            try:
+                body = client.V1Secret(
+                    metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
+                    string_data=desired_secret,
+                    type=desired_secret_full.get('type', 'Opaque')
+                )
+
+                if exists:
+                    result = core_v1_api.replace_namespaced_secret(
+                        name=secret_name,
+                        namespace=namespace,
+                        body=body
+                    )
+                    updated = True
+                    message = f"Secret {secret_name} updated in namespace {namespace}"
+                else:
+                    result = core_v1_api.create_namespaced_secret(
+                        namespace=namespace,
+                        body=body
+                    )
+                    updated = True
+                    message = f"Secret {secret_name} created in namespace {namespace}"
+            except ApiException as e:
+                updated = False
+                message = f"Failed to update/create Secret {secret_name}: {str(e)}"
+                result = {'error': str(e)}
+        else:
+            message = f"Secret {secret_name} already matches desired state in namespace {namespace}"
+            result = current_secret
+
+        return {
+            'success': True,
+            'updated': updated,
+            'result': result,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'result': {},
+            'message': f"An error occurred during bmc_auth_present operation: {str(e)}"
+        }
