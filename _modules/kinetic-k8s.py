@@ -438,12 +438,12 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
 
 def networkdata_present(namespace, bmh_name, pillar_data, network_template_path='salt://formulas/bmo/files/network-data.j2'):
     """
-    Ensure that the network data ConfigMap in Kubernetes matches the desired state
-    defined by pillar data and Jinja2 template. Creates or replaces the ConfigMap if it needs updating.
+    Ensure that the network data Secret in Kubernetes matches the desired state
+    defined by pillar data and Jinja2 template. Creates or replaces the Secret if it needs updating.
 
     Args:
-        namespace (str): The namespace of the network data ConfigMap in Kubernetes.
-        bmh_name (str): The name of the Bare Metal Host resource (used for ConfigMap naming).
+        namespace (str): The namespace of the network data Secret in Kubernetes.
+        bmh_name (str): The name of the Bare Metal Host resource (used for Secret naming).
         pillar_data (dict): Pillar data containing the desired network configuration.
         network_template_path (str, optional): Salt URI to the Jinja2 template file for network data.
 
@@ -470,17 +470,21 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
 
         core_v1_api = client.CoreV1Api()
 
-        # Step 1: Retrieve the existing network data ConfigMap from Kubernetes
+        # Step 1: Retrieve the existing network data Secret from Kubernetes
         if 'network' in pillar_data:
             try:
                 network_data_name = f"{bmh_name}-network-data"
-                network_cm = core_v1_api.read_namespaced_config_map(name=network_data_name, namespace=namespace)
+                network_secret = core_v1_api.read_namespaced_secret(name=network_data_name, namespace=namespace)
                 exists = True
-                current_network = network_cm.data if network_cm.data else {}
+                current_network = network_secret.string_data if network_secret.string_data else {}
+                if not current_network and network_secret.data:
+                    # If string_data is not available, decode data (base64 encoded)
+                    import base64
+                    current_network = {k: base64.b64decode(v).decode('utf-8') for k, v in network_secret.data.items()}
             except ApiException as ne:
                 exists = False
                 current_network = {}
-                message = f"Network data ConfigMap {network_data_name} not found: {str(ne)}"
+                message = f"Network data Secret {network_data_name} not found: {str(ne)}"
             except Exception as ne:
                 exists = False
                 current_network = {}
@@ -537,24 +541,26 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 if not rendered_network:
                     raise Exception("Failed to render network template: Empty or invalid output")
 
-                # Parse the rendered JSON content into a dictionary
+                # Parse the rendered JSON content into a dictionary and convert to string for Secret
                 import json
-                desired_network = json.loads(rendered_network)
+                desired_network_json = json.loads(rendered_network)
+                desired_network = {'networkData': json.dumps(desired_network_json)}
 
                 # Compare the existing network data with the desired network data
                 if exists:
                     current_network_data = current_network
-                    if isinstance(current_network, dict) and len(current_network) == 1 and 'networkData' in current_network:
+                    if isinstance(current_network, dict) and 'networkData' in current_network:
                         try:
                             current_network_data = json.loads(current_network['networkData'])
                         except Exception:
                             current_network_data = current_network
 
-                    for key in desired_network:
-                        if key not in current_network_data or current_network_data[key] != desired_network[key]:
+                    desired_network_data = json.loads(desired_network['networkData'])
+                    for key in desired_network_data:
+                        if key not in current_network_data or current_network_data[key] != desired_network_data[key]:
                             differences[key] = {
                                 'current': current_network_data.get(key, 'not set'),
-                                'desired': desired_network[key]
+                                'desired': desired_network_data[key]
                             }
                     matches = len(differences) == 0
                 else:
@@ -571,34 +577,34 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
             matches = False
             message = f"Network data not applicable for {bmh_name}"
 
-        # Step 3: Update or create network data ConfigMap if it doesn't exist or doesn't match
+        # Step 3: Update or create network data Secret if it doesn't exist or doesn't match
         if 'network' in pillar_data and (not exists or not matches):
             try:
                 network_data_name = f"{bmh_name}-network-data"
-                network_data_str = json.dumps(desired_network)
-                body = client.V1ConfigMap(
+                body = client.V1Secret(
                     metadata=client.V1ObjectMeta(name=network_data_name, namespace=namespace),
-                    data={'networkData': network_data_str}
+                    string_data=desired_network,
+                    type='Opaque'
                 )
 
                 if exists:
-                    result = core_v1_api.replace_namespaced_config_map(
+                    result = core_v1_api.replace_namespaced_secret(
                         name=network_data_name,
                         namespace=namespace,
                         body=body
                     )
                     updated = True
-                    message = f"Network data ConfigMap {network_data_name} updated"
+                    message = f"Network data Secret {network_data_name} updated"
                 else:
-                    result = core_v1_api.create_namespaced_config_map(
+                    result = core_v1_api.create_namespaced_secret(
                         namespace=namespace,
                         body=body
                     )
                     updated = True
-                    message = f"Network data ConfigMap {network_data_name} created"
+                    message = f"Network data Secret {network_data_name} created"
             except ApiException as e:
                 updated = False
-                message = f"Failed to update/create network data ConfigMap {network_data_name}: {str(e)}"
+                message = f"Failed to update/create network data Secret {network_data_name}: {str(e)}"
                 result = {'error': str(e)}
         else:
             message = f"Network data for {bmh_name} already matches desired state or not applicable"
@@ -621,12 +627,12 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
 
 def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='salt://formulas/bmo/files/cloudinit.j2'):
     """
-    Ensure that the userdata ConfigMap in Kubernetes matches the desired state
-    defined by pillar data and Jinja2 template. Creates or replaces the ConfigMap if it needs updating.
+    Ensure that the userdata Secret in Kubernetes matches the desired state
+    defined by pillar data and Jinja2 template. Creates or replaces the Secret if it needs updating.
 
     Args:
-        namespace (str): The namespace of the userdata ConfigMap in Kubernetes.
-        bmh_name (str): The name of the Bare Metal Host resource (used for ConfigMap naming).
+        namespace (str): The namespace of the userdata Secret in Kubernetes.
+        bmh_name (str): The name of the Bare Metal Host resource (used for Secret naming).
         pillar_data (dict): Pillar data containing the desired userdata configuration.
         userdata_template_path (str, optional): Salt URI to the Jinja2 template file for userdata.
 
@@ -653,17 +659,21 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
 
         core_v1_api = client.CoreV1Api()
 
-        # Step 1: Retrieve the existing userdata ConfigMap from Kubernetes
+        # Step 1: Retrieve the existing userdata Secret from Kubernetes
         if 'network' in pillar_data:
             try:
                 userdata_name = f"{bmh_name}-user-data"
-                userdata_cm = core_v1_api.read_namespaced_config_map(name=userdata_name, namespace=namespace)
+                userdata_secret = core_v1_api.read_namespaced_secret(name=userdata_name, namespace=namespace)
                 exists = True
-                current_userdata = userdata_cm.data if userdata_cm.data else {}
+                current_userdata = userdata_secret.string_data if userdata_secret.string_data else {}
+                if not current_userdata and userdata_secret.data:
+                    # If string_data is not available, decode data (base64 encoded)
+                    import base64
+                    current_userdata = {k: base64.b64decode(v).decode('utf-8') for k, v in userdata_secret.data.items()}
             except ApiException as ue:
                 exists = False
                 current_userdata = {}
-                message = f"Userdata ConfigMap {userdata_name} not found: {str(ue)}"
+                message = f"Userdata Secret {userdata_name} not found: {str(ue)}"
             except Exception as ue:
                 exists = False
                 current_userdata = {}
@@ -713,7 +723,7 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
                 if not rendered_userdata:
                     raise Exception("Failed to render userdata template: Empty or invalid output")
 
-                # Since cloudinit.j2 is plain text, store as a string in a dict
+                # Since cloudinit.j2 is plain text, store as a string in a dict for Secret
                 desired_userdata = {'cloud-config': rendered_userdata}
 
                 # Compare the existing userdata with the desired userdata
@@ -745,34 +755,34 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
             matches = False
             message = f"Userdata not applicable for {bmh_name}"
 
-        # Step 3: Update or create userdata ConfigMap if it doesn't exist or doesn't match
+        # Step 3: Update or create userdata Secret if it doesn't exist or doesn't match
         if 'network' in pillar_data and (not exists or not matches):
             try:
                 userdata_name = f"{bmh_name}-user-data"
-                userdata_str = desired_userdata.get('cloud-config', '')
-                body = client.V1ConfigMap(
+                body = client.V1Secret(
                     metadata=client.V1ObjectMeta(name=userdata_name, namespace=namespace),
-                    data={'cloud-config': userdata_str}
+                    string_data=desired_userdata,
+                    type='Opaque'
                 )
 
                 if exists:
-                    result = core_v1_api.replace_namespaced_config_map(
+                    result = core_v1_api.replace_namespaced_secret(
                         name=userdata_name,
                         namespace=namespace,
                         body=body
                     )
                     updated = True
-                    message = f"Userdata ConfigMap {userdata_name} updated"
+                    message = f"Userdata Secret {userdata_name} updated"
                 else:
-                    result = core_v1_api.create_namespaced_config_map(
+                    result = core_v1_api.create_namespaced_secret(
                         namespace=namespace,
                         body=body
                     )
                     updated = True
-                    message = f"Userdata ConfigMap {userdata_name} created"
+                    message = f"Userdata Secret {userdata_name} created"
             except ApiException as e:
                 updated = False
-                message = f"Failed to update/create userdata ConfigMap {userdata_name}: {str(e)}"
+                message = f"Failed to update/create userdata Secret {userdata_name}: {str(e)}"
                 result = {'error': str(e)}
         else:
             message = f"Userdata for {bmh_name} already matches desired state or not applicable"
