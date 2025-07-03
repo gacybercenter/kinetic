@@ -506,10 +506,27 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 networking_data = full_pillar.get('networking', {})
                 dhcp_options = full_pillar.get('dhcp-options', {})
 
+                # Extract subnet CIDR and convert to netmask, fail if not possible
+                subnet_cidr = ''
+                netmask = ''
+                management_subnet = networking_data.get('subnets', {}).get('management', '')
+                if not management_subnet:
+                    raise Exception("Missing required pillar data: 'networking.subnets.management' not found.")
+                if '/' not in management_subnet:
+                    raise Exception(f"Invalid CIDR format in 'networking.subnets.management': {management_subnet}. Expected format is 'x.x.x.x/y'.")
+                try:
+                    subnet_cidr = management_subnet.split('/')[1]
+                    if not subnet_cidr:
+                        raise Exception(f"Invalid CIDR format in 'networking.subnets.management': {management_subnet}. No CIDR value found after '/'.") 
+                    netmask = __salt__['network_utils.cidr_to_netmask'](subnet_cidr)
+                except (IndexError, KeyError, Exception) as e:
+                    raise Exception(f"Failed to convert CIDR to netmask for 'networking.subnets.management' ({management_subnet}): {str(e)}")
+
                 network_context = {
                     'interface': hosts_data.get('interface', ''),
                     'mac': pillar_data.get('bootMACAddress', ''),
                     'ip': pillar_data.get('network', {}).get('management_ip', ''),
+                    'prefix': netmask,  # Provide computed netmask, fail if not computed
                     'pillar': {
                         'networking': {
                             'subnets': networking_data.get('subnets', {})
