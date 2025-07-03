@@ -500,16 +500,29 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 # Infer the BMH type from bmh_name (e.g., compute, controller, storage)
                 bmh_type = bmh_name.split('-')[0].lower() if '-' in bmh_name else 'compute'
                 
-                # Fetch the appropriate hosts data based on the BMH type
-
+                # Fetch the full pillar data to access nested structures
+                full_pillar = __salt__['pillar.get']('', {})
+                hosts_data = full_pillar.get('hosts', {}).get(bmh_type, {})
+                networking_data = full_pillar.get('networking', {})
+                dhcp_options = full_pillar.get('dhcp-options', {})
 
                 network_context = {
-                    'interface': __pillar__['hosts'][bmh_type]['interface'],
-                    'mac': __pillar__['bmh'][bmh_name]['bootMACAddress'],
-                    'ip': __pillar__['bmh']['network'][bmh_name]['management_ip'],
-                    'prefix': __pillar__['networking']['subnets']['management'],
-                    'gateway': __pillar__['dhcp-options']['mgmt_gateway'],
-                    'nameserver': __pillar__['dhcp-options']['dns']
+                    'interface': hosts_data.get('interface', ''),
+                    'mac': pillar_data.get('bootMACAddress', ''),
+                    'ip': pillar_data.get('network', {}).get('management_ip', ''),
+                    'pillar': {
+                        'networking': {
+                            'subnets': networking_data.get('subnets', {})
+                        },
+                        'dhcp-options': dhcp_options
+                    },
+                    'gateway': dhcp_options.get('mgmt_gateway', ''),
+                    'nameserver': dhcp_options.get('dns', ''),
+                    'salt': {
+                        'network_utils': {
+                            'cidr_to_netmask': __salt__['network_utils.cidr_to_netmask']
+                        }
+                    }
                 }
 
                 # Use Salt's in-memory rendering for network data template
