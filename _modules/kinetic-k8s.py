@@ -509,6 +509,8 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 dhcp_options = {}
                 management_subnet = None
                 networking_data = full_pillar.get('networking', {})
+                if not networking_data:
+                    print("network data": network_data)
                 dhcp_options = full_pillar.get('dhcp-options', {})
                 management_subnet = networking_data.get('subnets',{}).get('management')
                 
