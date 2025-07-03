@@ -508,26 +508,10 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 networking_data = {}
                 dhcp_options = {}
                 management_subnet = None
+                networking_data = full_pillar.get('networking', {})
+                dhcp_options = full_pillar.get('dhcp-options', {})
+                management_subnet = networking_data.get('subnets',{}).get('management')
                 
-                # Check if networking is at the root level
-                if 'networking' in full_pillar:
-                    networking_data = full_pillar.get('networking', {})
-                    management_subnet = networking_data.get('subnets', {}).get('management', '')
-                
-                # If not found, try under bmh or hosts
-                if not management_subnet and 'bmh' in full_pillar:
-                    bmh_data = full_pillar.get('bmh', {}).get(bmh_name, {})
-                    if 'networking' in bmh_data:
-                        networking_data = bmh_data.get('networking', {})
-                        management_subnet = networking_data.get('subnets', {}).get('management', '')
-                
-                # Check dhcp-options at root level
-                if 'dhcp-options' in full_pillar:
-                    dhcp_options = full_pillar.get('dhcp-options', {})
-                
-                # If still not found, raise detailed error
-                if not management_subnet:
-                    raise Exception("Missing required pillar data: 'networking.subnets.management' not found in any expected path. Checked root['networking'] and bmh-specific paths.")
 
                 # Extract subnet CIDR and convert to netmask, fail if not possible
                 subnet_cidr = ''
