@@ -505,13 +505,13 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 hosts_data = full_pillar.get('hosts', {}).get(bmh_type, {})
                 
                 # Debug: Try to locate networking data in different possible paths
-                networking_data = {}
-                dhcp_options = {}
-                management_subnet = None
                 networking_data = full_pillar.get('networking', {})
                 dhcp_options = full_pillar.get('dhcp-options', {})
-                management_subnet = networking_data.get('subnets',{}).get('management')
-                
+                management_subnet = networking_data.get('subnets', {}).get('management')
+
+                # Check if management_subnet is found and is a string
+                if not management_subnet or not isinstance(management_subnet, str):
+                    raise Exception(f"Missing or invalid required pillar data: 'networking.subnets.management' not found or not a string. Got: {management_subnet}")
 
                 # Extract subnet CIDR and convert to netmask, fail if not possible
                 subnet_cidr = ''
@@ -533,7 +533,6 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                     'prefix': netmask,  # Provide computed netmask, fail if not computed
                     'gateway': dhcp_options.get('mgmt_gateway'),
                     'nameserver': dhcp_options.get('dns'),
-
                 }
 
                 # Use Salt's in-memory rendering for network data template
@@ -647,7 +646,6 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
             'result': {},
             'message': f"An error occurred during networkdata_present operation: {str(e)}"
         }
-
 def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='salt://formulas/bmo/files/cloudinit.j2'):
     """
     Ensure that the userdata Secret in Kubernetes matches the desired state
