@@ -509,8 +509,6 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 dhcp_options = {}
                 management_subnet = None
                 networking_data = full_pillar.get('networking', {})
-                if not networking_data:
-                    print(networking_data)
                 dhcp_options = full_pillar.get('dhcp-options', {})
                 management_subnet = networking_data.get('subnets',{}).get('management')
                 
@@ -529,23 +527,13 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                     raise Exception(f"Failed to convert CIDR to netmask for 'networking.subnets.management' ({management_subnet}): {str(e)}")
 
                 network_context = {
-                    'interface': hosts_data.get('interface', ''),
-                    'mac': pillar_data.get('bootMACAddress', ''),
-                    'ip': pillar_data.get('network', {}).get('management_ip', ''),
+                    'interface': hosts_data.get('interface'),
+                    'mac': pillar_data.get('bootMACAddress'),
+                    'ip': pillar_data.get('network', {}).get('management_ip'),
                     'prefix': netmask,  # Provide computed netmask, fail if not computed
-                    'pillar': {
-                        'networking': {
-                            'subnets': networking_data.get('subnets', {})
-                        },
-                        'dhcp-options': dhcp_options
-                    },
-                    'gateway': dhcp_options.get('mgmt_gateway', ''),
-                    'nameserver': dhcp_options.get('dns', ''),
-                    'salt': {
-                        'network_utils': {
-                            'cidr_to_netmask': __salt__['network_utils.cidr_to_netmask']
-                        }
-                    }
+                    'gateway': dhcp_options.get('mgmt_gateway'),
+                    'nameserver': dhcp_options.get('dns'),
+
                 }
 
                 # Use Salt's in-memory rendering for network data template
