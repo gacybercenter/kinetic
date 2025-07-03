@@ -1,3 +1,8 @@
+{% set subnet_cidr = pillar['networking']['subnets'][network] %}
+{% set cidr_prefix = subnet_cidr.split('/')[1] %}
+{% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
+{% set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
+
 {
   "links": [
     {
@@ -12,7 +17,7 @@
       "link": "{{ interface }}",
       "type": "ipv4",
       "ip_address": "{{ ip }}",
-      "netmask": "{{ prefix }}",
+      "netmask": "{{ netmask }}",
       "gateway": "{{ gateway }}"
     }
   ],
