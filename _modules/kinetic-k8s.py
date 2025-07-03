@@ -501,11 +501,10 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 bmh_type = bmh_name.split('-')[0].lower() if '-' in bmh_name else 'compute'
                 
                 # Fetch the appropriate hosts data based on the BMH type
-                host_data = __salt__['pillar.get'](f'hosts:{bmh_type}')
-                bmh_data = __salt__['pillar.get'](f'{bmh_name}')
+
 
                 network_context = {
-                    'interface': host_data.get('interface'),
+                    'interface': __pillar__['hosts'][bmh_type]['interface'],
                     'mac': bmh_data.get('bootMACAddress'),
                     'ip': bmh_data.get('network').get('management_ip'),
                     'prefix': host_data.get('networking').get('subnets').get('management'),
