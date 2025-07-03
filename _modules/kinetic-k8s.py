@@ -155,6 +155,7 @@ def get_all_interfaces(namespace, resource_name):
             'interfaces': {},
             'message': f"An error occurred: {str(e)}"
         }
+
 def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
     """
     Ensure that the Bare Metal Host (BMH) object in Kubernetes matches the desired state
@@ -435,8 +436,6 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             'result': {},
             'message': f"An error occurred during bmh_present operation: {str(e)}"
         }
-
-// ... existing code ...
 
 def networkdata_present(namespace, bmh_name, pillar_data, network_template_path='salt://formulas/bmo/files/network-data.j2'):
     """
