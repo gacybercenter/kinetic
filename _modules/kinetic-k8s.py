@@ -437,7 +437,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             'message': f"An error occurred during bmh_present operation: {str(e)}"
         }
 
-def networkdata_present(namespace, bmh_name, defaults, network_template_path='salt://formulas/bmo/files/network-data.j2'):
+def networkdata_present(namespace, bmh_name, defaults, pillar_data,network_template_path='salt://formulas/bmo/files/network-data.j2'):
     """
     Ensure that the network data Secret in Kubernetes matches the desired state
     defined by pillar data and Jinja2 template. Creates or replaces the Secret if it needs updating.
