@@ -502,7 +502,7 @@ def networkdata_present(namespace, bmh_name, defaults, pillar_data,network_templ
                     'ip': defaults['ip'],
                     'prefix': defaults['prefix'],
                     'gateway': defaults['gateway'],
-                    'nameserver': defaults['dns'],
+                    'nameserver': defaults['nameserver'],
                 }
 
                 try:
