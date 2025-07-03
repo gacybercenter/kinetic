@@ -46,7 +46,7 @@ helm_ingress_release:
     - namespace: {{ pillar['bmo_namespace'] }}
     - kvflags:
         values: /tmp/ingress-values.yaml
-    - unless: helm list -n ingress |grep nginx-ingress
+    - unless: helm list -n {{ pillar['bmo_namespace'] }} |grep nginx-ingress
     - require:
       - file: ingress_values
     - watch:

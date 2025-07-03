@@ -1,10 +1,9 @@
-#!gpg|jinja
 apiVersion: v1
 kind: Secret
 metadata:
-  name: bmc-auth
+  name: {{ pillar['name'] }}-bmc-auth
   namespace: {{ pillar['bmo_namespace'] }}
 type: Opaque
 stringData:
   username: ADMIN
-  password: {{ pillar['ipmi-password'] }}
+  password: {{ pillar['ipmi_password'] }}

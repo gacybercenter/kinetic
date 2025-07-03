@@ -1,4 +1,3 @@
-#!gpg|jinja
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost #
 metadata:
@@ -8,7 +7,7 @@ spec:
   online: {{ online }}
   bmc:
     address: {{ address }}
-    credentialsName: bmc-auth
+    credentialsName: {{ name }}-bmc-auth
   bootMACAddress: {{ bootMACAddress }}
   bootMode: UEFI
   image:
