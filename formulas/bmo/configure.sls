@@ -12,6 +12,7 @@ deploy_script:
 {% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
 {% set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
 {% for name, host in pillar['bmh'].items() %}
+bmh_type = name.split('-')[0].lower()
 ensure_{{ name }}_bmc_auth_present:
   module.run:
     - name: kinetic-k8s.host_bmc_auth_present
@@ -26,7 +27,7 @@ ensure_{{ name }}_networkdata_present:
     - name: kinetic-k8s.networkdata_present
     - namespace: baremetal-operator-system
     - defaults:
-        'interface': {{ pillar['hosts'][grains['type']]['interface'] }}
+        'interface': {{ pillar['hosts'][bmh_type]['interface'] }}
         'mac': {{ pillar['bmh'][name]['bootMACAddress'] }}
         'ip': {{ pillar['bmh'][name]['network']['management_ip'] }}
         'prefix': netmask
