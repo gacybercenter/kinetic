@@ -7,7 +7,10 @@ deploy_script:
     - source: salt://formulas/bmo/files/deploy.j2
     - mode: 700
     - template: jinja
-
+{% set subnet_cidr = pillar['networking']['subnets']['management'] %}
+{% set cidr_prefix = subnet_cidr.split('/')[1] %}
+{% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
+{% set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
 {% for name, host in pillar['bmh'].items() %}
 ensure_{{ name }}_bmc_auth_present:
   module.run:
@@ -22,6 +25,13 @@ ensure_{{ name }}_networkdata_present:
   module.run:
     - name: kinetic-k8s.networkdata_present
     - namespace: baremetal-operator-system
+    - defaults:
+        'interface': {{ pillar['hosts'][grains['type']]['interface'] }}
+        'mac': {{ pillar['bmh'][name]['bootMACAddress'] }}
+        'ip': {{ pillar['bmh'][name]['network']['management_ip'] }}
+        'prefix': netmask
+        'gateway': {{ pillar['dhcp_options']['mgmt_gateway'] }}
+        'nameserver': {{ pillar['dhcp_options']['dns'] }}
     - bmh_name: {{ name }}
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - network_template_path: salt://formulas/bmo/files/network-data.j2

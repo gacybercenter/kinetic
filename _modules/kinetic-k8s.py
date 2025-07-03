@@ -437,7 +437,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             'message': f"An error occurred during bmh_present operation: {str(e)}"
         }
 
-def networkdata_present(namespace, bmh_name, pillar_data, network_template_path='salt://formulas/bmo/files/network-data.j2'):
+def networkdata_present(namespace, bmh_name, defaults, network_template_path='salt://formulas/bmo/files/network-data.j2'):
     """
     Ensure that the network data Secret in Kubernetes matches the desired state
     defined by pillar data and Jinja2 template. Creates or replaces the Secret if it needs updating.
@@ -494,40 +494,15 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
 
         if 'network' in pillar_data:
             try:
-                bmh_type = bmh_name.split('-')[0].lower() if '-' in bmh_name else 'compute'
-                
-                full_pillar = __salt__['pillar.get']('', {})
-                hosts_data = full_pillar.get('hosts', {}).get(bmh_type, {})
-                
-                networking_data = full_pillar.get('networking', {})
-                dhcp_options = full_pillar.get('dhcp-options', {})
-                management_subnet = networking_data.get('subnets', {}).get('management')
-
-                if not management_subnet:
-                    management_subnet = __salt__['pillar.get']('networking:subnets:management')
-
-                if not management_subnet or not isinstance(management_subnet, str):
-                    raise Exception(f"Missing or invalid required pillar data: 'networking.subnets.management' not found or not a string. Got: {management_subnet}")
-
-                subnet_cidr = ''
-                netmask = ''
-                if '/' not in management_subnet:
-                    raise Exception(f"Invalid CIDR format in 'networking.subnets.management': {management_subnet}. Expected format is 'x.x.x.x/y'.")
-                try:
-                    subnet_cidr = management_subnet.split('/')[1]
-                    if not subnet_cidr:
-                        raise Exception(f"Invalid CIDR format in 'networking.subnets.management': {management_subnet}. No CIDR value found after '/'.") 
-                    netmask = __salt__['network_utils.cidr_to_netmask'](subnet_cidr)
-                except (IndexError, KeyError, Exception) as e:
-                    raise Exception(f"Failed to convert CIDR to netmask for 'networking.subnets.management' ({management_subnet}): {str(e)}")
+                bmh_type = bmh_name.split('-')[0].lower()
 
                 network_context = {
-                    'interface': hosts_data.get('interface'),
-                    'mac': pillar_data.get('bootMACAddress'),
-                    'ip': pillar_data.get('network', {}).get('management_ip'),
-                    'prefix': netmask,
-                    'gateway': dhcp_options.get('mgmt_gateway'),
-                    'nameserver': dhcp_options.get('dns'),
+                    'interface': defaults['interface'],
+                    'mac': defaults['bootMACAddress'],
+                    'ip': defaults['ip'],
+                    'prefix': defaults['netmask'],
+                    'gateway': defaults['gateway'],
+                    'nameserver': defaults['dns'],
                 }
 
                 try:
