@@ -31,8 +31,8 @@ ensure_{{ name }}_networkdata_present:
         'mac': {{ pillar['bmh'][name]['bootMACAddress'] }}
         'ip': {{ pillar['bmh'][name]['network']['management_ip'] }}
         'prefix': netmask
-        'gateway': {{ pillar['dhcp_options']['mgmt_gateway'] }}
-        'nameserver': {{ pillar['dhcp_options']['dns'] }}
+        'gateway': {{ pillar['dhcp-options']['mgmt_gateway'] }}
+        'nameserver': {{ pillar['dhcp-options']['dns'] }}
     - bmh_name: {{ name }}
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - network_template_path: salt://formulas/bmo/files/network-data.j2
