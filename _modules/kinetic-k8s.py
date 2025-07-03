@@ -498,7 +498,7 @@ def networkdata_present(namespace, bmh_name, defaults, pillar_data,network_templ
 
                 network_context = {
                     'interface': defaults['interface'],
-                    'mac': defaults['bootMACAddress'],
+                    'mac': defaults['mac'],
                     'ip': defaults['ip'],
                     'prefix': defaults['netmask'],
                     'gateway': defaults['gateway'],
