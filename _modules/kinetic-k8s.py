@@ -501,16 +501,16 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 bmh_type = bmh_name.split('-')[0].lower() if '-' in bmh_name else 'compute'
                 
                 # Fetch the appropriate hosts data based on the BMH type
-                full_pillar = __salt__['pillar.get'](f'hosts:{bmh_type}', {})
-                interface = full_pillar.get('interface') if full_pillar else ''
+                host_data = __salt__['pillar.get'](f'hosts:{bmh_type}')
+                bmh_data = __salt__['pillar.get'](f'{bmh_name}')
 
                 network_context = {
-                    'interface': interface,
-                    'mac': pillar_data.get('bootMACAddress', ''),
-                    'ip': pillar_data.get('network', {}).get('management_ip', ''),
-                    'prefix': full_pillar.get('networking', {}).get('subnets', {}).get('management') if full_pillar else '',
-                    'gateway': full_pillar.get('dhcp-options', {}).get('mgmt_gateway') if full_pillar else '',
-                    'nameserver': full_pillar.get('dhcp-options', {}).get('dns') if full_pillar else ''
+                    'interface': host_data.get('interface'),
+                    'mac': bmh_data.get('bootMACAddress'),
+                    'ip': bmh_data.get('network').get('management_ip'),
+                    'prefix': host_data.get('networking').get('subnets').get('management'),
+                    'gateway': host_data.get('dhcp-options').get('mgmt_gateway'),
+                    'nameserver': host_data.get('dhcp-options').get('dns')
                 }
 
                 # Use Salt's in-memory rendering for network data template
