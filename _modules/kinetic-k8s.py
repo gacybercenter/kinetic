@@ -506,7 +506,7 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 network_context = {
                     'interface': __pillar__['hosts'][bmh_type]['interface'],
                     'mac': __pillar__['bmh'][bmh_name]['bootMACAddress'],
-                    'ip': __pillar__['network'][bmh_name]['management_ip'],
+                    'ip': __pillar__['bmh']['network'][bmh_name]['management_ip'],
                     'prefix': __pillar__['networking']['subnets']['management'],
                     'gateway': __pillar__['dhcp-options']['mgmt_gateway'],
                     'nameserver': __pillar__['dhcp-options']['dns']
