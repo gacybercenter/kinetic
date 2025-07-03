@@ -99,3 +99,26 @@ hosts:
       private:
         interfaces: [enp113s0f1np1]
         bridge: true
+networking:
+  subnets:
+    management: 10.100.1.0/24
+    public: 10.101.0.0/16
+    private: 10.100.4.0/24
+    sfe: 10.100.2.0/24
+    sbe: 10.100.3.0/24
+    oob: 10.100.0.0/24
+  addresses:
+    float_start: 10.101.20.0
+    float_end: 10.101.255.100
+    float_gateway: 10.101.255.254
+    float_dns: 10.100.10.3
+dhcp-options:
+  domain: internal.gacyberrange.org
+  dns: 10.100.10.10
+  tftp: 10.100.1.30
+  arm_efi: ipxe-arm64.efi
+  x86_efi: ipxe-x86_64.efi
+  mgmt_start: 10.100.1.50
+  mgmt_end: 10.100.1.200
+  mgmt_gateway: 10.100.1.254
+  mgmt_netmask: 255.255.255.0
