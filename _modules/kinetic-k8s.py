@@ -462,19 +462,14 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
         current_network = {}
         desired_network = {}
         differences = {}
-        debug_info = []
 
-        # Load Kubernetes configuration for updates
         try:
             config.load_incluster_config()
-            debug_info.append("Loaded in-cluster config successfully")
         except config.ConfigException:
             config.load_kube_config()
-            debug_info.append("Loaded kubeconfig from file successfully")
 
         core_v1_api = client.CoreV1Api()
 
-        # Step 1: Retrieve the existing network data Secret from Kubernetes
         if 'network' in pillar_data:
             try:
                 network_data_name = f"{bmh_name}-network-data"
@@ -482,75 +477,38 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                 exists = True
                 current_network = network_secret.string_data if network_secret.string_data else {}
                 if not current_network and network_secret.data:
-                    # If string_data is not available, decode data (base64 encoded)
                     import base64
                     current_network = {k: base64.b64decode(v).decode('utf-8') for k, v in network_secret.data.items()}
             except ApiException as ne:
                 exists = False
                 current_network = {}
                 message = f"Network data Secret {network_data_name} not found: {str(ne)}"
-                debug_info.append(message)
             except Exception as ne:
                 exists = False
                 current_network = {}
                 message = f"Error fetching network data: {str(ne)}"
-                debug_info.append(message)
         else:
             exists = False
             current_network = {}
             message = f"Network data not applicable for {bmh_name}"
-            debug_info.append(message)
 
-        # Step 2: Render the desired network data configuration from pillar data using Jinja2 template in memory
         if 'network' in pillar_data:
             try:
-                # Infer the BMH type from bmh_name (e.g., compute, controller, storage)
                 bmh_type = bmh_name.split('-')[0].lower() if '-' in bmh_name else 'compute'
-                debug_info.append(f"Inferred BMH type: {bmh_type}")
                 
-                # Fetch the full pillar data to access nested structures and debug structure
                 full_pillar = __salt__['pillar.get']('', {})
-                debug_info.append(f"Full pillar keys: {list(full_pillar.keys())}")
-                
                 hosts_data = full_pillar.get('hosts', {}).get(bmh_type, {})
-                if not hosts_data:
-                    debug_info.append(f"Hosts data for type {bmh_type} not found in pillar")
-                else:
-                    debug_info.append(f"Hosts data keys for {bmh_type}: {list(hosts_data.keys())}")
                 
-                # Try to locate networking data in different possible paths
-                networking_data = {}
-                dhcp_options = {}
-                management_subnet = None
-                
-                # Check if networking is at the root level
-                if 'networking' in full_pillar:
-                    networking_data = full_pillar.get('networking', {})
-                    debug_info.append(f"Networking data found at root level, keys: {list(networking_data.keys())}")
-                    management_subnet = networking_data.get('subnets', {}).get('management')
-                    if management_subnet:
-                        debug_info.append(f"Management subnet found at root['networking']['subnets']['management']: {management_subnet}")
-                
-                # Check dhcp-options at root level
-                if 'dhcp-options' in full_pillar:
-                    dhcp_options = full_pillar.get('dhcp-options', {})
-                    debug_info.append(f"DHCP options found at root level, keys: {list(dhcp_options.keys())}")
-                
-                # If management_subnet is still not found, try direct pillar.get with specific path
+                networking_data = full_pillar.get('networking', {})
+                dhcp_options = full_pillar.get('dhcp-options', {})
+                management_subnet = networking_data.get('subnets', {}).get('management')
+
                 if not management_subnet:
                     management_subnet = __salt__['pillar.get']('networking:subnets:management')
-                    if management_subnet:
-                        debug_info.append(f"Management subnet found via direct pillar.get('networking:subnets:management'): {management_subnet}")
-                    else:
-                        debug_info.append("Management subnet not found via direct pillar.get('networking:subnets:management')")
-                
-                # If still not found, log failure with detailed debug info
-                if not management_subnet or not isinstance(management_subnet, str):
-                    error_msg = f"Missing or invalid required pillar data: 'networking.subnets.management' not found or not a string. Got: {management_subnet}"
-                    debug_info.append(error_msg)
-                    raise Exception(error_msg)
 
-                # Extract subnet CIDR and convert to netmask, fail if not possible
+                if not management_subnet or not isinstance(management_subnet, str):
+                    raise Exception(f"Missing or invalid required pillar data: 'networking.subnets.management' not found or not a string. Got: {management_subnet}")
+
                 subnet_cidr = ''
                 netmask = ''
                 if '/' not in management_subnet:
@@ -567,32 +525,26 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                     'interface': hosts_data.get('interface'),
                     'mac': pillar_data.get('bootMACAddress'),
                     'ip': pillar_data.get('network', {}).get('management_ip'),
-                    'prefix': netmask,  # Provide computed netmask, fail if not computed
+                    'prefix': netmask,
                     'gateway': dhcp_options.get('mgmt_gateway'),
                     'nameserver': dhcp_options.get('dns'),
                 }
-                debug_info.append(f"Network context prepared: interface={network_context['interface']}, ip={network_context['ip']}, prefix={network_context['prefix']}")
 
-                # Use Salt's in-memory rendering for network data template
                 try:
                     network_content = __salt__['cp.get_file_str'](network_template_path)
                     if not network_content:
                         raise Exception(f"Failed to read network template from {network_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
-                    # Strip shebang line if present to avoid rendering issues
                     if network_content.startswith('#!'):
                         network_content_lines = network_content.splitlines()
                         network_content = '\n'.join(network_content_lines[1:]) if len(network_content_lines) > 1 else ''
                         if not network_content:
                             raise Exception(f"Network template at {network_template_path} is empty after removing shebang line.")
-                    debug_info.append(f"Successfully retrieved network template from {network_template_path}")
                 except Exception as file_error:
-                    debug_info.append(f"Failed to retrieve network template: {str(file_error)}")
                     return {
                         'success': False,
                         'updated': False,
                         'result': {'error': str(file_error)},
-                        'message': f"Failed to retrieve network template file from {network_template_path}: {str(file_error)}. Check if the file exists in Salt file roots.",
-                        'debug': debug_info
+                        'message': f"Failed to retrieve network template file from {network_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
                     }
 
                 rendered_network = __salt__['slsutil.renderer'](
@@ -603,14 +555,11 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
 
                 if not rendered_network:
                     raise Exception("Failed to render network template: Empty or invalid output")
-                debug_info.append("Network template rendered successfully")
 
-                # Parse the rendered JSON content into a dictionary and convert to string for Secret
                 import json
                 desired_network_json = json.loads(rendered_network)
                 desired_network = {'networkData': json.dumps(desired_network_json)}
 
-                # Compare the existing network data with the desired network data
                 if exists:
                     current_network_data = current_network
                     if isinstance(current_network, dict) and 'networkData' in current_network:
@@ -627,26 +576,20 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                                 'desired': desired_network_data[key]
                             }
                     matches = len(differences) == 0
-                    debug_info.append(f"Comparison result: matches={matches}, differences={differences}")
                 else:
                     matches = False
-                    debug_info.append("No existing Secret to compare, will create new")
             except Exception as network_render_error:
-                debug_info.append(f"Rendering error: {str(network_render_error)}")
                 return {
                     'success': False,
                     'updated': False,
                     'result': {'error': str(network_render_error)},
-                    'message': f"Failed to render network data template: {str(network_render_error)}",
-                    'debug': debug_info
+                    'message': f"Failed to render network data template: {str(network_render_error)}"
                 }
         else:
             desired_network = {}
             matches = False
             message = f"Network data not applicable for {bmh_name}"
-            debug_info.append(message)
 
-        # Step 3: Update or create network data Secret if it doesn't exist or doesn't match
         if 'network' in pillar_data and (not exists or not matches):
             try:
                 network_data_name = f"{bmh_name}-network-data"
@@ -664,7 +607,6 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                     )
                     updated = True
                     message = f"Network data Secret {network_data_name} updated"
-                    debug_info.append(message)
                 else:
                     result = core_v1_api.create_namespaced_secret(
                         namespace=namespace,
@@ -672,33 +614,27 @@ def networkdata_present(namespace, bmh_name, pillar_data, network_template_path=
                     )
                     updated = True
                     message = f"Network data Secret {network_data_name} created"
-                    debug_info.append(message)
             except ApiException as e:
                 updated = False
                 message = f"Failed to update/create network data Secret {network_data_name}: {str(e)}"
-                debug_info.append(message)
                 result = {'error': str(e)}
         else:
             message = f"Network data for {bmh_name} already matches desired state or not applicable"
-            debug_info.append(message)
             result = current_network
 
         return {
             'success': True,
             'updated': updated,
             'result': result,
-            'message': message,
-            'debug': debug_info
+            'message': message
         }
 
     except Exception as e:
-        debug_info.append(f"Unexpected error: {str(e)}") if 'debug_info' in locals() else None
         return {
             'success': False,
             'updated': False,
             'result': {},
-            'message': f"An error occurred during networkdata_present operation: {str(e)}",
-            'debug': debug_info if 'debug_info' in locals() else ['Debug info not initialized']
+            'message': f"An error occurred during networkdata_present operation: {str(e)}"
         }
 
 def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='salt://formulas/bmo/files/cloudinit.j2'):
