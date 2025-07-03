@@ -500,7 +500,7 @@ def networkdata_present(namespace, bmh_name, defaults, pillar_data,network_templ
                     'interface': defaults['interface'],
                     'mac': defaults['mac'],
                     'ip': defaults['ip'],
-                    'prefix': defaults['netmask'],
+                    'prefix': defaults['prefix'],
                     'gateway': defaults['gateway'],
                     'nameserver': defaults['dns'],
                 }
