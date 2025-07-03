@@ -30,7 +30,7 @@ ensure_{{ name }}_networkdata_present:
         'interface': {{ pillar['hosts'][bmh_type]['interface'] }}
         'mac': {{ pillar['bmh'][name]['bootMACAddress'] }}
         'ip': {{ pillar['bmh'][name]['network']['management_ip'] }}
-        'prefix': netmask
+        'prefix': {{ netmask }}
         'gateway': {{ pillar['dhcp-options']['mgmt_gateway'] }}
         'nameserver': {{ pillar['dhcp-options']['dns'] }}
     - bmh_name: {{ name }}
