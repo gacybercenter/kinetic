@@ -145,6 +145,13 @@ bond-{{ network }}:
     {% endif %}
   {% endif %}
     {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
+{% if network == "public" %}
+{{ network }}_br:
+  network.managed:
+    - enabled: True
+    - proto: manual
+    - type: bridge
+{% else %}
 {{ network }}_br:
   network.managed:
     - enabled: True
