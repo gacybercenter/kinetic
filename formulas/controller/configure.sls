@@ -70,16 +70,6 @@ fs:
     - require:
       - fs
 
-## add libvirt control key
-ssh_libvirt_key:
-  file.managed:
-    - name: /home/ubuntu/.ssh/id_ed25519
-    - user: ubuntu
-    - group: ubuntu
-    - mode: 600
-    - attrs: a
-    - contents_pillar: hosts:controller:ssh_key
-
 {% elif 'standard' in pillar['hosts'][type]['kvm_disk_config']['type'] %}
 {% set target_device = pillar['hosts'][type]['kvm_disk_config']['members'][0] %}
   {% if target_device == "rootfs" %}
@@ -184,3 +174,13 @@ haveged_service:
   service.running:
     - name: haveged
     - enable: true
+
+## add libvirt control key
+ssh_libvirt_key:
+  file.managed:
+    - name: /home/ubuntu/.ssh/id_ed25519
+    - user: ubuntu
+    - group: ubuntu
+    - mode: 600
+    - attrs: a
+    - contents_pillar: hosts:controller:ssh_key
