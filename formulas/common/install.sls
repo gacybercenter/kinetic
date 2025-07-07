@@ -93,8 +93,6 @@ pyghmi_salt_pip:
     - pkgs:
       - pyopenssl
       - pyghmi
-    - require:
-      - pyghmi_pip
 
 rdma-core:
   pkg.installed:
