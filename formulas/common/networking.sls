@@ -151,6 +151,7 @@ bond-{{ network }}:
     - enabled: True
     - proto: manual
     - type: bridge
+    - ports: {{ interface }}
  {% else %}
 {{ network }}_br:
   network.managed:
