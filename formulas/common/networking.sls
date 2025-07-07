@@ -27,9 +27,9 @@ netplan.io:
 /run/systemd/network:
   file.absent
 systemd-networkd.socket:
-  service.disable
+  service.disabled
 systemd-networkd:
-  service.disable
+  service.disabled
 NetworkManager:
   service.disabled
 
