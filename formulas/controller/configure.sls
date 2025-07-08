@@ -180,7 +180,7 @@ libvirt_control_key:
     - user: ubuntu
     - names: 
       - {{ pillar['hosts']['controller']['ssh_cert'] }}
-    - enc: {{ pillar['authorized_keys'][ key ]['encoding'] }}
+    - enc: {{ pillar['hosts']['controller']['ssh_enc'] }}
 
 ## add libvirt control key
 #ssh_libvirt_key:
