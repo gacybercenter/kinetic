@@ -27,10 +27,20 @@ install_dependencies:
         - curl
         - apache2-utils
         - golang
+        - libvirt-dev
+        - pkg-config
   cmd.run:
     - name: |
         curl -sL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.1/kustomize_v5.4.1_linux_amd64.tar.gz | tar xz -C /usr/local/bin/ && chmod +x /usr/local/bin/kustomize
     - unless: test -x /usr/local/bin/kustomize && kustomize version | grep v5.4.1
+    - require:
+      - pkg: install_dependencies
+salt-pip_installs:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
+    - reload_modules: true
+    - names:
+      - libvirt-python
     - require:
       - pkg: install_dependencies
 helm_ingress_repo:
