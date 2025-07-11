@@ -174,3 +174,20 @@ haveged_service:
   service.running:
     - name: haveged
     - enable: true
+
+libvirt_control_key:
+  ssh_auth.present:
+    - user: ubuntu
+    - names: 
+      - {{ pillar['hosts']['controller']['ssh_cert'] }}
+    - enc: {{ pillar['hosts']['controller']['ssh_enc'] }}
+
+## add libvirt control key
+#ssh_libvirt_key:
+#  file.managed:
+#    - name: /home/ubuntu/.ssh/id_ed25519
+#    - user: ubuntu
+#    - group: ubuntu
+#    - mode: 600
+#    - attrs: a
+#    - contents_pillar: hosts:controller:ssh_key

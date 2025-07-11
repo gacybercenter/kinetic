@@ -28,6 +28,7 @@ controller_packages:
       - python3-libvirt
       - libvirt-dev
       - libguestfs-tools
+      - virtualbmc
     - reload_modules: true
 
 salt-pip_installs:
