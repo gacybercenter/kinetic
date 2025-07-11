@@ -66,6 +66,7 @@ ensure_{{ name }}_kvm_present:
       - type: network
       - source: management_br
       - mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
+    - connection: {{ pillar['bmh'][name]['connection'] }}
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
     - name: vbmc add --libvirt-url {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
