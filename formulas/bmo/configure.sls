@@ -48,7 +48,7 @@ ensure_{{ name }}_userdata_present:
     - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
     - require:
       - module: ensure_{{ name }}_networkdata_present
-{% if pillar['bmh'][name]['type'] == 'virt' %}
+{% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
 
 ensure_{{ name }}_kvm_present:
   virt.defined:
