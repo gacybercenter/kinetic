@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-SaltStack execution module for generating unique MAC addresses for libvirt virtual machines.
+SaltStack execution module for interacting with libvirt to generate unique MAC addresses
+and manage virtual machine configurations.
 This module connects to a libvirt instance to check for existing MAC addresses and generates
 a new one that avoids collisions.
 """
@@ -15,7 +16,7 @@ except ImportError:
     HAS_LIBVIRT = False
 
 # Ensure Salt can find this module
-__virtualname__ = 'virt_mac'
+__virtualname__ = 'kinetic-libvirt'
 
 @decorators.memoize
 def __virtual__():
@@ -119,7 +120,7 @@ def generate_unique_mac(connection_uri="qemu:///system", max_attempts=100):
         dict: A dictionary with 'success' (bool), 'mac' (str or None), and 'message' (str)
     
     CLI Example:
-        salt '*' virt_mac.generate_unique_mac connection_uri='qemu+ssh://user@remote-host/system'
+        salt '*' kinetic-libvirt.generate_unique_mac connection_uri='qemu+ssh://user@remote-host/system'
     """
     # Get existing MAC addresses to avoid collisions
     macs_result = get_existing_mac_addresses(connection_uri)
