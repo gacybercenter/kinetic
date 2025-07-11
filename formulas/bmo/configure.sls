@@ -63,10 +63,11 @@ ensure_{{ name }}_kvm_present:
         path: /kvm/vms/{{ name }}/disk01.qcow2
     - interfaces:
       - name: {{ pillar['hosts'][bmh_type]['interface'] }}
-        type: network
+        type: bridge
         source: management_br
         mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
+    - unless: virsh -c {{ pillar['bmh'][name]['connect'] }} list --all |grep {{ name }} 
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
     - name: vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
