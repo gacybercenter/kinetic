@@ -59,7 +59,6 @@ ensure_{{ name }}_kvm_present:
       - name: system
         device: disk
         format: qcow2
-        path: /kvm/vms/{{ name }}/{{ name }}.qcow2
         size: {{ pillar['bmh'][name]['disk'] }}
     - interfaces:
       - name: {{ pillar['bmh'][name]['connection'] }}
