@@ -55,14 +55,14 @@ ensure_{{ name }}_kvm_present:
     - name: {{ name }}
     - cpu: {{ pillar['bmh'][name]['cpu'] }}
     - mem: {{ pillar['bmh'][name]['mem'] }}
-    - disk:
-      - name: system
+    - disks:
+      - name: disk0
         device: disk
         format: qcow2
         size: {{ pillar['bmh'][name]['disk'] }}
         path: /kvm/vms/{{ name }}/disk01.qcow2
     - interfaces:
-      - name: {{ pillar['bmh'][name]['connection'] }}
+      - name: {{ pillar['hosts'][bmh_type]['inteface'] }}
         type: network
         source: management_br
         mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
