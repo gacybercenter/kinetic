@@ -48,7 +48,30 @@ ensure_{{ name }}_userdata_present:
     - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
     - require:
       - module: ensure_{{ name }}_networkdata_present
+{% if pillar['bmh']['type'] == 'virt' %}
 
+ensure_{{ name }}_kvm_present:
+  virt.defined:
+    - name: {{ name }}
+    - cpu: {{ pillar['bmh'][name]['cpu'] }}
+    - mem: {{ pillar['bmh'][name]['mem'] }}
+    - disks:
+      - name: system
+        device: disk
+        format: qcow2
+        path: /kvm/vms/{{ name }}/{{ name }}.qcow2
+        size: {{ pillar['bmh'][name]['size'] }}
+    - nic:
+      - name: management
+      - type: network
+      - source: management_br
+      - mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
+ensure_{{ name }}_vbmc_connection:
+  cmd.run:
+    - name: vbmc add --libvirt-url {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
+    - unless: vbmc show --libvirt-url {{ pillar['bmh'][name]['connection' ] }} {{ name }}
+
+{% endif %}
 ensure_{{ name }}_bmh_present:
   module.run: 
     - name: kinetic-k8s.bmh_present
