@@ -62,10 +62,10 @@ ensure_{{ name }}_kvm_present:
         path: /kvm/vms/{{ name }}/{{ name }}.qcow2
         size: {{ pillar['bmh'][name]['disk'] }}
     - interfaces:
-      - name: management
-      - type: network
-      - source: management_br
-      - mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
+      - name: {{ pillar['bmh'][name]['connection'] }}
+        type: network
+        source: management_br
+        mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
