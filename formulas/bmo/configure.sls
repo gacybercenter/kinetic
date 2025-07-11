@@ -71,8 +71,8 @@ ensure_{{ name }}_kvm_present:
     - password: {{ pillar['ipmi-password'] }}
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
-    - name: vbmc add --libvirt-url {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
-    - unless: vbmc show --libvirt-url {{ pillar['bmh'][name]['connection' ] }} {{ name }}
+    - name: vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
+    - unless: vbmc show --libvirt-uri {{ pillar['bmh'][name]['connection' ] }} {{ name }}
     - require:
       - virt: ensure_{{ name }}_kvm_present
 
