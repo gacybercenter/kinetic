@@ -70,6 +70,8 @@ ensure_{{ name }}_vbmc_connection:
   cmd.run:
     - name: vbmc add --libvirt-url {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
     - unless: vbmc show --libvirt-url {{ pillar['bmh'][name]['connection' ] }} {{ name }}
+    - require:
+      - cmd: ensure_{{ name }}_kvm_present
 
 {% endif %}
 ensure_{{ name }}_bmh_present:
