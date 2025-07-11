@@ -67,7 +67,7 @@ ensure_{{ name }}_kvm_present:
         source: management_br
         mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
-    - unless: virsh -c {{ pillar['bmh'][name]['connect'] }} list --all |grep {{ name }} 
+    - unless: virsh -c {{ pillar['bmh'][name]['connection'] }} list --all |grep {{ name }} 
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
     - name: vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
