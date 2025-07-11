@@ -60,7 +60,7 @@ ensure_{{ name }}_kvm_present:
         device: disk
         format: qcow2
         path: /kvm/vms/{{ name }}/{{ name }}.qcow2
-        size: {{ pillar['bmh'][name]['size'] }}
+        size: {{ pillar['bmh'][name]['disk'] }}
     - nic:
       - name: management
       - type: network
