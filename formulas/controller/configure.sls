@@ -130,6 +130,30 @@ fs:
     - require:
       - /kvm
 
+
+# Define the libvirt storage pool
+define_vms_pool:
+  virt.pool_defined:
+    - name: vms
+    - ptype: dir
+    - target: /kvm/vms
+    - require:
+      - file: /kvm/vms
+
+# Start the storage pool
+start_vms_pool:
+  virt.pool_running:
+    - name: vms
+    - require:
+      - virt: define_vms_pool
+
+# Enable autostart for the pool
+autostart_vms_pool:
+  virt.pool_autostart:
+    - name: vms
+    - state: on
+    - require:
+      - virt: start_vms_pool
 {% for os, args in pillar.get('images', {}).items() %}
   {% if args['type'] == 'virt-builder' %}
 create_{{ args['name'] }}:
