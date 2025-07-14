@@ -175,7 +175,9 @@ apparmor_service:
     - enable: True
     - watch:
       - file: apparmor_libvirt_profile
-
+apparmor_pkg:
+  pkg.installed:
+    - name: apparmor
 {% for os, args in pillar.get('images', {}).items() %}
   {% if args['type'] == 'virt-builder' %}
 create_{{ args['name'] }}:
