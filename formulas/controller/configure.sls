@@ -154,6 +154,28 @@ autostart_vms_pool:
     - state: on
     - require:
       - virt: start_vms_pool
+# New: Manage AppArmor profile for libvirt-qemu
+apparmor_libvirt_profile:
+  file.managed:
+    - name: /etc/apparmor.d/local/usr.lib.libvirt.libvirtd-qemu
+    - contents: |
+        # Allow access to /kvm/vms for VM disk images
+        /kvm/vms/** rw,
+    - user: root
+    - group: root
+    - mode: 644
+    - require:
+      - pkg: apparmor
+    - watch_in:
+      - service: apparmor_service
+
+apparmor_service:
+  service.running:
+    - name: apparmor
+    - enable: True
+    - watch:
+      - file: apparmor_libvirt_profile
+
 {% for os, args in pillar.get('images', {}).items() %}
   {% if args['type'] == 'virt-builder' %}
 create_{{ args['name'] }}:
