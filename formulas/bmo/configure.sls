@@ -60,7 +60,6 @@ ensure_{{ name }}_kvm_present:
         device: disk
         format: qcow2
         size: {{ pillar['bmh'][name]['disk'] }}
-        path: /kvm/vms/{{ name }}/disk01.qcow2
     - interfaces:
       - name: {{ pillar['hosts'][bmh_type]['interface'] }}
         type: bridge
