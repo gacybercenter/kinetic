@@ -71,7 +71,7 @@ ensure_{{ name }}_kvm_present:
 {% set addrs = pillar['bmh'][name]['bmc']['address'].split('//')[1] %}
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
-    - name: vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address {{ addrs }} --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
+    - name: vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
     - unless: vbmc show --libvirt-uri {{ pillar['bmh'][name]['connection' ] }} {{ name }}
     - require:
       - virt: ensure_{{ name }}_kvm_present
