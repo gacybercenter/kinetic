@@ -108,7 +108,7 @@ define_vm:
             <graphics type='spice' autoport='yes'/>
           </devices>
         </domain>
-    - connection: {{ pillar['bmh'][name]['connection'] }}
+    - connection: '{{ pillar['bmh'][name]['connection'] }}'
     - require:
       - module: create_disk_volume
 
