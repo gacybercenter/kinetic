@@ -55,6 +55,7 @@ vms_pool:
   virt.pool_running:
     - name: vms
     - ptype: dir
+    - target: /kvm/vms
     - connection: {{ pillar['bmh'][name]['connection'] }}
 
 # Create the disk volume if it doesn't exist
