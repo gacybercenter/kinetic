@@ -49,10 +49,6 @@ ensure_{{ name }}_userdata_present:
     - require:
       - module: ensure_{{ name }}_networkdata_present
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
-# Debug: Echo the resolved connection for troubleshooting
-debug_connection:
-  cmd.run:
-    - name: 'echo "Resolved connection: {{ pillar['bmh'][name]['connection'] }}"'
 # Ensure the storage pool is defined and running
 vms_pool:
   virt.pool_running:
@@ -62,7 +58,7 @@ vms_pool:
     - connection: {{ pillar['bmh'][name]['connection'] }}
 
 # Create the disk volume if it doesn't exist
-create_disk_volume:
+create_{{ name }}_disk_volume:
   module.run:
     - name: virt.volume_create
     - pool: vms
@@ -75,7 +71,7 @@ create_disk_volume:
     - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms {{ name }}_disk0.qcow2
 
 # Define the VM using the inline XML string
-define_vm:
+define_{{ name }}_vm:
   module.run:
     - name: virt.define_xml_str
     - xml: |
@@ -110,14 +106,14 @@ define_vm:
         </domain>
     - connection: '{{ pillar['bmh'][name]['connection'] }}'
     - require:
-      - module: create_disk_volume
+      - module: create_{{ name }}_disk_volume
 
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
     - name: /opt/virtualbmc/bin/vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
     - unless: /opt/virtualbmc/bin/vbmc show {{ name }}
     - require:
-      - virt: ensure_{{ name }}_kvm_present
+      - virt: create_{{ name }}_disk_volume
 
 {% endif %}
 ensure_{{ name }}_bmh_present:
