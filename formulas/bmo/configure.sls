@@ -54,7 +54,7 @@ ensure_{{ name }}_userdata_present:
 vms_pool:
   virt.pool_running:
     - name: vms
-    - type: file
+    - ptype: file
     - connection: {{ pillar['bmh'][name]['connection'] }}
 
 # Create the disk volume if it doesn't exist
