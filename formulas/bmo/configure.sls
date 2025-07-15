@@ -53,6 +53,7 @@ ensure_{{ name }}_userdata_present:
 ensure_{{ name }}_kvm_present:
   virt.defined:
     - name: {{ name }}
+    - vm_type: kvm
     - cpu: {{ pillar['bmh'][name]['cpu'] }}
     - mem: {{ pillar['bmh'][name]['mem'] }}
     - disks:
