@@ -49,7 +49,10 @@ ensure_{{ name }}_userdata_present:
     - require:
       - module: ensure_{{ name }}_networkdata_present
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
-
+# Debug: Echo the resolved connection for troubleshooting
+debug_connection:
+  cmd.run:
+    - name: echo "Resolved connection: {{ pillar.get('bmh:' + name + ':connection', 'PILLAR_MISSING') }}"
 # Ensure the storage pool is defined and running
 vms_pool:
   virt.pool_running:
