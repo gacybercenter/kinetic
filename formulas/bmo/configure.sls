@@ -50,7 +50,7 @@ ensure_{{ name }}_userdata_present:
       - module: ensure_{{ name }}_networkdata_present
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
 
-# Ensure the storage pool is running
+# Ensure the storage pool is defined and running
 vms_pool:
   virt.pool_running:
     - name: vms
@@ -62,23 +62,20 @@ vms_pool:
 create_disk_volume:
   module.run:
     - name: virt.volume_create
-    - pool: vms'
+    - pool: vms
     - name: {{ name }}_disk0.qcow2
     - format: qcow2
     - size: {{ pillar['bmh'][name]['disk'] * 1073741824 }}  # Convert GiB to bytes
     - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
       - virt: vms_pool
-    - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms {{ name}}_disk0.qcow2
+    - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms {{ name }}_disk0.qcow2
 
-# Generate the domain XML file
-generate_domain_xml:
-  file.managed:
-    - name: /tmp/{{ name }}_domain.xml
-    - user: root
-    - group: root
-    - mode: 644
-    - contents: |
+# Define the VM using the inline XML string
+define_vm:
+  module.run:
+    - name: virt.define_xml_str
+    - xml: |
         <domain type='kvm'>
           <name>{{ name }}</name>
           <uuid>{{ pillar['bmh'][name]['uuid'] }}</uuid>
@@ -108,24 +105,9 @@ generate_domain_xml:
             <graphics type='spice' autoport='yes'/>
           </devices>
         </domain>
-    - require:
-      - module: create_disk_volume
-
-# Define the VM using the XML path
-define_vm:
-  module.run:
-    - name: virt.define_xml_path
-    - path: /tmp/{{ name }}_domain.xml
     - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
-      - file: generate_domain_xml
-
-# Optional: Remove the temporary XML file
-cleanup_xml:
-  file.absent:
-    - name: /tmp/{{ name }}_domain.xml
-    - require:
-      - module: define_vm
+      - module: create_disk_volume
 
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
