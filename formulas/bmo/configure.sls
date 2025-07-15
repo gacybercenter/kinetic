@@ -113,7 +113,7 @@ ensure_{{ name }}_vbmc_connection:
     - name: /opt/virtualbmc/bin/vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
     - unless: /opt/virtualbmc/bin/vbmc show {{ name }}
     - require:
-      - virt: define_{{ name }}_vm
+      - module: define_{{ name }}_vm
 
 {% endif %}
 ensure_{{ name }}_bmh_present:
