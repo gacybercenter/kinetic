@@ -1,6 +1,6 @@
 include:
   - /formulas/common/k8s-certmanager/install
-  - /formulas/common/vbmcd
+  - /formulas/common/vbmc
 
 # Validate deployment options
 validate_deployment_bmo_ironic:
