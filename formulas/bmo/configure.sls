@@ -62,13 +62,13 @@ create_disk_volume:
   module.run:
     - name: virt.volume_create
     - pool: vms'
-    - name: disk0.qcow2
+    - name: {{ name }}_disk0.qcow2
     - format: qcow2
     - size: {{ pillar['bmh'][name]['disk'] * 1073741824 }}  # Convert GiB to bytes
     - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
       - virt: vms_pool
-    - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms disk0.qcow2
+    - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms {{ name}}_disk0.qcow2
 
 # Generate the domain XML file
 generate_domain_xml:
@@ -88,7 +88,7 @@ generate_domain_xml:
           </os>
           <devices>
             <disk type='volume' device='disk'>
-              <source pool='vms' volume='disk0.qcow2'/>
+              <source pool='vms' volume='{{ name }}_disk0.qcow2'/>
               <driver name='qemu' type='qcow2'/>
               <target dev='vda' bus='virtio'/>
             </disk>
