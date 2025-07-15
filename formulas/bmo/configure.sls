@@ -56,7 +56,7 @@ ensure_{{ name }}_kvm_present:
     - cpu: {{ pillar['bmh'][name]['cpu'] }}
     - mem: {{ pillar['bmh'][name]['mem'] }}
     - disks:
-      - name: disk0
+      - name: disk0.qcow2
         device: disk
         format: qcow2
         size: {{ pillar['bmh'][name]['disk'] }}
