@@ -50,35 +50,80 @@ ensure_{{ name }}_userdata_present:
       - module: ensure_{{ name }}_networkdata_present
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
 
-ensure_{{ name }}_kvm_present:
-  virt.defined:
-    - name: {{ name }}
-    - vm_type: kvm
-    - uuid: {{ pillar['bmh'][name]['uuid'] }}
-    - cpu: {{ pillar['bmh'][name]['cpu'] }}
-    - mem: {{ pillar['bmh'][name]['mem'] }}
-    - disks:
-      - name: disk0.qcow2
-        device: disk
-        format: qcow2
-        size: {{ pillar['bmh'][name]['disk'] }}
-        pool: vms
-    - interfaces:
-      - name: {{ pillar['hosts'][bmh_type]['interface'] }}
-        type: bridge
-        source: management_br
-        mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
+# Ensure the storage pool is running
+vms_pool:
+  virt.pool_running:
+    - name: vms
     - connection: {{ pillar['bmh'][name]['connection'] }}
-    - serials:
-      - type: 'pty'
-        target_type: 'isa-serial'
-        target_port: 0
-    - consoles:
-      - type: 'pty'
-        target_type: 'serial'
-        target_port: 0
-    - graphics:
-        type: 'spice'
+
+# Create the disk volume if it doesn't exist
+create_disk_volume:
+  module.run:
+    - name: virt.volume_create
+    - pool: vms'
+    - name: disk0.qcow2
+    - format: qcow2
+    - size: {{ pillar['bmh'][name]['disk'] * 1073741824 }}  # Convert GiB to bytes
+    - connection: {{ pillar['bmh'][name]['connection'] }}
+    - require:
+      - virt: vms_pool
+    - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms disk0.qcow2
+
+# Generate the domain XML file
+generate_domain_xml:
+  file.managed:
+    - name: /tmp/{{ name }}_domain.xml
+    - user: root
+    - group: root
+    - mode: 644
+    - contents: |
+        <domain type='kvm'>
+          <name>{{ name }}</name>
+          <uuid>{{ pillar['bmh'][name]['uuid'] }}</uuid>
+          <memory unit='MiB'>{{ pillar['bmh'][name]['mem'] }}</memory>
+          <vcpu>{{ pillar['bmh'][name]['cpu'] }}</vcpu>
+          <os>
+            <type>hvm</type>
+          </os>
+          <devices>
+            <disk type='volume' device='disk'>
+              <source pool='vms' volume='disk0.qcow2'/>
+              <driver name='qemu' type='qcow2'/>
+              <target dev='vda' bus='virtio'/>
+            </disk>
+            <interface type='bridge'>
+              <source bridge='management_br'/>
+              <mac address='{{ pillar['bmh'][name]['bootMACAddress'] }}'/>
+              <alias name='{{ pillar['hosts'][bmh_type]['interface'] }}'/>
+              <model type='virtio'/>
+            </interface>
+            <serial type='pty'>
+              <target type='isa-serial' port='0'/>
+            </serial>
+            <console type='pty'>
+              <target type='serial' port='0'/>
+            </console>
+            <graphics type='spice' autoport='yes'/>
+          </devices>
+        </domain>
+    - require:
+      - module: create_disk_volume
+
+# Define the VM using the XML path
+define_vm:
+  module.run:
+    - name: virt.define_xml_path
+    - path: /tmp/{{ name }}_domain.xml
+    - connection: {{ pillar['bmh'][name]['connection'] }}
+    - require:
+      - file: generate_domain_xml
+
+# Optional: Remove the temporary XML file
+cleanup_xml:
+  file.absent:
+    - name: /tmp/{{ name }}_domain.xml
+    - require:
+      - module: define_vm
 
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
