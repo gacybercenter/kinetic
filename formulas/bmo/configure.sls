@@ -54,6 +54,7 @@ ensure_{{ name }}_kvm_present:
   virt.defined:
     - name: {{ name }}
     - vm_type: kvm
+    - uuid: {{ pillar['bmh'][name]['uuid'] }}
     - cpu: {{ pillar['bmh'][name]['cpu'] }}
     - mem: {{ pillar['bmh'][name]['mem'] }}
     - disks:
@@ -78,7 +79,7 @@ ensure_{{ name }}_kvm_present:
         target_port: 0
     - graphics:
         type: 'spice'
-        
+
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
     - name: /opt/virtualbmc/bin/vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
