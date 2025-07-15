@@ -52,7 +52,7 @@ ensure_{{ name }}_userdata_present:
 # Debug: Echo the resolved connection for troubleshooting
 debug_connection:
   cmd.run:
-    - name: echo "Resolved connection: {{ pillar['bmh'][name]['connection'] }}}"
+    - name: echo "Resolved connection: {{ pillar['bmh'][name]['connection'] }}"
 # Ensure the storage pool is defined and running
 vms_pool:
   virt.pool_running:
