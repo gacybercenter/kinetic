@@ -67,6 +67,14 @@ ensure_{{ name }}_kvm_present:
         source: management_br
         mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
+    - serials:
+        type: 'pty'
+        target_type: 'isa-serial'
+        target_port: 0
+    - consoles:
+        type: 'pty'
+        target_type: 'serial'
+        target_port: 0
     - unless: virsh -c {{ pillar['bmh'][name]['connection'] }} list --all |grep {{ name }}
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
