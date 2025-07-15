@@ -69,11 +69,11 @@ ensure_{{ name }}_kvm_present:
         mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
     - serials:
-        type: 'pty'
+      - type: 'pty'
         target_type: 'isa-serial'
         target_port: 0
     - consoles:
-        type: 'pty'
+      - type: 'pty'
         target_type: 'serial'
         target_port: 0
 ensure_{{ name }}_vbmc_connection:
