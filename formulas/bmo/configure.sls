@@ -70,8 +70,8 @@ ensure_{{ name }}_kvm_present:
     - unless: virsh -c {{ pillar['bmh'][name]['connection'] }} list --all |grep {{ name }}
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
-    - name: vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
-    - unless: vbmc show --libvirt-uri {{ pillar['bmh'][name]['connection' ] }} {{ name }}
+    - name: /opt/virtualbmc/bin/vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
+    - unless: /opt/virtualbmc/bin/vbmc show --libvirt-uri {{ pillar['bmh'][name]['connection' ] }} {{ name }}
     - require:
       - virt: ensure_{{ name }}_kvm_present
 
