@@ -1033,3 +1033,116 @@ def host_bmc_auth_present(namespace, bmh_name, ipmi, pillar_data, bmc_auth_templ
             'message': f"An error occurred during host_bmc_auth_present operation: {str(e)}",
             'debug': debug_info if 'debug_info' in locals() else ['Exception occurred before debug_info initialization']
         }
+def uuids_secret_present(namespace, secret_name, pillar_data):
+    """
+    Ensure that a Kubernetes Secret containing UUIDs from pillar data matches the desired state.
+    Creates the Secret if it doesn't exist, or updates it if it differs.
+
+    Args:
+        namespace (str): The namespace of the Secret in Kubernetes.
+        secret_name (str): The name of the Secret to create or update.
+        pillar_data (dict): Pillar data containing the UUIDs under 'salt-master:uuids'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
+
+    CLI Example:
+        salt '*' kinetic-k8s.uuids_secret_present baremetal-operator-system salt-master-uuids pillar_data
+    """
+    try:
+        updated = False
+        result = {}
+        exists = False
+        matches = False
+        current_secret = {}
+        desired_secret = {}
+        differences = {}
+
+        # Load Kubernetes configuration for updates
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+
+        # Step 1: Retrieve the existing Secret from Kubernetes
+        try:
+            secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+            exists = True
+            current_secret = secret.string_data if secret.string_data else {}
+            if not current_secret and secret.data:
+                import base64
+                current_secret = {k: base64.b64decode(v).decode('utf-8') for k, v in secret.data.items()}
+        except ApiException as e:
+            exists = False
+            current_secret = {}
+            message = f"Secret {secret_name} not found: {str(e)}"
+        except Exception as e:
+            exists = False
+            current_secret = {}
+            message = f"Error fetching Secret {secret_name}: {str(e)}"
+
+        # Step 2: Prepare the desired Secret content from pillar data
+        uuids = pillar_data.get('salt-master', {}).get('uuids', [])
+        # Convert the list of UUIDs to a single string for storage in the secret
+        desired_secret = {'uuids': '\n'.join(uuids)}
+
+        # Compare the existing Secret with the desired Secret
+        if exists:
+            for key in desired_secret:
+                if key not in current_secret or current_secret[key] != desired_secret[key]:
+                    differences[key] = {
+                        'current': current_secret.get(key, 'not set'),
+                        'desired': desired_secret[key]
+                    }
+            matches = len(differences) == 0
+        else:
+            matches = False
+
+        # Step 3: Update or create the Secret if it doesn't exist or doesn't match
+        if not exists or not matches:
+            try:
+                body = client.V1Secret(
+                    metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
+                    string_data=desired_secret,
+                    type='Opaque'
+                )
+
+                if exists:
+                    result = core_v1_api.replace_namespaced_secret(
+                        name=secret_name,
+                        namespace=namespace,
+                        body=body
+                    )
+                    updated = True
+                    message = f"Secret {secret_name} updated"
+                else:
+                    result = core_v1_api.create_namespaced_secret(
+                        namespace=namespace,
+                        body=body
+                    )
+                    updated = True
+                    message = f"Secret {secret_name} created"
+            except ApiException as e:
+                updated = False
+                message = f"Failed to update/create Secret {secret_name}: {str(e)}"
+                result = {'error': str(e)}
+        else:
+            message = f"Secret {secret_name} already matches desired state"
+            result = current_secret
+
+        return {
+            'success': True if updated or matches else False,
+            'updated': updated,
+            'result': result,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'result': {},
+            'message': f"An error occurred during uuids_secret_present operation: {str(e)}"
+        }
