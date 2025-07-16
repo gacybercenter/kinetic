@@ -692,10 +692,10 @@ def host_bmc_auth_present(namespace, bmh_name, ipmi, pillar_data, bmc_auth_templ
             'message': f"BMC auth operation error: {str(e)[:50]}..."
         }
 
-def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="salt-master", wait_timeout=300, wait_interval=10, salt_check_timeout=120, salt_check_interval=5):
+def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="salt-master", wait_timeout=300, wait_interval=10, salt_check_timeout=120, salt_check_interval=5, salt_check_key="salt-master:uuids"):
     """
     Ensure that a Kubernetes Secret containing UUIDs from pillar data matches the desired state.
-    If updated, restarts the specified deployment, waits for it to become ready, and verifies salt-master responsiveness.
+    If updated, restarts the specified deployment, waits for it to become ready, and verifies salt-master responsiveness by fetching pillar data.
     Assumes UUIDs are under 'salt-master:uuids' or directly under 'uuids'.
 
     Args:
@@ -707,6 +707,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         wait_interval (int, optional): Interval in seconds between checks for deployment readiness. Defaults to 10 seconds.
         salt_check_timeout (int, optional): Maximum time in seconds to wait for salt-master responsiveness. Defaults to 120 seconds.
         salt_check_interval (int, optional): Interval in seconds between salt-master responsiveness checks. Defaults to 5 seconds.
+        salt_check_key (str, optional): The pillar key to fetch for checking salt-master responsiveness. Defaults to 'salt-master:uuids'.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'waited' (bool), 'salt_responded' (bool), and 'message' (str).
@@ -843,25 +844,25 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 if wait_time >= wait_timeout and not waited:
                     message += f"; {deployment_name} timeout ({wait_timeout}s)"
 
-                # Step 3: If deployment is ready, verify salt-master responsiveness with salt-call ping
+                # Step 3: If deployment is ready, verify salt-master responsiveness by fetching pillar data
                 if waited:
                     salt_check_time = 0
                     while salt_check_time < salt_check_timeout:
                         try:
-                            # Use salt's test.ping to check if salt-master is responsive
-                            ping_result = __salt__['test.ping']()
-                            if ping_result:
+                            # Attempt to fetch the specified pillar key to verify salt-master responsiveness
+                            pillar_result = __salt__['pillar.get'](salt_check_key, default=None)
+                            if pillar_result is not None:
                                 salt_responded = True
-                                message += f"; salt-master responded to ping ({salt_check_time}s)"
+                                message += f"; salt-master responded with pillar data for '{salt_check_key}' ({salt_check_time}s)"
                                 break
                             else:
-                                message += f"; salt-master ping failed ({salt_check_time}s), retrying..."
-                        except Exception as ping_err:
-                            message += f"; salt-master ping error ({salt_check_time}s): {str(ping_err)[:50]}..., retrying..."
+                                message += f"; salt-master returned None for pillar key '{salt_check_key}' ({salt_check_time}s), retrying..."
+                        except Exception as pillar_err:
+                            message += f"; salt-master pillar fetch error for '{salt_check_key}' ({salt_check_time}s): {str(pillar_err)[:50]}..., retrying..."
                         time.sleep(salt_check_interval)
                         salt_check_time += salt_check_interval
                     if salt_check_time >= salt_check_timeout and not salt_responded:
-                        message += f"; salt-master responsiveness timeout ({salt_check_timeout}s)"
+                        message += f"; salt-master responsiveness timeout for pillar fetch ({salt_check_timeout}s)"
             except ApiException as e:
                 restarted = False
                 message += f"; {deployment_name} restart failed: {str(e)[:50]}..."

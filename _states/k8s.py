@@ -15,11 +15,12 @@ def __virtual__():
         return __virtualname__
     return (False, 'The kinetic-k8s execution module is not available.')
 
-def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="salt-master", deployment_name="salt-master", wait_timeout=300, wait_interval=10, salt_check_timeout=120, salt_check_interval=5):
+def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="salt-master", deployment_name="salt-master", wait_timeout=300, wait_interval=10, salt_check_timeout=120, salt_check_interval=5, salt_check_key="salt-master:uuids"):
     """
     Ensure that a Kubernetes Secret with UUIDs is present and matches the desired state.
     If the secret is updated, the specified deployment will be restarted, and the state will wait
-    for the deployment to become ready and salt-master to respond before completing. Assumes UUIDs are under 'salt-master:uuids' or directly under 'uuids'.
+    for the deployment to become ready and salt-master to respond with pillar data before completing.
+    Assumes UUIDs are under 'salt-master:uuids' or directly under 'uuids'.
 
     name
         The name of the state (arbitrary, for SaltStack identification).
@@ -53,6 +54,9 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="sa
     salt_check_interval
         Optional. Interval in seconds between salt-master responsiveness checks. Defaults to 5 seconds.
 
+    salt_check_key
+        Optional. The pillar key to fetch for checking salt-master responsiveness. Defaults to 'salt-master:uuids'.
+
     Example:
     .. code-block:: yaml
 
@@ -66,6 +70,7 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="sa
             - wait_interval: 10
             - salt_check_timeout: 120
             - salt_check_interval: 5
+            - salt_check_key: salt-master:uuids
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
@@ -90,7 +95,7 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="sa
 
         # Call the execution module function with the new parameters
         result = __salt__['kinetic-k8s.uuids_secret_present'](
-            namespace, secret_name, pillar_data, deployment_name, wait_timeout, wait_interval, salt_check_timeout, salt_check_interval
+            namespace, secret_name, pillar_data, deployment_name, wait_timeout, wait_interval, salt_check_timeout, salt_check_interval, salt_check_key
         )
 
         ret['result'] = result['success']

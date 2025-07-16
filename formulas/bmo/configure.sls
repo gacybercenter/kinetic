@@ -22,6 +22,7 @@ ensure_salt_master_uuids_secret:
     - wait_interval: 10
     - salt_check_timeout: 120
     - salt_check_interval: 5
+    - salt_check_key: salt-master:uuids
 
 {% for name, host in pillar['bmh'].items() %}
 {% set bmh_type = name.split('-')[0].lower() %}
