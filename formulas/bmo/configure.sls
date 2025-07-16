@@ -71,7 +71,7 @@ vms_pool:
     - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms {{ name }}_disk0.qcow2
 
 # Define the VM using the inline XML string
-define_{{ name }}_vm:
+define_{{name }}_vm:
   module.run:
     - name: virt.define_xml_str
     - xml: |
@@ -80,6 +80,7 @@ define_{{ name }}_vm:
           <uuid>{{ pillar['bmh'][name]['uuid'] }}</uuid>
           <memory unit='MiB'>{{ pillar['bmh'][name]['mem'] }}</memory>
           <vcpu>{{ pillar['bmh'][name]['cpu'] }}</vcpu>
+          <cpu mode='host-passthrough' check='none'/>
           <os>
             <type>hvm</type>
           </os>
