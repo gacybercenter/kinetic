@@ -64,7 +64,7 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, deployment_nam
     try:
         # If pillar_data is not provided, fetch it using pillar_key
         if pillar_data is None:
-            pillar_data = __salt__['pillar.get'](salt-master.uuids, {})
+            pillar_data = __salt__['pillar.get']("salt-master:uuids", {})
 
         # Call the execution module function
         result = __salt__['kinetic-k8s.uuids_secret_present'](namespace, secret_name, pillar_data, deployment_name, wait_timeout, wait_interval)
