@@ -61,6 +61,7 @@ vms_pool:
 {{ name }}_disk.qcow2:
   module.run:
     - name: virt.volume_define
+    - m_name: {{ name }}_disk0.qcow2
     - pool: vms
     - format: qcow2
     - size: {{ pillar['bmh'][name]['disk'] }}
