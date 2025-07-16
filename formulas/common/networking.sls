@@ -26,7 +26,10 @@ netplan.io:
 
 /run/systemd/network:
   file.absent
-
+systemd-networkd.socket:
+  service.disabled
+systemd-networkd:
+  service.disabled
 NetworkManager:
   service.disabled
 
@@ -124,6 +127,12 @@ bond-{{ network }}:
   {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
 
 {{ interface }}:
+ {% if network == "public" %}
+  network.managed:
+    - enabled: True
+    - type: eth
+    - proto: manual
+ {% else %}
   network.managed:
     - enabled: True
     - type: eth
@@ -141,7 +150,16 @@ bond-{{ network }}:
     - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
     {% endif %}
   {% endif %}
+ {% endif %}
     {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
+ {% if network == "public" %}
+{{ network }}_br:
+  network.managed:
+    - enabled: True
+    - proto: manual
+    - type: bridge
+    - ports: {{ interface }}
+ {% else %}
 {{ network }}_br:
   network.managed:
     - enabled: True
@@ -161,6 +179,7 @@ bond-{{ network }}:
       - network: {{ interface }}
     - require:
       - network: {{ interface }}
+      {% endif %}
       {% endif %}
     {% endif %}
   {% endif %}
