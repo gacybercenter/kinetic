@@ -721,18 +721,24 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         desired_secret = {}
         differences = {}
 
-        # Step 1: Safely extract UUIDs string from pillar data
-        # Handle cases where pillar_data might not be a dictionary or might not have the expected structure
+        # Step 1: Safely extract UUIDs string from pillar data with detailed debugging
         uuids_str = ''
+        debug_msg = "Pillar data structure: "
         if isinstance(pillar_data, dict):
+            debug_msg += "dict; "
             salt_master_data = pillar_data.get('salt-master', {})
             if isinstance(salt_master_data, dict):
+                debug_msg += "salt-master is dict; "
                 uuids_str = salt_master_data.get('uuids', '')
+                debug_msg += f"uuids found: {bool(uuids_str)}; "
             else:
+                debug_msg += "salt-master is not dict; "
                 uuids_str = salt_master_data if isinstance(salt_master_data, str) else ''
+                debug_msg += f"uuids as string direct: {bool(uuids_str)}; "
         else:
-            # If pillar_data is not a dict, it might be the string directly
+            debug_msg += "not dict; "
             uuids_str = pillar_data if isinstance(pillar_data, str) else ''
+            debug_msg += f"uuids as direct pillar_data: {bool(uuids_str)}; "
 
         # Check if UUIDs string is empty or whitespace-only
         if not uuids_str or uuids_str.strip() == '':
@@ -741,7 +747,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 'updated': False,
                 'restarted': False,
                 'waited': False,
-                'message': f"No UUIDs provided for Secret {secret_name}; no action taken"
+                'message': f"No UUIDs provided for Secret {secret_name}; no action taken. {debug_msg}"
             }
 
         try:
