@@ -11,6 +11,14 @@ deploy_script:
 {% set cidr_prefix = subnet_cidr.split('/')[1] %}
 {% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
 {% set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
+
+ensure_salt_master_uuids_secret:
+  k8s_secret.uuids_present:
+    - namespace: salt
+    - secret_name: uuids
+    - pillar_key: salt-master
+    - deployment_name: salt-master
+
 {% for name, host in pillar['bmh'].items() %}
 {% set bmh_type = name.split('-')[0].lower() %}
 ensure_{{ name }}_bmc_auth_present:
