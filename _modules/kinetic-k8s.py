@@ -237,7 +237,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 'message': f"BMH template render failed: {str(e)[:50]}..."
             }
 
-        # Update or create BMH
+        # Update or create BMH only if necessary
         if not exists:
             try:
                 custom_api.create_namespaced_custom_object(group=group, version=version, namespace=namespace, plural=plural, body=desired_bmh)
@@ -360,6 +360,11 @@ def networkdata_present(namespace, bmh_name, defaults, pillar_data, network_temp
             exists = False
             current_network = {}
             message = f"Network data not applicable for {bmh_name}"
+            return {
+                'success': True,
+                'updated': False,
+                'message': message
+            }
 
         if 'network' in pillar_data:
             try:
@@ -404,6 +409,11 @@ def networkdata_present(namespace, bmh_name, defaults, pillar_data, network_temp
             desired_network = {}
             matches = False
             message = f"Network data not applicable for {bmh_name}"
+            return {
+                'success': True,
+                'updated': False,
+                'message': message
+            }
 
         if 'network' in pillar_data and (not exists or not matches):
             try:
@@ -487,6 +497,11 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
             exists = False
             current_userdata = {}
             message = f"Userdata not applicable for {bmh_name}"
+            return {
+                'success': True,
+                'updated': False,
+                'message': message
+            }
 
         if 'network' in pillar_data:
             try:
@@ -524,6 +539,11 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
             desired_userdata = {}
             matches = False
             message = f"Userdata not applicable for {bmh_name}"
+            return {
+                'success': True,
+                'updated': False,
+                'message': message
+            }
 
         if 'network' in pillar_data and (not exists or not matches):
             try:

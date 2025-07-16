@@ -81,7 +81,12 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="sa
                 'message': result['message']
             }
         else:
-            ret['changes'] = {'updated': False, 'restarted': False, 'waited': False, 'message': 'No changes needed'}
+            ret['changes'] = {
+                'updated': False,
+                'restarted': False,
+                'waited': False,
+                'message': 'No changes needed'
+            }
 
     except Exception as e:
         ret['result'] = False
