@@ -68,6 +68,14 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="sa
                 raise SaltInvocationError('Either pillar_data or pillar_key must be provided.')
             # Fetch the pillar data as a dictionary
             pillar_data = __salt__['pillar.get'](pillar_key, {})
+            # Debug the fetched pillar data structure
+            debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(pillar_data).__name__}; "
+            if isinstance(pillar_data, dict):
+                debug_pillar_msg += f"keys={list(pillar_data.keys())[:5]}; "
+                if 'salt-master' in pillar_data and isinstance(pillar_data['salt-master'], dict):
+                    debug_pillar_msg += f"salt-master keys={list(pillar_data['salt-master'].keys())[:5]}; "
+            else:
+                debug_pillar_msg += f"value preview={repr(pillar_data)[:50]}...; "
             # If the fetched data is not a dictionary, wrap it appropriately
             if not isinstance(pillar_data, dict):
                 pillar_data = {pillar_key: pillar_data}
@@ -77,6 +85,8 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="sa
 
         ret['result'] = result['success']
         ret['comment'] = result['message']
+        if pillar_data is not None and debug_pillar_msg:
+            ret['comment'] += f" Debug: {debug_pillar_msg}"
         if result['updated']:
             ret['changes'] = {
                 'secret_updated': True,
