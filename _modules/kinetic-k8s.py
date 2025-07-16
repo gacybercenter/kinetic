@@ -808,7 +808,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 message += f"; {deployment_name} restart error: {str(e)[:50]}..."
 
         return {
-            'success': True if (updated and restarted and waited) or matches else False,
+            'success': True if (updated and restarted and waited) or (matches and not updated) else False,
             'updated': updated,
             'restarted': restarted,
             'waited': waited,

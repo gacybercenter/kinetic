@@ -75,18 +75,12 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="sa
         ret['comment'] = result['message']
         if result['updated']:
             ret['changes'] = {
-                'updated': True,
-                'restarted': result['restarted'],
-                'waited': result['waited'],
-                'message': result['message']
+                'secret_updated': True,
+                'deployment_restarted': result['restarted'],
+                'deployment_waited': result['waited']
             }
         else:
-            ret['changes'] = {
-                'updated': False,
-                'restarted': False,
-                'waited': False,
-                'message': 'No changes needed'
-            }
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
 
     except Exception as e:
         ret['result'] = False
