@@ -66,7 +66,11 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="sa
         if pillar_data is None:
             if pillar_key is None:
                 raise SaltInvocationError('Either pillar_data or pillar_key must be provided.')
-            pillar_data = __salt__['pillar.get']("uuids", {})
+            # Fetch the pillar data as a dictionary
+            pillar_data = __salt__['pillar.get'](pillar_key, {})
+            # If the fetched data is not a dictionary, wrap it appropriately
+            if not isinstance(pillar_data, dict):
+                pillar_data = {pillar_key: pillar_data}
 
         # Call the execution module function
         result = __salt__['kinetic-k8s.uuids_secret_present'](namespace, secret_name, pillar_data, deployment_name, wait_timeout, wait_interval)

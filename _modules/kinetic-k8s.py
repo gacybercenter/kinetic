@@ -721,8 +721,20 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         desired_secret = {}
         differences = {}
 
-        # Step 1: Check if UUIDs string is empty or whitespace-only
-        uuids_str = pillar_data.get('uuids', {})
+        # Step 1: Safely extract UUIDs string from pillar data
+        # Handle cases where pillar_data might not be a dictionary or might not have the expected structure
+        uuids_str = ''
+        if isinstance(pillar_data, dict):
+            salt_master_data = pillar_data.get('salt-master', {})
+            if isinstance(salt_master_data, dict):
+                uuids_str = salt_master_data.get('uuids', '')
+            else:
+                uuids_str = salt_master_data if isinstance(salt_master_data, str) else ''
+        else:
+            # If pillar_data is not a dict, it might be the string directly
+            uuids_str = pillar_data if isinstance(pillar_data, str) else ''
+
+        # Check if UUIDs string is empty or whitespace-only
         if not uuids_str or uuids_str.strip() == '':
             return {
                 'success': True,
