@@ -15,7 +15,7 @@ def __virtual__():
         return __virtualname__
     return (False, 'The kinetic-k8s execution module is not available.')
 
-def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key=None, deployment_name="salt-master", wait_timeout=300, wait_interval=10):
+def uuids_present(name, namespace, secret_name, pillar_data=None, deployment_name="salt-master", wait_timeout=300, wait_interval=10):
     """
     Ensure that a Kubernetes Secret with UUIDs is present and matches the desired state.
     If the secret is updated, the specified deployment will be restarted, and the state will wait
@@ -66,7 +66,7 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key=Non
         if pillar_data is None:
             if pillar_key is None:
                 raise SaltInvocationError('Either pillar_data or pillar_key must be provided.')
-            pillar_data = __salt__['pillar.get'](pillar_key, {})
+            pillar_data = __salt__['pillar.get'](salt-master:uuids, {})
 
         # Call the execution module function
         result = __salt__['kinetic-k8s.uuids_secret_present'](namespace, secret_name, pillar_data, deployment_name, wait_timeout, wait_interval)

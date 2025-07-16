@@ -16,7 +16,6 @@ ensure_salt_master_uuids_secret:
   k8s_secret.uuids_present:
     - namespace: salt
     - secret_name: uuids
-    - pillar_key: salt-master:uuids
     - deployment_name: salt-master
     - wait_timeout: 300
     - wait_interval: 10
