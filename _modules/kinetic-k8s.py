@@ -1037,7 +1037,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
     """
     Ensure that a Kubernetes Secret containing UUIDs from pillar data matches the desired state.
     Creates the Secret if it doesn't exist, or updates it if it differs. If updated, restarts
-    the specified deployment and waits for it to become ready.
+    the specified deployment and waits for it to become ready. Assumes UUIDs are under 'salt-master:uuids' in pillar data.
 
     Args:
         namespace (str): The namespace of the Secret and Deployment in Kubernetes.
@@ -1090,7 +1090,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             current_secret = {}
             message = f"Error fetching Secret {secret_name}: {str(e)}"
 
-        # Step 2: Prepare the desired Secret content from pillar data
+        # Step 2: Prepare the desired Secret content from pillar data, assuming UUIDs are under 'salt-master:uuids'
         uuids = pillar_data.get('salt-master', {}).get('uuids', [])
         # Convert the list of UUIDs to a single string for storage in the secret
         desired_secret = {'uuids': '\n'.join(uuids)}
