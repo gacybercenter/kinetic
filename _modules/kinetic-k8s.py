@@ -780,7 +780,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             exists = False
             current_secret = {}
 
-        desired_secret = {'uuids': uuids_str}
+        desired_secret = {'uuid': uuids_str}  # Changed from 'uuids' to 'uuid'
 
         if exists:
             for key in desired_secret:
