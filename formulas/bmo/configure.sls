@@ -64,7 +64,7 @@ create_{{ name }}_disk_volume:
     - pool: vms
     - name: {{ name }}_disk0.qcow2
     - format: qcow2
-    - size: {{ pillar['bmh'][name]['disk'] * 1073741824 }}  # Convert GiB to bytes
+    - size: {{ pillar['bmh'][name]['disk'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
       - virt: vms_pool
