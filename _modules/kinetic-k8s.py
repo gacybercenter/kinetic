@@ -40,59 +40,46 @@ def get_mac_by_interface_name(namespace, resource_name, interface_name):
         salt '*' kinetic-k8s.get_mac_by_interface_name baremetal-operator-system compute-133-26 enp97s0f0
     """
     try:
-        # Load kubeconfig file (ensure access to cluster config)
-        # Use in-cluster config if running inside a pod, otherwise kubeconfig
         try:
             config.load_incluster_config()
         except config.ConfigException:
             config.load_kube_config()
 
-        # Create an instance of the Custom Objects API
         custom_api = client.CustomObjectsApi()
-
-        # Define the Custom Resource details
         group = "metal3.io"
         version = "v1alpha1"
         plural = "hardwaredata"
 
-        # Get the HardwareData resource
         resource = custom_api.get_namespaced_custom_object(
-            group=group,
-            version=version,
-            namespace=namespace,
-            plural=plural,
-            name=resource_name
+            group=group, version=version, namespace=namespace, plural=plural, name=resource_name
         )
 
-        # Extract the NICs from the hardware spec
         nics = resource.get('spec', {}).get('hardware', {}).get('nics', [])
-
-        # Search for the interface by name
         for nic in nics:
             if nic.get('name') == interface_name:
                 return {
                     'success': True,
-                    'mac': nic.get('mac'),
-                    'message': f"Found MAC address for interface {interface_name}"
+                    'mac': nic.get('mac', ''),
+                    'message': f"Found MAC for {interface_name}"
                 }
 
         return {
             'success': False,
             'mac': '',
-            'message': f"No interface found with name: {interface_name}"
+            'message': f"Interface {interface_name} not found"
         }
 
     except ApiException as e:
         return {
             'success': False,
             'mac': '',
-            'message': f"Exception when calling Kubernetes API: {str(e)}"
+            'message': f"Kubernetes API error: {str(e)[:50]}..."
         }
     except Exception as e:
         return {
             'success': False,
             'mac': '',
-            'message': f"An error occurred: {str(e)}"
+            'message': f"Error: {str(e)[:50]}..."
         }
 
 def get_all_interfaces(namespace, resource_name):
@@ -110,57 +97,47 @@ def get_all_interfaces(namespace, resource_name):
         salt '*' kinetic-k8s.get_all_interfaces baremetal-operator-system compute-133-26
     """
     try:
-        # Load kubeconfig file (ensure access to cluster config)
         try:
             config.load_incluster_config()
         except config.ConfigException:
             config.load_kube_config()
 
-        # Create an instance of the Custom Objects API
         custom_api = client.CustomObjectsApi()
-
-        # Define the Custom Resource details
         group = "metal3.io"
         version = "v1alpha1"
         plural = "hardwaredata"
 
-        # Get the HardwareData resource
         resource = custom_api.get_namespaced_custom_object(
-            group=group,
-            version=version,
-            namespace=namespace,
-            plural=plural,
-            name=resource_name
+            group=group, version=version, namespace=namespace, plural=plural, name=resource_name
         )
 
-        # Extract the NICs from the hardware spec
         nics = resource.get('spec', {}).get('hardware', {}).get('nics', [])
         interfaces = {nic.get('name'): nic.get('mac') for nic in nics if nic.get('name') and nic.get('mac')}
 
         return {
             'success': True,
             'interfaces': interfaces,
-            'message': f"Retrieved {len(interfaces)} interfaces for {resource_name}"
+            'message': f"Retrieved {len(interfaces)} interfaces"
         }
 
     except ApiException as e:
         return {
             'success': False,
             'interfaces': {},
-            'message': f"Exception when calling Kubernetes API: {str(e)}"
+            'message': f"Kubernetes API error: {str(e)[:50]}..."
         }
     except Exception as e:
         return {
             'success': False,
             'interfaces': {},
-            'message': f"An error occurred: {str(e)}"
+            'message': f"Error: {str(e)[:50]}..."
         }
 
 def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
     """
     Ensure that the Bare Metal Host (BMH) object in Kubernetes matches the desired state
     defined by pillar data and Jinja2 template. Updates BMH if possible, or deletes and recreates
-    if it needs updating and is in an error state, waiting for deletion to complete.
+    if it needs updating and is in an error state.
 
     Args:
         namespace (str): The namespace of the Bare Metal Host resource in Kubernetes.
@@ -169,7 +146,7 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
         bmh_template_path (str, optional): Salt URI to the Jinja2 template file for BMH.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'recreated' (bool), 'result' (dict), and 'message' (str for status or error).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'recreated' (bool), and 'message' (str).
 
     CLI Example:
         salt '*' kinetic-k8s.bmh_present baremetal-operator-system compute-133-26 pillar_data
@@ -177,68 +154,52 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
     try:
         updated = False
         recreated = False
-        result = {}
         exists = False
         matches = False
         in_error_state = False
-        current_bmh = {}
-        desired_bmh = {}
         differences = {}
 
-        # Load Kubernetes configuration for updates
         try:
             config.load_incluster_config()
         except config.ConfigException:
             config.load_kube_config()
 
         custom_api = client.CustomObjectsApi()
+        group = "metal3.io"
+        version = "v1alpha1"
+        plural = "baremetalhosts"
 
-        # Step 1: Retrieve the existing BMH from Kubernetes
+        # Check if BMH exists
         try:
-            group = "metal3.io"
-            version = "v1alpha1"
-            plural = "baremetalhosts"
             resource = custom_api.get_namespaced_custom_object(
-                group=group,
-                version=version,
-                namespace=namespace,
-                plural=plural,
-                name=bmh_name
+                group=group, version=version, namespace=namespace, plural=plural, name=bmh_name
             )
             exists = True
-            current_bmh = {
-                'name': resource.get('metadata', {}).get('name', ''),
-                'namespace': resource.get('metadata', {}).get('namespace', ''),
-                'status': resource.get('status', {}),
-                'spec': resource.get('spec', {})
-            }
-            # Check if BMH is in an error state
-            status = current_bmh.get('status', {})
-            error_message = status.get('errorMessage', '')
-            provisioning_state = status.get('provisioning', {}).get('state', '')
-            in_error_state = error_message != '' or provisioning_state == 'error'
-        except ApiException as e:
+            current_bmh = resource.get('spec', {})
+            status = resource.get('status', {})
+            in_error_state = status.get('errorMessage', '') != '' or status.get('provisioning', {}).get('state', '') == 'error'
+        except ApiException:
             exists = False
             current_bmh = {}
-            message = f"BMH {bmh_name} not found: {str(e)}"
         except Exception as e:
             exists = False
             current_bmh = {}
-            message = f"Error fetching BMH: {str(e)}"
+            return {
+                'success': False,
+                'updated': False,
+                'recreated': False,
+                'message': f"Error fetching BMH: {str(e)[:50]}..."
+            }
 
-        # Step 2: Render the desired BMH configuration from pillar data using Jinja2 template in memory
+        # Render desired BMH configuration
         try:
-            # Prepare the context for rendering the BMH template, using host-specific BMC auth Secret
             network_data_name = f"{bmh_name}-network-data"
             userdata_name = f"{bmh_name}-user-data"
             bmc_auth_name = f"{bmh_name}-bmc-auth"
             bmh_context = {
-                'name': bmh_name,
-                'namespace': namespace,
-                'online': pillar_data.get('online', False),
+                'name': bmh_name, 'namespace': namespace, 'online': pillar_data.get('online', False),
                 'address': pillar_data.get('bmc', {}).get('address', ''),
-                'credentialsName': bmc_auth_name,  # Use host-specific BMC auth Secret
-                'bootMACAddress': pillar_data.get('bootMACAddress', ''),
+                'credentialsName': bmc_auth_name, 'bootMACAddress': pillar_data.get('bootMACAddress', ''),
                 'checksum': pillar_data.get('image', {}).get('checksum', ''),
                 'format': pillar_data.get('image', {}).get('format', ''),
                 'url': pillar_data.get('image', {}).get('url', ''),
@@ -247,184 +208,95 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
                 'userdata': userdata_name if 'network' in pillar_data else ''
             }
 
-            # Use Salt's in-memory rendering for BMH template
-            try:
-                bmh_content = __salt__['cp.get_file_str'](bmh_template_path)
-                if not bmh_content:
-                    raise Exception(f"Failed to read BMH template from {bmh_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
-                # Strip shebang line if present to avoid rendering issues
-                if bmh_content.startswith('#!'):
-                    bmh_content_lines = bmh_content.splitlines()
-                    bmh_content = '\n'.join(bmh_content_lines[1:]) if len(bmh_content_lines) > 1 else ''
-                    if not bmh_content:
-                        raise Exception(f"BMH template at {bmh_template_path} is empty after removing shebang line.")
-            except Exception as file_error:
-                return {
-                    'success': False,
-                    'updated': False,
-                    'recreated': False,
-                    'result': {'error': str(file_error)},
-                    'message': f"Failed to retrieve BMH template file from {bmh_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
-                }
-
-            rendered_bmh = __salt__['slsutil.renderer'](
-                string=bmh_content,
-                default_renderer='jinja|yaml',
-                context=bmh_context
-            )
-
+            bmh_content = __salt__['cp.get_file_str'](bmh_template_path)
+            if not bmh_content:
+                raise Exception(f"Empty BMH template at {bmh_template_path}")
+            if bmh_content.startswith('#!'):
+                bmh_content = '\n'.join(bmh_content.splitlines()[1:]) if len(bmh_content.splitlines()) > 1 else ''
+            rendered_bmh = __salt__['slsutil.renderer'](string=bmh_content, default_renderer='jinja|yaml', context=bmh_context)
             if not rendered_bmh:
-                raise Exception("Failed to render BMH template: Empty or invalid output")
+                raise Exception("Failed to render BMH template")
 
-            # Handle the case where rendered_bmh is already a dictionary (parsed YAML)
             import yaml
-            if isinstance(rendered_bmh, dict):
-                desired_bmh = rendered_bmh
-            else:
-                # If it's a string, parse it as YAML
-                desired_bmh = yaml.safe_load(rendered_bmh)
+            desired_bmh = rendered_bmh if isinstance(rendered_bmh, dict) else yaml.safe_load(rendered_bmh)
 
-            # Compare the existing BMH spec with the desired spec
             if exists:
-                current_bmh_spec = current_bmh.get('spec', {})
-                desired_bmh_spec = desired_bmh.get('spec', {})
-                for key in desired_bmh_spec:
-                    if key not in current_bmh_spec or current_bmh_spec[key] != desired_bmh_spec[key]:
-                        differences[key] = {
-                            'current': current_bmh_spec.get(key, 'not set'),
-                            'desired': desired_bmh_spec[key]
-                        }
+                current_spec = current_bmh
+                desired_spec = desired_bmh.get('spec', {})
+                for key in desired_spec:
+                    if key not in current_spec or current_spec[key] != desired_spec[key]:
+                        differences[key] = {'desired': desired_spec[key]}
                 matches = len(differences) == 0
             else:
                 matches = False
-        except Exception as bmh_render_error:
+        except Exception as e:
             return {
                 'success': False,
                 'updated': False,
                 'recreated': False,
-                'result': {'error': str(bmh_render_error)},
-                'message': f"Failed to render BMH template: {str(bmh_render_error)}"
+                'message': f"BMH template render failed: {str(e)[:50]}..."
             }
 
-        # Step 3: Update or create BMH based on existence, match status, and error state
+        # Update or create BMH
         if not exists:
             try:
-                group = "metal3.io"
-                version = "v1alpha1"
-                plural = "baremetalhosts"
-                body = desired_bmh
-
-                result = custom_api.create_namespaced_custom_object(
-                    group=group,
-                    version=version,
-                    namespace=namespace,
-                    plural=plural,
-                    body=body
-                )
+                custom_api.create_namespaced_custom_object(group=group, version=version, namespace=namespace, plural=plural, body=desired_bmh)
                 updated = True
-                recreated = True  # Treat initial creation as recreation for triggering Secret creation
-                message = f"BMH {bmh_name} created (did not exist)"
+                recreated = True
+                message = f"BMH {bmh_name} created"
             except ApiException as e:
                 updated = False
                 recreated = False
-                message = f"Failed to create BMH {bmh_name}: {str(e)}"
-                result = {'error': str(e)}
+                message = f"BMH {bmh_name} creation failed: {str(e)[:50]}..."
         elif not matches or in_error_state:
             try:
-                group = "metal3.io"
-                version = "v1alpha1"
-                plural = "baremetalhosts"
                 body = desired_bmh
-                # Preserve metadata like resourceVersion for update
-                if 'metadata' in current_bmh and 'resourceVersion' in current_bmh['metadata']:
-                    if 'metadata' not in body:
-                        body['metadata'] = {}
-                    body['metadata']['resourceVersion'] = current_bmh['metadata'].get('resourceVersion', '')
-
+                if exists and 'metadata' in resource and 'resourceVersion' in resource['metadata']:
+                    body.setdefault('metadata', {}).update({'resourceVersion': resource['metadata'].get('resourceVersion', '')})
                 try:
-                    # First attempt to update the existing BMH
-                    result = custom_api.replace_namespaced_custom_object(
-                        group=group,
-                        version=version,
-                        namespace=namespace,
-                        plural=plural,
-                        name=bmh_name,
-                        body=body
-                    )
+                    custom_api.replace_namespaced_custom_object(group=group, version=version, namespace=namespace, plural=plural, name=bmh_name, body=body)
                     updated = True
                     recreated = False
-                    message = f"BMH {bmh_name} updated (direct replacement)"
+                    message = f"BMH {bmh_name} updated"
                 except ApiException as update_error:
-                    # If update fails and it's due to an error state requiring deletion, fall back to delete and recreate
                     if in_error_state:
                         import time
-                        # Delete the BMH
-                        custom_api.delete_namespaced_custom_object(
-                            group=group,
-                            version=version,
-                            namespace=namespace,
-                            plural=plural,
-                            name=bmh_name,
-                            body=client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5)
-                        )
-                        message = f"BMH {bmh_name} deleted (due to error state or update failure: {str(update_error)})"
-
-                        # Wait for deletion to complete
-                        max_wait = 60  # Wait up to 60 seconds
-                        wait_interval = 5  # Check every 5 seconds
+                        custom_api.delete_namespaced_custom_object(group=group, version=version, namespace=namespace, plural=plural, name=bmh_name, body=client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5))
                         wait_time = 0
+                        max_wait = 60
+                        wait_interval = 5
                         while wait_time < max_wait:
                             try:
-                                custom_api.get_namespaced_custom_object(
-                                    group=group,
-                                    version=version,
-                                    namespace=namespace,
-                                    plural=plural,
-                                    name=bmh_name
-                                )
+                                custom_api.get_namespaced_custom_object(group=group, version=version, namespace=namespace, plural=plural, name=bmh_name)
                                 time.sleep(wait_interval)
                                 wait_time += wait_interval
                             except ApiException as get_error:
-                                if get_error.status == 404:  # Not found, deletion complete
-                                    message += f"; Deletion of BMH {bmh_name} completed after {wait_time} seconds"
+                                if get_error.status == 404:
                                     break
                                 else:
-                                    message += f"; Error checking deletion status for BMH {bmh_name}: {str(get_error)}"
+                                    message = f"BMH {bmh_name} deletion check failed: {str(get_error)[:50]}..."
                                     break
-                        if wait_time >= max_wait:
-                            message += f"; Timeout waiting for deletion of BMH {bmh_name} after {max_wait} seconds"
-
-                        # Recreate after deletion
-                        result = custom_api.create_namespaced_custom_object(
-                            group=group,
-                            version=version,
-                            namespace=namespace,
-                            plural=plural,
-                            body=body
-                        )
+                        custom_api.create_namespaced_custom_object(group=group, version=version, namespace=namespace, plural=plural, body=body)
                         updated = True
-                        recreated = True  # Indicate recreation for triggering Secret recreation
-                        message += f"; BMH {bmh_name} recreated after deletion"
+                        recreated = True
+                        message = f"BMH {bmh_name} recreated"
                     else:
                         updated = False
                         recreated = False
-                        message = f"Failed to update BMH {bmh_name}: {str(update_error)}"
-                        result = {'error': str(update_error)}
+                        message = f"BMH {bmh_name} update failed: {str(update_error)[:50]}..."
             except ApiException as e:
                 updated = False
                 recreated = False
-                message = f"Failed to process BMH {bmh_name}: {str(e)}"
-                result = {'error': str(e)}
+                message = f"BMH {bmh_name} operation failed: {str(e)[:50]}..."
         else:
-            message = f"BMH {bmh_name} already matches desired state and is not in error state"
-            result = current_bmh
+            message = f"BMH {bmh_name} already up-to-date"
+            updated = False
             recreated = False
 
         return {
-            'success': True,
+            'success': True if updated or matches else False,
             'updated': updated,
-            'recreated': recreated,  # Indicate if BMH was recreated to trigger Secret recreation
-            'result': result,
+            'recreated': recreated,
             'message': message
         }
 
@@ -433,30 +305,29 @@ def bmh_present(namespace, bmh_name, pillar_data, bmh_template_path='salt://form
             'success': False,
             'updated': False,
             'recreated': False,
-            'result': {},
-            'message': f"An error occurred during bmh_present operation: {str(e)}"
+            'message': f"BMH operation error: {str(e)[:50]}..."
         }
 
-def networkdata_present(namespace, bmh_name, defaults, pillar_data,network_template_path='salt://formulas/bmo/files/network-data.j2'):
+def networkdata_present(namespace, bmh_name, defaults, pillar_data, network_template_path='salt://formulas/bmo/files/network-data.j2'):
     """
     Ensure that the network data Secret in Kubernetes matches the desired state
-    defined by pillar data and Jinja2 template. Creates or replaces the Secret if it needs updating.
+    defined by pillar data and Jinja2 template.
 
     Args:
         namespace (str): The namespace of the network data Secret in Kubernetes.
         bmh_name (str): The name of the Bare Metal Host resource (used for Secret naming).
+        defaults (dict): Default values for network configuration.
         pillar_data (dict): Pillar data containing the desired network configuration.
         network_template_path (str, optional): Salt URI to the Jinja2 template file for network data.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.networkdata_present baremetal-operator-system compute-133-26 pillar_data
+        salt '*' kinetic-k8s.networkdata_present baremetal-operator-system compute-133-26 defaults pillar_data
     """
     try:
         updated = False
-        result = {}
         exists = False
         matches = False
         current_network = {}
@@ -469,24 +340,22 @@ def networkdata_present(namespace, bmh_name, defaults, pillar_data,network_templ
             config.load_kube_config()
 
         core_v1_api = client.CoreV1Api()
+        network_data_name = f"{bmh_name}-network-data"
 
         if 'network' in pillar_data:
             try:
-                network_data_name = f"{bmh_name}-network-data"
                 network_secret = core_v1_api.read_namespaced_secret(name=network_data_name, namespace=namespace)
                 exists = True
                 current_network = network_secret.string_data if network_secret.string_data else {}
                 if not current_network and network_secret.data:
                     import base64
                     current_network = {k: base64.b64decode(v).decode('utf-8') for k, v in network_secret.data.items()}
-            except ApiException as ne:
+            except ApiException:
                 exists = False
                 current_network = {}
-                message = f"Network data Secret {network_data_name} not found: {str(ne)}"
-            except Exception as ne:
+            except Exception:
                 exists = False
                 current_network = {}
-                message = f"Error fetching network data: {str(ne)}"
         else:
             exists = False
             current_network = {}
@@ -494,71 +363,42 @@ def networkdata_present(namespace, bmh_name, defaults, pillar_data,network_templ
 
         if 'network' in pillar_data:
             try:
-                bmh_type = bmh_name.split('-')[0].lower()
-
                 network_context = {
-                    'interface': defaults['interface'],
-                    'mac': defaults['mac'],
-                    'ip': defaults['ip'],
-                    'prefix': defaults['prefix'],
-                    'gateway': defaults['gateway'],
-                    'nameserver': defaults['nameserver'],
+                    'interface': defaults['interface'], 'mac': defaults['mac'], 'ip': defaults['ip'],
+                    'prefix': defaults['prefix'], 'gateway': defaults['gateway'], 'nameserver': defaults['nameserver']
                 }
-
-                try:
-                    network_content = __salt__['cp.get_file_str'](network_template_path)
-                    if not network_content:
-                        raise Exception(f"Failed to read network template from {network_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
-                    if network_content.startswith('#!'):
-                        network_content_lines = network_content.splitlines()
-                        network_content = '\n'.join(network_content_lines[1:]) if len(network_content_lines) > 1 else ''
-                        if not network_content:
-                            raise Exception(f"Network template at {network_template_path} is empty after removing shebang line.")
-                except Exception as file_error:
-                    return {
-                        'success': False,
-                        'updated': False,
-                        'result': {'error': str(file_error)},
-                        'message': f"Failed to retrieve network template file from {network_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
-                    }
-
-                rendered_network = __salt__['slsutil.renderer'](
-                    string=network_content,
-                    default_renderer='jinja',
-                    context=network_context
-                )
-
+                network_content = __salt__['cp.get_file_str'](network_template_path)
+                if not network_content:
+                    raise Exception(f"Empty network template at {network_template_path}")
+                if network_content.startswith('#!'):
+                    network_content = '\n'.join(network_content.splitlines()[1:]) if len(network_content.splitlines()) > 1 else ''
+                rendered_network = __salt__['slsutil.renderer'](string=network_content, default_renderer='jinja', context=network_context)
                 if not rendered_network:
-                    raise Exception("Failed to render network template: Empty or invalid output")
+                    raise Exception("Failed to render network template")
 
                 import json
                 desired_network_json = json.loads(rendered_network)
                 desired_network = {'networkData': json.dumps(desired_network_json)}
 
                 if exists:
-                    current_network_data = current_network
+                    current_data = current_network
                     if isinstance(current_network, dict) and 'networkData' in current_network:
                         try:
-                            current_network_data = json.loads(current_network['networkData'])
+                            current_data = json.loads(current_network['networkData'])
                         except Exception:
-                            current_network_data = current_network
-
-                    desired_network_data = json.loads(desired_network['networkData'])
-                    for key in desired_network_data:
-                        if key not in current_network_data or current_network_data[key] != desired_network_data[key]:
-                            differences[key] = {
-                                'current': current_network_data.get(key, 'not set'),
-                                'desired': desired_network_data[key]
-                            }
+                            current_data = current_network
+                    desired_data = json.loads(desired_network['networkData'])
+                    for key in desired_data:
+                        if key not in current_data or current_data[key] != desired_data[key]:
+                            differences[key] = {'desired': desired_data[key]}
                     matches = len(differences) == 0
                 else:
                     matches = False
-            except Exception as network_render_error:
+            except Exception as e:
                 return {
                     'success': False,
                     'updated': False,
-                    'result': {'error': str(network_render_error)},
-                    'message': f"Failed to render network data template: {str(network_render_error)}"
+                    'message': f"Network data render failed: {str(e)[:50]}..."
                 }
         else:
             desired_network = {}
@@ -567,40 +407,25 @@ def networkdata_present(namespace, bmh_name, defaults, pillar_data,network_templ
 
         if 'network' in pillar_data and (not exists or not matches):
             try:
-                network_data_name = f"{bmh_name}-network-data"
-                body = client.V1Secret(
-                    metadata=client.V1ObjectMeta(name=network_data_name, namespace=namespace),
-                    string_data=desired_network,
-                    type='Opaque'
-                )
-
+                body = client.V1Secret(metadata=client.V1ObjectMeta(name=network_data_name, namespace=namespace), string_data=desired_network, type='Opaque')
                 if exists:
-                    result = core_v1_api.replace_namespaced_secret(
-                        name=network_data_name,
-                        namespace=namespace,
-                        body=body
-                    )
+                    core_v1_api.replace_namespaced_secret(name=network_data_name, namespace=namespace, body=body)
                     updated = True
-                    message = f"Network data Secret {network_data_name} updated"
+                    message = f"Network Secret {network_data_name} updated"
                 else:
-                    result = core_v1_api.create_namespaced_secret(
-                        namespace=namespace,
-                        body=body
-                    )
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=body)
                     updated = True
-                    message = f"Network data Secret {network_data_name} created"
+                    message = f"Network Secret {network_data_name} created"
             except ApiException as e:
                 updated = False
-                message = f"Failed to update/create network data Secret {network_data_name}: {str(e)}"
-                result = {'error': str(e)}
+                message = f"Network Secret {network_data_name} operation failed: {str(e)[:50]}..."
         else:
-            message = f"Network data for {bmh_name} already matches desired state or not applicable"
-            result = current_network
+            message = f"Network data for {bmh_name} up-to-date or not applicable"
+            updated = False
 
         return {
-            'success': True,
+            'success': True if updated or matches else False,
             'updated': updated,
-            'result': result,
             'message': message
         }
 
@@ -608,14 +433,13 @@ def networkdata_present(namespace, bmh_name, defaults, pillar_data,network_templ
         return {
             'success': False,
             'updated': False,
-            'result': {},
-            'message': f"An error occurred during networkdata_present operation: {str(e)}"
+            'message': f"Network data operation error: {str(e)[:50]}..."
         }
 
 def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='salt://formulas/bmo/files/cloudinit.j2'):
     """
     Ensure that the userdata Secret in Kubernetes matches the desired state
-    defined by pillar data and Jinja2 template. Creates or replaces the Secret if it needs updating.
+    defined by pillar data and Jinja2 template.
 
     Args:
         namespace (str): The namespace of the userdata Secret in Kubernetes.
@@ -624,161 +448,104 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
         userdata_template_path (str, optional): Salt URI to the Jinja2 template file for userdata.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
         salt '*' kinetic-k8s.userdata_present baremetal-operator-system compute-133-26 pillar_data
     """
     try:
         updated = False
-        result = {}
         exists = False
         matches = False
         current_userdata = {}
         desired_userdata = {}
         differences = {}
 
-        # Load Kubernetes configuration for updates
         try:
             config.load_incluster_config()
         except config.ConfigException:
             config.load_kube_config()
 
         core_v1_api = client.CoreV1Api()
+        userdata_name = f"{bmh_name}-user-data"
 
-        # Step 1: Retrieve the existing userdata Secret from Kubernetes
         if 'network' in pillar_data:
             try:
-                userdata_name = f"{bmh_name}-user-data"
                 userdata_secret = core_v1_api.read_namespaced_secret(name=userdata_name, namespace=namespace)
                 exists = True
                 current_userdata = userdata_secret.string_data if userdata_secret.string_data else {}
                 if not current_userdata and userdata_secret.data:
-                    # If string_data is not available, decode data (base64 encoded)
                     import base64
                     current_userdata = {k: base64.b64decode(v).decode('utf-8') for k, v in userdata_secret.data.items()}
-            except ApiException as ue:
+            except ApiException:
                 exists = False
                 current_userdata = {}
-                message = f"Userdata Secret {userdata_name} not found: {str(ue)}"
-            except Exception as ue:
+            except Exception:
                 exists = False
                 current_userdata = {}
-                message = f"Error fetching userdata: {str(ue)}"
         else:
             exists = False
             current_userdata = {}
             message = f"Userdata not applicable for {bmh_name}"
 
-        # Step 2: Render the desired userdata configuration from pillar data using Jinja2 template in memory
         if 'network' in pillar_data:
             try:
-                # Prepare the context for rendering the userdata template (cloudinit.j2)
-                full_pillar = __salt__['pillar.get']('', {})  # Get the full pillar to access node_deploy_key
+                full_pillar = __salt__['pillar.get']('', {})
                 userdata_context = {
-                    'pillar': {
-                        'node_deploy_key': full_pillar.get('node_deploy_key', '')
-                    },
+                    'pillar': {'node_deploy_key': full_pillar.get('node_deploy_key', '')},
                     'pass': pillar_data.get('root_password_crypted', '')
                 }
-
-                # Use Salt's in-memory rendering for userdata template
-                try:
-                    userdata_content = __salt__['cp.get_file_str'](userdata_template_path)
-                    if not userdata_content:
-                        raise Exception(f"Failed to read userdata template from {userdata_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
-                    # Strip shebang line if present to avoid rendering issues
-                    if userdata_content.startswith('#!'):
-                        userdata_content_lines = userdata_content.splitlines()
-                        userdata_content = '\n'.join(userdata_content_lines[1:]) if len(userdata_content_lines) > 1 else ''
-                        if not userdata_content:
-                            raise Exception(f"Userdata template at {userdata_template_path} is empty after removing shebang line.")
-                except Exception as file_error:
-                    return {
-                        'success': False,
-                        'updated': False,
-                        'result': {'error': str(file_error)},
-                        'message': f"Failed to retrieve userdata template file from {userdata_template_path}: {str(file_error)}. Check if the file exists in Salt file roots."
-                    }
-
-                rendered_userdata = __salt__['slsutil.renderer'](
-                    string=userdata_content,
-                    default_renderer='jinja',
-                    context=userdata_context
-                )
-
+                userdata_content = __salt__['cp.get_file_str'](userdata_template_path)
+                if not userdata_content:
+                    raise Exception(f"Empty userdata template at {userdata_template_path}")
+                if userdata_content.startswith('#!'):
+                    userdata_content = '\n'.join(userdata_content.splitlines()[1:]) if len(userdata_content.splitlines()) > 1 else ''
+                rendered_userdata = __salt__['slsutil.renderer'](string=userdata_content, default_renderer='jinja', context=userdata_context)
                 if not rendered_userdata:
-                    raise Exception("Failed to render userdata template: Empty or invalid output")
+                    raise Exception("Failed to render userdata template")
 
-                # Since cloudinit.j2 is plain text, store as a string in a dict for Secret with key 'userData'
                 desired_userdata = {'userData': rendered_userdata}
 
-                # Compare the existing userdata with the desired userdata
                 if exists:
-                    current_userdata_data = current_userdata
-                    if isinstance(current_userdata, dict) and 'userData' in current_userdata:
-                        current_userdata_data = current_userdata.get('userData', '')
-                    elif isinstance(current_userdata, dict) and len(current_userdata) == 1:
-                        current_userdata_data = list(current_userdata.values())[0]
-
-                    desired_userdata_data = desired_userdata.get('userData', '')
-                    if current_userdata_data != desired_userdata_data:
-                        differences['userData'] = {
-                            'current': current_userdata_data if current_userdata_data else 'not set',
-                            'desired': desired_userdata_data
-                        }
+                    current_data = current_userdata.get('userData', '') if isinstance(current_userdata, dict) and 'userData' in current_userdata else (list(current_userdata.values())[0] if isinstance(current_userdata, dict) and len(current_userdata) == 1 else '')
+                    desired_data = desired_userdata.get('userData', '')
+                    if current_data != desired_data:
+                        differences['userData'] = {'desired': desired_data[:50] + '...' if len(desired_data) > 50 else desired_data}
                     matches = len(differences) == 0
                 else:
                     matches = False
-            except Exception as userdata_render_error:
+            except Exception as e:
                 return {
                     'success': False,
                     'updated': False,
-                    'result': {'error': str(userdata_render_error)},
-                    'message': f"Failed to render userdata template: {str(userdata_render_error)}"
+                    'message': f"Userdata render failed: {str(e)[:50]}..."
                 }
         else:
             desired_userdata = {}
             matches = False
             message = f"Userdata not applicable for {bmh_name}"
 
-        # Step 3: Update or create userdata Secret if it doesn't exist or doesn't match
         if 'network' in pillar_data and (not exists or not matches):
             try:
-                userdata_name = f"{bmh_name}-user-data"
-                body = client.V1Secret(
-                    metadata=client.V1ObjectMeta(name=userdata_name, namespace=namespace),
-                    string_data=desired_userdata,
-                    type='Opaque'
-                )
-
+                body = client.V1Secret(metadata=client.V1ObjectMeta(name=userdata_name, namespace=namespace), string_data=desired_userdata, type='Opaque')
                 if exists:
-                    result = core_v1_api.replace_namespaced_secret(
-                        name=userdata_name,
-                        namespace=namespace,
-                        body=body
-                    )
+                    core_v1_api.replace_namespaced_secret(name=userdata_name, namespace=namespace, body=body)
                     updated = True
                     message = f"Userdata Secret {userdata_name} updated"
                 else:
-                    result = core_v1_api.create_namespaced_secret(
-                        namespace=namespace,
-                        body=body
-                    )
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=body)
                     updated = True
                     message = f"Userdata Secret {userdata_name} created"
             except ApiException as e:
                 updated = False
-                message = f"Failed to update/create userdata Secret {userdata_name}: {str(e)}"
-                result = {'error': str(e)}
+                message = f"Userdata Secret {userdata_name} operation failed: {str(e)[:50]}..."
         else:
-            message = f"Userdata for {bmh_name} already matches desired state or not applicable"
-            result = current_userdata
+            message = f"Userdata for {bmh_name} up-to-date or not applicable"
+            updated = False
 
         return {
-            'success': True,
+            'success': True if updated or matches else False,
             'updated': updated,
-            'result': result,
             'message': message
         }
 
@@ -786,269 +553,140 @@ def userdata_present(namespace, bmh_name, pillar_data, userdata_template_path='s
         return {
             'success': False,
             'updated': False,
-            'result': {},
-            'message': f"An error occurred during userdata_present operation: {str(e)}"
+            'message': f"Userdata operation error: {str(e)[:50]}..."
         }
 
 def host_bmc_auth_present(namespace, bmh_name, ipmi, pillar_data, bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
     """
     Ensure that a host-specific BMC authentication Secret in Kubernetes matches the desired state
-    defined by pillar data and Jinja2 template. Creates the Secret if it doesn't exist, or updates it if it differs.
+    defined by pillar data and Jinja2 template.
 
     Args:
         namespace (str): The namespace of the Secret in Kubernetes.
         bmh_name (str): The name of the Bare Metal Host resource (used for Secret naming).
+        ipmi (str): Default IPMI password if not in pillar.
         pillar_data (dict): Pillar data containing the desired BMC authentication configuration.
         bmc_auth_template_path (str, optional): Salt URI to the Jinja2 template file for BMC auth Secret.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.host_bmc_auth_present baremetal-operator-system compute-133-26 pillar_data
+        salt '*' kinetic-k8s.host_bmc_auth_present baremetal-operator-system compute-133-26 ipmi pillar_data
     """
     try:
         updated = False
-        result = {}
         exists = False
         matches = False
         current_secret = {}
         desired_secret = {}
         differences = {}
-        debug_info = []
         secret_name = f"{bmh_name}-bmc-auth"
 
-        # Load Kubernetes configuration for updates
         try:
             config.load_incluster_config()
-            debug_info.append("Loaded in-cluster config successfully")
         except config.ConfigException:
             config.load_kube_config()
-            debug_info.append("Loaded kubeconfig from file successfully")
 
-        # Get Kubernetes API client and server information for debugging context
         core_v1_api = client.CoreV1Api()
-        try:
-            api_client = core_v1_api.api_client
-            server = api_client.configuration.host
-            debug_info.append(f"Kubernetes API server: {server}")
-        except Exception as e:
-            debug_info.append(f"Could not determine Kubernetes API server: {str(e)}")
 
-        # Step 1: Retrieve the existing host-specific BMC auth Secret from Kubernetes
         try:
             secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
             exists = True
             current_secret = secret.string_data if secret.string_data else {}
             if not current_secret and secret.data:
-                # If string_data is not available, decode data (base64 encoded)
                 import base64
                 current_secret = {k: base64.b64decode(v).decode('utf-8') for k, v in secret.data.items()}
-            message = f"Secret {secret_name} found in namespace {namespace}"
-            debug_info.append(f"Secret {secret_name} exists in namespace {namespace} with keys: {list(current_secret.keys())}")
-            # Check for deletion timestamp or finalizers
-            deletion_timestamp = secret.metadata.deletion_timestamp if secret.metadata else None
-            finalizers = secret.metadata.finalizers if secret.metadata else None
-            owner_references = secret.metadata.owner_references if secret.metadata else None
-            debug_info.append(f"Deletion timestamp: {deletion_timestamp}")
-            debug_info.append(f"Finalizers: {finalizers}")
-            debug_info.append(f"Owner references: {owner_references}")
-            if deletion_timestamp:
-                message += f"; WARNING: Secret {secret_name} is marked for deletion at {deletion_timestamp}, possibly due to BMH deletion or controller policy"
-                debug_info.append(f"WARNING: Secret is marked for deletion, will attempt to recreate or update")
-        except ApiException as e:
+        except ApiException:
             exists = False
             current_secret = {}
-            message = f"Secret {secret_name} not found in namespace {namespace}: {str(e)}"
-            debug_info.append(f"ApiException when fetching Secret: {str(e)}")
-        except Exception as e:
+        except Exception:
             exists = False
             current_secret = {}
-            message = f"Error fetching Secret {secret_name}: {str(e)}"
-            debug_info.append(f"General exception when fetching Secret: {str(e)}")
 
-        # Step 2: Render the desired BMC auth Secret configuration from pillar data using Jinja2 template in memory
         try:
-            # Fetch pillar data for rendering, allow host-specific credentials if available
             full_pillar = __salt__['pillar.get']('', {})
             bmc_auth_context = {
                 'pillar': {
-                    'name': bmh_name,
-                    'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
+                    'name': bmh_name, 'bmo_namespace': full_pillar.get('bmo_namespace', namespace),
                     'ipmi_password': pillar_data.get('bmc', {}).get('password', full_pillar.get('ipmi-password', ipmi))
                 }
             }
-            debug_info.append(f"Pillar data for rendering: bmo_namespace={full_pillar.get('bmo_namespace', 'not set')}, ipmi-password={'***' if bmc_auth_context['pillar']['ipmi_password'] else 'not set'}")
-
-            # Use Salt's in-memory rendering for BMC auth template
-            try:
-                bmc_auth_content = __salt__['cp.get_file_str'](bmc_auth_template_path)
-                if not bmc_auth_content:
-                    raise Exception(f"Failed to read BMC auth template from {bmc_auth_template_path}: Content is empty or inaccessible. Verify the path exists in Salt file roots.")
-                # Strip shebang line if present to avoid rendering issues
-                if bmc_auth_content.startswith('#!'):
-                    bmc_auth_content_lines = bmc_auth_content.splitlines()
-                    bmc_auth_content = '\n'.join(bmc_auth_content_lines[1:]) if len(bmc_auth_content_lines) > 1 else ''
-                    if not bmc_auth_content:
-                        raise Exception(f"BMC auth template at {bmc_auth_template_path} is empty after removing shebang line.")
-                debug_info.append(f"Successfully retrieved template content from {bmc_auth_template_path}")
-            except Exception as file_error:
-                return {
-                    'success': False,
-                    'updated': False,
-                    'result': {'error': str(file_error)},
-                    'message': f"Failed to retrieve BMC auth template file from {bmc_auth_template_path}: {str(file_error)}. Check if the file exists in Salt file roots.",
-                    'debug': debug_info
-                }
-
-            rendered_bmc_auth = __salt__['slsutil.renderer'](
-                string=bmc_auth_content,
-                default_renderer='jinja|yaml',
-                context=bmc_auth_context
-            )
-
+            bmc_auth_content = __salt__['cp.get_file_str'](bmc_auth_template_path)
+            if not bmc_auth_content:
+                raise Exception(f"Empty BMC auth template at {bmc_auth_template_path}")
+            if bmc_auth_content.startswith('#!'):
+                bmc_auth_content = '\n'.join(bmc_auth_content.splitlines()[1:]) if len(bmc_auth_content.splitlines()) > 1 else ''
+            rendered_bmc_auth = __salt__['slsutil.renderer'](string=bmc_auth_content, default_renderer='jinja|yaml', context=bmc_auth_context)
             if not rendered_bmc_auth:
-                raise Exception("Failed to render BMC auth template: Empty or invalid output")
-            debug_info.append("Template rendered successfully")
+                raise Exception("Failed to render BMC auth template")
 
-            # Handle the case where rendered_bmc_auth is already a dictionary (parsed YAML)
             import yaml
-            if isinstance(rendered_bmc_auth, dict):
-                desired_secret_full = rendered_bmc_auth
-            else:
-                # If it's a string, parse it as YAML
-                desired_secret_full = yaml.safe_load(rendered_bmc_auth)
-            debug_info.append(f"Rendered output type: {type(rendered_bmc_auth).__name__}")
-
-            # Update the metadata name to be host-specific
+            desired_secret_full = rendered_bmc_auth if isinstance(rendered_bmc_auth, dict) else yaml.safe_load(rendered_bmc_auth)
             if 'metadata' in desired_secret_full:
                 desired_secret_full['metadata']['name'] = secret_name
-
-            # Extract the stringData from the desired Secret for comparison
             desired_secret = desired_secret_full.get('stringData', {})
-            debug_info.append(f"Desired Secret keys: {list(desired_secret.keys())}")
 
-            # Compare the existing Secret with the desired Secret
             if exists:
                 for key in desired_secret:
                     if key not in current_secret or current_secret[key] != desired_secret[key]:
-                        differences[key] = {
-                            'current': current_secret.get(key, 'not set'),
-                            'desired': desired_secret[key]
-                        }
+                        differences[key] = {'desired': desired_secret[key][:10] + '...' if len(desired_secret[key]) > 10 else desired_secret[key]}
                 matches = len(differences) == 0
-                debug_info.append(f"Comparison result: matches={matches}, differences={differences}")
             else:
                 matches = False
-                debug_info.append("No existing Secret to compare, will create new")
-        except Exception as bmc_auth_render_error:
+        except Exception as e:
             return {
                 'success': False,
                 'updated': False,
-                'result': {'error': str(bmc_auth_render_error)},
-                'message': f"Failed to render BMC auth template: {str(bmc_auth_render_error)}",
-                'debug': debug_info
+                'message': f"BMC auth render failed: {str(e)[:50]}..."
             }
 
-        # Step 3: Update or create host-specific BMC auth Secret if it doesn't exist or doesn't match
         if not exists or not matches:
             try:
-                body = client.V1Secret(
-                    metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
-                    string_data=desired_secret,
-                    type=desired_secret_full.get('type', 'Opaque')
-                )
-                debug_info.append(f"Preparing Secret {secret_name} in namespace {namespace} with type {body.type}")
-
+                body = client.V1Secret(metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace), string_data=desired_secret, type=desired_secret_full.get('type', 'Opaque'))
                 if exists:
-                    result = core_v1_api.replace_namespaced_secret(
-                        name=secret_name,
-                        namespace=namespace,
-                        body=body
-                    )
+                    core_v1_api.replace_namespaced_secret(name=secret_name, namespace=namespace, body=body)
                     updated = True
-                    message = f"Secret {secret_name} updated in namespace {namespace}"
-                    debug_info.append(f"API call to update Secret {secret_name} completed with result metadata: {result.metadata if result else 'No metadata'}")
+                    message = f"BMC Secret {secret_name} updated"
                 else:
-                    result = core_v1_api.create_namespaced_secret(
-                        namespace=namespace,
-                        body=body
-                    )
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=body)
                     updated = True
-                    message = f"Secret {secret_name} created in namespace {namespace}"
-                    debug_info.append(f"API call to create Secret {secret_name} completed with result metadata: {result.metadata if result else 'No metadata'}")
-
-                # Step 4: Verify the Secret exists after creation/update with multiple retries
-                verified = False
-                max_retries = 3
-                retry_delay = 2  # seconds
-                for attempt in range(max_retries):
-                    try:
-                        verified_secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
-                        if verified_secret:
-                            verified = True
-                            message += f"; Verified Secret {secret_name} exists in namespace {namespace} (attempt {attempt+1}/{max_retries})"
-                            debug_info.append(f"Verification successful on attempt {attempt+1}: Secret {secret_name} found")
-                            break
-                    except ApiException as verify_error:
-                        message += f"; WARNING: Failed to verify Secret {secret_name} after creation/update (attempt {attempt+1}/{max_retries}): {str(verify_error)}"
-                        debug_info.append(f"Verification attempt {attempt+1} failed with ApiException: {str(verify_error)}")
-                    except Exception as verify_error:
-                        message += f"; WARNING: General error verifying Secret {secret_name} (attempt {attempt+1}/{max_retries}): {str(verify_error)}"
-                        debug_info.append(f"Verification attempt {attempt+1} failed with general exception: {str(verify_error)}")
-                    
-                    if attempt < max_retries - 1:
-                        import time
-                        time.sleep(retry_delay)
-                        debug_info.append(f"Waiting {retry_delay} seconds before retry {attempt+2}/{max_retries}")
-
-                if not verified:
-                    updated = False
-                    message += f"; ERROR: Secret {secret_name} could not be verified after {max_retries} attempts. Possible deletion by external controller."
-                    result = {'error': f"Verification failed after {max_retries} attempts"}
-                    debug_info.append(f"Failed to verify Secret after {max_retries} attempts")
+                    message = f"BMC Secret {secret_name} created"
             except ApiException as e:
                 updated = False
-                message = f"Failed to update/create Secret {secret_name}: {str(e)}"
-                result = {'error': str(e)}
-                debug_info.append(f"ApiException during update/create: {str(e)}")
+                message = f"BMC Secret {secret_name} operation failed: {str(e)[:50]}..."
         else:
-            message = f"Secret {secret_name} already matches desired state in namespace {namespace}"
-            result = current_secret
-            debug_info.append("No update needed, Secret matches desired state")
+            message = f"BMC Secret {secret_name} up-to-date"
+            updated = False
 
         return {
-            'success': True if (updated and verified) or matches else False,
+            'success': True if updated or matches else False,
             'updated': updated,
-            'result': result,
-            'message': message,
-            'debug': debug_info
+            'message': message
         }
 
     except Exception as e:
         return {
             'success': False,
             'updated': False,
-            'result': {},
-            'message': f"An error occurred during host_bmc_auth_present operation: {str(e)}",
-            'debug': debug_info if 'debug_info' in locals() else ['Exception occurred before debug_info initialization']
+            'message': f"BMC auth operation error: {str(e)[:50]}..."
         }
+
 def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="salt-master", wait_timeout=300, wait_interval=10):
     """
     Ensure that a Kubernetes Secret containing UUIDs from pillar data matches the desired state.
-    Creates the Secret if it doesn't exist, or updates it if it differs. If updated, restarts
-    the specified deployment and waits for it to become ready. Assumes UUIDs are under 'salt-master:uuids' in pillar data.
+    If updated, restarts the specified deployment and waits for it to become ready. Assumes UUIDs are under 'salt-master:uuids'.
 
     Args:
         namespace (str): The namespace of the Secret and Deployment in Kubernetes.
         secret_name (str): The name of the Secret to create or update.
         pillar_data (dict): Pillar data containing the UUIDs under 'salt-master:uuids'.
-        deployment_name (str, optional): The name of the deployment to restart if the secret is updated. Defaults to 'salt-master'.
-        wait_timeout (int, optional): Maximum time in seconds to wait for the deployment to become ready. Defaults to 300 (5 minutes).
+        deployment_name (str, optional): The name of the deployment to restart if updated. Defaults to 'salt-master'.
+        wait_timeout (int, optional): Maximum time in seconds to wait for deployment readiness. Defaults to 300 (5 minutes).
         wait_interval (int, optional): Interval in seconds between checks for deployment readiness. Defaults to 10 seconds.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'waited' (bool), 'result' (dict), and 'message' (str for status or error).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'waited' (bool), and 'message' (str).
 
     CLI Example:
         salt '*' kinetic-k8s.uuids_secret_present baremetal-operator-system salt-master-uuids pillar_data
@@ -1057,14 +695,12 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         updated = False
         restarted = False
         waited = False
-        result = {}
         exists = False
         matches = False
         current_secret = {}
         desired_secret = {}
         differences = {}
 
-        # Load Kubernetes configuration for updates
         try:
             config.load_incluster_config()
         except config.ConfigException:
@@ -1073,7 +709,6 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         core_v1_api = client.CoreV1Api()
         apps_v1_api = client.AppsV1Api()
 
-        # Step 1: Retrieve the existing Secret from Kubernetes
         try:
             secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
             exists = True
@@ -1081,116 +716,82 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             if not current_secret and secret.data:
                 import base64
                 current_secret = {k: base64.b64decode(v).decode('utf-8') for k, v in secret.data.items()}
-        except ApiException as e:
+        except ApiException:
             exists = False
             current_secret = {}
-            message = f"Secret {secret_name} not found: {str(e)}"
-        except Exception as e:
+        except Exception:
             exists = False
             current_secret = {}
-            message = f"Error fetching Secret {secret_name}: {str(e)}"
 
-        # Step 2: Prepare the desired Secret content from pillar data, assuming UUIDs are under 'salt-master:uuids'
         uuids = pillar_data.get('salt-master', {}).get('uuids', [])
-        # Convert the list of UUIDs to a single string for storage in the secret
         desired_secret = {'uuids': '\n'.join(uuids)}
 
-        # Compare the existing Secret with the desired Secret
         if exists:
             for key in desired_secret:
                 if key not in current_secret or current_secret[key] != desired_secret[key]:
-                    differences[key] = {
-                        'current': current_secret.get(key, 'not set'),
-                        'desired': desired_secret[key]
-                    }
+                    differences[key] = {'desired': desired_secret[key][:50] + '...' if len(desired_secret[key]) > 50 else desired_secret[key]}
             matches = len(differences) == 0
         else:
             matches = False
 
-        # Step 3: Update or create the Secret if it doesn't exist or doesn't match
         if not exists or not matches:
             try:
-                body = client.V1Secret(
-                    metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
-                    string_data=desired_secret,
-                    type='Opaque'
-                )
-
+                body = client.V1Secret(metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace), string_data=desired_secret, type='Opaque')
                 if exists:
-                    result = core_v1_api.replace_namespaced_secret(
-                        name=secret_name,
-                        namespace=namespace,
-                        body=body
-                    )
+                    core_v1_api.replace_namespaced_secret(name=secret_name, namespace=namespace, body=body)
                     updated = True
-                    message = f"Secret {secret_name} updated"
+                    message = f"UUID Secret {secret_name} updated"
                 else:
-                    result = core_v1_api.create_namespaced_secret(
-                        namespace=namespace,
-                        body=body
-                    )
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=body)
                     updated = True
-                    message = f"Secret {secret_name} created"
+                    message = f"UUID Secret {secret_name} created"
             except ApiException as e:
                 updated = False
-                message = f"Failed to update/create Secret {secret_name}: {str(e)}"
-                result = {'error': str(e)}
+                message = f"UUID Secret {secret_name} operation failed: {str(e)[:50]}..."
         else:
-            message = f"Secret {secret_name} already matches desired state"
-            result = current_secret
+            message = f"UUID Secret {secret_name} up-to-date"
+            updated = False
 
-        # Step 4: If the secret was updated, restart the specified deployment
         if updated:
             try:
-                # Get the pods associated with the deployment
                 deployment = apps_v1_api.read_namespaced_deployment(name=deployment_name, namespace=namespace)
                 selector = deployment.spec.selector.match_labels
                 pods = core_v1_api.list_namespaced_pod(namespace=namespace, label_selector=','.join([f"{k}={v}" for k, v in selector.items()]))
-                
-                # Delete each pod to trigger a restart
                 for pod in pods.items:
                     core_v1_api.delete_namespaced_pod(name=pod.metadata.name, namespace=namespace, body=client.V1DeleteOptions())
-                
                 restarted = True
-                message += f"; Deployment {deployment_name} pods restarted"
-                
-                # Step 5: Wait for the deployment to become ready
+                message += f"; {deployment_name} restarted"
+
                 import time
                 wait_time = 0
                 while wait_time < wait_timeout:
                     try:
-                        deployment_status = apps_v1_api.read_namespaced_deployment_status(name=deployment_name, namespace=namespace)
-                        ready_replicas = deployment_status.status.ready_replicas or 0
-                        desired_replicas = deployment_status.spec.replicas
+                        status = apps_v1_api.read_namespaced_deployment_status(name=deployment_name, namespace=namespace)
+                        ready_replicas = status.status.ready_replicas or 0
+                        desired_replicas = status.spec.replicas
                         if ready_replicas == desired_replicas:
                             waited = True
-                            message += f"; Deployment {deployment_name} is ready after {wait_time} seconds"
+                            message += f"; {deployment_name} ready ({wait_time}s)"
                             break
-                    except ApiException as status_err:
-                        message += f"; Error checking deployment status: {str(status_err)}"
+                    except ApiException:
+                        message += f"; {deployment_name} status check failed"
                         break
-                    
                     time.sleep(wait_interval)
                     wait_time += wait_interval
-                
                 if wait_time >= wait_timeout and not waited:
-                    message += f"; Timeout waiting for Deployment {deployment_name} to become ready after {wait_timeout} seconds"
-                    result['wait_error'] = f"Timeout after {wait_timeout} seconds"
+                    message += f"; {deployment_name} timeout ({wait_timeout}s)"
             except ApiException as e:
                 restarted = False
-                message += f"; Failed to restart Deployment {deployment_name}: {str(e)}"
-                result['deployment_error'] = str(e)
+                message += f"; {deployment_name} restart failed: {str(e)[:50]}..."
             except Exception as e:
                 restarted = False
-                message += f"; Error restarting Deployment {deployment_name}: {str(e)}"
-                result['deployment_error'] = str(e)
+                message += f"; {deployment_name} restart error: {str(e)[:50]}..."
 
         return {
             'success': True if (updated and restarted and waited) or matches else False,
             'updated': updated,
             'restarted': restarted,
             'waited': waited,
-            'result': result,
             'message': message
         }
 
@@ -1200,6 +801,5 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'updated': False,
             'restarted': False,
             'waited': False,
-            'result': {},
-            'message': f"An error occurred during uuids_secret_present operation: {str(e)}"
+            'message': f"UUID Secret operation error: {str(e)[:50]}..."
         }
