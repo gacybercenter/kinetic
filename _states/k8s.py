@@ -64,7 +64,6 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, deployment_nam
     try:
         # If pillar_data is not provided, fetch it using pillar_key
         if pillar_data is None:
-            raise SaltInvocationError('Either pillar_data or pillar_key must be provided.')
             pillar_data = __salt__['pillar.get'](salt-master.uuids, {})
 
         # Call the execution module function
