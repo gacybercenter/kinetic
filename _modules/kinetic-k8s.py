@@ -731,6 +731,9 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 debug_msg += "salt-master is dict; "
                 uuids_str = salt_master_data.get('uuids', '')
                 debug_msg += f"uuids found: {bool(uuids_str)}; "
+                debug_msg += f"uuids type: {type(uuids_str).__name__}; "
+                debug_msg += f"uuids content preview: {repr(uuids_str)[:50]}...; "
+                debug_msg += f"salt-master keys: {list(salt_master_data.keys())[:5]}; "
             else:
                 debug_msg += "salt-master is not dict; "
                 uuids_str = salt_master_data if isinstance(salt_master_data, str) else ''
@@ -741,7 +744,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             debug_msg += f"uuids as direct pillar_data: {bool(uuids_str)}; "
 
         # Check if UUIDs string is empty or whitespace-only
-        if not uuids_str or uuids_str.strip() == '':
+        if not uuids_str or (isinstance(uuids_str, str) and uuids_str.strip() == ''):
             return {
                 'success': True,
                 'updated': False,
