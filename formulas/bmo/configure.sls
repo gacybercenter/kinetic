@@ -67,7 +67,7 @@ vms_{{ name }}_pool:
     - size: {{ pillar['bmh'][name]['disk'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
-      - virt: vms_pool
+      - virt: vms_{{ name }}_pool
     - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms {{ name }}_disk0.qcow2
 
 # Define the VM using the inline XML string
