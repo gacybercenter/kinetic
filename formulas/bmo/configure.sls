@@ -81,7 +81,7 @@ define_{{name }}_vm:
           <memory unit='MiB'>{{ pillar['bmh'][name]['mem'] }}</memory>
           <vcpu>{{ pillar['bmh'][name]['cpu'] }}</vcpu>
           <cpu mode='host-passthrough' check='none'/>
-          <os firmware='uefi'>
+          <os firmware='efi'>
             <type arch='x86_64' machine='pc-q35-{{ pillar.get('qemu_version', 'latest') }}'>hvm</type>
             <loader readonly='yes' type='pflash'>/usr/share/OVMF/OVMF_CODE.fd</loader>
             <nvram>/var/lib/libvirt/qemu/nvram/{{ name }}_VARS.fd</nvram>
