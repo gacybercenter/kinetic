@@ -18,6 +18,8 @@ ensure_salt_master_uuids_secret:
     - secret_name: uuids
     - pillar_key: salt-master
     - deployment_name: salt-master
+    - wait_timeout: 300
+    - wait_interval: 10
 
 {% for name, host in pillar['bmh'].items() %}
 {% set bmh_type = name.split('-')[0].lower() %}

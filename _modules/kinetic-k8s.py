@@ -1033,20 +1033,22 @@ def host_bmc_auth_present(namespace, bmh_name, ipmi, pillar_data, bmc_auth_templ
             'message': f"An error occurred during host_bmc_auth_present operation: {str(e)}",
             'debug': debug_info if 'debug_info' in locals() else ['Exception occurred before debug_info initialization']
         }
-def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="salt-master"):
+def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="salt-master", wait_timeout=300, wait_interval=10):
     """
     Ensure that a Kubernetes Secret containing UUIDs from pillar data matches the desired state.
     Creates the Secret if it doesn't exist, or updates it if it differs. If updated, restarts
-    the specified deployment.
+    the specified deployment and waits for it to become ready.
 
     Args:
         namespace (str): The namespace of the Secret and Deployment in Kubernetes.
         secret_name (str): The name of the Secret to create or update.
         pillar_data (dict): Pillar data containing the UUIDs under 'salt-master:uuids'.
         deployment_name (str, optional): The name of the deployment to restart if the secret is updated. Defaults to 'salt-master'.
+        wait_timeout (int, optional): Maximum time in seconds to wait for the deployment to become ready. Defaults to 300 (5 minutes).
+        wait_interval (int, optional): Interval in seconds between checks for deployment readiness. Defaults to 10 seconds.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'result' (dict), and 'message' (str for status or error).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'waited' (bool), 'result' (dict), and 'message' (str for status or error).
 
     CLI Example:
         salt '*' kinetic-k8s.uuids_secret_present baremetal-operator-system salt-master-uuids pillar_data
@@ -1054,6 +1056,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
     try:
         updated = False
         restarted = False
+        waited = False
         result = {}
         exists = False
         matches = False
@@ -1150,6 +1153,29 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 
                 restarted = True
                 message += f"; Deployment {deployment_name} pods restarted"
+                
+                # Step 5: Wait for the deployment to become ready
+                import time
+                wait_time = 0
+                while wait_time < wait_timeout:
+                    try:
+                        deployment_status = apps_v1_api.read_namespaced_deployment_status(name=deployment_name, namespace=namespace)
+                        ready_replicas = deployment_status.status.ready_replicas or 0
+                        desired_replicas = deployment_status.spec.replicas
+                        if ready_replicas == desired_replicas:
+                            waited = True
+                            message += f"; Deployment {deployment_name} is ready after {wait_time} seconds"
+                            break
+                    except ApiException as status_err:
+                        message += f"; Error checking deployment status: {str(status_err)}"
+                        break
+                    
+                    time.sleep(wait_interval)
+                    wait_time += wait_interval
+                
+                if wait_time >= wait_timeout and not waited:
+                    message += f"; Timeout waiting for Deployment {deployment_name} to become ready after {wait_timeout} seconds"
+                    result['wait_error'] = f"Timeout after {wait_timeout} seconds"
             except ApiException as e:
                 restarted = False
                 message += f"; Failed to restart Deployment {deployment_name}: {str(e)}"
@@ -1160,9 +1186,10 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 result['deployment_error'] = str(e)
 
         return {
-            'success': True if (updated and restarted) or matches else False,
+            'success': True if (updated and restarted and waited) or matches else False,
             'updated': updated,
             'restarted': restarted,
+            'waited': waited,
             'result': result,
             'message': message
         }
@@ -1172,6 +1199,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'success': False,
             'updated': False,
             'restarted': False,
+            'waited': False,
             'result': {},
             'message': f"An error occurred during uuids_secret_present operation: {str(e)}"
         }
