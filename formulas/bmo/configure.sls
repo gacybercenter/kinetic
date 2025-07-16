@@ -50,7 +50,7 @@ ensure_{{ name }}_userdata_present:
       - module: ensure_{{ name }}_networkdata_present
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
 # Ensure the storage pool is defined and running
-vms_pool:
+vms_{{ name }}_pool:
   virt.pool_running:
     - name: vms
     - ptype: dir
