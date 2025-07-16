@@ -721,6 +721,17 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         desired_secret = {}
         differences = {}
 
+        # Step 1: Check if UUIDs list is empty
+        uuids = pillar_data.get('salt-master', {}).get('uuids', [])
+        if not uuids:
+            return {
+                'success': True,
+                'updated': False,
+                'restarted': False,
+                'waited': False,
+                'message': f"No UUIDs provided for Secret {secret_name}; no action taken"
+            }
+
         try:
             config.load_incluster_config()
         except config.ConfigException:
@@ -743,7 +754,6 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             exists = False
             current_secret = {}
 
-        uuids = pillar_data.get('salt-master', {}).get('uuids', [])
         desired_secret = {'uuids': '\n'.join(uuids)}
 
         if exists:
