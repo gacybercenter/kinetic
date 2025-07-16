@@ -692,10 +692,11 @@ def host_bmc_auth_present(namespace, bmh_name, ipmi, pillar_data, bmc_auth_templ
             'message': f"BMC auth operation error: {str(e)[:50]}..."
         }
 
-def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="salt-master", wait_timeout=300, wait_interval=10):
+def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="salt-master", wait_timeout=300, wait_interval=10, salt_check_timeout=120, salt_check_interval=5):
     """
     Ensure that a Kubernetes Secret containing UUIDs from pillar data matches the desired state.
-    If updated, restarts the specified deployment and waits for it to become ready. Assumes UUIDs are under 'salt-master:uuids' or directly under 'uuids'.
+    If updated, restarts the specified deployment, waits for it to become ready, and verifies salt-master responsiveness.
+    Assumes UUIDs are under 'salt-master:uuids' or directly under 'uuids'.
 
     Args:
         namespace (str): The namespace of the Secret and Deployment in Kubernetes.
@@ -704,9 +705,11 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         deployment_name (str, optional): The name of the deployment to restart if updated. Defaults to 'salt-master'.
         wait_timeout (int, optional): Maximum time in seconds to wait for deployment readiness. Defaults to 300 (5 minutes).
         wait_interval (int, optional): Interval in seconds between checks for deployment readiness. Defaults to 10 seconds.
+        salt_check_timeout (int, optional): Maximum time in seconds to wait for salt-master responsiveness. Defaults to 120 seconds.
+        salt_check_interval (int, optional): Interval in seconds between salt-master responsiveness checks. Defaults to 5 seconds.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'waited' (bool), and 'message' (str).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'waited' (bool), 'salt_responded' (bool), and 'message' (str).
 
     CLI Example:
         salt '*' kinetic-k8s.uuids_secret_present baremetal-operator-system salt-master-uuids pillar_data
@@ -715,6 +718,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         updated = False
         restarted = False
         waited = False
+        salt_responded = False
         exists = False
         matches = False
         current_secret = {}
@@ -755,6 +759,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 'updated': False,
                 'restarted': False,
                 'waited': False,
+                'salt_responded': False,
                 'message': f"No UUIDs provided for Secret {secret_name}; no action taken. {debug_msg}"
             }
 
@@ -780,7 +785,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             exists = False
             current_secret = {}
 
-        desired_secret = {'uuid': uuids_str}  # Changed from 'uuids' to 'uuid'
+        desired_secret = {'uuid': uuids_str}
 
         if exists:
             for key in desired_secret:
@@ -818,6 +823,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 restarted = True
                 message += f"; {deployment_name} restarted"
 
+                # Step 2: Wait for the deployment to become ready
                 import time
                 wait_time = 0
                 while wait_time < wait_timeout:
@@ -836,6 +842,26 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                     wait_time += wait_interval
                 if wait_time >= wait_timeout and not waited:
                     message += f"; {deployment_name} timeout ({wait_timeout}s)"
+
+                # Step 3: If deployment is ready, verify salt-master responsiveness with salt-call ping
+                if waited:
+                    salt_check_time = 0
+                    while salt_check_time < salt_check_timeout:
+                        try:
+                            # Use salt's test.ping to check if salt-master is responsive
+                            ping_result = __salt__['test.ping']()
+                            if ping_result:
+                                salt_responded = True
+                                message += f"; salt-master responded to ping ({salt_check_time}s)"
+                                break
+                            else:
+                                message += f"; salt-master ping failed ({salt_check_time}s), retrying..."
+                        except Exception as ping_err:
+                            message += f"; salt-master ping error ({salt_check_time}s): {str(ping_err)[:50]}..., retrying..."
+                        time.sleep(salt_check_interval)
+                        salt_check_time += salt_check_interval
+                    if salt_check_time >= salt_check_timeout and not salt_responded:
+                        message += f"; salt-master responsiveness timeout ({salt_check_timeout}s)"
             except ApiException as e:
                 restarted = False
                 message += f"; {deployment_name} restart failed: {str(e)[:50]}..."
@@ -844,10 +870,11 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 message += f"; {deployment_name} restart error: {str(e)[:50]}..."
 
         return {
-            'success': True if (updated and restarted and waited) or (matches and not updated) else False,
+            'success': True if (updated and restarted and waited and salt_responded) or (matches and not updated) else False,
             'updated': updated,
             'restarted': restarted,
             'waited': waited,
+            'salt_responded': salt_responded,
             'message': message
         }
 
@@ -857,5 +884,6 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'updated': False,
             'restarted': False,
             'waited': False,
+            'salt_responded': False,
             'message': f"UUID Secret operation error: {str(e)[:50]}..."
         }

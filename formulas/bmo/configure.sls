@@ -20,6 +20,8 @@ ensure_salt_master_uuids_secret:
     - deployment_name: salt-master
     - wait_timeout: 300
     - wait_interval: 10
+    - salt_check_timeout: 120
+    - salt_check_interval: 5
 
 {% for name, host in pillar['bmh'].items() %}
 {% set bmh_type = name.split('-')[0].lower() %}
