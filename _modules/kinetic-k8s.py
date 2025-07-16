@@ -728,16 +728,16 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             debug_msg += "dict; "
             # First, try to access uuids under pillar_data['salt-master']['uuids']
             salt_master_data = pillar_data.get('salt-master', {})
-            if isinstance(salt_master_data, dict):
-                debug_msg += "salt-master is dict; "
+            if isinstance(salt_master_data, dict) and salt_master_data:
+                debug_msg += "salt-master is dict and non-empty; "
                 uuids_str = salt_master_data.get('uuids', '')
                 debug_msg += f"uuids found in salt-master: {bool(uuids_str)}; "
                 debug_msg += f"uuids type: {type(uuids_str).__name__}; "
                 debug_msg += f"uuids content preview: {repr(uuids_str)[:50]}...; "
                 debug_msg += f"salt-master keys: {list(salt_master_data.keys())[:5]}; "
             else:
-                debug_msg += "salt-master is not dict or not found; "
-                # If salt-master is not a dict or not found, try directly under pillar_data['uuids']
+                debug_msg += "salt-master not found or empty; "
+                # If salt-master is not a dict or empty, try directly under pillar_data['uuids']
                 uuids_str = pillar_data.get('uuids', '')
                 debug_msg += f"uuids found directly: {bool(uuids_str)}; "
                 debug_msg += f"uuids type: {type(uuids_str).__name__}; "
