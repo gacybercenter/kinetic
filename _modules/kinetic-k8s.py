@@ -844,8 +844,12 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                 if wait_time >= wait_timeout and not waited:
                     message += f"; {deployment_name} timeout ({wait_timeout}s)"
 
-                # Step 3: If deployment is ready, verify salt-master responsiveness by fetching pillar data
+                # Step 3: If deployment is ready, wait a mandatory 15 seconds before checking salt-master responsiveness
                 if waited:
+                    message += f"; Pausing for 15 seconds before salt-master responsiveness check"
+                    time.sleep(15)
+                    
+                    # Step 4: Verify salt-master responsiveness by fetching pillar data
                     salt_check_time = 0
                     while salt_check_time < salt_check_timeout:
                         try:
@@ -853,16 +857,16 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
                             pillar_result = __salt__['pillar.get'](salt_check_key, default=None)
                             if pillar_result is not None:
                                 salt_responded = True
-                                message += f"; salt-master responded with pillar data for '{salt_check_key}' ({salt_check_time}s)"
+                                message += f"; salt-master responded with pillar data for '{salt_check_key}' ({salt_check_time+15}s total)"
                                 break
                             else:
-                                message += f"; salt-master returned None for pillar key '{salt_check_key}' ({salt_check_time}s), retrying..."
+                                message += f"; salt-master returned None for pillar key '{salt_check_key}' ({salt_check_time+15}s total), retrying..."
                         except Exception as pillar_err:
-                            message += f"; salt-master pillar fetch error for '{salt_check_key}' ({salt_check_time}s): {str(pillar_err)[:50]}..., retrying..."
+                            message += f"; salt-master pillar fetch error for '{salt_check_key}' ({salt_check_time+15}s total): {str(pillar_err)[:50]}..., retrying..."
                         time.sleep(salt_check_interval)
                         salt_check_time += salt_check_interval
                     if salt_check_time >= salt_check_timeout and not salt_responded:
-                        message += f"; salt-master responsiveness timeout for pillar fetch ({salt_check_timeout}s)"
+                        message += f"; salt-master responsiveness timeout for pillar fetch ({salt_check_timeout+15}s total)"
             except ApiException as e:
                 restarted = False
                 message += f"; {deployment_name} restart failed: {str(e)[:50]}..."
