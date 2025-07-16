@@ -1033,24 +1033,27 @@ def host_bmc_auth_present(namespace, bmh_name, ipmi, pillar_data, bmc_auth_templ
             'message': f"An error occurred during host_bmc_auth_present operation: {str(e)}",
             'debug': debug_info if 'debug_info' in locals() else ['Exception occurred before debug_info initialization']
         }
-def uuids_secret_present(namespace, secret_name, pillar_data):
+def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="salt-master"):
     """
     Ensure that a Kubernetes Secret containing UUIDs from pillar data matches the desired state.
-    Creates the Secret if it doesn't exist, or updates it if it differs.
+    Creates the Secret if it doesn't exist, or updates it if it differs. If updated, restarts
+    the specified deployment.
 
     Args:
-        namespace (str): The namespace of the Secret in Kubernetes.
+        namespace (str): The namespace of the Secret and Deployment in Kubernetes.
         secret_name (str): The name of the Secret to create or update.
         pillar_data (dict): Pillar data containing the UUIDs under 'salt-master:uuids'.
+        deployment_name (str, optional): The name of the deployment to restart if the secret is updated. Defaults to 'salt-master'.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'result' (dict), and 'message' (str for status or error).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'result' (dict), and 'message' (str for status or error).
 
     CLI Example:
         salt '*' kinetic-k8s.uuids_secret_present baremetal-operator-system salt-master-uuids pillar_data
     """
     try:
         updated = False
+        restarted = False
         result = {}
         exists = False
         matches = False
@@ -1065,6 +1068,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data):
             config.load_kube_config()
 
         core_v1_api = client.CoreV1Api()
+        apps_v1_api = client.AppsV1Api()
 
         # Step 1: Retrieve the existing Secret from Kubernetes
         try:
@@ -1132,9 +1136,33 @@ def uuids_secret_present(namespace, secret_name, pillar_data):
             message = f"Secret {secret_name} already matches desired state"
             result = current_secret
 
+        # Step 4: If the secret was updated, restart the specified deployment
+        if updated:
+            try:
+                # Get the pods associated with the deployment
+                deployment = apps_v1_api.read_namespaced_deployment(name=deployment_name, namespace=namespace)
+                selector = deployment.spec.selector.match_labels
+                pods = core_v1_api.list_namespaced_pod(namespace=namespace, label_selector=','.join([f"{k}={v}" for k, v in selector.items()]))
+                
+                # Delete each pod to trigger a restart
+                for pod in pods.items:
+                    core_v1_api.delete_namespaced_pod(name=pod.metadata.name, namespace=namespace, body=client.V1DeleteOptions())
+                
+                restarted = True
+                message += f"; Deployment {deployment_name} pods restarted"
+            except ApiException as e:
+                restarted = False
+                message += f"; Failed to restart Deployment {deployment_name}: {str(e)}"
+                result['deployment_error'] = str(e)
+            except Exception as e:
+                restarted = False
+                message += f"; Error restarting Deployment {deployment_name}: {str(e)}"
+                result['deployment_error'] = str(e)
+
         return {
-            'success': True if updated or matches else False,
+            'success': True if (updated and restarted) or matches else False,
             'updated': updated,
+            'restarted': restarted,
             'result': result,
             'message': message
         }
@@ -1143,6 +1171,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data):
         return {
             'success': False,
             'updated': False,
+            'restarted': False,
             'result': {},
             'message': f"An error occurred during uuids_secret_present operation: {str(e)}"
         }
