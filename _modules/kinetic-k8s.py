@@ -700,7 +700,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
     Args:
         namespace (str): The namespace of the Secret and Deployment in Kubernetes.
         secret_name (str): The name of the Secret to create or update.
-        pillar_data (dict): Pillar data containing the UUIDs under 'salt-master:uuids'.
+        pillar_data (dict): Pillar data containing the UUIDs under 'salt-master:uuids' as a string.
         deployment_name (str, optional): The name of the deployment to restart if updated. Defaults to 'salt-master'.
         wait_timeout (int, optional): Maximum time in seconds to wait for deployment readiness. Defaults to 300 (5 minutes).
         wait_interval (int, optional): Interval in seconds between checks for deployment readiness. Defaults to 10 seconds.
@@ -721,9 +721,9 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         desired_secret = {}
         differences = {}
 
-        # Step 1: Check if UUIDs list is empty
-        uuids = pillar_data.get('salt-master', {}).get('uuids', [])
-        if not uuids:
+        # Step 1: Check if UUIDs string is empty or whitespace-only
+        uuids_str = pillar_data.get('salt-master', {}).get('uuids', '')
+        if not uuids_str or uuids_str.strip() == '':
             return {
                 'success': True,
                 'updated': False,
@@ -754,7 +754,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             exists = False
             current_secret = {}
 
-        desired_secret = {'uuids': '\n'.join(uuids)}
+        desired_secret = {'uuids': uuids_str}
 
         if exists:
             for key in desired_secret:
