@@ -58,11 +58,10 @@ vms_pool:
     - connection: {{ pillar['bmh'][name]['connection'] }}
 
 # Create the disk volume if it doesn't exist
-create_{{ name }}_disk_volume:
+{{ name }}_disk.qcow2:
   module.run:
     - name: virt.volume_create
     - pool: vms
-    - name: {{ name }}_disk0.qcow2
     - format: qcow2
     - size: {{ pillar['bmh'][name]['disk'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
