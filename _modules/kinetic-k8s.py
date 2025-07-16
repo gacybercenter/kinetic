@@ -722,7 +722,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         differences = {}
 
         # Step 1: Check if UUIDs string is empty or whitespace-only
-        uuids_str = pillar_data.get('salt-master', {}).get('uuids', '')
+        uuids_str = pillar_data.get('uuids', {})
         if not uuids_str or uuids_str.strip() == '':
             return {
                 'success': True,
