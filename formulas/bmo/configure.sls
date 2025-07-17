@@ -156,18 +156,16 @@ ensure_{{ name }}_bmh_present:
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - bmh_template_path: salt://formulas/bmo/files/bmh.j2
     - require:
-      - module: ensure_{{ name }}_networkdata_present
+      - k8s: ensure_{{ name }}_networkdata_present
       - module: ensure_{{ name }}_userdata_present
 
 # If BMH was recreated, ensure the host-specific BMC auth Secret is recreated
 ensure_{{ name }}_bmc_auth_recreated_if_bmh_recreated:
-  module.run:
-    - name: kinetic-k8s.host_bmc_auth_present
+  k8s.host_bmc_auth_present:
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
     - ipmi: {{ pillar['ipmi-password'] }}
-    - pillar_data: {{ pillar['bmh'].get(name) }}
-    - bmc_auth_template_path: salt://formulas/bmo/files/bmc-auth.j2
+    - pillar_key: bmh
     - require:
       - module: ensure_{{ name }}_bmh_present
     - onchanges:
