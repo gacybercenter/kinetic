@@ -27,13 +27,18 @@ ensure_salt_master_uuids_secret:
 {% for name, host in pillar['bmh'].items() %}
 {% set bmh_type = name.split('-')[0].lower() %}
 ensure_{{ name }}_bmc_auth_present:
-  module.run:
-    - name: kinetic-k8s.host_bmc_auth_present
+  k8s.host_bmc_auth_present:
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
-    - ipmi: {{ pillar['ipmi-password'] }}
-    - pillar_data: {{ pillar['bmh'].get(name) }}
-    - bmc_auth_template_path: salt://formulas/bmo/files/bmc-auth.j2
+    - ipmi: {{ pillar['impi-password']}}
+    - pillar_key: bmh
+#  module.run:
+#    - name: kinetic-k8s.host_bmc_auth_present
+#    - namespace: baremetal-operator-system
+#    - bmh_name: {{ name }}
+#    - ipmi: {{ pillar['ipmi-password'] }}
+#    - pillar_data: {{ pillar['bmh'].get(name) }}
+#    - bmc_auth_template_path: salt://formulas/bmo/files/bmc-auth.j2
 
 ensure_{{ name }}_networkdata_present:
   module.run:
