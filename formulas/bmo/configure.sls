@@ -13,7 +13,7 @@ deploy_script:
 {% set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
 
 ensure_salt_master_uuids_secret:
-  k8s_secret.uuids_present:
+  k8s.uuids_present:
     - namespace: salt
     - secret_name: uuids
     - pillar_key: bmh  # Explicitly set to bmh, though it's now the default
