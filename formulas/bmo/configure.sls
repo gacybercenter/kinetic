@@ -71,14 +71,19 @@ ensure_{{ name }}_networkdata_present:
   #    - k8s: ensure_{{ name }}_bmc_auth_present
 
 ensure_{{ name }}_userdata_present:
-  module.run:
-    - name: kinetic-k8s.userdata_present
+  k8s.userdata_present:
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
-    - pillar_data: {{ pillar['bmh'].get(name) }}
-    - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
-    - require:
-      - k8s: ensure_{{ name }}_networkdata_present
+    - pillar_key: bmh
+#  module.run:
+#    - name: kinetic-k8s.userdata_present
+#    - namespace: baremetal-operator-system
+#    - bmh_name: {{ name }}
+#    - pillar_data: {{ pillar['bmh'].get(name) }}
+#    - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
+#    - require:
+#      - k8s: ensure_{{ name }}_networkdata_present
+
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
 # Ensure the storage pool is defined and running
 vms_{{ name }}_pool:
