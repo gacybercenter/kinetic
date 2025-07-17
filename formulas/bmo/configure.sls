@@ -78,7 +78,7 @@ ensure_{{ name }}_userdata_present:
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - userdata_template_path: salt://formulas/bmo/files/cloudinit.j2
     - require:
-      - module: ensure_{{ name }}_networkdata_present
+      - k8s: ensure_{{ name }}_networkdata_present
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
 # Ensure the storage pool is defined and running
 vms_{{ name }}_pool:
