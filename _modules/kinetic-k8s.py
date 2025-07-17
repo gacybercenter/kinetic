@@ -695,13 +695,13 @@ def host_bmc_auth_present(namespace, bmh_name, ipmi, pillar_data, bmc_auth_templ
 def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="salt-master", wait_timeout=300, wait_interval=10, salt_check_timeout=120, salt_check_interval=5, salt_check_key="salt-master:uuids"):
     """
     Ensure that a Kubernetes Secret containing UUIDs from pillar data matches the desired state.
+    Extracts UUIDs by looping through the 'bmh' dictionary in pillar data, collecting 'uuid' from each host.
     If updated, restarts the specified deployment, waits for it to become ready, and verifies salt-master responsiveness by fetching pillar data.
-    Assumes UUIDs are under 'salt-master:uuids' or directly under 'uuids'.
 
     Args:
         namespace (str): The namespace of the Secret and Deployment in Kubernetes.
         secret_name (str): The name of the Secret to create or update.
-        pillar_data (dict): Pillar data containing the UUIDs under 'salt-master:uuids' or directly under 'uuids' as a string.
+        pillar_data (dict): Pillar data containing the BMH hosts under 'bmh' with 'uuid' fields.
         deployment_name (str, optional): The name of the deployment to restart if updated. Defaults to 'salt-master'.
         wait_timeout (int, optional): Maximum time in seconds to wait for deployment readiness. Defaults to 300 (5 minutes).
         wait_interval (int, optional): Interval in seconds between checks for deployment readiness. Defaults to 10 seconds.
@@ -726,42 +726,48 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
         desired_secret = {}
         differences = {}
 
-        # Step 1: Safely extract UUIDs string from pillar data with detailed debugging
-        uuids_str = ''
+        # Step 1: Extract UUIDs by looping through 'bmh' dictionary in pillar data
+        uuids_list = []
         debug_msg = "Pillar data structure: "
         if isinstance(pillar_data, dict):
             debug_msg += "dict; "
-            # First, try to access uuids under pillar_data['salt-master']['uuids']
-            salt_master_data = pillar_data.get('salt-master', {})
-            if isinstance(salt_master_data, dict) and salt_master_data:
-                debug_msg += "salt-master is dict and non-empty; "
-                uuids_str = salt_master_data.get('uuids', '')
-                debug_msg += f"uuids found in salt-master: {bool(uuids_str)}; "
-                debug_msg += f"uuids type: {type(uuids_str).__name__}; "
-                debug_msg += f"uuids content preview: {repr(uuids_str)[:50]}...; "
-                debug_msg += f"salt-master keys: {list(salt_master_data.keys())[:5]}; "
+            # Try to access 'bmh' directly in pillar_data or under 'bmh' key
+            bmh_data = pillar_data.get('bmh', {})
+            if not bmh_data or not isinstance(bmh_data, dict):
+                debug_msg += "bmh not found or not dict; "
+                # If 'bmh' is not found, check if pillar_data itself contains host entries (unlikely but for completeness)
+                bmh_data = pillar_data if any(isinstance(v, dict) and 'uuid' in v for v in pillar_data.values()) else {}
+                debug_msg += f"bmh as pillar_data: {bool(bmh_data)}; "
             else:
-                debug_msg += "salt-master not found or empty; "
-                # If salt-master is not a dict or empty, try directly under pillar_data['uuids']
-                uuids_str = pillar_data.get('uuids', '')
-                debug_msg += f"uuids found directly: {bool(uuids_str)}; "
-                debug_msg += f"uuids type: {type(uuids_str).__name__}; "
-                debug_msg += f"uuids content preview: {repr(uuids_str)[:50]}...; "
-                debug_msg += f"pillar_data keys: {list(pillar_data.keys())[:5]}; "
+                debug_msg += "bmh found; "
+
+            if bmh_data and isinstance(bmh_data, dict):
+                # Loop through each host entry in bmh_data to extract 'uuid'
+                for host_name, host_data in bmh_data.items():
+                    if isinstance(host_data, dict) and 'uuid' in host_data:
+                        uuid_val = host_data.get('uuid', '')
+                        if uuid_val and isinstance(uuid_val, str):
+                            uuids_list.append(uuid_val)
+                debug_msg += f"extracted {len(uuids_list)} UUIDs from bmh hosts; "
+                debug_msg += f"bmh host keys: {list(bmh_data.keys())[:5]}; "
+            else:
+                debug_msg += "no valid bmh data to extract UUIDs; "
         else:
             debug_msg += "not dict; "
-            uuids_str = pillar_data if isinstance(pillar_data, str) else ''
-            debug_msg += f"uuids as direct pillar_data: {bool(uuids_str)}; "
+
+        # Join the UUIDs into a single string with newlines
+        uuids_str = '\n'.join(uuids_list) if uuids_list else ''
+        debug_msg += f"uuids_str preview: {repr(uuids_str)[:50]}...; "
 
         # Check if UUIDs string is empty or whitespace-only
-        if not uuids_str or (isinstance(uuids_str, str) and uuids_str.strip() == ''):
+        if not uuids_str or uuids_str.strip() == '':
             return {
                 'success': True,
                 'updated': False,
                 'restarted': False,
                 'waited': False,
                 'salt_responded': False,
-                'message': f"No UUIDs provided for Secret {secret_name}; no action taken. {debug_msg}"
+                'message': f"No UUIDs extracted for Secret {secret_name}; no action taken. {debug_msg}"
             }
 
         try:
