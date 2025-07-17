@@ -154,12 +154,10 @@ ensure_{{ name }}_vbmc_connection:
 
 {% endif %}
 ensure_{{ name }}_bmh_present:
-  module.run: 
-    - name: kinetic-k8s.bmh_present
+  k8s.bmh_present:
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
-    - pillar_data: {{ pillar['bmh'].get(name) }}
-    - bmh_template_path: salt://formulas/bmo/files/bmh.j2
+    - pillar_key: bmh
     - require:
       - k8s: ensure_{{ name }}_networkdata_present
       - k8s: ensure_{{ name }}_userdata_present
