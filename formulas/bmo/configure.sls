@@ -30,7 +30,7 @@ ensure_{{ name }}_bmc_auth_present:
   k8s.host_bmc_auth_present:
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
-    - ipmi: {{ pillar['impi-password']}}
+    - ipmi: {{ pillar['impi-password'] }}
     - pillar_key: bmh
 #  module.run:
 #    - name: kinetic-k8s.host_bmc_auth_present
