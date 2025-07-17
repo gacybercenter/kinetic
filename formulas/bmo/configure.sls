@@ -11,6 +11,19 @@ deploy_script:
 {% set cidr_prefix = subnet_cidr.split('/')[1] %}
 {% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
 {% set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
+
+ensure_salt_master_uuids_secret:
+  k8s_secret.uuids_present:
+    - namespace: salt
+    - secret_name: uuids
+    - pillar_key: bmh  # Explicitly set to bmh, though it's now the default
+    - deployment_name: salt-master
+    - wait_timeout: 300
+    - wait_interval: 10
+    - salt_check_timeout: 120
+    - salt_check_interval: 5
+    - salt_check_key: bmh
+
 {% for name, host in pillar['bmh'].items() %}
 {% set bmh_type = name.split('-')[0].lower() %}
 ensure_{{ name }}_bmc_auth_present:
@@ -50,7 +63,7 @@ ensure_{{ name }}_userdata_present:
       - module: ensure_{{ name }}_networkdata_present
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
 # Ensure the storage pool is defined and running
-vms_pool:
+vms_{{ name }}_pool:
   virt.pool_running:
     - name: vms
     - ptype: dir
@@ -67,7 +80,7 @@ vms_pool:
     - size: {{ pillar['bmh'][name]['disk'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
-      - virt: vms_pool
+      - virt: vms_{{ name }}_pool
     - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms {{ name }}_disk0.qcow2
 
 # Define the VM using the inline XML string
@@ -111,7 +124,7 @@ define_{{name }}_vm:
 
 ensure_{{ name }}_vbmc_connection:
   cmd.run:
-    - name: /opt/virtualbmc/bin/vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }}
+    - name: /opt/virtualbmc/bin/vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }} && /opt/virtualbmc/bin/vbmc start {{ name }}
     - unless: /opt/virtualbmc/bin/vbmc show {{ name }}
     - require:
       - module: define_{{ name }}_vm
