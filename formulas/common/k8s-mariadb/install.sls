@@ -1,5 +1,5 @@
 include:
-  /formulas/common/helm
+  - /formulas/common/helm
 
 helm_mariadb_op_repo:
   helm.repo_managed:
