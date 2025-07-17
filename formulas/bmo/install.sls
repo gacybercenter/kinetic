@@ -1,7 +1,7 @@
 include:
   - /formulas/common/k8s-certmanager/install
   - /formulas/common/vbmc
-  - /formulas/common/k8s-mariadb
+  - /formulas/common/ironic-operator
 
 # Validate deployment options
 validate_deployment_bmo_ironic:

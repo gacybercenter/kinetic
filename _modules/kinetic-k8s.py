@@ -898,3 +898,222 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'salt_responded': False,
             'message': f"UUID Secret operation error: {str(e)[:50]}..."
         }
+def mariadb_instance_present(namespace, instance_name, root_password, image="mariadb:10.6", storage_size="1Gi", storage_class="standard", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", root_password_secret_name="mariadb-root-password"):
+    """
+    Ensure that a MariaDB instance in Kubernetes matches the desired state using the MariaDB Operator.
+    Creates or updates the MariaDB Custom Resource and associated root password Secret if necessary.
+
+    Args:
+        namespace (str): The namespace of the MariaDB instance and Secret in Kubernetes.
+        instance_name (str): The name of the MariaDB instance.
+        root_password (str): The root password for the MariaDB instance.
+        image (str, optional): The Docker image for MariaDB. Defaults to "mariadb:10.6".
+        storage_size (str, optional): The storage size for MariaDB data. Defaults to "1Gi".
+        storage_class (str, optional): The storage class for persistent volume. Defaults to "standard".
+        replicas (int, optional): Number of replicas for the MariaDB instance. Defaults to 1.
+        limits_cpu (str, optional): CPU limit for the MariaDB pod. Defaults to "500m".
+        limits_memory (str, optional): Memory limit for the MariaDB pod. Defaults to "512Mi".
+        requests_cpu (str, optional): CPU request for the MariaDB pod. Defaults to "200m".
+        requests_memory (str, optional): Memory request for the MariaDB pod. Defaults to "256Mi".
+        root_password_secret_name (str, optional): The name of the Secret for the root password. Defaults to "mariadb-root-password".
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), and 'message' (str for status or error).
+
+    CLI Example:
+        salt '*' kinetic-k8s.mariadb_instance_present baremetal-operator-system ironic-mariadb mypassword
+    """
+    try:
+        updated = False
+        secret_updated = False
+        exists = False
+        matches = False
+        secret_exists = False
+        secret_matches = False
+        differences = {}
+
+        # Load Kubernetes configuration
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+        custom_api = client.CustomObjectsApi()
+
+        # Step 1: Handle the root password Secret
+        secret_name = root_password_secret_name
+        desired_secret = {'password': root_password}
+
+        try:
+            secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+            secret_exists = True
+            current_secret = secret.string_data if secret.string_data else {}
+            if not current_secret and secret.data:
+                import base64
+                current_secret = {k: base64.b64decode(v).decode('utf-8') for k, v in secret.data.items()}
+        except ApiException:
+            secret_exists = False
+            current_secret = {}
+        except Exception as e:
+            secret_exists = False
+            current_secret = {}
+            return {
+                'success': False,
+                'updated': False,
+                'secret_updated': False,
+                'message': f"Error fetching Secret {secret_name}: {str(e)[:50]}..."
+            }
+
+        if secret_exists:
+            for key in desired_secret:
+                if key not in current_secret or current_secret[key] != desired_secret[key]:
+                    secret_matches = False
+                    break
+            else:
+                secret_matches = True
+        else:
+            secret_matches = False
+
+        if not secret_exists or not secret_matches:
+            try:
+                body = client.V1Secret(
+                    metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
+                    string_data=desired_secret,
+                    type='Opaque'
+                )
+                if secret_exists:
+                    core_v1_api.replace_namespaced_secret(name=secret_name, namespace=namespace, body=body)
+                    secret_updated = True
+                    message = f"Secret {secret_name} updated"
+                else:
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=body)
+                    secret_updated = True
+                    message = f"Secret {secret_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'secret_updated': False,
+                    'message': f"Failed to update/create Secret {secret_name}: {str(e)[:50]}..."
+                }
+        else:
+            message = f"Secret {secret_name} already up-to-date"
+            secret_updated = False
+
+        # Step 2: Handle the MariaDB Custom Resource
+        group = "mariadb.mariadb.com"
+        version = "v1alpha1"
+        plural = "mariadbs"
+
+        # Define the desired MariaDB spec
+        desired_mariadb = {
+            'apiVersion': f"{group}/{version}",
+            'kind': 'MariaDb',
+            'metadata': {
+                'name': instance_name,
+                'namespace': namespace
+            },
+            'spec': {
+                'image': image,
+                'storage': {
+                    'size': storage_size,
+                    'storageClass': storage_class
+                },
+                'rootPasswordSecret': {
+                    'name': secret_name,
+                    'key': 'password'
+                },
+                'replicas': replicas,
+                'resources': {
+                    'limits': {
+                        'cpu': limits_cpu,
+                        'memory': limits_memory
+                    },
+                    'requests': {
+                        'cpu': requests_cpu,
+                        'memory': requests_memory
+                    }
+                }
+            }
+        }
+
+        # Check if MariaDB instance exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=instance_name
+            )
+            exists = True
+            current_spec = resource.get('spec', {})
+        except ApiException as e:
+            exists = False
+            current_spec = {}
+            if e.status != 404:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'secret_updated': secret_updated,
+                    'message': f"Error fetching MariaDB instance {instance_name}: {str(e)[:50]}..."
+                }
+        except Exception as e:
+            exists = False
+            current_spec = {}
+            return {
+                'success': False,
+                'updated': False,
+                'secret_updated': secret_updated,
+                'message': f"Unexpected error fetching MariaDB instance {instance_name}: {str(e)[:50]}..."
+            }
+
+        # Compare current and desired spec
+        if exists:
+            desired_spec = desired_mariadb.get('spec', {})
+            for key in desired_spec:
+                if key not in current_spec or current_spec[key] != desired_spec[key]:
+                    differences[key] = {'current': current_spec.get(key, 'not set'), 'desired': desired_spec[key]}
+            matches = len(differences) == 0
+        else:
+            matches = False
+
+        # Create or update MariaDB instance if necessary
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, body=desired_mariadb
+                )
+                updated = True
+                message += f"; MariaDB instance {instance_name} created"
+            except ApiException as e:
+                updated = False
+                message += f"; Failed to create MariaDB instance {instance_name}: {str(e)[:50]}..."
+        elif not matches:
+            try:
+                # Preserve resourceVersion for update
+                if 'metadata' in resource and 'resourceVersion' in resource['metadata']:
+                    desired_mariadb['metadata']['resourceVersion'] = resource['metadata'].get('resourceVersion', '')
+                custom_api.replace_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=desired_mariadb
+                )
+                updated = True
+                message += f"; MariaDB instance {instance_name} updated"
+            except ApiException as e:
+                updated = False
+                message += f"; Failed to update MariaDB instance {instance_name}: {str(e)[:50]}..."
+        else:
+            message += f"; MariaDB instance {instance_name} already up-to-date"
+            updated = False
+
+        return {
+            'success': True if (updated or matches) and (secret_updated or secret_matches) else False,
+            'updated': updated,
+            'secret_updated': secret_updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'secret_updated': False,
+            'message': f"MariaDB instance operation error: {str(e)[:50]}..."
+        }
