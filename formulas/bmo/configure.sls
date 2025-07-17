@@ -170,7 +170,7 @@ ensure_{{ name }}_bmc_auth_recreated_if_bmh_recreated:
     - ipmi: {{ pillar['ipmi-password'] }}
     - pillar_key: bmh
     - require:
-      - module: ensure_{{ name }}_bmh_present
+      - k8s: ensure_{{ name }}_bmh_present
     - onchanges:
-      - module: ensure_{{ name }}_bmh_present
+      - k8s: ensure_{{ name }}_bmh_present
 {% endfor %}
