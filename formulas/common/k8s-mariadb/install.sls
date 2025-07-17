@@ -18,4 +18,4 @@ helm_mariadb_op_release:
     - name: mariadb-operator
     - chart: mariadb-operator/mariadb-operator
     - namespace: {{ pillar['bmo_namespace'] }}
-    - unless: helm list -n {{ pillar['bmo_namespace'] }} |grep 'mariadb-operator'
+    - unless: helm list -n {{ pillar['bmo_namespace'] }} |grep 'mariadb-operator '
