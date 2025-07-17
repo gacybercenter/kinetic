@@ -16,13 +16,13 @@ ensure_salt_master_uuids_secret:
   k8s_secret.uuids_present:
     - namespace: salt
     - secret_name: uuids
-    - pillar_key: salt-master
+    - pillar_key: bmh  # Explicitly set to bmh, though it's now the default
     - deployment_name: salt-master
     - wait_timeout: 300
     - wait_interval: 10
     - salt_check_timeout: 120
     - salt_check_interval: 5
-    - salt_check_key: salt-master:uuids
+    - salt_check_key: bmh
 
 {% for name, host in pillar['bmh'].items() %}
 {% set bmh_type = name.split('-')[0].lower() %}
