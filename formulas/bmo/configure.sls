@@ -32,13 +32,6 @@ ensure_{{ name }}_bmc_auth_present:
     - bmh_name: {{ name }}
     - ipmi: {{ pillar['ipmi-password'] }}
     - pillar_key: bmh
-#  module.run:
-#    - name: kinetic-k8s.host_bmc_auth_present
-#    - namespace: baremetal-operator-system
-#    - bmh_name: {{ name }}
-#    - ipmi: {{ pillar['ipmi-password'] }}
-#    - pillar_data: {{ pillar['bmh'].get(name) }}
-#    - bmc_auth_template_path: salt://formulas/bmo/files/bmc-auth.j2
 
 ensure_{{ name }}_networkdata_present:
   k8s.networkdata_present:
