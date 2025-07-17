@@ -944,7 +944,10 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         try:
             secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
             secret_exists = True
-            current_password = secret.string_data.get('password', '') if secret.string_data else (base64.b64decode(list(secret.data.values())[0]).decode('utf-8') if secret.data else '')
+            current_password = secret.string_data.get('password', '') if secret.string_data else ''
+            if not current_password and secret.data:
+                import base64
+                current_password = base64.b64decode(list(secret.data.values())[0]).decode('utf-8') if secret.data else ''
             if current_password != root_password:
                 differences['password'] = {'desired': root_password[:3] + '...' if len(root_password) > 3 else root_password}
         except ApiException:
@@ -985,7 +988,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             secret_updated = False
 
         # Step 2: Manage the MariaDB instance Custom Resource
-        group = "k8s.mariadb.com"  # Updated to match the available CRD group
+        group = "k8s.mariadb.com"
         version = "v1alpha1"
         plural = "mariadbs"
 
