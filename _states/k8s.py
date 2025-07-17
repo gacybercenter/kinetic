@@ -531,3 +531,107 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="bm
         ret['changes'] = {}
 
     return ret
+def mariadb_instance_present(name, namespace, instance_name, root_password, secret_name="mariadb-root-password", image="mariadb:10.6", storage_size="1Gi", storage_class="standard", pvc_name=None, replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi"):
+    """
+    Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
+    Creates or updates a root password Secret and the MariaDB instance Custom Resource with specified storage class, size, and optional PVC name.
+    Checks if the associated PVC is available.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace where the Secret and MariaDB instance reside.
+
+    instance_name
+        The name of the MariaDB instance in Kubernetes.
+
+    root_password
+        The root password for the MariaDB instance.
+
+    secret_name
+        Optional. The name of the Secret for the root password. Defaults to 'mariadb-root-password'.
+
+    image
+        Optional. The Docker image for MariaDB. Defaults to 'mariadb:10.6'.
+
+    storage_size
+        Optional. Storage size for MariaDB PVC. Defaults to '1Gi'.
+
+    storage_class
+        Optional. Storage class for MariaDB PVC. Defaults to 'standard'.
+
+    pvc_name
+        Optional. Name of an existing PVC to use for MariaDB storage. If not provided, the operator will create one based on storage_size and storage_class.
+
+    replicas
+        Optional. Number of replicas for MariaDB. Defaults to 1.
+
+    limits_cpu
+        Optional. CPU limit for MariaDB. Defaults to '500m'.
+
+    limits_memory
+        Optional. Memory limit for MariaDB. Defaults to '512Mi'.
+
+    requests_cpu
+        Optional. CPU request for MariaDB. Defaults to '200m'.
+
+    requests_memory
+        Optional. Memory request for MariaDB. Defaults to '256Mi'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_mariadb_instance:
+          k8s.mariadb_instance_present:
+            - namespace: baremetal-operator-system
+            - instance_name: ironic-mariadb
+            - root_password: mysecurepassword
+            - secret_name: mariadb-root-password
+            - image: mariadb:10.6
+            - storage_size: 5Gi
+            - storage_class: gp2
+            - pvc_name: my-custom-pvc
+            - replicas: 1
+            - limits_cpu: 500m
+            - limits_memory: 512Mi
+            - requests_cpu: 200m
+            - requests_memory: 256Mi
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        # Call the execution module function
+        result = __salt__['kinetic-k8s.mariadb_instance_present'](
+            namespace=namespace,
+            instance_name=instance_name,
+            root_password=root_password,
+            secret_name=secret_name,
+            image=image,
+            storage_size=storage_size,
+            storage_class=storage_class,
+            pvc_name=pvc_name,
+            replicas=replicas,
+            limits_cpu=limits_cpu,
+            limits_memory=limits_memory,
+            requests_cpu=requests_cpu,
+            requests_memory=requests_memory
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated'] or result['secret_updated']:
+            ret['changes'] = {
+                'instance_updated': result['updated'],
+                'secret_updated': result['secret_updated'],
+                'pvc_available': result['pvc_available']
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure MariaDB instance {instance_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
