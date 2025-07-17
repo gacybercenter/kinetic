@@ -55,7 +55,7 @@ ensure_{{ name }}_networkdata_present:
     - pillar_data: {{ pillar['bmh'].get(name) }}
     - network_template_path: salt://formulas/bmo/files/network-data.j2
     - require:
-      - module: ensure_{{ name }}_bmc_auth_present
+      - k8s: ensure_{{ name }}_bmc_auth_present
 
 ensure_{{ name }}_userdata_present:
   module.run:
