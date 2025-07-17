@@ -162,7 +162,7 @@ ensure_{{ name }}_bmh_present:
     - bmh_template_path: salt://formulas/bmo/files/bmh.j2
     - require:
       - k8s: ensure_{{ name }}_networkdata_present
-      - module: ensure_{{ name }}_userdata_present
+      - k8s: ensure_{{ name }}_userdata_present
 
 # If BMH was recreated, ensure the host-specific BMC auth Secret is recreated
 ensure_{{ name }}_bmc_auth_recreated_if_bmh_recreated:
