@@ -45,6 +45,12 @@ ensure_mariadb_instance:
     - require:
       - k8s: ensure_k8s_storage
 
+git_ironic_repo:
+  git.config_set:
+    - name: safe.directory
+    - value: {{ pillar['ironic_op_dir'] }}
+    - global: True
+
 clone_ironic_repo:
   git.cloned:
     - name: https://github.com/metal3-io/ironic-standalone-operator
