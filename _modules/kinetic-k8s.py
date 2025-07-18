@@ -1024,12 +1024,13 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             desired_replicas = replicas
             current_image = current_spec.get('image', '')
             current_replicas = current_spec.get('replicas', 1)
-            current_storage = current_spec.get('storage', {}).get('volumeClaimTemplate', {}).get('spec', {})
-            current_pvc_name = current_spec.get('storage', {}).get('volumeClaimTemplate', {}).get('metadata', {}).get('name', '')
+            current_storage = current_spec.get('storage', {})
+            current_pvc_name = current_storage.get('volumeClaimTemplate', {}).get('metadata', {}).get('name', '')
             current_storage_class = current_storage.get('storageClassName', '')
+            current_storage_size = current_storage.get('size', '')
             if (current_image != desired_image or
                 current_replicas != desired_replicas or
-                current_storage.get('resources', {}).get('requests', {}).get('storage', '') != storage_size or
+                current_storage_size != storage_size or
                 current_pvc_name != pvc_name or
                 current_storage_class != storage_class):
                 matches = False
@@ -1095,21 +1096,8 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                         },
                         "storage": {
                             "size": storage_size,
-                            "storageClass": storage_class,
-                            "volumeClaimTemplate": {
-                                "metadata": {
-                                    "name": pvc_name
-                                },
-                                "spec": {
-                                    "resources": {
-                                        "requests": {
-                                            "storage": storage_size
-                                        }
-                                    },
-                                    "storageClassName": storage_class,
-                                    "accessModes": ["ReadWriteOnce"]
-                                }
-                            }
+                            "storageClassName": storage_class,  # Changed from storageClass to storageClassName
+                            "accessModes": ["ReadWriteOnce"]
                         }
                     }
                 }
