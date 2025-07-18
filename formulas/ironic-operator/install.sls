@@ -44,7 +44,7 @@ clone_ironic_repo:
   git.cloned:
     - name: https://github.com/metal3-io/ironic-standalone-operator
     - branch: {{ pillar['ironic_op_release'] }}
-    - target: {{ pillar['ironic_data_dir'] }}
+    - target: {{ pillar['ironic_op_dir'] }}
     - require:
       - file: create_ironic_op_dir
 
