@@ -898,7 +898,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'salt_responded': False,
             'message': f"UUID Secret operation error: {str(e)[:50]}..."
         }
-def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi"):
+def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", storage_class="standard", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi"):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
     Creates a Secret for the root password if it doesn't exist, then creates or updates the MariaDB Custom Resource.
@@ -912,6 +912,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         image (str, optional): The MariaDB Docker image to use. Defaults to 'mariadb:10.6'.
         pvc_name (str, optional): The name of the Persistent Volume Claim for storage. Defaults to 'mariadb-pvc'. Will be sanitized.
         storage_size (str, optional): Storage size for the PVC. Defaults to '1Gi'.
+        storage_class (str, optional): Storage class for the PVC. Defaults to 'standard'.
         replicas (int, optional): Number of replicas for the MariaDB instance. Defaults to 1.
         limits_cpu (str, optional): CPU limit for the MariaDB container. Defaults to '500m'.
         limits_memory (str, optional): Memory limit for the MariaDB container. Defaults to '512Mi'.
@@ -919,10 +920,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         requests_memory (str, optional): Memory request for the MariaDB container. Defaults to '256Mi'.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), and 'message' (str).
-
-    CLI Example:
-        salt '*' kinetic-k8s.mariadb_instance_present baremetal-operator-system ironic-mariadb mypassword mariadb-root-password image='mariadb:10.6' pvc_name='ironic-db-pvc' storage_size='5Gi'
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), 'pvc_available' (bool), and 'message' (str).
     """
     try:
         updated = False
@@ -930,6 +928,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         secret_exists = False
         mariadb_exists = False
         matches = False
+        pvc_available = False
 
         # Sanitize pvc_name to meet Kubernetes naming conventions
         def sanitize_name(name):
@@ -980,6 +979,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                     'success': False,
                     'updated': False,
                     'secret_updated': False,
+                    'pvc_available': False,
                     'message': f"Error fetching Secret {secret_name}: {str(e)[:100]}...; {message}"
                 }
 
@@ -1003,6 +1003,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                     'success': False,
                     'updated': False,
                     'secret_updated': False,
+                    'pvc_available': False,
                     'message': f"Failed to create/update Secret {secret_name}: {str(e)[:100]}...; {message}"
                 }
         else:
@@ -1025,10 +1026,12 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             current_replicas = current_spec.get('replicas', 1)
             current_storage = current_spec.get('storage', {}).get('volumeClaimTemplate', {}).get('spec', {})
             current_pvc_name = current_spec.get('storage', {}).get('volumeClaimTemplate', {}).get('metadata', {}).get('name', '')
+            current_storage_class = current_storage.get('storageClassName', '')
             if (current_image != desired_image or
                 current_replicas != desired_replicas or
                 current_storage.get('resources', {}).get('requests', {}).get('storage', '') != storage_size or
-                current_pvc_name != pvc_name):
+                current_pvc_name != pvc_name or
+                current_storage_class != storage_class):
                 matches = False
             else:
                 matches = True
@@ -1041,10 +1044,24 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                     'success': False,
                     'updated': False,
                     'secret_updated': secret_updated,
+                    'pvc_available': False,
                     'message': f"Error fetching MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
                 }
 
-        # Step 4: Create or update MariaDB instance if necessary
+        # Step 4: Check if PVC exists (if provided or after creation)
+        try:
+            pvc = core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
+            pvc_available = True
+            message += f"; PVC {pvc_name} is available"
+        except ApiException as e:
+            if e.status == 404:
+                pvc_available = False
+                message += f"; PVC {pvc_name} not found, will be created by operator"
+            else:
+                pvc_available = False
+                message += f"; Error checking PVC {pvc_name}: {str(e)[:50]}..."
+
+        # Step 5: Create or update MariaDB instance if necessary
         if not mariadb_exists or not matches:
             try:
                 group = "k8s.mariadb.com"
@@ -1078,7 +1095,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                         },
                         "storage": {
                             "size": storage_size,
-                            "storageClass": "local-storage",
+                            "storageClass": storage_class,
                             "volumeClaimTemplate": {
                                 "metadata": {
                                     "name": pvc_name
@@ -1089,7 +1106,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                                             "storage": storage_size
                                         }
                                     },
-                                    "storageClassName": "local-storage",
+                                    "storageClassName": storage_class,
                                     "accessModes": ["ReadWriteOnce"]
                                 }
                             }
@@ -1113,6 +1130,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                     'success': False,
                     'updated': False,
                     'secret_updated': secret_updated,
+                    'pvc_available': pvc_available,
                     'message': f"Failed to create/update MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
                 }
         else:
@@ -1120,17 +1138,18 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             updated = False
 
         return {
-            'success': True if (updated or matches) and secret_updated is not True or secret_updated else False, 
+            'success': True if (updated or matches) else False,
             'updated': updated,
             'secret_updated': secret_updated,
+            'pvc_available': pvc_available,
             'message': message
         }
-
     except Exception as e:
         return {
             'success': False,
             'updated': False,
             'secret_updated': False,
+            'pvc_available': False,
             'message': f"MariaDB instance operation error: {str(e)[:100]}..."
         }
 def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage", storage_class="local-storage"):
