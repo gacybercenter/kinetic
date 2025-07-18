@@ -1463,14 +1463,16 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
             except ApiException as e:
                 error_details = str(e)
                 if hasattr(e, 'body') and e.body:
-                    error_details += f"; Body: {e.body[:200]}..."
+                    error_details += f"; Full Response Body: {e.body}"
+                elif hasattr(e, 'reason'):
+                    error_details += f"; Reason: {e.reason}"
                 return {
                     'success': False,
                     'secret_updated': secret_updated,
                     'user_updated': False,
                     'database_updated': False,
                     'grant_updated': False,
-                    'message': f"Failed to create/update User {user_name}: {error_details[:200]}...; {message}"
+                    'message': f"Failed to create/update User {user_name}: {error_details}; {message}"
                 }
         else:
             message += f"; User {user_name} spec matches, no update needed"
@@ -1539,14 +1541,16 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
             except ApiException as e:
                 error_details = str(e)
                 if hasattr(e, 'body') and e.body:
-                    error_details += f"; Body: {e.body[:200]}..."
+                    error_details += f"; Full Response Body: {e.body}"
+                elif hasattr(e, 'reason'):
+                    error_details += f"; Reason: {e.reason}"
                 return {
                     'success': False,
                     'secret_updated': secret_updated,
                     'user_updated': user_updated,
                     'database_updated': False,
                     'grant_updated': False,
-                    'message': f"Failed to create/update Database {database_name}: {error_details[:200]}...; {message}"
+                    'message': f"Failed to create/update Database {database_name}: {error_details}; {message}"
                 }
         else:
             message += f"; Database {database_name} spec matches, no update needed"
@@ -1555,8 +1559,9 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
         grant_name = f"{user_name}-grant"
         try:
             plural = "grants"
+            # Use mariadb_namespace for Grant to ensure it's in the same namespace as MariaDB instance
             grant = custom_api.get_namespaced_custom_object(
-                group=group, version=version, namespace=namespace, plural=plural, name=grant_name
+                group=group, version=version, namespace=mariadb_namespace, plural=plural, name=grant_name
             )
             grant_exists = True
             current_grant_spec = grant.get('spec', {})
@@ -1567,7 +1572,7 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                 current_grant_spec.get('database', '') != database_name or
                 current_grant_spec.get('host', '') != host or
                 current_grant_spec.get('username', '') != user_name or
-                current_grant_spec.get('table', '') != table or
+                (current_grant_spec.get('table', '*') != table if 'table' in current_grant_spec else True) or
                 sorted(current_privileges) != sorted(privileges)):
                 grant_matches = False
             else:
@@ -1586,15 +1591,17 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                     'message': f"Error fetching Grant {grant_name}: {str(e)[:100]}...; {message}"
                 }
 
-        # Step 8: Create or update Grant if necessary
+        # Step 8: Create or update Grant if necessary with a minimal spec first
         if not grant_exists or not grant_matches:
             try:
+                plural = "grants"
+                # Use mariadb_namespace for Grant to ensure it's in the same namespace as MariaDB instance
                 grant_body = {
                     "apiVersion": f"{group}/{version}",
                     "kind": "Grant",
                     "metadata": {
                         "name": grant_name,
-                        "namespace": namespace
+                        "namespace": mariadb_namespace
                     },
                     "spec": {
                         "mariaDbRef": {
@@ -1606,33 +1613,35 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                         "database": database_name,
                         "host": host,
                         "privileges": privileges,
-                        "table": table,
                         "username": user_name
                     }
                 }
                 if grant_exists:
                     custom_api.replace_namespaced_custom_object(
-                        group=group, version=version, namespace=namespace, plural=plural, name=grant_name, body=grant_body
+                        group=group, version=version, namespace=mariadb_namespace, plural=plural, name=grant_name, body=grant_body
                     )
                     grant_updated = True
                     message += f"; Grant {grant_name} updated"
                 else:
                     custom_api.create_namespaced_custom_object(
-                        group=group, version=version, namespace=namespace, plural=plural, body=grant_body
+                        group=group, version=version, namespace=mariadb_namespace, plural=plural, body=grant_body
                     )
                     grant_updated = True
                     message += f"; Grant {grant_name} created"
             except ApiException as e:
-                error_details = str(e)
+                error_details = f"Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}"
                 if hasattr(e, 'body') and e.body:
-                    error_details += f"; Body: {e.body[:500]}..."  # Extended to capture more details
+                    error_details += f"; Full Response Body: {e.body[:1000] if len(e.body) > 1000 else e.body}"
+                elif hasattr(e, 'headers'):
+                    error_details += f"; Headers: {e.headers}"
+                message += f"; DEBUG - Attempted Grant spec in namespace {mariadb_namespace}: {grant_body['spec']}"
                 return {
                     'success': False,
                     'secret_updated': secret_updated,
                     'user_updated': user_updated,
                     'database_updated': database_updated,
                     'grant_updated': False,
-                    'message': f"Failed to create/update Grant {grant_name}: {error_details[:500]}...; {message}"
+                    'message': f"Failed to create/update Grant {grant_name}: {error_details}; {message}"
                 }
         else:
             message += f"; Grant {grant_name} spec matches, no update needed"
@@ -1646,11 +1655,12 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
             'message': message
         }
     except Exception as e:
+        error_details = f"General Exception: {str(e)}"
         return {
             'success': False,
             'secret_updated': False,
             'user_updated': False,
             'database_updated': False,
             'grant_updated': False,
-            'message': f"Ironic DB user setup error: {str(e)[:100]}...; {message}"
+            'message': f"Ironic DB user setup error: {error_details}; {message}"
         }
