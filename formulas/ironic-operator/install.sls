@@ -41,7 +41,7 @@ ensure_mariadb_instance:
     - requests_cpu: 200m
     - requests_memory: 256Mi
     - require:
-      - k8s: local_storage_pv_pvc_present
+      - k8s: ensure_k8s_storage
 
 clone_ironic_repo:
   git.cloned:
