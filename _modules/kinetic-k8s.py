@@ -1136,7 +1136,8 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
 def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage"):
     """
     Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using the local-storage class.
-    The PV is tied to a specific node and local path for local storage. Checks if both resources exist and are bound.
+    The PV is tied to a specific node and local path for local storage. Checks if the local path exists on the node before proceeding.
+    Checks if both resources exist and are bound.
 
     Args:
         namespace (str): The namespace of the PVC in Kubernetes (PV is cluster-wide but associated via PVC).
@@ -1166,6 +1167,27 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
         desired_pvc = {}
         differences_pv = {}
         differences_pvc = {}
+
+        # Step 0: Check if the local path exists on the node (assuming minion can access it)
+        # Note: This assumes the Salt minion can check the path directly. If remote, this may need SSH or node-specific logic.
+        try:
+            path_exists = __salt__['file.directory_exists'](path)
+            if not path_exists:
+                return {
+                    'success': False,
+                    'pv_updated': False,
+                    'pvc_updated': False,
+                    'bound': False,
+                    'message': f"Local path {path} does not exist on the node. Please create the directory or specify a valid path before creating the PV."
+                }
+        except Exception as e:
+            return {
+                'success': False,
+                'pv_updated': False,
+                'pvc_updated': False,
+                'bound': False,
+                'message': f"Failed to check if local path {path} exists: {str(e)[:50]}... Ensure the Salt minion can access the path or disable this check if running remotely."
+            }
 
         # Load Kubernetes configuration
         try:
