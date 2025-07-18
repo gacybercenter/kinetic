@@ -1025,7 +1025,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             current_image = current_spec.get('image', '')
             current_replicas = current_spec.get('replicas', 1)
             current_storage = current_spec.get('storage', {})
-            current_pvc_name = current_storage.get('volumeClaimTemplate', {}).get('metadata', {}).get('name', '')
+            current_pvc_name = current_storage.get('volumeClaimTemplate', {}).get('metadata', {}).get('name', '') or current_storage.get('pvcName', '')
             current_storage_class = current_storage.get('storageClassName', '')
             current_storage_size = current_storage.get('size', '')
             if (current_image != desired_image or
@@ -1057,7 +1057,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         except ApiException as e:
             if e.status == 404:
                 pvc_available = False
-                message += f"; PVC {pvc_name} not found, will be created by operator"
+                message += f"; PVC {pvc_name} not found, operator may create a new one if not configured to use existing"
             else:
                 pvc_available = False
                 message += f"; Error checking PVC {pvc_name}: {str(e)[:50]}..."
@@ -1096,8 +1096,22 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                         },
                         "storage": {
                             "size": storage_size,
-                            "storageClassName": storage_class,  # Changed from storageClass to storageClassName
-                            "accessModes": ["ReadWriteOnce"]
+                            "storageClassName": storage_class,
+                            "accessModes": ["ReadWriteOnce"],
+                            "volumeClaimTemplate": {
+                                "metadata": {
+                                    "name": pvc_name
+                                },
+                                "spec": {
+                                    "resources": {
+                                        "requests": {
+                                            "storage": storage_size
+                                        }
+                                    },
+                                    "storageClassName": storage_class,
+                                    "accessModes": ["ReadWriteOnce"]
+                                }
+                            }
                         }
                     }
                 }
