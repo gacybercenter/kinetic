@@ -48,7 +48,7 @@ ensure_mariadb_instance:
 ensure_ironic_db_user:
   k8s.ironic_db_user_present:
     - namespace: {{ pillar['bmo_namespace'] }}
-    - mariadb_name: generic-mariadb
+    - mariadb_name: ironic-mariadb
     - mariadb_namespace: {{ pillar['bmo_namespace'] }}
     - user_name: {{ pillar.get('ironic-user', pillar['ironic_username']) }}
     - user_password: {{ pillar.get('ironic_user_password', pillar['ironic_password']) }}
