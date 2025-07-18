@@ -23,7 +23,6 @@ ensure_k8s_storage:
     - pv_name: {{ pillar['ironic_db_dir'] }}-pv
     - pvc_name: {{ pillar['ironic_db_dir'] }}-pvc
     - storage_size: 5Gi
-    - node_name: {{ grains['id'] }}
     - path: {{ pillar['ironic_db_dir'] }}
     - require:
       - file: create_ironic_db_dir
