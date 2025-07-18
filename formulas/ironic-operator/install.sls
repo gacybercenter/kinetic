@@ -34,7 +34,7 @@ ensure_mariadb_instance:
     - root_password: {{ pillar['ironic_password'] }}
     - secret_name: mariadb-root-password
     - image: mariadb:10.6
-    - pvc_name: {{ pillar['ironic_db_dir'] }}
+    - pvc_name: {{ pillar['ironic_db_dir'] }}-pvc
     - replicas: 1
     - limits_cpu: 500m
     - limits_memory: 512Mi
