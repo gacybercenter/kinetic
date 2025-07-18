@@ -24,6 +24,7 @@ ensure_k8s_storage:
     - pvc_name: {{ pillar['ironic_db_dir'] }}-pvc
     - storage_size: 5Gi
     - path: {{ pillar['ironic_db_dir'] }}
+    - storage_class: local-storage
     - require:
       - file: create_ironic_db_dir
   
@@ -34,7 +35,8 @@ ensure_mariadb_instance:
     - root_password: {{ pillar['ironic_password'] }}
     - secret_name: mariadb-root-password
     - image: mariadb:10.6
-    - pvc_name: {{ pillar['ironic_db_dir'] }}-pvc
+    - storage_size: 5Gi
+    - storage_class: local-storage
     - replicas: 1
     - limits_cpu: 500m
     - limits_memory: 512Mi

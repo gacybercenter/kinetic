@@ -898,11 +898,10 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'salt_responded': False,
             'message': f"UUID Secret operation error: {str(e)[:50]}..."
         }
-def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", storage_class="standard", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi"):
+def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", storage_class="local-storage", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi"):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
     Creates a Secret for the root password if it doesn't exist, then creates or updates the MariaDB Custom Resource.
-    Sanitizes the PVC name to meet Kubernetes naming conventions.
 
     Args:
         namespace (str): The namespace of the MariaDB instance and Secret in Kubernetes.
@@ -910,9 +909,9 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         root_password (str): The root password for MariaDB (stored in a Secret).
         secret_name (str): The name of the Secret to store the root password.
         image (str, optional): The MariaDB Docker image to use. Defaults to 'mariadb:10.6'.
-        pvc_name (str, optional): The name of the Persistent Volume Claim for storage. Defaults to 'mariadb-pvc'. Will be sanitized.
+        pvc_name (str, optional): Ignored since operator creates PVC. Kept for compatibility. Defaults to 'mariadb-pvc'.
         storage_size (str, optional): Storage size for the PVC. Defaults to '1Gi'.
-        storage_class (str, optional): Storage class for the PVC. Defaults to 'standard'.
+        storage_class (str, optional): Storage class for the PVC. Defaults to 'local-storage'.
         replicas (int, optional): Number of replicas for the MariaDB instance. Defaults to 1.
         limits_cpu (str, optional): CPU limit for the MariaDB container. Defaults to '500m'.
         limits_memory (str, optional): Memory limit for the MariaDB container. Defaults to '512Mi'.
@@ -930,25 +929,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         matches = False
         pvc_available = False
 
-        # Sanitize pvc_name to meet Kubernetes naming conventions
-        def sanitize_name(name):
-            import re
-            # Convert to lowercase
-            sanitized = name.lower()
-            # Replace invalid characters with hyphens
-            sanitized = re.sub(r'[^a-z0-9.-]', '-', sanitized)
-            # Remove leading/trailing hyphens or periods
-            sanitized = sanitized.strip('-').strip('.')
-            # Truncate to 253 characters (Kubernetes max for most resource names)
-            sanitized = sanitized[:253]
-            # If empty after sanitization, provide a fallback
-            if not sanitized:
-                sanitized = "sanitized-pvc-name"
-            return sanitized
-
-        original_pvc_name = pvc_name
-        pvc_name = sanitize_name(pvc_name)
-        message = f"Sanitized PVC name: {original_pvc_name} -> {pvc_name}"
+        message = f"Configuring MariaDB with storage class: {storage_class}"
 
         try:
             config.load_incluster_config()
@@ -1025,13 +1006,11 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             current_image = current_spec.get('image', '')
             current_replicas = current_spec.get('replicas', 1)
             current_storage = current_spec.get('storage', {})
-            current_pvc_name = current_storage.get('volumeClaimTemplate', {}).get('metadata', {}).get('name', '') or current_storage.get('pvcName', '')
             current_storage_class = current_storage.get('storageClassName', '')
             current_storage_size = current_storage.get('size', '')
             if (current_image != desired_image or
                 current_replicas != desired_replicas or
                 current_storage_size != storage_size or
-                current_pvc_name != pvc_name or
                 current_storage_class != storage_class):
                 matches = False
             else:
@@ -1049,18 +1028,9 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                     'message': f"Error fetching MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
                 }
 
-        # Step 4: Check if PVC exists (if provided or after creation)
-        try:
-            pvc = core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
-            pvc_available = True
-            message += f"; PVC {pvc_name} is available"
-        except ApiException as e:
-            if e.status == 404:
-                pvc_available = False
-                message += f"; PVC {pvc_name} not found, operator may create a new one if not configured to use existing"
-            else:
-                pvc_available = False
-                message += f"; Error checking PVC {pvc_name}: {str(e)[:50]}..."
+        # Step 4: No PVC check since operator will create it
+        pvc_available = False
+        message += f"; Skipping PVC check, operator will create PVC with storage class {storage_class}"
 
         # Step 5: Create or update MariaDB instance if necessary
         if not mariadb_exists or not matches:
@@ -1097,21 +1067,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                         "storage": {
                             "size": storage_size,
                             "storageClassName": storage_class,
-                            "accessModes": ["ReadWriteOnce"],
-                            "volumeClaimTemplate": {
-                                "metadata": {
-                                    "name": pvc_name
-                                },
-                                "spec": {
-                                    "resources": {
-                                        "requests": {
-                                            "storage": storage_size
-                                        }
-                                    },
-                                    "storageClassName": storage_class,
-                                    "accessModes": ["ReadWriteOnce"]
-                                }
-                            }
+                            "accessModes": ["ReadWriteOnce"]
                         }
                     }
                 }
@@ -1156,31 +1112,28 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         }
 def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage", storage_class="local-storage"):
     """
-    Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using a specified storage class for local storage.
+    Ensure that a Persistent Volume (PV) is present in Kubernetes using a specified storage class for local storage.
     The PV is tied to a local path. Checks if the local path exists on the node before proceeding.
-    Also checks if both resources exist and are bound. Sanitizes PV and PVC names to meet Kubernetes naming conventions.
+    Does not manage PVC creation since the operator will handle it. Sanitizes PV name to meet Kubernetes naming conventions.
 
     Args:
-        namespace (str): The namespace of the PVC (PV is cluster-wide but associated via PVC).
+        namespace (str): The namespace of the PVC (unused since PVC is not created, kept for compatibility).
         pv_name (str): The name of the Persistent Volume (will be sanitized).
-        pvc_name (str): The name of the Persistent Volume Claim (will be sanitized).
-        storage_size (str, optional): Storage size for the PV and PVC. Defaults to '1Gi'.
+        pvc_name (str): Ignored since PVC is not created. Kept for compatibility.
+        storage_size (str, optional): Storage size for the PV. Defaults to '1Gi'.
         node_name (str, optional): The name of the node to bind the local storage PV to. Not used in this simplified version to avoid validation issues.
         path (str, optional): The host path on the node for local storage. Defaults to '/mnt/local-storage'.
-        storage_class (str, optional): The storage class to use for the PV and PVC. Defaults to 'local-storage'.
+        storage_class (str, optional): The storage class to use for the PV. Defaults to 'local-storage'.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'pv_updated' (bool), 'pvc_updated' (bool), 'bound' (bool), and 'message' (str).
-
-    CLI Example:
-        salt '*' kinetic-k8s.local_storage_pv_pvc_present baremetal-operator-system local-pv-1 local-pvc-1 storage_size='5Gi' path='/mnt/local-storage' storage_class='local-storage'
     """
     try:
         pv_updated = False
         pvc_updated = False
         bound = False
 
-        # Sanitize pv_name and pvc_name to meet Kubernetes naming conventions
+        # Sanitize pv_name to meet Kubernetes naming conventions
         def sanitize_name(name):
             import re
             # Convert to lowercase
@@ -1197,20 +1150,24 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
             return sanitized
 
         original_pv_name = pv_name
-        original_pvc_name = pvc_name
         pv_name = sanitize_name(pv_name)
-        pvc_name = sanitize_name(pvc_name)
-        message = f"Sanitized PV name: {original_pv_name} -> {pv_name}; PVC name: {original_pvc_name} -> {pvc_name}"
+        message = f"Sanitized PV name: {original_pv_name} -> {pv_name}; PVC management skipped, operator will handle PVC creation"
 
-        # Step 1: Check if the local path exists on the node
+        # Step 1: Ensure the local path exists on the node
         if not __salt__['file.directory_exists'](path):
-            return {
-                'success': False,
-                'pv_updated': False,
-                'pvc_updated': False,
-                'bound': False,
-                'message': f"Local path {path} does not exist on the node. Please create the directory or specify a valid path before creating the PV. {message}"
-            }
+            try:
+                __salt__['file.mkdir'](path)
+                message += f"; Created directory {path} on node"
+            except Exception as e:
+                return {
+                    'success': False,
+                    'pv_updated': False,
+                    'pvc_updated': False,
+                    'bound': False,
+                    'message': f"Failed to create directory {path} on node: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; Directory {path} already exists on node"
 
         try:
             config.load_incluster_config()
@@ -1256,82 +1213,20 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
                     'pv_updated': False,
                     'pvc_updated': False,
                     'bound': False,
-                    'message': f"Failed to create/update PV {pv_name}: {str(e)}; {message}"
+                    'message': f"Failed to create/update PV {pv_name}: {str(e)[:100]}...; {message}"
                 }
         else:
             message += f"; PV {pv_name} already exists"
             pv_updated = False
 
-        # Step 4: Check if PVC exists
-        try:
-            existing_pvc = core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
-            pvc_exists = True
-            # Check if PVC is bound to the PV
-            if existing_pvc.status.phase == "Bound" and existing_pvc.spec.volume_name == pv_name:
-                bound = True
-            else:
-                bound = False
-        except ApiException as e:
-            if e.status == 404:
-                pvc_exists = False
-                bound = False
-            else:
-                return {
-                    'success': False,
-                    'pv_updated': pv_updated,
-                    'pvc_updated': False,
-                    'bound': False,
-                    'message': f"Error fetching PVC {pvc_name}: {str(e)[:100]}...; {message}"
-                }
-
-        # Step 5: Create or update PVC if it doesn't exist or needs updating
-        if not pvc_exists:
-            try:
-                pvc_body = client.V1PersistentVolumeClaim(
-                    metadata=client.V1ObjectMeta(name=pvc_name, namespace=namespace),
-                    spec=client.V1PersistentVolumeClaimSpec(
-                        resources=client.V1ResourceRequirements(
-                            requests={'storage': storage_size}
-                        ),
-                        access_modes=["ReadWriteOnce"],
-                        storage_class_name=storage_class,
-                        volume_name=pv_name
-                    )
-                )
-                core_v1_api.create_namespaced_persistent_volume_claim(namespace=namespace, body=pvc_body)
-                pvc_updated = True
-                message += f"; PVC {pvc_name} created with size {storage_size}"
-            except ApiException as e:
-                return {
-                    'success': False,
-                    'pv_updated': pv_updated,
-                    'pvc_updated': False,
-                    'bound': False,
-                    'message': f"Failed to create/update PVC {pvc_name}: {str(e)[:100]}...; {message}"
-                }
-        else:
-            message += f"; PVC {pvc_name} already exists"
-            pvc_updated = False
-
-        # Step 6: Check if PVC is bound to PV after creation/update
-        if pvc_exists or pvc_updated:
-            try:
-                updated_pvc = core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
-                if updated_pvc.status.phase == "Bound" and updated_pvc.spec.volume_name == pv_name:
-                    bound = True
-                    message += f"; PVC {pvc_name} is bound to PV {pv_name}"
-                else:
-                    bound = False
-                    message += f"; PVC {pvc_name} is not bound to PV {pv_name} (status: {updated_pvc.status.phase})"
-            except ApiException as e:
-                bound = False
-                message += f"; Failed to check PVC {pvc_name} binding status: {str(e)[:100]}..."
+        # Step 4: Skip PVC creation and binding check since operator handles PVC
+        message += f"; PVC creation and binding skipped, relying on operator to create PVC with storage class {storage_class}"
 
         return {
-            'success': True if (pv_updated or pvc_updated or bound) else False,
+            'success': True if pv_updated or pv_exists else False,
             'pv_updated': pv_updated,
-            'pvc_updated': pvc_updated,
-            'bound': bound,
+            'pvc_updated': False,
+            'bound': False,
             'message': message
         }
 
@@ -1341,5 +1236,5 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
             'pv_updated': False,
             'pvc_updated': False,
             'bound': False,
-            'message': f"Local storage PV/PVC operation error: {str(e)[:100]}..."
+            'message': f"Local storage PV operation error: {str(e)[:100]}..."
         }
