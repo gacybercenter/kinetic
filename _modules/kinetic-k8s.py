@@ -1137,12 +1137,12 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
     """
     Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using a specified storage class for local storage.
     The PV is tied to a local path. Checks if the local path exists on the node before proceeding.
-    Also checks if both resources exist and are bound.
+    Also checks if both resources exist and are bound. Sanitizes PV and PVC names to meet Kubernetes naming conventions.
 
     Args:
         namespace (str): The namespace of the PVC (PV is cluster-wide but associated via PVC).
-        pv_name (str): The name of the Persistent Volume.
-        pvc_name (str): The name of the Persistent Volume Claim.
+        pv_name (str): The name of the Persistent Volume (will be sanitized).
+        pvc_name (str): The name of the Persistent Volume Claim (will be sanitized).
         storage_size (str, optional): Storage size for the PV and PVC. Defaults to '1Gi'.
         node_name (str, optional): The name of the node to bind the local storage PV to. Not used in this simplified version to avoid validation issues.
         path (str, optional): The host path on the node for local storage. Defaults to '/mnt/local-storage'.
@@ -1159,6 +1159,28 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
         pvc_updated = False
         bound = False
 
+        # Sanitize pv_name and pvc_name to meet Kubernetes naming conventions
+        def sanitize_name(name):
+            import re
+            # Convert to lowercase
+            sanitized = name.lower()
+            # Replace invalid characters with hyphens
+            sanitized = re.sub(r'[^a-z0-9.-]', '-', sanitized)
+            # Remove leading/trailing hyphens or periods
+            sanitized = sanitized.strip('-').strip('.')
+            # Truncate to 253 characters (Kubernetes max for most resource names)
+            sanitized = sanitized[:253]
+            # If empty after sanitization, provide a fallback
+            if not sanitized:
+                sanitized = "sanitized-name"
+            return sanitized
+
+        original_pv_name = pv_name
+        original_pvc_name = pvc_name
+        pv_name = sanitize_name(pv_name)
+        pvc_name = sanitize_name(pvc_name)
+        message = f"Sanitized PV name: {original_pv_name} -> {pv_name}; PVC name: {original_pvc_name} -> {pvc_name}"
+
         # Step 1: Check if the local path exists on the node
         if not __salt__['file.directory_exists'](path):
             return {
@@ -1166,7 +1188,7 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
                 'pv_updated': False,
                 'pvc_updated': False,
                 'bound': False,
-                'message': f"Local path {path} does not exist on the node. Please create the directory or specify a valid path before creating the PV."
+                'message': f"Local path {path} does not exist on the node. Please create the directory or specify a valid path before creating the PV. {message}"
             }
 
         try:
@@ -1189,7 +1211,7 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
                     'pv_updated': False,
                     'pvc_updated': False,
                     'bound': False,
-                    'message': f"Error fetching PV {pv_name}: {str(e)[:100]}..."
+                    'message': f"Error fetching PV {pv_name}: {str(e)[:100]}...; {message}"
                 }
 
         # Step 3: Create or update PV if it doesn't exist or needs updating
@@ -1206,17 +1228,17 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
                 )
                 core_v1_api.create_persistent_volume(body=pv_body)
                 pv_updated = True
-                message = f"PV {pv_name} created with size {storage_size} at {path}"
+                message += f"; PV {pv_name} created with size {storage_size} at {path}"
             except ApiException as e:
                 return {
                     'success': False,
                     'pv_updated': False,
                     'pvc_updated': False,
                     'bound': False,
-                    'message': f"Failed to create/update PV {pv_name}: {str(e)}"
+                    'message': f"Failed to create/update PV {pv_name}: {str(e)}; {message}"
                 }
         else:
-            message = f"PV {pv_name} already exists"
+            message += f"; PV {pv_name} already exists"
             pv_updated = False
 
         # Step 4: Check if PVC exists
