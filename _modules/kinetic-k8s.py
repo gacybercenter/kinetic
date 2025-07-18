@@ -1289,13 +1289,13 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
             'bound': False,
             'message': f"Local storage PV operation error: {str(e)[:100]}..."
         }
-def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, user_password, secret_name, database_name="ironic-database", host="%", max_user_connections=100, privileges=["ALL"], table="*"):
+def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, user_password, secret_name, database_name="ironic-database", host="%", max_user_connections=100, privileges=["ALL PRIVILEGES"], table="*"):
     """
     Ensure that the necessary Kubernetes resources for an Ironic database user are present.
-    This includes a Secret for user credentials, a User custom resource, and a Grant custom resource.
+    This includes a Secret for user credentials, a User custom resource, a Database custom resource, and a Grant custom resource.
 
     Args:
-        namespace (str): The namespace for the Secret, User, and Grant resources (typically Ironic namespace).
+        namespace (str): The namespace for the Secret, User, Database, and Grant resources (typically Ironic namespace).
         mariadb_name (str): The name of the MariaDB instance (Custom Resource) to reference.
         mariadb_namespace (str): The namespace of the MariaDB instance.
         user_name (str): The username for the database user (must match Secret data and User metadata name).
@@ -1304,21 +1304,24 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
         database_name (str, optional): The name of the database to grant privileges on. Defaults to 'ironic-database'.
         host (str, optional): The host pattern for user access. Defaults to '%'.
         max_user_connections (int, optional): Maximum connections for the user. Defaults to 100.
-        privileges (list, optional): List of privileges to grant. Defaults to ['ALL'].
+        privileges (list, optional): List of privileges to grant. Defaults to ['ALL PRIVILEGES'].
         table (str, optional): Table pattern for privileges. Defaults to '*'.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'secret_updated' (bool), 'user_updated' (bool), 'grant_updated' (bool), and 'message' (str).
+        dict: A dictionary with 'success' (bool), 'secret_updated' (bool), 'user_updated' (bool), 'database_updated' (bool), 'grant_updated' (bool), and 'message' (str).
     """
     try:
         secret_updated = False
         user_updated = False
+        database_updated = False
         grant_updated = False
         secret_exists = False
         user_exists = False
+        database_exists = False
         grant_exists = False
         secret_matches = False
         user_matches = False
+        database_matches = False
         grant_matches = False
 
         message = f"Setting up Ironic DB user {user_name} for database {database_name} in namespace {namespace}"
@@ -1355,6 +1358,7 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                     'success': False,
                     'secret_updated': False,
                     'user_updated': False,
+                    'database_updated': False,
                     'grant_updated': False,
                     'message': f"Error fetching Secret {secret_name}: {str(e)[:100]}...; {message}"
                 }
@@ -1380,6 +1384,7 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                     'success': False,
                     'secret_updated': False,
                     'user_updated': False,
+                    'database_updated': False,
                     'grant_updated': False,
                     'message': f"Failed to create/update Secret {secret_name}: {str(e)[:100]}...; {message}"
                 }
@@ -1413,6 +1418,7 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                     'success': False,
                     'secret_updated': secret_updated,
                     'user_updated': False,
+                    'database_updated': False,
                     'grant_updated': False,
                     'message': f"Error fetching User {user_name}: {str(e)[:100]}...; {message}"
                 }
@@ -1462,13 +1468,90 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                     'success': False,
                     'secret_updated': secret_updated,
                     'user_updated': False,
+                    'database_updated': False,
                     'grant_updated': False,
                     'message': f"Failed to create/update User {user_name}: {error_details[:200]}...; {message}"
                 }
         else:
             message += f"; User {user_name} spec matches, no update needed"
 
-        # Step 5: Check if Grant custom resource exists
+        # Step 5: Check if Database custom resource exists
+        try:
+            plural = "databases"
+            database = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=database_name
+            )
+            database_exists = True
+            current_database_spec = database.get('spec', {})
+            current_mariadb_ref = current_database_spec.get('mariaDbRef', {})
+            if (current_mariadb_ref.get('name', '') != mariadb_name or
+                current_mariadb_ref.get('namespace', '') != mariadb_namespace):
+                database_matches = False
+            else:
+                database_matches = True
+        except ApiException as e:
+            if e.status == 404:
+                database_exists = False
+                database_matches = False
+            else:
+                return {
+                    'success': False,
+                    'secret_updated': secret_updated,
+                    'user_updated': user_updated,
+                    'database_updated': False,
+                    'grant_updated': False,
+                    'message': f"Error fetching Database {database_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 6: Create or update Database if necessary
+        if not database_exists or not database_matches:
+            try:
+                database_body = {
+                    "apiVersion": f"{group}/{version}",
+                    "kind": "Database",
+                    "metadata": {
+                        "name": database_name,
+                        "namespace": namespace
+                    },
+                    "spec": {
+                        "mariaDbRef": {
+                            "name": mariadb_name,
+                            "namespace": mariadb_namespace,
+                            "waitForIt": True
+                        },
+                        "cleanupPolicy": "Delete",
+                        "characterSet": "utf8",
+                        "collate": "utf8_general_ci"
+                    }
+                }
+                if database_exists:
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, name=database_name, body=database_body
+                    )
+                    database_updated = True
+                    message += f"; Database {database_name} updated"
+                else:
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, body=database_body
+                    )
+                    database_updated = True
+                    message += f"; Database {database_name} created"
+            except ApiException as e:
+                error_details = str(e)
+                if hasattr(e, 'body') and e.body:
+                    error_details += f"; Body: {e.body[:200]}..."
+                return {
+                    'success': False,
+                    'secret_updated': secret_updated,
+                    'user_updated': user_updated,
+                    'database_updated': False,
+                    'grant_updated': False,
+                    'message': f"Failed to create/update Database {database_name}: {error_details[:200]}...; {message}"
+                }
+        else:
+            message += f"; Database {database_name} spec matches, no update needed"
+
+        # Step 7: Check if Grant custom resource exists
         grant_name = f"{user_name}-grant"
         try:
             plural = "grants"
@@ -1498,11 +1581,12 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                     'success': False,
                     'secret_updated': secret_updated,
                     'user_updated': user_updated,
+                    'database_updated': database_updated,
                     'grant_updated': False,
                     'message': f"Error fetching Grant {grant_name}: {str(e)[:100]}...; {message}"
                 }
 
-        # Step 6: Create or update Grant if necessary
+        # Step 8: Create or update Grant if necessary
         if not grant_exists or not grant_matches:
             try:
                 grant_body = {
@@ -1541,21 +1625,23 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
             except ApiException as e:
                 error_details = str(e)
                 if hasattr(e, 'body') and e.body:
-                    error_details += f"; Body: {e.body[:200]}..."
+                    error_details += f"; Body: {e.body[:500]}..."  # Extended to capture more details
                 return {
                     'success': False,
                     'secret_updated': secret_updated,
                     'user_updated': user_updated,
+                    'database_updated': database_updated,
                     'grant_updated': False,
-                    'message': f"Failed to create/update Grant {grant_name}: {error_details[:200]}...; {message}"
+                    'message': f"Failed to create/update Grant {grant_name}: {error_details[:500]}...; {message}"
                 }
         else:
             message += f"; Grant {grant_name} spec matches, no update needed"
 
         return {
-            'success': True if (secret_updated or user_updated or grant_updated or (secret_matches and user_matches and grant_matches)) else False,
+            'success': True if (secret_updated or user_updated or database_updated or grant_updated or (secret_matches and user_matches and database_matches and grant_matches)) else False,
             'secret_updated': secret_updated,
             'user_updated': user_updated,
+            'database_updated': database_updated,
             'grant_updated': grant_updated,
             'message': message
         }
@@ -1564,6 +1650,7 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
             'success': False,
             'secret_updated': False,
             'user_updated': False,
+            'database_updated': False,
             'grant_updated': False,
             'message': f"Ironic DB user setup error: {str(e)[:100]}...; {message}"
         }
