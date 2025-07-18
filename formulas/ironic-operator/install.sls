@@ -4,8 +4,8 @@ include:
 create_ironic_op_dir:
   file.directory:
     - name: {{ pillar['ironic_op_dir'] }}
-    - user: root
-    - group: root
+    - user: 999
+    - group: 999
     - dir_mode: 755
     - file_mode: 644
 
