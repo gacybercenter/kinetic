@@ -25,6 +25,8 @@ ensure_k8s_storage:
     - storage_size: 5Gi
     - node_name: {{ grains['id'] }}
     - path: {{ pillar['ironic_db_dir'] }}
+    - require:
+      - file: create_ironic_db_dir
   
 ensure_mariadb_instance:
   k8s.mariadb_instance_present:
@@ -39,6 +41,8 @@ ensure_mariadb_instance:
     - limits_memory: 512Mi
     - requests_cpu: 200m
     - requests_memory: 256Mi
+    - require:
+     - k8s: local_storage_pv_pvc_present
 
 clone_ironic_repo:
   git.cloned:
