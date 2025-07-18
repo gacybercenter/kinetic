@@ -1120,7 +1120,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             updated = False
 
         return {
-            'success': True if (updated or matches) and secret_updated is not True or secret_updated, 
+            'success': True if (updated or matches) and secret_updated is not True or secret_updated else False, 
             'updated': updated,
             'secret_updated': secret_updated,
             'message': message
