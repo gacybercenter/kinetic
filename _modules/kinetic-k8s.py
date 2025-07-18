@@ -1448,6 +1448,8 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                         }
                     }
                 }
+                if user_exists and 'metadata' in user and 'resourceVersion' in user['metadata']:
+                    user_body['metadata']['resourceVersion'] = user['metadata']['resourceVersion']
                 if user_exists:
                     custom_api.replace_namespaced_custom_object(
                         group=group, version=version, namespace=namespace, plural=plural, name=user_name, body=user_body
@@ -1463,7 +1465,7 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
             except ApiException as e:
                 error_details = str(e)
                 if hasattr(e, 'body') and e.body:
-                    error_details += f"; Full Response Body: {e.body}"
+                    error_details += f"; Full Response Body: {e.body[:1000] if len(e.body) > 1000 else e.body}"
                 elif hasattr(e, 'reason'):
                     error_details += f"; Reason: {e.reason}"
                 return {
@@ -1526,6 +1528,8 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                         "collate": "utf8_general_ci"
                     }
                 }
+                if database_exists and 'metadata' in database and 'resourceVersion' in database['metadata']:
+                    database_body['metadata']['resourceVersion'] = database['metadata']['resourceVersion']
                 if database_exists:
                     custom_api.replace_namespaced_custom_object(
                         group=group, version=version, namespace=namespace, plural=plural, name=database_name, body=database_body
@@ -1541,7 +1545,7 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
             except ApiException as e:
                 error_details = str(e)
                 if hasattr(e, 'body') and e.body:
-                    error_details += f"; Full Response Body: {e.body}"
+                    error_details += f"; Full Response Body: {e.body[:1000] if len(e.body) > 1000 else e.body}"
                 elif hasattr(e, 'reason'):
                     error_details += f"; Reason: {e.reason}"
                 return {
@@ -1616,6 +1620,8 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
                         "username": user_name
                     }
                 }
+                if grant_exists and 'metadata' in grant and 'resourceVersion' in grant['metadata']:
+                    grant_body['metadata']['resourceVersion'] = grant['metadata']['resourceVersion']
                 if grant_exists:
                     custom_api.replace_namespaced_custom_object(
                         group=group, version=version, namespace=mariadb_namespace, plural=plural, name=grant_name, body=grant_body
