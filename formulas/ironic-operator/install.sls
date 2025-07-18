@@ -55,7 +55,7 @@ ensure_ironic_db_user:
     - user_name: {{ pillar.get('ironic-user', pillar['ironic_username']) }}
     - user_password: {{ pillar.get('ironic_user_password', pillar['ironic_password']) }}
     - secret_name: ironic-user
-    - database_name: ironic-database
+    - database_name: ironic
     - host: '%'
     - max_user_connections: 100
     - privileges:
