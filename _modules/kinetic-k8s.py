@@ -898,43 +898,59 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'salt_responded': False,
             'message': f"UUID Secret operation error: {str(e)[:50]}..."
         }
-def mariadb_instance_present(namespace, instance_name, root_password, secret_name="mariadb-root-password", image="mariadb:10.6", storage_size="1Gi", storage_class="standard", pvc_name=None, replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi"):
+def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi"):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
-    Creates or updates a root password Secret and the MariaDB instance Custom Resource with specified storage class, size, and optional PVC name.
-    Checks if the associated PVC is available.
+    Creates a Secret for the root password if it doesn't exist, then creates or updates the MariaDB Custom Resource.
+    Sanitizes the PVC name to meet Kubernetes naming conventions.
 
     Args:
-        namespace (str): The namespace where the Secret and MariaDB instance will reside.
-        instance_name (str): The name of the MariaDB instance.
-        root_password (str): The root password for the MariaDB instance.
-        secret_name (str, optional): The name of the Secret for the root password. Defaults to 'mariadb-root-password'.
-        image (str, optional): The Docker image for MariaDB. Defaults to 'mariadb:10.6'.
-        storage_size (str, optional): Storage size for MariaDB PVC. Defaults to '1Gi'.
-        storage_class (str, optional): Storage class for MariaDB PVC. Defaults to 'standard'.
-        pvc_name (str, optional): Optional name of an existing PVC to use for MariaDB storage. If not provided, the operator will create one based on storage_size and storage_class.
-        replicas (int, optional): Number of replicas for MariaDB. Defaults to 1.
-        limits_cpu (str, optional): CPU limit for MariaDB. Defaults to '500m'.
-        limits_memory (str, optional): Memory limit for MariaDB. Defaults to '512Mi'.
-        requests_cpu (str, optional): CPU request for MariaDB. Defaults to '200m'.
-        requests_memory (str, optional): Memory request for MariaDB. Defaults to '256Mi'.
+        namespace (str): The namespace of the MariaDB instance and Secret in Kubernetes.
+        instance_name (str): The name of the MariaDB instance (Custom Resource).
+        root_password (str): The root password for MariaDB (stored in a Secret).
+        secret_name (str): The name of the Secret to store the root password.
+        image (str, optional): The MariaDB Docker image to use. Defaults to 'mariadb:10.6'.
+        pvc_name (str, optional): The name of the Persistent Volume Claim for storage. Defaults to 'mariadb-pvc'. Will be sanitized.
+        storage_size (str, optional): Storage size for the PVC. Defaults to '1Gi'.
+        replicas (int, optional): Number of replicas for the MariaDB instance. Defaults to 1.
+        limits_cpu (str, optional): CPU limit for the MariaDB container. Defaults to '500m'.
+        limits_memory (str, optional): Memory limit for the MariaDB container. Defaults to '512Mi'.
+        requests_cpu (str, optional): CPU request for the MariaDB container. Defaults to '200m'.
+        requests_memory (str, optional): Memory request for the MariaDB container. Defaults to '256Mi'.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), 'pvc_available' (bool), and 'message' (str for status or error).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.mariadb_instance_present baremetal-operator-system ironic-mariadb mypassword storage_class=gp2 storage_size=5Gi pvc_name=my-custom-pvc
+        salt '*' kinetic-k8s.mariadb_instance_present baremetal-operator-system ironic-mariadb mypassword mariadb-root-password image='mariadb:10.6' pvc_name='ironic-db-pvc' storage_size='5Gi'
     """
     try:
         updated = False
         secret_updated = False
         secret_exists = False
-        instance_exists = False
-        instance_matches = False
-        pvc_available = False
-        differences = {}
+        mariadb_exists = False
+        matches = False
 
-        # Load Kubernetes configuration
+        # Sanitize pvc_name to meet Kubernetes naming conventions
+        def sanitize_name(name):
+            import re
+            # Convert to lowercase
+            sanitized = name.lower()
+            # Replace invalid characters with hyphens
+            sanitized = re.sub(r'[^a-z0-9.-]', '-', sanitized)
+            # Remove leading/trailing hyphens or periods
+            sanitized = sanitized.strip('-').strip('.')
+            # Truncate to 253 characters (Kubernetes max for most resource names)
+            sanitized = sanitized[:253]
+            # If empty after sanitization, provide a fallback
+            if not sanitized:
+                sanitized = "sanitized-pvc-name"
+            return sanitized
+
+        original_pvc_name = pvc_name
+        pvc_name = sanitize_name(pvc_name)
+        message = f"Sanitized PVC name: {original_pvc_name} -> {pvc_name}"
+
         try:
             config.load_incluster_config()
         except config.ConfigException:
@@ -943,29 +959,32 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         core_v1_api = client.CoreV1Api()
         custom_api = client.CustomObjectsApi()
 
-        # Step 1: Manage the root password Secret
+        # Step 1: Check if Secret for root password exists
         try:
             secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
             secret_exists = True
             current_password = secret.string_data.get('password', '') if secret.string_data else ''
             if not current_password and secret.data:
                 import base64
-                current_password = base64.b64decode(list(secret.data.values())[0]).decode('utf-8') if secret.data else ''
+                current_password = base64.b64decode(secret.data.get('password', '')).decode('utf-8')
             if current_password != root_password:
-                differences['password'] = {'desired': root_password[:3] + '...' if len(root_password) > 3 else root_password}
-        except ApiException:
-            secret_exists = False
-        except Exception as e:
-            secret_exists = False
-            return {
-                'success': False,
-                'updated': False,
-                'secret_updated': False,
-                'pvc_available': False,
-                'message': f"Error fetching Secret {secret_name}: {str(e)[:50]}..."
-            }
+                secret_updated = True
+            else:
+                secret_updated = False
+        except ApiException as e:
+            if e.status == 404:
+                secret_exists = False
+                secret_updated = True
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'secret_updated': False,
+                    'message': f"Error fetching Secret {secret_name}: {str(e)[:100]}...; {message}"
+                }
 
-        if not secret_exists or differences.get('password'):
+        # Step 2: Create or update Secret if necessary
+        if not secret_exists or secret_updated:
             try:
                 secret_body = client.V1Secret(
                     metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
@@ -974,154 +993,136 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                 )
                 if secret_exists:
                     core_v1_api.replace_namespaced_secret(name=secret_name, namespace=namespace, body=secret_body)
-                    secret_updated = True
-                    message = f"Secret {secret_name} updated"
+                    message += f"; Secret {secret_name} updated"
                 else:
                     core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
-                    secret_updated = True
-                    message = f"Secret {secret_name} created"
+                    message += f"; Secret {secret_name} created"
+                secret_updated = True
             except ApiException as e:
                 return {
                     'success': False,
                     'updated': False,
                     'secret_updated': False,
-                    'pvc_available': False,
-                    'message': f"Failed to update/create Secret {secret_name}: {str(e)[:50]}..."
+                    'message': f"Failed to create/update Secret {secret_name}: {str(e)[:100]}...; {message}"
                 }
         else:
-            message = f"Secret {secret_name} up-to-date"
-            secret_updated = False
+            message += f"; Secret {secret_name} already up-to-date"
 
-        # Step 2: Check if a specified PVC exists (if pvc_name is provided)
-        if pvc_name:
-            try:
-                core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
-                pvc_available = True
-                message += f"; Specified PVC {pvc_name} found and available"
-            except ApiException as e:
-                if e.status == 404:
-                    pvc_available = False
-                    message += f"; Warning: Specified PVC {pvc_name} not found, will rely on operator to create a new PVC if not supported"
-                else:
-                    pvc_available = False
-                    message += f"; Warning: Error checking specified PVC {pvc_name}: {str(e)[:50]}..."
-            except Exception as e:
-                pvc_available = False
-                message += f"; Warning: General error checking specified PVC {pvc_name}: {str(e)[:50]}..."
-        else:
-            message += f"; No specific PVC name provided, relying on operator to create PVC with storageClass {storage_class} and size {storage_size}"
-
-        # Step 3: Manage the MariaDB instance Custom Resource
-        group = "k8s.mariadb.com"
-        version = "v1alpha1"
-        plural = "mariadbs"
-
+        # Step 3: Check if MariaDB instance exists
         try:
-            instance = custom_api.get_namespaced_custom_object(
+            group = "k8s.mariadb.com"
+            version = "v1alpha1"
+            plural = "mariadbs"
+            mariadb = custom_api.get_namespaced_custom_object(
                 group=group, version=version, namespace=namespace, plural=plural, name=instance_name
             )
-            instance_exists = True
-            current_spec = instance.get('spec', {})
-            desired_spec = {
-                'image': image,
-                'storage': {'size': storage_size, 'storageClass': storage_class},
-                'rootPasswordSecret': {'name': secret_name, 'key': 'password'},
-                'replicas': replicas,
-                'resources': {
-                    'limits': {'cpu': limits_cpu, 'memory': limits_memory},
-                    'requests': {'cpu': requests_cpu, 'memory': requests_memory}
+            mariadb_exists = True
+            # Check if key fields match desired state for potential update
+            current_spec = mariadb.get('spec', {})
+            desired_image = image
+            desired_replicas = replicas
+            current_image = current_spec.get('image', '')
+            current_replicas = current_spec.get('replicas', 1)
+            current_storage = current_spec.get('storage', {}).get('volumeClaimTemplate', {}).get('spec', {})
+            current_pvc_name = current_spec.get('storage', {}).get('volumeClaimTemplate', {}).get('metadata', {}).get('name', '')
+            if (current_image != desired_image or
+                current_replicas != desired_replicas or
+                current_storage.get('resources', {}).get('requests', {}).get('storage', '') != storage_size or
+                current_pvc_name != pvc_name):
+                matches = False
+            else:
+                matches = True
+        except ApiException as e:
+            if e.status == 404:
+                mariadb_exists = False
+                matches = False
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'secret_updated': secret_updated,
+                    'message': f"Error fetching MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
                 }
-            }
-            # If a specific PVC name is provided, note it in the spec (though MariaDB Operator may ignore it)
-            if pvc_name:
-                desired_spec['storage'].setdefault('pvcName', pvc_name)  # This is speculative; depends on operator support
-            for key in desired_spec:
-                if key not in current_spec or current_spec[key] != desired_spec[key]:
-                    differences[key] = {'desired': desired_spec[key]}
-            instance_matches = len(differences) == 0
-        except ApiException:
-            instance_exists = False
-            differences = {'instance': {'desired': 'to be created'}}
-        except Exception as e:
-            instance_exists = False
-            return {
-                'success': False,
-                'updated': False,
-                'secret_updated': secret_updated,
-                'pvc_available': pvc_available,
-                'message': f"Error fetching MariaDB instance {instance_name}: {str(e)[:50]}..."
-            }
 
-        if not instance_exists or not instance_matches:
+        # Step 4: Create or update MariaDB instance if necessary
+        if not mariadb_exists or not matches:
             try:
-                instance_body = {
-                    'apiVersion': f"{group}/{version}",
-                    'kind': 'MariaDb',
-                    'metadata': {'name': instance_name, 'namespace': namespace},
-                    'spec': {
-                        'image': image,
-                        'storage': {'size': storage_size, 'storageClass': storage_class},
-                        'rootPasswordSecret': {'name': secret_name, 'key': 'password'},
-                        'replicas': replicas,
-                        'resources': {
-                            'limits': {'cpu': limits_cpu, 'memory': limits_memory},
-                            'requests': {'cpu': requests_cpu, 'memory': requests_memory}
+                group = "k8s.mariadb.com"
+                version = "v1alpha1"
+                plural = "mariadbs"
+                mariadb_body = {
+                    "apiVersion": f"{group}/{version}",
+                    "kind": "MariaDb",
+                    "metadata": {
+                        "name": instance_name,
+                        "namespace": namespace
+                    },
+                    "spec": {
+                        "image": image,
+                        "database": "ironic",
+                        "username": "root",
+                        "passwordSecretKeyRef": {
+                            "name": secret_name,
+                            "key": "password"
+                        },
+                        "replicas": replicas,
+                        "resources": {
+                            "limits": {
+                                "cpu": limits_cpu,
+                                "memory": limits_memory
+                            },
+                            "requests": {
+                                "cpu": requests_cpu,
+                                "memory": requests_memory
+                            }
+                        },
+                        "storage": {
+                            "size": storage_size,
+                            "storageClass": "local-storage",
+                            "volumeClaimTemplate": {
+                                "metadata": {
+                                    "name": pvc_name
+                                },
+                                "spec": {
+                                    "resources": {
+                                        "requests": {
+                                            "storage": storage_size
+                                        }
+                                    },
+                                    "storageClassName": "local-storage",
+                                    "accessModes": ["ReadWriteOnce"]
+                                }
+                            }
                         }
                     }
                 }
-                # If a specific PVC name is provided, add it to the spec (though MariaDB Operator may not use it)
-                if pvc_name:
-                    instance_body['spec']['storage'].setdefault('pvcName', pvc_name)  # Speculative; depends on operator
-                if instance_exists:
-                    if 'metadata' in instance and 'resourceVersion' in instance['metadata']:
-                        instance_body['metadata']['resourceVersion'] = instance['metadata'].get('resourceVersion', '')
+                if mariadb_exists:
                     custom_api.replace_namespaced_custom_object(
-                        group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=instance_body
+                        group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=mariadb_body
                     )
                     updated = True
-                    message += f"; MariaDB instance {instance_name} updated with storageClass {storage_class} and size {storage_size}"
+                    message += f"; MariaDB instance {instance_name} updated"
                 else:
                     custom_api.create_namespaced_custom_object(
-                        group=group, version=version, namespace=namespace, plural=plural, body=instance_body
+                        group=group, version=version, namespace=namespace, plural=plural, body=mariadb_body
                     )
                     updated = True
-                    message += f"; MariaDB instance {instance_name} created with storageClass {storage_class} and size {storage_size}"
+                    message += f"; MariaDB instance {instance_name} created"
             except ApiException as e:
                 return {
                     'success': False,
                     'updated': False,
                     'secret_updated': secret_updated,
-                    'pvc_available': pvc_available,
-                    'message': f"Failed to create/update MariaDB instance {instance_name}: {str(e)[:100]}..."
+                    'message': f"Failed to create/update MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
                 }
         else:
-            message += f"; MariaDB instance {instance_name} up-to-date with storageClass {storage_class} and size {storage_size}"
+            message += f"; MariaDB instance {instance_name} already up-to-date"
             updated = False
 
-        # Step 4: Verify PVC existence for the MariaDB instance (if pvc_name not provided, look for operator-created PVC)
-        if not pvc_name:  # If no specific PVC name provided, try to find the operator-created PVC
-            try:
-                pvc_list = core_v1_api.list_namespaced_persistent_volume_claim(namespace=namespace)
-                for pvc in pvc_list.items:
-                    if instance_name in pvc.metadata.name:
-                        pvc_available = True
-                        pvc_name = pvc.metadata.name
-                        message += f"; Operator-created PVC for {instance_name} found ({pvc_name})"
-                        break
-                if not pvc_available:
-                    message += f"; Warning: No operator-created PVC found for {instance_name}, may still be provisioning"
-            except ApiException as e:
-                message += f"; Warning: Failed to check operator-created PVC for {instance_name}: {str(e)[:50]}..."
-            except Exception as e:
-                message += f"; Warning: Error checking operator-created PVC for {instance_name}: {str(e)[:50]}..."
-        elif not pvc_available:  # If pvc_name was provided but not found earlier, note it again
-            message += f"; Reminder: Specified PVC {pvc_name} was not found earlier, operator may have ignored it"
-
         return {
-            'success': True if (updated or instance_matches) and (secret_updated or secret_exists) else False,
+            'success': True if (updated or matches) and secret_updated is not True or secret_updated, 
             'updated': updated,
             'secret_updated': secret_updated,
-            'pvc_available': pvc_available,
             'message': message
         }
 
@@ -1130,8 +1131,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             'success': False,
             'updated': False,
             'secret_updated': False,
-            'pvc_available': False,
-            'message': f"MariaDB operation error: {str(e)[:50]}..."
+            'message': f"MariaDB instance operation error: {str(e)[:100]}..."
         }
 def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage", storage_class="local-storage"):
     """
