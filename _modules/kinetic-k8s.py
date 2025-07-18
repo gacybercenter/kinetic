@@ -1300,3 +1300,4 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
             'bound': False,
             'message': f"Local storage PV/PVC operation error: {str(e)[:100]}..."
         }
+}
