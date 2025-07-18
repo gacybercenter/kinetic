@@ -33,7 +33,7 @@ ensure_mariadb_instance:
     - namespace: {{ pillar['bmo_namespace'] }}
     - instance_name: ironic-mariadb
     - root_password: {{ pillar['ironic_password'] }}
-    - secret_name: mariadb-root-password
+    - secret_name: ironic-db-password
     - image: mariadb:10.6
     - storage_size: 5Gi
     - storage_class: local-storage
