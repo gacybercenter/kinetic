@@ -635,10 +635,10 @@ def mariadb_instance_present(name, namespace, instance_name, root_password, secr
         ret['changes'] = {}
 
     return ret
-def local_storage_pv_pvc_present(name, namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage"):
+def local_storage_pv_pvc_present(name, namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage", storage_class="local-storage"):
     """
-    Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using the local-storage class.
-    The PV is tied to a specific node and local path for local storage. Checks if the local path exists on the node before proceeding.
+    Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using a specified storage class for local storage.
+    The PV is tied to a local path for local storage. Checks if the local path exists on the node before proceeding.
     Also checks if both resources exist and are bound.
 
     name
@@ -657,10 +657,13 @@ def local_storage_pv_pvc_present(name, namespace, pv_name, pvc_name, storage_siz
         Optional. Storage size for the PV and PVC. Defaults to '1Gi'.
 
     node_name
-        Optional. The name of the node to bind the local storage PV to. If not provided, no node affinity is set (may not bind correctly).
+        Optional. The name of the node to bind the local storage PV to. Not used in this simplified version to avoid validation issues.
 
     path
         Optional. The host path on the node for local storage. Defaults to '/mnt/local-storage'.
+
+    storage_class
+        Optional. The storage class to use for the PV and PVC. Defaults to 'local-storage'.
 
     Example:
     .. code-block:: yaml
@@ -671,14 +674,14 @@ def local_storage_pv_pvc_present(name, namespace, pv_name, pvc_name, storage_siz
             - pv_name: local-pv-1
             - pvc_name: local-pvc-1
             - storage_size: 5Gi
-            - node_name: worker-node-1
             - path: /mnt/local-storage
+            - storage_class: local-storage
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
     try:
         # Call the execution module function
-        result = __salt__['kinetic-k8s.local_storage_pv_pvc_present'](namespace, pv_name, pvc_name, storage_size, node_name, path)
+        result = __salt__['kinetic-k8s.local_storage_pv_pvc_present'](namespace, pv_name, pvc_name, storage_size, node_name, path, storage_class)
 
         ret['result'] = result['success']
         ret['comment'] = result['message']

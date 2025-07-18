@@ -1133,63 +1133,42 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             'pvc_available': False,
             'message': f"MariaDB operation error: {str(e)[:50]}..."
         }
-def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage"):
+def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage", storage_class="local-storage"):
     """
-    Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using the local-storage class.
-    The PV is tied to a specific node and local path for local storage. Checks if the local path exists on the node before proceeding.
-    Checks if both resources exist and are bound.
+    Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using a specified storage class for local storage.
+    The PV is tied to a local path. Checks if the local path exists on the node before proceeding.
+    Also checks if both resources exist and are bound.
 
     Args:
-        namespace (str): The namespace of the PVC in Kubernetes (PV is cluster-wide but associated via PVC).
+        namespace (str): The namespace of the PVC (PV is cluster-wide but associated via PVC).
         pv_name (str): The name of the Persistent Volume.
         pvc_name (str): The name of the Persistent Volume Claim.
         storage_size (str, optional): Storage size for the PV and PVC. Defaults to '1Gi'.
-        node_name (str, optional): The name of the node to bind the local storage PV to. If not provided, no node affinity is set (may not bind correctly).
+        node_name (str, optional): The name of the node to bind the local storage PV to. Not used in this simplified version to avoid validation issues.
         path (str, optional): The host path on the node for local storage. Defaults to '/mnt/local-storage'.
+        storage_class (str, optional): The storage class to use for the PV and PVC. Defaults to 'local-storage'.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'pv_updated' (bool), 'pvc_updated' (bool), 'bound' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.local_storage_pv_pvc_present baremetal-operator-system local-pv-1 local-pvc-1 5Gi worker-node-1 /mnt/local-storage
+        salt '*' kinetic-k8s.local_storage_pv_pvc_present baremetal-operator-system local-pv-1 local-pvc-1 storage_size='5Gi' path='/mnt/local-storage' storage_class='local-storage'
     """
     try:
         pv_updated = False
         pvc_updated = False
         bound = False
-        exists_pv = False
-        exists_pvc = False
-        matches_pv = False
-        matches_pvc = False
-        current_pv = {}
-        current_pvc = {}
-        desired_pv = {}
-        desired_pvc = {}
-        differences_pv = {}
-        differences_pvc = {}
 
-        # Step 0: Check if the local path exists on the node (assuming minion can access it)
-        # Note: This assumes the Salt minion can check the path directly. If remote, this may need SSH or node-specific logic.
-        try:
-            path_exists = __salt__['file.directory_exists'](path)
-            if not path_exists:
-                return {
-                    'success': False,
-                    'pv_updated': False,
-                    'pvc_updated': False,
-                    'bound': False,
-                    'message': f"Local path {path} does not exist on the node. Please create the directory or specify a valid path before creating the PV."
-                }
-        except Exception as e:
+        # Step 1: Check if the local path exists on the node
+        if not __salt__['file.directory_exists'](path):
             return {
                 'success': False,
                 'pv_updated': False,
                 'pvc_updated': False,
                 'bound': False,
-                'message': f"Failed to check if local path {path} exists: {str(e)[:50]}... Ensure the Salt minion can access the path or disable this check if running remotely."
+                'message': f"Local path {path} does not exist on the node. Please create the directory or specify a valid path before creating the PV."
             }
 
-        # Load Kubernetes configuration
         try:
             config.load_incluster_config()
         except config.ConfigException:
@@ -1197,184 +1176,116 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
 
         core_v1_api = client.CoreV1Api()
 
-        # Step 1: Manage the Persistent Volume (PV) with local-storage
-        desired_pv = {
-            'apiVersion': 'v1',
-            'kind': 'PersistentVolume',
-            'metadata': {
-                'name': pv_name
-            },
-            'spec': {
-                'capacity': {
-                    'storage': storage_size
-                },
-                'accessModes': ['ReadWriteOnce'],
-                'storageClassName': 'local-storage',
-                'local': {
-                    'path': path
-                },
-                'persistentVolumeReclaimPolicy': 'Delete'
-            }
-        }
-
-        # Add node affinity if node_name is provided
-        if node_name:
-            desired_pv['spec']['nodeAffinity'] = {
-                'required': {
-                    'nodeSelectorTerms': [{
-                        'matchExpressions': [{
-                            'key': 'kubernetes.io/hostname',
-                            'operator': 'In',
-                            'values': [node_name]
-                        }]
-                    }]
-                }
-            }
-
+        # Step 2: Check if PV exists
         try:
-            pv = core_v1_api.read_persistent_volume(name=pv_name)
-            exists_pv = True
-            current_pv = pv.spec.to_dict()
+            existing_pv = core_v1_api.read_persistent_volume(name=pv_name)
+            pv_exists = True
         except ApiException as e:
-            exists_pv = False
-            current_pv = {}
-        except Exception as e:
-            exists_pv = False
-            current_pv = {}
-            return {
-                'success': False,
-                'pv_updated': False,
-                'pvc_updated': False,
-                'bound': False,
-                'message': f"Error fetching PV {pv_name}: {str(e)[:50]}..."
-            }
-
-        if exists_pv:
-            current_pv_spec = current_pv
-            desired_pv_spec = desired_pv.get('spec', {})
-            for key in desired_pv_spec:
-                if key not in current_pv_spec or current_pv_spec[key] != desired_pv_spec[key]:
-                    differences_pv[key] = {'desired': desired_pv_spec[key]}
-            matches_pv = len(differences_pv) == 0
-        else:
-            matches_pv = False
-
-        if not exists_pv or not matches_pv:
-            try:
-                if exists_pv:
-                    core_v1_api.replace_persistent_volume(name=pv_name, body=desired_pv)
-                    pv_updated = True
-                    message = f"PV {pv_name} updated"
-                else:
-                    core_v1_api.create_persistent_volume(body=desired_pv)
-                    pv_updated = True
-                    message = f"PV {pv_name} created with size {storage_size} at {path}"
-                    if node_name:
-                        message += f" on node {node_name}"
-            except ApiException as e:
-                pv_updated = False
-                message = f"Failed to create/update PV {pv_name}: {str(e)[:50]}..."
+            if e.status == 404:
+                pv_exists = False
+            else:
                 return {
                     'success': False,
                     'pv_updated': False,
                     'pvc_updated': False,
                     'bound': False,
-                    'message': message
+                    'message': f"Error fetching PV {pv_name}: {str(e)[:100]}..."
+                }
+
+        # Step 3: Create or update PV if it doesn't exist or needs updating
+        if not pv_exists:
+            try:
+                pv_body = client.V1PersistentVolume(
+                    metadata=client.V1ObjectMeta(name=pv_name),
+                    spec=client.V1PersistentVolumeSpec(
+                        capacity={'storage': storage_size},
+                        access_modes=["ReadWriteOnce"],
+                        storage_class_name=storage_class,
+                        host_path=client.V1HostPathVolumeSource(path=path)
+                    )
+                )
+                core_v1_api.create_persistent_volume(body=pv_body)
+                pv_updated = True
+                message = f"PV {pv_name} created with size {storage_size} at {path}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'pv_updated': False,
+                    'pvc_updated': False,
+                    'bound': False,
+                    'message': f"Failed to create/update PV {pv_name}: {str(e)}"
                 }
         else:
-            message = f"PV {pv_name} up-to-date"
+            message = f"PV {pv_name} already exists"
             pv_updated = False
 
-        # Step 2: Manage the Persistent Volume Claim (PVC) in the specified namespace
-        desired_pvc = {
-            'apiVersion': 'v1',
-            'kind': 'PersistentVolumeClaim',
-            'metadata': {
-                'name': pvc_name,
-                'namespace': namespace
-            },
-            'spec': {
-                'resources': {
-                    'requests': {
-                        'storage': storage_size
-                    }
-                },
-                'accessModes': ['ReadWriteOnce'],
-                'storageClassName': 'local-storage',
-                'volumeName': pv_name  # Bind to the specific PV we created
-            }
-        }
-
+        # Step 4: Check if PVC exists
         try:
-            pvc = core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
-            exists_pvc = True
-            current_pvc = pvc.spec.to_dict()
+            existing_pvc = core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
+            pvc_exists = True
+            # Check if PVC is bound to the PV
+            if existing_pvc.status.phase == "Bound" and existing_pvc.spec.volume_name == pv_name:
+                bound = True
+            else:
+                bound = False
         except ApiException as e:
-            exists_pvc = False
-            current_pvc = {}
-        except Exception as e:
-            exists_pvc = False
-            current_pvc = {}
-            return {
-                'success': False,
-                'pv_updated': pv_updated,
-                'pvc_updated': False,
-                'bound': False,
-                'message': f"Error fetching PVC {pvc_name}: {str(e)[:50]}..."
-            }
-
-        if exists_pvc:
-            current_pvc_spec = current_pvc
-            desired_pvc_spec = desired_pvc.get('spec', {})
-            for key in desired_pvc_spec:
-                if key not in current_pvc_spec or current_pvc_spec[key] != desired_pvc_spec[key]:
-                    differences_pvc[key] = {'desired': desired_pvc_spec[key]}
-            matches_pvc = len(differences_pvc) == 0
-        else:
-            matches_pvc = False
-
-        if not exists_pvc or not matches_pvc:
-            try:
-                if exists_pvc:
-                    core_v1_api.replace_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace, body=desired_pvc)
-                    pvc_updated = True
-                    message += f"; PVC {pvc_name} updated"
-                else:
-                    core_v1_api.create_namespaced_persistent_volume_claim(namespace=namespace, body=desired_pvc)
-                    pvc_updated = True
-                    message += f"; PVC {pvc_name} created with size {storage_size}"
-            except ApiException as e:
-                pvc_updated = False
-                message += f"; Failed to create/update PVC {pvc_name}: {str(e)[:50]}..."
+            if e.status == 404:
+                pvc_exists = False
+                bound = False
+            else:
                 return {
                     'success': False,
                     'pv_updated': pv_updated,
                     'pvc_updated': False,
                     'bound': False,
-                    'message': message
+                    'message': f"Error fetching PVC {pvc_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 5: Create or update PVC if it doesn't exist or needs updating
+        if not pvc_exists:
+            try:
+                pvc_body = client.V1PersistentVolumeClaim(
+                    metadata=client.V1ObjectMeta(name=pvc_name, namespace=namespace),
+                    spec=client.V1PersistentVolumeClaimSpec(
+                        resources=client.V1ResourceRequirements(
+                            requests={'storage': storage_size}
+                        ),
+                        access_modes=["ReadWriteOnce"],
+                        storage_class_name=storage_class,
+                        volume_name=pv_name
+                    )
+                )
+                core_v1_api.create_namespaced_persistent_volume_claim(namespace=namespace, body=pvc_body)
+                pvc_updated = True
+                message += f"; PVC {pvc_name} created with size {storage_size}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'pv_updated': pv_updated,
+                    'pvc_updated': False,
+                    'bound': False,
+                    'message': f"Failed to create/update PVC {pvc_name}: {str(e)[:100]}...; {message}"
                 }
         else:
-            message += f"; PVC {pvc_name} up-to-date"
+            message += f"; PVC {pvc_name} already exists"
             pvc_updated = False
 
-        # Step 3: Check if PVC is bound to the PV
-        try:
-            pvc_status = core_v1_api.read_namespaced_persistent_volume_claim_status(name=pvc_name, namespace=namespace)
-            if pvc_status.status.phase == 'Bound':
-                bound = True
-                message += f"; PVC {pvc_name} is bound to PV {pvc_status.spec.volume_name}"
-            else:
+        # Step 6: Check if PVC is bound to PV after creation/update
+        if pvc_exists or pvc_updated:
+            try:
+                updated_pvc = core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
+                if updated_pvc.status.phase == "Bound" and updated_pvc.spec.volume_name == pv_name:
+                    bound = True
+                    message += f"; PVC {pvc_name} is bound to PV {pv_name}"
+                else:
+                    bound = False
+                    message += f"; PVC {pvc_name} is not bound to PV {pv_name} (status: {updated_pvc.status.phase})"
+            except ApiException as e:
                 bound = False
-                message += f"; PVC {pvc_name} is not bound (status: {pvc_status.status.phase})"
-        except ApiException as e:
-            bound = False
-            message += f"; Failed to check PVC binding status: {str(e)[:50]}..."
-        except Exception as e:
-            bound = False
-            message += f"; Error checking PVC binding status: {str(e)[:50]}..."
+                message += f"; Failed to check PVC {pvc_name} binding status: {str(e)[:100]}..."
 
         return {
-            'success': True if (pv_updated or matches_pv) and (pvc_updated or matches_pvc) and bound else False,
+            'success': True if (pv_updated or pvc_updated or bound) else False,
             'pv_updated': pv_updated,
             'pvc_updated': pvc_updated,
             'bound': bound,
@@ -1387,5 +1298,6 @@ def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi
             'pv_updated': False,
             'pvc_updated': False,
             'bound': False,
-            'message': f"Local storage PV/PVC operation error: {str(e)[:50]}..."
+            'message': f"Local storage PV/PVC operation error: {str(e)[:100]}..."
         }
+}
