@@ -1,2 +1,2 @@
 include:
-  - /formulas/ironic-operator
+  - /formulas/ironic-operator/install
