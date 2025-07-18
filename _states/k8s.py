@@ -700,3 +700,96 @@ def local_storage_pv_pvc_present(name, namespace, pv_name, pvc_name, storage_siz
         ret['changes'] = {}
 
     return ret
+def ironic_db_user_present(name, namespace, mariadb_name, mariadb_namespace, user_name, user_password, secret_name, database_name="ironic-database", host="%", max_user_connections=100, privileges=["ALL PRIVILEGES"], table="*"):
+    """
+    Ensure that the necessary Kubernetes resources for an Ironic database user are present.
+    This includes a Secret for user credentials, a User custom resource, and a Grant custom resource.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The namespace for the Secret, User, and Grant resources (typically Ironic namespace).
+
+    mariadb_name
+        The name of the MariaDB instance (Custom Resource) to reference.
+
+    mariadb_namespace
+        The namespace of the MariaDB instance.
+
+    user_name
+        The username for the database user (must match Secret data and User metadata name).
+
+    user_password
+        The password for the database user.
+
+    secret_name
+        The name of the Secret to store the user credentials.
+
+    database_name
+        Optional. The name of the database to grant privileges on. Defaults to 'ironic-database'.
+
+    host
+        Optional. The host pattern for user access. Defaults to '%'.
+
+    max_user_connections
+        Optional. Maximum connections for the user. Defaults to 100.
+
+    privileges
+        Optional. List of privileges to grant. Defaults to ['ALL PRIVILEGES'].
+
+    table
+        Optional. Table pattern for privileges. Defaults to '*'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ironic_db_user:
+          k8s.ironic_db_user_present:
+            - namespace: test-ironic
+            - mariadb_name: database-server
+            - mariadb_namespace: mariadb
+            - user_name: ironic-user
+            - user_password: mysecurepassword
+            - secret_name: ironic-user
+            - database_name: ironic-database
+            - host: '%'
+            - max_user_connections: 100
+            - privileges:
+              - ALL PRIVILEGES
+            - table: '*'
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.ironic_db_user_setup'](
+            namespace=namespace,
+            mariadb_name=mariadb_name,
+            mariadb_namespace=mariadb_namespace,
+            user_name=user_name,
+            user_password=user_password,
+            secret_name=secret_name,
+            database_name=database_name,
+            host=host,
+            max_user_connections=max_user_connections,
+            privileges=privileges,
+            table=table
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['secret_updated'] or result['user_updated'] or result['grant_updated']:
+            ret['changes'] = {
+                'secret_updated': result['secret_updated'],
+                'user_updated': result['user_updated'],
+                'grant_updated': result['grant_updated']
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Ironic DB user setup for {user_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret

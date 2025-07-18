@@ -45,6 +45,23 @@ ensure_mariadb_instance:
     - require:
       - k8s: ensure_k8s_storage
 
+ensure_ironic_db_user:
+  k8s.ironic_db_user_present:
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - mariadb_name: generic-mariadb
+    - mariadb_namespace: {{ pillar['bmo_namespace'] }}
+    - user_name: {{ pillar.get('ironic-user', pillar['ironic_user']) }}
+    - user_password: {{ pillar.get('ironic_user_password', pillar['ironic_password']) }}
+    - secret_name: ironic-user
+    - database_name: ironic-database
+    - host: '%'
+    - max_user_connections: 100
+    - privileges:
+      - ALL PRIVILEGES
+    - table: '*'
+    - require:
+      - k8s: ensure_mariadb_instance
+
 git_ironic_repo:
   git.config_set:
     - name: safe.directory
