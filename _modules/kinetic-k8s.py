@@ -1086,24 +1086,48 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                 if database:
                     mariadb_body["spec"]["database"] = database
                 if mariadb_exists:
-                    custom_api.replace_namespaced_custom_object(
-                        group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=mariadb_body
-                    )
-                    updated = True
-                    message += f"; MariaDB instance {instance_name} updated"
+                    try:
+                        custom_api.replace_namespaced_custom_object(
+                            group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=mariadb_body
+                        )
+                        updated = True
+                        message += f"; MariaDB instance {instance_name} updated"
+                    except ApiException as e:
+                        error_details = str(e)
+                        if hasattr(e, 'body') and e.body:
+                            error_details += f"; Body: {e.body[:200]}..."
+                        return {
+                            'success': False,
+                            'updated': False,
+                            'secret_updated': secret_updated,
+                            'pvc_available': pvc_available,
+                            'message': f"Failed to update MariaDB instance {instance_name}: {error_details[:200]}...; {message}"
+                        }
                 else:
-                    custom_api.create_namespaced_custom_object(
-                        group=group, version=version, namespace=namespace, plural=plural, body=mariadb_body
-                    )
-                    updated = True
-                    message += f"; MariaDB instance {instance_name} created"
-            except ApiException as e:
+                    try:
+                        custom_api.create_namespaced_custom_object(
+                            group=group, version=version, namespace=namespace, plural=plural, body=mariadb_body
+                        )
+                        updated = True
+                        message += f"; MariaDB instance {instance_name} created"
+                    except ApiException as e:
+                        error_details = str(e)
+                        if hasattr(e, 'body') and e.body:
+                            error_details += f"; Body: {e.body[:200]}..."
+                        return {
+                            'success': False,
+                            'updated': False,
+                            'secret_updated': secret_updated,
+                            'pvc_available': pvc_available,
+                            'message': f"Failed to create MariaDB instance {instance_name}: {error_details[:200]}...; {message}"
+                        }
+            except Exception as e:
                 return {
                     'success': False,
                     'updated': False,
                     'secret_updated': secret_updated,
                     'pvc_available': pvc_available,
-                    'message': f"Failed to create/update MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
+                    'message': f"Unexpected error creating/updating MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
                 }
         else:
             message += f"; MariaDB instance {instance_name} already up-to-date"
