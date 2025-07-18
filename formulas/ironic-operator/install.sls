@@ -16,17 +16,24 @@ create_ironic_db_dir:
     - group: root
     - dir_mode: 755
     - file_mode: 644
+
+ensure_k8s_storage:
+  k8s.local_storage_pv_pvc_present:
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - pv_name: {{ pillar['ironic_db_dir'] }}
+    - pvc_name: {{ pillar['ironic_db_dir'] }}
+    - storage_size: 5Gi
+    - node_name: {{ grains['id'] }}
+    - path: {{ pillar['ironic_db_dir'] }}
   
 ensure_mariadb_instance:
   k8s.mariadb_instance_present:
-    - namespace: baremetal-operator-system
+    - namespace: {{ pillar['bmo_namespace'] }}
     - instance_name: ironic-mariadb
-    - root_password: mysecurepassword
+    - root_password: {{ pillar['ironic_password'] }}
     - secret_name: mariadb-root-password
     - image: mariadb:10.6
-    - storage_size: 5Gi
-    - storage_class: local-storage
-    - pvc_name: ironic-mariadb
+    - pvc_name: {{ pillar['ironic_db_dir'] }}
     - replicas: 1
     - limits_cpu: 500m
     - limits_memory: 512Mi
