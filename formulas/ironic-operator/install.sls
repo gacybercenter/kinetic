@@ -4,16 +4,16 @@ include:
 create_ironic_op_dir:
   file.directory:
     - name: {{ pillar['ironic_op_dir'] }}
-    - user: 999
-    - group: 999
+    - user: root
+    - group: root
     - dir_mode: 755
     - file_mode: 644
 
 create_ironic_db_dir:
   file.directory:
     - name: {{ pillar['ironic_db_dir'] }}
-    - user: root
-    - group: root
+    - user: 999
+    - group: 999
     - dir_mode: 755
     - file_mode: 644
 
