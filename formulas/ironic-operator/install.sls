@@ -33,15 +33,17 @@ ensure_mariadb_instance:
     - namespace: {{ pillar['bmo_namespace'] }}
     - instance_name: ironic-mariadb
     - root_password: {{ pillar['ironic_password'] }}
-    - secret_name: ironic-db-password
+    - secret_name: mariadb-root-password
     - image: mariadb:10.6
     - storage_size: 5Gi
     - storage_class: local-storage
+    - pvc_name: {{ pillar['ironic_db_dir'] }}-pvc
     - replicas: 1
     - limits_cpu: 500m
     - limits_memory: 512Mi
     - requests_cpu: 200m
     - requests_memory: 256Mi
+    - database: ironic
     - require:
       - k8s: ensure_k8s_storage
 

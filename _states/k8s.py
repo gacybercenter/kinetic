@@ -531,7 +531,7 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="bm
         ret['changes'] = {}
 
     return ret
-def mariadb_instance_present(name, namespace, instance_name, root_password, secret_name="mariadb-root-password", image="mariadb:10.6", storage_size="1Gi", storage_class="standard", pvc_name=None, replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi"):
+def mariadb_instance_present(name, namespace, instance_name, root_password, secret_name="mariadb-root-password", image="mariadb:10.6", storage_size="1Gi", storage_class="standard", pvc_name=None, replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", database=None):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
     Creates or updates a root password Secret and the MariaDB instance Custom Resource with specified storage class, size, and optional PVC name.
@@ -579,6 +579,9 @@ def mariadb_instance_present(name, namespace, instance_name, root_password, secr
     requests_memory
         Optional. Memory request for MariaDB. Defaults to '256Mi'.
 
+    database
+        Optional. The name of the initial database to create. If not provided, no specific database is set. Defaults to None.
+
     Example:
     .. code-block:: yaml
 
@@ -597,6 +600,7 @@ def mariadb_instance_present(name, namespace, instance_name, root_password, secr
             - limits_memory: 512Mi
             - requests_cpu: 200m
             - requests_memory: 256Mi
+            - database: ironic
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
@@ -615,7 +619,8 @@ def mariadb_instance_present(name, namespace, instance_name, root_password, secr
             limits_cpu=limits_cpu,
             limits_memory=limits_memory,
             requests_cpu=requests_cpu,
-            requests_memory=requests_memory
+            requests_memory=requests_memory,
+            database=database
         )
 
         ret['result'] = result['success']

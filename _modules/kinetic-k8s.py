@@ -898,7 +898,7 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'salt_responded': False,
             'message': f"UUID Secret operation error: {str(e)[:50]}..."
         }
-def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", storage_class="standard", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi"):
+def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", storage_class="standard", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", database=None):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
     Creates a Secret for the root password if it doesn't exist, then creates or updates the MariaDB Custom Resource.
@@ -918,6 +918,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         limits_memory (str, optional): Memory limit for the MariaDB container. Defaults to '512Mi'.
         requests_cpu (str, optional): CPU request for the MariaDB container. Defaults to '200m'.
         requests_memory (str, optional): Memory request for the MariaDB container. Defaults to '256Mi'.
+        database (str, optional): The name of the initial database to create. If None, no database is specified. Defaults to None.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), 'pvc_available' (bool), and 'message' (str).
@@ -1027,10 +1028,13 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             current_storage = current_spec.get('storage', {})
             current_storage_class = current_storage.get('storageClassName', '')
             current_storage_size = current_storage.get('size', '')
+            current_database = current_spec.get('database', '')
+            desired_database = database if database else ''
             if (current_image != desired_image or
                 current_replicas != desired_replicas or
                 current_storage_size != storage_size or
-                current_storage_class != storage_class):
+                current_storage_class != storage_class or
+                (database is not None and current_database != desired_database)):
                 matches = False
             else:
                 matches = True
@@ -1112,6 +1116,9 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                         }
                     }
                 }
+                # Only add 'database' to spec if it's provided
+                if database is not None:
+                    mariadb_body["spec"]["database"] = database
                 if mariadb_exists:
                     custom_api.replace_namespaced_custom_object(
                         group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=mariadb_body
