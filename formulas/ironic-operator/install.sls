@@ -20,8 +20,8 @@ create_ironic_db_dir:
 ensure_k8s_storage:
   k8s.local_storage_pv_pvc_present:
     - namespace: {{ pillar['bmo_namespace'] }}
-    - pv_name: {{ pillar['ironic_db_dir'] }}
-    - pvc_name: {{ pillar['ironic_db_dir'] }}
+    - pv_name: {{ pillar['ironic_db_dir'] }}-pv
+    - pvc_name: {{ pillar['ironic_db_dir'] }}-pvc
     - storage_size: 5Gi
     - node_name: {{ grains['id'] }}
     - path: {{ pillar['ironic_db_dir'] }}
