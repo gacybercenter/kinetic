@@ -46,6 +46,18 @@ ensure_mariadb_instance:
     - require:
       - k8s: ensure_k8s_storage
 
+ensure_ironic_database:
+  k8s.mariadb_database_present:
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - database_name: ironic
+    - mariadb_name: ironic-mariadb
+    - mariadb_namespace: {{ pillar['bmo_namespace'] }}
+    - character_set: utf8
+    - collate: utf8_general_ci
+    - cleanup_policy: Delete
+    - require:
+      - k8s: ensure_mariadb_instance
+
 ensure_ironic_db_user:
   k8s.ironic_db_user_present:
     - namespace: {{ pillar['bmo_namespace'] }}

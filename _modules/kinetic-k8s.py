@@ -1651,3 +1651,124 @@ def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, 
             'grant_updated': False,
             'message': f"Ironic DB user setup error: {error_details}; {message}"
         }
+def mariadb_database_present(namespace, database_name, mariadb_name, mariadb_namespace, character_set="utf8", collate="utf8_general_ci", cleanup_policy="Delete"):
+    """
+    Ensure that a Database custom resource is present in Kubernetes using the MariaDB Operator.
+    Creates or updates the Database resource to ensure a specific database exists in the MariaDB instance.
+
+    Args:
+        namespace (str): The namespace for the Database resource (often the same as the application namespace).
+        database_name (str): The name of the Database resource and the actual database in MariaDB.
+        mariadb_name (str): The name of the MariaDB instance to reference.
+        mariadb_namespace (str): The namespace of the MariaDB instance.
+        character_set (str, optional): The character set for the database. Defaults to 'utf8'.
+        collate (str, optional): The collation for the database. Defaults to 'utf8_general_ci'.
+        cleanup_policy (str, optional): Cleanup policy for the resource. Defaults to 'Delete'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+    """
+    try:
+        updated = False
+        exists = False
+        matches = False
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "k8s.mariadb.com"
+        version = "v1alpha1"
+        plural = "databases"
+
+        message = f"Configuring Database {database_name} in namespace {namespace}"
+
+        # Check if Database resource exists
+        try:
+            database = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=database_name
+            )
+            exists = True
+            current_spec = database.get('spec', {})
+            desired_spec = {
+                "mariaDbRef": {
+                    "name": mariadb_name,
+                    "namespace": mariadb_namespace,
+                    "waitForIt": True
+                },
+                "characterSet": character_set,
+                "cleanupPolicy": cleanup_policy,
+                "collate": collate
+            }
+            # Compare current spec with desired spec
+            matches = current_spec == desired_spec
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                matches = False
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error fetching Database {database_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Create or update Database if necessary
+        if not exists or not matches:
+            try:
+                database_body = {
+                    "apiVersion": f"{group}/{version}",
+                    "kind": "Database",
+                    "metadata": {
+                        "name": database_name,
+                        "namespace": namespace
+                    },
+                    "spec": {
+                        "mariaDbRef": {
+                            "name": mariadb_name,
+                            "namespace": mariadb_namespace,
+                            "waitForIt": True
+                        },
+                        "characterSet": character_set,
+                        "cleanupPolicy": cleanup_policy,
+                        "collate": collate
+                    }
+                }
+                if exists:
+                    # Include resourceVersion for update
+                    if 'metadata' in database and 'resourceVersion' in database['metadata']:
+                        database_body['metadata']['resourceVersion'] = database['metadata']['resourceVersion']
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, name=database_name, body=database_body
+                    )
+                    updated = True
+                    message += f"; Database {database_name} updated"
+                else:
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, body=database_body
+                    )
+                    updated = True
+                    message += f"; Database {database_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create/update Database {database_name}: Status: {e.status}, Reason: {e.reason}; Full Response Body: {str(e.body)[:500]}...; {message}"
+                }
+        else:
+            message += f"; Database {database_name} already up-to-date"
+            updated = False
+
+        return {
+            'success': True if (updated or matches) else False,
+            'updated': updated,
+            'message': message
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Database operation error for {database_name}: {str(e)[:100]}..."
+        }

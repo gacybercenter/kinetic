@@ -799,3 +799,73 @@ def ironic_db_user_present(name, namespace, mariadb_name, mariadb_namespace, use
         ret['changes'] = {}
 
     return ret
+def mariadb_database_present(name, namespace, database_name, mariadb_name, mariadb_namespace, character_set="utf8", collate="utf8_general_ci", cleanup_policy="Delete"):
+    """
+    Ensure that a Database custom resource is present in Kubernetes using the MariaDB Operator.
+    Creates or updates the Database resource to ensure a specific database exists in the MariaDB instance.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the Database resource (often the application namespace).
+
+    database_name
+        The name of the Database resource and the actual database in MariaDB.
+
+    mariadb_name
+        The name of the MariaDB instance to reference.
+
+    mariadb_namespace
+        The namespace of the MariaDB instance.
+
+    character_set
+        Optional. The character set for the database. Defaults to 'utf8'.
+
+    collate
+        Optional. The collation for the database. Defaults to 'utf8_general_ci'.
+
+    cleanup_policy
+        Optional. Cleanup policy for the resource. Defaults to 'Delete'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ironic_database:
+          k8s.mariadb_database_present:
+            - namespace: test-ironic
+            - database_name: ironic-database
+            - mariadb_name: database-server
+            - mariadb_namespace: mariadb
+            - character_set: utf8
+            - collate: utf8_general_ci
+            - cleanup_policy: Delete
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.mariadb_database_present'](
+            namespace=namespace,
+            database_name=database_name,
+            mariadb_name=mariadb_name,
+            mariadb_namespace=mariadb_namespace,
+            character_set=character_set,
+            collate=collate,
+            cleanup_policy=cleanup_policy
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {
+                'database_updated': True
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Database {database_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
