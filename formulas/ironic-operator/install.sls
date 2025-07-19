@@ -43,6 +43,7 @@ ensure_mariadb_instance:
     - requests_cpu: 200m
     - requests_memory: 256Mi
     - admin_host_access: 192.168.1.41
+    - database: ironic
     - require:
       - k8s: ensure_k8s_storage
 
