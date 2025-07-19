@@ -898,11 +898,11 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'salt_responded': False,
             'message': f"UUID Secret operation error: {str(e)[:50]}..."
         }
-def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", storage_class="standard", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", database=None):
+def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", storage_class="local-storage", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", admin_host_access="%"):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
     Creates a Secret for the root password if it doesn't exist, then creates or updates the MariaDB Custom Resource.
-    Sanitizes the PVC name to meet Kubernetes naming conventions.
+    Additionally, ensures the root user has access from the specified host or IP pattern.
 
     Args:
         namespace (str): The namespace of the MariaDB instance and Secret in Kubernetes.
@@ -910,46 +910,29 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
         root_password (str): The root password for MariaDB (stored in a Secret).
         secret_name (str): The name of the Secret to store the root password.
         image (str, optional): The MariaDB Docker image to use. Defaults to 'mariadb:10.6'.
-        pvc_name (str, optional): The name of the Persistent Volume Claim for storage. Defaults to 'mariadb-pvc'. Will be sanitized.
+        pvc_name (str, optional): Ignored since operator creates PVC. Kept for compatibility. Defaults to 'mariadb-pvc'.
         storage_size (str, optional): Storage size for the PVC. Defaults to '1Gi'.
-        storage_class (str, optional): Storage class for the PVC. Defaults to 'standard'.
+        storage_class (str, optional): Storage class for the PVC. Defaults to 'local-storage'.
         replicas (int, optional): Number of replicas for the MariaDB instance. Defaults to 1.
         limits_cpu (str, optional): CPU limit for the MariaDB container. Defaults to '500m'.
         limits_memory (str, optional): Memory limit for the MariaDB container. Defaults to '512Mi'.
         requests_cpu (str, optional): CPU request for the MariaDB container. Defaults to '200m'.
         requests_memory (str, optional): Memory request for the MariaDB container. Defaults to '256Mi'.
-        database (str, optional): The name of the initial database to create. If None, no database is specified. Defaults to None.
+        admin_host_access (str, optional): Host or IP pattern to grant root access from. Defaults to '%'.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), 'pvc_available' (bool), and 'message' (str).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), 'pvc_available' (bool), 'root_access_updated' (bool), and 'message' (str).
     """
     try:
         updated = False
         secret_updated = False
+        root_access_updated = False
         secret_exists = False
         mariadb_exists = False
         matches = False
         pvc_available = False
 
-        # Sanitize pvc_name to meet Kubernetes naming conventions
-        def sanitize_name(name):
-            import re
-            # Convert to lowercase
-            sanitized = name.lower()
-            # Replace invalid characters with hyphens
-            sanitized = re.sub(r'[^a-z0-9.-]', '-', sanitized)
-            # Remove leading/trailing hyphens or periods
-            sanitized = sanitized.strip('-').strip('.')
-            # Truncate to 253 characters (Kubernetes max for most resource names)
-            sanitized = sanitized[:253]
-            # If empty after sanitization, provide a fallback
-            if not sanitized:
-                sanitized = "sanitized-pvc-name"
-            return sanitized
-
-        original_pvc_name = pvc_name
-        pvc_name = sanitize_name(pvc_name)
-        message = f"Sanitized PVC name: {original_pvc_name} -> {pvc_name}"
+        message = f"Configuring MariaDB with storage class: {storage_class}"
 
         try:
             config.load_incluster_config()
@@ -981,6 +964,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                     'updated': False,
                     'secret_updated': False,
                     'pvc_available': False,
+                    'root_access_updated': False,
                     'message': f"Error fetching Secret {secret_name}: {str(e)[:100]}...; {message}"
                 }
 
@@ -1005,6 +989,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                     'updated': False,
                     'secret_updated': False,
                     'pvc_available': False,
+                    'root_access_updated': False,
                     'message': f"Failed to create/update Secret {secret_name}: {str(e)[:100]}...; {message}"
                 }
         else:
@@ -1028,13 +1013,10 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             current_storage = current_spec.get('storage', {})
             current_storage_class = current_storage.get('storageClassName', '')
             current_storage_size = current_storage.get('size', '')
-            current_database = current_spec.get('database', '')
-            desired_database = database if database else ''
             if (current_image != desired_image or
                 current_replicas != desired_replicas or
                 current_storage_size != storage_size or
-                current_storage_class != storage_class or
-                (database is not None and current_database != desired_database)):
+                current_storage_class != storage_class):
                 matches = False
             else:
                 matches = True
@@ -1048,21 +1030,13 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                     'updated': False,
                     'secret_updated': secret_updated,
                     'pvc_available': False,
+                    'root_access_updated': False,
                     'message': f"Error fetching MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
                 }
 
-        # Step 4: Check if PVC exists (if provided or after creation)
-        try:
-            pvc = core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
-            pvc_available = True
-            message += f"; PVC {pvc_name} is available"
-        except ApiException as e:
-            if e.status == 404:
-                pvc_available = False
-                message += f"; PVC {pvc_name} not found, operator may create a new one if not configured to use existing"
-            else:
-                pvc_available = False
-                message += f"; Error checking PVC {pvc_name}: {str(e)[:50]}..."
+        # Step 4: No PVC check since operator will create it
+        pvc_available = False
+        message += f"; Skipping PVC check, operator will create PVC with storage class {storage_class}"
 
         # Step 5: Create or update MariaDB instance if necessary
         if not mariadb_exists or not matches:
@@ -1098,27 +1072,10 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                         "storage": {
                             "size": storage_size,
                             "storageClassName": storage_class,
-                            "accessModes": ["ReadWriteOnce"],
-                            "volumeClaimTemplate": {
-                                "metadata": {
-                                    "name": pvc_name
-                                },
-                                "spec": {
-                                    "resources": {
-                                        "requests": {
-                                            "storage": storage_size
-                                        }
-                                    },
-                                    "storageClassName": storage_class,
-                                    "accessModes": ["ReadWriteOnce"]
-                                }
-                            }
+                            "accessModes": ["ReadWriteOnce"]
                         }
                     }
                 }
-                # Only add 'database' to spec if it's provided
-                if database is not None:
-                    mariadb_body["spec"]["database"] = database
                 if mariadb_exists:
                     custom_api.replace_namespaced_custom_object(
                         group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=mariadb_body
@@ -1132,25 +1089,48 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
                     updated = True
                     message += f"; MariaDB instance {instance_name} created"
             except ApiException as e:
-                error_details = str(e)
-                if hasattr(e, 'body') and e.body:
-                    error_details += f"; Body: {e.body[:200]}..."
                 return {
                     'success': False,
                     'updated': False,
                     'secret_updated': secret_updated,
                     'pvc_available': pvc_available,
-                    'message': f"Failed to create/update MariaDB instance {instance_name}: {error_details[:200]}...; {message}"
+                    'root_access_updated': False,
+                    'message': f"Failed to create/update MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
                 }
         else:
             message += f"; MariaDB instance {instance_name} already up-to-date"
             updated = False
+
+        # Step 6: Ensure root user has access from the specified host/IP pattern
+        try:
+            # Get the MariaDB pod name
+            pod_list = core_v1_api.list_namespaced_pod(namespace=namespace, label_selector=f"app.kubernetes.io/name={instance_name}")
+            if pod_list.items:
+                pod_name = pod_list.items[0].metadata.name
+                # Construct the kubectl exec command to grant root access
+                grant_cmd = f"mysql -u root -p{root_password} -e \"GRANT ALL PRIVILEGES ON *.* TO 'root'@'{admin_host_access}' IDENTIFIED BY '{root_password}' WITH GRANT OPTION; FLUSH PRIVILEGES;\""
+                kubectl_cmd = f"kubectl exec -i {pod_name} -n {namespace} -- {grant_cmd}"
+                # Execute the command using Salt's cmd.run
+                grant_result = __salt__['cmd.run'](kubectl_cmd, shell=True, ignore_retcode=True)
+                if "ERROR" not in grant_result:
+                    root_access_updated = True
+                    message += f"; Root user access granted for host {admin_host_access}"
+                else:
+                    root_access_updated = False
+                    message += f"; Failed to grant root access for host {admin_host_access}: {grant_result[:100]}..."
+            else:
+                root_access_updated = False
+                message += f"; No MariaDB pod found for {instance_name} to grant root access"
+        except Exception as e:
+            root_access_updated = False
+            message += f"; Error granting root access for host {admin_host_access}: {str(e)[:100]}..."
 
         return {
             'success': True if (updated or matches) else False,
             'updated': updated,
             'secret_updated': secret_updated,
             'pvc_available': pvc_available,
+            'root_access_updated': root_access_updated,
             'message': message
         }
     except Exception as e:
@@ -1159,6 +1139,7 @@ def mariadb_instance_present(namespace, instance_name, root_password, secret_nam
             'updated': False,
             'secret_updated': False,
             'pvc_available': False,
+            'root_access_updated': False,
             'message': f"MariaDB instance operation error: {str(e)[:100]}..."
         }
 def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage", storage_class="local-storage"):

@@ -531,11 +531,11 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="bm
         ret['changes'] = {}
 
     return ret
-def mariadb_instance_present(name, namespace, instance_name, root_password, secret_name="mariadb-root-password", image="mariadb:10.6", storage_size="1Gi", storage_class="standard", pvc_name=None, replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", database=None):
+def mariadb_instance_present(name, namespace, instance_name, root_password, secret_name="mariadb-root-password", image="mariadb:10.6", storage_size="1Gi", storage_class="standard", pvc_name=None, replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", admin_host_access="%"):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
     Creates or updates a root password Secret and the MariaDB instance Custom Resource with specified storage class, size, and optional PVC name.
-    Checks if the associated PVC is available.
+    Checks if the associated PVC is available and ensures root user access from specified host.
 
     name
         The name of the state (arbitrary, for SaltStack identification).
@@ -579,8 +579,8 @@ def mariadb_instance_present(name, namespace, instance_name, root_password, secr
     requests_memory
         Optional. Memory request for MariaDB. Defaults to '256Mi'.
 
-    database
-        Optional. The name of the initial database to create. If not provided, no specific database is set. Defaults to None.
+    admin_host_access
+        Optional. Host or IP pattern to grant root access from. Defaults to '%'.
 
     Example:
     .. code-block:: yaml
@@ -593,14 +593,14 @@ def mariadb_instance_present(name, namespace, instance_name, root_password, secr
             - secret_name: mariadb-root-password
             - image: mariadb:10.6
             - storage_size: 5Gi
-            - storage_class: gp2
+            - storage_class: local-storage
             - pvc_name: my-custom-pvc
             - replicas: 1
             - limits_cpu: 500m
             - limits_memory: 512Mi
             - requests_cpu: 200m
             - requests_memory: 256Mi
-            - database: ironic
+            - admin_host_access: 192.168.1.41
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
@@ -620,16 +620,17 @@ def mariadb_instance_present(name, namespace, instance_name, root_password, secr
             limits_memory=limits_memory,
             requests_cpu=requests_cpu,
             requests_memory=requests_memory,
-            database=database
+            admin_host_access=admin_host_access
         )
 
         ret['result'] = result['success']
         ret['comment'] = result['message']
-        if result['updated'] or result['secret_updated']:
+        if result['updated'] or result['secret_updated'] or result['root_access_updated']:
             ret['changes'] = {
                 'instance_updated': result['updated'],
                 'secret_updated': result['secret_updated'],
-                'pvc_available': result['pvc_available']
+                'pvc_available': result['pvc_available'],
+                'root_access_updated': result['root_access_updated']
             }
         else:
             ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
