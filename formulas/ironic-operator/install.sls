@@ -88,4 +88,18 @@ clone_ironic_repo:
     - target: {{ pillar['ironic_op_dir'] }}
     - require:
       - file: create_ironic_op_dir
+      - git: git_ironic_repo
+
+install_deploy_ironic_operator:
+  cmd.run:
+    - name: make install deploy
+    - cwd: {{ pillar['ironic_op_dir'] }}
+    - onchanges:
+      - git: clone_ironic_repo
+
+wait_for_ironic_deployment:
+  cmd.run:
+    - name: kubectl wait --for=condition=Available --timeout=60s -n ironic-standalone-operator-system deployment/ironic-standalone-operator-controller-manager
+    - require:
+      - cmd: install_deploy_ironic_operator
 
