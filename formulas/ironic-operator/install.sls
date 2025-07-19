@@ -1,6 +1,10 @@
 include:
   - /formulas/common/k8s-mariadb
 
+ironic_dependancies:
+  pkg.installed:
+    - name: podman
+
 create_ironic_op_dir:
   file.directory:
     - name: {{ pillar['ironic_op_dir'] }}
@@ -96,6 +100,8 @@ install_deploy_ironic_operator:
     - cwd: {{ pillar['ironic_op_dir'] }}
     - onchanges:
       - git: clone_ironic_repo
+    - requrie:
+      - pkg: ironic_dependancies
 
 wait_for_ironic_deployment:
   cmd.run:
