@@ -1879,7 +1879,6 @@ def generate_tls_secret(namespace, secret_name, common_name="ironic-operator", v
 
         # Create Secret with TLS key pair
         try:
-            import base64
             secret_body = client.V1Secret(
                 metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
                 data={
