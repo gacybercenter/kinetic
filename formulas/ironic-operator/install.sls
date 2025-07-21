@@ -3,7 +3,12 @@ include:
 
 ironic_dependancies:
   pkg.installed:
-    - name: podman
+    - pkgs: 
+      - podman
+tls_generate_pip:
+  pip.installed:
+    - name: cryptography
+    - pip_bin: /usr/bin/salt-pip
 
 create_ironic_op_dir:
   file.directory:
@@ -94,18 +99,11 @@ clone_ironic_repo:
       - file: create_ironic_op_dir
       - git: git_ironic_repo
 
-install_deploy_ironic_operator:
-  cmd.run:
-    - name: make install deploy
-    - cwd: {{ pillar['ironic_op_dir'] }}
-    - onchanges:
-      - git: clone_ironic_repo
-    - requrie:
-      - pkg: ironic_dependancies
-
-wait_for_ironic_deployment:
-  cmd.run:
-    - name: kubectl wait --for=condition=Available --timeout=60s -n ironic-standalone-operator-system deployment/ironic-standalone-operator-controller-manager
+ensure_tls_secret:
+  k8s.tls_secret_present:
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - secret_name: ironic-tls
+    - common_name: ironic-operator
+    - validity_days: 365
     - require:
-      - cmd: install_deploy_ironic_operator
-
+      - k8s: ensure_ironic_db_user

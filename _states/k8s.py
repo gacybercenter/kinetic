@@ -7,7 +7,9 @@ BMC authentication, and UUIDs, as well as querying hardware data from Kubernetes
 """
 
 from salt.exceptions import SaltInvocationError
-
+from kubernetes import client, config
+from kubernetes.client.rest import ApiException
+import base64
 __virtualname__ = 'k8s'
 
 def __virtual__():
@@ -800,6 +802,7 @@ def ironic_db_user_present(name, namespace, mariadb_name, mariadb_namespace, use
 
     return ret
 def mariadb_database_present(name, namespace, database_name, mariadb_name, mariadb_namespace, character_set="utf8", collate="utf8_general_ci", cleanup_policy="Delete"):
+
     """
     Ensure that a Database custom resource is present in Kubernetes using the MariaDB Operator.
     Creates or updates the Database resource to ensure a specific database exists in the MariaDB instance.
@@ -866,6 +869,61 @@ def mariadb_database_present(name, namespace, database_name, mariadb_name, maria
     except Exception as e:
         ret['result'] = False
         ret['comment'] = f"Failed to ensure Database {database_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
+def tls_secret_present(name, namespace, secret_name, common_name="ironic-operator", validity_days=365):
+    """
+    Ensure that a Kubernetes Secret with a TLS key pair is present.
+    Generates a private key and self-signed certificate, then stores them in the Secret.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace where the Secret will be created.
+
+    secret_name
+        The name of the Secret to store the TLS key pair.
+
+    common_name
+        Optional. The Common Name (CN) for the certificate subject. Defaults to 'ironic-operator'.
+
+    validity_days
+        Optional. The number of days the certificate is valid for. Defaults to 365 (1 year).
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_tls_secret:
+          k8s.tls_secret_present:
+            - namespace: ironic-standalone-operator-system
+            - secret_name: ironic-tls
+            - common_name: ironic-operator
+            - validity_days: 365
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.generate_tls_secret'](
+            namespace=namespace,
+            secret_name=secret_name,
+            common_name=common_name,
+            validity_days=validity_days
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {
+                'secret_updated': True
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure TLS Secret {secret_name}: {str(e)[:100]}..."
         ret['changes'] = {}
 
     return ret

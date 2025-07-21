@@ -9,6 +9,7 @@ for retrieving MAC addresses from HardwareData resources in a Metal3.io environm
 import salt.utils.decorators as decorators
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
+import base64
 
 # Ensure Salt can find this module
 __virtualname__ = 'kinetic-k8s'
@@ -1771,4 +1772,141 @@ def mariadb_database_present(namespace, database_name, mariadb_name, mariadb_nam
             'success': False,
             'updated': False,
             'message': f"Database operation error for {database_name}: {str(e)[:100]}..."
+        }
+def generate_tls_secret(namespace, secret_name, common_name="ironic-operator", validity_days=365):
+    """
+    Generate a TLS key pair (private key and certificate) and store them in a Kubernetes Secret.
+    This is useful for securing communications, such as for the Ironic Standalone Operator.
+
+    Args:
+        namespace (str): The Kubernetes namespace where the Secret will be created.
+        secret_name (str): The name of the Secret to store the TLS key pair.
+        common_name (str, optional): The Common Name (CN) for the certificate subject. Defaults to 'ironic-operator'.
+        validity_days (int, optional): The number of days the certificate is valid for. Defaults to 365 (1 year).
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+    """
+    try:
+        updated = False
+        exists = False
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+
+        message = f"Generating TLS key pair for Secret {secret_name} in namespace {namespace}"
+
+        # Check if Secret already exists
+        try:
+            core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+            exists = True
+            message += f"; Secret {secret_name} already exists, skipping generation"
+            return {
+                'success': True,
+                'updated': False,
+                'message': message
+            }
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking Secret {secret_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Generate TLS key pair if Secret does not exist
+        try:
+            from cryptography import x509
+            from cryptography.x509.oid import NameOID
+            from cryptography.hazmat.primitives import serialization, hashes
+            from cryptography.hazmat.primitives.asymmetric import rsa
+            from cryptography.hazmat.backends import default_backend
+            import datetime
+            import base64
+
+
+            # Generate private key
+            private_key = rsa.generate_private_key(
+                public_exponent=65537,
+                key_size=2048,
+                backend=default_backend()
+            )
+            public_key = private_key.public_key()
+
+            # Create certificate subject and issuer (self-signed)
+            subject = issuer = x509.Name([
+                x509.NameAttribute(NameOID.COMMON_NAME, common_name)
+            ])
+
+            # Build self-signed certificate
+            cert = (
+                x509.CertificateBuilder()
+                .subject_name(subject)
+                .issuer_name(issuer)
+                .public_key(public_key)
+                .serial_number(x509.random_serial_number())
+                .not_valid_before(datetime.datetime.utcnow())
+                .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=validity_days))
+                .sign(private_key, hashes.SHA256(), default_backend())
+            )
+
+            # Encode private key and certificate to PEM format
+            private_key_pem = private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption()
+            ).decode('utf-8')
+
+            cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM).decode('utf-8')
+
+            message += f"; TLS key pair generated with CN={common_name}, valid for {validity_days} days"
+        except ImportError:
+            return {
+                'success': False,
+                'updated': False,
+                'message': f"Error: 'cryptography' library not installed. Install with 'pip install cryptography'; {message}"
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'updated': False,
+                'message': f"Failed to generate TLS key pair: {str(e)[:100]}...; {message}"
+            }
+
+        # Create Secret with TLS key pair
+        try:
+            secret_body = client.V1Secret(
+                metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
+                data={
+                    'tls.key': base64.b64encode(private_key_pem.encode('utf-8')).decode('utf-8'),
+                    'tls.crt': base64.b64encode(cert_pem.encode('utf-8')).decode('utf-8')
+                },
+                type='kubernetes.io/tls'
+            )
+            core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
+            updated = True
+            message += f"; Secret {secret_name} created with TLS key pair"
+        except ApiException as e:
+            return {
+                'success': False,
+                'updated': False,
+                'message': f"Failed to create Secret {secret_name}: Status: {e.status}, Reason: {e.reason}; Full Response Body: {str(e.body)[:500]}...; {message}"
+            }
+
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"TLS Secret operation error for {secret_name}: {str(e)[:100]}..."
         }
