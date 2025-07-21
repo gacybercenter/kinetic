@@ -898,3 +898,877 @@ def uuids_secret_present(namespace, secret_name, pillar_data, deployment_name="s
             'salt_responded': False,
             'message': f"UUID Secret operation error: {str(e)[:50]}..."
         }
+def mariadb_instance_present(namespace, instance_name, root_password, secret_name, image="mariadb:10.6", pvc_name="mariadb-pvc", storage_size="1Gi", storage_class="local-storage", replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", admin_host_access="%"):
+    """
+    Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
+    Creates a Secret for the root password if it doesn't exist, then creates or updates the MariaDB Custom Resource.
+    Additionally, ensures the root user has access from the specified host or IP pattern.
+
+    Args:
+        namespace (str): The namespace of the MariaDB instance and Secret in Kubernetes.
+        instance_name (str): The name of the MariaDB instance (Custom Resource).
+        root_password (str): The root password for MariaDB (stored in a Secret).
+        secret_name (str): The name of the Secret to store the root password.
+        image (str, optional): The MariaDB Docker image to use. Defaults to 'mariadb:10.6'.
+        pvc_name (str, optional): Ignored since operator creates PVC. Kept for compatibility. Defaults to 'mariadb-pvc'.
+        storage_size (str, optional): Storage size for the PVC. Defaults to '1Gi'.
+        storage_class (str, optional): Storage class for the PVC. Defaults to 'local-storage'.
+        replicas (int, optional): Number of replicas for the MariaDB instance. Defaults to 1.
+        limits_cpu (str, optional): CPU limit for the MariaDB container. Defaults to '500m'.
+        limits_memory (str, optional): Memory limit for the MariaDB container. Defaults to '512Mi'.
+        requests_cpu (str, optional): CPU request for the MariaDB container. Defaults to '200m'.
+        requests_memory (str, optional): Memory request for the MariaDB container. Defaults to '256Mi'.
+        admin_host_access (str, optional): Host or IP pattern to grant root access from. Defaults to '%'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), 'pvc_available' (bool), 'root_access_updated' (bool), and 'message' (str).
+    """
+    try:
+        updated = False
+        secret_updated = False
+        root_access_updated = False
+        secret_exists = False
+        mariadb_exists = False
+        matches = False
+        pvc_available = False
+
+        message = f"Configuring MariaDB with storage class: {storage_class}"
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+        custom_api = client.CustomObjectsApi()
+
+        # Step 1: Check if Secret for root password exists
+        try:
+            secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+            secret_exists = True
+            current_password = secret.string_data.get('password', '') if secret.string_data else ''
+            if not current_password and secret.data:
+                import base64
+                current_password = base64.b64decode(secret.data.get('password', '')).decode('utf-8')
+            if current_password != root_password:
+                secret_updated = True
+            else:
+                secret_updated = False
+        except ApiException as e:
+            if e.status == 404:
+                secret_exists = False
+                secret_updated = True
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'secret_updated': False,
+                    'pvc_available': False,
+                    'root_access_updated': False,
+                    'message': f"Error fetching Secret {secret_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 2: Create or update Secret if necessary
+        if not secret_exists or secret_updated:
+            try:
+                secret_body = client.V1Secret(
+                    metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
+                    string_data={'password': root_password},
+                    type='Opaque'
+                )
+                if secret_exists:
+                    core_v1_api.replace_namespaced_secret(name=secret_name, namespace=namespace, body=secret_body)
+                    message += f"; Secret {secret_name} updated"
+                else:
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
+                    message += f"; Secret {secret_name} created"
+                secret_updated = True
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'secret_updated': False,
+                    'pvc_available': False,
+                    'root_access_updated': False,
+                    'message': f"Failed to create/update Secret {secret_name}: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; Secret {secret_name} already up-to-date"
+
+        # Step 3: Check if MariaDB instance exists
+        try:
+            group = "k8s.mariadb.com"
+            version = "v1alpha1"
+            plural = "mariadbs"
+            mariadb = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=instance_name
+            )
+            mariadb_exists = True
+            # Check if key fields match desired state for potential update
+            current_spec = mariadb.get('spec', {})
+            desired_image = image
+            desired_replicas = replicas
+            current_image = current_spec.get('image', '')
+            current_replicas = current_spec.get('replicas', 1)
+            current_storage = current_spec.get('storage', {})
+            current_storage_class = current_storage.get('storageClassName', '')
+            current_storage_size = current_storage.get('size', '')
+            if (current_image != desired_image or
+                current_replicas != desired_replicas or
+                current_storage_size != storage_size or
+                current_storage_class != storage_class):
+                matches = False
+            else:
+                matches = True
+        except ApiException as e:
+            if e.status == 404:
+                mariadb_exists = False
+                matches = False
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'secret_updated': secret_updated,
+                    'pvc_available': False,
+                    'root_access_updated': False,
+                    'message': f"Error fetching MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 4: No PVC check since operator will create it
+        pvc_available = False
+        message += f"; Skipping PVC check, operator will create PVC with storage class {storage_class}"
+
+        # Step 5: Create or update MariaDB instance if necessary
+        if not mariadb_exists or not matches:
+            try:
+                group = "k8s.mariadb.com"
+                version = "v1alpha1"
+                plural = "mariadbs"
+                mariadb_body = {
+                    "apiVersion": f"{group}/{version}",
+                    "kind": "MariaDb",
+                    "metadata": {
+                        "name": instance_name,
+                        "namespace": namespace
+                    },
+                    "spec": {
+                        "image": image,
+                        "username": "root",
+                        "passwordSecretKeyRef": {
+                            "name": secret_name,
+                            "key": "password"
+                        },
+                        "replicas": replicas,
+                        "resources": {
+                            "limits": {
+                                "cpu": limits_cpu,
+                                "memory": limits_memory
+                            },
+                            "requests": {
+                                "cpu": requests_cpu,
+                                "memory": requests_memory
+                            }
+                        },
+                        "storage": {
+                            "size": storage_size,
+                            "storageClassName": storage_class,
+                            "accessModes": ["ReadWriteOnce"]
+                        }
+                    }
+                }
+                if mariadb_exists:
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=mariadb_body
+                    )
+                    updated = True
+                    message += f"; MariaDB instance {instance_name} updated"
+                else:
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, body=mariadb_body
+                    )
+                    updated = True
+                    message += f"; MariaDB instance {instance_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'secret_updated': secret_updated,
+                    'pvc_available': pvc_available,
+                    'root_access_updated': False,
+                    'message': f"Failed to create/update MariaDB instance {instance_name}: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; MariaDB instance {instance_name} already up-to-date"
+            updated = False
+
+        # Step 6: Ensure root user has access from the specified host/IP pattern
+        try:
+            # Get the MariaDB pod name
+            pod_list = core_v1_api.list_namespaced_pod(namespace=namespace, label_selector=f"app.kubernetes.io/name={instance_name}")
+            if pod_list.items:
+                pod_name = pod_list.items[0].metadata.name
+                # Construct the kubectl exec command to grant root access
+                grant_cmd = f"mysql -u root -p{root_password} -e \"GRANT ALL PRIVILEGES ON *.* TO 'root'@'{admin_host_access}' IDENTIFIED BY '{root_password}' WITH GRANT OPTION; FLUSH PRIVILEGES;\""
+                kubectl_cmd = f"kubectl exec -i {pod_name} -n {namespace} -- {grant_cmd}"
+                # Execute the command using Salt's cmd.run
+                grant_result = __salt__['cmd.run'](kubectl_cmd, shell=True, ignore_retcode=True)
+                if "ERROR" not in grant_result:
+                    root_access_updated = True
+                    message += f"; Root user access granted for host {admin_host_access}"
+                else:
+                    root_access_updated = False
+                    message += f"; Failed to grant root access for host {admin_host_access}: {grant_result[:100]}..."
+            else:
+                root_access_updated = False
+                message += f"; No MariaDB pod found for {instance_name} to grant root access"
+        except Exception as e:
+            root_access_updated = False
+            message += f"; Error granting root access for host {admin_host_access}: {str(e)[:100]}..."
+
+        return {
+            'success': True if (updated or matches) else False,
+            'updated': updated,
+            'secret_updated': secret_updated,
+            'pvc_available': pvc_available,
+            'root_access_updated': root_access_updated,
+            'message': message
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'secret_updated': False,
+            'pvc_available': False,
+            'root_access_updated': False,
+            'message': f"MariaDB instance operation error: {str(e)[:100]}..."
+        }
+def local_storage_pv_pvc_present(namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage", storage_class="local-storage"):
+    """
+    Ensure that a Persistent Volume (PV) is present in Kubernetes using a specified storage class for local storage.
+    The PV is tied to a local path. Checks if the local path exists on the node before proceeding.
+    Does not manage PVC creation since the operator will handle it. Sanitizes PV name to meet Kubernetes naming conventions.
+
+    Args:
+        namespace (str): The namespace of the PVC (unused since PVC is not created, kept for compatibility).
+        pv_name (str): The name of the Persistent Volume (will be sanitized).
+        pvc_name (str): Ignored since PVC is not created. Kept for compatibility.
+        storage_size (str, optional): Storage size for the PV. Defaults to '1Gi'.
+        node_name (str, optional): The name of the node to bind the local storage PV to. Not used in this simplified version to avoid validation issues.
+        path (str, optional): The host path on the node for local storage. Defaults to '/mnt/local-storage'.
+        storage_class (str, optional): The storage class to use for the PV. Defaults to 'local-storage'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'pv_updated' (bool), 'pvc_updated' (bool), 'bound' (bool), and 'message' (str).
+    """
+    try:
+        pv_updated = False
+        pvc_updated = False
+        bound = False
+
+        # Sanitize pv_name to meet Kubernetes naming conventions
+        def sanitize_name(name):
+            import re
+            # Convert to lowercase
+            sanitized = name.lower()
+            # Replace invalid characters with hyphens
+            sanitized = re.sub(r'[^a-z0-9.-]', '-', sanitized)
+            # Remove leading/trailing hyphens or periods
+            sanitized = sanitized.strip('-').strip('.')
+            # Truncate to 253 characters (Kubernetes max for most resource names)
+            sanitized = sanitized[:253]
+            # If empty after sanitization, provide a fallback
+            if not sanitized:
+                sanitized = "sanitized-name"
+            return sanitized
+
+        original_pv_name = pv_name
+        pv_name = sanitize_name(pv_name)
+        message = f"Sanitized PV name: {original_pv_name} -> {pv_name}; PVC management skipped, operator will handle PVC creation"
+
+        # Step 1: Ensure the local path exists on the node
+        if not __salt__['file.directory_exists'](path):
+            try:
+                __salt__['file.mkdir'](path)
+                message += f"; Created directory {path} on node"
+            except Exception as e:
+                return {
+                    'success': False,
+                    'pv_updated': False,
+                    'pvc_updated': False,
+                    'bound': False,
+                    'message': f"Failed to create directory {path} on node: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; Directory {path} already exists on node"
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+
+        # Step 2: Check if PV exists
+        try:
+            existing_pv = core_v1_api.read_persistent_volume(name=pv_name)
+            pv_exists = True
+        except ApiException as e:
+            if e.status == 404:
+                pv_exists = False
+            else:
+                return {
+                    'success': False,
+                    'pv_updated': False,
+                    'pvc_updated': False,
+                    'bound': False,
+                    'message': f"Error fetching PV {pv_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 3: Create or update PV if it doesn't exist or needs updating
+        if not pv_exists:
+            try:
+                pv_body = client.V1PersistentVolume(
+                    metadata=client.V1ObjectMeta(name=pv_name),
+                    spec=client.V1PersistentVolumeSpec(
+                        capacity={'storage': storage_size},
+                        access_modes=["ReadWriteOnce"],
+                        storage_class_name=storage_class,
+                        host_path=client.V1HostPathVolumeSource(path=path)
+                    )
+                )
+                core_v1_api.create_persistent_volume(body=pv_body)
+                pv_updated = True
+                message += f"; PV {pv_name} created with size {storage_size} at {path}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'pv_updated': False,
+                    'pvc_updated': False,
+                    'bound': False,
+                    'message': f"Failed to create/update PV {pv_name}: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; PV {pv_name} already exists"
+            pv_updated = False
+
+        # Step 4: Skip PVC creation and binding check since operator handles PVC
+        message += f"; PVC creation and binding skipped, relying on operator to create PVC with storage class {storage_class}"
+
+        return {
+            'success': True if pv_updated or pv_exists else False,
+            'pv_updated': pv_updated,
+            'pvc_updated': False,
+            'bound': False,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'pv_updated': False,
+            'pvc_updated': False,
+            'bound': False,
+            'message': f"Local storage PV operation error: {str(e)[:100]}..."
+        }
+def ironic_db_user_setup(namespace, mariadb_name, mariadb_namespace, user_name, user_password, secret_name, database_name="ironic-database", host="%", max_user_connections=100, privileges=["ALL PRIVILEGES"], table="*"):
+    """
+    Ensure that the necessary Kubernetes resources for an Ironic database user are present.
+    This includes a Secret for user credentials, a User custom resource, a Database custom resource, and a Grant custom resource.
+
+    Args:
+        namespace (str): The namespace for the Secret, User, Database, and Grant resources (typically Ironic namespace).
+        mariadb_name (str): The name of the MariaDB instance (Custom Resource) to reference.
+        mariadb_namespace (str): The namespace of the MariaDB instance.
+        user_name (str): The username for the database user (must match Secret data and User metadata name).
+        user_password (str): The password for the database user.
+        secret_name (str): The name of the Secret to store the user credentials.
+        database_name (str, optional): The name of the database to grant privileges on. Defaults to 'ironic-database'.
+        host (str, optional): The host pattern for user access. Defaults to '%'.
+        max_user_connections (int, optional): Maximum connections for the user. Defaults to 100.
+        privileges (list, optional): List of privileges to grant. Defaults to ['ALL PRIVILEGES'].
+        table (str, optional): Table pattern for privileges. Defaults to '*'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'secret_updated' (bool), 'user_updated' (bool), 'database_updated' (bool), 'grant_updated' (bool), and 'message' (str).
+    """
+    try:
+        secret_updated = False
+        user_updated = False
+        database_updated = False
+        grant_updated = False
+        secret_exists = False
+        user_exists = False
+        database_exists = False
+        grant_exists = False
+        secret_matches = False
+        user_matches = False
+        database_matches = False
+        grant_matches = False
+
+        message = f"Setting up Ironic DB user {user_name} for database {database_name} in namespace {namespace}"
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+        custom_api = client.CustomObjectsApi()
+
+        # Step 1: Check if Secret for user credentials exists
+        try:
+            secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+            secret_exists = True
+            current_username = secret.string_data.get('username', '') if secret.string_data else ''
+            current_password = secret.string_data.get('password', '') if secret.string_data else ''
+            if not current_username and secret.data:
+                import base64
+                current_username = base64.b64decode(secret.data.get('username', '')).decode('utf-8')
+                current_password = base64.b64decode(secret.data.get('password', '')).decode('utf-8')
+            if current_username != user_name or current_password != user_password:
+                secret_updated = True
+            else:
+                secret_matches = True
+                secret_updated = False
+        except ApiException as e:
+            if e.status == 404:
+                secret_exists = False
+                secret_updated = True
+            else:
+                return {
+                    'success': False,
+                    'secret_updated': False,
+                    'user_updated': False,
+                    'database_updated': False,
+                    'grant_updated': False,
+                    'message': f"Error fetching Secret {secret_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 2: Create or update Secret if necessary
+        if not secret_exists or secret_updated:
+            try:
+                secret_body = client.V1Secret(
+                    metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
+                    string_data={'username': user_name, 'password': user_password},
+                    type='Opaque'
+                )
+                if secret_exists:
+                    core_v1_api.replace_namespaced_secret(name=secret_name, namespace=namespace, body=secret_body)
+                    secret_updated = True
+                    message += f"; Secret {secret_name} updated"
+                else:
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
+                    secret_updated = True
+                    message += f"; Secret {secret_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'secret_updated': False,
+                    'user_updated': False,
+                    'database_updated': False,
+                    'grant_updated': False,
+                    'message': f"Failed to create/update Secret {secret_name}: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; Secret {secret_name} credentials match, no update needed"
+
+        # Step 3: Check if User custom resource exists
+        try:
+            group = "k8s.mariadb.com"
+            version = "v1alpha1"
+            plural = "users"
+            user = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=user_name
+            )
+            user_exists = True
+            current_user_spec = user.get('spec', {})
+            current_mariadb_ref = current_user_spec.get('mariaDbRef', {})
+            if (current_mariadb_ref.get('name', '') != mariadb_name or
+                current_mariadb_ref.get('namespace', '') != mariadb_namespace or
+                current_user_spec.get('host', '') != host or
+                current_user_spec.get('maxUserConnections', 0) != max_user_connections):
+                user_matches = False
+            else:
+                user_matches = True
+        except ApiException as e:
+            if e.status == 404:
+                user_exists = False
+                user_matches = False
+            else:
+                return {
+                    'success': False,
+                    'secret_updated': secret_updated,
+                    'user_updated': False,
+                    'database_updated': False,
+                    'grant_updated': False,
+                    'message': f"Error fetching User {user_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 4: Create or update User if necessary
+        if not user_exists or not user_matches:
+            try:
+                user_body = {
+                    "apiVersion": f"{group}/{version}",
+                    "kind": "User",
+                    "metadata": {
+                        "name": user_name,
+                        "namespace": namespace
+                    },
+                    "spec": {
+                        "mariaDbRef": {
+                            "name": mariadb_name,
+                            "namespace": mariadb_namespace,
+                            "waitForIt": True
+                        },
+                        "cleanupPolicy": "Delete",
+                        "host": host,
+                        "maxUserConnections": max_user_connections,
+                        "passwordSecretKeyRef": {
+                            "name": secret_name,
+                            "key": "password"
+                        }
+                    }
+                }
+                if user_exists and 'metadata' in user and 'resourceVersion' in user['metadata']:
+                    user_body['metadata']['resourceVersion'] = user['metadata']['resourceVersion']
+                if user_exists:
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, name=user_name, body=user_body
+                    )
+                    user_updated = True
+                    message += f"; User {user_name} updated"
+                else:
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, body=user_body
+                    )
+                    user_updated = True
+                    message += f"; User {user_name} created"
+            except ApiException as e:
+                error_details = str(e)
+                if hasattr(e, 'body') and e.body:
+                    error_details += f"; Full Response Body: {e.body[:1000] if len(e.body) > 1000 else e.body}"
+                elif hasattr(e, 'reason'):
+                    error_details += f"; Reason: {e.reason}"
+                return {
+                    'success': False,
+                    'secret_updated': secret_updated,
+                    'user_updated': False,
+                    'database_updated': False,
+                    'grant_updated': False,
+                    'message': f"Failed to create/update User {user_name}: {error_details}; {message}"
+                }
+        else:
+            message += f"; User {user_name} spec matches, no update needed"
+
+        # Step 5: Check if Database custom resource exists
+        try:
+            plural = "databases"
+            database = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=database_name
+            )
+            database_exists = True
+            current_database_spec = database.get('spec', {})
+            current_mariadb_ref = current_database_spec.get('mariaDbRef', {})
+            if (current_mariadb_ref.get('name', '') != mariadb_name or
+                current_mariadb_ref.get('namespace', '') != mariadb_namespace):
+                database_matches = False
+            else:
+                database_matches = True
+        except ApiException as e:
+            if e.status == 404:
+                database_exists = False
+                database_matches = False
+            else:
+                return {
+                    'success': False,
+                    'secret_updated': secret_updated,
+                    'user_updated': user_updated,
+                    'database_updated': False,
+                    'grant_updated': False,
+                    'message': f"Error fetching Database {database_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 6: Create or update Database if necessary
+        if not database_exists or not database_matches:
+            try:
+                database_body = {
+                    "apiVersion": f"{group}/{version}",
+                    "kind": "Database",
+                    "metadata": {
+                        "name": database_name,
+                        "namespace": namespace
+                    },
+                    "spec": {
+                        "mariaDbRef": {
+                            "name": mariadb_name,
+                            "namespace": mariadb_namespace,
+                            "waitForIt": True
+                        },
+                        "cleanupPolicy": "Delete",
+                        "characterSet": "utf8",
+                        "collate": "utf8_general_ci"
+                    }
+                }
+                if database_exists and 'metadata' in database and 'resourceVersion' in database['metadata']:
+                    database_body['metadata']['resourceVersion'] = database['metadata']['resourceVersion']
+                if database_exists:
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, name=database_name, body=database_body
+                    )
+                    database_updated = True
+                    message += f"; Database {database_name} updated"
+                else:
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, body=database_body
+                    )
+                    database_updated = True
+                    message += f"; Database {database_name} created"
+            except ApiException as e:
+                error_details = str(e)
+                if hasattr(e, 'body') and e.body:
+                    error_details += f"; Full Response Body: {e.body[:1000] if len(e.body) > 1000 else e.body}"
+                elif hasattr(e, 'reason'):
+                    error_details += f"; Reason: {e.reason}"
+                return {
+                    'success': False,
+                    'secret_updated': secret_updated,
+                    'user_updated': user_updated,
+                    'database_updated': False,
+                    'grant_updated': False,
+                    'message': f"Failed to create/update Database {database_name}: {error_details}; {message}"
+                }
+        else:
+            message += f"; Database {database_name} spec matches, no update needed"
+
+        # Step 7: Check if Grant custom resource exists
+        grant_name = f"{user_name}-grant"
+        try:
+            plural = "grants"
+            # Use mariadb_namespace for Grant to ensure it's in the same namespace as MariaDB instance
+            grant = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=mariadb_namespace, plural=plural, name=grant_name
+            )
+            grant_exists = True
+            current_grant_spec = grant.get('spec', {})
+            current_mariadb_ref = current_grant_spec.get('mariaDbRef', {})
+            current_privileges = current_grant_spec.get('privileges', [])
+            if (current_mariadb_ref.get('name', '') != mariadb_name or
+                current_mariadb_ref.get('namespace', '') != mariadb_namespace or
+                current_grant_spec.get('database', '') != database_name or
+                current_grant_spec.get('host', '') != host or
+                current_grant_spec.get('username', '') != user_name or
+                (current_grant_spec.get('table', '*') != table if 'table' in current_grant_spec else True) or
+                sorted(current_privileges) != sorted(privileges)):
+                grant_matches = False
+            else:
+                grant_matches = True
+        except ApiException as e:
+            if e.status == 404:
+                grant_exists = False
+                grant_matches = False
+            else:
+                return {
+                    'success': False,
+                    'secret_updated': secret_updated,
+                    'user_updated': user_updated,
+                    'database_updated': database_updated,
+                    'grant_updated': False,
+                    'message': f"Error fetching Grant {grant_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 8: Create or update Grant if necessary with a minimal spec first
+        if not grant_exists or not grant_matches:
+            try:
+                plural = "grants"
+                # Use mariadb_namespace for Grant to ensure it's in the same namespace as MariaDB instance
+                grant_body = {
+                    "apiVersion": f"{group}/{version}",
+                    "kind": "Grant",
+                    "metadata": {
+                        "name": grant_name,
+                        "namespace": mariadb_namespace
+                    },
+                    "spec": {
+                        "mariaDbRef": {
+                            "name": mariadb_name,
+                            "namespace": mariadb_namespace,
+                            "waitForIt": True
+                        },
+                        "cleanupPolicy": "Delete",
+                        "database": database_name,
+                        "host": host,
+                        "privileges": privileges,
+                        "username": user_name
+                    }
+                }
+                if grant_exists and 'metadata' in grant and 'resourceVersion' in grant['metadata']:
+                    grant_body['metadata']['resourceVersion'] = grant['metadata']['resourceVersion']
+                if grant_exists:
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=mariadb_namespace, plural=plural, name=grant_name, body=grant_body
+                    )
+                    grant_updated = True
+                    message += f"; Grant {grant_name} updated"
+                else:
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=mariadb_namespace, plural=plural, body=grant_body
+                    )
+                    grant_updated = True
+                    message += f"; Grant {grant_name} created"
+            except ApiException as e:
+                error_details = f"Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}"
+                if hasattr(e, 'body') and e.body:
+                    error_details += f"; Full Response Body: {e.body[:1000] if len(e.body) > 1000 else e.body}"
+                elif hasattr(e, 'headers'):
+                    error_details += f"; Headers: {e.headers}"
+                message += f"; DEBUG - Attempted Grant spec in namespace {mariadb_namespace}: {grant_body['spec']}"
+                return {
+                    'success': False,
+                    'secret_updated': secret_updated,
+                    'user_updated': user_updated,
+                    'database_updated': database_updated,
+                    'grant_updated': False,
+                    'message': f"Failed to create/update Grant {grant_name}: {error_details}; {message}"
+                }
+        else:
+            message += f"; Grant {grant_name} spec matches, no update needed"
+
+        return {
+            'success': True if (secret_updated or user_updated or database_updated or grant_updated or (secret_matches and user_matches and database_matches and grant_matches)) else False,
+            'secret_updated': secret_updated,
+            'user_updated': user_updated,
+            'database_updated': database_updated,
+            'grant_updated': grant_updated,
+            'message': message
+        }
+    except Exception as e:
+        error_details = f"General Exception: {str(e)}"
+        return {
+            'success': False,
+            'secret_updated': False,
+            'user_updated': False,
+            'database_updated': False,
+            'grant_updated': False,
+            'message': f"Ironic DB user setup error: {error_details}; {message}"
+        }
+def mariadb_database_present(namespace, database_name, mariadb_name, mariadb_namespace, character_set="utf8", collate="utf8_general_ci", cleanup_policy="Delete"):
+    """
+    Ensure that a Database custom resource is present in Kubernetes using the MariaDB Operator.
+    Creates or updates the Database resource to ensure a specific database exists in the MariaDB instance.
+
+    Args:
+        namespace (str): The namespace for the Database resource (often the same as the application namespace).
+        database_name (str): The name of the Database resource and the actual database in MariaDB.
+        mariadb_name (str): The name of the MariaDB instance to reference.
+        mariadb_namespace (str): The namespace of the MariaDB instance.
+        character_set (str, optional): The character set for the database. Defaults to 'utf8'.
+        collate (str, optional): The collation for the database. Defaults to 'utf8_general_ci'.
+        cleanup_policy (str, optional): Cleanup policy for the resource. Defaults to 'Delete'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+    """
+    try:
+        updated = False
+        exists = False
+        matches = False
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "k8s.mariadb.com"
+        version = "v1alpha1"
+        plural = "databases"
+
+        message = f"Configuring Database {database_name} in namespace {namespace}"
+
+        # Check if Database resource exists
+        try:
+            database = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=database_name
+            )
+            exists = True
+            current_spec = database.get('spec', {})
+            desired_spec = {
+                "mariaDbRef": {
+                    "name": mariadb_name,
+                    "namespace": mariadb_namespace,
+                    "waitForIt": True
+                },
+                "characterSet": character_set,
+                "cleanupPolicy": cleanup_policy,
+                "collate": collate
+            }
+            # Compare current spec with desired spec
+            matches = current_spec == desired_spec
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                matches = False
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error fetching Database {database_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Create or update Database if necessary
+        if not exists or not matches:
+            try:
+                database_body = {
+                    "apiVersion": f"{group}/{version}",
+                    "kind": "Database",
+                    "metadata": {
+                        "name": database_name,
+                        "namespace": namespace
+                    },
+                    "spec": {
+                        "mariaDbRef": {
+                            "name": mariadb_name,
+                            "namespace": mariadb_namespace,
+                            "waitForIt": True
+                        },
+                        "characterSet": character_set,
+                        "cleanupPolicy": cleanup_policy,
+                        "collate": collate
+                    }
+                }
+                if exists:
+                    # Include resourceVersion for update
+                    if 'metadata' in database and 'resourceVersion' in database['metadata']:
+                        database_body['metadata']['resourceVersion'] = database['metadata']['resourceVersion']
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, name=database_name, body=database_body
+                    )
+                    updated = True
+                    message += f"; Database {database_name} updated"
+                else:
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, body=database_body
+                    )
+                    updated = True
+                    message += f"; Database {database_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create/update Database {database_name}: Status: {e.status}, Reason: {e.reason}; Full Response Body: {str(e.body)[:500]}...; {message}"
+                }
+        else:
+            message += f"; Database {database_name} already up-to-date"
+            updated = False
+
+        return {
+            'success': True if (updated or matches) else False,
+            'updated': updated,
+            'message': message
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Database operation error for {database_name}: {str(e)[:100]}..."
+        }
