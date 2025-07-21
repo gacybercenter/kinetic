@@ -1827,6 +1827,7 @@ def generate_tls_secret(namespace, secret_name, common_name="ironic-operator", v
             from cryptography.hazmat.primitives.asymmetric import rsa
             from cryptography.hazmat.backends import default_backend
             import datetime
+            import base64
 
             # Generate private key
             private_key = rsa.generate_private_key(
