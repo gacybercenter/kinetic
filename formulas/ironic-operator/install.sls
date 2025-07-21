@@ -101,7 +101,7 @@ clone_ironic_repo:
 
 ensure_tls_secret:
   k8s.tls_secret_present:
-    - namespace: ironic-standalone-operator-system
+    - namespace: {{ pillar['bmo_namespace'] }}
     - secret_name: ironic-tls
     - common_name: ironic-operator
     - validity_days: 365
