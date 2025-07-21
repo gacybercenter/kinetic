@@ -9,6 +9,7 @@ for retrieving MAC addresses from HardwareData resources in a Metal3.io environm
 import salt.utils.decorators as decorators
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
+import base64
 
 # Ensure Salt can find this module
 __virtualname__ = 'kinetic-k8s'
