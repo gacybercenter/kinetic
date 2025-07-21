@@ -531,3 +531,341 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="bm
         ret['changes'] = {}
 
     return ret
+def mariadb_instance_present(name, namespace, instance_name, root_password, secret_name="mariadb-root-password", image="mariadb:10.6", storage_size="1Gi", storage_class="standard", pvc_name=None, replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", admin_host_access="%"):
+    """
+    Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
+    Creates or updates a root password Secret and the MariaDB instance Custom Resource with specified storage class, size, and optional PVC name.
+    Checks if the associated PVC is available and ensures root user access from specified host.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace where the Secret and MariaDB instance reside.
+
+    instance_name
+        The name of the MariaDB instance in Kubernetes.
+
+    root_password
+        The root password for the MariaDB instance.
+
+    secret_name
+        Optional. The name of the Secret for the root password. Defaults to 'mariadb-root-password'.
+
+    image
+        Optional. The Docker image for MariaDB. Defaults to 'mariadb:10.6'.
+
+    storage_size
+        Optional. Storage size for MariaDB PVC. Defaults to '1Gi'.
+
+    storage_class
+        Optional. Storage class for MariaDB PVC. Defaults to 'standard'.
+
+    pvc_name
+        Optional. Name of an existing PVC to use for MariaDB storage. If not provided, the operator will create one based on storage_size and storage_class.
+
+    replicas
+        Optional. Number of replicas for MariaDB. Defaults to 1.
+
+    limits_cpu
+        Optional. CPU limit for MariaDB. Defaults to '500m'.
+
+    limits_memory
+        Optional. Memory limit for MariaDB. Defaults to '512Mi'.
+
+    requests_cpu
+        Optional. CPU request for MariaDB. Defaults to '200m'.
+
+    requests_memory
+        Optional. Memory request for MariaDB. Defaults to '256Mi'.
+
+    admin_host_access
+        Optional. Host or IP pattern to grant root access from. Defaults to '%'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_mariadb_instance:
+          k8s.mariadb_instance_present:
+            - namespace: baremetal-operator-system
+            - instance_name: ironic-mariadb
+            - root_password: mysecurepassword
+            - secret_name: mariadb-root-password
+            - image: mariadb:10.6
+            - storage_size: 5Gi
+            - storage_class: local-storage
+            - pvc_name: my-custom-pvc
+            - replicas: 1
+            - limits_cpu: 500m
+            - limits_memory: 512Mi
+            - requests_cpu: 200m
+            - requests_memory: 256Mi
+            - admin_host_access: 192.168.1.41
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        # Call the execution module function
+        result = __salt__['kinetic-k8s.mariadb_instance_present'](
+            namespace=namespace,
+            instance_name=instance_name,
+            root_password=root_password,
+            secret_name=secret_name,
+            image=image,
+            storage_size=storage_size,
+            storage_class=storage_class,
+            pvc_name=pvc_name,
+            replicas=replicas,
+            limits_cpu=limits_cpu,
+            limits_memory=limits_memory,
+            requests_cpu=requests_cpu,
+            requests_memory=requests_memory,
+            admin_host_access=admin_host_access
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated'] or result['secret_updated'] or result['root_access_updated']:
+            ret['changes'] = {
+                'instance_updated': result['updated'],
+                'secret_updated': result['secret_updated'],
+                'pvc_available': result['pvc_available'],
+                'root_access_updated': result['root_access_updated']
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure MariaDB instance {instance_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
+def local_storage_pv_pvc_present(name, namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage", storage_class="local-storage"):
+    """
+    Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using a specified storage class for local storage.
+    The PV is tied to a local path for local storage. Checks if the local path exists on the node before proceeding.
+    Also checks if both resources exist and are bound.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace of the PVC (PV is cluster-wide but associated via PVC).
+
+    pv_name
+        The name of the Persistent Volume.
+
+    pvc_name
+        The name of the Persistent Volume Claim.
+
+    storage_size
+        Optional. Storage size for the PV and PVC. Defaults to '1Gi'.
+
+    node_name
+        Optional. The name of the node to bind the local storage PV to. Not used in this simplified version to avoid validation issues.
+
+    path
+        Optional. The host path on the node for local storage. Defaults to '/mnt/local-storage'.
+
+    storage_class
+        Optional. The storage class to use for the PV and PVC. Defaults to 'local-storage'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_local_storage:
+          k8s.local_storage_pv_pvc_present:
+            - namespace: baremetal-operator-system
+            - pv_name: local-pv-1
+            - pvc_name: local-pvc-1
+            - storage_size: 5Gi
+            - path: /mnt/local-storage
+            - storage_class: local-storage
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        # Call the execution module function
+        result = __salt__['kinetic-k8s.local_storage_pv_pvc_present'](namespace, pv_name, pvc_name, storage_size, node_name, path, storage_class)
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['pv_updated'] or result['pvc_updated']:
+            ret['changes'] = {
+                'pv_updated': result['pv_updated'],
+                'pvc_updated': result['pvc_updated'],
+                'bound': result['bound']
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure local storage PV {pv_name} and PVC {pvc_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
+def ironic_db_user_present(name, namespace, mariadb_name, mariadb_namespace, user_name, user_password, secret_name, database_name="ironic-database", host="%", max_user_connections=100, privileges=["ALL PRIVILEGES"], table="*"):
+    """
+    Ensure that the necessary Kubernetes resources for an Ironic database user are present.
+    This includes a Secret for user credentials, a User custom resource, and a Grant custom resource.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The namespace for the Secret, User, and Grant resources (typically Ironic namespace).
+
+    mariadb_name
+        The name of the MariaDB instance (Custom Resource) to reference.
+
+    mariadb_namespace
+        The namespace of the MariaDB instance.
+
+    user_name
+        The username for the database user (must match Secret data and User metadata name).
+
+    user_password
+        The password for the database user.
+
+    secret_name
+        The name of the Secret to store the user credentials.
+
+    database_name
+        Optional. The name of the database to grant privileges on. Defaults to 'ironic-database'.
+
+    host
+        Optional. The host pattern for user access. Defaults to '%'.
+
+    max_user_connections
+        Optional. Maximum connections for the user. Defaults to 100.
+
+    privileges
+        Optional. List of privileges to grant. Defaults to ['ALL PRIVILEGES'].
+
+    table
+        Optional. Table pattern for privileges. Defaults to '*'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ironic_db_user:
+          k8s.ironic_db_user_present:
+            - namespace: test-ironic
+            - mariadb_name: database-server
+            - mariadb_namespace: mariadb
+            - user_name: ironic-user
+            - user_password: mysecurepassword
+            - secret_name: ironic-user
+            - database_name: ironic-database
+            - host: '%'
+            - max_user_connections: 100
+            - privileges:
+              - ALL PRIVILEGES
+            - table: '*'
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.ironic_db_user_setup'](
+            namespace=namespace,
+            mariadb_name=mariadb_name,
+            mariadb_namespace=mariadb_namespace,
+            user_name=user_name,
+            user_password=user_password,
+            secret_name=secret_name,
+            database_name=database_name,
+            host=host,
+            max_user_connections=max_user_connections,
+            privileges=privileges,
+            table=table
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['secret_updated'] or result['user_updated'] or result['grant_updated']:
+            ret['changes'] = {
+                'secret_updated': result['secret_updated'],
+                'user_updated': result['user_updated'],
+                'grant_updated': result['grant_updated']
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Ironic DB user setup for {user_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
+def mariadb_database_present(name, namespace, database_name, mariadb_name, mariadb_namespace, character_set="utf8", collate="utf8_general_ci", cleanup_policy="Delete"):
+    """
+    Ensure that a Database custom resource is present in Kubernetes using the MariaDB Operator.
+    Creates or updates the Database resource to ensure a specific database exists in the MariaDB instance.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the Database resource (often the application namespace).
+
+    database_name
+        The name of the Database resource and the actual database in MariaDB.
+
+    mariadb_name
+        The name of the MariaDB instance to reference.
+
+    mariadb_namespace
+        The namespace of the MariaDB instance.
+
+    character_set
+        Optional. The character set for the database. Defaults to 'utf8'.
+
+    collate
+        Optional. The collation for the database. Defaults to 'utf8_general_ci'.
+
+    cleanup_policy
+        Optional. Cleanup policy for the resource. Defaults to 'Delete'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ironic_database:
+          k8s.mariadb_database_present:
+            - namespace: test-ironic
+            - database_name: ironic-database
+            - mariadb_name: database-server
+            - mariadb_namespace: mariadb
+            - character_set: utf8
+            - collate: utf8_general_ci
+            - cleanup_policy: Delete
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.mariadb_database_present'](
+            namespace=namespace,
+            database_name=database_name,
+            mariadb_name=mariadb_name,
+            mariadb_namespace=mariadb_namespace,
+            character_set=character_set,
+            collate=collate,
+            cleanup_policy=cleanup_policy
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {
+                'database_updated': True
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Database {database_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
