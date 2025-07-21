@@ -1829,6 +1829,7 @@ def generate_tls_secret(namespace, secret_name, common_name="ironic-operator", v
             import datetime
             import base64
 
+
             # Generate private key
             private_key = rsa.generate_private_key(
                 public_exponent=65537,

@@ -7,7 +7,9 @@ BMC authentication, and UUIDs, as well as querying hardware data from Kubernetes
 """
 
 from salt.exceptions import SaltInvocationError
-
+from kubernetes import client, config
+from kubernetes.client.rest import ApiException
+import base64
 __virtualname__ = 'k8s'
 
 def __virtual__():
