@@ -3,7 +3,12 @@ include:
 
 ironic_dependancies:
   pkg.installed:
-    - name: podman
+    - pkgs: 
+      - podman
+tls_generate_pip:
+  pip.installed:
+    - name: cryptography
+    - pip_bin: /usr/bin/salt-pip
 
 create_ironic_op_dir:
   file.directory:
