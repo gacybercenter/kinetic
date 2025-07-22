@@ -2142,7 +2142,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                     "port": database_port,
                     "name": database_name,
                     "user": database_user,
-                    "secretName": database_secret_name
+                    "credentialsName": database_secret_name
                 },
                 "httpPort": http_port,
                 "provisioning": {
