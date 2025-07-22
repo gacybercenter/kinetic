@@ -955,7 +955,8 @@ def ironic_operator_present(name, namespace="ironic-standalone-operator-system",
         result = __salt__['kinetic-k8s.check_ironic_operator'](namespace, deployment_name, timeout)
         ret['result'] = result['success']
         ret['comment'] = result['message']
-        if result['available']:
+        # Report changes only if the deployment transitioned from unavailable to available during the wait
+        if result.get('transitioned', False):
             ret['changes'] = {'available': True}
         else:
             ret['changes'] = {}

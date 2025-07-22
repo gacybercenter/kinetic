@@ -1921,7 +1921,7 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
         timeout (int, optional): Maximum time in seconds to wait for the deployment to become available. Defaults to 60.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'available' (bool), 'waited' (bool), and 'message' (str).
+        dict: A dictionary with 'success' (bool), 'available' (bool), 'waited' (bool), 'transitioned' (bool), and 'message' (str).
     """
     try:
         import time
@@ -1935,12 +1935,19 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
 
         message = f"Checking Ironic Operator deployment {deployment_name} in namespace {namespace}"
         available = False
+        initially_available = False
         waited = False
+        transitioned = False
 
-        # Check if deployment exists
+        # Check if deployment exists and get initial availability status
         try:
-            deployment = apps_v1_api.read_namespaced_deployment(name=deployment_name, namespace=namespace)
+            status = apps_v1_api.read_namespaced_deployment_status(name=deployment_name, namespace=namespace)
             message += f"; Deployment {deployment_name} found"
+            ready_replicas = status.status.ready_replicas or 0
+            desired_replicas = status.spec.replicas
+            initially_available = (ready_replicas == desired_replicas)
+            if initially_available:
+                message += f"; Deployment {deployment_name} is initially available"
         except ApiException as e:
             if e.status == 404:
                 message += f"; Deployment {deployment_name} not found"
@@ -1948,6 +1955,7 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
                     'success': False,
                     'available': False,
                     'waited': False,
+                    'transitioned': False,
                     'message': message
                 }
             else:
@@ -1956,8 +1964,19 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
                     'success': False,
                     'available': False,
                     'waited': False,
+                    'transitioned': False,
                     'message': message
                 }
+
+        # If initially available, no need to wait
+        if initially_available:
+            return {
+                'success': True,
+                'available': True,
+                'waited': False,
+                'transitioned': False,
+                'message': message
+            }
 
         # Wait for deployment to become available (ready replicas match desired replicas)
         wait_time = 0
@@ -1970,6 +1989,7 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
                 if ready_replicas == desired_replicas:
                     available = True
                     waited = True
+                    transitioned = not initially_available
                     message += f"; Deployment {deployment_name} is available ({wait_time}s)"
                     break
             except ApiException as e:
@@ -1982,11 +2002,13 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
             message += f"; Timeout waiting for deployment {deployment_name} to become available ({timeout}s)"
             available = False
             waited = False
+            transitioned = False
 
         return {
             'success': True if available else False,
             'available': available,
             'waited': waited,
+            'transitioned': transitioned,
             'message': message
         }
     except Exception as e:
@@ -1994,5 +2016,6 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
             'success': False,
             'available': False,
             'waited': False,
+            'transitioned': False,
             'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
         }
