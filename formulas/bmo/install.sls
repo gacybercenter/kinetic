@@ -1,19 +1,8 @@
 include:
   - /formulas/common/k8s-certmanager/install
   - /formulas/common/vbmc
+  - /formulas/common/k8s-mariadb
   - /formulas/ironic-operator
-
-# Validate deployment options
-validate_deployment_bmo_ironic:
-  test.fail_without_changes:
-    - name: "Nothing to deploy: deploy_bmo and deploy_ironic are both false"
-    - failhard: True
-    - unless: {{ pillar['deploy_bmo'] }} || {{ pillar['deploy_ironic'] }}
-valid_deployment_mariadb_tls:
-  test.fail_without_changes:
-    - name: "MariaDB deployment requires TLS"
-    - failhard: True
-    - onlyif: {{ pillar['deploy_mariadb'] }} && ! {{ pillar['deploy_tls'] }}
 
 ingress_values:
   file.managed:
