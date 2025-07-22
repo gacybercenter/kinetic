@@ -968,3 +968,133 @@ def ironic_operator_present(name, namespace="ironic-standalone-operator-system",
         ret['changes'] = {}
 
     return ret
+def ironic_instance_present(name, namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls"):
+    """
+    Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
+    Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace where the Ironic instance will reside.
+
+    instance_name
+        The name of the Ironic instance (Custom Resource).
+
+    database_secret_name
+        Optional. The name of the Secret containing database credentials. Defaults to 'ironic-user'.
+
+    database_host
+        Optional. The hostname or service name of the database. Defaults to 'ironic-mariadb'.
+
+    database_port
+        Optional. The port for the database connection. Defaults to 3306.
+
+    database_user
+        Optional. The database user for Ironic. Defaults to 'ironic'.
+
+    database_name
+        Optional. The name of the database for Ironic. Defaults to 'ironic'.
+
+    http_port
+        Optional. The HTTP port for Ironic API. Defaults to 6385.
+
+    provisioning_interface
+        Optional. The provisioning interface name. Defaults to 'ironic-provisioning'.
+
+    provisioning_nic
+        Optional. The NIC for provisioning. Defaults to 'eth0'.
+
+    provisioning_dhcp_range_start
+        Optional. Start of DHCP range for provisioning. Defaults to empty (no DHCP).
+
+    provisioning_dhcp_range_end
+        Optional. End of DHCP range for provisioning. Defaults to empty (no DHCP).
+
+    provisioning_dhcp_range_gateway
+        Optional. Gateway for DHCP range. Defaults to empty.
+
+    provisioning_dhcp_range_netmask
+        Optional. Netmask for DHCP range. Defaults to empty.
+
+    inspection_dhcp_all_interfaces
+        Optional. Whether to DHCP all interfaces during inspection. Defaults to False.
+
+    enable_keepalived
+        Optional. Whether to enable Keepalived for high availability. Defaults to False.
+
+    keepalived_vip
+        Optional. Virtual IP for Keepalived. Required if enable_keepalived is True. Defaults to empty.
+
+    keepalived_interface
+        Optional. Interface for Keepalived. Defaults to 'eth0'.
+
+    tls_secret_name
+        Optional. The name of the Secret containing TLS certificates for Ironic. Defaults to 'ironic-tls'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ironic_instance:
+          k8s.ironic_instance_present:
+            - namespace: ironic-standalone-operator-system
+            - instance_name: ironic
+            - database_secret_name: ironic-user
+            - database_host: ironic-mariadb
+            - database_port: 3306
+            - database_user: ironic
+            - database_name: ironic
+            - http_port: 6385
+            - provisioning_interface: ironic-provisioning
+            - provisioning_nic: eth0
+            - provisioning_dhcp_range_start: 192.168.123.100
+            - provisioning_dhcp_range_end: 192.168.123.200
+            - provisioning_dhcp_range_gateway: 192.168.123.1
+            - provisioning_dhcp_range_netmask: 255.255.255.0
+            - inspection_dhcp_all_interfaces: False
+            - enable_keepalived: True
+            - keepalived_vip: 192.168.123.10
+            - keepalived_interface: eth0
+            - tls_secret_name: ironic-tls
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.ironic_instance_present'](
+            namespace=namespace,
+            instance_name=instance_name,
+            database_secret_name=database_secret_name,
+            database_host=database_host,
+            database_port=database_port,
+            database_user=database_user,
+            database_name=database_name,
+            http_port=http_port,
+            provisioning_interface=provisioning_interface,
+            provisioning_nic=provisioning_nic,
+            provisioning_dhcp_range_start=provisioning_dhcp_range_start,
+            provisioning_dhcp_range_end=provisioning_dhcp_range_end,
+            provisioning_dhcp_range_gateway=provisioning_dhcp_range_gateway,
+            provisioning_dhcp_range_netmask=provisioning_dhcp_range_netmask,
+            inspection_dhcp_all_interfaces=inspection_dhcp_all_interfaces,
+            enable_keepalived=enable_keepalived,
+            keepalived_vip=keepalived_vip,
+            keepalived_interface=keepalived_interface,
+            tls_secret_name=tls_secret_name
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {
+                'ironic_updated': True
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Ironic instance {instance_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret

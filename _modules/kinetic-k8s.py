@@ -2019,3 +2019,201 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
             'transitioned': False,
             'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
         }
+def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls"):
+    """
+    Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
+    Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings.
+
+    Args:
+        namespace (str): The Kubernetes namespace where the Ironic instance will reside.
+        instance_name (str): The name of the Ironic instance (Custom Resource).
+        database_secret_name (str, optional): The name of the Secret containing database credentials. Defaults to 'ironic-user'.
+        database_host (str, optional): The hostname or service name of the database. Defaults to 'ironic-mariadb'.
+        database_port (int, optional): The port for the database connection. Defaults to 3306.
+        database_user (str, optional): The database user for Ironic. Defaults to 'ironic'.
+        database_name (str, optional): The name of the database for Ironic. Defaults to 'ironic'.
+        http_port (int, optional): The HTTP port for Ironic API. Defaults to 6385.
+        provisioning_interface (str, optional): The provisioning interface name. Defaults to 'ironic-provisioning'.
+        provisioning_nic (str, optional): The NIC for provisioning. Defaults to 'eth0'.
+        provisioning_dhcp_range_start (str, optional): Start of DHCP range for provisioning. Defaults to empty (no DHCP).
+        provisioning_dhcp_range_end (str, optional): End of DHCP range for provisioning. Defaults to empty (no DHCP).
+        provisioning_dhcp_range_gateway (str, optional): Gateway for DHCP range. Defaults to empty.
+        provisioning_dhcp_range_netmask (str, optional): Netmask for DHCP range. Defaults to empty.
+        inspection_dhcp_all_interfaces (bool, optional): Whether to DHCP all interfaces during inspection. Defaults to False.
+        enable_keepalived (bool, optional): Whether to enable Keepalived for high availability. Defaults to False.
+        keepalived_vip (str, optional): Virtual IP for Keepalived. Required if enable_keepalived is True. Defaults to empty.
+        keepalived_interface (str, optional): Interface for Keepalived. Defaults to 'eth0'.
+        tls_secret_name (str, optional): The name of the Secret containing TLS certificates for Ironic. Defaults to 'ironic-tls'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+    """
+    try:
+        updated = False
+        exists = False
+        matches = False
+        message = f"Configuring Ironic instance {instance_name} in namespace {namespace}"
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "ironic.metal3.io"
+        version = "v1alpha1"
+        plural = "ironics"
+
+        # Check if Ironic instance exists
+        try:
+            ironic = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=instance_name
+            )
+            exists = True
+            current_spec = ironic.get('spec', {})
+            # Build desired spec for comparison (simplified, adjust based on critical fields)
+            desired_spec = {
+                "database": {
+                    "host": database_host,
+                    "port": database_port,
+                    "name": database_name,
+                    "user": database_user,
+                    "secretName": database_secret_name
+                },
+                "httpPort": http_port,
+                "provisioning": {
+                    "interface": provisioning_interface,
+                    "nic": provisioning_nic
+                }
+            }
+            if provisioning_dhcp_range_start and provisioning_dhcp_range_end:
+                desired_spec["provisioning"]["dhcp"] = {
+                    "range": {
+                        "start": provisioning_dhcp_range_start,
+                        "end": provisioning_dhcp_range_end
+                    }
+                }
+                if provisioning_dhcp_range_gateway:
+                    desired_spec["provisioning"]["dhcp"]["range"]["gateway"] = provisioning_dhcp_range_gateway
+                if provisioning_dhcp_range_netmask:
+                    desired_spec["provisioning"]["dhcp"]["range"]["netmask"] = provisioning_dhcp_range_netmask
+            desired_spec["inspection"] = {
+                "dhcp": {
+                    "allInterfaces": inspection_dhcp_all_interfaces
+                }
+            }
+            if enable_keepalived and keepalived_vip:
+                desired_spec["keepalived"] = {
+                    "enabled": True,
+                    "vip": keepalived_vip,
+                    "interface": keepalived_interface
+                }
+            if tls_secret_name:
+                desired_spec["tls"] = {
+                    "enabled": True,
+                    "secretName": tls_secret_name
+                }
+            # Simplified match check (deep comparison can be more detailed if needed)
+            matches = current_spec == desired_spec
+            message += f"; Ironic spec comparison: matches={matches}"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                matches = False
+                message += f"; Ironic instance {instance_name} not found, will create"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error fetching Ironic instance {instance_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Build the full Ironic body for create/update
+        ironic_body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Ironic",
+            "metadata": {
+                "name": instance_name,
+                "namespace": namespace
+            },
+            "spec": {
+                "database": {
+                    "host": database_host,
+                    "port": database_port,
+                    "name": database_name,
+                    "user": database_user,
+                    "secretName": database_secret_name
+                },
+                "httpPort": http_port,
+                "provisioning": {
+                    "interface": provisioning_interface,
+                    "nic": provisioning_nic
+                },
+                "inspection": {
+                    "dhcp": {
+                        "allInterfaces": inspection_dhcp_all_interfaces
+                    }
+                }
+            }
+        }
+        if provisioning_dhcp_range_start and provisioning_dhcp_range_end:
+            ironic_body["spec"]["provisioning"]["dhcp"] = {
+                "range": {
+                    "start": provisioning_dhcp_range_start,
+                    "end": provisioning_dhcp_range_end
+                }
+            }
+            if provisioning_dhcp_range_gateway:
+                ironic_body["spec"]["provisioning"]["dhcp"]["range"]["gateway"] = provisioning_dhcp_range_gateway
+            if provisioning_dhcp_range_netmask:
+                ironic_body["spec"]["provisioning"]["dhcp"]["range"]["netmask"] = provisioning_dhcp_range_netmask
+        if enable_keepalived and keepalived_vip:
+            ironic_body["spec"]["keepalived"] = {
+                "enabled": True,
+                "vip": keepalived_vip,
+                "interface": keepalived_interface
+            }
+        if tls_secret_name:
+            ironic_body["spec"]["tls"] = {
+                "enabled": True,
+                "secretName": tls_secret_name
+            }
+
+        # Create or update Ironic instance if necessary
+        if not exists or not matches:
+            try:
+                if exists:
+                    if 'metadata' in ironic and 'resourceVersion' in ironic['metadata']:
+                        ironic_body['metadata']['resourceVersion'] = ironic['metadata']['resourceVersion']
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=ironic_body
+                    )
+                    updated = True
+                    message += f"; Ironic instance {instance_name} updated"
+                else:
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, body=ironic_body
+                    )
+                    updated = True
+                    message += f"; Ironic instance {instance_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create/update Ironic instance {instance_name}: Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}; Full Response Body: {str(e.body)[:500] if hasattr(e, 'body') and e.body else 'N/A'}...; {message}"
+                }
+        else:
+            message += f"; Ironic instance {instance_name} already up-to-date"
+            updated = False
+
+        return {
+            'success': True if updated or matches else False,
+            'updated': updated,
+            'message': message
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Ironic instance operation error for {instance_name}: {str(e)[:100]}..."
+        }
