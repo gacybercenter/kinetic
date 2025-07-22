@@ -48,7 +48,7 @@ create_ironic_db_dir:
     - dir_mode: 755
     - file_mode: 644
     - require:
-      - sls: /formulas/common/k8s-mariadb
+      - sls: /formulas/common/k8s-mariadb/install
 
 ensure_k8s_storage:
   k8s.local_storage_pv_pvc_present:
