@@ -959,10 +959,12 @@ def ironic_operator_present(name, namespace="ironic-standalone-operator-system",
         ret['changes'] = {}
         # If the state fails, append a message with the command to run
         if not result['success']:
-            ret['comment'] += f"; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {{ pillar['ironic_op_dir'] }} to install it."
+            ironic_op_dir = __salt__['pillar.get']('ironic_op_dir', '<path-to-ironic-operator-repo>')
+            ret['comment'] += f"; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {ironic_op_dir} to install it."
     except Exception as e:
         ret['result'] = False
-        ret['comment'] = f"Failed to check Ironic Operator: {str(e)[:100]}...; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {{ pillar['ironic_op_dir'] }} to install it."
+        ironic_op_dir = __salt__['pillar.get']('ironic_op_dir', '<path-to-ironic-operator-repo>')
+        ret['comment'] = f"Failed to check Ironic Operator: {str(e)[:100]}...; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {ironic_op_dir} to install it."
         ret['changes'] = {}
 
     return ret
