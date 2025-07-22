@@ -955,14 +955,14 @@ def ironic_operator_present(name, namespace="ironic-standalone-operator-system",
         result = __salt__['kinetic-k8s.check_ironic_operator'](namespace, deployment_name, timeout)
         ret['result'] = result['success']
         ret['comment'] = result['message']
-        # Report changes only if the deployment transitioned from unavailable to available during the wait
-        if result.get('transitioned', False):
-            ret['changes'] = {'available': True}
-        else:
-            ret['changes'] = {}
+        # Only report changes if needed; keep empty for check-only state
+        ret['changes'] = {}
+        # If the state fails, append a message with the command to run
+        if not result['success']:
+            ret['comment'] += f"; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {pillar.get('ironic_op_dir', '<path-to-ironic-operator-repo>')} to install it."
     except Exception as e:
         ret['result'] = False
-        ret['comment'] = f"Failed to check Ironic Operator: {str(e)[:100]}..."
+        ret['comment'] = f"Failed to check Ironic Operator: {str(e)[:100]}...; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {pillar.get('ironic_op_dir', '<path-to-ironic-operator-repo>')} to install it."
         ret['changes'] = {}
 
     return ret
