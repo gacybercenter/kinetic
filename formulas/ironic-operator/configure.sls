@@ -25,12 +25,8 @@ ironic-op-ns:
     - require:
       - git: clone_ironic_repo
 
-
-
-ensure_tls_secret:
-  k8s.tls_secret_present:
+check_ironic_operator:
+  k8s.ironic_operator_present:
     - namespace: {{ pillar['bmo_namespace'] }}
-    - secret_name: ironic-tls
-    - common_name: ironic-operator
-    - validity_days: 365
-
+    - deployment_name: {{ pillar['bmo_namespace'] }}-controller-manager
+    - timeout: 60

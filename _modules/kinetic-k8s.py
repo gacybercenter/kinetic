@@ -1910,3 +1910,89 @@ def generate_tls_secret(namespace, secret_name, common_name="ironic-operator", v
             'updated': False,
             'message': f"TLS Secret operation error for {secret_name}: {str(e)[:100]}..."
         }
+def check_ironic_operator(namespace="ironic-standalone-operator-system", deployment_name="ironic-standalone-operator-controller-manager", timeout=60):
+    """
+    Check if the Ironic Operator is installed and available in Kubernetes by verifying the deployment status.
+    This mimics the behavior of 'kubectl wait --for=condition=Available'.
+
+    Args:
+        namespace (str, optional): The namespace of the Ironic Operator deployment. Defaults to 'ironic-standalone-operator-system'.
+        deployment_name (str, optional): The name of the Ironic Operator deployment. Defaults to 'ironic-standalone-operator-controller-manager'.
+        timeout (int, optional): Maximum time in seconds to wait for the deployment to become available. Defaults to 60.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'available' (bool), 'waited' (bool), and 'message' (str).
+    """
+    try:
+        import time
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        apps_v1_api = client.AppsV1Api()
+
+        message = f"Checking Ironic Operator deployment {deployment_name} in namespace {namespace}"
+        available = False
+        waited = False
+
+        # Check if deployment exists
+        try:
+            deployment = apps_v1_api.read_namespaced_deployment(name=deployment_name, namespace=namespace)
+            message += f"; Deployment {deployment_name} found"
+        except ApiException as e:
+            if e.status == 404:
+                message += f"; Deployment {deployment_name} not found"
+                return {
+                    'success': False,
+                    'available': False,
+                    'waited': False,
+                    'message': message
+                }
+            else:
+                message += f"; Error fetching deployment {deployment_name}: {str(e)[:100]}..."
+                return {
+                    'success': False,
+                    'available': False,
+                    'waited': False,
+                    'message': message
+                }
+
+        # Wait for deployment to become available (ready replicas match desired replicas)
+        wait_time = 0
+        wait_interval = 5  # Check every 5 seconds
+        while wait_time < timeout:
+            try:
+                status = apps_v1_api.read_namespaced_deployment_status(name=deployment_name, namespace=namespace)
+                ready_replicas = status.status.ready_replicas or 0
+                desired_replicas = status.spec.replicas
+                if ready_replicas == desired_replicas:
+                    available = True
+                    waited = True
+                    message += f"; Deployment {deployment_name} is available ({wait_time}s)"
+                    break
+            except ApiException as e:
+                message += f"; Error checking deployment status: {str(e)[:100]}..."
+                break
+            time.sleep(wait_interval)
+            wait_time += wait_interval
+
+        if wait_time >= timeout and not available:
+            message += f"; Timeout waiting for deployment {deployment_name} to become available ({timeout}s)"
+            available = False
+            waited = False
+
+        return {
+            'success': True if available else False,
+            'available': available,
+            'waited': waited,
+            'message': message
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'available': False,
+            'waited': False,
+            'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
+        }

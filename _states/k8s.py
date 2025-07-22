@@ -927,3 +927,41 @@ def tls_secret_present(name, namespace, secret_name, common_name="ironic-operato
         ret['changes'] = {}
 
     return ret
+def ironic_operator_present(name, namespace="ironic-standalone-operator-system", deployment_name="ironic-standalone-operator-controller-manager", timeout=60):
+    """
+    Ensure that the Ironic Operator is installed and available in Kubernetes by checking the deployment status.
+
+    Args:
+        name (str): The name of the state (arbitrary, for SaltStack identification).
+        namespace (str, optional): The Kubernetes namespace of the Ironic Operator deployment. Defaults to 'ironic-standalone-operator-system'.
+        deployment_name (str, optional): The name of the Ironic Operator deployment. Defaults to 'ironic-standalone-operator-controller-manager'.
+        timeout (int, optional): Maximum time in seconds to wait for the deployment to become available. Defaults to 60.
+
+    Returns:
+        dict: A dictionary with 'name' (str), 'result' (bool), 'comment' (str), and 'changes' (dict).
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ironic_operator:
+          k8s.ironic_operator_present:
+            - namespace: ironic-standalone-operator-system
+            - deployment_name: ironic-standalone-operator-controller-manager
+            - timeout: 60
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.check_ironic_operator'](namespace, deployment_name, timeout)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['available']:
+            ret['changes'] = {'available': True}
+        else:
+            ret['changes'] = {}
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to check Ironic Operator: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
