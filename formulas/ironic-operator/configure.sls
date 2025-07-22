@@ -27,6 +27,6 @@ ironic-op-ns:
 
 check_ironic_operator:
   k8s.ironic_operator_present:
-    - namespace: {{ pillar['bmo_namespace'] }}
-    - deployment_name: {{ pillar['bmo_namespace'] }}-controller-manager
+    - namespace: {{ pillar['irso_namespace'] }}
+    - deployment_name: {{ pillar['irso_namespace'] }}-controller-manager
     - timeout: 60
