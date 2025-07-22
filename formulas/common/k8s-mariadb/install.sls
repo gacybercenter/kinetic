@@ -1,6 +1,11 @@
 include:
   - /formulas/common/helm
 
+mariadb_op_namespace:
+  cmd.run:
+    - name: kubectl create ns {{ pillar['mariadb_namespace'] }}
+    - unless: kubectl get ns |grep {{ pillar ['mariadb_namespace'] }}
+
 helm_mariadb_op_repo:
   helm.repo_managed:
     - present:
