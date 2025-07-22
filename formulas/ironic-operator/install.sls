@@ -5,18 +5,11 @@ ironic_dependancies:
   pkg.installed:
     - pkgs: 
       - podman
+
 tls_generate_pip:
   pip.installed:
     - name: cryptography
     - pip_bin: /usr/bin/salt-pip
-
-create_ironic_op_dir:
-  file.directory:
-    - name: {{ pillar['ironic_op_dir'] }}
-    - user: root
-    - group: root
-    - dir_mode: 755
-    - file_mode: 644
 
 create_ironic_db_dir:
   file.directory:
@@ -83,27 +76,3 @@ ensure_ironic_db_user:
     - table: '*'
     - require:
       - k8s: ensure_mariadb_instance
-
-git_ironic_repo:
-  git.config_set:
-    - name: safe.directory
-    - value: {{ pillar['ironic_op_dir'] }}
-    - global: True
-
-clone_ironic_repo:
-  git.cloned:
-    - name: https://github.com/metal3-io/ironic-standalone-operator
-    - branch: {{ pillar['ironic_op_release'] }}
-    - target: {{ pillar['ironic_op_dir'] }}
-    - require:
-      - file: create_ironic_op_dir
-      - git: git_ironic_repo
-
-ensure_tls_secret:
-  k8s.tls_secret_present:
-    - namespace: {{ pillar['bmo_namespace'] }}
-    - secret_name: ironic-tls
-    - common_name: ironic-operator
-    - validity_days: 365
-    - require:
-      - k8s: ensure_ironic_db_user
