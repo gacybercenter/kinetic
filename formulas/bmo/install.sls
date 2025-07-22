@@ -35,6 +35,11 @@ salt-pip_installs:
     - require:
       - pkg: install_dependencies
 
+bmo_namespace_present:
+  cmd.run:
+    - name: kubectl create ns {{ pillar['bmo_namespace'] }}
+    - unless: kubectl get ns |grep {{ pillar['bmo_namespace'] }}
+
 create_ironic_db_dir:
   file.directory:
     - name: {{ pillar['ironic_db_dir'] }}
@@ -43,7 +48,7 @@ create_ironic_db_dir:
     - dir_mode: 755
     - file_mode: 644
     - require:
-      - sls: /formulas/common/k8s-maridb
+      - sls: /formulas/common/k8s-mariadb
 
 ensure_k8s_storage:
   k8s.local_storage_pv_pvc_present:
