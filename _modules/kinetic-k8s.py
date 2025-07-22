@@ -2081,6 +2081,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                     "user": database_user,
                     "credentialsName": database_secret_name
                 },
+                "apiCredentialsName": database_secret_name,
                 "httpPort": http_port,
                 "provisioning": {
                     "interface": provisioning_interface,
