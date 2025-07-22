@@ -2019,10 +2019,10 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
             'transitioned': False,
             'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
         }
-def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls"):
+def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key=""):
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
-    Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings.
+    Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings, TLS, and SSH key for deploy ramdisk.
 
     Args:
         namespace (str): The Kubernetes namespace where the Ironic instance will reside.
@@ -2044,6 +2044,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         keepalived_vip (str, optional): Virtual IP for Keepalived. Required if enable_keepalived is True. Defaults to empty.
         keepalived_interface (str, optional): Interface for Keepalived. Defaults to 'eth0'.
         tls_secret_name (str, optional): The name of the Secret containing TLS certificates for Ironic. Defaults to 'ironic-tls'.
+        ssh_public_key (str, optional): SSH public key to include in the deploy ramdisk for secure access. Defaults to empty.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
@@ -2110,8 +2111,11 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 }
             if tls_secret_name:
                 desired_spec["tls"] = {
-                    "enabled": True,
-                    "secretName": tls_secret_name
+                    "certificateName": tls_secret_name
+                }
+            if ssh_public_key:
+                desired_spec["deployRamdisk"] = {
+                    "sshPublicKey": ssh_public_key
                 }
             # Simplified match check (deep comparison can be more detailed if needed)
             matches = current_spec == desired_spec
@@ -2175,8 +2179,11 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             }
         if tls_secret_name:
             ironic_body["spec"]["tls"] = {
-                "enabled": True,
-                "secretName": tls_secret_name
+                "certificateName": tls_secret_name
+            }
+        if ssh_public_key:
+            ironic_body["spec"]["deployRamdisk"] = {
+                "sshPublicKey": ssh_public_key
             }
 
         # Create or update Ironic instance if necessary
