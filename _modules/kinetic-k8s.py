@@ -2210,6 +2210,22 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                                     normalized[key] = int(float(normalized[key]) if isinstance(normalized[key], str) else normalized[key])
                                 except (ValueError, TypeError):
                                     pass
+                    else:
+                        # Handle missing fields with defaults if they are optional or operator-managed
+                        if key == "inspection" and "inspection" not in current:
+                            normalized[key] = {"dhcp": {"allInterfaces": False}}
+                        elif key == "dhcp" and "dhcp" not in current.get("inspection", {}):
+                            normalized[key] = {"allInterfaces": False}
+                        elif key == "allInterfaces" and "allInterfaces" not in current.get("dhcp", {}):
+                            normalized[key] = False
+                        elif key == "keepalived" and "keepalived" not in current and "ipAddressManager" in current.get("networking", {}) and current["networking"]["ipAddressManager"] == "keepalived":
+                            normalized[key] = {
+                                "enabled": True,
+                                "vip": current.get("networking", {}).get("ipAddress", ""),
+                                "interface": current.get("networking", {}).get("interface", "eth0")
+                            }
+                        elif key == "serveDNS" and "serveDNS" not in current and "dhcp" in current:
+                            normalized[key] = False
                 return normalized
 
             normalized_current_spec = normalize_dict(desired_spec, current_spec)
