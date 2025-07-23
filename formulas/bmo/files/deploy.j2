@@ -1,5 +1,9 @@
 #!/bin/bash
+IRONIC_INSECURE={{ pillar['ironicInsecure'] }}
+IRONIC_ENDPOINT=https://{{ pillar['ironic_endpoint_ip'] }}:6385/v1/
+CACHEURL=http://{{ pillar['ironic_endpoint_ip'] }}/images
+RESTART_CONTAINER_CERTIFICATE_UPDATED={{ pillar['restart_container_certificate_updated'] }}
+IRONIC_USERNAME=ironic
+IRONIC_PASSWORD={{ pillar['ironic_api_password'] }}
 
-export IRONIC_HOST_IP={{ pillar['ironic_endpoint_ip'] }}
-export IRONIC_HOST={{ grains['id'] }}
 /opt/metal3/baremetal-operator/tools/deploy.sh {{pillar['deploy_args'] }}
