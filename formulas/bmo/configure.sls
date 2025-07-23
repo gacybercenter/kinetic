@@ -25,7 +25,7 @@ ensure_ironic_instance:
     - database_user: {{ pillar['ironic_username'] }}
     - database_name: ironic
     - http_port: 6385
-    - provisioning_interface: ironic-provisioning
+    - provisioning_interface: {{ pillar['ironic_interface'] }}
     - provisioning_nic: {{ pillar['ironic_interface'] }}
     - provisioning_dhcp_range_start: {{ pillar['ironic_dhcp_start'] }}
     - provisioning_dhcp_range_end: {{ pillar['ironic_dhcp_end'] }}

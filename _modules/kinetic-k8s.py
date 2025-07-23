@@ -2019,7 +2019,7 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
             'transitioned': False,
             'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
         }
-def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-credentials", api_username="ironic-api", api_password=""):
+def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_ip="", provisioning_network="Managed", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", provisioning_dhcp_external=False, inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-credentials", api_username="ironic-api", api_password=""):
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
     Creates or updates the Ironic Custom Resource with specified database connection, networking, optional Keepalived settings, TLS, SSH key for deploy ramdisk, and API credentials.
@@ -2035,10 +2035,13 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         http_port (int, optional): The HTTP port for Ironic API. Defaults to 6385.
         provisioning_interface (str, optional): The provisioning interface name. Defaults to 'ironic-provisioning'.
         provisioning_nic (str, optional): The NIC for provisioning. Defaults to 'eth0'.
+        provisioning_ip (str, optional): The IP address for provisioning. Defaults to empty.
+        provisioning_network (str, optional): The provisioning network management type ('Managed', 'Unmanaged', 'Disabled'). Defaults to 'Managed'.
         provisioning_dhcp_range_start (str, optional): Start of DHCP range for provisioning. Defaults to empty (no DHCP).
         provisioning_dhcp_range_end (str, optional): End of DHCP range for provisioning. Defaults to empty (no DHCP).
         provisioning_dhcp_range_gateway (str, optional): Gateway for DHCP range. Defaults to empty.
         provisioning_dhcp_range_netmask (str, optional): Netmask for DHCP range. Defaults to empty.
+        provisioning_dhcp_external (bool, optional): Whether DHCP is handled externally for provisioning. Defaults to False.
         inspection_dhcp_all_interfaces (bool, optional): Whether to DHCP all interfaces during inspection. Defaults to False.
         enable_keepalived (bool, optional): Whether to enable Keepalived for high availability. Defaults to False.
         keepalived_vip (str, optional): Virtual IP for Keepalived. Required if enable_keepalived is True. Defaults to empty.
@@ -2148,23 +2151,21 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 "httpPort": http_port,
                 "provisioning": {
                     "interface": provisioning_interface,
-                    "nic": provisioning_nic
-                }
-            }
-            if provisioning_dhcp_range_start and provisioning_dhcp_range_end:
-                desired_spec["provisioning"]["dhcp"] = {
-                    "range": {
-                        "start": provisioning_dhcp_range_start,
-                        "end": provisioning_dhcp_range_end
+                    "nic": provisioning_nic,
+                    "ip": provisioning_ip if provisioning_ip else "",
+                    "network": provisioning_network,
+                    "dhcpRange": {
+                        "start": provisioning_dhcp_range_start if provisioning_dhcp_range_start else "",
+                        "end": provisioning_dhcp_range_end if provisioning_dhcp_range_end else "",
+                        "gateway": provisioning_dhcp_range_gateway if provisioning_dhcp_range_gateway else "",
+                        "netmask": provisioning_dhcp_range_netmask if provisioning_dhcp_range_netmask else ""
+                    },
+                    "dhcpExternal": provisioning_dhcp_external
+                },
+                "inspection": {
+                    "dhcp": {
+                        "allInterfaces": inspection_dhcp_all_interfaces
                     }
-                }
-                if provisioning_dhcp_range_gateway:
-                    desired_spec["provisioning"]["dhcp"]["range"]["gateway"] = provisioning_dhcp_range_gateway
-                if provisioning_dhcp_range_netmask:
-                    desired_spec["provisioning"]["dhcp"]["range"]["netmask"] = provisioning_dhcp_range_netmask
-            desired_spec["inspection"] = {
-                "dhcp": {
-                    "allInterfaces": inspection_dhcp_all_interfaces
                 }
             }
             if enable_keepalived and keepalived_vip:
@@ -2217,7 +2218,16 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 "httpPort": http_port,
                 "provisioning": {
                     "interface": provisioning_interface,
-                    "nic": provisioning_nic
+                    "nic": provisioning_nic,
+                    "ip": provisioning_ip if provisioning_ip else "",
+                    "network": provisioning_network,
+                    "dhcpRange": {
+                        "start": provisioning_dhcp_range_start if provisioning_dhcp_range_start else "",
+                        "end": provisioning_dhcp_range_end if provisioning_dhcp_range_end else "",
+                        "gateway": provisioning_dhcp_range_gateway if provisioning_dhcp_range_gateway else "",
+                        "netmask": provisioning_dhcp_range_netmask if provisioning_dhcp_range_netmask else ""
+                    },
+                    "dhcpExternal": provisioning_dhcp_external
                 },
                 "inspection": {
                     "dhcp": {
@@ -2226,17 +2236,6 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 }
             }
         }
-        if provisioning_dhcp_range_start and provisioning_dhcp_range_end:
-            ironic_body["spec"]["provisioning"]["dhcp"] = {
-                "range": {
-                    "start": provisioning_dhcp_range_start,
-                    "end": provisioning_dhcp_range_end
-                }
-            }
-            if provisioning_dhcp_range_gateway:
-                ironic_body["spec"]["provisioning"]["dhcp"]["range"]["gateway"] = provisioning_dhcp_range_gateway
-            if provisioning_dhcp_range_netmask:
-                ironic_body["spec"]["provisioning"]["dhcp"]["range"]["netmask"] = provisioning_dhcp_range_netmask
         if enable_keepalived and keepalived_vip:
             ironic_body["spec"]["keepalived"] = {
                 "enabled": True,
