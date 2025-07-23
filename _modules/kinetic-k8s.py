@@ -2023,36 +2023,6 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
     Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings, TLS, SSH key for deploy ramdisk, and API credentials.
-
-    Args:
-        namespace (str): The namespace of the Ironic instance in Kubernetes.
-        instance_name (str): The name of the Ironic instance (Custom Resource).
-        database_secret_name (str, optional): Secret name for database credentials. Defaults to "ironic-user".
-        database_host (str, optional): Database host. Defaults to "ironic-mariadb".
-        database_port (int, optional): Database port. Defaults to 3306.
-        database_user (str, optional): Database user. Defaults to "ironic".
-        database_name (str, optional): Database name. Defaults to "ironic".
-        http_port (int, optional): API port for Ironic. Defaults to 6385.
-        networking_interface (str, optional): Network interface for Ironic. Defaults to "".
-        networking_ip (str, optional): IP address for Ironic. Defaults to "".
-        networking_dhcp_range_start (str, optional): DHCP range start IP. Defaults to "".
-        networking_dhcp_range_end (str, optional): DHCP range end IP. Defaults to "".
-        networking_dhcp_range_gateway (str, optional): DHCP gateway address. Defaults to "".
-        networking_dhcp_network_cidr (str, optional): DHCP network CIDR. Defaults to "".
-        networking_dhcp_serve_dns (bool, optional): Whether to serve DNS in DHCP. Defaults to False.
-        networking_dhcp_dns_address (str, optional): DNS address for DHCP. Defaults to "".
-        inspection_dhcp_all_interfaces (bool, optional): Inspect all interfaces for DHCP. Defaults to False.
-        enable_keepalived (bool, optional): Enable Keepalived for VIP. Defaults to False.
-        keepalived_vip (str, optional): Virtual IP for Keepalived. Defaults to "".
-        keepalived_interface (str, optional): Interface for Keepalived. Defaults to "eth0".
-        tls_secret_name (str, optional): Secret name for TLS certificate. Defaults to "ironic-tls".
-        ssh_public_key (str, optional): SSH public key for deploy ramdisk. Defaults to "".
-        api_secret_name (str, optional): Secret name for API credentials. Defaults to "ironic-api-creds".
-        api_username (str, optional): Username for API. Defaults to "ironic".
-        api_password (str, optional): Password for API. Defaults to "".
-
-    Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'api_secret_updated' (bool), and 'message' (str).
     """
     try:
         updated = False
@@ -2186,7 +2156,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 desired_spec["deployRamdisk"] = {
                     "sshKey": ssh_public_key
                 }
-            # Normalize current spec by recursively removing fields not in desired spec and ensuring type consistency
+            # Normalize current spec by recursively adding missing fields with defaults matching desired spec
             def normalize_dict(desired, current):
                 normalized = {}
                 for key in desired:
@@ -2205,40 +2175,35 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                                 normalized[key] = bool(normalized[key])
                             if key == "enabled" and isinstance(normalized[key], (bool, str)):
                                 normalized[key] = bool(normalized[key])
-                            if key == "port" and isinstance(normalized[key], (int, float, str)):
-                                try:
-                                    normalized[key] = int(float(normalized[key]) if isinstance(normalized[key], str) else normalized[key])
-                                except (ValueError, TypeError):
-                                    pass
                     else:
-                        # Handle missing fields with defaults if they are optional or operator-managed
-                        if key == "inspection" or (key == "inspection" and "inspection" in current and not current["inspection"]):
-                            normalized[key] = {"dhcp": {"allInterfaces": False}}
-                        elif key == "dhcp" and ("inspection" not in current or "dhcp" not in current.get("inspection", {})):
-                            normalized[key] = {"allInterfaces": False}
-                        elif key == "allInterfaces" and ("inspection" not in current or "dhcp" not in current.get("inspection", {}) or "allInterfaces" not in current.get("inspection", {}).get("dhcp", {})):
-                            normalized[key] = False
-                        elif key == "keepalived" and "keepalived" not in current and "ipAddressManager" in current.get("networking", {}) and current["networking"]["ipAddressManager"] == "keepalived":
+                        # Explicitly set defaults for missing fields to match desired spec structure
+                        if key == "inspection":
+                            normalized[key] = {"dhcp": {"allInterfaces": bool(inspection_dhcp_all_interfaces)}}
+                        elif key == "dhcp" and "inspection" in desired:
+                            normalized[key] = {"allInterfaces": bool(inspection_dhcp_all_interfaces)}
+                        elif key == "allInterfaces" and "dhcp" in desired:
+                            normalized[key] = bool(inspection_dhcp_all_interfaces)
+                        elif key == "keepalived" and enable_keepalived and keepalived_vip:
                             normalized[key] = {
                                 "enabled": True,
-                                "vip": current.get("networking", {}).get("ipAddress", ""),
-                                "interface": current.get("networking", {}).get("interface", "eth0")
+                                "vip": keepalived_vip,
+                                "interface": keepalived_interface
                             }
-                        elif key == "dhcp" and ("networking" not in current or "dhcp" not in current.get("networking", {})):
+                        elif key == "dhcp" and "networking" in desired and "dhcp" in desired["networking"]:
                             normalized[key] = {
-                                "networkCIDR": "",
-                                "rangeBegin": "",
-                                "rangeEnd": "",
-                                "gatewayAddress": "",
-                                "serveDNS": False,
-                                "dnsAddress": ""
+                                "networkCIDR": networking_dhcp_network_cidr if networking_dhcp_network_cidr else "",
+                                "rangeBegin": networking_dhcp_range_start if networking_dhcp_range_start else "",
+                                "rangeEnd": networking_dhcp_range_end if networking_dhcp_range_end else "",
+                                "gatewayAddress": networking_dhcp_range_gateway if networking_dhcp_range_gateway else "",
+                                "serveDNS": bool(networking_dhcp_serve_dns),
+                                "dnsAddress": networking_dhcp_dns_address if networking_dhcp_dns_address and not networking_dhcp_serve_dns else ""
                             }
-                        elif key == "serveDNS" and "serveDNS" not in current and "dhcp" in current:
-                            normalized[key] = False
+                        elif key == "serveDNS" and "dhcp" in desired:
+                            normalized[key] = bool(networking_dhcp_serve_dns)
                 return normalized
 
             normalized_current_spec = normalize_dict(desired_spec, current_spec)
-            # Compare normalized specs and log detailed differences for debugging without truncation
+            # Compare fully normalized specs and log concise differences
             matches = normalized_current_spec == desired_spec
             diff_message = f"Ironic spec comparison: matches={matches}"
             if not matches:
@@ -2250,9 +2215,12 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                             diff_info.append(f"{full_key}: desired={desired[key]}; current={current.get(key, 'missing')}")
                         elif isinstance(desired[key], dict) and isinstance(current.get(key), dict):
                             find_diff(desired[key], current.get(key, {}), f"{full_key}.")
+                        if len(diff_info) >= 3:  # Limit to first 3 differences
+                            diff_info.append("...more differences omitted...")
+                            break
                 find_diff(desired_spec, normalized_current_spec)
                 diff_message += f"; Diff: {' | '.join(diff_info)}"
-                # Write full specs to a temporary file for complete debugging
+                # Debug: Write full specs to a temporary file for detailed comparison
                 import json
                 import os
                 debug_data = {
@@ -2267,7 +2235,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                     diff_message += f"; Full specs written to {debug_file} for debugging"
                 except Exception as debug_err:
                     diff_message += f"; Failed to write debug file {debug_file}: {str(debug_err)[:50]}..."
-            message = f"{message}; {diff_message}"
+            message = f"{message}; {diff_message[:300]}"  # Ensure diff_message is early in the log and limited in length
         except ApiException as e:
             if e.status == 404:
                 exists = False
@@ -2347,15 +2315,11 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 if exists:
                     if 'metadata' in ironic and 'resourceVersion' in ironic['metadata']:
                         ironic_body['metadata']['resourceVersion'] = ironic['metadata']['resourceVersion']
-                    # Perform the update and check if resourceVersion changed to confirm actual update
-                    pre_update_resource_version = current_resource_version
-                    update_response = custom_api.replace_namespaced_custom_object(
+                    custom_api.replace_namespaced_custom_object(
                         group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=ironic_body
                     )
-                    post_update_resource_version = update_response.get('metadata', {}).get('resourceVersion', '')
-                    # Only set updated=True if resourceVersion changed or if we can't determine (fallback to old logic)
-                    updated = (pre_update_resource_version != post_update_resource_version) if pre_update_resource_version and post_update_resource_version else True
-                    message += f"; Ironic instance {instance_name} update attempted; resourceVersion changed: {pre_update_resource_version != post_update_resource_version}"
+                    updated = True
+                    message += f"; Ironic instance {instance_name} updated"
                 else:
                     custom_api.create_namespaced_custom_object(
                         group=group, version=version, namespace=namespace, plural=plural, body=ironic_body
