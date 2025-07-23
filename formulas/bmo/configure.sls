@@ -25,13 +25,15 @@ ensure_ironic_instance:
     - database_user: {{ pillar['ironic_username'] }}
     - database_name: ironic
     - http_port: 6385
-    - provisioning_interface: {{ pillar['ironic_interface'] }}
-    - provisioning_nic: {{ pillar['ironic_interface'] }}
-    - provisioning_dhcp_range_start: {{ pillar['ironic_dhcp_start'] }}
-    - provisioning_dhcp_range_end: {{ pillar['ironic_dhcp_end'] }}
-    - provisioning_dhcp_range_gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-    - provisioning_dhcp_range_netmask: {{ netmask }}
-    - inspection_dhcp_all_interfaces: {{ pillar['ironic_interface'] }}
+    - networking_interface: {{ pillar['ironic_interface'] }}
+    - networking_ip: {{ pillar['ironic_endpoint_ip'] }}
+    - networking_dhcp_range_start: {{ pillar['ironic_dhcp_start'] }}
+    - networking_dhcp_range_end: {{ pillar['ironic_dhcp_end'] }}
+    - networking_dhcp_range_gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+    - networking_dhcp_range_netmask: {{ netmask }}
+    - networking_dhcp_serve_dns: False
+    - networking_dhcp_dns_address: {{ pillar.get('dns_server', '8.8.8.8') }}
+    - inspection_dhcp_all_interfaces: False
     - enable_keepalived: True
     - keepalived_vip: {{ pillar['ironic_endpoint_ip'] }}
     - keepalived_interface: {{ pillar['ironic_interface'] }}
