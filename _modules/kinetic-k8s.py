@@ -2019,7 +2019,7 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
             'transitioned': False,
             'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
         }
-def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="ironic-provisioning", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_network_cidr="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-creds", api_username="ironic", api_password=""):
+def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_network_cidr="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-creds", api_username="ironic", api_password=""):
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
     Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings, TLS, SSH key for deploy ramdisk, and API credentials.
@@ -2033,14 +2033,14 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         database_user (str, optional): The database user for Ironic. Defaults to 'ironic'.
         database_name (str, optional): The name of the database for Ironic. Defaults to 'ironic'.
         http_port (int, optional): The HTTP port for Ironic API. Defaults to 6385.
-        networking_interface (str, optional): The interface for networking. Defaults to 'ironic-provisioning'.
+        networking_interface (str, optional): The interface for networking. Defaults to empty.
         networking_ip (str, optional): The IP address for networking. Defaults to empty.
         networking_dhcp_range_start (str, optional): Start of DHCP range for networking. Defaults to empty (no DHCP).
         networking_dhcp_range_end (str, optional): End of DHCP range for networking. Defaults to empty (no DHCP).
         networking_dhcp_range_gateway (str, optional): Gateway for DHCP range. Defaults to empty.
         networking_dhcp_network_cidr (str, optional): Network CIDR for DHCP range (e.g., '192.168.1.0/24'). Defaults to empty.
         networking_dhcp_serve_dns (bool, optional): Whether to serve DNS via DHCP. Defaults to False.
-        networking_dhcp_dns_address (str, optional): DNS address for DHCP. Defaults to empty.
+        networking_dhcp_dns_address (str, optional): DNS address for DHCP if serve_dns is False. Defaults to empty.
         inspection_dhcp_all_interfaces (bool, optional): Whether to DHCP all interfaces during inspection. Defaults to False.
         enable_keepalived (bool, optional): Whether to enable Keepalived for high availability. Defaults to False.
         keepalived_vip (str, optional): Virtual IP for Keepalived. Required if enable_keepalived is True. Defaults to empty.
@@ -2049,7 +2049,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         ssh_public_key (str, optional): SSH public key to include in the deploy ramdisk for secure access. Defaults to empty.
         api_secret_name (str, optional): The name of the Secret containing API credentials for Ironic. Defaults to 'ironic-api-creds'.
         api_username (str, optional): The username for Ironic API access. Defaults to 'ironic'.
-        api_password (str, optional): The password for Ironic API access. Defaults to empty (no password set).
+        api_password (str, optional): The password for Ironic API access. Defaults to empty.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'api_secret_updated' (bool), and 'message' (str).
@@ -2072,58 +2072,61 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         version = "v1alpha1"
         plural = "ironics"
 
-        # Step 1: Handle API credentials secret if username and password are provided
-        if api_username and api_password:
-            secret_name = api_secret_name
-            try:
-                secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
-                exists_secret = True
-                current_secret = secret.string_data if secret.string_data else {}
-                if not current_secret and secret.data:
-                    import base64
-                    current_secret = {k: base64.b64decode(v).decode('utf-8') for k, v in secret.data.items()}
-                if current_secret.get('username') != api_username or current_secret.get('password') != api_password:
-                    api_secret_updated = True
-                else:
-                    api_secret_updated = False
-            except ApiException as e:
-                if e.status == 404:
-                    exists_secret = False
-                    api_secret_updated = True
-                else:
-                    return {
-                        'success': False,
-                        'updated': False,
-                        'api_secret_updated': False,
-                        'message': f"Error fetching API Secret {secret_name}: {str(e)[:100]}...; {message}"
-                    }
-
-            if not exists_secret or api_secret_updated:
-                try:
-                    secret_body = client.V1Secret(
-                        metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
-                        string_data={'username': api_username, 'password': api_password},
-                        type='Opaque'
-                    )
-                    if exists_secret:
-                        core_v1_api.replace_namespaced_secret(name=secret_name, namespace=namespace, body=secret_body)
-                        message += f"; API Secret {secret_name} updated"
-                    else:
-                        core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
-                        message += f"; API Secret {secret_name} created"
-                    api_secret_updated = True
-                except ApiException as e:
-                    return {
-                        'success': False,
-                        'updated': False,
-                        'api_secret_updated': False,
-                        'message': f"Failed to create/update API Secret {secret_name}: {str(e)[:100]}...; {message}"
-                    }
+        # Step 1: Manage API credentials Secret
+        api_secret_exists = False
+        api_secret_matches = False
+        try:
+            api_secret = core_v1_api.read_namespaced_secret(name=api_secret_name, namespace=namespace)
+            api_secret_exists = True
+            current_username = api_secret.string_data.get('username', '') if api_secret.string_data else ''
+            current_password = api_secret.string_data.get('password', '') if api_secret.string_data else ''
+            if not current_username and api_secret.data:
+                import base64
+                current_username = base64.b64decode(api_secret.data.get('username', '')).decode('utf-8')
+                current_password = base64.b64decode(api_secret.data.get('password', '')).decode('utf-8')
+            if current_username != api_username or (api_password and current_password != api_password):
+                api_secret_updated = True
             else:
-                message += f"; API Secret {secret_name} already up-to-date"
+                api_secret_matches = True
+                api_secret_updated = False
+        except ApiException as e:
+            if e.status == 404:
+                api_secret_exists = False
+                api_secret_updated = True
+            else:
+                message += f"; Error fetching API Secret {api_secret_name}: {str(e)[:50]}..."
+                return {
+                    'success': False,
+                    'updated': False,
+                    'api_secret_updated': False,
+                    'message': message
+                }
+
+        if not api_secret_exists or api_secret_updated:
+            try:
+                secret_body = client.V1Secret(
+                    metadata=client.V1ObjectMeta(name=api_secret_name, namespace=namespace),
+                    string_data={'username': api_username, 'password': api_password},
+                    type='Opaque'
+                )
+                if api_secret_exists:
+                    core_v1_api.replace_namespaced_secret(name=api_secret_name, namespace=namespace, body=secret_body)
+                    api_secret_updated = True
+                    message += f"; API Secret {api_secret_name} updated"
+                else:
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
+                    api_secret_updated = True
+                    message += f"; API Secret {api_secret_name} created"
+            except ApiException as e:
+                message += f"; Failed to create/update API Secret {api_secret_name}: {str(e)[:50]}..."
+                return {
+                    'success': False,
+                    'updated': False,
+                    'api_secret_updated': False,
+                    'message': message
+                }
         else:
-            api_secret_updated = False
-            message += f"; No API credentials provided, using default secret name {api_secret_name}"
+            message += f"; API Secret {api_secret_name} already up-to-date"
 
         # Step 2: Check if Ironic instance exists
         try:
@@ -2132,41 +2135,40 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             )
             exists = True
             current_spec = ironic.get('spec', {})
-            # Build desired spec for comparison (simplified, adjust based on critical fields)
+            # Build desired spec for comparison with normalization
             desired_spec = {
                 "database": {
                     "host": database_host,
-                    "port": database_port,
+                    "port": int(database_port),  # Ensure integer for comparison
                     "name": database_name,
                     "user": database_user,
                     "credentialsName": database_secret_name
                 },
                 "apiCredentialsName": api_secret_name,
                 "networking": {
-                    "apiPort": http_port
+                    "apiPort": int(http_port)  # Ensure integer for comparison
                 },
                 "inspection": {
                     "dhcp": {
-                        "allInterfaces": inspection_dhcp_all_interfaces
+                        "allInterfaces": bool(inspection_dhcp_all_interfaces)  # Ensure boolean
                     }
                 }
             }
+            # Add optional networking fields only if provided
             if networking_interface:
                 desired_spec["networking"]["interface"] = networking_interface
             if networking_ip:
                 desired_spec["networking"]["ipAddress"] = networking_ip
-            if networking_dhcp_range_start and networking_dhcp_range_end:
+            if networking_dhcp_range_start and networking_dhcp_range_end and networking_dhcp_network_cidr:
                 desired_spec["networking"]["dhcp"] = {
+                    "networkCIDR": networking_dhcp_network_cidr,
                     "rangeBegin": networking_dhcp_range_start,
                     "rangeEnd": networking_dhcp_range_end
                 }
                 if networking_dhcp_range_gateway:
                     desired_spec["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
-                if networking_dhcp_network_cidr:
-                    desired_spec["networking"]["dhcp"]["networkCIDR"] = networking_dhcp_network_cidr
-                if networking_dhcp_serve_dns:
-                    desired_spec["networking"]["dhcp"]["serveDNS"] = True
-                elif networking_dhcp_dns_address:
+                desired_spec["networking"]["dhcp"]["serveDNS"] = bool(networking_dhcp_serve_dns)
+                if networking_dhcp_dns_address and not networking_dhcp_serve_dns:
                     desired_spec["networking"]["dhcp"]["dnsAddress"] = networking_dhcp_dns_address
             if enable_keepalived and keepalived_vip:
                 desired_spec["networking"]["ipAddressManager"] = "keepalived"
@@ -2183,8 +2185,20 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 desired_spec["deployRamdisk"] = {
                     "sshKey": ssh_public_key
                 }
-            # Simplified match check (deep comparison can be more detailed if needed)
-            matches = current_spec == desired_spec
+            # Normalize current spec by removing fields not in desired spec or with default values
+            normalized_current_spec = {}
+            for key in desired_spec:
+                if key in current_spec:
+                    normalized_current_spec[key] = current_spec[key]
+                    # Ensure type consistency for nested fields
+                    if key == "database" and "port" in normalized_current_spec[key]:
+                        normalized_current_spec[key]["port"] = int(normalized_current_spec[key]["port"])
+                    if key == "networking" and "apiPort" in normalized_current_spec[key]:
+                        normalized_current_spec[key]["apiPort"] = int(normalized_current_spec[key]["apiPort"])
+                    if key == "inspection" and "dhcp" in normalized_current_spec[key] and "allInterfaces" in normalized_current_spec[key]["dhcp"]:
+                        normalized_current_spec[key]["dhcp"]["allInterfaces"] = bool(normalized_current_spec[key]["dhcp"]["allInterfaces"])
+            # Compare normalized specs
+            matches = normalized_current_spec == desired_spec
             message += f"; Ironic spec comparison: matches={matches}"
         except ApiException as e:
             if e.status == 404:
@@ -2210,18 +2224,18 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             "spec": {
                 "database": {
                     "host": database_host,
-                    "port": database_port,
+                    "port": int(database_port),
                     "name": database_name,
                     "user": database_user,
                     "credentialsName": database_secret_name
                 },
                 "apiCredentialsName": api_secret_name,
                 "networking": {
-                    "apiPort": http_port
+                    "apiPort": int(http_port)
                 },
                 "inspection": {
                     "dhcp": {
-                        "allInterfaces": inspection_dhcp_all_interfaces
+                        "allInterfaces": bool(inspection_dhcp_all_interfaces)
                     }
                 }
             }
@@ -2230,18 +2244,16 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             ironic_body["spec"]["networking"]["interface"] = networking_interface
         if networking_ip:
             ironic_body["spec"]["networking"]["ipAddress"] = networking_ip
-        if networking_dhcp_range_start and networking_dhcp_range_end:
+        if networking_dhcp_range_start and networking_dhcp_range_end and networking_dhcp_network_cidr:
             ironic_body["spec"]["networking"]["dhcp"] = {
+                "networkCIDR": networking_dhcp_network_cidr,
                 "rangeBegin": networking_dhcp_range_start,
                 "rangeEnd": networking_dhcp_range_end
             }
             if networking_dhcp_range_gateway:
                 ironic_body["spec"]["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
-            if networking_dhcp_network_cidr:
-                ironic_body["spec"]["networking"]["dhcp"]["networkCIDR"] = networking_dhcp_network_cidr
-            if networking_dhcp_serve_dns:
-                ironic_body["spec"]["networking"]["dhcp"]["serveDNS"] = True
-            elif networking_dhcp_dns_address:
+            ironic_body["spec"]["networking"]["dhcp"]["serveDNS"] = bool(networking_dhcp_serve_dns)
+            if networking_dhcp_dns_address and not networking_dhcp_serve_dns:
                 ironic_body["spec"]["networking"]["dhcp"]["dnsAddress"] = networking_dhcp_dns_address
         if enable_keepalived and keepalived_vip:
             ironic_body["spec"]["networking"]["ipAddressManager"] = "keepalived"
