@@ -968,7 +968,7 @@ def ironic_operator_present(name, namespace="ironic-standalone-operator-system",
         ret['changes'] = {}
 
     return ret
-def ironic_instance_present(name, namespace, instance_name="ironic", database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_range_netmask="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-credentials", api_username="ironic-api", api_password=""):
+def ironic_instance_present(name, namespace, instance_name="ironic", database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_network_cidr="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-creds", api_username="ironic", api_password=""):
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
     Configures database connection, networking, optional Keepalived for HA, TLS, SSH key for deploy ramdisk, and API credentials.
@@ -1015,8 +1015,8 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
     networking_dhcp_range_gateway
         Optional. Gateway for DHCP range. Defaults to empty.
 
-    networking_dhcp_range_netmask
-        Optional. Netmask for DHCP range (as Network CIDR). Defaults to empty.
+    networking_dhcp_network_cidr
+        Optional. Network CIDR for DHCP range (e.g., '192.168.1.0/24'). Defaults to empty.
 
     networking_dhcp_serve_dns
         Optional. Whether to serve DNS via DHCP. Defaults to False.
@@ -1043,10 +1043,10 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
         Optional. SSH public key to include in the deploy ramdisk for secure access. Defaults to empty.
 
     api_secret_name
-        Optional. The name of the Secret containing API credentials for Ironic. Defaults to 'ironic-api-credentials'.
+        Optional. The name of the Secret containing API credentials for Ironic. Defaults to 'ironic-api-creds'.
 
     api_username
-        Optional. The username for Ironic API access. Defaults to 'ironic-api'.
+        Optional. The username for Ironic API access. Defaults to 'ironic'.
 
     api_password
         Optional. The password for Ironic API access. Defaults to empty (no password set).
@@ -1069,17 +1069,17 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
             - networking_dhcp_range_start: 192.168.123.100
             - networking_dhcp_range_end: 192.168.123.200
             - networking_dhcp_range_gateway: 192.168.123.1
-            - networking_dhcp_range_netmask: 192.168.123.0/24
+            - networking_dhcp_network_cidr: 192.168.123.0/24
             - networking_dhcp_serve_dns: False
             - networking_dhcp_dns_address: 8.8.8.8
             - inspection_dhcp_all_interfaces: False
-            - enable_keepalived: False
-            - keepalived_vip: ""
+            - enable_keepalived: True
+            - keepalived_vip: 192.168.123.10
             - keepalived_interface: eth0
             - tls_secret_name: ironic-tls
             - ssh_public_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... user@example.com
-            - api_secret_name: ironic-api-credentials
-            - api_username: ironic-api
+            - api_secret_name: ironic-api-creds
+            - api_username: ironic
             - api_password: mysecureapipassword
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
@@ -1099,7 +1099,7 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
             networking_dhcp_range_start=networking_dhcp_range_start,
             networking_dhcp_range_end=networking_dhcp_range_end,
             networking_dhcp_range_gateway=networking_dhcp_range_gateway,
-            networking_dhcp_range_netmask=networking_dhcp_range_netmask,
+            networking_dhcp_network_cidr=networking_dhcp_network_cidr,
             networking_dhcp_serve_dns=networking_dhcp_serve_dns,
             networking_dhcp_dns_address=networking_dhcp_dns_address,
             inspection_dhcp_all_interfaces=inspection_dhcp_all_interfaces,
