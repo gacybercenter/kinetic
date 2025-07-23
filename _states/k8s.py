@@ -927,3 +927,205 @@ def tls_secret_present(name, namespace, secret_name, common_name="ironic-operato
         ret['changes'] = {}
 
     return ret
+def ironic_operator_present(name, namespace="ironic-standalone-operator-system", deployment_name="ironic-standalone-operator-controller-manager", timeout=60):
+    """
+    Ensure that the Ironic Operator is installed and available in Kubernetes by checking the deployment status.
+
+    Args:
+        name (str): The name of the state (arbitrary, for SaltStack identification).
+        namespace (str, optional): The Kubernetes namespace of the Ironic Operator deployment. Defaults to 'ironic-standalone-operator-system'.
+        deployment_name (str, optional): The name of the Ironic Operator deployment. Defaults to 'ironic-standalone-operator-controller-manager'.
+        timeout (int, optional): Maximum time in seconds to wait for the deployment to become available. Defaults to 60.
+
+    Returns:
+        dict: A dictionary with 'name' (str), 'result' (bool), 'comment' (str), and 'changes' (dict).
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ironic_operator:
+          k8s.ironic_operator_present:
+            - namespace: ironic-standalone-operator-system
+            - deployment_name: ironic-standalone-operator-controller-manager
+            - timeout: 60
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.check_ironic_operator'](namespace, deployment_name, timeout)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        # Only report changes if needed; keep empty for check-only state
+        ret['changes'] = {}
+        # If the state fails, append a message with the command to run
+        if not result['success']:
+            ironic_op_dir = __salt__['pillar.get']('ironic_op_dir', '<path-to-ironic-operator-repo>')
+            ret['comment'] += f"; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {ironic_op_dir} to install it."
+    except Exception as e:
+        ret['result'] = False
+        ironic_op_dir = __salt__['pillar.get']('ironic_op_dir', '<path-to-ironic-operator-repo>')
+        ret['comment'] = f"Failed to check Ironic Operator: {str(e)[:100]}...; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {ironic_op_dir} to install it."
+        ret['changes'] = {}
+
+    return ret
+def ironic_instance_present(name, namespace, instance_name="ironic", database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_network_cidr="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-creds", api_username="ironic", api_password=""):
+    """
+    Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
+    Configures database connection, networking, optional Keepalived for HA, TLS, SSH key for deploy ramdisk, and API credentials.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace where the Ironic instance will reside.
+
+    instance_name
+        Optional. The name of the Ironic instance in Kubernetes. Defaults to 'ironic'.
+
+    database_secret_name
+        Optional. The name of the Secret for database credentials. Defaults to 'ironic-user'.
+
+    database_host
+        Optional. The hostname or service name of the database. Defaults to 'ironic-mariadb'.
+
+    database_port
+        Optional. The port for the database connection. Defaults to 3306.
+
+    database_user
+        Optional. The database user for Ironic. Defaults to 'ironic'.
+
+    database_name
+        Optional. The name of the database for Ironic. Defaults to 'ironic'.
+
+    http_port
+        Optional. The HTTP port for Ironic API. Defaults to 6385.
+
+    networking_interface
+        Optional. The interface for networking. Defaults to empty.
+
+    networking_ip
+        Optional. The IP address for networking. Defaults to empty.
+
+    networking_dhcp_range_start
+        Optional. Start of DHCP range for networking. Defaults to empty (no DHCP).
+
+    networking_dhcp_range_end
+        Optional. End of DHCP range for networking. Defaults to empty (no DHCP).
+
+    networking_dhcp_range_gateway
+        Optional. Gateway for DHCP range. Defaults to empty.
+
+    networking_dhcp_network_cidr
+        Optional. Network CIDR for DHCP range (e.g., '192.168.1.0/24'). Defaults to empty.
+
+    networking_dhcp_serve_dns
+        Optional. Whether to serve DNS via DHCP. Defaults to False.
+
+    networking_dhcp_dns_address
+        Optional. DNS address for DHCP if serve_dns is False. Defaults to empty.
+
+    inspection_dhcp_all_interfaces
+        Optional. Whether to DHCP all interfaces during inspection. Defaults to False.
+
+    enable_keepalived
+        Optional. Whether to enable Keepalived for high availability. Defaults to False.
+
+    keepalived_vip
+        Optional. Virtual IP for Keepalived. Required if enable_keepalived is True. Defaults to empty.
+
+    keepalived_interface
+        Optional. Interface for Keepalived. Defaults to 'eth0'.
+
+    tls_secret_name
+        Optional. The name of the Secret containing TLS certificates for Ironic. Defaults to 'ironic-tls'.
+
+    ssh_public_key
+        Optional. SSH public key to include in the deploy ramdisk for secure access. Defaults to empty.
+
+    api_secret_name
+        Optional. The name of the Secret containing API credentials for Ironic. Defaults to 'ironic-api-creds'.
+
+    api_username
+        Optional. The username for Ironic API access. Defaults to 'ironic'.
+
+    api_password
+        Optional. The password for Ironic API access. Defaults to empty (no password set).
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ironic_instance:
+          k8s.ironic_instance_present:
+            - namespace: baremetal-operator-system
+            - instance_name: ironic
+            - database_secret_name: ironic-user
+            - database_host: ironic-mariadb
+            - database_port: 3306
+            - database_user: ironic
+            - database_name: ironic
+            - http_port: 6385
+            - networking_interface: eth0
+            - networking_ip: 192.168.123.10
+            - networking_dhcp_range_start: 192.168.123.100
+            - networking_dhcp_range_end: 192.168.123.200
+            - networking_dhcp_range_gateway: 192.168.123.1
+            - networking_dhcp_network_cidr: 192.168.123.0/24
+            - networking_dhcp_serve_dns: False
+            - networking_dhcp_dns_address: 8.8.8.8
+            - inspection_dhcp_all_interfaces: False
+            - enable_keepalived: True
+            - keepalived_vip: 192.168.123.10
+            - keepalived_interface: eth0
+            - tls_secret_name: ironic-tls
+            - ssh_public_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... user@example.com
+            - api_secret_name: ironic-api-creds
+            - api_username: ironic
+            - api_password: mysecureapipassword
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.ironic_instance_present'](
+            namespace=namespace,
+            instance_name=instance_name,
+            database_secret_name=database_secret_name,
+            database_host=database_host,
+            database_port=database_port,
+            database_user=database_user,
+            database_name=database_name,
+            http_port=http_port,
+            networking_interface=networking_interface,
+            networking_ip=networking_ip,
+            networking_dhcp_range_start=networking_dhcp_range_start,
+            networking_dhcp_range_end=networking_dhcp_range_end,
+            networking_dhcp_range_gateway=networking_dhcp_range_gateway,
+            networking_dhcp_network_cidr=networking_dhcp_network_cidr,
+            networking_dhcp_serve_dns=networking_dhcp_serve_dns,
+            networking_dhcp_dns_address=networking_dhcp_dns_address,
+            inspection_dhcp_all_interfaces=inspection_dhcp_all_interfaces,
+            enable_keepalived=enable_keepalived,
+            keepalived_vip=keepalived_vip,
+            keepalived_interface=keepalived_interface,
+            tls_secret_name=tls_secret_name,
+            ssh_public_key=ssh_public_key,
+            api_secret_name=api_secret_name,
+            api_username=api_username,
+            api_password=api_password
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated'] or result['api_secret_updated']:
+            ret['changes'] = {
+                'instance_updated': result['updated'],
+                'api_secret_updated': result['api_secret_updated']
+            }
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Ironic instance {instance_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret

@@ -1910,3 +1910,390 @@ def generate_tls_secret(namespace, secret_name, common_name="ironic-operator", v
             'updated': False,
             'message': f"TLS Secret operation error for {secret_name}: {str(e)[:100]}..."
         }
+def check_ironic_operator(namespace="ironic-standalone-operator-system", deployment_name="ironic-standalone-operator-controller-manager", timeout=60):
+    """
+    Check if the Ironic Operator is installed and available in Kubernetes by verifying the deployment status.
+    This mimics the behavior of 'kubectl wait --for=condition=Available'.
+
+    Args:
+        namespace (str, optional): The namespace of the Ironic Operator deployment. Defaults to 'ironic-standalone-operator-system'.
+        deployment_name (str, optional): The name of the Ironic Operator deployment. Defaults to 'ironic-standalone-operator-controller-manager'.
+        timeout (int, optional): Maximum time in seconds to wait for the deployment to become available. Defaults to 60.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'available' (bool), 'waited' (bool), 'transitioned' (bool), and 'message' (str).
+    """
+    try:
+        import time
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        apps_v1_api = client.AppsV1Api()
+
+        message = f"Checking Ironic Operator deployment {deployment_name} in namespace {namespace}"
+        available = False
+        initially_available = False
+        waited = False
+        transitioned = False
+
+        # Check if deployment exists and get initial availability status
+        try:
+            status = apps_v1_api.read_namespaced_deployment_status(name=deployment_name, namespace=namespace)
+            message += f"; Deployment {deployment_name} found"
+            ready_replicas = status.status.ready_replicas or 0
+            desired_replicas = status.spec.replicas
+            initially_available = (ready_replicas == desired_replicas)
+            if initially_available:
+                message += f"; Deployment {deployment_name} is initially available"
+        except ApiException as e:
+            if e.status == 404:
+                message += f"; Deployment {deployment_name} not found"
+                return {
+                    'success': False,
+                    'available': False,
+                    'waited': False,
+                    'transitioned': False,
+                    'message': message
+                }
+            else:
+                message += f"; Error fetching deployment {deployment_name}: {str(e)[:100]}..."
+                return {
+                    'success': False,
+                    'available': False,
+                    'waited': False,
+                    'transitioned': False,
+                    'message': message
+                }
+
+        # If initially available, no need to wait
+        if initially_available:
+            return {
+                'success': True,
+                'available': True,
+                'waited': False,
+                'transitioned': False,
+                'message': message
+            }
+
+        # Wait for deployment to become available (ready replicas match desired replicas)
+        wait_time = 0
+        wait_interval = 5  # Check every 5 seconds
+        while wait_time < timeout:
+            try:
+                status = apps_v1_api.read_namespaced_deployment_status(name=deployment_name, namespace=namespace)
+                ready_replicas = status.status.ready_replicas or 0
+                desired_replicas = status.spec.replicas
+                if ready_replicas == desired_replicas:
+                    available = True
+                    waited = True
+                    transitioned = not initially_available
+                    message += f"; Deployment {deployment_name} is available ({wait_time}s)"
+                    break
+            except ApiException as e:
+                message += f"; Error checking deployment status: {str(e)[:100]}..."
+                break
+            time.sleep(wait_interval)
+            wait_time += wait_interval
+
+        if wait_time >= timeout and not available:
+            message += f"; Timeout waiting for deployment {deployment_name} to become available ({timeout}s)"
+            available = False
+            waited = False
+            transitioned = False
+
+        return {
+            'success': True if available else False,
+            'available': available,
+            'waited': waited,
+            'transitioned': transitioned,
+            'message': message
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'available': False,
+            'waited': False,
+            'transitioned': False,
+            'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
+        }
+def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_network_cidr="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-creds", api_username="ironic", api_password=""):
+    """
+    Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
+    Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings, TLS, SSH key for deploy ramdisk, and API credentials.
+    """
+    try:
+        updated = False
+        api_secret_updated = False
+        exists = False
+        matches = False
+        message = f"Configuring Ironic instance {instance_name} in namespace {namespace}"
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        core_v1_api = client.CoreV1Api()
+        group = "ironic.metal3.io"
+        version = "v1alpha1"
+        plural = "ironics"
+
+        # Step 1: Manage API credentials Secret
+        api_secret_exists = False
+        api_secret_matches = False
+        try:
+            api_secret = core_v1_api.read_namespaced_secret(name=api_secret_name, namespace=namespace)
+            api_secret_exists = True
+            current_username = api_secret.string_data.get('username', '') if api_secret.string_data else ''
+            current_password = api_secret.string_data.get('password', '') if api_secret.string_data else ''
+            if not current_username and api_secret.data:
+                import base64
+                current_username = base64.b64decode(api_secret.data.get('username', '')).decode('utf-8')
+                current_password = base64.b64decode(api_secret.data.get('password', '')).decode('utf-8')
+            if current_username != api_username or (api_password and current_password != api_password):
+                api_secret_updated = True
+            else:
+                api_secret_matches = True
+                api_secret_updated = False
+        except ApiException as e:
+            if e.status == 404:
+                api_secret_exists = False
+                api_secret_updated = True
+            else:
+                message += f"; Error fetching API Secret {api_secret_name}: {str(e)[:50]}..."
+                return {
+                    'success': False,
+                    'updated': False,
+                    'api_secret_updated': False,
+                    'message': message
+                }
+
+        if not api_secret_exists or api_secret_updated:
+            try:
+                secret_body = client.V1Secret(
+                    metadata=client.V1ObjectMeta(name=api_secret_name, namespace=namespace),
+                    string_data={'username': api_username, 'password': api_password},
+                    type='Opaque'
+                )
+                if api_secret_exists:
+                    core_v1_api.replace_namespaced_secret(name=api_secret_name, namespace=namespace, body=secret_body)
+                    api_secret_updated = True
+                    message += f"; API Secret {api_secret_name} updated"
+                else:
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
+                    api_secret_updated = True
+                    message += f"; API Secret {api_secret_name} created"
+            except ApiException as e:
+                message += f"; Failed to create/update API Secret {api_secret_name}: {str(e)[:50]}..."
+                return {
+                    'success': False,
+                    'updated': False,
+                    'api_secret_updated': False,
+                    'message': message
+                }
+        else:
+            message += f"; API Secret {api_secret_name} already up-to-date"
+
+        # Step 2: Build desired spec for Ironic instance
+        desired_spec = {
+            "database": {
+                "host": database_host,
+                "name": database_name,
+                "credentialsName": database_secret_name
+            },
+            "apiCredentialsName": api_secret_name,
+            "networking": {
+                "apiPort": int(http_port),
+                "imageServerPort": 6180,
+                "imageServerTLSPort": 6183
+            },
+            "inspection": {
+                "dhcp": {
+                    "allInterfaces": bool(inspection_dhcp_all_interfaces)
+                }
+            }
+        }
+        if networking_interface:
+            desired_spec["networking"]["interface"] = networking_interface
+        if networking_ip:
+            desired_spec["networking"]["ipAddress"] = networking_ip
+        if networking_dhcp_range_start and networking_dhcp_range_end and networking_dhcp_network_cidr:
+            desired_spec["networking"]["dhcp"] = {
+                "networkCIDR": networking_dhcp_network_cidr,
+                "rangeBegin": networking_dhcp_range_start,
+                "rangeEnd": networking_dhcp_range_end
+            }
+            if networking_dhcp_range_gateway:
+                desired_spec["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
+            desired_spec["networking"]["dhcp"]["serveDNS"] = bool(networking_dhcp_serve_dns)
+            if networking_dhcp_dns_address and not networking_dhcp_serve_dns:
+                desired_spec["networking"]["dhcp"]["dnsAddress"] = networking_dhcp_dns_address
+        if enable_keepalived and keepalived_vip:
+            desired_spec["networking"]["ipAddressManager"] = "keepalived"
+            desired_spec["keepalived"] = {
+                "enabled": True,
+                "vip": keepalived_vip,
+                "interface": keepalived_interface
+            }
+        if tls_secret_name:
+            desired_spec["tls"] = {
+                "certificateName": tls_secret_name
+            }
+        if ssh_public_key:
+            desired_spec["deployRamdisk"] = {
+                "sshKey": ssh_public_key
+            }
+
+        # Step 3: Check if Ironic instance exists and normalize current spec
+        try:
+            ironic = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=instance_name
+            )
+            exists = True
+            current_spec = ironic.get('spec', {})
+            current_resource_version = ironic.get('metadata', {}).get('resourceVersion', '')
+
+            # Normalize current spec by adding missing fields with defaults matching desired spec
+            def normalize_dict(desired, current):
+                normalized = {}
+                for key in desired:
+                    if key in current:
+                        if isinstance(desired[key], dict) and isinstance(current[key], dict):
+                            normalized[key] = normalize_dict(desired[key], current[key])
+                        else:
+                            normalized[key] = current[key]
+                            if key in ["apiPort", "imageServerPort", "imageServerTLSPort"] and isinstance(normalized[key], (int, float, str)):
+                                try:
+                                    normalized[key] = int(float(normalized[key]) if isinstance(normalized[key], str) else normalized[key])
+                                except (ValueError, TypeError):
+                                    pass
+                            if key == "allInterfaces" and isinstance(normalized[key], (bool, str)):
+                                normalized[key] = bool(normalized[key])
+                            if key == "enabled" and isinstance(normalized[key], (bool, str)):
+                                normalized[key] = bool(normalized[key])
+                    else:
+                        # Explicitly set defaults for missing fields based on desired spec
+                        normalized[key] = desired[key]
+                return normalized
+
+            normalized_current_spec = normalize_dict(desired_spec, current_spec)
+            # Compare fully normalized specs
+            matches = normalized_current_spec == desired_spec
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                matches = False
+                message += f"; Ironic instance {instance_name} not found, will create"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'api_secret_updated': api_secret_updated,
+                    'message': f"Error fetching Ironic instance {instance_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Build the full Ironic body for create/update
+        ironic_body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Ironic",
+            "metadata": {
+                "name": instance_name,
+                "namespace": namespace
+            },
+            "spec": {
+                "database": {
+                    "host": database_host,
+                    "port": int(database_port),
+                    "name": database_name,
+                    "user": database_user,
+                    "credentialsName": database_secret_name
+                },
+                "apiCredentialsName": api_secret_name,
+                "networking": {
+                    "apiPort": int(http_port),
+                    "imageServerPort": 6180,
+                    "imageServerTLSPort": 6183
+                },
+                "inspection": {
+                    "dhcp": {
+                        "allInterfaces": bool(inspection_dhcp_all_interfaces)
+                    }
+                }
+            }
+        }
+        if networking_interface:
+            ironic_body["spec"]["networking"]["interface"] = networking_interface
+        if networking_ip:
+            ironic_body["spec"]["networking"]["ipAddress"] = networking_ip
+        if networking_dhcp_range_start and networking_dhcp_range_end and networking_dhcp_network_cidr:
+            ironic_body["spec"]["networking"]["dhcp"] = {
+                "networkCIDR": networking_dhcp_network_cidr,
+                "rangeBegin": networking_dhcp_range_start,
+                "rangeEnd": networking_dhcp_range_end
+            }
+            if networking_dhcp_range_gateway:
+                ironic_body["spec"]["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
+            ironic_body["spec"]["networking"]["dhcp"]["serveDNS"] = bool(networking_dhcp_serve_dns)
+            if networking_dhcp_dns_address and not networking_dhcp_serve_dns:
+                ironic_body["spec"]["networking"]["dhcp"]["dnsAddress"] = networking_dhcp_dns_address
+        if enable_keepalived and keepalived_vip:
+            ironic_body["spec"]["networking"]["ipAddressManager"] = "keepalived"
+            ironic_body["spec"]["keepalived"] = {
+                "enabled": True,
+                "vip": keepalived_vip,
+                "interface": keepalived_interface
+            }
+        if tls_secret_name:
+            ironic_body["spec"]["tls"] = {
+                "certificateName": tls_secret_name
+            }
+        if ssh_public_key:
+            ironic_body["spec"]["deployRamdisk"] = {
+                "sshKey": ssh_public_key
+            }
+
+        # Create or update Ironic instance if necessary
+        if not exists or not matches:
+            try:
+                if exists:
+                    if 'metadata' in ironic and 'resourceVersion' in ironic['metadata']:
+                        ironic_body['metadata']['resourceVersion'] = ironic['metadata']['resourceVersion']
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=ironic_body
+                    )
+                    updated = True
+                    message += f"; Ironic instance {instance_name} updated"
+                else:
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, body=ironic_body
+                    )
+                    updated = True
+                    message += f"; Ironic instance {instance_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'api_secret_updated': api_secret_updated,
+                    'message': f"Failed to create/update Ironic instance {instance_name}: Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}; {message}"
+                }
+        else:
+            message += f"; Ironic instance {instance_name} already up-to-date"
+            updated = False
+
+        return {
+            'success': True if updated or matches else False,
+            'updated': updated,
+            'api_secret_updated': api_secret_updated,
+            'message': message
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'api_secret_updated': False,
+            'message': f"Ironic instance operation error for {instance_name}: {str(e)[:100]}..."
+        }
