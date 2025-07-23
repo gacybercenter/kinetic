@@ -2135,7 +2135,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                     "rangeBegin": networking_dhcp_range_start,
                     "rangeEnd": networking_dhcp_range_end
                 }
-                if networking_dhcp_range_gateway:
+                if networking_dhcp_range_gateway:  # Only include if non-empty
                     desired_spec["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
                 desired_spec["networking"]["dhcp"]["serveDNS"] = bool(networking_dhcp_serve_dns)
                 if networking_dhcp_dns_address and not networking_dhcp_serve_dns:
@@ -2155,34 +2155,41 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 desired_spec["deployRamdisk"] = {
                     "sshKey": ssh_public_key
                 }
-            # Normalize current spec by removing fields not in desired spec or with default values
-            normalized_current_spec = {}
-            for key in desired_spec:
-                if key in current_spec:
-                    normalized_current_spec[key] = current_spec[key]
-                    # Ensure type consistency for nested fields
-                    if key == "networking" and "apiPort" in normalized_current_spec[key]:
-                        normalized_current_spec[key]["apiPort"] = int(normalized_current_spec[key]["apiPort"])
-                    if key == "networking" and "imageServerPort" in normalized_current_spec[key]:
-                        normalized_current_spec[key]["imageServerPort"] = int(normalized_current_spec[key]["imageServerPort"])
-                    if key == "networking" and "imageServerTLSPort" in normalized_current_spec[key]:
-                        normalized_current_spec[key]["imageServerTLSPort"] = int(normalized_current_spec[key]["imageServerTLSPort"])
-                    if key == "inspection" and "dhcp" in normalized_current_spec[key] and "allInterfaces" in normalized_current_spec[key]["dhcp"]:
-                        normalized_current_spec[key]["dhcp"]["allInterfaces"] = bool(normalized_current_spec[key]["dhcp"]["allInterfaces"])
-                    # If keepalived is in desired_spec, ensure it's normalized in current_spec
-                    if key == "keepalived" and key in current_spec:
-                        normalized_current_spec[key]["enabled"] = bool(normalized_current_spec[key]["enabled"])
+            # Normalize current spec by recursively removing fields not in desired spec
+            def normalize_dict(desired, current):
+                normalized = {}
+                for key in desired:
+                    if key in current:
+                        if isinstance(desired[key], dict) and isinstance(current[key], dict):
+                            normalized[key] = normalize_dict(desired[key], current[key])
+                        else:
+                            normalized[key] = current[key]
+                            # Ensure type consistency for specific fields
+                            if key in ["apiPort", "imageServerPort", "imageServerTLSPort"] and isinstance(normalized[key], (int, float)):
+                                normalized[key] = int(normalized[key])
+                            if key == "allInterfaces" and isinstance(normalized[key], bool):
+                                normalized[key] = bool(normalized[key])
+                            if key == "enabled" and isinstance(normalized[key], bool):
+                                normalized[key] = bool(normalized[key])
+                return normalized
+
+            normalized_current_spec = normalize_dict(desired_spec, current_spec)
             # Compare normalized specs and log concise differences
             matches = normalized_current_spec == desired_spec
             diff_message = f"Ironic spec comparison: matches={matches}"
             if not matches:
                 diff_info = []
-                for key in desired_spec:
-                    if key not in normalized_current_spec or normalized_current_spec[key] != desired_spec[key]:
-                        diff_info.append(f"{key}: desired={desired_spec[key]}; current={normalized_current_spec.get(key, 'missing')}")
-                    if len(diff_info) >= 3:  # Limit to first 3 differences to avoid long messages
-                        diff_info.append("...more differences omitted...")
-                        break
+                def find_diff(desired, current, prefix=""):
+                    for key in desired:
+                        full_key = f"{prefix}{key}" if prefix else key
+                        if key not in current or desired[key] != current.get(key):
+                            diff_info.append(f"{full_key}: desired={desired[key]}; current={current.get(key, 'missing')}")
+                        elif isinstance(desired[key], dict) and isinstance(current.get(key), dict):
+                            find_diff(desired[key], current.get(key, {}), f"{full_key}.")
+                        if len(diff_info) >= 3:  # Limit to first 3 differences
+                            diff_info.append("...more differences omitted...")
+                            break
+                find_diff(desired_spec, normalized_current_spec)
                 diff_message += f"; Diff: {' | '.join(diff_info)}"
             message = f"{message}; {diff_message[:300]}"  # Ensure diff_message is early in the log and limited in length
         except ApiException as e:
@@ -2237,7 +2244,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 "rangeBegin": networking_dhcp_range_start,
                 "rangeEnd": networking_dhcp_range_end
             }
-            if networking_dhcp_range_gateway:
+            if networking_dhcp_range_gateway:  # Only include if non-empty
                 ironic_body["spec"]["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
             ironic_body["spec"]["networking"]["dhcp"]["serveDNS"] = bool(networking_dhcp_serve_dns)
             if networking_dhcp_dns_address and not networking_dhcp_serve_dns:
