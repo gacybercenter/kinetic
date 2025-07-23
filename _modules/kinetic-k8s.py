@@ -2019,10 +2019,10 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
             'transitioned': False,
             'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
         }
-def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key=""):
+def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-credentials", api_username="ironic-api", api_password=""):
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
-    Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings, TLS, and SSH key for deploy ramdisk.
+    Creates or updates the Ironic Custom Resource with specified database connection, networking, optional Keepalived settings, TLS, SSH key for deploy ramdisk, and API credentials.
 
     Args:
         namespace (str): The Kubernetes namespace where the Ironic instance will reside.
@@ -2045,14 +2045,18 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         keepalived_interface (str, optional): Interface for Keepalived. Defaults to 'eth0'.
         tls_secret_name (str, optional): The name of the Secret containing TLS certificates for Ironic. Defaults to 'ironic-tls'.
         ssh_public_key (str, optional): SSH public key to include in the deploy ramdisk for secure access. Defaults to empty.
+        api_secret_name (str, optional): The name of the Secret containing API credentials for Ironic. Defaults to 'ironic-api-credentials'.
+        api_username (str, optional): The username for Ironic API access. Defaults to 'ironic-api'.
+        api_password (str, optional): The password for Ironic API access. Defaults to empty (no password set).
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'api_secret_updated' (bool), and 'message' (str).
     """
     try:
         updated = False
         exists = False
         matches = False
+        api_secret_updated = False
         message = f"Configuring Ironic instance {instance_name} in namespace {namespace}"
 
         try:
@@ -2061,18 +2065,77 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             config.load_kube_config()
 
         custom_api = client.CustomObjectsApi()
+        core_v1_api = client.CoreV1Api()
         group = "ironic.metal3.io"
         version = "v1alpha1"
         plural = "ironics"
 
-        # Check if Ironic instance exists
+        # Step 1: Create or update API credentials secret if api_password is provided
+        if api_password:
+            try:
+                secret_exists = False
+                secret_matches = False
+                try:
+                    secret = core_v1_api.read_namespaced_secret(name=api_secret_name, namespace=namespace)
+                    secret_exists = True
+                    current_username = secret.string_data.get('username', '') if secret.string_data else ''
+                    current_password = secret.string_data.get('password', '') if secret.string_data else ''
+                    if not current_username and secret.data:
+                        import base64
+                        current_username = base64.b64decode(secret.data.get('username', '')).decode('utf-8')
+                        current_password = base64.b64decode(secret.data.get('password', '')).decode('utf-8')
+                    if current_username == api_username and current_password == api_password:
+                        secret_matches = True
+                        api_secret_updated = False
+                    else:
+                        api_secret_updated = True
+                except ApiException as e:
+                    if e.status == 404:
+                        secret_exists = False
+                        api_secret_updated = True
+                    else:
+                        return {
+                            'success': False,
+                            'updated': False,
+                            'api_secret_updated': False,
+                            'message': f"Error fetching API Secret {api_secret_name}: {str(e)[:100]}...; {message}"
+                        }
+
+                if not secret_exists or api_secret_updated:
+                    secret_body = client.V1Secret(
+                        metadata=client.V1ObjectMeta(name=api_secret_name, namespace=namespace),
+                        string_data={'username': api_username, 'password': api_password},
+                        type='Opaque'
+                    )
+                    if secret_exists:
+                        core_v1_api.replace_namespaced_secret(name=api_secret_name, namespace=namespace, body=secret_body)
+                        api_secret_updated = True
+                        message += f"; API Secret {api_secret_name} updated"
+                    else:
+                        core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
+                        api_secret_updated = True
+                        message += f"; API Secret {api_secret_name} created"
+                else:
+                    message += f"; API Secret {api_secret_name} already up-to-date"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'api_secret_updated': False,
+                    'message': f"Failed to create/update API Secret {api_secret_name}: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; No API password provided, skipping API Secret creation for {api_secret_name}"
+            api_secret_updated = False
+
+        # Step 2: Check if Ironic instance exists
         try:
             ironic = custom_api.get_namespaced_custom_object(
                 group=group, version=version, namespace=namespace, plural=plural, name=instance_name
             )
             exists = True
             current_spec = ironic.get('spec', {})
-            # Build desired spec for comparison (simplified, adjust based on critical fields)
+            # Build desired spec for comparison
             desired_spec = {
                 "database": {
                     "host": database_host,
@@ -2081,7 +2144,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                     "user": database_user,
                     "credentialsName": database_secret_name
                 },
-                "apiCredentialsName": database_secret_name,
+                "apiCredentialsName": api_secret_name if api_password else database_secret_name,
                 "httpPort": http_port,
                 "provisioning": {
                     "interface": provisioning_interface,
@@ -2118,7 +2181,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 desired_spec["deployRamdisk"] = {
                     "sshPublicKey": ssh_public_key
                 }
-            # Simplified match check (deep comparison can be more detailed if needed)
+            # Simplified match check
             matches = current_spec == desired_spec
             message += f"; Ironic spec comparison: matches={matches}"
         except ApiException as e:
@@ -2130,10 +2193,11 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 return {
                     'success': False,
                     'updated': False,
+                    'api_secret_updated': api_secret_updated,
                     'message': f"Error fetching Ironic instance {instance_name}: {str(e)[:100]}...; {message}"
                 }
 
-        # Build the full Ironic body for create/update
+        # Step 3: Build the full Ironic body for create/update
         ironic_body = {
             "apiVersion": f"{group}/{version}",
             "kind": "Ironic",
@@ -2149,7 +2213,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                     "user": database_user,
                     "credentialsName": database_secret_name
                 },
-                "apiCredentialsName": database_secret_name,
+                "apiCredentialsName": api_secret_name if api_password else database_secret_name,
                 "httpPort": http_port,
                 "provisioning": {
                     "interface": provisioning_interface,
@@ -2188,7 +2252,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 "sshPublicKey": ssh_public_key
             }
 
-        # Create or update Ironic instance if necessary
+        # Step 4: Create or update Ironic instance if necessary
         if not exists or not matches:
             try:
                 if exists:
@@ -2209,6 +2273,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 return {
                     'success': False,
                     'updated': False,
+                    'api_secret_updated': api_secret_updated,
                     'message': f"Failed to create/update Ironic instance {instance_name}: Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}; Full Response Body: {str(e.body)[:500] if hasattr(e, 'body') and e.body else 'N/A'}...; {message}"
                 }
         else:
@@ -2218,11 +2283,13 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         return {
             'success': True if updated or matches else False,
             'updated': updated,
+            'api_secret_updated': api_secret_updated,
             'message': message
         }
     except Exception as e:
         return {
             'success': False,
             'updated': False,
+            'api_secret_updated': False,
             'message': f"Ironic instance operation error for {instance_name}: {str(e)[:100]}..."
         }

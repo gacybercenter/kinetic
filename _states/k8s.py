@@ -968,10 +968,10 @@ def ironic_operator_present(name, namespace="ironic-standalone-operator-system",
         ret['changes'] = {}
 
     return ret
-def ironic_instance_present(name, namespace, instance_name="ironic", database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key=""):
+def ironic_instance_present(name, namespace, instance_name="ironic", database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, provisioning_interface="ironic-provisioning", provisioning_nic="eth0", provisioning_dhcp_range_start="", provisioning_dhcp_range_end="", provisioning_dhcp_range_gateway="", provisioning_dhcp_range_netmask="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-credentials", api_username="ironic-api", api_password=""):
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
-    Configures database connection, networking, optional Keepalived for HA, TLS, and SSH key for deploy ramdisk.
+    Configures database connection, networking, optional Keepalived for HA, TLS, SSH key for deploy ramdisk, and API credentials.
 
     name
         The name of the state (arbitrary, for SaltStack identification).
@@ -1036,6 +1036,15 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
     ssh_public_key
         Optional. SSH public key to include in the deploy ramdisk for secure access. Defaults to empty.
 
+    api_secret_name
+        Optional. The name of the Secret containing API credentials for Ironic. Defaults to 'ironic-api-credentials'.
+
+    api_username
+        Optional. The username for Ironic API access. Defaults to 'ironic-api'.
+
+    api_password
+        Optional. The password for Ironic API access. Defaults to empty (no password set).
+
     Example:
     .. code-block:: yaml
 
@@ -1061,6 +1070,9 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
             - keepalived_interface: eth0
             - tls_secret_name: ironic-tls
             - ssh_public_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... user@example.com
+            - api_secret_name: ironic-api-credentials
+            - api_username: ironic-api
+            - api_password: mysecureapipassword
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
@@ -1085,14 +1097,18 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
             keepalived_vip=keepalived_vip,
             keepalived_interface=keepalived_interface,
             tls_secret_name=tls_secret_name,
-            ssh_public_key=ssh_public_key
+            ssh_public_key=ssh_public_key,
+            api_secret_name=api_secret_name,
+            api_username=api_username,
+            api_password=api_password
         )
 
         ret['result'] = result['success']
         ret['comment'] = result['message']
-        if result['updated']:
+        if result['updated'] or result['api_secret_updated']:
             ret['changes'] = {
-                'instance_updated': True
+                'instance_updated': result['updated'],
+                'api_secret_updated': result['api_secret_updated']
             }
         else:
             ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
