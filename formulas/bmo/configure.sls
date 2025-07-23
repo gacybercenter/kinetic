@@ -1,6 +1,14 @@
 include:
   - /formulas/bmo/install
 
+
+bmo_ironic_env:
+  file.managed:
+    - name: {{ pillar['script_dir'] }}/config/default/ironic.env
+    - source: salt://formulas/bmo/files/ironic.env.j2
+    - template: jinja
+    - mode: 644
+
 deploy_script:
   file.managed:
     - name: {{ pillar['script_dir'] }}/deploy_state.sh
