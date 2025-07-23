@@ -2019,8 +2019,7 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
             'transitioned': False,
             'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
         }
-def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_range_netmask="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-credentials", api_username="ironic-api", api_password=""):
-    """
+def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="ironic-provisioning", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_network_cidr="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-credentials", api_username="ironic-api", api_password=""):    """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
     Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings, TLS, SSH key for deploy ramdisk, and API credentials.
 
@@ -2200,64 +2199,62 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 }
 
         # Build the full Ironic body for create/update
-        ironic_body = {
-            "apiVersion": f"{group}/{version}",
-            "kind": "Ironic",
-            "metadata": {
-                "name": instance_name,
-                "namespace": namespace
+    ironic_body = {
+        "apiVersion": f"{group}/{version}",
+        "kind": "Ironic",
+        "metadata": {
+            "name": instance_name,
+            "namespace": namespace
+        },
+        "spec": {
+            "database": {
+                "host": database_host,
+                "port": database_port,
+                "name": database_name,
+                "user": database_user,
+                "credentialsName": database_secret_name
             },
-            "spec": {
-                "database": {
-                    "host": database_host,
-                    "port": database_port,
-                    "name": database_name,
-                    "user": database_user,
-                    "credentialsName": database_secret_name
-                },
-                "apiCredentialsName": api_secret_name,
-                "networking": {
-                    "apiPort": http_port
-                },
-                "inspection": {
-                    "dhcp": {
-                        "allInterfaces": inspection_dhcp_all_interfaces
-                    }
+            "apiCredentialsName": api_secret_name,
+            "networking": {
+                "apiPort": http_port,
+                "interface": networking_interface
+            },
+            "inspection": {
+                "dhcp": {
+                    "allInterfaces": inspection_dhcp_all_interfaces
                 }
             }
         }
-        if networking_interface:
-            ironic_body["spec"]["networking"]["interface"] = networking_interface
-        if networking_ip:
-            ironic_body["spec"]["networking"]["ipAddress"] = networking_ip
-        if networking_dhcp_range_start and networking_dhcp_range_end:
-            ironic_body["spec"]["networking"]["dhcp"] = {
-                "rangeBegin": networking_dhcp_range_start,
-                "rangeEnd": networking_dhcp_range_end
-            }
-            if networking_dhcp_range_gateway:
-                ironic_body["spec"]["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
-            if networking_dhcp_range_netmask:
-                ironic_body["spec"]["networking"]["dhcp"]["networkCIDR"] = networking_dhcp_range_netmask
-            if networking_dhcp_serve_dns:
-                ironic_body["spec"]["networking"]["dhcp"]["serveDNS"] = True
-            elif networking_dhcp_dns_address:
-                ironic_body["spec"]["networking"]["dhcp"]["dnsAddress"] = networking_dhcp_dns_address
-        if enable_keepalived and keepalived_vip:
-            ironic_body["spec"]["networking"]["ipAddressManager"] = "keepalived"
-            ironic_body["spec"]["keepalived"] = {
-                "enabled": True,
-                "vip": keepalived_vip,
-                "interface": keepalived_interface
-            }
-        if tls_secret_name:
-            ironic_body["spec"]["tls"] = {
-                "certificateName": tls_secret_name
-            }
-        if ssh_public_key:
-            ironic_body["spec"]["deployRamdisk"] = {
-                "sshKey": ssh_public_key
-            }
+    }
+    if networking_ip:
+        ironic_body["spec"]["networking"]["ipAddress"] = networking_ip
+    if networking_dhcp_range_start and networking_dhcp_range_end:
+        ironic_body["spec"]["networking"]["dhcp"] = {
+            "rangeBegin": networking_dhcp_range_start,
+            "rangeEnd": networking_dhcp_range_end
+        }
+        if networking_dhcp_range_gateway:
+            ironic_body["spec"]["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
+        if networking_dhcp_network_cidr:
+            ironic_body["spec"]["networking"]["dhcp"]["networkCIDR"] = networking_dhcp_network_cidr
+        if networking_dhcp_dns_address:
+            ironic_body["spec"]["networking"]["dhcp"]["dnsAddress"] = networking_dhcp_dns_address
+        ironic_body["spec"]["networking"]["dhcp"]["serveDNS"] = networking_dhcp_serve_dns
+    if enable_keepalived and keepalived_vip:
+        ironic_body["spec"]["networking"]["ipAddressManager"] = "keepalived"
+        ironic_body["spec"]["keepalived"] = {
+            "enabled": True,
+            "vip": keepalived_vip,
+            "interface": keepalived_interface
+        }
+    if tls_secret_name:
+        ironic_body["spec"]["tls"] = {
+            "certificateName": tls_secret_name
+        }
+    if ssh_public_key:
+        ironic_body["spec"]["deployRamdisk"] = {
+            "sshKey": ssh_public_key
+        }
 
         # Create or update Ironic instance if necessary
         if not exists or not matches:

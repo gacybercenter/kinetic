@@ -30,7 +30,7 @@ ensure_ironic_instance:
     - networking_dhcp_range_start: {{ pillar['ironic_dhcp_start'] }}
     - networking_dhcp_range_end: {{ pillar['ironic_dhcp_end'] }}
     - networking_dhcp_range_gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-    - networking_dhcp_range_netmask: {{ netmask }}
+    - networking_dhcp_network_cidr: {{ pillar['networking']['subnets']['management'] }}
     - networking_dhcp_serve_dns: False
     - networking_dhcp_dns_address: {{ pillar.get('dns_server', '8.8.8.8') }}
     - inspection_dhcp_all_interfaces: False
