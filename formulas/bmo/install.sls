@@ -1,19 +1,8 @@
 include:
   - /formulas/common/k8s-certmanager/install
   - /formulas/common/vbmc
+  - /formulas/common/k8s-mariadb
   - /formulas/ironic-operator
-
-# Validate deployment options
-validate_deployment_bmo_ironic:
-  test.fail_without_changes:
-    - name: "Nothing to deploy: deploy_bmo and deploy_ironic are both false"
-    - failhard: True
-    - unless: {{ pillar['deploy_bmo'] }} || {{ pillar['deploy_ironic'] }}
-valid_deployment_mariadb_tls:
-  test.fail_without_changes:
-    - name: "MariaDB deployment requires TLS"
-    - failhard: True
-    - onlyif: {{ pillar['deploy_mariadb'] }} && ! {{ pillar['deploy_tls'] }}
 
 ingress_values:
   file.managed:
@@ -45,12 +34,87 @@ salt-pip_installs:
       - libvirt-python
     - require:
       - pkg: install_dependencies
+
+bmo_namespace_present:
+  cmd.run:
+    - name: kubectl create ns {{ pillar['bmo_namespace'] }}
+    - unless: kubectl get ns |grep {{ pillar['bmo_namespace'] }}
+
+create_ironic_db_dir:
+  file.directory:
+    - name: {{ pillar['ironic_db_dir'] }}
+    - user: 999
+    - group: 999
+    - dir_mode: 755
+    - file_mode: 644
+    - require:
+      - sls: /formulas/common/k8s-mariadb/install
+
+ensure_k8s_storage:
+  k8s.local_storage_pv_pvc_present:
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - pv_name: {{ pillar['ironic_db_dir'] }}-pv
+    - pvc_name: {{ pillar['ironic_db_dir'] }}-pvc
+    - storage_size: 5Gi
+    - path: {{ pillar['ironic_db_dir'] }}
+    - storage_class: local-storage
+    - require:
+      - file: create_ironic_db_dir
+  
+ensure_mariadb_instance:
+  k8s.mariadb_instance_present:
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - instance_name: ironic-mariadb
+    - root_password: {{ pillar['ironic_password'] }}
+    - secret_name: mariadb-root-password
+    - image: mariadb:10.6
+    - storage_size: 5Gi
+    - storage_class: local-storage
+    - replicas: 1
+    - limits_cpu: 500m
+    - limits_memory: 512Mi
+    - requests_cpu: 200m
+    - requests_memory: 256Mi
+    - admin_host_access: 192.168.1.41
+    - require:
+      - k8s: ensure_k8s_storage
+
+ensure_ironic_database:
+  k8s.mariadb_database_present:
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - database_name: ironic
+    - mariadb_name: ironic-mariadb
+    - mariadb_namespace: {{ pillar['bmo_namespace'] }}
+    - character_set: utf8
+    - collate: utf8_general_ci
+    - cleanup_policy: Delete
+    - require:
+      - k8s: ensure_mariadb_instance
+
+ensure_ironic_db_user:
+  k8s.ironic_db_user_present:
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - mariadb_name: ironic-mariadb
+    - mariadb_namespace: {{ pillar['bmo_namespace'] }}
+    - user_name: {{ pillar.get('ironic-user', pillar['ironic_username']) }}
+    - user_password: {{ pillar.get('ironic_user_password', pillar['ironic_password']) }}
+    - secret_name: ironic-user
+    - database_name: ironic
+    - host: '%'
+    - max_user_connections: 100
+    - privileges:
+      - ALL PRIVILEGES
+    - table: '*'
+    - require:
+      - k8s: ensure_mariadb_instance
+
 helm_ingress_repo:
   helm.repo_managed:
     - present:
       - name: nginx-ingress
         url: https://kubernetes.github.io/ingress-nginx
         repo_update: true
+
 helm_ingress_release:
   helm.release_present:
     - name: nginx-ingress
@@ -72,24 +136,3 @@ clone_bmo_repo:
     - require:
       - pkg: install_dependencies
     - unless: -f {{ pillar['script_dir'] }}
-
-bmo_ironic_env:
-  file.managed:
-    - name: {{ pillar['script_dir'] }}/config/default/ironic.env
-    - source: salt://formulas/bmo/files/ironic.env.j2
-    - template: jinja
-    - mode: 644
-
-ironic_bmo_configmap:
-  file.managed:
-    - name: {{ pillar['script_dir'] }}/ironic-deployment/default/ironic_bmo_configmap.env
-    - source: salt://formulas/bmo/files/ironic.env.j2
-    - mode: 644
-    - template: jinja
-bmo_deploy_env:
-  file.managed:
-    - name: {{ pillar['script_dir'] }}/deploy_env.sh
-    - mode: 644
-    - contents: |
-        export IRONIC_HOST=bmo
-        export IRONIC_HOST_IP=10.150.1.41
