@@ -2176,30 +2176,8 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                             if key == "enabled" and isinstance(normalized[key], (bool, str)):
                                 normalized[key] = bool(normalized[key])
                     else:
-                        # Set defaults for missing fields based on desired spec or input parameters
-                        if key == "inspection":
-                            normalized[key] = {"dhcp": {"allInterfaces": bool(inspection_dhcp_all_interfaces)}}
-                        elif key == "dhcp" and "inspection" in desired:
-                            normalized[key] = {"allInterfaces": bool(inspection_dhcp_all_interfaces)}
-                        elif key == "allInterfaces" and "dhcp" in desired:
-                            normalized[key] = bool(inspection_dhcp_all_interfaces)
-                        elif key == "keepalived" and enable_keepalived and keepalived_vip:
-                            normalized[key] = {
-                                "enabled": True,
-                                "vip": keepalived_vip,
-                                "interface": keepalived_interface
-                            }
-                        elif key == "dhcp" and "networking" in desired and "dhcp" in desired.get("networking", {}):
-                            normalized[key] = {
-                                "networkCIDR": desired["networking"]["dhcp"].get("networkCIDR", ""),
-                                "rangeBegin": desired["networking"]["dhcp"].get("rangeBegin", ""),
-                                "rangeEnd": desired["networking"]["dhcp"].get("rangeEnd", ""),
-                                "gatewayAddress": desired["networking"]["dhcp"].get("gatewayAddress", ""),
-                                "serveDNS": desired["networking"]["dhcp"].get("serveDNS", False),
-                                "dnsAddress": desired["networking"]["dhcp"].get("dnsAddress", "")
-                            }
-                        elif key == "serveDNS" and "dhcp" in desired:
-                            normalized[key] = desired.get("serveDNS", False)
+                        # Explicitly set defaults for missing fields based on desired spec
+                        normalized[key] = desired[key]
                 return normalized
 
             normalized_current_spec = normalize_dict(desired_spec, current_spec)
