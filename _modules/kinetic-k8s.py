@@ -2169,6 +2169,9 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                         normalized_current_spec[key]["imageServerTLSPort"] = int(normalized_current_spec[key]["imageServerTLSPort"])
                     if key == "inspection" and "dhcp" in normalized_current_spec[key] and "allInterfaces" in normalized_current_spec[key]["dhcp"]:
                         normalized_current_spec[key]["dhcp"]["allInterfaces"] = bool(normalized_current_spec[key]["dhcp"]["allInterfaces"])
+                    # If keepalived is in desired_spec, ensure it's normalized in current_spec
+                    if key == "keepalived" and key in current_spec:
+                        normalized_current_spec[key]["enabled"] = bool(normalized_current_spec[key]["enabled"])
             # Compare normalized specs and log concise differences
             matches = normalized_current_spec == desired_spec
             diff_message = f"Ironic spec comparison: matches={matches}"
