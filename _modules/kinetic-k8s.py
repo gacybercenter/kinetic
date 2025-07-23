@@ -2212,11 +2212,11 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                                     pass
                     else:
                         # Handle missing fields with defaults if they are optional or operator-managed
-                        if key == "inspection" and "inspection" not in current:
+                        if key == "inspection" or (key == "inspection" and "inspection" in current and not current["inspection"]):
                             normalized[key] = {"dhcp": {"allInterfaces": False}}
-                        elif key == "dhcp" and "dhcp" not in current.get("inspection", {}):
+                        elif key == "dhcp" and ("inspection" not in current or "dhcp" not in current.get("inspection", {})):
                             normalized[key] = {"allInterfaces": False}
-                        elif key == "allInterfaces" and "allInterfaces" not in current.get("dhcp", {}):
+                        elif key == "allInterfaces" and ("inspection" not in current or "dhcp" not in current.get("inspection", {}) or "allInterfaces" not in current.get("inspection", {}).get("dhcp", {})):
                             normalized[key] = False
                         elif key == "keepalived" and "keepalived" not in current and "ipAddressManager" in current.get("networking", {}) and current["networking"]["ipAddressManager"] == "keepalived":
                             normalized[key] = {
@@ -2224,7 +2224,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                                 "vip": current.get("networking", {}).get("ipAddress", ""),
                                 "interface": current.get("networking", {}).get("interface", "eth0")
                             }
-                        elif key == "dhcp" and "dhcp" not in current.get("networking", {}):
+                        elif key == "dhcp" and ("networking" not in current or "dhcp" not in current.get("networking", {})):
                             normalized[key] = {
                                 "networkCIDR": "",
                                 "rangeBegin": "",
