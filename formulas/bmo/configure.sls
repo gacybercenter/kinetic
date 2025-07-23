@@ -74,3 +74,15 @@ ensure_ironic_instance:
     - require:
       - sls: /formulas/bmo/install
       - k8s: ensure_tls_secret
+
+{% for name, host in pillar['bmh'].items() %}
+{% set bmh_type = name.split('-')[0].lower() %}
+ensure_{{ name }}_bmc_auth_present:
+  k8s.host_bmc_auth_present:
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - ipmi: {{ pillar['ipmi-password'] }}
+    - pillar_key: bmh
+
+
+{% endfor %}
