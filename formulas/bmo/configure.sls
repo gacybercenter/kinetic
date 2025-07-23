@@ -36,6 +36,10 @@ ensure_ironic_instance:
     - keepalived_vip: {{ pillar['ironic_endpoint_ip'] }}
     - keepalived_interface: {{ pillar['ironic_interface'] }}
     - tls_secret_name: ironic-tls
+    - ssh_public_key: {{ pillar['node_deploy_key'] }}
+    - api_secret_name: ironic-api-creds
+    - api_username: ironic
+    - api_password: {{ pillar['ironic_api_password'] }}
     - require:
       - sls: /formulas/bmo/install
       - k8s: ensure_tls_secret
