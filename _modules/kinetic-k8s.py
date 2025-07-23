@@ -2023,6 +2023,36 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
     Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings, TLS, SSH key for deploy ramdisk, and API credentials.
+
+    Args:
+        namespace (str): The namespace of the Ironic instance in Kubernetes.
+        instance_name (str): The name of the Ironic instance (Custom Resource).
+        database_secret_name (str, optional): Secret name for database credentials. Defaults to "ironic-user".
+        database_host (str, optional): Database host. Defaults to "ironic-mariadb".
+        database_port (int, optional): Database port. Defaults to 3306.
+        database_user (str, optional): Database user. Defaults to "ironic".
+        database_name (str, optional): Database name. Defaults to "ironic".
+        http_port (int, optional): API port for Ironic. Defaults to 6385.
+        networking_interface (str, optional): Network interface for Ironic. Defaults to "".
+        networking_ip (str, optional): IP address for Ironic. Defaults to "".
+        networking_dhcp_range_start (str, optional): DHCP range start IP. Defaults to "".
+        networking_dhcp_range_end (str, optional): DHCP range end IP. Defaults to "".
+        networking_dhcp_range_gateway (str, optional): DHCP gateway address. Defaults to "".
+        networking_dhcp_network_cidr (str, optional): DHCP network CIDR. Defaults to "".
+        networking_dhcp_serve_dns (bool, optional): Whether to serve DNS in DHCP. Defaults to False.
+        networking_dhcp_dns_address (str, optional): DNS address for DHCP. Defaults to "".
+        inspection_dhcp_all_interfaces (bool, optional): Inspect all interfaces for DHCP. Defaults to False.
+        enable_keepalived (bool, optional): Enable Keepalived for VIP. Defaults to False.
+        keepalived_vip (str, optional): Virtual IP for Keepalived. Defaults to "".
+        keepalived_interface (str, optional): Interface for Keepalived. Defaults to "eth0".
+        tls_secret_name (str, optional): Secret name for TLS certificate. Defaults to "ironic-tls".
+        ssh_public_key (str, optional): SSH public key for deploy ramdisk. Defaults to "".
+        api_secret_name (str, optional): Secret name for API credentials. Defaults to "ironic-api-creds".
+        api_username (str, optional): Username for API. Defaults to "ironic".
+        api_password (str, optional): Password for API. Defaults to "".
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'api_secret_updated' (bool), and 'message' (str).
     """
     try:
         updated = False
@@ -2042,7 +2072,61 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         version = "v1alpha1"
         plural = "ironics"
 
-        # ... existing code for API credentials Secret ...
+        # Step 1: Manage API credentials Secret
+        api_secret_exists = False
+        api_secret_matches = False
+        try:
+            api_secret = core_v1_api.read_namespaced_secret(name=api_secret_name, namespace=namespace)
+            api_secret_exists = True
+            current_username = api_secret.string_data.get('username', '') if api_secret.string_data else ''
+            current_password = api_secret.string_data.get('password', '') if api_secret.string_data else ''
+            if not current_username and api_secret.data:
+                import base64
+                current_username = base64.b64decode(api_secret.data.get('username', '')).decode('utf-8')
+                current_password = base64.b64decode(api_secret.data.get('password', '')).decode('utf-8')
+            if current_username != api_username or (api_password and current_password != api_password):
+                api_secret_updated = True
+            else:
+                api_secret_matches = True
+                api_secret_updated = False
+        except ApiException as e:
+            if e.status == 404:
+                api_secret_exists = False
+                api_secret_updated = True
+            else:
+                message += f"; Error fetching API Secret {api_secret_name}: {str(e)[:50]}..."
+                return {
+                    'success': False,
+                    'updated': False,
+                    'api_secret_updated': False,
+                    'message': message
+                }
+
+        if not api_secret_exists or api_secret_updated:
+            try:
+                secret_body = client.V1Secret(
+                    metadata=client.V1ObjectMeta(name=api_secret_name, namespace=namespace),
+                    string_data={'username': api_username, 'password': api_password},
+                    type='Opaque'
+                )
+                if api_secret_exists:
+                    core_v1_api.replace_namespaced_secret(name=api_secret_name, namespace=namespace, body=secret_body)
+                    api_secret_updated = True
+                    message += f"; API Secret {api_secret_name} updated"
+                else:
+                    core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
+                    api_secret_updated = True
+                    message += f"; API Secret {api_secret_name} created"
+            except ApiException as e:
+                message += f"; Failed to create/update API Secret {api_secret_name}: {str(e)[:50]}..."
+                return {
+                    'success': False,
+                    'updated': False,
+                    'api_secret_updated': False,
+                    'message': message
+                }
+        else:
+            message += f"; API Secret {api_secret_name} already up-to-date"
 
         # Step 2: Check if Ironic instance exists
         try:
@@ -2129,7 +2213,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 return normalized
 
             normalized_current_spec = normalize_dict(desired_spec, current_spec)
-            # Compare normalized specs and log detailed differences for debugging
+            # Compare normalized specs and log detailed differences for debugging without truncation
             matches = normalized_current_spec == desired_spec
             diff_message = f"Ironic spec comparison: matches={matches}"
             if not matches:
@@ -2141,12 +2225,24 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                             diff_info.append(f"{full_key}: desired={desired[key]}; current={current.get(key, 'missing')}")
                         elif isinstance(desired[key], dict) and isinstance(current.get(key), dict):
                             find_diff(desired[key], current.get(key, {}), f"{full_key}.")
-                        if len(diff_info) >= 5:  # Limit to first 5 differences
-                            diff_info.append("...more differences omitted...")
-                            break
                 find_diff(desired_spec, normalized_current_spec)
                 diff_message += f"; Diff: {' | '.join(diff_info)}"
-            message = f"{message}; {diff_message[:500]}"  # Ensure diff_message is concise
+                # Write full specs to a temporary file for complete debugging
+                import json
+                import os
+                debug_data = {
+                    "desired_spec": desired_spec,
+                    "normalized_current_spec": normalized_current_spec,
+                    "full_current_spec": current_spec
+                }
+                debug_file = f"/tmp/ironic_spec_debug_{instance_name}_{int(os.times()[4])}.json"
+                try:
+                    with open(debug_file, 'w') as f:
+                        json.dump(debug_data, f, indent=2)
+                    diff_message += f"; Full specs written to {debug_file} for debugging"
+                except Exception as debug_err:
+                    diff_message += f"; Failed to write debug file {debug_file}: {str(debug_err)[:50]}..."
+            message = f"{message}; {diff_message}"
         except ApiException as e:
             if e.status == 404:
                 exists = False
