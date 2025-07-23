@@ -2191,6 +2191,21 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                             break
                 find_diff(desired_spec, normalized_current_spec)
                 diff_message += f"; Diff: {' | '.join(diff_info)}"
+                # Debug: Write full specs to a temporary file for detailed comparison
+                import json
+                import os
+                debug_data = {
+                    "desired_spec": desired_spec,
+                    "normalized_current_spec": normalized_current_spec,
+                    "full_current_spec": current_spec
+                }
+                debug_file = f"/tmp/ironic_spec_debug_{instance_name}.json"
+                try:
+                    with open(debug_file, 'w') as f:
+                        json.dump(debug_data, f, indent=2)
+                    diff_message += f"; Full specs written to {debug_file} for debugging"
+                except Exception as debug_err:
+                    diff_message += f"; Failed to write debug file {debug_file}: {str(debug_err)[:50]}..."
             message = f"{message}; {diff_message[:300]}"  # Ensure diff_message is early in the log and limited in length
         except ApiException as e:
             if e.status == 404:
