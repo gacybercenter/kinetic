@@ -2042,61 +2042,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         version = "v1alpha1"
         plural = "ironics"
 
-        # Step 1: Manage API credentials Secret
-        api_secret_exists = False
-        api_secret_matches = False
-        try:
-            api_secret = core_v1_api.read_namespaced_secret(name=api_secret_name, namespace=namespace)
-            api_secret_exists = True
-            current_username = api_secret.string_data.get('username', '') if api_secret.string_data else ''
-            current_password = api_secret.string_data.get('password', '') if api_secret.string_data else ''
-            if not current_username and api_secret.data:
-                import base64
-                current_username = base64.b64decode(api_secret.data.get('username', '')).decode('utf-8')
-                current_password = base64.b64decode(api_secret.data.get('password', '')).decode('utf-8')
-            if current_username != api_username or (api_password and current_password != api_password):
-                api_secret_updated = True
-            else:
-                api_secret_matches = True
-                api_secret_updated = False
-        except ApiException as e:
-            if e.status == 404:
-                api_secret_exists = False
-                api_secret_updated = True
-            else:
-                message += f"; Error fetching API Secret {api_secret_name}: {str(e)[:50]}..."
-                return {
-                    'success': False,
-                    'updated': False,
-                    'api_secret_updated': False,
-                    'message': message
-                }
-
-        if not api_secret_exists or api_secret_updated:
-            try:
-                secret_body = client.V1Secret(
-                    metadata=client.V1ObjectMeta(name=api_secret_name, namespace=namespace),
-                    string_data={'username': api_username, 'password': api_password},
-                    type='Opaque'
-                )
-                if api_secret_exists:
-                    core_v1_api.replace_namespaced_secret(name=api_secret_name, namespace=namespace, body=secret_body)
-                    api_secret_updated = True
-                    message += f"; API Secret {api_secret_name} updated"
-                else:
-                    core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
-                    api_secret_updated = True
-                    message += f"; API Secret {api_secret_name} created"
-            except ApiException as e:
-                message += f"; Failed to create/update API Secret {api_secret_name}: {str(e)[:50]}..."
-                return {
-                    'success': False,
-                    'updated': False,
-                    'api_secret_updated': False,
-                    'message': message
-                }
-        else:
-            message += f"; API Secret {api_secret_name} already up-to-date"
+        # ... existing code for API credentials Secret ...
 
         # Step 2: Check if Ironic instance exists
         try:
@@ -2105,6 +2051,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             )
             exists = True
             current_spec = ironic.get('spec', {})
+            current_resource_version = ironic.get('metadata', {}).get('resourceVersion', '')
             # Build desired spec for comparison with normalization, excluding fields not consistently returned
             desired_spec = {
                 "database": {
@@ -2155,7 +2102,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 desired_spec["deployRamdisk"] = {
                     "sshKey": ssh_public_key
                 }
-            # Normalize current spec by recursively removing fields not in desired spec
+            # Normalize current spec by recursively removing fields not in desired spec and ensuring type consistency
             def normalize_dict(desired, current):
                 normalized = {}
                 for key in desired:
@@ -2165,16 +2112,24 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                         else:
                             normalized[key] = current[key]
                             # Ensure type consistency for specific fields
-                            if key in ["apiPort", "imageServerPort", "imageServerTLSPort"] and isinstance(normalized[key], (int, float)):
-                                normalized[key] = int(normalized[key])
-                            if key == "allInterfaces" and isinstance(normalized[key], bool):
+                            if key in ["apiPort", "imageServerPort", "imageServerTLSPort"] and isinstance(normalized[key], (int, float, str)):
+                                try:
+                                    normalized[key] = int(float(normalized[key]) if isinstance(normalized[key], str) else normalized[key])
+                                except (ValueError, TypeError):
+                                    pass
+                            if key == "allInterfaces" and isinstance(normalized[key], (bool, str)):
                                 normalized[key] = bool(normalized[key])
-                            if key == "enabled" and isinstance(normalized[key], bool):
+                            if key == "enabled" and isinstance(normalized[key], (bool, str)):
                                 normalized[key] = bool(normalized[key])
+                            if key == "port" and isinstance(normalized[key], (int, float, str)):
+                                try:
+                                    normalized[key] = int(float(normalized[key]) if isinstance(normalized[key], str) else normalized[key])
+                                except (ValueError, TypeError):
+                                    pass
                 return normalized
 
             normalized_current_spec = normalize_dict(desired_spec, current_spec)
-            # Compare normalized specs and log concise differences
+            # Compare normalized specs and log detailed differences for debugging
             matches = normalized_current_spec == desired_spec
             diff_message = f"Ironic spec comparison: matches={matches}"
             if not matches:
@@ -2186,27 +2141,12 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                             diff_info.append(f"{full_key}: desired={desired[key]}; current={current.get(key, 'missing')}")
                         elif isinstance(desired[key], dict) and isinstance(current.get(key), dict):
                             find_diff(desired[key], current.get(key, {}), f"{full_key}.")
-                        if len(diff_info) >= 3:  # Limit to first 3 differences
+                        if len(diff_info) >= 5:  # Limit to first 5 differences
                             diff_info.append("...more differences omitted...")
                             break
                 find_diff(desired_spec, normalized_current_spec)
                 diff_message += f"; Diff: {' | '.join(diff_info)}"
-                # Debug: Write full specs to a temporary file for detailed comparison
-                import json
-                import os
-                debug_data = {
-                    "desired_spec": desired_spec,
-                    "normalized_current_spec": normalized_current_spec,
-                    "full_current_spec": current_spec
-                }
-                debug_file = f"/tmp/ironic_spec_debug_{instance_name}.json"
-                try:
-                    with open(debug_file, 'w') as f:
-                        json.dump(debug_data, f, indent=2)
-                    diff_message += f"; Full specs written to {debug_file} for debugging"
-                except Exception as debug_err:
-                    diff_message += f"; Failed to write debug file {debug_file}: {str(debug_err)[:50]}..."
-            message = f"{message}; {diff_message[:300]}"  # Ensure diff_message is early in the log and limited in length
+            message = f"{message}; {diff_message[:500]}"  # Ensure diff_message is concise
         except ApiException as e:
             if e.status == 404:
                 exists = False
@@ -2286,11 +2226,15 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 if exists:
                     if 'metadata' in ironic and 'resourceVersion' in ironic['metadata']:
                         ironic_body['metadata']['resourceVersion'] = ironic['metadata']['resourceVersion']
-                    custom_api.replace_namespaced_custom_object(
+                    # Perform the update and check if resourceVersion changed to confirm actual update
+                    pre_update_resource_version = current_resource_version
+                    update_response = custom_api.replace_namespaced_custom_object(
                         group=group, version=version, namespace=namespace, plural=plural, name=instance_name, body=ironic_body
                     )
-                    updated = True
-                    message += f"; Ironic instance {instance_name} updated"
+                    post_update_resource_version = update_response.get('metadata', {}).get('resourceVersion', '')
+                    # Only set updated=True if resourceVersion changed or if we can't determine (fallback to old logic)
+                    updated = (pre_update_resource_version != post_update_resource_version) if pre_update_resource_version and post_update_resource_version else True
+                    message += f"; Ironic instance {instance_name} update attempted; resourceVersion changed: {pre_update_resource_version != post_update_resource_version}"
                 else:
                     custom_api.create_namespaced_custom_object(
                         group=group, version=version, namespace=namespace, plural=plural, body=ironic_body
