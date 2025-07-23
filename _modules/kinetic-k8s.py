@@ -2224,6 +2224,15 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                                 "vip": current.get("networking", {}).get("ipAddress", ""),
                                 "interface": current.get("networking", {}).get("interface", "eth0")
                             }
+                        elif key == "dhcp" and "dhcp" not in current.get("networking", {}):
+                            normalized[key] = {
+                                "networkCIDR": "",
+                                "rangeBegin": "",
+                                "rangeEnd": "",
+                                "gatewayAddress": "",
+                                "serveDNS": False,
+                                "dnsAddress": ""
+                            }
                         elif key == "serveDNS" and "serveDNS" not in current and "dhcp" in current:
                             normalized[key] = False
                 return normalized
