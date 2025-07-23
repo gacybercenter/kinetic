@@ -2023,36 +2023,6 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
     Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings, TLS, SSH key for deploy ramdisk, and API credentials.
-
-    Args:
-        namespace (str): The Kubernetes namespace where the Ironic instance will reside.
-        instance_name (str): The name of the Ironic instance (Custom Resource).
-        database_secret_name (str, optional): The name of the Secret containing database credentials. Defaults to 'ironic-user'.
-        database_host (str, optional): The hostname or service name of the database. Defaults to 'ironic-mariadb'.
-        database_port (int, optional): The port for the database connection. Defaults to 3306.
-        database_user (str, optional): The database user for Ironic. Defaults to 'ironic'.
-        database_name (str, optional): The name of the database for Ironic. Defaults to 'ironic'.
-        http_port (int, optional): The HTTP port for Ironic API. Defaults to 6385.
-        networking_interface (str, optional): The interface for networking. Defaults to empty.
-        networking_ip (str, optional): The IP address for networking. Defaults to empty.
-        networking_dhcp_range_start (str, optional): Start of DHCP range for networking. Defaults to empty (no DHCP).
-        networking_dhcp_range_end (str, optional): End of DHCP range for networking. Defaults to empty (no DHCP).
-        networking_dhcp_range_gateway (str, optional): Gateway for DHCP range. Defaults to empty.
-        networking_dhcp_network_cidr (str, optional): Network CIDR for DHCP range (e.g., '192.168.1.0/24'). Defaults to empty.
-        networking_dhcp_serve_dns (bool, optional): Whether to serve DNS via DHCP. Defaults to False.
-        networking_dhcp_dns_address (str, optional): DNS address for DHCP if serve_dns is False. Defaults to empty.
-        inspection_dhcp_all_interfaces (bool, optional): Whether to DHCP all interfaces during inspection. Defaults to False.
-        enable_keepalived (bool, optional): Whether to enable Keepalived for high availability. Defaults to False.
-        keepalived_vip (str, optional): Virtual IP for Keepalived. Required if enable_keepalived is True. Defaults to empty.
-        keepalived_interface (str, optional): Interface for Keepalived. Defaults to 'eth0'.
-        tls_secret_name (str, optional): The name of the Secret containing TLS certificates for Ironic. Defaults to 'ironic-tls'.
-        ssh_public_key (str, optional): SSH public key to include in the deploy ramdisk for secure access. Defaults to empty.
-        api_secret_name (str, optional): The name of the Secret containing API credentials for Ironic. Defaults to 'ironic-api-creds'.
-        api_username (str, optional): The username for Ironic API access. Defaults to 'ironic'.
-        api_password (str, optional): The password for Ironic API access. Defaults to empty.
-
-    Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'api_secret_updated' (bool), and 'message' (str).
     """
     try:
         updated = False
@@ -2197,9 +2167,16 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                         normalized_current_spec[key]["apiPort"] = int(normalized_current_spec[key]["apiPort"])
                     if key == "inspection" and "dhcp" in normalized_current_spec[key] and "allInterfaces" in normalized_current_spec[key]["dhcp"]:
                         normalized_current_spec[key]["dhcp"]["allInterfaces"] = bool(normalized_current_spec[key]["dhcp"]["allInterfaces"])
-            # Compare normalized specs
+            # Compare normalized specs and log detailed differences
             matches = normalized_current_spec == desired_spec
             message += f"; Ironic spec comparison: matches={matches}"
+            if not matches:
+                import json
+                diff_info = []
+                for key in desired_spec:
+                    if key not in normalized_current_spec or normalized_current_spec[key] != desired_spec[key]:
+                        diff_info.append(f"{key}: desired={json.dumps(desired_spec[key])[:50]}..., current={json.dumps(normalized_current_spec.get(key, 'missing'))[:50]}...")
+                message += f"; Differences: {'; '.join(diff_info)[:200]}..." if diff_info else "; No detailed differences found (possible nested mismatch)"
         except ApiException as e:
             if e.status == 404:
                 exists = False
