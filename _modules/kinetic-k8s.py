@@ -2167,16 +2167,19 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                         normalized_current_spec[key]["apiPort"] = int(normalized_current_spec[key]["apiPort"])
                     if key == "inspection" and "dhcp" in normalized_current_spec[key] and "allInterfaces" in normalized_current_spec[key]["dhcp"]:
                         normalized_current_spec[key]["dhcp"]["allInterfaces"] = bool(normalized_current_spec[key]["dhcp"]["allInterfaces"])
-            # Compare normalized specs and log detailed differences
+            # Compare normalized specs and log concise differences
             matches = normalized_current_spec == desired_spec
-            message += f"; Ironic spec comparison: matches={matches}"
+            diff_message = f"Ironic spec comparison: matches={matches}"
             if not matches:
-                import json
                 diff_info = []
                 for key in desired_spec:
                     if key not in normalized_current_spec or normalized_current_spec[key] != desired_spec[key]:
-                        diff_info.append(f"{key}: desired={json.dumps(desired_spec[key])[:50]}..., current={json.dumps(normalized_current_spec.get(key, 'missing'))[:50]}...")
-                message += f"; Differences: {'; '.join(diff_info)[:200]}..." if diff_info else "; No detailed differences found (possible nested mismatch)"
+                        diff_info.append(f"{key}: desired={desired_spec[key]}; current={normalized_current_spec.get(key, 'missing')}")
+                    if len(diff_info) >= 3:  # Limit to first 3 differences to avoid long messages
+                        diff_info.append("...more differences omitted...")
+                        break
+                diff_message += f"; Diff: {' | '.join(diff_info)}"
+            message = f"{message}; {diff_message[:300]}"  # Ensure diff_message is early in the log and limited in length
         except ApiException as e:
             if e.status == 404:
                 exists = False
