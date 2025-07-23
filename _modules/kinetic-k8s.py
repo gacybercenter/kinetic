@@ -2019,7 +2019,8 @@ def check_ironic_operator(namespace="ironic-standalone-operator-system", deploym
             'transitioned': False,
             'message': f"Error checking Ironic Operator: {str(e)[:100]}..."
         }
-def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="ironic-provisioning", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_network_cidr="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-credentials", api_username="ironic-api", api_password=""):    """
+def ironic_instance_present(namespace, instance_name, database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="ironic-provisioning", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_network_cidr="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-credentials", api_username="ironic-api", api_password=""):
+    """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
     Creates or updates the Ironic Custom Resource with specified database connection, networking, and optional Keepalived settings, TLS, SSH key for deploy ramdisk, and API credentials.
 
