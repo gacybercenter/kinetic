@@ -2183,37 +2183,6 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             normalized_current_spec = normalize_dict(desired_spec, current_spec)
             # Compare fully normalized specs
             matches = normalized_current_spec == desired_spec
-            diff_message = f"Ironic spec comparison: matches={matches}"
-            if not matches:
-                diff_info = []
-                def find_diff(desired, current, prefix=""):
-                    for key in desired:
-                        full_key = f"{prefix}{key}" if prefix else key
-                        if key not in current or desired[key] != current.get(key):
-                            diff_info.append(f"{full_key}: desired={str(desired[key])[:50]}; current={str(current.get(key, 'missing'))[:50]}")
-                        elif isinstance(desired[key], dict) and isinstance(current.get(key), dict):
-                            find_diff(desired[key], current.get(key, {}), f"{full_key}.")
-                        if len(diff_info) >= 2:  # Limit differences to avoid truncation
-                            diff_info.append("...more differences omitted...")
-                            break
-                find_diff(desired_spec, normalized_current_spec)
-                diff_message += f"; Diff: {' | '.join(diff_info)[:200]}"
-            # Debug: Write specs to a file for troubleshooting
-            import json
-            import os
-            debug_data = {
-                "desired_spec": desired_spec,
-                "normalized_current_spec": normalized_current_spec,
-                "full_current_spec": current_spec
-            }
-            debug_file = f"/tmp/ironic_spec_debug_{instance_name}_{int(os.times()[4])}.json"
-            try:
-                with open(debug_file, 'w') as f:
-                    json.dump(debug_data, f, indent=2)
-                diff_message += f"; Full specs written to {debug_file}"
-            except Exception as debug_err:
-                diff_message += f"; Debug file write failed: {str(debug_err)[:50]}"
-            message = f"{message}; {diff_message[:300]}"
         except ApiException as e:
             if e.status == 404:
                 exists = False
@@ -2309,7 +2278,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                     'success': False,
                     'updated': False,
                     'api_secret_updated': api_secret_updated,
-                    'message': f"Failed to create/update Ironic instance {instance_name}: Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}; Full Response Body: {str(e.body)[:500] if hasattr(e, 'body') and e.body else 'N/A'}...; {message}"
+                    'message': f"Failed to create/update Ironic instance {instance_name}: Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}; {message}"
                 }
         else:
             message += f"; Ironic instance {instance_name} already up-to-date"
