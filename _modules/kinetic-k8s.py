@@ -2105,18 +2105,18 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             )
             exists = True
             current_spec = ironic.get('spec', {})
-            # Build desired spec for comparison with normalization
+            # Build desired spec for comparison with normalization, excluding fields not consistently returned
             desired_spec = {
                 "database": {
                     "host": database_host,
-                    "port": int(database_port),  # Ensure integer for comparison
                     "name": database_name,
-                    "user": database_user,
                     "credentialsName": database_secret_name
                 },
                 "apiCredentialsName": api_secret_name,
                 "networking": {
-                    "apiPort": int(http_port)  # Ensure integer for comparison
+                    "apiPort": int(http_port),  # Ensure integer for comparison
+                    "imageServerPort": 6180,  # Add default value as seen in CRD
+                    "imageServerTLSPort": 6183  # Add default value as seen in CRD
                 },
                 "inspection": {
                     "dhcp": {
@@ -2161,10 +2161,12 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 if key in current_spec:
                     normalized_current_spec[key] = current_spec[key]
                     # Ensure type consistency for nested fields
-                    if key == "database" and "port" in normalized_current_spec[key]:
-                        normalized_current_spec[key]["port"] = int(normalized_current_spec[key]["port"])
                     if key == "networking" and "apiPort" in normalized_current_spec[key]:
                         normalized_current_spec[key]["apiPort"] = int(normalized_current_spec[key]["apiPort"])
+                    if key == "networking" and "imageServerPort" in normalized_current_spec[key]:
+                        normalized_current_spec[key]["imageServerPort"] = int(normalized_current_spec[key]["imageServerPort"])
+                    if key == "networking" and "imageServerTLSPort" in normalized_current_spec[key]:
+                        normalized_current_spec[key]["imageServerTLSPort"] = int(normalized_current_spec[key]["imageServerTLSPort"])
                     if key == "inspection" and "dhcp" in normalized_current_spec[key] and "allInterfaces" in normalized_current_spec[key]["dhcp"]:
                         normalized_current_spec[key]["dhcp"]["allInterfaces"] = bool(normalized_current_spec[key]["dhcp"]["allInterfaces"])
             # Compare normalized specs and log concise differences
@@ -2211,7 +2213,9 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 },
                 "apiCredentialsName": api_secret_name,
                 "networking": {
-                    "apiPort": int(http_port)
+                    "apiPort": int(http_port),
+                    "imageServerPort": 6180,  # Add default value as seen in CRD
+                    "imageServerTLSPort": 6183  # Add default value as seen in CRD
                 },
                 "inspection": {
                     "dhcp": {
