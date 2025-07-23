@@ -1,6 +1,15 @@
 include:
   - /formulas/bmo/install
 
+deploy_script:
+  file.managed:
+    - name: {{ pillar['script_dir'] }}/deploy_state.sh
+    - source: salt://formulas/bmo/files/deploy.j2
+    - mode: 700
+    - template: jinja
+    - require:
+      - sls: /formulas/bmo/install
+
 {% set subnet_cidr = pillar['networking']['subnets']['management'] %}
 {% set cidr_prefix = subnet_cidr.split('/')[1] %}
 {% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
@@ -14,6 +23,18 @@ ensure_tls_secret:
     - validity_days: 365
     - require:
       - sls: /formulas/ironic-operator/configure
+
+ensure_salt_master_uuids_secret:
+  k8s.uuids_present:
+    - namespace: salt
+    - secret_name: uuids
+    - pillar_key: bmh  # Explicitly set to bmh, though it's now the default
+    - deployment_name: salt-master
+    - wait_timeout: 300
+    - wait_interval: 10
+    - salt_check_timeout: 120
+    - salt_check_interval: 5
+    - salt_check_key: bmh
 
 ensure_ironic_instance:
   k8s.ironic_instance_present:
