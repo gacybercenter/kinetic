@@ -2098,7 +2098,57 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
         else:
             message += f"; API Secret {api_secret_name} already up-to-date"
 
-        # Step 2: Check if Ironic instance exists
+        # Step 2: Build desired spec for Ironic instance
+        desired_spec = {
+            "database": {
+                "host": database_host,
+                "name": database_name,
+                "credentialsName": database_secret_name
+            },
+            "apiCredentialsName": api_secret_name,
+            "networking": {
+                "apiPort": int(http_port),
+                "imageServerPort": 6180,
+                "imageServerTLSPort": 6183
+            },
+            "inspection": {
+                "dhcp": {
+                    "allInterfaces": bool(inspection_dhcp_all_interfaces)
+                }
+            }
+        }
+        if networking_interface:
+            desired_spec["networking"]["interface"] = networking_interface
+        if networking_ip:
+            desired_spec["networking"]["ipAddress"] = networking_ip
+        if networking_dhcp_range_start and networking_dhcp_range_end and networking_dhcp_network_cidr:
+            desired_spec["networking"]["dhcp"] = {
+                "networkCIDR": networking_dhcp_network_cidr,
+                "rangeBegin": networking_dhcp_range_start,
+                "rangeEnd": networking_dhcp_range_end
+            }
+            if networking_dhcp_range_gateway:
+                desired_spec["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
+            desired_spec["networking"]["dhcp"]["serveDNS"] = bool(networking_dhcp_serve_dns)
+            if networking_dhcp_dns_address and not networking_dhcp_serve_dns:
+                desired_spec["networking"]["dhcp"]["dnsAddress"] = networking_dhcp_dns_address
+        if enable_keepalived and keepalived_vip:
+            desired_spec["networking"]["ipAddressManager"] = "keepalived"
+            desired_spec["keepalived"] = {
+                "enabled": True,
+                "vip": keepalived_vip,
+                "interface": keepalived_interface
+            }
+        if tls_secret_name:
+            desired_spec["tls"] = {
+                "certificateName": tls_secret_name
+            }
+        if ssh_public_key:
+            desired_spec["deployRamdisk"] = {
+                "sshKey": ssh_public_key
+            }
+
+        # Step 3: Check if Ironic instance exists and normalize current spec
         try:
             ironic = custom_api.get_namespaced_custom_object(
                 group=group, version=version, namespace=namespace, plural=plural, name=instance_name
@@ -2106,57 +2156,8 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             exists = True
             current_spec = ironic.get('spec', {})
             current_resource_version = ironic.get('metadata', {}).get('resourceVersion', '')
-            # Build desired spec for comparison with normalization, excluding fields not consistently returned
-            desired_spec = {
-                "database": {
-                    "host": database_host,
-                    "name": database_name,
-                    "credentialsName": database_secret_name
-                },
-                "apiCredentialsName": api_secret_name,
-                "networking": {
-                    "apiPort": int(http_port),  # Ensure integer for comparison
-                    "imageServerPort": 6180,  # Add default value as seen in CRD
-                    "imageServerTLSPort": 6183  # Add default value as seen in CRD
-                },
-                "inspection": {
-                    "dhcp": {
-                        "allInterfaces": bool(inspection_dhcp_all_interfaces)  # Ensure boolean
-                    }
-                }
-            }
-            # Add optional networking fields only if provided
-            if networking_interface:
-                desired_spec["networking"]["interface"] = networking_interface
-            if networking_ip:
-                desired_spec["networking"]["ipAddress"] = networking_ip
-            if networking_dhcp_range_start and networking_dhcp_range_end and networking_dhcp_network_cidr:
-                desired_spec["networking"]["dhcp"] = {
-                    "networkCIDR": networking_dhcp_network_cidr,
-                    "rangeBegin": networking_dhcp_range_start,
-                    "rangeEnd": networking_dhcp_range_end
-                }
-                if networking_dhcp_range_gateway:  # Only include if non-empty
-                    desired_spec["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
-                desired_spec["networking"]["dhcp"]["serveDNS"] = bool(networking_dhcp_serve_dns)
-                if networking_dhcp_dns_address and not networking_dhcp_serve_dns:
-                    desired_spec["networking"]["dhcp"]["dnsAddress"] = networking_dhcp_dns_address
-            if enable_keepalived and keepalived_vip:
-                desired_spec["networking"]["ipAddressManager"] = "keepalived"
-                desired_spec["keepalived"] = {
-                    "enabled": True,
-                    "vip": keepalived_vip,
-                    "interface": keepalived_interface
-                }
-            if tls_secret_name:
-                desired_spec["tls"] = {
-                    "certificateName": tls_secret_name
-                }
-            if ssh_public_key:
-                desired_spec["deployRamdisk"] = {
-                    "sshKey": ssh_public_key
-                }
-            # Normalize current spec by recursively adding missing fields with defaults matching desired spec
+
+            # Normalize current spec by adding missing fields with defaults matching desired spec
             def normalize_dict(desired, current):
                 normalized = {}
                 for key in desired:
@@ -2165,7 +2166,6 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                             normalized[key] = normalize_dict(desired[key], current[key])
                         else:
                             normalized[key] = current[key]
-                            # Ensure type consistency for specific fields
                             if key in ["apiPort", "imageServerPort", "imageServerTLSPort"] and isinstance(normalized[key], (int, float, str)):
                                 try:
                                     normalized[key] = int(float(normalized[key]) if isinstance(normalized[key], str) else normalized[key])
@@ -2176,7 +2176,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                             if key == "enabled" and isinstance(normalized[key], (bool, str)):
                                 normalized[key] = bool(normalized[key])
                     else:
-                        # Explicitly set defaults for missing fields to match desired spec structure
+                        # Set defaults for missing fields based on desired spec or input parameters
                         if key == "inspection":
                             normalized[key] = {"dhcp": {"allInterfaces": bool(inspection_dhcp_all_interfaces)}}
                         elif key == "dhcp" and "inspection" in desired:
@@ -2189,21 +2189,21 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                                 "vip": keepalived_vip,
                                 "interface": keepalived_interface
                             }
-                        elif key == "dhcp" and "networking" in desired and "dhcp" in desired["networking"]:
+                        elif key == "dhcp" and "networking" in desired and "dhcp" in desired.get("networking", {}):
                             normalized[key] = {
-                                "networkCIDR": networking_dhcp_network_cidr if networking_dhcp_network_cidr else "",
-                                "rangeBegin": networking_dhcp_range_start if networking_dhcp_range_start else "",
-                                "rangeEnd": networking_dhcp_range_end if networking_dhcp_range_end else "",
-                                "gatewayAddress": networking_dhcp_range_gateway if networking_dhcp_range_gateway else "",
-                                "serveDNS": bool(networking_dhcp_serve_dns),
-                                "dnsAddress": networking_dhcp_dns_address if networking_dhcp_dns_address and not networking_dhcp_serve_dns else ""
+                                "networkCIDR": desired["networking"]["dhcp"].get("networkCIDR", ""),
+                                "rangeBegin": desired["networking"]["dhcp"].get("rangeBegin", ""),
+                                "rangeEnd": desired["networking"]["dhcp"].get("rangeEnd", ""),
+                                "gatewayAddress": desired["networking"]["dhcp"].get("gatewayAddress", ""),
+                                "serveDNS": desired["networking"]["dhcp"].get("serveDNS", False),
+                                "dnsAddress": desired["networking"]["dhcp"].get("dnsAddress", "")
                             }
                         elif key == "serveDNS" and "dhcp" in desired:
-                            normalized[key] = bool(networking_dhcp_serve_dns)
+                            normalized[key] = desired.get("serveDNS", False)
                 return normalized
 
             normalized_current_spec = normalize_dict(desired_spec, current_spec)
-            # Compare fully normalized specs and log concise differences
+            # Compare fully normalized specs
             matches = normalized_current_spec == desired_spec
             diff_message = f"Ironic spec comparison: matches={matches}"
             if not matches:
@@ -2212,30 +2212,30 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                     for key in desired:
                         full_key = f"{prefix}{key}" if prefix else key
                         if key not in current or desired[key] != current.get(key):
-                            diff_info.append(f"{full_key}: desired={desired[key]}; current={current.get(key, 'missing')}")
+                            diff_info.append(f"{full_key}: desired={str(desired[key])[:50]}; current={str(current.get(key, 'missing'))[:50]}")
                         elif isinstance(desired[key], dict) and isinstance(current.get(key), dict):
                             find_diff(desired[key], current.get(key, {}), f"{full_key}.")
-                        if len(diff_info) >= 3:  # Limit to first 3 differences
+                        if len(diff_info) >= 2:  # Limit differences to avoid truncation
                             diff_info.append("...more differences omitted...")
                             break
                 find_diff(desired_spec, normalized_current_spec)
-                diff_message += f"; Diff: {' | '.join(diff_info)}"
-                # Debug: Write full specs to a temporary file for detailed comparison
-                import json
-                import os
-                debug_data = {
-                    "desired_spec": desired_spec,
-                    "normalized_current_spec": normalized_current_spec,
-                    "full_current_spec": current_spec
-                }
-                debug_file = f"/tmp/ironic_spec_debug_{instance_name}_{int(os.times()[4])}.json"
-                try:
-                    with open(debug_file, 'w') as f:
-                        json.dump(debug_data, f, indent=2)
-                    diff_message += f"; Full specs written to {debug_file} for debugging"
-                except Exception as debug_err:
-                    diff_message += f"; Failed to write debug file {debug_file}: {str(debug_err)[:50]}..."
-            message = f"{message}; {diff_message[:300]}"  # Ensure diff_message is early in the log and limited in length
+                diff_message += f"; Diff: {' | '.join(diff_info)[:200]}"
+            # Debug: Write specs to a file for troubleshooting
+            import json
+            import os
+            debug_data = {
+                "desired_spec": desired_spec,
+                "normalized_current_spec": normalized_current_spec,
+                "full_current_spec": current_spec
+            }
+            debug_file = f"/tmp/ironic_spec_debug_{instance_name}_{int(os.times()[4])}.json"
+            try:
+                with open(debug_file, 'w') as f:
+                    json.dump(debug_data, f, indent=2)
+                diff_message += f"; Full specs written to {debug_file}"
+            except Exception as debug_err:
+                diff_message += f"; Debug file write failed: {str(debug_err)[:50]}"
+            message = f"{message}; {diff_message[:300]}"
         except ApiException as e:
             if e.status == 404:
                 exists = False
@@ -2268,8 +2268,8 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 "apiCredentialsName": api_secret_name,
                 "networking": {
                     "apiPort": int(http_port),
-                    "imageServerPort": 6180,  # Add default value as seen in CRD
-                    "imageServerTLSPort": 6183  # Add default value as seen in CRD
+                    "imageServerPort": 6180,
+                    "imageServerTLSPort": 6183
                 },
                 "inspection": {
                     "dhcp": {
@@ -2288,7 +2288,7 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
                 "rangeBegin": networking_dhcp_range_start,
                 "rangeEnd": networking_dhcp_range_end
             }
-            if networking_dhcp_range_gateway:  # Only include if non-empty
+            if networking_dhcp_range_gateway:
                 ironic_body["spec"]["networking"]["dhcp"]["gatewayAddress"] = networking_dhcp_range_gateway
             ironic_body["spec"]["networking"]["dhcp"]["serveDNS"] = bool(networking_dhcp_serve_dns)
             if networking_dhcp_dns_address and not networking_dhcp_serve_dns:
