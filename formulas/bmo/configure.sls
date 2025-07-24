@@ -183,16 +183,6 @@ ensure_{{ name }}_vbmc_connection:
       - module: define_{{ name }}_vm
       - libvirt: check_qemu_address_for_{{ name }}
 
-ensure_{{ name }}_bmh_present:
-  k8s.bmh_present:
-    - namespace: baremetal-operator-system
-    - bmh_name: {{ name }}
-    - pillar_key: bmh
-    - require:
-      - k8s: ensure_{{ name }}_networkdata_present
-      - k8s: ensure_{{ name }}_userdata_present
-      - libvirt: check_qemu_address_for_{{ name }}
-
 {% endif %}
 
 ensure_{{ name }}_bmh_present:
