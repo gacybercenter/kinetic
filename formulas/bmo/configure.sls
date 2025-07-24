@@ -106,7 +106,84 @@ ensure_{{ name }}_userdata_present:
     - pillar_key: bmh    
     - require:
       - k8s: ensure_{{ name }}_networkdata_present
+{% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
+check_qemu_address_for_{{ name }}:
+  libvirt.check_qemu_address:
+    - connection_uri: '{{ pillar['bmh'][name]['connection'] }}'
 
+# Ensure the storage pool is defined and running
+vms_{{ name }}_pool:
+  virt.pool_running:
+    - name: vms
+    - ptype: dir
+    - target: /kvm/vms
+    - connection: {{ pillar['bmh'][name]['connection'] }}
+    - require:
+      - libvirt: check_qemu_address_for_{{ name }}
+
+# Create the disk volume if it doesn't exist
+{{ name }}_disk.qcow2:
+  module.run:
+    - name: virt.volume_define
+    - m_name: {{ name }}_disk0.qcow2
+    - pool: vms
+    - format: qcow2
+    - size: {{ pillar['bmh'][name]['disk'] }}
+    - connection: {{ pillar['bmh'][name]['connection'] }}
+    - require:
+      - virt: vms_{{ name }}_pool
+      - libvirt: check_qemu_address_for_{{ name }}
+    - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms {{ name }}_disk0.qcow2
+
+# Define the VM using the inline XML string
+define_{{name }}_vm:
+  module.run:
+    - name: virt.define_xml_str
+    - xml: |
+        <domain type='kvm'>
+          <name>{{ name }}</name>
+          <uuid>{{ pillar['bmh'][name]['uuid'] }}</uuid>
+          <memory unit='MiB'>{{ pillar['bmh'][name]['mem'] }}</memory>
+          <vcpu>{{ pillar['bmh'][name]['cpu'] }}</vcpu>
+          <cpu mode='host-passthrough' check='none'/>
+          <os>
+            <type>hvm</type>
+          </os>
+          <devices>
+            <disk type='volume' device='disk'>
+              <source pool='vms' volume='{{ name }}_disk0.qcow2'/>
+              <driver name='qemu' type='qcow2'/>
+              <target dev='vda' bus='virtio'/>
+            </disk>
+            <interface type='bridge'>
+              <source bridge='management_br'/>
+              <mac address='{{ pillar['bmh'][name]['bootMACAddress'] }}'/>
+              <alias name='{{ pillar['hosts'][bmh_type]['interface'] }}'/>
+              <model type='virtio'/>
+            </interface>
+            <serial type='pty'>
+              <target type='isa-serial' port='0'/>
+            </serial>
+            <console type='pty'>
+              <target type='serial' port='0'/>
+            </console>
+            <graphics type='spice' autoport='yes'/>
+          </devices>
+        </domain>
+    - connection: '{{ pillar['bmh'][name]['connection'] }}'
+    - require:
+      - module: {{ name }}_disk.qcow2
+      - libvirt: check_qemu_address_for_{{ name }}
+
+ensure_{{ name }}_vbmc_connection:
+  cmd.run:
+    - name: /opt/virtualbmc/bin/vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }} && /opt/virtualbmc/bin/vbmc start {{ name }}
+    - unless: /opt/virtualbmc/bin/vbmc show {{ name }}
+    - require:
+      - module: define_{{ name }}_vm
+      - libvirt: check_qemu_address_for_{{ name }}
+
+{% endif %}
 ensure_{{ name }}_bmh_present:
   k8s.bmh_present:
     - namespace: baremetal-operator-system
