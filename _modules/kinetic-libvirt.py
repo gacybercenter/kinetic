@@ -157,3 +157,36 @@ def generate_unique_mac(connection_uri="qemu:///system", max_attempts=100):
         'mac': None,
         'message': f"Failed to generate a unique MAC address after {max_attempts} attempts"
     }
+def check_qemu_address(connection_uri="qemu:///system"):
+    """
+    Check if a QEMU address (libvirt connection URI) is reachable and available.
+    
+    Args:
+        connection_uri (str): The libvirt connection URI to test (e.g., 'qemu:///system' or 'qemu+ssh://user@host/system')
+    
+    Returns:
+        dict: A dictionary with 'success' (bool), 'available' (bool), and 'message' (str)
+    
+    CLI Example:
+        salt '*' kinetic-libvirt.check_qemu_address connection_uri='qemu:///system'
+    """
+    try:
+        conn = libvirt.openReadOnly(connection_uri)
+        conn.close()
+        return {
+            'success': True,
+            'available': True,
+            'message': f"QEMU address {connection_uri} is reachable and available"
+        }
+    except libvirt.libvirtError as e:
+        return {
+            'success': False,
+            'available': False,
+            'message': f"Failed to connect to QEMU address {connection_uri}: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'available': False,
+            'message': f"Error checking QEMU address {connection_uri}: {str(e)[:100]}..."
+        }
