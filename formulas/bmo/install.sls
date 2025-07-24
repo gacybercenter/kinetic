@@ -136,3 +136,11 @@ clone_bmo_repo:
     - require:
       - pkg: install_dependencies
     - unless: -f {{ pillar['script_dir'] }}
+
+ensure_image_server:
+  k8s.image_server_present:
+    - name: ensure_image_server
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - port: 6182
+    - storage_size: "10Gi"
+    - storage_class: "local-storage"
