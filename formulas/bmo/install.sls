@@ -148,7 +148,7 @@ ensure_image_storage:
     - namespace: {{ pillar['bmo_namespace'] }}
     - pv_name: {{ pillar['ironic_image_dir'] }}-pv
     - pvc_name: {{ pillar['ironic_image_dir'] }}-pvc
-    - storage_size: 5Gi
+    - storage_size: 10Gi
     - path: {{ pillar['ironic_image_dir'] }}
     - storage_class: local-storage
     - require:
