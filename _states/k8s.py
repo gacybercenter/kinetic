@@ -1130,7 +1130,7 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
 
     return ret
 
-def image_server_present(name, namespace, deployment_name="ironic-image-server", service_name="ironic-image-server", image="python:3.9-slim", port=6180, tls_port=6183, storage_path="/images", pvc_name="ironic-images-pvc", storage_size="10Gi", storage_class="local-storage"):
+def image_server_present(name, namespace, deployment_name="ironic-image-server", service_name="ironic-image-server", image="python:3.9-slim", port=6180, tls_port=6183, storage_path="/images", pvc_name="ironic-images-pvc", storage_size="10Gi", storage_class="local-storage", service_type="ClusterIP", external_ip=None):
     """
     State to ensure that an image server for Ironic is present in Kubernetes.
     This state uses the kinetic-k8s.image_server_present execution module to manage the image server resources.
@@ -1147,6 +1147,8 @@ def image_server_present(name, namespace, deployment_name="ironic-image-server",
         pvc_name (str, optional): The name of the PersistentVolumeClaim for image storage. Defaults to 'ironic-images-pvc'.
         storage_size (str, optional): The storage size for the PVC. Defaults to '10Gi'.
         storage_class (str, optional): The storage class for the PVC. Defaults to 'local-storage'.
+        service_type (str, optional): The type of Service to expose the image server. Options are 'ClusterIP', 'NodePort', or 'LoadBalancer'. Defaults to 'ClusterIP'.
+        external_ip (str, optional): An external IP to assign to the Service if supported by the cluster. Defaults to None.
 
     Returns:
         dict: A dictionary with 'name', 'result', 'changes', and 'comment' as per Salt state conventions.
@@ -1156,6 +1158,8 @@ def image_server_present(name, namespace, deployment_name="ironic-image-server",
           k8s.image_server_present:
             - name: ensure_image_server
             - namespace: baremetal-operator-system
+            - service_type: LoadBalancer
+            - external_ip: 192.168.1.100
     """
     ret = {
         'name': name,
@@ -1175,7 +1179,9 @@ def image_server_present(name, namespace, deployment_name="ironic-image-server",
             storage_path=storage_path,
             pvc_name=pvc_name,
             storage_size=storage_size,
-            storage_class=storage_class
+            storage_class=storage_class,
+            service_type=service_type,
+            external_ip=external_ip
         )
 
         ret['result'] = result.get('success', False)

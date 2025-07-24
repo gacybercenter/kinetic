@@ -2297,11 +2297,11 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             'api_secret_updated': False,
             'message': f"Ironic instance operation error for {instance_name}: {str(e)[:100]}..."
         }
-def image_server_present(namespace, deployment_name="ironic-image-server", service_name="ironic-image-server", image="python:3.9-slim", port=6180, tls_port=6183, storage_path="/images", pvc_name="ironic-images-pvc", storage_size="10Gi", storage_class="local-storage"):
+def image_server_present(namespace, deployment_name="ironic-image-server", service_name="ironic-image-server", image="python:3.9-slim", port=6180, tls_port=6183, storage_path="/images", pvc_name="ironic-images-pvc", storage_size="10Gi", storage_class="local-storage", service_type="ClusterIP", external_ip=None):
     """
     Ensure that an image server for Ironic is present in Kubernetes.
     Creates or updates a Deployment and Service to serve images over HTTP for bare metal provisioning.
-    Also ensures a PersistentVolumeClaim (PVC) for storing images.
+    Also ensures a PersistentVolumeClaim (PVC) for storing images. Optionally configures the Service for external access.
 
     Args:
         namespace (str): The namespace for the Deployment, Service, and PVC in Kubernetes.
@@ -2314,12 +2314,14 @@ def image_server_present(namespace, deployment_name="ironic-image-server", servi
         pvc_name (str, optional): The name of the PersistentVolumeClaim for image storage. Defaults to 'ironic-images-pvc'.
         storage_size (str, optional): The storage size for the PVC. Defaults to '10Gi'.
         storage_class (str, optional): The storage class for the PVC. Defaults to 'local-storage'.
+        service_type (str, optional): The type of Service to expose the image server. Options are 'ClusterIP', 'NodePort', or 'LoadBalancer'. Defaults to 'ClusterIP'.
+        external_ip (str, optional): An external IP to assign to the Service if supported by the cluster (used with service_type 'ClusterIP' or 'LoadBalancer'). Defaults to None.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'deployment_updated' (bool), 'service_updated' (bool), 'pvc_updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.image_server_present baremetal-operator-system
+        salt '*' kinetic-k8s.image_server_present baremetal-operator-system service_type=LoadBalancer external_ip=192.168.1.100
     """
     try:
         deployment_updated = False
@@ -2476,7 +2478,13 @@ def image_server_present(namespace, deployment_name="ironic-image-server", servi
             service_exists = True
             current_service_spec = service.spec
             current_ports = current_service_spec.ports if current_service_spec.ports else []
-            if len(current_ports) != 1 or current_ports[0].port != port or current_ports[0].target_port != port:
+            current_type = current_service_spec.type if current_service_spec.type else "ClusterIP"
+            current_external_ips = current_service_spec.external_i_ps if hasattr(current_service_spec, 'external_i_ps') else []
+            if (len(current_ports) != 1 or 
+                current_ports[0].port != port or 
+                current_ports[0].target_port != port or
+                current_type != service_type or
+                (external_ip and current_external_ips != [external_ip])):
                 service_matches = False
             else:
                 service_matches = True
@@ -2500,9 +2508,13 @@ def image_server_present(namespace, deployment_name="ironic-image-server", servi
                     metadata=client.V1ObjectMeta(name=service_name, namespace=namespace),
                     spec=client.V1ServiceSpec(
                         selector={"app": "ironic-image-server"},
-                        ports=[client.V1ServicePort(port=port, target_port=port, protocol="TCP")]
+                        ports=[client.V1ServicePort(port=port, target_port=port, protocol="TCP")],
+                        type=service_type
                     )
                 )
+                if external_ip and service_type in ["ClusterIP", "LoadBalancer"]:
+                    service_body.spec.external_i_ps = [external_ip]
+                    message += f"; Service {service_name} configured with external IP {external_ip}"
                 if service_exists:
                     core_v1_api.replace_namespaced_service(name=service_name, namespace=namespace, body=service_body)
                     service_updated = True
