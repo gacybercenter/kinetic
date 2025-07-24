@@ -107,4 +107,15 @@ ensure_{{ name }}_userdata_present:
     - require:
       - k8s: ensure_{{ name }}_networkdata_present
 
+ensure_{{ name }}_bmc_auth_recreated_if_bmh_recreated:
+  k8s.host_bmc_auth_present:
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - ipmi: {{ pillar['ipmi-password'] }}
+    - pillar_key: bmh
+    - require:
+      - k8s: ensure_{{ name }}_bmh_present
+    - onchanges:
+      - k8s: ensure_{{ name }}_bmh_present
+
 {% endfor %}
