@@ -84,5 +84,34 @@ ensure_{{ name }}_bmc_auth_present:
     - ipmi: {{ pillar['ipmi-password'] }}
     - pillar_key: bmh
 
+ensure_{{ name }}_bmc_auth_present:
+  k8s.host_bmc_auth_present:
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - ipmi: {{ pillar['ipmi-password'] }}
+    - pillar_key: bmh
+
+ensure_{{ name }}_networkdata_present:
+  k8s.networkdata_present:
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - defaults:
+        interface: {{ pillar['hosts'][bmh_type]['interface'] }}
+        mac: {{ pillar['bmh'][name]['bootMACAddress'] }}
+        ip: {{ pillar['bmh'][name]['network']['management_ip'] }}
+        prefix: {{ netmask }}
+        gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+        nameserver: {{ pillar['dhcp-options']['dns'] }}
+    - pillar_key: bmh
+    - require: 
+      - k8s: ensure_{{ name }}_bmc_auth_present
+
+ensure_{{ name }}_userdata_present:
+  k8s.userdata_present:
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - pillar_key: bmh    
+    - require:
+      - k8s: ensure_{{ name }}_networkdata_present
 
 {% endfor %}
