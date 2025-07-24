@@ -2297,3 +2297,243 @@ def ironic_instance_present(namespace, instance_name, database_secret_name="iron
             'api_secret_updated': False,
             'message': f"Ironic instance operation error for {instance_name}: {str(e)[:100]}..."
         }
+def image_server_present(namespace, deployment_name="ironic-image-server", service_name="ironic-image-server", image="python:3.9-slim", port=6180, tls_port=6183, storage_path="/images", pvc_name="ironic-images-pvc", storage_size="10Gi", storage_class="local-storage"):
+    """
+    Ensure that an image server for Ironic is present in Kubernetes.
+    Creates or updates a Deployment and Service to serve images over HTTP for bare metal provisioning.
+    Also ensures a PersistentVolumeClaim (PVC) for storing images.
+
+    Args:
+        namespace (str): The namespace for the Deployment, Service, and PVC in Kubernetes.
+        deployment_name (str, optional): The name of the Deployment for the image server. Defaults to 'ironic-image-server'.
+        service_name (str, optional): The name of the Service for the image server. Defaults to 'ironic-image-server'.
+        image (str, optional): The Docker image to use for the image server. Defaults to 'python:3.9-slim'.
+        port (int, optional): The HTTP port for serving images. Defaults to 6180.
+        tls_port (int, optional): The HTTPS port for serving images (if TLS is configured). Defaults to 6183.
+        storage_path (str, optional): The path inside the container to mount the image storage. Defaults to '/images'.
+        pvc_name (str, optional): The name of the PersistentVolumeClaim for image storage. Defaults to 'ironic-images-pvc'.
+        storage_size (str, optional): The storage size for the PVC. Defaults to '10Gi'.
+        storage_class (str, optional): The storage class for the PVC. Defaults to 'local-storage'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'deployment_updated' (bool), 'service_updated' (bool), 'pvc_updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.image_server_present baremetal-operator-system
+    """
+    try:
+        deployment_updated = False
+        service_updated = False
+        pvc_updated = False
+        deployment_exists = False
+        service_exists = False
+        pvc_exists = False
+        deployment_matches = False
+        service_matches = False
+        pvc_matches = False
+        message = f"Configuring Ironic image server in namespace {namespace}"
+
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+        apps_v1_api = client.AppsV1Api()
+
+        # Step 1: Check if PVC exists
+        try:
+            pvc = core_v1_api.read_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace)
+            pvc_exists = True
+            current_pvc_spec = pvc.spec
+            if (current_pvc_spec.resources.requests.get('storage', '') != storage_size or
+                current_pvc_spec.storage_class_name != storage_class):
+                pvc_matches = False
+            else:
+                pvc_matches = True
+        except ApiException as e:
+            if e.status == 404:
+                pvc_exists = False
+                pvc_matches = False
+            else:
+                return {
+                    'success': False,
+                    'deployment_updated': False,
+                    'service_updated': False,
+                    'pvc_updated': False,
+                    'message': f"Error fetching PVC {pvc_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 2: Create or update PVC if necessary
+        if not pvc_exists or not pvc_matches:
+            try:
+                pvc_body = client.V1PersistentVolumeClaim(
+                    metadata=client.V1ObjectMeta(name=pvc_name, namespace=namespace),
+                    spec=client.V1PersistentVolumeClaimSpec(
+                        access_modes=["ReadWriteOnce"],
+                        resources=client.V1ResourceRequirements(
+                            requests={'storage': storage_size}
+                        ),
+                        storage_class_name=storage_class
+                    )
+                )
+                if pvc_exists:
+                    core_v1_api.replace_namespaced_persistent_volume_claim(name=pvc_name, namespace=namespace, body=pvc_body)
+                    pvc_updated = True
+                    message += f"; PVC {pvc_name} updated"
+                else:
+                    core_v1_api.create_namespaced_persistent_volume_claim(namespace=namespace, body=pvc_body)
+                    pvc_updated = True
+                    message += f"; PVC {pvc_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'deployment_updated': False,
+                    'service_updated': False,
+                    'pvc_updated': False,
+                    'message': f"Failed to create/update PVC {pvc_name}: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; PVC {pvc_name} already up-to-date"
+
+        # Step 3: Check if Deployment exists
+        try:
+            deployment = apps_v1_api.read_namespaced_deployment(name=deployment_name, namespace=namespace)
+            deployment_exists = True
+            current_deployment_spec = deployment.spec
+            current_image = current_deployment_spec.template.spec.containers[0].image if current_deployment_spec.template.spec.containers else ''
+            current_command = current_deployment_spec.template.spec.containers[0].command if current_deployment_spec.template.spec.containers else []
+            if (current_image != image or
+                current_command != ["python", "-m", "http.server", str(port), "--directory", storage_path]):
+                deployment_matches = False
+            else:
+                deployment_matches = True
+        except ApiException as e:
+            if e.status == 404:
+                deployment_exists = False
+                deployment_matches = False
+            else:
+                return {
+                    'success': False,
+                    'deployment_updated': False,
+                    'service_updated': False,
+                    'pvc_updated': pvc_updated,
+                    'message': f"Error fetching Deployment {deployment_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 4: Create or update Deployment if necessary
+        if not deployment_exists or not deployment_matches:
+            try:
+                deployment_body = client.V1Deployment(
+                    metadata=client.V1ObjectMeta(name=deployment_name, namespace=namespace),
+                    spec=client.V1DeploymentSpec(
+                        replicas=1,
+                        selector=client.V1LabelSelector(match_labels={"app": "ironic-image-server"}),
+                        template=client.V1PodTemplateSpec(
+                            metadata=client.V1ObjectMeta(labels={"app": "ironic-image-server"}),
+                            spec=client.V1PodSpec(
+                                containers=[
+                                    client.V1Container(
+                                        name="image-server",
+                                        image=image,
+                                        command=["python", "-m", "http.server", str(port), "--directory", storage_path],
+                                        ports=[client.V1ContainerPort(container_port=port)],
+                                        volume_mounts=[client.V1VolumeMount(name="images", mount_path=storage_path)]
+                                    )
+                                ],
+                                volumes=[
+                                    client.V1Volume(
+                                        name="images",
+                                        persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(claim_name=pvc_name)
+                                    )
+                                ]
+                            )
+                        )
+                    )
+                )
+                if deployment_exists:
+                    apps_v1_api.replace_namespaced_deployment(name=deployment_name, namespace=namespace, body=deployment_body)
+                    deployment_updated = True
+                    message += f"; Deployment {deployment_name} updated"
+                else:
+                    apps_v1_api.create_namespaced_deployment(namespace=namespace, body=deployment_body)
+                    deployment_updated = True
+                    message += f"; Deployment {deployment_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'deployment_updated': False,
+                    'service_updated': False,
+                    'pvc_updated': pvc_updated,
+                    'message': f"Failed to create/update Deployment {deployment_name}: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; Deployment {deployment_name} already up-to-date"
+
+        # Step 5: Check if Service exists
+        try:
+            service = core_v1_api.read_namespaced_service(name=service_name, namespace=namespace)
+            service_exists = True
+            current_service_spec = service.spec
+            current_ports = current_service_spec.ports if current_service_spec.ports else []
+            if len(current_ports) != 1 or current_ports[0].port != port or current_ports[0].target_port != port:
+                service_matches = False
+            else:
+                service_matches = True
+        except ApiException as e:
+            if e.status == 404:
+                service_exists = False
+                service_matches = False
+            else:
+                return {
+                    'success': False,
+                    'deployment_updated': deployment_updated,
+                    'service_updated': False,
+                    'pvc_updated': pvc_updated,
+                    'message': f"Error fetching Service {service_name}: {str(e)[:100]}...; {message}"
+                }
+
+        # Step 6: Create or update Service if necessary
+        if not service_exists or not service_matches:
+            try:
+                service_body = client.V1Service(
+                    metadata=client.V1ObjectMeta(name=service_name, namespace=namespace),
+                    spec=client.V1ServiceSpec(
+                        selector={"app": "ironic-image-server"},
+                        ports=[client.V1ServicePort(port=port, target_port=port, protocol="TCP")]
+                    )
+                )
+                if service_exists:
+                    core_v1_api.replace_namespaced_service(name=service_name, namespace=namespace, body=service_body)
+                    service_updated = True
+                    message += f"; Service {service_name} updated"
+                else:
+                    core_v1_api.create_namespaced_service(namespace=namespace, body=service_body)
+                    service_updated = True
+                    message += f"; Service {service_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'deployment_updated': deployment_updated,
+                    'service_updated': False,
+                    'pvc_updated': pvc_updated,
+                    'message': f"Failed to create/update Service {service_name}: {str(e)[:100]}...; {message}"
+                }
+        else:
+            message += f"; Service {service_name} already up-to-date"
+
+        return {
+            'success': True if (deployment_updated or service_updated or pvc_updated or (deployment_matches and service_matches and pvc_matches)) else False,
+            'deployment_updated': deployment_updated,
+            'service_updated': service_updated,
+            'pvc_updated': pvc_updated,
+            'message': message
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'deployment_updated': False,
+            'service_updated': False,
+            'pvc_updated': False,
+            'message': f"Image server operation error: {str(e)[:100]}..."
+        }
