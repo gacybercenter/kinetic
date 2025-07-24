@@ -183,7 +183,6 @@ ensure_{{ name }}_vbmc_connection:
       - module: define_{{ name }}_vm
       - libvirt: check_qemu_address_for_{{ name }}
 
-{% endif %}
 ensure_{{ name }}_bmh_present:
   k8s.bmh_present:
     - namespace: baremetal-operator-system
@@ -192,6 +191,21 @@ ensure_{{ name }}_bmh_present:
     - require:
       - k8s: ensure_{{ name }}_networkdata_present
       - k8s: ensure_{{ name }}_userdata_present
+      - libvirt: check_qemu_address_for_{{ name }}
+
+{% endif %}
+
+ensure_{{ name }}_bmh_present:
+  k8s.bmh_present:
+    - namespace: baremetal-operator-system
+    - bmh_name: {{ name }}
+    - pillar_key: bmh
+    - require:
+      - k8s: ensure_{{ name }}_networkdata_present
+      - k8s: ensure_{{ name }}_userdata_present
+{% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
+      - libvirt: check_qemu_address_for_{{ name }}
+{% endif %}
 
 ensure_{{ name }}_bmc_auth_recreated_if_bmh_recreated:
   k8s.host_bmc_auth_present:
