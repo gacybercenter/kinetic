@@ -2549,3 +2549,64 @@ def image_server_present(namespace, deployment_name="ironic-image-server", servi
             'pvc_updated': False,
             'message': f"Image server operation error: {str(e)[:100]}..."
         }
+def bmh_state(namespace, bmh_name, desired_state):
+    """
+    Check if a Bare Metal Host (BMH) object in Kubernetes is in the specified state.
+
+    Args:
+        namespace (str): The namespace of the Bare Metal Host resource in Kubernetes.
+        bmh_name (str): The name of the Bare Metal Host resource.
+        desired_state (str): The state to check for (e.g., 'provisioned', 'ready', 'error').
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'in_state' (bool), 'current_state' (str), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.bmh_state baremetal-operator-system compute-133-26 provisioned
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "metal3.io"
+        version = "v1alpha1"
+        plural = "baremetalhosts"
+
+        # Check BMH status
+        resource = custom_api.get_namespaced_custom_object(
+            group=group, version=version, namespace=namespace, plural=plural, name=bmh_name
+        )
+        status = resource.get('status', {})
+        current_state = status.get('provisioning', {}).get('state', 'unknown')
+
+        return {
+            'success': True,
+            'in_state': current_state == desired_state,
+            'current_state': current_state,
+            'message': f"BMH {bmh_name} is in state: {current_state}. Checking for: {desired_state}"
+        }
+
+    except ApiException as e:
+        if e.status == 404:
+            return {
+                'success': False,
+                'in_state': False,
+                'current_state': 'not_found',
+                'message': f"BMH {bmh_name} not found in namespace {namespace}"
+            }
+        return {
+            'success': False,
+            'in_state': False,
+            'current_state': 'error',
+            'message': f"Kubernetes API error: {str(e)[:50]}..."
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'in_state': False,
+            'current_state': 'error',
+            'message': f"Error checking BMH state: {str(e)[:50]}..."
+        }

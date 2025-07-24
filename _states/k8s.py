@@ -1202,3 +1202,48 @@ def image_server_present(name, namespace, deployment_name="ironic-image-server",
         ret['comment'] = f"Failed to ensure image server: {str(e)[:100]}..."
 
     return ret
+def bmh_state(name, namespace, bmh_name, desired_state):
+    """
+    Check if a Bare Metal Host (BMH) object in Kubernetes is in the specified state.
+    This is a read-only state for querying the current provisioning status of a BMH.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace of the Bare Metal Host resource.
+
+    bmh_name
+        The name of the Bare Metal Host resource.
+
+    desired_state
+        The state to check for (e.g., 'provisioned', 'ready', 'error').
+
+    Example:
+    .. code-block:: yaml
+
+        check_bmh_state:
+          k8s.bmh_state:
+            - namespace: baremetal-operator-system
+            - bmh_name: compute-133-26
+            - desired_state: provisioned
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.bmh_state'](namespace, bmh_name, desired_state)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['success']:
+            ret['changes'] = {
+                'in_state': result['in_state'],
+                'current_state': result['current_state']
+            }
+        else:
+            ret['changes'] = {}
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to check BMH state for {bmh_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
