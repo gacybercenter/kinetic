@@ -145,6 +145,7 @@ start_vms_pool:
   virt.pool_running:
     - name: vms
     - ptype: dir
+    - target: /kvm/vms
     - require:
       - virt: define_vms_pool
 
