@@ -137,25 +137,11 @@ define_vms_pool:
     - name: vms
     - ptype: dir
     - target: /kvm/vms
+    - start: True
+    - autostart: True
     - require:
       - file: /kvm/vms
 
-# Start the storage pool
-start_vms_pool:
-  virt.pool_running:
-    - name: vms
-    - ptype: dir
-    - target: /kvm/vms
-    - require:
-      - virt: define_vms_pool
-
-# Enable autostart for the pool
-autostart_vms_pool:
-  virt.pool_autostart:
-    - name: vms
-    - state: on
-    - require:
-      - virt: start_vms_pool
 # New: Manage AppArmor profile for libvirt-qemu
 apparmor_libvirt_profile:
   file.managed:
