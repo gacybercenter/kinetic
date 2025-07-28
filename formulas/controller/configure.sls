@@ -137,7 +137,6 @@ define_vms_pool:
     - name: vms
     - ptype: dir
     - target: /kvm/vms
-    - start: True
     - autostart: True
     - require:
       - file: /kvm/vms
