@@ -144,6 +144,7 @@ define_vms_pool:
 start_vms_pool:
   virt.pool_running:
     - name: vms
+    - ptype: dir
     - require:
       - virt: define_vms_pool
 
