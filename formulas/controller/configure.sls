@@ -140,6 +140,7 @@ define_vms_pool:
     - autostart: True
     - require:
       - file: /kvm/vms
+    - unless: virsh pool-list |grep vms
 
 # New: Manage AppArmor profile for libvirt-qemu
 apparmor_libvirt_profile:
