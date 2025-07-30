@@ -165,7 +165,7 @@ apparmor_libvirt_profile:
     - group: root
     - mode: 644
     - require:
-      - pkg: apparmor_libvirt_dir
+      - file: apparmor_libvirt_dir
     - watch_in:
       - service: apparmor_service
 
