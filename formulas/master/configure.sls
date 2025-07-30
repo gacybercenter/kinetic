@@ -15,7 +15,7 @@ sysctl_k8s_file:
         net.bridge.bridge-nf-call-iptables = 1
         net.ipv4.ip_forward = 1
 
-{% for sysctl in pillar['k8s_sysctl'] %}
+{% for sysctl in pillar['k8s_sysctl'].items() %}
 {{ sysctl }}_k8s_sysctl:
   sysctl.present:
     - name: {{ sysctl }}
