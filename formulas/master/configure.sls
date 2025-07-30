@@ -1,2 +1,2 @@
 include:
-  - .install
+  - /formulas/master/install
