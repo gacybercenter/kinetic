@@ -158,7 +158,7 @@ apparmor_libvirt_dir:
   
 apparmor_libvirt_profile:
   file.managed:
-    - name: /etc/apparmor.d/abstrations/libvirt-qemu.d/kvm_vms
+    - name: /etc/apparmor.d/abstractions/libvirt-qemu.d/kvm_vms
     - contents: |
         /kvm/vms/** rwk,
     - user: root
