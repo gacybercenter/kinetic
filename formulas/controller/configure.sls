@@ -120,12 +120,16 @@ fs:
 
 /kvm/images:
   file.directory:
+    - user: libvirt-qemu
+    - group: kvm
     - makedirs: True
     - require:
       - /kvm
-
+  
 /kvm/vms:
   file.directory:
+    - user: libvirt-qemu
+    - group: kvm
     - makedirs: True
     - require:
       - /kvm
@@ -137,35 +141,31 @@ define_vms_pool:
     - name: vms
     - ptype: dir
     - target: /kvm/vms
+    - autostart: True
     - require:
       - file: /kvm/vms
+    - unless: virsh pool-list |grep vms
 
-# Start the storage pool
-start_vms_pool:
-  virt.pool_running:
-    - name: vms
-    - require:
-      - virt: define_vms_pool
-
-# Enable autostart for the pool
-autostart_vms_pool:
-  virt.pool_autostart:
-    - name: vms
-    - state: on
-    - require:
-      - virt: start_vms_pool
 # New: Manage AppArmor profile for libvirt-qemu
+apparmor_libvirt_dir:
+  file.directory:
+    - name: /etc/apparmor.d/abstractions/libvirt-qemu.d
+    - user: root
+    - group: root
+    - mkdirs: True
+    - dir_mode: 755
+    - file_mode: 644
+  
 apparmor_libvirt_profile:
   file.managed:
-    - name: /etc/apparmor.d/local/usr.lib.libvirt.libvirtd-qemu
+    - name: /etc/apparmor.d/abstractions/libvirt-qemu.d/kvm_vms
     - contents: |
-        # Allow access to /kvm/vms for VM disk images
-        /kvm/vms/** rw,
+        /kvm/vms/** rwk,
     - user: root
     - group: root
     - mode: 644
     - require:
-      - pkg: apparmor
+      - file: apparmor_libvirt_dir
     - watch_in:
       - service: apparmor_service
 
