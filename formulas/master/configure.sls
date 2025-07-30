@@ -19,7 +19,7 @@ sysctl_k8s_file:
 {{ sysctl }}_k8s_sysctl:
   sysctl.present:
     - name: {{ sysctl }}
-    - value: {{ pillar[{{ sysctl }}] }}
+    - value: {{ pillar[sysctl] }}
 {% endfor %}
 
 {% for mod in pillar['k8s_modules'] %}
