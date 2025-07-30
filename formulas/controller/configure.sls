@@ -120,12 +120,16 @@ fs:
 
 /kvm/images:
   file.directory:
+    - user: libvirt-qemu
+    - group: kvm
     - makedirs: True
     - require:
       - /kvm
-
+  
 /kvm/vms:
   file.directory:
+    - user: libvirt-qemu
+    - group: kvm
     - makedirs: True
     - require:
       - /kvm
@@ -143,9 +147,18 @@ define_vms_pool:
     - unless: virsh pool-list |grep vms
 
 # New: Manage AppArmor profile for libvirt-qemu
+apparmor_libvirt_dir:
+  file.directory:
+    - name: /etc/apparmor.d/abstrations/libvirt-qemu.d/
+    - user: root
+    - group: root
+    - mkdirs: True
+    - dir_mode: 755
+    - file_mode: 644
+  
 apparmor_libvirt_profile:
   file.managed:
-    - name: /etc/apparmor.d/local/usr.lib.libvirt.libvirtd-qemu
+    - name: /etc/apparmor.d/abstrations/libvirt-qemu.d/kvm_vms
     - contents: |
         # Allow access to /kvm/vms for VM disk images
         /kvm/vms/** rw,
@@ -153,7 +166,7 @@ apparmor_libvirt_profile:
     - group: root
     - mode: 644
     - require:
-      - pkg: apparmor
+      - pkg: apparmor_libvirt_dir
     - watch_in:
       - service: apparmor_service
 
