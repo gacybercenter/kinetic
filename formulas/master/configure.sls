@@ -1,0 +1,2 @@
+include:
+  - /formulas/master/install

@@ -1129,3 +1129,121 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
         ret['changes'] = {}
 
     return ret
+
+def image_server_present(name, namespace, deployment_name="ironic-image-server", service_name="ironic-image-server", image="python:3.9-slim", port=6180, tls_port=6183, storage_path="/images", pvc_name="ironic-images-pvc", storage_size="10Gi", storage_class="local-storage", service_type="ClusterIP", external_ip=None):
+    """
+    State to ensure that an image server for Ironic is present in Kubernetes.
+    This state uses the kinetic-k8s.image_server_present execution module to manage the image server resources.
+
+    Args:
+        name (str): The name of the state (used for Salt state ID).
+        namespace (str): The namespace for the Deployment, Service, and PVC in Kubernetes.
+        deployment_name (str, optional): The name of the Deployment for the image server. Defaults to 'ironic-image-server'.
+        service_name (str, optional): The name of the Service for the image server. Defaults to 'ironic-image-server'.
+        image (str, optional): The Docker image to use for the image server. Defaults to 'python:3.9-slim'.
+        port (int, optional): The HTTP port for serving images. Defaults to 6180.
+        tls_port (int, optional): The HTTPS port for serving images (if TLS is configured). Defaults to 6183.
+        storage_path (str, optional): The path inside the container to mount the image storage. Defaults to '/images'.
+        pvc_name (str, optional): The name of the PersistentVolumeClaim for image storage. Defaults to 'ironic-images-pvc'.
+        storage_size (str, optional): The storage size for the PVC. Defaults to '10Gi'.
+        storage_class (str, optional): The storage class for the PVC. Defaults to 'local-storage'.
+        service_type (str, optional): The type of Service to expose the image server. Options are 'ClusterIP', 'NodePort', or 'LoadBalancer'. Defaults to 'ClusterIP'.
+        external_ip (str, optional): An external IP to assign to the Service if supported by the cluster. Defaults to None.
+
+    Returns:
+        dict: A dictionary with 'name', 'result', 'changes', and 'comment' as per Salt state conventions.
+
+    Example:
+        ensure_image_server:
+          k8s.image_server_present:
+            - name: ensure_image_server
+            - namespace: baremetal-operator-system
+            - service_type: LoadBalancer
+            - external_ip: 192.168.1.100
+    """
+    ret = {
+        'name': name,
+        'result': False,
+        'changes': {},
+        'comment': ''
+    }
+
+    try:
+        result = __salt__['kinetic-k8s.image_server_present'](
+            namespace=namespace,
+            deployment_name=deployment_name,
+            service_name=service_name,
+            image=image,
+            port=port,
+            tls_port=tls_port,
+            storage_path=storage_path,
+            pvc_name=pvc_name,
+            storage_size=storage_size,
+            storage_class=storage_class,
+            service_type=service_type,
+            external_ip=external_ip
+        )
+
+        ret['result'] = result.get('success', False)
+        ret['comment'] = result.get('message', 'Unknown error')
+
+        if result.get('success', False):
+            changes = {}
+            if result.get('deployment_updated', False):
+                changes['deployment'] = f"Deployment {deployment_name} updated or created"
+            if result.get('service_updated', False):
+                changes['service'] = f"Service {service_name} updated or created"
+            if result.get('pvc_updated', False):
+                changes['pvc'] = f"PVC {pvc_name} updated or created"
+            ret['changes'] = changes
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure image server: {str(e)[:100]}..."
+
+    return ret
+def bmh_state(name, namespace, bmh_name, desired_state):
+    """
+    Check if a Bare Metal Host (BMH) object in Kubernetes is in the specified state.
+    This is a read-only state for querying the current provisioning status of a BMH.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace of the Bare Metal Host resource.
+
+    bmh_name
+        The name of the Bare Metal Host resource.
+
+    desired_state
+        The state to check for (e.g., 'provisioned', 'ready', 'error').
+
+    Example:
+    .. code-block:: yaml
+
+        check_bmh_state:
+          k8s.bmh_state:
+            - namespace: baremetal-operator-system
+            - bmh_name: compute-133-26
+            - desired_state: provisioned
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.bmh_state'](namespace, bmh_name, desired_state)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['success']:
+            ret['changes'] = {
+                'in_state': result['in_state'],
+                'current_state': result['current_state']
+            }
+        else:
+            ret['changes'] = {}
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to check BMH state for {bmh_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
