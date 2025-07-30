@@ -149,7 +149,7 @@ define_vms_pool:
 # New: Manage AppArmor profile for libvirt-qemu
 apparmor_libvirt_dir:
   file.directory:
-    - name: /etc/apparmor.d/abstrations/libvirt-qemu.d/
+    - name: /etc/apparmor.d/abstractions/libvirt-qemu.d
     - user: root
     - group: root
     - mkdirs: True
@@ -160,8 +160,7 @@ apparmor_libvirt_profile:
   file.managed:
     - name: /etc/apparmor.d/abstrations/libvirt-qemu.d/kvm_vms
     - contents: |
-        # Allow access to /kvm/vms for VM disk images
-        /kvm/vms/** rw,
+        /kvm/vms/** rwk,
     - user: root
     - group: root
     - mode: 644
