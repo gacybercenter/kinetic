@@ -11,32 +11,29 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+# Setup the Kubernetes repo
+kube.repo:
+  pkgrepo.managed:
+    - name: {{ pillar['k8s_repo'] }}
+    - file: {{ pillar['k8s_source_file'] }}
+    - key_url: {{ pillar['k8s_gpg_key'] }}
+crio_repo:
+  pkgrepo.managed:
+    - name: {{ pillar['crio_repo'] }}
+    - file: {{ pillar['crio_source_file'] }}
+    - key_url: {{ pillar['crio_gpg_key'] }}
 
-include:
-  - /formulas/common/base
-  - /formulas/common/networking
-  - /formulas/common/install
-
-k8s_ipv4_forward:
-  file.managed:
-    - name: /etc/sysctl.d/k8s.configuration
-    - contents: |
-        net.ipv4.ip_forward = 1
-k8s_ipv4_forward_commit:
-  cmd.run:
-    - name: sysctl --system
-    - onchanges:
-      - file: k8s_ipv4_forward
-
-k8s_depends:
+# Install Kubernetes
+kube.packages:
   pkg.installed:
+    - hold: True
     - pkgs:
+      - kubelet
+      - kubeadm
+      - kubectl
       - ca-certificates
       - curl
-
-k8s_packages:
-  pkg.installed:
-    - pkgs:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
+      - apt-transport-https
+      - gpg
+      - make
+      - cri-o
