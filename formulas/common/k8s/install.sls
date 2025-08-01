@@ -14,7 +14,7 @@
 # Setup the Kubernetes repo
 Install Salt Kubernetes extension:
   pip.installed:
-    - bin_env: /opt/saltstack/salt/bin
+    - pip_bin: /usr/bin/salt-pip
     - name: saltext-kubernetes
 kube.repo:
   pkgrepo.managed:
