@@ -12,6 +12,10 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # Setup the Kubernetes repo
+Install Salt Kubernetes extension:
+  pip.installed:
+    - bin_env: /opt/saltstack/salt/bin
+    - name: saltext-kubernetes
 kube.repo:
   pkgrepo.managed:
     - name: {{ pillar['k8s_repo'] }}
