@@ -11,12 +11,6 @@ include:
 {% set control_nodes = res_k8s.get('control_nodes', ['master-rsc-0']) %}
 {% set first_control_node = control_nodes[0] if control_nodes else 'master-rsc-0' %}
 
-# Debug pillar data to ensure it's available
-debug_pillar_data:
-  cmd.run:
-    - name: echo "VIP: {{ vip }}, Control Nodes: {{ control_nodes }}, First Node: {{ first_control_node }}"
-    - tgt: '*'
-    - output_loglevel: debug
 
 # Check if VIP is reachable (port 6443 for Kubernetes API using curl)
 check_vip_reachable:
