@@ -1287,7 +1287,7 @@ def kubeadm_init(name, pod_network_cidr="10.244.0.0/16", service_cidr="10.96.0.0
         init_args.update(kwargs)
 
         # Call the execution module
-        result = __salt__["kubernetes.kubeadm_init"](**init_args)
+        result = __salt__["kubeadm.init"](**init_args)
         if result:
             ret["changes"] = {"initialized": True, "details": result}
             ret["comment"] = f"Cluster {name} initialized successfully."
