@@ -1247,3 +1247,222 @@ def bmh_state(name, namespace, bmh_name, desired_state):
         ret['changes'] = {}
 
     return ret
+def kubeadm_init(name, pod_network_cidr="10.244.0.0/16", service_cidr="10.96.0.0/12",
+                 kubernetes_version="v1.24.0", control_plane_endpoint=None, **kwargs):
+    """
+    Initialize a Kubernetes cluster using kubeadm_init from saltext.kubernetes.
+
+    Args:
+        name (str): Name of the state (for reporting purposes).
+        pod_network_cidr (str): CIDR range for pod network. Default: "10.244.0.0/16".
+        service_cidr (str): CIDR range for services. Default: "10.96.0.0/12".
+        kubernetes_version (str): Kubernetes version to install. Default: "v1.24.0".
+        control_plane_endpoint (str): Endpoint for control plane (VIP or hostname:port). Optional.
+        **kwargs: Additional arguments to pass to kubeadm_init.
+
+    Returns:
+        dict: State result dictionary.
+    """
+    ret = {
+        "name": name,
+        "result": True,
+        "changes": {},
+        "comment": f"Cluster {name} already initialized or initialization successful."
+    }
+
+    # Check if cluster is already initialized
+    if __salt__["file.file_exists"]("/etc/kubernetes/admin.conf"):
+        ret["comment"] = f"Cluster {name} already initialized (admin.conf exists)."
+        return ret
+
+    try:
+        # Prepare arguments for kubeadm_init
+        init_args = {
+            "pod_network_cidr": pod_network_cidr,
+            "service_cidr": service_cidr,
+            "kubernetes_version": kubernetes_version
+        }
+        if control_plane_endpoint:
+            init_args["control_plane_endpoint"] = control_plane_endpoint
+        init_args.update(kwargs)
+
+        # Call the execution module
+        result = __salt__["kubernetes.kubeadm_init"](**init_args)
+        if result:
+            ret["changes"] = {"initialized": True, "details": result}
+            ret["comment"] = f"Cluster {name} initialized successfully."
+        else:
+            ret["result"] = False
+            ret["comment"] = f"Failed to initialize cluster {name}."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error initializing cluster {name}: {str(e)}"
+
+    return ret
+
+
+def kubeadm_upload_certs(name, **kwargs):
+    """
+    Upload certificates for control plane joining using kubeadm_upload_certs.
+
+    Args:
+        name (str): Name of the state (for reporting purposes).
+        **kwargs: Additional arguments to pass to kubeadm_upload_certs.
+
+    Returns:
+        dict: State result dictionary.
+    """
+    ret = {
+        "name": name,
+        "result": True,
+        "changes": {},
+        "comment": f"Certificates for {name} uploaded or already handled."
+    }
+
+    try:
+        # Call the execution module
+        result = __salt__["kubernetes.kubeadm_upload_certs"](**kwargs)
+        if result:
+            ret["changes"] = {"uploaded": True, "details": result}
+            ret["comment"] = f"Certificates for {name} uploaded successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error uploading certificates for {name}: {str(e)}"
+
+    return ret
+
+
+def kubeadm_token_create(name, ttl="24h", usages=None, **kwargs):
+    """
+    Create a token for joining nodes using kubeadm_token_create.
+
+    Args:
+        name (str): Name of the state (for reporting purposes).
+        ttl (str): Time-to-live for the token. Default: "24h".
+        usages (list): List of token usages (e.g., ['signing', 'authentication']). Optional.
+        **kwargs: Additional arguments to pass to kubeadm_token_create.
+
+    Returns:
+        dict: State result dictionary.
+    """
+    ret = {
+        "name": name,
+        "result": True,
+        "changes": {},
+        "comment": f"Token for {name} created or already exists."
+    }
+
+    try:
+        # Prepare arguments for token creation
+        token_args = {"ttl": ttl}
+        if usages:
+            token_args["usages"] = usages
+        token_args.update(kwargs)
+
+        # Call the execution module
+        result = __salt__["kubernetes.kubeadm_token_create"](**token_args)
+        if result:
+            ret["changes"] = {"token_created": True, "details": result}
+            ret["comment"] = f"Token for {name} created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating token for {name}: {str(e)}"
+
+    return ret
+
+
+def kubeadm_join(name, api_server_endpoint, token=None, discovery_token_ca_cert_hash=None,
+                 certificate_key=None, control_plane=False, **kwargs):
+    """
+    Join a node to a Kubernetes cluster using kubeadm_join.
+
+    Args:
+        name (str): Name of the state (for reporting purposes).
+        api_server_endpoint (str): API server endpoint (e.g., "vip:6443").
+        token (str): Token for joining the cluster. Optional (can be retrieved dynamically).
+        discovery_token_ca_cert_hash (str): CA cert hash for discovery. Optional.
+        certificate_key (str): Certificate key for control plane joining. Optional.
+        control_plane (bool): Whether to join as a control plane node. Default: False.
+        **kwargs: Additional arguments to pass to kubeadm_join.
+
+    Returns:
+        dict: State result dictionary.
+    """
+    ret = {
+        "name": name,
+        "result": True,
+        "changes": {},
+        "comment": f"Node {name} already joined or join successful."
+    }
+
+    # Check if node is already joined
+    if __salt__["file.file_exists"]("/etc/kubernetes/admin.conf"):
+        ret["comment"] = f"Node {name} already joined (admin.conf exists)."
+        return ret
+
+    try:
+        # Prepare arguments for join
+        join_args = {
+            "api_server_endpoint": api_server_endpoint,
+            "control_plane": control_plane
+        }
+        if token:
+            join_args["token"] = token
+        if discovery_token_ca_cert_hash:
+            join_args["discovery_token_ca_cert_hash"] = discovery_token_ca_cert_hash
+        if certificate_key:
+            join_args["certificate_key"] = certificate_key
+        join_args.update(kwargs)
+
+        # Call the execution module
+        result = __salt__["kubernetes.kubeadm_join"](**join_args)
+        if result:
+            ret["changes"] = {"joined": True, "details": result}
+            ret["comment"] = f"Node {name} joined cluster successfully."
+        else:
+            ret["result"] = False
+            ret["comment"] = f"Failed to join node {name} to cluster."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error joining node {name}: {str(e)}"
+
+    return ret
+
+
+def kubeadm_reset(name, **kwargs):
+    """
+    Reset a Kubernetes node using kubeadm_reset.
+
+    Args:
+        name (str): Name of the state (for reporting purposes).
+        **kwargs: Additional arguments to pass to kubeadm_reset.
+
+    Returns:
+        dict: State result dictionary.
+    """
+    ret = {
+        "name": name,
+        "result": True,
+        "changes": {},
+        "comment": f"Node {name} reset or already not initialized."
+    }
+
+    # Check if node needs reset
+    if not __salt__["file.file_exists"]("/etc/kubernetes/admin.conf"):
+        ret["comment"] = f"Node {name} not initialized (no admin.conf), no reset needed."
+        return ret
+
+    try:
+        # Call the execution module
+        result = __salt__["kubernetes.kubeadm_reset"](**kwargs)
+        if result:
+            ret["changes"] = {"reset": True, "details": result}
+            ret["comment"] = f"Node {name} reset successfully."
+        else:
+            ret["result"] = False
+            ret["comment"] = f"Failed to reset node {name}."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error resetting node {name}: {str(e)}"
+
+    return ret
