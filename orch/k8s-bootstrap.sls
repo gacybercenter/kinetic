@@ -87,7 +87,7 @@ join_{{ node }}_to_cluster:
   kubernetes.kubeadm_join:
     - name: join_cluster_{{ node }}
     - api_server_endpoint: "{{ vip if vip else first_control_node + ':6443' }}"
-    - token: "{{ pillar.get('k8s_join_parameters', {}).get('token', salt['kubernetes.kubeadm_token_list'](tgt=first_control_node).get('tokens', [{}])[0].get('token', '')) }}"
+    - token: "{{ pillar.get('k8s_join_parameters', {}).get('token', salt['kubeadm.token_list'](tgt=first_control_node).get('tokens', [{}])[0].get('token', '')) }}"
     - discovery_token_ca_cert_hash: "{{ pillar.get('k8s_join_parameters', {}).get('discovery_token_ca_cert_hash', salt['kubernetes.kubeadm_cert_hash'](tgt=first_control_node)) }}"
     - certificate_key: "{{ pillar.get('k8s_join_parameters', {}).get('certificate_key', salt['kubernetes.kubeadm_certificate_key'](tgt=first_control_node)) }}"
     - control_plane: True  # Join as control plane node
