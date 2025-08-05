@@ -5,10 +5,11 @@ include:
   - /formulas/common/k8s/install
   - /formulas/common/k8s/configure
 
-# Get VIP and control nodes from pillar data
-{% set vip = pillar['res-k8s'].get('vip', '') %}
-{% set control_nodes = pillar.get('res-k8s', {}).get('control_nodes', ['master-rsc-0']) %}
-{% set first_control_node = control_nodes[0] %}
+# Get VIP and control nodes from pillar data with safer handling
+{% set res_k8s = pillar.get('res-k8s', {'vip': '', 'control_nodes': ['master-rsc-0']}) %}
+{% set vip = res_k8s.get('vip', '') %}
+{% set control_nodes = res_k8s.get('control_nodes', ['master-rsc-0']) %}
+{% set first_control_node = control_nodes[0] if control_nodes else 'master-rsc-0' %}
 
 # Debug pillar data to ensure it's available
 debug_pillar_data:
@@ -34,7 +35,7 @@ debug_admin_conf:
 
 # Initialize the cluster if VIP is not reachable or not set
 init_kubernetes_cluster:
-  kubernetes.kubeadm_init:
+  kubeadm.init:
     - name: init_cluster
     - pod_network_cidr: "10.244.0.0/16"
     - service_cidr: "10.96.0.0/12"
@@ -50,17 +51,17 @@ init_kubernetes_cluster:
 
 # Upload certificates for control plane joining (run on first control node after init)
 upload_certs_and_get_key:
-  kubernetes.kubeadm_upload_certs:
+  kubeadm.upload_certs:
     - name: upload_certs
     - onlyif:
       - test -f /etc/kubernetes/admin.conf
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - onchanges:
-      - kubernetes: init_kubernetes_cluster
+      - kubeadm: init_kubernetes_cluster
 
 # Create a token for joining nodes (run on first control node after init)
 create_join_token:
-  kubernetes.kubeadm_token_create:
+  kubeadm.token_create:
     - name: create_token
     - ttl: "24h"  # Token time-to-live, adjust as needed
     - usages: ['signing', 'authentication']
@@ -68,12 +69,12 @@ create_join_token:
       - test -f /etc/kubernetes/admin.conf
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - onchanges:
-      - kubernetes: init_kubernetes_cluster
+      - kubeadm: init_kubernetes_cluster
 
 # Reset and join logic for additional control nodes if VIP is reachable
-{% for node in control_nodes[1:] %}
+{% for node in control_nodes[1:] if control_nodes|length > 1 %}
 reset_{{ node }}_if_needed:
-  kubernetes.kubeadm_reset:
+  kubeadm.reset:
     - name: reset_{{ node }}
     - onlyif:
       - test -f /etc/kubernetes/admin.conf
@@ -84,23 +85,20 @@ reset_{{ node }}_if_needed:
       - sls: /formulas/common/k8s/configure
 
 join_{{ node }}_to_cluster:
-  kubernetes.kubeadm_join:
+  kubeadm.join:
     - name: join_cluster_{{ node }}
     - api_server_endpoint: "{{ vip if vip else first_control_node + ':6443' }}"
-    - token: "{{ pillar.get('k8s_join_parameters', {}).get('token', salt['kubeadm.token_list'](tgt=first_control_node).get('tokens', [{}])[0].get('token', '')) }}"
-    - discovery_token_ca_cert_hash: "{{ pillar.get('k8s_join_parameters', {}).get('discovery_token_ca_cert_hash', salt['kubernetes.kubeadm_cert_hash'](tgt=first_control_node)) }}"
-    - certificate_key: "{{ pillar.get('k8s_join_parameters', {}).get('certificate_key', salt['kubernetes.kubeadm_certificate_key'](tgt=first_control_node)) }}"
     - control_plane: True  # Join as control plane node
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
       - test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 && echo "reachable" || echo "unreachable" | grep -q "reachable"
     - tgt: '{{ node }}'  # Target specific control node
     - require:
-      - kubernetes: init_kubernetes_cluster
-      - kubernetes: upload_certs_and_get_key
-      - kubernetes: create_join_token
+      - kubeadm: init_kubernetes_cluster
+      - kubeadm: upload_certs_and_get_key
+      - kubeadm: create_join_token
       - sls: /formulas/common/k8s/install
       - sls: /formulas/common/k8s/configure
     - onchanges:
-      - kubernetes: reset_{{ node }}_if_needed
+      - kubeadm: reset_{{ node }}_if_needed
 {% endfor %}
