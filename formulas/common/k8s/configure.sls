@@ -18,7 +18,7 @@ crio-registries:
   file.managed:
     - name: /etc/containers/registries.conf.d/crio.conf
     - makedirs: true
-    - source: salt://formulas/k8s/files/registries.conf.j2
+    - source: salt://formulas/common/k8s/files/registries.conf.j2
     - template: jinja
 
 crio-service:
