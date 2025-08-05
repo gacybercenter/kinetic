@@ -6,7 +6,7 @@ include:
   - /formulas/common/k8s/configure
 
 # Get VIP and control nodes from pillar data
-{% set vip = pillar.get('res-k8s', {}).get('vip', '') %}
+{% set vip = pillar['res-k8s'].get('vip', '') %}
 {% set control_nodes = pillar.get('res-k8s', {}).get('control_nodes', ['master-rsc-0']) %}
 {% set first_control_node = control_nodes[0] %}
 
