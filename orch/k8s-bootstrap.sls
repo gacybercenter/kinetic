@@ -14,7 +14,7 @@ include:
 # Debug pillar data to ensure it's available
 debug_pillar_data:
   cmd.run:
-    - name: echo "VIP: {{ vip }}, Control Nodes: {{ control_nodes }}, First Node: {{ first_control_node }}"
+    - name: echo "VIP {{ vip }}, Control Nodes {{ control_nodes }}, First Node {{ first_control_node }}"
     - tgt: '*'
     - output_loglevel: debug
 
