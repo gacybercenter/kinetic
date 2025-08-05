@@ -10,13 +10,27 @@ include:
 {% set control_nodes = pillar.get('res-k8s', {}).get('control_nodes', ['master-rsc-0']) %}
 {% set first_control_node = control_nodes[0] %}
 
-# Check if VIP is reachable (port 6443 for Kubernetes API)
+# Debug pillar data to ensure it's available
+debug_pillar_data:
+  cmd.run:
+    - name: echo "VIP: {{ vip }}, Control Nodes: {{ control_nodes }}, First Node: {{ first_control_node }}"
+    - tgt: '*'
+    - output_loglevel: debug
+
+# Check if VIP is reachable (port 6443 for Kubernetes API using curl)
 check_vip_reachable:
   cmd.run:
-    - name: nc -z -w 5 {{ vip }} 6443 && echo "reachable" || echo "unreachable"
-    - output_loglevel: quiet
+    - name: test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 && echo "reachable" || echo "unreachable" || echo "no_vip"
+    - output_loglevel: debug
     - tgt: '{{ first_control_node }}'  # Run on the first control node to test connectivity
     - stateful: True  # Store the result for conditional logic
+
+# Debug admin.conf existence on first node
+debug_admin_conf:
+  cmd.run:
+    - name: test -f /etc/kubernetes/admin.conf && echo "admin.conf exists" || echo "admin.conf missing"
+    - output_loglevel: debug
+    - tgt: '{{ first_control_node }}'
 
 # Initialize the cluster if VIP is not reachable or not set
 init_kubernetes_cluster:
@@ -28,7 +42,7 @@ init_kubernetes_cluster:
     - control_plane_endpoint: "{{ vip if vip else first_control_node + ':6443' }}"  # Use VIP if available, else default to first node
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
-      - test -z "{{ vip }}" || echo "{{ salt['cmd.run_stdout']('nc -z -w 5 ' + vip + ' 6443 && echo reachable || echo unreachable', tgt=first_control_node) }}" | grep -q "unreachable"
+      - test -z "{{ vip }}" || test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 || echo "unreachable" | grep -q "unreachable"
     - tgt: '{{ first_control_node }}'  # Target only the first control node for initialization
     - require:
       - sls: /formulas/common/k8s/install
@@ -63,7 +77,7 @@ reset_{{ node }}_if_needed:
     - name: reset_{{ node }}
     - onlyif:
       - test -f /etc/kubernetes/admin.conf
-      - test -n "{{ vip }}" && echo "{{ salt['cmd.run_stdout']('nc -z -w 5 ' + vip + ' 6443 && echo reachable || echo unreachable', tgt=first_control_node) }}" | grep -q "reachable"
+      - test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 && echo "reachable" || echo "unreachable" | grep -q "reachable"
     - tgt: '{{ node }}'  # Target specific control node for reset
     - require:
       - sls: /formulas/common/k8s/install
@@ -79,7 +93,7 @@ join_{{ node }}_to_cluster:
     - control_plane: True  # Join as control plane node
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
-      - test -n "{{ vip }}" && echo "{{ salt['cmd.run_stdout']('nc -z -w 5 ' + vip + ' 6443 && echo reachable || echo unreachable', tgt=first_control_node) }}" | grep -q "reachable"
+      - test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 && echo "reachable" || echo "unreachable" | grep -q "reachable"
     - tgt: '{{ node }}'  # Target specific control node
     - require:
       - kubernetes: init_kubernetes_cluster
