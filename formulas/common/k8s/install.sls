@@ -38,6 +38,9 @@ kube.packages:
       - kubelet
       - kubeadm
       - kubectl
+kube-deps.packages:
+  pkg.installed:
+    - pkgs:
       - ca-certificates
       - curl
       - apt-transport-https
