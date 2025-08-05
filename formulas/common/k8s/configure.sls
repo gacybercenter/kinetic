@@ -21,7 +21,7 @@ crio-registries:
 
 crio-service:
   service.running:
-    - name: cri-0.service
+    - name: cri-o.service
     - enable: true
     - watch:
       - file: crio-registries
