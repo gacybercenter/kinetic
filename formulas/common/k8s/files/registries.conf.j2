@@ -1,4 +1,4 @@
-            unqualified-search-registries = {{ pillar['res-k8s']['registry']['cache']}}
+            unqualified-search-registries = {{ pillar['res-k8s']['registry']['cache'] }}
             {% for cache in pillar['res-k8s']['registry']['cache'] %}
             [[registry]]
             prefix = "{{ cache }}"
