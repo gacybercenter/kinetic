@@ -1,5 +1,5 @@
-            unqualified-search-registries = {{ pillar['res-k8s']['registry']['cache'] }}
-            {% for cache in pillar['res-k8s']['registry']['cache'] %}
+            unqualified-search-registries = {{ pillar['res-k8s']['registry']['cache'].items() }}
+            {% for cache in pillar['res-k8s']['registry']['cache'].items() %}
             [[registry]]
             prefix = "{{ cache }}"
             location = "{{ cache }}"
