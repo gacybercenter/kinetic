@@ -1,15 +1,15 @@
 # Bootstrap a Kubernetes cluster using kubeadm
 
-# Ensure dependencies are installed and configured
-include:
-  - /formulas/common/k8s/install
-  - /formulas/common/k8s/configure
-
 # Get VIP and control nodes from pillar data with safer handling
 {% set res_k8s = pillar.get('res-k8s', {'vip': '', 'control_nodes': ['master-rsc-0']}) %}
 {% set vip = res_k8s.get('vip', '') %}
 {% set control_nodes = res_k8s.get('control_nodes', ['master-rsc-0']) %}
 {% set first_control_node = control_nodes[0] if control_nodes else 'master-rsc-0' %}
+
+k8s_deps:
+  salt.state:
+    - tgt: '{{ first_control_node }}'
+    - sls: /formulas/common/k8s/configure
 
 # Debug pillar data to ensure it's available
 debug_pillar_data:
