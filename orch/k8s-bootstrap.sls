@@ -46,8 +46,7 @@ init_kubernetes_cluster:
       - test -z "{{ vip }}" || test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 || echo "unreachable" | grep -q "unreachable"
     - tgt: '{{ first_control_node }}'  # Target only the first control node for initialization
     - require:
-      - sls: /formulas/common/k8s/install
-      - sls: /formulas/common/k8s/configure
+      - state: k8s_deps
 
 # Upload certificates for control plane joining (run on first control node after init)
 upload_certs_and_get_key:
