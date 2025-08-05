@@ -14,6 +14,17 @@ sysctl_k8s_file:
         net.bridge.bridge-nf-call-ip6tables = 1
         net.bridge.bridge-nf-call-iptables = 1
         net.ipv4.ip_forward = 1
+crio-registries:
+  file.managed:
+    - name: /etc/containers/registries.conf.d/crio.conf
+    - makedirs: true
+
+crio-service:
+  service.running:
+    - name: cri-0.service
+    - enable: true
+    - watch:
+      - file: crio-registries
 
 {% for sysctl in pillar['k8s_sysctl'] %}
 {{ sysctl.name }}_k8s_sysctl:

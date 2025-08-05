@@ -11,6 +11,9 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+include:
+  - /formulas/common/helm
+
 # Setup the Kubernetes repo
 Install Salt Kubernetes extension:
   pip.installed:
