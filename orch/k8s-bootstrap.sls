@@ -25,16 +25,54 @@ k8s_deps:
     - tgt_type: list
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
-# Step 2: Download and extract kube-vip binary on all control plane nodes
-download_kube_vip:
+# Step 2: Download kube-vip binary tarball on all control plane nodes using file.managed
+download_kube_vip_tarball:
   salt.function:
-    - name: cmd.run
-    - cmd: curl -sL https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz -o /tmp/kube-vip.tar.gz && tar -xzf /tmp/kube-vip.tar.gz -C /usr/local/bin/ && chmod +x /usr/local/bin/kube-vip && rm /tmp/kube-vip.tar.gz
-    - creates: /usr/local/bin/kube-vip  # Only run if the binary doesn't exist
+    - name: file.managed
+    - path: /tmp/kube-vip.tar.gz
+    - source: https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz
+    - source_hash: skip  # Optional: You can add a hash for verification if known
+    - makedirs: True
+    - replace: True  # Ensure the file is replaced if it exists
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
       - salt: k8s_deps
+
+# Step 2.1: Extract the kube-vip binary from the tarball
+extract_kube_vip:
+  salt.function:
+    - name: archive.extracted
+    - name: /usr/local/bin
+    - source: /tmp/kube-vip.tar.gz
+    - archive_format: tar
+    - options: z  # For gzip compression
+    - if_missing: /usr/local/bin/kube-vip  # Only extract if the binary is not already there
+    - tgt: '{{ control_nodes|join(",") }}'
+    - tgt_type: list
+    - require:
+      - salt: download_kube_vip_tarball
+
+# Step 2.2: Set executable permissions on kube-vip binary
+set_kube_vip_permissions:
+  salt.function:
+    - name: file.managed
+    - path: /usr/local/bin/kube-vip
+    - mode: 0755
+    - tgt: '{{ control_nodes|join(",") }}'
+    - tgt_type: list
+    - require:
+      - salt: extract_kube_vip
+
+# Step 2.3: Clean up the downloaded tarball to save space
+cleanup_kube_vip_tarball:
+  salt.function:
+    - name: file.absent
+    - path: /tmp/kube-vip.tar.gz
+    - tgt: '{{ control_nodes|join(",") }}'
+    - tgt_type: list
+    - require:
+      - salt: set_kube_vip_permissions
 
 # Step 3: Create kube-vip manifest for static pod on all control plane nodes
 create_kube_vip_manifest:
@@ -87,7 +125,7 @@ create_kube_vip_manifest:
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
-      - salt: download_kube_vip
+      - salt: cleanup_kube_vip_tarball
 
 # Step 4: Ensure kubelet is running to pick up the static pod manifest (kube-vip)
 start_kubelet:
