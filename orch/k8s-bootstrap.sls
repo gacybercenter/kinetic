@@ -1,7 +1,9 @@
 # Bootstrap a Kubernetes cluster using kubeadm
 
+
+{% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': 'bmo'}) %}
 # Get VIP and control nodes from pillar data with safer handling
-{% set res_k8s = pillar.get('res-k8s', {'vip': '', 'control_nodes': ['master-rsc-0']}) %}
+{% set res_k8s = pillardata['res_k8s'] %}
 {% set vip = res_k8s.get('vip', '') %}
 {% set control_nodes = res_k8s.get('control_nodes', ['master-rsc-0']) %}
 {% set first_control_node = control_nodes[0] if control_nodes else 'master-rsc-0' %}
