@@ -15,11 +15,12 @@ __virtualname__ = 'k8s'
 def __virtual__():
     """
     Check if the kinetic-k8s execution module is available.
-    """
+    
     if 'kinetic-k8s.get_mac_by_interface_name' in __salt__:
         return __virtualname__
     return (False, 'The kinetic-k8s execution module is not available.')
-
+   """
+   return __virtualname__
 def mac_by_interface_name(name, namespace, resource_name, interface_name):
     """
     Retrieve the MAC address of a specific network interface from a HardwareData Custom Resource in Kubernetes.
