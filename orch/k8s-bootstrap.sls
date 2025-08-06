@@ -29,12 +29,13 @@ k8s_deps:
 download_kube_vip_tarball:
   salt.function:
     - name: file.manage_file
-    - name: /tmp/kube-vip.tar.gz
-    - source: https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz
-    - skip_verify: True  # Skip hash verification for simplicity; set to False and provide hash if needed
-    - makedirs: True
-    - replace: True  # Ensure the file is replaced if it exists
-    - mode: 0644
+    - kwarg:
+        name: /tmp/kube-vip.tar.gz
+        source: https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz
+        skip_verify: True  # Skip hash verification for simplicity; set to False and provide hash if needed
+        makedirs: True
+        replace: True  # Ensure the file is replaced if it exists
+        mode: 0644
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
