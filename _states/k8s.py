@@ -19,8 +19,7 @@ def __virtual__():
     if 'kubeadm.init' in __salt__:
         return __virtualname__
     return (False, 'The kubeadm execution module is not available.')
-   
-   return __virtualname__
+
 def mac_by_interface_name(name, namespace, resource_name, interface_name):
     """
     Retrieve the MAC address of a specific network interface from a HardwareData Custom Resource in Kubernetes.
