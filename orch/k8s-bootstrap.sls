@@ -8,7 +8,7 @@
 {% set vip = res_k8s.get('vip', '') %}
 {% set control_nodes = res_k8s.get('control_nodes', ['master-rsc-0']) %}
 {% set first_control_node = control_nodes[0] if control_nodes else 'master-rsc-0' %}
-{% set interface = res_k8s.get('interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
+{% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
 # Debug pillar data to ensure it's available
