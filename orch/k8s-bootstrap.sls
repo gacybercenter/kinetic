@@ -40,10 +40,9 @@ init_kubernetes_cluster:
   salt.function:
     - name: kubernetes.kubeadm.init
     - pod_network_cidr: "10.244.0.0/16"
-    - apiserver_advertise_address: '{{ vip }}'
     - service_cidr: "10.96.0.0/12"
     - kubernetes_version: "v1.24.0"
-    - control_plane_endpoint: "{{ vip if vip else first_control_node + ':6443' }}"  # Use VIP if available, else default to first node
+    - control_plane_endpoint: "{{ vip }}"  # Use VIP if available, else default to first node
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
       - test -z "{{ vip }}" || test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 || echo "unreachable" | grep -q "unreachable"
