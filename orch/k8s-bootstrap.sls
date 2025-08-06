@@ -58,13 +58,12 @@ generate_kube_vip_manifest:
       - salt: pull_kube_vip_image
 
 # Step 5: Wait for kube-vip to be active on one of the nodes (check VIP reachability)
+# Step 5: Wait for kube-vip to be active on one of the nodes (check VIP reachability)
 wait_for_vip:
   salt.function:
     - name: cmd.run
-    - cmd: |
-        timeout 60 bash -c "until curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1; do
-          echo 'Waiting for kube-vip to be active...'; sleep 5; done" &&
-        echo "VIP {{ vip }} is reachable" || echo "Timeout waiting for VIP"
+    - kwarg:
+        cmd: timeout 60 bash -c "until curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1; do echo 'Waiting for kube-vip to be active...'; sleep 5; done" && echo "VIP {{ vip }} is reachable" || echo "Timeout waiting for VIP"
     - tgt: '{{ first_control_node }}'
     - require:
       - salt: generate_kube_vip_manifest
