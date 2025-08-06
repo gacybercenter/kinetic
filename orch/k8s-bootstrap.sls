@@ -25,15 +25,16 @@ k8s_deps:
     - tgt_type: list
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
-# Step 2: Download kube-vip binary tarball on all control plane nodes using file.managed
+# Step 2: Download kube-vip binary tarball on all control plane nodes using file.manage_file
 download_kube_vip_tarball:
   salt.function:
-    - name: file.managed
-    - path: /tmp/kube-vip.tar.gz
+    - name: file.manage_file
+    - name: /tmp/kube-vip.tar.gz
     - source: https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz
-    - source_hash: skip  # Optional: You can add a hash for verification if known
+    - skip_verify: True  # Skip hash verification for simplicity; set to False and provide hash if needed
     - makedirs: True
     - replace: True  # Ensure the file is replaced if it exists
+    - mode: 0644
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
@@ -56,9 +57,10 @@ extract_kube_vip:
 # Step 2.2: Set executable permissions on kube-vip binary
 set_kube_vip_permissions:
   salt.function:
-    - name: file.managed
-    - path: /usr/local/bin/kube-vip
+    - name: file.manage_file
+    - name: /usr/local/bin/kube-vip
     - mode: 0755
+    - replace: False  # Don't replace the file, just update permissions
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
