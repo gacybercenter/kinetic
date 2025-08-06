@@ -28,11 +28,11 @@ k8s_deps:
 # Step 2: Download kube-vip binary tarball on all control plane nodes using file.manage_file
 download_kube_vip_tarball:
   salt.function:
-    - name: file.manage_file
+    - name: file.managed
     - kwarg:
-        name: /tmp/kube-vip.tar.gz
+        path: /tmp/kube-vip.tar.gz
         source: https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz
-        skip_verify: True  # Skip hash verification for simplicity; set to False and provide hash if needed
+        source_hash: skip  # Skip hash verification for simplicity; add hash if needed for security
         makedirs: True
         replace: True  # Ensure the file is replaced if it exists
         mode: 0644
@@ -40,7 +40,6 @@ download_kube_vip_tarball:
     - tgt_type: list
     - require:
       - salt: k8s_deps
-
 # Step 2.1: Extract the kube-vip binary from the tarball
 extract_kube_vip:
   salt.function:
