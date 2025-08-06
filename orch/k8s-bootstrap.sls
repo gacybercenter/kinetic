@@ -37,9 +37,10 @@ debug_admin_conf:
 
 # Initialize the cluster if VIP is not reachable or not set
 init_kubernetes_cluster:
-  k8s.kubeadm_init:
-    - name: init_cluster
+  salt.function:
+    - name: kubernetes.kubeadm.init
     - pod_network_cidr: "10.244.0.0/16"
+    - apiserver_advertise_address: '{{ vip }}'
     - service_cidr: "10.96.0.0/12"
     - kubernetes_version: "v1.24.0"
     - control_plane_endpoint: "{{ vip if vip else first_control_node + ':6443' }}"  # Use VIP if available, else default to first node
@@ -48,51 +49,51 @@ init_kubernetes_cluster:
       - test -z "{{ vip }}" || test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 || echo "unreachable" | grep -q "unreachable"
     - tgt: '{{ first_control_node }}'  # Target only the first control node for initialization
 
-# Upload certificates for control plane joining (run on first control node after init)
-upload_certs_and_get_key:
-  k8s.kubeadm_upload_certs:
-    - name: upload_certs
-    - onlyif:
-      - test -f /etc/kubernetes/admin.conf
-    - tgt: '{{ first_control_node }}'  # Run only on the initialized node
-    - onchanges:
-      - k8s: init_kubernetes_cluster
+# # Upload certificates for control plane joining (run on first control node after init)
+# upload_certs_and_get_key:
+#   k8s.kubeadm_upload_certs:
+#     - name: upload_certs
+#     - onlyif:
+#       - test -f /etc/kubernetes/admin.conf
+#     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
+#     - onchanges:
+#       - k8s: init_kubernetes_cluster
 
-# Create a token for joining nodes (run on first control node after init)
-create_join_token:
-  k8s.kubeadm_token_create:
-    - name: create_token
-    - ttl: "24h"  # Token time-to-live, adjust as needed
-    - usages: ['signing', 'authentication']
-    - onlyif:
-      - test -f /etc/kubernetes/admin.conf
-    - tgt: '{{ first_control_node }}'  # Run only on the initialized node
-    - onchanges:
-      - k8s: init_kubernetes_cluster
+# # Create a token for joining nodes (run on first control node after init)
+# create_join_token:
+#   k8s.kubeadm_token_create:
+#     - name: create_token
+#     - ttl: "24h"  # Token time-to-live, adjust as needed
+#     - usages: ['signing', 'authentication']
+#     - onlyif:
+#       - test -f /etc/kubernetes/admin.conf
+#     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
+#     - onchanges:
+#       - k8s: init_kubernetes_cluster
 
-# Reset and join logic for additional control nodes if VIP is reachable
-{% for node in control_nodes[1:] if control_nodes|length > 1 %}
-reset_{{ node }}_if_needed:
-  k8s.kubeadm_reset:
-    - name: reset_{{ node }}
-    - onlyif:
-      - test -f /etc/kubernetes/admin.conf
-      - test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 && echo "reachable" || echo "unreachable" | grep -q "reachable"
-    - tgt: '{{ node }}'  # Target specific control node for reset
+# # Reset and join logic for additional control nodes if VIP is reachable
+# {% for node in control_nodes[1:] if control_nodes|length > 1 %}
+# reset_{{ node }}_if_needed:
+#   k8s.kubeadm_reset:
+#     - name: reset_{{ node }}
+#     - onlyif:
+#       - test -f /etc/kubernetes/admin.conf
+#       - test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 && echo "reachable" || echo "unreachable" | grep -q "reachable"
+#     - tgt: '{{ node }}'  # Target specific control node for reset
 
-join_{{ node }}_to_cluster:
-  k8s.kubeadm_join:
-    - name: join_cluster_{{ node }}
-    - api_server_endpoint: "{{ vip if vip else first_control_node + ':6443' }}"
-    - control_plane: True  # Join as control plane node
-    - onlyif:
-      - test ! -f /etc/kubernetes/admin.conf
-      - test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 && echo "reachable" || echo "unreachable" | grep -q "reachable"
-    - tgt: '{{ node }}'  # Target specific control node
-    - require:
-      - k8s: init_kubernetes_cluster
-      - k8s: upload_certs_and_get_key
-      - k8s: create_join_token
-    - onchanges:
-      - k8s: reset_{{ node }}_if_needed
-{% endfor %}
+# join_{{ node }}_to_cluster:
+#   k8s.kubeadm_join:
+#     - name: join_cluster_{{ node }}
+#     - api_server_endpoint: "{{ vip if vip else first_control_node + ':6443' }}"
+#     - control_plane: True  # Join as control plane node
+#     - onlyif:
+#       - test ! -f /etc/kubernetes/admin.conf
+#       - test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 && echo "reachable" || echo "unreachable" | grep -q "reachable"
+#     - tgt: '{{ node }}'  # Target specific control node
+#     - require:
+#       - k8s: init_kubernetes_cluster
+#       - k8s: upload_certs_and_get_key
+#       - k8s: create_join_token
+#     - onchanges:
+#       - k8s: reset_{{ node }}_if_needed
+# {% endfor %}
