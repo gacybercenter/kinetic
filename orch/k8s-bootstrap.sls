@@ -72,11 +72,12 @@ wait_for_vip:
 init_kubernetes_cluster:
   salt.function:
     - name: kubeadm.init
-    - pod_network_cidr: "10.244.0.0/16"
-    - service_cidr: "10.96.0.0/12"
-    - kubernetes_version: "v1.24.0"
-    - cri_socket: unix:///var/run/crio/crio.sock
-    - control_plane_endpoint: "{{ vip }}:6443"  # Use VIP for HA control plane
+    - kwarg:
+        pod_network_cidr: "10.244.0.0/16"
+        service_cidr: "10.96.0.0/12"
+        kubernetes_version: "v1.24.0"
+        cri_socket: unix:///var/run/crio/crio.sock
+        control_plane_endpoint: "{{ vip }}:6443"  # Use VIP for HA control plane
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf  # Only initialize if not already done
     - tgt: '{{ first_control_node }}'  # Target only the first control node for initialization
