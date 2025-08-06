@@ -47,3 +47,4 @@ kube-deps.packages:
       - gpg
       - make
       - cri-o
+      - containerd

@@ -25,106 +25,37 @@ k8s_deps:
     - tgt_type: list
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
-# Step 2: Download kube-vip binary tarball on all control plane nodes using file.manage_file
-# Step 2: Download kube-vip binary tarball on all control plane nodes using cmd.run
-download_kube_vip_tarball:
+# Step 2: Pull kube-vip container image using containerd
+pull_kube_vip_image:
   salt.function:
     - name: cmd.run
     - kwarg:
-        cmd: curl -sL https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz -o /tmp/kube-vip.tar.gz
-        creates: /tmp/kube-vip.tar.gz  # Only run if the file doesn't exist
+        cmd: ctr image pull ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }}
+        onlyif: test ! -f /etc/kubernetes/manifests/kube-vip.yaml  # Only run if manifest doesn't exist
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
       - salt: k8s_deps
 
-# Step 2.1: Extract the kube-vip binary from the tarball
-extract_kube_vip:
+# Step 3: Run kube-vip container to generate the manifest for static pod
+generate_kube_vip_manifest:
   salt.function:
     - name: cmd.run
     - kwarg:
-        cmd: tar -xzf /tmp/kube-vip.tar.gz -C /usr/local/bin/
-        creates: /usr/local/bin/kube-vip  # Only run if the binary doesn't exist
+        cmd: |
+          mkdir -p /etc/kubernetes/manifests &&
+          ctr run --rm --net-host ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }} vip /kube-vip manifest pod \
+            --interface {{ interface }} \
+            --address {{ vip }} \
+            --controlplane \
+            --services \
+            --arp \
+            --leaderElection > /etc/kubernetes/manifests/kube-vip.yaml
+        creates: /etc/kubernetes/manifests/kube-vip.yaml  # Only run if the manifest doesn't exist
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
-      - salt: download_kube_vip_tarball
-
-# Step 2.2: Set executable permissions on kube-vip binary
-set_kube_vip_permissions:
-  salt.function:
-    - name: cmd.run
-    - kwarg:
-        cmd: chmod +x /usr/local/bin/kube-vip
-        onlyif: test -f /usr/local/bin/kube-vip  # Only run if the binary exists
-    - tgt: '{{ control_nodes|join(",") }}'
-    - tgt_type: list
-    - require:
-      - salt: extract_kube_vip
-
-# Step 2.3: Clean up the downloaded tarball to save space
-cleanup_kube_vip_tarball:
-  salt.function:
-    - name: file.absent
-    - kwarg:
-        path: /tmp/kube-vip.tar.gz
-    - tgt: '{{ control_nodes|join(",") }}'
-    - tgt_type: list
-    - require:
-      - salt: set_kube_vip_permissions
-
-# Step 3: Create kube-vip manifest for static pod on all control plane nodes
-create_kube_vip_manifest:
-  salt.function:
-    - name: file.managed
-    - path: /etc/kubernetes/manifests/kube-vip.yaml
-    - contents: |
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: kube-vip
-          namespace: kube-system
-        spec:
-          containers:
-          - name: kube-vip
-            image: ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }}
-            imagePullPolicy: IfNotPresent
-            args:
-            - manager
-            env:
-            - name: vip_arp
-              value: "true"
-            - name: port
-              value: "6443"
-            - name: vip_interface
-              value: {{ interface }}
-            - name: vip_cidr
-              value: "32"
-            - name: vip_address
-              value: {{ vip }}
-            - name: vip_leaseduration
-              value: "15"
-            - name: vip_renewdeadline
-              value: "10"
-            - name: vip_retryperiod
-              value: "2"
-            - name: node_selector
-              value: "true"
-            - name: enableServicesElection
-              value: "true"
-            resources:
-              limits:
-                cpu: 100m
-                memory: 128Mi
-              requests:
-                cpu: 100m
-                memory: 128Mi
-          hostNetwork: true
-          restartPolicy: Always
-    - tgt: '{{ control_nodes|join(",") }}'
-    - tgt_type: list
-    - require:
-      - salt: cleanup_kube_vip_tarball
+      - salt: pull_kube_vip_image
 
 # Step 4: Ensure kubelet is running to pick up the static pod manifest (kube-vip)
 start_kubelet:
@@ -135,7 +66,7 @@ start_kubelet:
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
-      - salt: create_kube_vip_manifest
+      - salt: generate_kube_vip_manifest
 
 # Step 5: Wait for kube-vip to be active on one of the nodes (check VIP reachability)
 wait_for_vip:
