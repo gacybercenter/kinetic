@@ -75,7 +75,7 @@ init_kubernetes_cluster:
     - pod_network_cidr: "10.244.0.0/16"
     - service_cidr: "10.96.0.0/12"
     - kubernetes_version: "v1.24.0"
-    - cri_socket: /var/run/crio.sock
+    - cri_socket: unix:///var/run/crio/crio.sock
     - control_plane_endpoint: "{{ vip }}:6443"  # Use VIP for HA control plane
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf  # Only initialize if not already done
