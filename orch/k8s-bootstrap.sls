@@ -79,9 +79,6 @@ reset_{{ node }}_if_needed:
       - test -f /etc/kubernetes/admin.conf
       - test -n "{{ vip }}" && curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1 && echo "reachable" || echo "unreachable" | grep -q "reachable"
     - tgt: '{{ node }}'  # Target specific control node for reset
-    - require:
-      - sls: /formulas/common/k8s/install
-      - sls: /formulas/common/k8s/configure
 
 join_{{ node }}_to_cluster:
   k8s.kubeadm_join:
@@ -96,8 +93,6 @@ join_{{ node }}_to_cluster:
       - k8s: init_kubernetes_cluster
       - k8s: upload_certs_and_get_key
       - k8s: create_join_token
-      - sls: /formulas/common/k8s/install
-      - sls: /formulas/common/k8s/configure
     - onchanges:
       - k8s: reset_{{ node }}_if_needed
 {% endfor %}
