@@ -15,10 +15,10 @@ __virtualname__ = 'k8s'
 def __virtual__():
     """
     Check if the kinetic-k8s execution module is available.
-    """
-    if 'kinetic-k8s.get_mac_by_interface_name' in __salt__:
+    """ 
+    if 'kubeadm.init' in __salt__:
         return __virtualname__
-    return (False, 'The kinetic-k8s execution module is not available.')
+    return (False, 'The kubeadm execution module is not available.')
 
 def mac_by_interface_name(name, namespace, resource_name, interface_name):
     """
