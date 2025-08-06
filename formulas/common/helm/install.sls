@@ -1,4 +1,4 @@
-Install Salt Kubernetes extension:
+Install Salt Kubernetes extension for helm:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - name: saltext-kubernetes
