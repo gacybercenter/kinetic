@@ -57,17 +57,6 @@ generate_kube_vip_manifest:
     - require:
       - salt: pull_kube_vip_image
 
-# Step 4: Ensure kubelet is running to pick up the static pod manifest (kube-vip)
-start_kubelet:
-  salt.function:
-    - name: service.running
-    - name: kubelet
-    - enable: True
-    - tgt: '{{ control_nodes|join(",") }}'
-    - tgt_type: list
-    - require:
-      - salt: generate_kube_vip_manifest
-
 # Step 5: Wait for kube-vip to be active on one of the nodes (check VIP reachability)
 wait_for_vip:
   salt.function:
@@ -78,7 +67,7 @@ wait_for_vip:
         echo "VIP {{ vip }} is reachable" || echo "Timeout waiting for VIP"
     - tgt: '{{ first_control_node }}'
     - require:
-      - salt: start_kubelet
+      - salt: generate_kube_vip_manifest
 
 # Step 6: Initialize Kubernetes cluster on the first control node with VIP as control-plane-endpoint
 init_kubernetes_cluster:

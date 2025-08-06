@@ -28,6 +28,11 @@ crio-service:
     - watch:
       - file: crio-registries
 
+kubelet-service:
+  service.running:
+    - name: kubelet.service
+    - enable: true
+
 {% for sysctl in pillar['k8s_sysctl'] %}
 {{ sysctl.name }}_k8s_sysctl:
   sysctl.present:
