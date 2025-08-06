@@ -38,7 +38,7 @@ debug_admin_conf:
 # Initialize the cluster if VIP is not reachable or not set
 init_kubernetes_cluster:
   salt.function:
-    - name: kubernetes.kubeadm.init
+    - name: kubeadm.init
     - pod_network_cidr: "10.244.0.0/16"
     - service_cidr: "10.96.0.0/12"
     - kubernetes_version: "v1.24.0"
