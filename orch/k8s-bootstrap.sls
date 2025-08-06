@@ -26,29 +26,25 @@ k8s_deps:
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
 # Step 2: Download kube-vip binary tarball on all control plane nodes using file.manage_file
+# Step 2: Download kube-vip binary tarball on all control plane nodes using cmd.run
 download_kube_vip_tarball:
   salt.function:
-    - name: file.managed
+    - name: cmd.run
     - kwarg:
-        path: /tmp/kube-vip.tar.gz
-        source: https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz
-        source_hash: skip  # Skip hash verification for simplicity; add hash if needed for security
-        makedirs: True
-        replace: True  # Ensure the file is replaced if it exists
-        mode: 0644
+        cmd: curl -sL https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz -o /tmp/kube-vip.tar.gz
+        creates: /tmp/kube-vip.tar.gz  # Only run if the file doesn't exist
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
       - salt: k8s_deps
+
 # Step 2.1: Extract the kube-vip binary from the tarball
 extract_kube_vip:
   salt.function:
-    - name: archive.extracted
-    - name: /usr/local/bin
-    - source: /tmp/kube-vip.tar.gz
-    - archive_format: tar
-    - options: z  # For gzip compression
-    - if_missing: /usr/local/bin/kube-vip  # Only extract if the binary is not already there
+    - name: cmd.run
+    - kwarg:
+        cmd: tar -xzf /tmp/kube-vip.tar.gz -C /usr/local/bin/
+        creates: /usr/local/bin/kube-vip  # Only run if the binary doesn't exist
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
@@ -57,10 +53,10 @@ extract_kube_vip:
 # Step 2.2: Set executable permissions on kube-vip binary
 set_kube_vip_permissions:
   salt.function:
-    - name: file.manage_file
-    - name: /usr/local/bin/kube-vip
-    - mode: 0755
-    - replace: False  # Don't replace the file, just update permissions
+    - name: cmd.run
+    - kwarg:
+        cmd: chmod +x /usr/local/bin/kube-vip
+        onlyif: test -f /usr/local/bin/kube-vip  # Only run if the binary exists
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
@@ -70,7 +66,8 @@ set_kube_vip_permissions:
 cleanup_kube_vip_tarball:
   salt.function:
     - name: file.absent
-    - path: /tmp/kube-vip.tar.gz
+    - kwarg:
+        path: /tmp/kube-vip.tar.gz
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
     - require:
