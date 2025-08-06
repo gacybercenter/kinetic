@@ -29,11 +29,7 @@ k8s_deps:
 download_kube_vip:
   salt.function:
     - name: cmd.run
-    - cmd: |
-        curl -sL https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz -o /tmp/kube-vip.tar.gz &&
-        tar -xzf /tmp/kube-vip.tar.gz -C /usr/local/bin/ &&
-        chmod +x /usr/local/bin/kube-vip &&
-        rm /tmp/kube-vip.tar.gz
+    - cmd: curl -sL https://github.com/kube-vip/kube-vip/releases/download/{{ kube_vip_version }}/kube-vip_Linux_amd64.tar.gz -o /tmp/kube-vip.tar.gz && tar -xzf /tmp/kube-vip.tar.gz -C /usr/local/bin/ && chmod +x /usr/local/bin/kube-vip && rm /tmp/kube-vip.tar.gz
     - creates: /usr/local/bin/kube-vip  # Only run if the binary doesn't exist
     - tgt: '{{ control_nodes|join(",") }}'
     - tgt_type: list
