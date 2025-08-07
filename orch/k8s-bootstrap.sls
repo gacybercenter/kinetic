@@ -21,8 +21,7 @@ debug_pillar_data:
 # Step 1: Ensure Kubernetes dependencies are installed on all control plane nodes
 k8s_deps:
   salt.state:
-    - tgt: '{{ control_nodes|join(",") }}'
-    - tgt_type: list
+    - tgt: '{{ first_control_node }}' 
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
 # Step 2: Pull kube-vip container image using containerd
@@ -32,8 +31,7 @@ pull_kube_vip_image:
     - kwarg:
         cmd: ctr image pull ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }}
         onlyif: test ! -f /etc/kubernetes/manifests/kube-vip.yaml  # Only run if manifest doesn't exist
-    - tgt: '{{ control_nodes|join(",") }}'
-    - tgt_type: list
+    - tgt: '{{ first_control_node }}' 
     - require:
       - salt: k8s_deps
 
@@ -53,7 +51,7 @@ generate_kube_vip_manifest:
             --arp \
             --leaderElection > /etc/kubernetes/manifests/kube-vip.yaml
         creates: /etc/kubernetes/manifests/kube-vip.yaml  # Only run if the manifest doesn't exist
-    - tgt: '{{ control_nodes|join(",") }}'
+    - tgt: '{{ first_control_node }}' 
     - tgt_type: list
     - require:
       - salt: pull_kube_vip_image
