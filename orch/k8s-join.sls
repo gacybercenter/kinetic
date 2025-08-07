@@ -22,7 +22,7 @@
 # Retrieve the join parameters from the bootstrapped node
 {% set join_params_result = salt.saltutil.cmd(tgt=first_control_node, fun='kubeadm.join_params') %}
 {% set join_params = join_params_result.get(first_control_node, {}).get('ret', {}) %}
-{% set join_token = join_params.get('token', '') %}
+{% set join_token = join_params_result.get('token', '') %}
 {% set cert_key = join_params.get('certificate_key', '') %}
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params:
