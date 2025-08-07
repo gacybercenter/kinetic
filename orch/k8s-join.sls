@@ -11,6 +11,6 @@
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params:
   cmd.run:
-    - name: echo "Bootstrap {{ bootstrap_node }} }}" #, Cert Key {{ cert_key }}, CA Cert Hash {{ ca_cert_hash }}, Bootstrapped Node {{ first_control_node }}"
+    - name: echo "Bootstrap {{ bootstrap_node }} }}"
     - tgt: '*'
     - output_loglevel: debug
