@@ -19,7 +19,7 @@
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "join params {{ join_params }}"
+    - name: echo "join params {{ token_result }}"
     - tgt: '*'
     - output_loglevel: debug
 
