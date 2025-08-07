@@ -13,15 +13,13 @@
 # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
 {% set is_control_plane = node_pillar.get('k8s_control_plane', False) == True %}
-debug_node_name_{{ node }}:
-  cmd.run:
-    - name: echo "Node {{ node }}"
-    - tgt: {{ node }}
-
-{% endfor %}
+# Retrieve the join parameters from the bootstrapped node
+{% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.join_params') %}
 # Debug the retrieved join parameters (optional, for troubleshooting)
-debug_join_params:
+debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "Bootstrap {{ bootstrap_node }} }} VIP {{ vip }}"
+    - name: echo "join params {{ join_params_result }}"
     - tgt: '*'
     - output_loglevel: debug
+
+{% endfor %}
