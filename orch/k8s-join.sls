@@ -17,12 +17,11 @@
 {% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.join_params') %}
 {% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
 {% set join_token = join_params_data.get('token', '') %}
-{% set cert_key = join_params_data.get('certificate_key', '') %}
-{% set ca_cert_hash = join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', [''])[0] if join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', []) else '' %}
+{% set ca_cert_hash = join_params_data.get(discovery-token-ca-cert-hash, '') %}
 #Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "results {{ join_params_result }} join token {{ join_token }} cert_key {{ cert_key }} {{ ca_cert_hash }}"
+    - name: echo "results {{ join_params_result }} join token {{ join_token }} cert_key_hash {{ ca_cert_hash }}"
     - tgt: '*'
     - output_loglevel: debug
 
