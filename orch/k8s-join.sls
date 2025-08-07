@@ -1,5 +1,5 @@
 # Fetch pillar data for the 'bmo' minion to get VIP and node list
-{% set bootstrap_node = salt['pillar.get']('bootstrap_node')%}
+{% set bootstrap_node = salt['pillar.get']('bootstrap_node') %}
 {% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': bootstrap_node}) %}
 {% set res_k8s = pillardata['res-k8s'] %}
 {% set vip = res_k8s.get('vip', '') %}
@@ -8,21 +8,10 @@
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
 # Find the first control node (bootstrapped node) to retrieve the join parameters
-{% set first_control_node = '' %}
-{% for node in k8s_nodes %}
-  {% set grain_result = salt.saltutil.cmd(tgt=node, fun='grains.get', arg=['k8s_bootstrapped']) %}
-  {% if grain_result.get(node, {}).get('ret', '') == 'true' and first_control_node == '' %}
-    {% set first_control_node = node %}
-  {% endif %}
-{% endfor %}
-# Fallback to the first node in the list if no bootstrapped node is found
-{% if first_control_node == '' %}
-  {% set first_control_node = k8s_nodes[0] if k8s_nodes else 'master-rsc-0' %}
-{% endif %}
 
 # Retrieve the join parameters from the bootstrapped node
-{% set join_params_result = salt.saltutil.cmd(tgt=first_control_node, fun='kubeadm.join_params') %}
-{% set join_params_data = join_params_result.get(first_control_node, {}).get('ret', {}) %}
+{% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.join_params') %}
+{% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
 {% set join_token = join_params_data.get('token', '') %}
 {% set cert_key = join_params_data.get('certificate_key', '') %}
 {% set ca_cert_hash = join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', [''])[0] if join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', []) else '' %}
