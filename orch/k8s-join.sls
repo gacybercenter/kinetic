@@ -6,7 +6,7 @@
 {% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
-# Find the first control node (bootstrapped node) to retrieve the join token
+# Find the first control node (bootstrapped node) to retrieve the join parameters
 {% set first_control_node = '' %}
 {% for node in k8s_nodes %}
   {% set grain_result = salt.saltutil.cmd(tgt=node, fun='grains.get', arg=['k8s_bootstrapped']) %}
@@ -19,17 +19,15 @@
   {% set first_control_node = k8s_nodes[0] if k8s_nodes else 'master-rsc-0' %}
 {% endif %}
 
-# Retrieve the join token from the bootstrapped node
-{% set token_result = salt.saltutil.cmd(tgt=first_control_node, fun='cmd.run', arg=['kubeadm token list | grep -v TOKEN | awk \'{print $1}\' | head -1']) %}
-{% set join_token = token_result.get(first_control_node, {}).get('ret', '').strip() %}
-# Retrieve the certificate key if needed for control plane nodes (run on bootstrapped node)
-{% set cert_key_result = salt.saltutil.cmd(tgt=first_control_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
-{% set cert_key = cert_key_result.get(first_control_node, {}).get('ret', '').strip() %}
-
-# Debug the retrieved token and cert key (optional, for troubleshooting)
-debug_token:
+# Retrieve the join parameters from the bootstrapped node
+{% set join_params_result = salt.saltutil.cmd(tgt=first_control_node, fun='kubeadm.join_params') %}
+{% set join_params = join_params_result.get(first_control_node, {}).get('ret', {}) %}
+{% set join_token = join_params.get('token', '') %}
+{% set cert_key = join_params.get('certificate_key', '') %}
+# Debug the retrieved join parameters (optional, for troubleshooting)
+debug_join_params:
   cmd.run:
-    - name: echo "Join Token: {{ join_token }}, Cert Key: {{ cert_key }}, Bootstrapped Node: {{ first_control_node }}"
+    - name: echo "Join Token {{ join_token }}, Cert Key {{ cert_key }}, Bootstrapped Node {{ first_control_node }}"
     - tgt: '*'
     - output_loglevel: debug
 
@@ -99,6 +97,7 @@ join_{{ node }}_to_cluster:
         api_server_endpoint: "{{ vip }}:6443"  # Use VIP as the endpoint
         cri_socket: unix:///var/run/crio/crio.sock
         token: "{{ join_token }}"  # Use the retrieved join token
+        ca_cert_hash: "{{ ca_cert_hash }}"  # Use the retrieved CA cert hash
         {% if is_control_plane %}
         control_plane: True  # Join as control plane node based on pillar data
         certificate_key: "{{ cert_key }}"  # Required for control plane nodes
