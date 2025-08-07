@@ -1,5 +1,6 @@
 # Fetch pillar data for the 'bmo' minion to get VIP and node list
-{% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': 'bmo'}) %}
+{% set bootstrap_node = salt['pillar.get']('bootstrap_node')%}
+{% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': bootstrap_node}) %}
 {% set res_k8s = pillardata['res-k8s'] %}
 {% set vip = res_k8s.get('vip', '') %}
 {% set k8s_nodes = res_k8s.get('k8s_nodes', ['master-rsc-0']) %}
