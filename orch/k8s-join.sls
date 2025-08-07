@@ -11,6 +11,6 @@
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params:
   cmd.run:
-    - name: echo "Bootstrap {{ bootstrap_node }} }}"
+    - name: echo "Bootstrap {{ bootstrap_node }} }} VIP {{ vip }}"
     - tgt: '*'
     - output_loglevel: debug
