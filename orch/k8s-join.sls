@@ -12,7 +12,7 @@
 # Check if the node has the 'k8s_bootstrapped' grain set to 'true'
 # Check if the node has the 'k8s_bootstrapped' grain set to 'true'
 {% set grain_result = salt.saltutil.cmd(node,'grains.get', arg=['k8s_bootstrapped']) %}
-{% set is_bootstrapped = grain_result %}
+{% set is_bootstrapped = grain_result.get(node, {}).get('ret', '') == 'true' %}
 {% if not is_bootstrapped %}
 # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
