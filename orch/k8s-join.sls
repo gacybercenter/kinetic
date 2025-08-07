@@ -2,8 +2,8 @@
 {% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': 'bmo'}) %}
 {% set res_k8s = pillardata['res-k8s'] %}
 {% set vip = res_k8s.get('vip', '') %}
-{% set k8s_nodes = res_k8s.get('k8s_nodes') %}
-{% set interface = res_k8s.get('vip-interface') %}  # Default to 'eth0' if not specified in pillar
+{% set k8s_nodes = res_k8s.get('k8s_nodes', ['master-rsc-0']) %}
+{% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
 # Find the first control node (bootstrapped node) to retrieve the join parameters
@@ -14,18 +14,22 @@
     {% set first_control_node = node %}
   {% endif %}
 {% endfor %}
+# Fallback to the first node in the list if no bootstrapped node is found
+{% if first_control_node == '' %}
+  {% set first_control_node = k8s_nodes[0] if k8s_nodes else 'master-rsc-0' %}
+{% endif %}
 
 # Retrieve the join parameters from the bootstrapped node
 {% set join_params_result = salt.saltutil.cmd(tgt=first_control_node, fun='kubeadm.join_params') %}
-{% set join_params = join_params_result.get(first_control_node, {}).get('ret', {}) %}
-{% set join_token = join_params_result.get('token', '') %}
-{% set cert_key = join_params_result.get('certificate_key', '') %}
-{% set ca_cert_hash = join_params_result.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', [''])[0] if join_params_result.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', []) else '' %}
+{% set join_params_data = join_params_result.get(first_control_node, {}).get('ret', {}) %}
+{% set join_token = join_params_data.get('token', '') %}
+{% set cert_key = join_params_data.get('certificate_key', '') %}
+{% set ca_cert_hash = join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', [''])[0] if join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', []) else '' %}
 
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params:
   cmd.run:
-    - name: echo "Join Token {{ join_token }}, Cert Key {{ cert_key }}, Bootstrapped Node {{ first_control_node }}"
+    - name: echo "Join Token {{ join_token }}, Cert Key {{ cert_key }}, CA Cert Hash {{ ca_cert_hash }}, Bootstrapped Node {{ first_control_node }}"
     - tgt: '*'
     - output_loglevel: debug
 
