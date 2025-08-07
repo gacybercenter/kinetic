@@ -9,8 +9,7 @@
 # Find the first control node (bootstrapped node) to retrieve the join parameters
 {% set first_control_node = '' %}
 {% for node in k8s_nodes %}
-#  {% set grain_result = salt.saltutil.cmd(tgt=node, fun='grains.get', arg=['k8s_bootstrapped']) %}
-  {% set grain_result = salt['mine.get'](node, 'is_bootstrapped') %}
+  {% set grain_result = salt.saltutil.cmd(tgt=node, fun='grains.get', arg=['k8s_bootstrapped']) %}
   {% if grain_result.get(node, {}).get('ret', '') == 'true' and first_control_node == '' %}
     {% set first_control_node = node %}
   {% endif %}
