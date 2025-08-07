@@ -99,7 +99,6 @@ join_{{ node }}_to_cluster:
         api_server_endpoint: "{{ vip }}:6443"  # Use VIP as the endpoint
         cri_socket: unix:///var/run/crio/crio.sock
         token: "{{ join_token }}"  # Use the retrieved join token
-        ca_cert_hash: "{{ ca_cert_hash }}"  # Use the retrieved CA cert hash
         {% if is_control_plane %}
         control_plane: True  # Join as control plane node based on pillar data
         certificate_key: "{{ cert_key }}"  # Required for control plane nodes
