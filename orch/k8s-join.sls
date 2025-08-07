@@ -15,10 +15,6 @@
     {% set first_control_node = node %}
   {% endif %}
 {% endfor %}
-# Fallback to the first node in the list if no bootstrapped node is found
-{% if first_control_node == '' %}
-  {% set first_control_node = k8s_nodes[0] if k8s_nodes else 'master-rsc-0' %}
-{% endif %}
 
 # Retrieve the join parameters from the bootstrapped node
 {% set join_params_result = salt.saltutil.cmd(tgt=first_control_node, fun='kubeadm.join_params') %}
