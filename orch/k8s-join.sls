@@ -95,6 +95,4 @@ join_{{ node }}_to_cluster:
       {% if is_control_plane %}
       - salt: generate_kube_vip_manifest_{{ node }}
       {% endif %}
-{% endif %}
-{% endfor %}
 {% endfor %}
