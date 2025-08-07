@@ -22,7 +22,7 @@
 #Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "join token {{ join_token }} cert_key {{ cert_key }} {{ ca_cert_hash }}"
+    - name: echo "results {{ join_params_result }} join token {{ join_token }} cert_key {{ cert_key }} {{ ca_cert_hash }}"
     - tgt: '*'
     - output_loglevel: debug
 
