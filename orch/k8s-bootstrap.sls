@@ -3,22 +3,34 @@
 
 # Fetch pillar data for the 'bmo' minion
 {% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': 'bmo'}) %}
-# Get VIP and control nodes from pillar data with safer handling
+# Get VIP and nodes from pillar data with safer handling
 {% set res_k8s = pillardata['res-k8s'] %}
 {% set vip = res_k8s.get('vip', '') %}
-{% set control_nodes = res_k8s.get('control_nodes', ['master-rsc-0']) %}
-{% set first_control_node = control_nodes[0] if control_nodes else 'master-rsc-0' %}
+{% set k8s_nodes = res_k8s.get('k8s_nodes', ['master-rsc-0']) %}
 {% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
+
+# Find the first node with k8s_control_plane == true
+{% set first_control_node = '' %}
+{% for node in k8s_nodes %}
+  {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
+  {% if node_pillar.get('k8s_control_plane', False) == True and first_control_node == '' %}
+    {% set first_control_node = node %}
+  {% endif %}
+{% endfor %}
+# Fallback to the first node in the list if no control plane node is found
+{% if first_control_node == '' %}
+  {% set first_control_node = k8s_nodes[0] if k8s_nodes else 'master-rsc-0' %}
+{% endif %}
 
 # Debug pillar data to ensure it's available
 debug_pillar_data:
   cmd.run:
-    - name: echo "VIP {{ vip }}, Control Nodes {{ control_nodes }}, First Node {{ first_control_node }}, Interface {{ interface }}"
+    - name: echo "VIP {{ vip }}, K8s Nodes {{ k8s_nodes }}, First Control Node {{ first_control_node }}, Interface {{ interface }}"
     - tgt: '*'
     - output_loglevel: debug
 
-# Step 1: Ensure Kubernetes dependencies are installed on all control plane nodes
+# Step 1: Ensure Kubernetes dependencies are installed on the first control plane node
 k8s_deps:
   salt.state:
     - tgt: '{{ first_control_node }}' 
@@ -52,7 +64,6 @@ generate_kube_vip_manifest:
             --leaderElection > /etc/kubernetes/manifests/kube-vip.yaml
         creates: /etc/kubernetes/manifests/kube-vip.yaml  # Only run if the manifest doesn't exist
     - tgt: '{{ first_control_node }}' 
-    - tgt_type: list
     - require:
       - salt: pull_kube_vip_image
 
@@ -80,6 +91,7 @@ set_bootstrap_grain:
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - require:
       - salt: init_kubernetes_cluster
+
 # Step 6.2: Sync grains to ensure the new grain is available
 sync_grains:
   salt.function:
@@ -97,6 +109,7 @@ upload_certs:
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - watch:
       - salt: init_kubernetes_cluster
+
 # Step 8: Create a token for joining nodes (run on first control node after init)
 create_join_token:
   salt.function:
