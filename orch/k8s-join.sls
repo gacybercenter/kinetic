@@ -84,7 +84,7 @@ join_{{ node }}_to_cluster:
         cri_socket: unix:///var/run/crio/crio.sock
         token: "{{ join_token }}"  # Use the retrieved join token
         discovery_token_ca_cert_hash: "{{ ca_cert_hash }}"  # Use the retrieved CA cert hash
-        {% if is_control_plane %}
+        {% if is_control_plane == True %}
         control_plane: True  # Join as control plane node based on pillar data
         {% endif %}
     - onlyif:
@@ -92,7 +92,7 @@ join_{{ node }}_to_cluster:
     - tgt: '{{ node }}'  # Target specific node
     - require:
       - salt: reset_{{ node }}_if_needed
-      {% if is_control_plane %}
+      {% if is_control_plane == True %}
       - salt: generate_kube_vip_manifest_{{ node }}
       {% endif %}
 {% endfor %}
