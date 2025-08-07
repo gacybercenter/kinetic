@@ -24,6 +24,8 @@
 {% set join_params = join_params_result.get(first_control_node, {}).get('ret', {}) %}
 {% set join_token = join_params_result.get('token', '') %}
 {% set cert_key = join_params_result.get('certificate_key', '') %}
+{% set ca_cert_hash = join_params_result.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', [''])[0] if join_params_result.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', []) else '' %}
+
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params:
   cmd.run:
