@@ -5,13 +5,38 @@
 {% set k8s_nodes = res_k8s.get('k8s_nodes', ['master-rsc-0']) %}
 {% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
-{% set first_control_node = k8s_nodes[0] if k8s_nodes else 'master-rsc-0' %}
+
+# Find the first control node (bootstrapped node) to retrieve the join token
+{% set first_control_node = '' %}
+{% for node in k8s_nodes %}
+  {% set grain_result = salt.saltutil.cmd(tgt=node, fun='grains.get', arg=['k8s_bootstrapped']) %}
+  {% if grain_result.get(node, {}).get('ret', '') == 'true' and first_control_node == '' %}
+    {% set first_control_node = node %}
+  {% endif %}
+{% endfor %}
+# Fallback to the first node in the list if no bootstrapped node is found
+{% if first_control_node == '' %}
+  {% set first_control_node = k8s_nodes[0] if k8s_nodes else 'master-rsc-0' %}
+{% endif %}
+
+# Retrieve the join token from the bootstrapped node
+{% set token_result = salt.saltutil.cmd(tgt=first_control_node, fun='cmd.run', arg=['kubeadm token list | grep -v TOKEN | awk \'{print $1}\' | head -1']) %}
+{% set join_token = token_result.get(first_control_node, {}).get('ret', '').strip() %}
+# Retrieve the certificate key if needed for control plane nodes (run on bootstrapped node)
+{% set cert_key_result = salt.saltutil.cmd(tgt=first_control_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
+{% set cert_key = cert_key_result.get(first_control_node, {}).get('ret', '').strip() %}
+
+# Debug the retrieved token and cert key (optional, for troubleshooting)
+debug_token:
+  cmd.run:
+    - name: echo "Join Token: {{ join_token }}, Cert Key: {{ cert_key }}, Bootstrapped Node: {{ first_control_node }}"
+    - tgt: '*'
+    - output_loglevel: debug
 
 # Step 9: Join additional nodes (excluding the node that was bootstrapped)
 {% for node in k8s_nodes %}
 # Check if the node has the 'k8s_bootstrapped' grain set to 'true'
-# Check if the node has the 'k8s_bootstrapped' grain set to 'true'
-{% set grain_result = salt.saltutil.cmd(node,'grains.get', arg=['k8s_bootstrapped']) %}
+{% set grain_result = salt.saltutil.cmd(tgt=node, fun='grains.get', arg=['k8s_bootstrapped']) %}
 {% set is_bootstrapped = grain_result.get(node, {}).get('ret', '') == 'true' %}
 {% if not is_bootstrapped %}
 # Fetch pillar data for the current node to check if it should join as a control plane node
@@ -70,12 +95,14 @@ reset_{{ node }}_if_needed:
 join_{{ node }}_to_cluster:
   salt.function:
     - name: kubeadm.join
-    - kwargs:
+    - kwarg:
         api_server_endpoint: "{{ vip }}:6443"  # Use VIP as the endpoint
         cri_socket: unix:///var/run/crio/crio.sock
-    {% if is_control_plane %}
+        token: "{{ join_token }}"  # Use the retrieved join token
+        {% if is_control_plane %}
         control_plane: True  # Join as control plane node based on pillar data
-    {% endif %}
+        certificate_key: "{{ cert_key }}"  # Required for control plane nodes
+        {% endif %}
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf  # Only join if not already joined
     - tgt: '{{ node }}'  # Target specific node
