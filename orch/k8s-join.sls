@@ -2,7 +2,7 @@
 {% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': 'bmo'}) %}
 {% set res_k8s = pillardata['res-k8s'] %}
 {% set vip = res_k8s.get('vip', '') %}
-{% set k8s_nodes = res_k8s.get('k8s_nodes' %}
+{% set k8s_nodes = res_k8s.get('k8s_nodes') %}
 {% set interface = res_k8s.get('vip-interface') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
