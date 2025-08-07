@@ -10,7 +10,7 @@
 # Step 9: Join additional nodes (excluding the node that was bootstrapped)
 {% for node in k8s_nodes %}
 # Check if the node has the 'k8s_bootstrapped' grain set to 'true'
-{% set is_bootstrapped = salt.saltutil.runner('grains.get', kwarg={'key': 'k8s_bootstrapped', 'tgt': node}) == 'true' %}
+{% set is_bootstrapped = salt.saltutil.runner('salt.execute', node, {'fun': 'grains.get', 'kwargs': {'key':'k8s_bootstrapped'}})  == 'true' %}
 {% if not is_bootstrapped %}
 # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
