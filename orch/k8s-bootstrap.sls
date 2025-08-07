@@ -58,17 +58,6 @@ generate_kube_vip_manifest:
     - require:
       - salt: pull_kube_vip_image
 
-# Step 5: Wait for kube-vip to be active on one of the nodes (check VIP reachability)
-# Step 5: Wait for kube-vip to be active on one of the nodes (check VIP reachability)
-wait_for_vip:
-  salt.function:
-    - name: cmd.run
-    - kwarg:
-        cmd: timeout 60 bash -c "until curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1; do echo 'Waiting for kube-vip to be active...'; sleep 5; done" && echo "VIP {{ vip }} is reachable" || echo "Timeout waiting for VIP"
-    - tgt: '{{ first_control_node }}'
-    - require:
-      - salt: generate_kube_vip_manifest
-
 # Step 6: Initialize Kubernetes cluster on the first control node with VIP as control-plane-endpoint
 init_kubernetes_cluster:
   salt.function:
@@ -79,11 +68,27 @@ init_kubernetes_cluster:
         kubernetes_version: "v1.29.0"
         cri_socket: unix:///var/run/crio/crio.sock
         control_plane_endpoint: "{{ vip }}:6443"  # Use VIP for HA control plane
-    - onlyif:
-      - test ! -f /etc/kubernetes/admin.conf  # Only initialize if not already done
+    - unless:
+      - timeout 60 bash -c "until curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1; do echo 'Waiting for kube-vip to be active...'; sleep 5; done" && echo "VIP {{ vip }} is reachable" || echo "Timeout waiting for VIP"
     - tgt: '{{ first_control_node }}'  # Target only the first control node for initialization
+
+# Step 6.1: Set a grain on the first control node to mark it as bootstrapped
+set_bootstrap_grain:
+  salt.function:
+    - name: grains.setval
+    - kwarg:
+        key: k8s_bootstrapped
+        val: true
+    - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - require:
-      - salt: wait_for_vip
+      - salt: init_kubernetes_cluster
+# Step 6.2: Sync grains to ensure the new grain is available
+sync_grains:
+  salt.function:
+    - name: saltutil.refresh_grains
+    - tgt: '{{ first_control_node }}'  # Run only on the initialized node
+    - require:
+      - salt: set_bootstrap_grain
 
 # Step 7: Upload certificates for control plane joining (run on first control node after init)
 upload_certs:
@@ -92,9 +97,8 @@ upload_certs:
     - onlyif:
       - test -f /etc/kubernetes/admin.conf  # Only run if cluster is initialized
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
-    - require:
+    - watch:
       - salt: init_kubernetes_cluster
-
 # Step 8: Create a token for joining nodes (run on first control node after init)
 create_join_token:
   salt.function:
@@ -106,29 +110,3 @@ create_join_token:
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - require:
       - salt: init_kubernetes_cluster
-
-# Step 9: Join additional control plane nodes (if any exist beyond the first)
-{% for node in control_nodes[1:] if control_nodes|length > 1 %}
-reset_{{ node }}_if_needed:
-  salt.function:
-    - name: kubeadm.reset
-    - onlyif:
-      - test -f /etc/kubernetes/admin.conf  # Reset if already joined
-    - tgt: '{{ node }}'  # Target specific control node for reset
-    - require:
-      - salt: start_kubelet
-
-join_{{ node }}_to_cluster:
-  salt.function:
-    - name: kubeadm.join
-    - api_server_endpoint: "{{ vip }}:6443"  # Use VIP as the endpoint
-    - control_plane: True  # Join as control plane node
-    - onlyif:
-      - test ! -f /etc/kubernetes/admin.conf  # Only join if not already joined
-    - tgt: '{{ node }}'  # Target specific control node
-    - require:
-      - salt: init_kubernetes_cluster
-      - salt: upload_certs
-      - salt: create_join_token
-      - salt: reset_{{ node }}_if_needed
-{% endfor %}
