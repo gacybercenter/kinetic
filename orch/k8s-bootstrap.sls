@@ -78,7 +78,7 @@ init_kubernetes_cluster:
         cri_socket: unix:///var/run/crio/crio.sock
         control_plane_endpoint: "{{ vip }}:6443"  # Use VIP for HA control plane
     - unless:
-      - timeout 60 bash -c "until curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1; do echo 'Waiting for kube-vip to be active...'; sleep 5; done" && echo "VIP {{ vip }} is reachable" || echo "Timeout waiting for VIP"
+      - curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null
     - tgt: '{{ first_control_node }}'  # Target only the first control node for initialization
 
 # Step 6.1: Set a grain on the first control node to mark it as bootstrapped
