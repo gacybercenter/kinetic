@@ -15,7 +15,6 @@
 {% set is_control_plane = node_pillar.get('k8s_control_plane', False) == True %}
 # Retrieve the join parameters from the bootstrapped node
 {% set token_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm token list | grep -v TOKEN | awk \'{print $1}\' | head -1']) %}
-#{% set join_params = join_params_result.get(bootstrap_node).get('ret') %}
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
