@@ -71,6 +71,7 @@ join_{{ node }}_to_cluster:
   salt.function:
     - name: kubeadm.join
     - api_server_endpoint: "{{ vip }}:6443"  # Use VIP as the endpoint
+    - cri_socket: unix:///var/run/crio/crio.sock
     {% if is_control_plane %}
     - control_plane: True  # Join as control plane node based on pillar data
     {% endif %}
