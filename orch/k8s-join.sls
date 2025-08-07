@@ -13,11 +13,11 @@
 # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
 {% set is_control_plane = node_pillar.get('k8s_control_plane', False) == True %}
-debug_node_name:
+debug_node_name_{{ node }}:
   cmd.run:
     - name: echo "Node {{ node }}"
     - tgt: {{ node }}
-    
+
 {% endfor %}
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params:
