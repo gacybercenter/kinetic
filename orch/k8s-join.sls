@@ -14,11 +14,11 @@
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
 {% set is_control_plane = node_pillar.get('k8s_control_plane', False) == True %}
 # Retrieve the join parameters from the bootstrapped node
-{% set token_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm token list | grep -v TOKEN | awk \'{print $1}\' | head -1']) %}
+{% set join_params_result = salt.saltutil.cmd(tgt=first_control_node, fun='kubeadm.join_params') %}
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "join params {{ token_result }}"
+    - name: echo "join params {{ join_params_result }}"
     - tgt: '*'
     - output_loglevel: debug
 
