@@ -29,7 +29,7 @@ k8s_deps_{{ node }}:
 #Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "results {{ is_control_plane }}"
+    - name: echo "results {{ cert_upload_result }}"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
