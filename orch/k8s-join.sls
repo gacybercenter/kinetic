@@ -70,6 +70,7 @@ generate_kube_vip_manifest_{{ node }}:
       - salt: pull_kube_vip_image_{{ node }}
 {% endif %}
 # Step 5: Join the node to the cluster
+{%- if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
 join_{{ node }}_to_cluster:
   salt.function:
     - name: cmd.run
@@ -78,18 +79,14 @@ join_{{ node }}_to_cluster:
           kubeadm join {{ vip }}:6443 \
             --token {{ join_token }} \
             --cri-socket unix:///var/run/crio/crio.sock \
-{%- if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
             --control-plane \
             --certificate-key {{ cert_key }} \
-{%- endif %}
             --discovery-token-ca-cert-hash {{ ca_cert_hash }}
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
     - tgt: {{ node }}
     - require:
       - salt: k8s_deps_{{ node }}
-{% if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
       - salt: generate_kube_vip_manifest_{{ node }}
 {% endif %}
-
 {% endfor %}
