@@ -31,7 +31,7 @@
   {% endif %}
 {% endfor %}
 {% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.token_create') %}
-
+{% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
@@ -42,7 +42,7 @@ k8s_deps_{{ node }}:
 #Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "results {{ join_params_result }}"
+    - name: echo "results {{ cert_upload_result }}"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
