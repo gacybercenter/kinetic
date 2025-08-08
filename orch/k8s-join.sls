@@ -73,7 +73,7 @@ generate_kube_vip_manifest_{{ node }}:
 join_{{ node }}_to_cluster:
   salt.function:
     - name: cmd.run
-    - kwargs:
+    - kwarg:
         cmd: |
           kubeadm {{ vip }}:6443 \
           --cri-socket unix:///var/run/crio/crio.sock \
