@@ -30,8 +30,12 @@
     {% endfor %}
   {% endif %}
 {% endfor %}
-{% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.token_create') %}
+{% set join_token_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.token_create') %}
+{% set join_token = join_token_result.get(bootstrap_node, {}).get('ret', {}) %}
+{% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.join_params') %}
 {% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
+{% set ca_cert_hash = join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', [''])[0] if join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', []) else '' %}
+
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
@@ -42,7 +46,7 @@ k8s_deps_{{ node }}:
 #Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "results api {{ vip  }} token {{ join_params_data }} token_hash {{ ca_cert_hash }} cert_key {{ cert_key }}"
+    - name: echo "results api {{ vip  }} token {{ join_token }} token_hash {{ ca_cert_hash }} cert_key {{ cert_key }}"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
