@@ -79,8 +79,6 @@ join_{{ node }}_to_cluster:
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf  # Only join if not already joined
     - tgt: '{{ node }}'  # Target specific node
-    - require:
-      - salt: reset_{{ node }}_if_needed
       {% if is_control_plane == True %}
       - salt: generate_kube_vip_manifest_{{ node }}
       {% endif %}
