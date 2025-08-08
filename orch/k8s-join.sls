@@ -37,13 +37,15 @@
 # Parse the certificate key from the upload-certs output
 {% set cert_key = '' %}
 {% for line in cert_output.split('\n') %}
-  {% if line.startswith('Using certificate key:') %}
-    {% set cert_key = line.split('Using certificate key:')[1].strip() %}
+  {% if '[upload-certs] Using certificate key:' in line %}
+    {% set cert_key = line.split('[upload-certs] Using certificate key:')[1].strip().strip('"') %}
+  {% elif line.startswith('Using certificate key:') %}
+    {% set cert_key = line.split('Using certificate key:')[1].strip().strip('"') %}
   {% elif 'certificate key' in line.lower() and cert_key == '' %}
     {% set parts = line.split() %}
     {% for i in range(parts|length) %}
       {% if parts[i].lower() == 'key' and i > 0 %}
-        {% set cert_key = parts[i-1] %}
+        {% set cert_key = parts[i-1].strip('"') %}
       {% endif %}
     {% endfor %}
   {% endif %}
