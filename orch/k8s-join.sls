@@ -42,7 +42,7 @@ k8s_deps_{{ node }}:
 #Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "results api {{ vip  }} token {{ join_token }} token_hash {{ ca_cert_hash }} cert_key {{ cert_key }}"
+    - name: echo "results api {{ vip  }} token {{ join_params_data }} token_hash {{ ca_cert_hash }} cert_key {{ cert_key }}"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
