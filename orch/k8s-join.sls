@@ -80,12 +80,6 @@ debug_raw_join_command_{{ node }}:
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
-# Step 1: Ensure Kubernetes dependencies are installed on the node
-k8s_deps_{{ node }}:
-  salt.state:
-    - tgt: '{{ node }}' 
-    - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
-
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
