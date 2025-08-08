@@ -27,7 +27,7 @@
 
 # # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
-{% set is_control_plane = node_pillar.get('k8s_control_plane', False) == True %}
+{% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) == True %}
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
   salt.state:
