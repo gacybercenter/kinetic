@@ -75,7 +75,7 @@ join_{{ node }}_to_cluster:
     - name: cmd.run
     - kwarg:
         cmd: |
-          kubeadm {{ vip }}:6443 \
+          kubeadm join {{ vip }}:6443 \
           --cri-socket unix:///var/run/crio/crio.sock \
 {% if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
           --control-plane \
