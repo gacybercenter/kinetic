@@ -80,11 +80,6 @@ debug_raw_join_command_{{ node }}:
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
-debug_raw_cert_output_{{ node }}:
-  cmd.run:
-    - name: echo "Raw Cert Upload Output {{ cert_output }}"
-    - tgt: '{{ node }}'
-    - output_loglevel: debug
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
   salt.state:
