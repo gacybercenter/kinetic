@@ -30,13 +30,7 @@
     {% endfor %}
   {% endif %}
 {% endfor %}
-# Fallback if token or hash is empty: try to get existing token and hash manually
-{% if join_token == '' or ca_cert_hash == '' %}
-  {% set token_list_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm token list | grep -v TOKEN | awk \'{print $1}\' | head -1']) %}
-  {% set join_token = token_list_result.get(bootstrap_node, {}).get('ret', '').strip() if join_token == '' else join_token %}
-  {% set ca_hash_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed \'s/^.* //\' | awk \'{print "sha256:"$1}\'']) %}
-  {% set ca_cert_hash = ca_hash_result.get(bootstrap_node, {}).get('ret', '').strip() if ca_cert_hash == '' else ca_cert_hash %}
-{% endif %}
+
 # Retrieve the certificate key for control plane nodes
 {% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm init phase upload-certs --upload-certs']) %}
 {% set cert_output = cert_upload_result.get(bootstrap_node, {}).get('ret', '') %}
