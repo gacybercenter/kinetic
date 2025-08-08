@@ -84,9 +84,7 @@ join_{{ node }}_to_cluster:
         cri_socket: unix:///var/run/crio/crio.sock
         token: "{{ join_token }}"  # Use the retrieved join token
         discovery_token_ca_cert_hash: "{{ ca_cert_hash }}"  # Use the retrieved CA cert hash
-        {% if is_control_plane == True %}
-        control_plane: True  # Join as control plane node based on pillar data
-        {% endif %}
+        control_plane: {{ is_control_plane }}  # Join as control plane node based on pillar data
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf  # Only join if not already joined
     - tgt: '{{ node }}'  # Target specific node
