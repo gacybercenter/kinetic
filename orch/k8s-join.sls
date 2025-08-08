@@ -100,6 +100,11 @@ debug_raw_join_command_{{ node }}:
     - name: echo "Raw Join Command Output {{ join_command_output }}"
     - tgt: '{{ node }}'
     - output_loglevel: debug
+debug_raw_cert_output_{{ node }}:
+  cmd.run:
+    - name: echo "Raw Cert Upload Output {{ cert_output }}"
+    - tgt: '{{ node }}'
+    - output_loglevel: debug
 
 # Conditional Steps for Control Plane Nodes: Install kube-vip if the node is a control plane node
 {% if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
