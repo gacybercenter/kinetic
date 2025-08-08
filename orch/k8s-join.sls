@@ -30,6 +30,13 @@
     {% endfor %}
   {% endif %}
 {% endfor %}
+# Fallback if token or hash is empty: try to get existing token and hash manually
+{% if join_token == '' or ca_cert_hash == '' %}
+  {% set token_list_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm token list | grep -v TOKEN | awk \'{print $1}\' | head -1']) %}
+  {% set join_token = token_list_result.get(bootstrap_node, {}).get('ret', '').strip() if join_token == '' else join_token %}
+  {% set ca_hash_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed \'s/^.* //\' | awk \'{print "sha256:"$1}\'']) %}
+  {% set ca_cert_hash = ca_hash_result.get(bootstrap_node, {}).get('ret', '').strip() if ca_cert_hash == '' else ca_cert_hash %}
+{% endif %}
 # Retrieve the certificate key for control plane nodes
 {% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm init phase upload-certs --upload-certs']) %}
 # Parse the certificate key from the upload-certs output
@@ -47,6 +54,37 @@
     {% endfor %}
   {% endif %}
 {% endfor %}
+# Fallback if certificate key is empty: try to generate a new key
+{% if cert_key == '' and is_control_plane == True %}
+  {% set cert_key_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
+  {% set cert_key = cert_key_result.get(bootstrap_node, {}).get('ret', '').strip() %}
+{% endif %}
+
+# Step 1: Ensure Kubernetes dependencies are installed on the node
+k8s_deps_{{ node }}:
+  salt.state:
+    - tgt: '{{ node }}' 
+    - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
+
+# Debug the retrieved join parameters (optional, for troubleshooting)
+debug_join_params_{{ node }}:
+  cmd.run:
+    - name: echo "Join Token {{ join_token }}, Cert Key {{ cert_key }}, CA Cert Hash {{ ca_cert_hash }}, Bootstrapped Node {{ bootstrap_node }}"
+    - tgt: '{{ node }}'
+    - output_loglevel: debug
+
+# Debug raw outputs to see what the commands returned (optional, for troubleshooting)
+debug_raw_join_command_{{ node }}:
+  cmd.run:
+    - name: echo "Raw Join Command Output {{ join_command_output }}"
+    - tgt: '{{ node }}'
+    - output_loglevel: debug
+
+debug_raw_cert_output_{{ node }}:
+  cmd.run:
+    - name: echo "Raw Cert Upload Output {{ cert_output }}"
+    - tgt: '{{ node }}'
+    - output_loglevel: debug
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
   salt.state:
