@@ -13,8 +13,11 @@
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
 {% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) %}
 # Retrieve the join parameters from the bootstrapped node using kubeadm token create --print-join-command
-{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command"]) %}
+{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command |awk '{print $7}'"]) %}
 {% set join_command_output = join_command_result.get(bootstrap_node, {}).get('ret', '') %}
+{% set join_token = join_command_output.split()[0] %}
+{% set ca_cert_hash = join_command_output.split()[1] %}
+
 
 # Retrieve the certificate key for control plane nodes
 {% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
