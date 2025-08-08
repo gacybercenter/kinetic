@@ -32,7 +32,7 @@ k8s_deps_{{ node }}:
 #Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "results {{ is_control_plane }}"
+    - name: echo "results {{ node_pillar['bmh'][node]['k8s_control_plane'] }}"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
