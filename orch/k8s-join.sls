@@ -30,7 +30,7 @@
     {% endfor %}
   {% endif %}
 {% endfor %}
-{% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.join_params', arg=['create_if_needed=True']) %}
+{% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.token_create') %}
 {% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
 {% set join_token = join_params_data.get('token', '') %}
 {% set ca_cert_hash = join_params_data.get('discovery-token-ca-cert-hash', '') %}
@@ -44,7 +44,7 @@ k8s_deps_{{ node }}:
 #Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "results {{ cert_key }}"
+    - name: echo "results {{ join_params_result }}"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
