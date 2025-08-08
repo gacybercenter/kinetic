@@ -36,9 +36,14 @@
 {% set cert_output = cert_upload_result.get(bootstrap_node, {}).get('ret', '') %}
 # Parse the certificate key from the upload-certs output
 {% set cert_key = '' %}
+{% set found_key_line = False %}
 {% for line in cert_output.split('\n') %}
+  {% if found_key_line %}
+    {% set cert_key = line.strip().strip('"') %}
+    {% set found_key_line = False %}
+  {% endif %}
   {% if '[upload-certs] Using certificate key:' in line %}
-    {% set cert_key = line.split('[upload-certs] Using certificate key:')[1].strip().strip('"') %}
+    {% set found_key_line = True %}
   {% elif line.startswith('Using certificate key:') %}
     {% set cert_key = line.split('Using certificate key:')[1].strip().strip('"') %}
   {% elif 'certificate key' in line.lower() and cert_key == '' %}
