@@ -18,12 +18,7 @@
 {% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
 {% set join_token = join_params_data.get('token', '') %}
 {% set ca_cert_hash = join_params_data.get('discovery-token-ca-cert-hash', '') %}
-#Debug the retrieved join parameters (optional, for troubleshooting)
-# debug_join_params_{{ node }}:
-#   cmd.run:
-#     - name: echo "results {{ join_params_result }} join token {{ join_token }} cert_key_hash {{ ca_cert_hash }}"
-#     - tgt: '*'
-#     - output_loglevel: debug
+
 
 # # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
@@ -34,8 +29,15 @@ k8s_deps_{{ node }}:
     - tgt: '{{ node }}' 
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
+#Debug the retrieved join parameters (optional, for troubleshooting)
+debug_join_params_{{ node }}:
+  cmd.run:
+    - name: echo "results {{ is_control_plane }}"
+    - tgt: '{{ node }}'
+    - output_loglevel: debug
+
 # Conditional Steps for Control Plane Nodes: Install kube-vip if the node is a control plane node
-{% if is_control_plane %}
+{% if is_control_plane == True %}
 # Step 2: Pull kube-vip container image using containerd
 pull_kube_vip_image_{{ node }}:
   salt.function:
