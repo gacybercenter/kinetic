@@ -72,7 +72,7 @@ generate_kube_vip_manifest_{{ node }}:
 # Step 5: Join the node to the cluster
 join_{{ node }}_to_cluster:
   salt.function:
-    - name: cmd.run:
+    - name: cmd.run
     - kwargs:
       cmd: |
         kubeadm {{ vip }}:6443 \
