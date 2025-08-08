@@ -31,9 +31,7 @@
   {% endif %}
 {% endfor %}
 {% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.token_create') %}
-{% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
-{% set join_token = join_params_data.get('token', '') %}
-{% set ca_cert_hash = join_params_data.get('discovery-token-ca-cert-hash', '') %}
+
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
