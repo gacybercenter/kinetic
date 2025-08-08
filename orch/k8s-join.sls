@@ -32,29 +32,11 @@
 {% endfor %}
 
 # Retrieve the certificate key for control plane nodes
-{% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm init phase upload-certs --upload-certs']) %}
-{% set cert_output = cert_upload_result.get(bootstrap_node, {}).get('ret', '') %}
+{% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
+{% set cert_key = cert_upload_result.get(bootstrap_node, {}).get('ret', '') %}
+
 # Parse the certificate key from the upload-certs output
-{% set cert_key = '' %}
-{% set found_key_line = False %}
-{% for line in cert_output.split('\n') %}
-  {% if found_key_line %}
-    {% set cert_key = line.strip().strip('"') %}
-    {% set found_key_line = False %}
-  {% endif %}
-  {% if '[upload-certs] Using certificate key:' in line %}
-    {% set found_key_line = True %}
-  {% elif line.startswith('Using certificate key:') %}
-    {% set cert_key = line.split('Using certificate key:')[1].strip().strip('"') %}
-  {% elif 'certificate key' in line.lower() and cert_key == '' %}
-    {% set parts = line.split() %}
-    {% for i in range(parts|length) %}
-      {% if parts[i].lower() == 'key' and i > 0 %}
-        {% set cert_key = parts[i-1].strip('"') %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-{% endfor %}
+
 # Fallback if certificate key is empty: try to generate a new key with sudo (in case of permission issues)
 {% if cert_key == '' and is_control_plane == True %}
   {% set cert_key_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
