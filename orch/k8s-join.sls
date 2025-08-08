@@ -7,13 +7,30 @@
 {% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
-
 # # Step 9: Join additional nodes (excluding the node that was bootstrapped)
 {% for node in k8s_nodes if not node == bootstrap_node %}
 # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
 {% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) %}
-# Retrieve the join parameters from the bootstrapped node
+# Retrieve the join parameters from the bootstrapped node using kubeadm token create --print-join-command
+{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm token create --print-join-command']) %}
+{% set join_command_output = join_command_result.get(bootstrap_node, {}).get('ret', '') %}
+# Parse the join command output to extract token and CA cert hash
+{% set join_token = '' %}
+{% set ca_cert_hash = '' %}
+{% for line in join_command_output.split('\n') %}
+  {% if line.startswith('kubeadm join') %}
+    {% set parts = line.split() %}
+    {% for i in range(parts|length) %}
+      {% if parts[i] == '--token' and i+1 < parts|length %}
+        {% set join_token = parts[i+1] %}
+      {% elif parts[i] == '--discovery-token-ca-cert-hash' and i+1 < parts|length %}
+        {% set ca_cert_hash = parts[i+1] %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endfor %}
+# Retrieve the certificate key for control plane nodes
 {% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm init phase upload-certs --upload-certs']) %}
 # Parse the certificate key from the upload-certs output
 {% set cert_output = cert_upload_result.get(bootstrap_node, {}).get('ret', '') %}
@@ -30,13 +47,6 @@
     {% endfor %}
   {% endif %}
 {% endfor %}
-{% set join_token_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.token_create') %}
-{% set join_token = join_token_result.get(bootstrap_node, {}).get('ret', {}) %}
-{% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.join_params') %}
-{% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
-{% set ca_cert_hash = join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', [''])[0] if join_params_data.get('discovery', {}).get('bootstrapToken', {}).get('caCertHashes', []) else '' %}
-
-
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
   salt.state:
