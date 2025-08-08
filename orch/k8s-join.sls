@@ -87,15 +87,20 @@ join_{{ node }}_to_cluster:
   salt.function:
     - name: kubeadm.join
     - kwarg:
-        api_server_endpoint: "{{ vip }}:6443"  # Use VIP as the endpointfs
+        api_server_endpoint: "{{ vip }}:6443"  # Use VIP as the endpoint
         cri_socket: unix:///var/run/crio/crio.sock
         token: "{{ join_token }}"  # Use the retrieved join token
         discovery_token_ca_cert_hash: "{{ ca_cert_hash }}"  # Use the retrieved CA cert hash
         control_plane: {{ node_pillar['bmh'][node]['k8s_control_plane'] }}  # Join as control plane node based on pillar data
+        {% if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
+        certificate_key: "{{ cert_key }}"  # Use the retrieved certificate key for control plane nodes
+        {% endif %}
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf  # Only join if not already joined
     - tgt: '{{ node }}'  # Target specific node
-      {% if is_control_plane == True %}
+    - require:
+      - salt: k8s_deps_{{ node }}
+      {% if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
       - salt: generate_kube_vip_manifest_{{ node }}
       {% endif %}
 {% endfor %}
