@@ -78,7 +78,7 @@ join_{{ node }}_to_cluster:
           kubeadm {{ vip }}:6443 \
           --cri-socket unix:///var/run/crio/crio.sock \
 {% if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
-          -- control-plane \
+          --control-plane \
           --certificate-key {{ cert_key }} \
 {% endif %}
           --discovery-token-ca-cert-hash {{ ca_cert_hash }} 
