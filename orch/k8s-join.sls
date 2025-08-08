@@ -74,14 +74,14 @@ join_{{ node }}_to_cluster:
   salt.function:
     - name: cmd.run
     - kwargs:
-      cmd: |
-        kubeadm {{ vip }}:6443 \
-        --cri-socket unix:///var/run/crio/crio.sock \
+        cmd: |
+          kubeadm {{ vip }}:6443 \
+          --cri-socket unix:///var/run/crio/crio.sock \
 {% if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
-        -- control-plane \
-        --certificate-key {{ cert_key }} \
+          -- control-plane \
+          --certificate-key {{ cert_key }} \
 {% endif %}
-        --discovery-token-ca-cert-hash {{ ca_cert_hash }} 
+          --discovery-token-ca-cert-hash {{ ca_cert_hash }} 
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
     - tgt: {{ node }}
