@@ -13,56 +13,12 @@
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
 {% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) %}
 # Retrieve the join parameters from the bootstrapped node using kubeadm token create --print-join-command
-{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm token create --print-join-command']) %}
+{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm token create --print-join-command |awk '{print $7}']) %}
 {% set join_command_output = join_command_result.get(bootstrap_node, {}).get('ret', '') %}
-# Parse the join command output to extract token and CA cert hash
-{% set join_token = '' %}
-{% set ca_cert_hash = '' %}
-{% for line in join_command_output.split('\n') %}
-  {% if line.startswith('kubeadm join') %}
-    {% set parts = line.split() %}
-    {% for i in range(parts|length) %}
-      {% if parts[i] == '--token' and i+1 < parts|length %}
-        {% set join_token = parts[i+1] %}
-      {% elif parts[i] == '--discovery-token-ca-cert-hash' and i+1 < parts|length %}
-        {% set ca_cert_hash = parts[i+1] %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-{% endfor %}
 
 # Retrieve the certificate key for control plane nodes
 {% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
 {% set cert_key = cert_upload_result.get(bootstrap_node, {}).get('ret', '') %}
-
-# Parse the certificate key from the upload-certs output
-
-# Fallback if certificate key is empty: try to generate a new key with sudo (in case of permission issues)
-{% if cert_key == '' and is_control_plane == True %}
-  {% set cert_key_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
-  {% set cert_key = cert_key_result.get(bootstrap_node, {}).get('ret', '').strip() %}
-  {% if cert_key == '' %}
-    {% set cert_key_sudo_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['sudo kubeadm certs certificate-key']) %}
-    {% set cert_key = cert_key_sudo_result.get(bootstrap_node, {}).get('ret', '').strip() %}
-  {% endif %}
-{% endif %}
-# Final fallback: if cert_key is still empty, try upload-certs with sudo
-{% if cert_key == '' and is_control_plane == True %}
-  {% set cert_upload_sudo_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['sudo kubeadm init phase upload-certs --upload-certs']) %}
-  {% set cert_sudo_output = cert_upload_sudo_result.get(bootstrap_node, {}).get('ret', '') %}
-  {% for line in cert_sudo_output.split('\n') %}
-    {% if line.startswith('Using certificate key:') %}
-      {% set cert_key = line.split('Using certificate key:')[1].strip() %}
-    {% elif 'certificate key' in line.lower() and cert_key == '' %}
-      {% set parts = line.split() %}
-      {% for i in range(parts|length) %}
-        {% if parts[i].lower() == 'key' and i > 0 %}
-          {% set cert_key = parts[i-1] %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-  {% endfor %}
-{% endif %}
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
