@@ -15,6 +15,21 @@
 {% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) %}
 # Retrieve the join parameters from the bootstrapped node
 {% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm init phase upload-certs --upload-certs']) %}
+# Parse the certificate key from the upload-certs output
+{% set cert_output = cert_upload_result.get(bootstrap_node, {}).get('ret', '') %}
+{% set cert_key = '' %}
+{% for line in cert_output.split('\n') %}
+  {% if line.startswith('Using certificate key:') %}
+    {% set cert_key = line.split('Using certificate key:')[1].strip() %}
+  {% elif 'certificate key' in line.lower() and cert_key == '' %}
+    {% set parts = line.split() %}
+    {% for i in range(parts|length) %}
+      {% if parts[i].lower() == 'key' and i > 0 %}
+        {% set cert_key = parts[i-1] %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endfor %}
 {% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.join_params', arg=['create_if_needed=True']) %}
 {% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
 {% set join_token = join_params_data.get('token', '') %}
