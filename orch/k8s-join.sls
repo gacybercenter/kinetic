@@ -39,8 +39,8 @@
 {% endif %}
 # Retrieve the certificate key for control plane nodes
 {% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm init phase upload-certs --upload-certs']) %}
-# Parse the certificate key from the upload-certs output
 {% set cert_output = cert_upload_result.get(bootstrap_node, {}).get('ret', '') %}
+# Parse the certificate key from the upload-certs output
 {% set cert_key = '' %}
 {% for line in cert_output.split('\n') %}
   {% if line.startswith('Using certificate key:') %}
@@ -54,10 +54,31 @@
     {% endfor %}
   {% endif %}
 {% endfor %}
-# Fallback if certificate key is empty: try to generate a new key
+# Fallback if certificate key is empty: try to generate a new key with sudo (in case of permission issues)
 {% if cert_key == '' and is_control_plane == True %}
   {% set cert_key_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
   {% set cert_key = cert_key_result.get(bootstrap_node, {}).get('ret', '').strip() %}
+  {% if cert_key == '' %}
+    {% set cert_key_sudo_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['sudo kubeadm certs certificate-key']) %}
+    {% set cert_key = cert_key_sudo_result.get(bootstrap_node, {}).get('ret', '').strip() %}
+  {% endif %}
+{% endif %}
+# Final fallback: if cert_key is still empty, try upload-certs with sudo
+{% if cert_key == '' and is_control_plane == True %}
+  {% set cert_upload_sudo_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['sudo kubeadm init phase upload-certs --upload-certs']) %}
+  {% set cert_sudo_output = cert_upload_sudo_result.get(bootstrap_node, {}).get('ret', '') %}
+  {% for line in cert_sudo_output.split('\n') %}
+    {% if line.startswith('Using certificate key:') %}
+      {% set cert_key = line.split('Using certificate key:')[1].strip() %}
+    {% elif 'certificate key' in line.lower() and cert_key == '' %}
+      {% set parts = line.split() %}
+      {% for i in range(parts|length) %}
+        {% if parts[i].lower() == 'key' and i > 0 %}
+          {% set cert_key = parts[i-1] %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
 {% endif %}
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
