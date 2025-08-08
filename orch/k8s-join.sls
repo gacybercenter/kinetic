@@ -76,12 +76,13 @@ join_{{ node }}_to_cluster:
     - kwarg:
         cmd: |
           kubeadm join {{ vip }}:6443 \
-          --cri-socket unix:///var/run/crio/crio.sock \
-{% if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
-          --control-plane \
-          --certificate-key {{ cert_key }} \
-{% endif %}
-          --discovery-token-ca-cert-hash {{ ca_cert_hash }} 
+            --token {{ join_token }} \
+            --cri-socket unix:///var/run/crio/crio.sock \
+{%- if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
+            --control-plane \
+            --certificate-key {{ cert_key }} \
+{%- endif %}
+            --discovery-token-ca-cert-hash {{ ca_cert_hash }}
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
     - tgt: {{ node }}
