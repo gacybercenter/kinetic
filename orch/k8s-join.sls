@@ -53,10 +53,10 @@ k8s_deps_{{ node }}:
     - tgt: '{{ node }}' 
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
-#Debug the retrieved join parameters (optional, for troubleshooting)
+# Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "results api {{ vip  }} token {{ join_token }} token_hash {{ ca_cert_hash }} cert_key {{ cert_key }}"
+    - name: echo "Join Token {{ join_token }}, Cert Key {{ cert_key }}, CA Cert Hash {{ ca_cert_hash }}, Bootstrapped Node {{ bootstrap_node }}"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
