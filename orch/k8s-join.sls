@@ -80,13 +80,6 @@ debug_raw_join_command_{{ node }}:
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
-# Debug the retrieved join parameters (optional, for troubleshooting)
-debug_join_params_{{ node }}:
-  cmd.run:
-    - name: echo "Join Token {{ join_token }}, Cert Key {{ cert_key }}, CA Cert Hash {{ ca_cert_hash }}, Bootstrapped Node {{ bootstrap_node }}"
-    - tgt: '{{ node }}'
-    - output_loglevel: debug
-
 # Conditional Steps for Control Plane Nodes: Install kube-vip if the node is a control plane node
 {% if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
 # Step 2: Pull kube-vip container image using containerd
