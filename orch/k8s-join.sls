@@ -65,13 +65,6 @@ generate_kube_vip_manifest_{{ node }}:
     - require:
       - salt: pull_kube_vip_image_{{ node }}
 {% endif %}
-# Step 4: Reset if needed
-reset_{{ node }}_if_needed:
-  salt.function:
-    - name: kubeadm.reset
-    - onlyif:
-      - test -f /etc/kubernetes/admin.conf  # Reset if already joined
-    - tgt: '{{ node }}'  # Target specific node for reset
 
 # Step 5: Join the node to the cluster
 join_{{ node }}_to_cluster:
