@@ -14,6 +14,7 @@
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
 {% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) %}
 # Retrieve the join parameters from the bootstrapped node
+{% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm', 'init', 'phase', 'upload-certs', '--upload-certs']) %}
 {% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.join_params', arg=['create_if_needed=True']) %}
 {% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
 {% set join_token = join_params_data.get('token', '') %}
