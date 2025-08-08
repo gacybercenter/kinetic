@@ -12,17 +12,13 @@
 {% for node in k8s_nodes if not node == bootstrap_node %}
 # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
-{% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) == True %}
+{% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) %}
 # Retrieve the join parameters from the bootstrapped node
 {% set join_params_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='kubeadm.join_params') %}
 {% set join_params_data = join_params_result.get(bootstrap_node, {}).get('ret', {}) %}
 {% set join_token = join_params_data.get('token', '') %}
 {% set ca_cert_hash = join_params_data.get('discovery-token-ca-cert-hash', '') %}
 
-
-# # Fetch pillar data for the current node to check if it should join as a control plane node
-{% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
-{% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) == True %}
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
   salt.state:
