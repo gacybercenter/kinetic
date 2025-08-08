@@ -21,7 +21,7 @@
 
 # Retrieve the certificate key for control plane nodes
 {% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
-{% set cert_key = cert_upload_result.get(bootstrap_node, {}).get('ret', '') %}
+{% set cert_key = cert_key_result.get(bootstrap_node, {}).get('ret', '').strip() %}
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
