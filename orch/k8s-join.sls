@@ -78,10 +78,9 @@ join_{{ node }}_to_cluster:
     - kwarg:
         cmd: |
           kubeadm join {{ vip }}:6443 \
-            --token {{ join_token }} \
+            --discovery-token {{ join_token }} \
             --cri-socket unix:///var/run/crio/crio.sock \
             --control-plane \
-            --certificate-key {{ cert_key }} \
             --discovery-token-ca-cert-hash {{ ca_cert_hash }}
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
