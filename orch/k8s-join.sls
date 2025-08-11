@@ -75,7 +75,7 @@ join_{{ node }}_to_cluster:
           {{ join_command_output }} --cri-socket unix:///var/run/crio/crio.sock --control-plane
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
-    - tgt: {{ node }}
+    - tgt: '{{ node }}'
     - require:
       - salt: k8s_deps_{{ node }}
       - salt: generate_kube_vip_manifest_{{ node }}
