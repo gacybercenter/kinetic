@@ -16,7 +16,7 @@
 {% set certkey = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm certs certificate-key"]) %}
 {% set certkey = certkey.get(bootstrap_node, {}).get('ret', '') %}
 {% set upload_certs = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm init phase upload-certs --upload-certs --certificate-key "+certkey]) %}
-{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command --certificate-key "+certkeys]) %}
+{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command --certificate-key "+certkey]) %}
 {% set join_command_output = join_command_result.get(bootstrap_node, {}).get('ret', '') %}
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
