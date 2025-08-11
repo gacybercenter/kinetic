@@ -74,12 +74,7 @@ join_{{ node }}_to_cluster:
     - name: cmd.run
     - kwarg:
         cmd: |
-          kubeadm join {{ vip }}:6443 \
-            --discovery-token {{ join_token }} \
-            --cri-socket unix:///var/run/crio/crio.sock \
-            --control-plane \
-            --certificate-key {{ certkey }} \
-            --discovery-token-ca-cert-hash {{ ca_cert_hash }}
+          kubeadm join {{ vip }}:6443 --discovery-token {{ join_token }} --cri-socket unix:///var/run/crio/crio.sock --control-plane --certificate-key {{ certkey }} --discovery-token-ca-cert-hash {{ ca_cert_hash }}
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
     - tgt: {{ node }}
