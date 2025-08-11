@@ -13,7 +13,8 @@
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
 {% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) %}
 # Retrieve the join parameters from the bootstrapped node using kubeadm token create --print-join-command
-{% set upload_certs = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm init phase upload-certs --upload-certs"]) %}
+{% set certkey = salt.saltutil.cmd(tgt-bootstrap_node, fun='cmd.run', arg=["kubeadm certs certificate-key"])%}
+{% set upload_certs = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm init phase upload-certs --upload-certs --certificate-key $certkey"]) %}
 {% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command |awk '{print $5,$7}'"]) %}
 {% set join_command_output = join_command_result.get(bootstrap_node, {}).get('ret', '') %}
 {% set join_token = join_command_output.split()[0] %}
@@ -21,8 +22,8 @@
 
 
 # Retrieve the certificate key for control plane nodes
-{% set cert_upload_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=['kubeadm certs certificate-key']) %}
-{% set cert_key = cert_upload_result.get(bootstrap_node, {}).get('ret', '').strip() %}
+{% set upload_certs = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm init phase upload-certs --upload-certs"]) %}
+{% upload_cert = %}
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
@@ -81,6 +82,7 @@ join_{{ node }}_to_cluster:
             --discovery-token {{ join_token }} \
             --cri-socket unix:///var/run/crio/crio.sock \
             --control-plane \
+            --certificate-key $certkey \
             --discovery-token-ca-cert-hash {{ ca_cert_hash }}
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
