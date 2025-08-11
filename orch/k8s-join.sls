@@ -72,7 +72,7 @@ join_{{ node }}_to_cluster:
     - name: cmd.run
     - kwarg:
         cmd: |
-          {{ join_command_output }} --cri-socket unix:///var/run/crio/crio.sock --control-plane
+          {{ join_command_output }} --cri-socket unix:///var/run/crio/crio.sock
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
     - tgt: '{{ node }}'
