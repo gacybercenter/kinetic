@@ -78,7 +78,7 @@ join_{{ node }}_to_cluster:
             --discovery-token {{ join_token }} \
             --cri-socket unix:///var/run/crio/crio.sock \
             --control-plane \
-            --certificate-key $certkey \
+            --certificate-key {{ certkey }} \
             --discovery-token-ca-cert-hash {{ ca_cert_hash }}
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
