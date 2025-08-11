@@ -28,7 +28,7 @@ k8s_deps_{{ node }}:
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "kubeadm join {{ vip }}:6443 --discovery-token {{ join_token }} --cri-socket unix:///var/run/crio/crio.sock --control-plane --certificate-key {{ certkey }} --discovery-token-ca-cert-hash {{ ca_cert_hash }}"
+    - name: echo "{{ join_command_output }}"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
