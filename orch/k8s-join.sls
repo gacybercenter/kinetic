@@ -20,11 +20,6 @@
 {% set join_token = join_command_output.split()[0] %}
 {% set ca_cert_hash = join_command_output.split()[1] %}
 
-
-# Retrieve the certificate key for control plane nodes
-{% set upload_certs = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm init phase upload-certs --upload-certs"]) %}
-{% upload_cert = %}
-
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
   salt.state:
