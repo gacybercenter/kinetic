@@ -16,10 +16,8 @@
 {% set certkey = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm certs certificate-key"]) %}
 {% set certkey = certkey.get(bootstrap_node, {}).get('ret', '') %}
 {% set upload_certs = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm init phase upload-certs --upload-certs --certificate-key $certkey"]) %}
-{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command |awk '{print $5,$7}'"]) %}
+{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command --certificate-key $certkey"]) %}
 {% set join_command_output = join_command_result.get(bootstrap_node, {}).get('ret', '') %}
-{% set join_token = join_command_output.split()[0] %}
-{% set ca_cert_hash = join_command_output.split()[1] %}
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
@@ -74,7 +72,7 @@ join_{{ node }}_to_cluster:
     - name: cmd.run
     - kwarg:
         cmd: |
-          kubeadm join {{ vip }}:6443 --token {{ join_token }} --cri-socket unix:///var/run/crio/crio.sock --control-plane --certificate-key {{ certkey }} --discovery-token-ca-cert-hash {{ ca_cert_hash }}
+          {{ join_command_output }} --cri-socket unix:///var/run/crio/crio.sock --control-plane
     - onlyif:
       - test ! -f /etc/kubernetes/admin.conf
     - tgt: {{ node }}
