@@ -28,7 +28,7 @@ k8s_deps_{{ node }}:
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "{{ join_command_output }}"
+    - name: echo "{{ join_command_output }} --cri-socket unix:///var/run/crio/crio.sock --control-plane"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
