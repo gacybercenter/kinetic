@@ -9,6 +9,7 @@ helm_calico_repo:
       - name: calico
         url: https://kubernetes.github.io/calico
         repo_update: true
+        namespace: tigera-operator
 
 helm_calico_release:
   helm.release_present:
