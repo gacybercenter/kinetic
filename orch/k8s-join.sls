@@ -90,7 +90,7 @@ join_{{ node }}_ctl_to_cluster:
       - salt: generate_kube_vip_manifest_{{ node }}
 {% else %}
 {% set join_command_worker_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command"]) %}
-{% set join_command_worker_output = join_command_result.get(bootstrap_node, {}).get('ret', '') %}
+{% set join_command_worker_output = join_command_worker_result.get(bootstrap_node, {}).get('ret', '') %}
 join_{{ node }}_worker_to_cluster:
   salt.function:
     - name: cmd.run
