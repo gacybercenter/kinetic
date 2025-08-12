@@ -66,7 +66,7 @@ generate_kube_vip_manifest_{{ node }}:
           ctr run --rm --net-host ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }} vip /kube-vip manifest pod \
             --interface {{ interface }} \
             --address {{ vip }} \
-            --k8sConfigPath /etc/kubernetes/super-admin.conf \
+            --k8sConfigPath /etc/kubernetes/admin.conf \
             --controlplane \
             --services \
             --arp \
