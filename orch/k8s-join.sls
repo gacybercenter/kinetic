@@ -11,7 +11,6 @@
 {% for node in k8s_nodes if not node == bootstrap_node %}
 # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
-{% set is_control_plane = node_pillar.get('bmh:node:k8s_control_plane', False) %}
 # Retrieve the join parameters from the bootstrapped node using kubeadm token create --print-join-command
 {% set certkey = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm certs certificate-key"]) %}
 {% set certkey = certkey.get(bootstrap_node, {}).get('ret', '') %}
@@ -67,17 +66,27 @@ generate_kube_vip_manifest_{{ node }}:
 {% endif %}
 # Step 5: Join the node to the cluster
 {%- if node_pillar['bmh'][node]['k8s_control_plane'] == True %}
-join_{{ node }}_to_cluster:
+join_{{ node }}_ctl_to_cluster:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: |
           {{ join_command_output }} --cri-socket unix:///var/run/crio/crio.sock
-    - onlyif:
-      - test ! -f /etc/kubernetes/admin.conf
     - tgt: '{{ node }}'
     - require:
       - salt: k8s_deps_{{ node }}
       - salt: generate_kube_vip_manifest_{{ node }}
+{% else %}
+{% set join_command_worker_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command"]) %}
+{% set join_command_worker_output = join_command_result.get(bootstrap_node, {}).get('ret', '') %}
+join_{{ node }}_worker_to_cluster:
+  salt.function:
+    - name: cmd.run
+    - kwarg:
+        cmd: |
+          {{ join_command_output }}
+    - tgt: '{{ node }}'
+    - require:
+      - salt: k8s_deps_{{ node }}
 {% endif %}
 {% endfor %}
