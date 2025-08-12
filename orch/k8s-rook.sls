@@ -9,28 +9,28 @@ create_rook_namespace:
     - tgt: '{{ k8s }}'
     - output_loglevel: info
 
-# Step 2: Label nodes with rook-rsc* as rook-node
-label_rook_nodes:
+# Step 2: Assign role label 'rook-node' to nodes with names matching rook-rsc*
+assign_rook_node_role:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: |
-          for node in $(kubectl get nodes -o name | grep 'rook-rsc'); do
-            kubectl label $node role=rook-node --overwrite
+          for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep 'rook-rsc'); do
+            kubectl label nodes "$node" role=rook-node --overwrite
           done
     - tgt: '{{ k8s }}'
     - output_loglevel: info
     - require:
       - salt: create_rook_namespace
 
-# Step 3: Label nodes with storage* as rook-osd-node
-label_storage_nodes:
+# Step 3: Assign role label 'rook-osd-node' to nodes with names containing storage*
+assign_storage_node_role:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: |
-          for node in $(kubectl get nodes -o name | grep 'storage'); do
-            kubectl label $node role=rook-osd-node --overwrite
+          for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep 'storage'); do
+            kubectl label nodes "$node" role=rook-osd-node --overwrite
           done
     - tgt: '{{ k8s }}'
     - output_loglevel: info
@@ -43,5 +43,5 @@ k8s_rook-op:
     - tgt: '{{ k8s }}' 
     - sls: /formulas/common/k8s-rook/configure
     - require:
-      - salt: label_rook_nodes
-      - salt: label_storage_nodes
+      - salt: assign_rook_node_role
+      - salt: assign_storage_node_role
