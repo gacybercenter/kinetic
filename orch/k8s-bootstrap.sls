@@ -3,26 +3,37 @@
 
 # Fetch pillar data for the 'bmo' minion
 {% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': 'bmo'}) %}
-# Get VIP and control nodes from pillar data with safer handling
+# Get VIP and nodes from pillar data with safer handling
 {% set res_k8s = pillardata['res-k8s'] %}
 {% set vip = res_k8s.get('vip', '') %}
-{% set control_nodes = res_k8s.get('control_nodes', ['master-rsc-0']) %}
-{% set first_control_node = control_nodes[0] if control_nodes else 'master-rsc-0' %}
+{% set k8s_nodes = res_k8s.get('k8s_nodes', ['master-rsc-0']) %}
 {% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
+
+# Find the first node with k8s_control_plane == true
+{% set first_control_node = '' %}
+{% for node in k8s_nodes %}
+  {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
+  {% if node_pillar.get('k8s_control_plane', False) == True and first_control_node == '' %}
+    {% set first_control_node = node %}
+  {% endif %}
+{% endfor %}
+# Fallback to the first node in the list if no control plane node is found
+{% if first_control_node == '' %}
+  {% set first_control_node = k8s_nodes[0] if k8s_nodes else 'master-rsc-0' %}
+{% endif %}
 
 # Debug pillar data to ensure it's available
 debug_pillar_data:
   cmd.run:
-    - name: echo "VIP {{ vip }}, Control Nodes {{ control_nodes }}, First Node {{ first_control_node }}, Interface {{ interface }}"
+    - name: echo "VIP {{ vip }}, K8s Nodes {{ k8s_nodes }}, First Control Node {{ first_control_node }}, Interface {{ interface }}"
     - tgt: '*'
     - output_loglevel: debug
 
-# Step 1: Ensure Kubernetes dependencies are installed on all control plane nodes
+# Step 1: Ensure Kubernetes dependencies are installed on the first control plane node
 k8s_deps:
   salt.state:
-    - tgt: '{{ control_nodes|join(",") }}'
-    - tgt_type: list
+    - tgt: '{{ first_control_node }}' 
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
 # Step 2: Pull kube-vip container image using containerd
@@ -32,8 +43,7 @@ pull_kube_vip_image:
     - kwarg:
         cmd: ctr image pull ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }}
         onlyif: test ! -f /etc/kubernetes/manifests/kube-vip.yaml  # Only run if manifest doesn't exist
-    - tgt: '{{ control_nodes|join(",") }}'
-    - tgt_type: list
+    - tgt: '{{ first_control_node }}' 
     - require:
       - salt: k8s_deps
 
@@ -53,21 +63,9 @@ generate_kube_vip_manifest:
             --arp \
             --leaderElection > /etc/kubernetes/manifests/kube-vip.yaml
         creates: /etc/kubernetes/manifests/kube-vip.yaml  # Only run if the manifest doesn't exist
-    - tgt: '{{ control_nodes|join(",") }}'
-    - tgt_type: list
+    - tgt: '{{ first_control_node }}' 
     - require:
       - salt: pull_kube_vip_image
-
-# Step 5: Wait for kube-vip to be active on one of the nodes (check VIP reachability)
-# Step 5: Wait for kube-vip to be active on one of the nodes (check VIP reachability)
-wait_for_vip:
-  salt.function:
-    - name: cmd.run
-    - kwarg:
-        cmd: timeout 60 bash -c "until curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null 2>&1; do echo 'Waiting for kube-vip to be active...'; sleep 5; done" && echo "VIP {{ vip }} is reachable" || echo "Timeout waiting for VIP"
-    - tgt: '{{ first_control_node }}'
-    - require:
-      - salt: generate_kube_vip_manifest
 
 # Step 6: Initialize Kubernetes cluster on the first control node with VIP as control-plane-endpoint
 init_kubernetes_cluster:
@@ -79,11 +77,28 @@ init_kubernetes_cluster:
         kubernetes_version: "v1.29.0"
         cri_socket: unix:///var/run/crio/crio.sock
         control_plane_endpoint: "{{ vip }}:6443"  # Use VIP for HA control plane
-    - onlyif:
-      - test ! -f /etc/kubernetes/admin.conf  # Only initialize if not already done
+    - unless:
+      - curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null
     - tgt: '{{ first_control_node }}'  # Target only the first control node for initialization
+
+# Step 6.1: Set a grain on the first control node to mark it as bootstrapped
+set_bootstrap_grain:
+  salt.function:
+    - name: grains.setval
+    - kwarg:
+        key: k8s_bootstrapped
+        val: true
+    - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - require:
-      - salt: wait_for_vip
+      - salt: init_kubernetes_cluster
+
+# Step 6.2: Sync grains to ensure the new grain is available
+sync_grains:
+  salt.function:
+    - name: saltutil.refresh_grains
+    - tgt: '{{ first_control_node }}'  # Run only on the initialized node
+    - require:
+      - salt: set_bootstrap_grain
 
 # Step 7: Upload certificates for control plane joining (run on first control node after init)
 upload_certs:
@@ -92,7 +107,7 @@ upload_certs:
     - onlyif:
       - test -f /etc/kubernetes/admin.conf  # Only run if cluster is initialized
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
-    - require:
+    - watch:
       - salt: init_kubernetes_cluster
 
 # Step 8: Create a token for joining nodes (run on first control node after init)
@@ -106,29 +121,3 @@ create_join_token:
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - require:
       - salt: init_kubernetes_cluster
-
-# Step 9: Join additional control plane nodes (if any exist beyond the first)
-{% for node in control_nodes[1:] if control_nodes|length > 1 %}
-reset_{{ node }}_if_needed:
-  salt.function:
-    - name: kubeadm.reset
-    - onlyif:
-      - test -f /etc/kubernetes/admin.conf  # Reset if already joined
-    - tgt: '{{ node }}'  # Target specific control node for reset
-    - require:
-      - salt: start_kubelet
-
-join_{{ node }}_to_cluster:
-  salt.function:
-    - name: kubeadm.join
-    - api_server_endpoint: "{{ vip }}:6443"  # Use VIP as the endpoint
-    - control_plane: True  # Join as control plane node
-    - onlyif:
-      - test ! -f /etc/kubernetes/admin.conf  # Only join if not already joined
-    - tgt: '{{ node }}'  # Target specific control node
-    - require:
-      - salt: init_kubernetes_cluster
-      - salt: upload_certs
-      - salt: create_join_token
-      - salt: reset_{{ node }}_if_needed
-{% endfor %}
