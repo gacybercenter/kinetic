@@ -13,7 +13,7 @@ helm_calico_repo:
 helm_calico_release:
   helm.release_present:
     - name: calico
-    - chart: projectcalico/tigera-operator
+    - chart: calico/tigera-operator
     - namespace: tigera-operator
     - kvflags:
         values: /tmp/calico.yaml
