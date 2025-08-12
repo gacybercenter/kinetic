@@ -44,7 +44,7 @@ debug_join_params_{{ node }}:
     - output_loglevel: debug
 
 # Conditional Steps for Control Plane Nodes: Install kube-vip if the node is a control plane node
-{% if node_pillar['bmh'][node]['k8s_control_plane'] %}
+{% if node_pillar['bmh'][node]['k8s_control_plane'] is defined %}
 # Step 2: Pull kube-vip container image using containerd
 pull_kube_vip_image_{{ node }}:
   salt.function:
@@ -75,9 +75,9 @@ generate_kube_vip_manifest_{{ node }}:
     - tgt: '{{ node }}' 
     - require:
       - salt: pull_kube_vip_image_{{ node }}
-{% endif %}
+
 # Step 5: Join the node to the cluster
-{%- if node_pillar['bmh'][node]['k8s_control_plane'] %}
+
 join_{{ node }}_ctl_to_cluster:
   salt.function:
     - name: cmd.run
