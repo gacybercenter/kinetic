@@ -7,7 +7,7 @@ helm_calico_repo:
   helm.repo_managed:
     - present:
       - name: calico
-        url: https://kubernetes.github.io/calico
+        url: https://docs.tigera.io/calico/charts 
         repo_update: true
         namespace: tigera-operator
 
