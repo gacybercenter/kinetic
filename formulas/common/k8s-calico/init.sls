@@ -1,7 +1,7 @@
 calico_values:
   file.managed:
     - name: /tmp/calico.yaml
-    - source: salt://formulas/k8s-calico/files/calico-values.j2
+    - source: salt://formulas/common/k8s-calico/files/calico-values.j2
     - template: jinja
 helm_calico_repo:
   helm.repo_managed:
