@@ -9,14 +9,14 @@ rook_values:
 helm_rook_repo:
   helm.repo_managed:
     - present:
-      - name: rook
+      - name: rook-release
         url: https://charts.rook.io/release
         repo_update: true
         namespace: rook-ceph
 
 helm_rook_release:
   helm.release_present:
-    - name: rook
+    - name: rook-ceph
     - chart: rook-release/rook-ceph
     - namespace: rook-ceph
     - kvflags:
