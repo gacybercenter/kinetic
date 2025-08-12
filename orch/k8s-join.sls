@@ -7,10 +7,22 @@
 {% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
-# # Step 9: Join additional nodes (excluding the node that was bootstrapped)
+# Step 9: Join additional nodes (excluding the node that was bootstrapped)
 {% for node in k8s_nodes if not node == bootstrap_node %}
 # Fetch pillar data for the current node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
+# Check if the node is already part of the Kubernetes cluster
+{% set node_status_check = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubectl get nodes --field-selector metadata.name="+node+" -o name"]) %}
+{% set node_status_output = node_status_check.get(bootstrap_node, {}).get('ret', '') %}
+# Skip the node if it is already in the cluster
+{% if node_status_output.strip() == "node/"+node %}
+# Node is already in the cluster, skip joining
+node_already_joined_{{ node }}:
+  cmd.run:
+    - name: echo "Node {{ node }} is already part of the cluster, skipping join process."
+    - tgt: '{{ bootstrap_node }}'
+    - output_loglevel: info
+{% else %}
 # Retrieve the join parameters from the bootstrapped node using kubeadm token create --print-join-command
 {% set certkey = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm certs certificate-key"]) %}
 {% set certkey = certkey.get(bootstrap_node, {}).get('ret', '') %}
@@ -88,5 +100,6 @@ join_{{ node }}_worker_to_cluster:
     - tgt: '{{ node }}'
     - require:
       - salt: k8s_deps_{{ node }}
+{% endif %}
 {% endif %}
 {% endfor %}
