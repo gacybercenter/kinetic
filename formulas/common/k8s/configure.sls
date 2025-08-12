@@ -27,10 +27,9 @@ crio-service:
     - enable: true
     - watch:
       - file: crio-registries
-
-kubelet-service:
+containerd-service.dead:
   service.running:
-    - name: kubelet.service
+    - name: containerd.service
     - enable: true
 
 {% for sysctl in pillar['k8s_sysctl'] %}
