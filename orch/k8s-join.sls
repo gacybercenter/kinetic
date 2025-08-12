@@ -96,7 +96,7 @@ join_{{ node }}_worker_to_cluster:
     - name: cmd.run
     - kwarg:
         cmd: |
-          {{ join_command_output }}
+          {{ join_command_worker_output }} --cri-socket unix:///var/run/crio/crio.sock
     - tgt: '{{ node }}'
     - require:
       - salt: k8s_deps_{{ node }}
