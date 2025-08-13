@@ -121,10 +121,10 @@ create_user_kubeconfig:
     - name: cmd.run
     - kwarg:
         cmd: |
-          kubectl config set-cluster kubernetes --server=https://$(kubectl config view -o jsonpath='{.clusters[0].cluster.server}' | cut -d'/' -f3) --certificate-authority=/etc/kubernetes/pki/ca.crt --embed-certs=true --kubeconfig={{ username }}.kubeconfig
-          kubectl config set-credentials {{ username }} --client-certificate=/tmp/{{ username }}.crt --client-key=/tmp/{{ username }}.key --embed-certs=true --kubeconfig={{ username }}.kubeconfig
-          kubectl config set-context {{ username }}@kubernetes --cluster=kubernetes --user={{ username }} --kubeconfig={{ username }}.kubeconfig
-          kubectl config use-context {{ username }}@kubernetes --kubeconfig={{ username }}.kubeconfig
+          kubectl config set-cluster kubernetes --server=https://$(kubectl config view -o jsonpath='{.clusters[0].cluster.server}' | cut -d'/' -f3) --certificate-authority=/etc/kubernetes/pki/ca.crt --embed-certs=true --kubeconfig=/tmp/{{ username }}.kubeconfig
+          kubectl config set-credentials {{ username }} --client-certificate=/tmp/{{ username }}.crt --client-key=/tmp/{{ username }}.key --embed-certs=true --kubeconfig=/tmp/{{ username }}.kubeconfig
+          kubectl config set-context {{ username }}@kubernetes --cluster=kubernetes --user={{ username }} --kubeconfig=/tmp/{{ username }}.kubeconfig
+          kubectl config use-context {{ username }}@kubernetes --kubeconfig=/tmp/{{ username }}.kubeconfig
     - tgt: '{{ k8s }}'
     - cwd: /tmp
     - creates: /tmp/{{ username }}.kubeconfig
