@@ -61,7 +61,7 @@ create_user_csr:
     - name: cmd.run
     - kwarg:
         cmd: |
-          openssl req -new -key {{ username }}.key -out /tmp/{{ username }}.csr -subj "/CN={{ username }}/O={{ user_group }}"
+          openssl req -new -key /tmp/{{ username }}.key -out /tmp/{{ username }}.csr -subj "/CN={{ username }}/O={{ user_group }}"
     - tgt: '{{ k8s }}'
     - cwd: /tmp
     - creates: /tmp/{{ username }}.csr
