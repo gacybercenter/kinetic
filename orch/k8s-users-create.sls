@@ -28,7 +28,7 @@ check_username_availability:
             echo "Error: Username '{{ username }}' is already in use (CSR exists). Please choose a different username."
             exit 1
           fi
-          if [ "{{ access_type }}" == "cluster-admin" ] && kubectl get clusterrolebinding {{ username }}-cluster-admin-binding >/dev/null 2>&1; then
+          if [ "{{ access_type }}" = "cluster-admin" ] && kubectl get clusterrolebinding {{ username }}-cluster-admin-binding >/dev/null 2>&1; then
             echo "Error: Username '{{ username }}' is already in use (ClusterRoleBinding exists). Please choose a different username."
             exit 1
           fi
@@ -210,34 +210,47 @@ create_namespace_rolebinding:
       - salt: create_namespace_role
 {% endif %}
 
-# Step 10: Optionally, move kubeconfig to a secure location or distribute it (example: log location)
+# Step 10: Log kubeconfig details in a cut/paste-friendly format
 log_kubeconfig_location:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: |
-          echo "Kubeconfig for {{ username }} created at /tmp/{{ username }}.kubeconfig. Please secure and distribute it to the user. Access type: {{ access_type }}"
-          echo "kubeconfig:"
+          echo "Kubeconfig for {{ username }} (Access type: {{ access_type }})"
+          echo "--------------------------------------------------"
+          echo "Copy the content below and save it as ~/.kube/{{ username }}-config or use it directly with kubectl --kubeconfig"
+          echo "--------------------------------------------------"
           cat /tmp/{{ username }}.kubeconfig
+          echo "--------------------------------------------------"
+          echo "Instructions:"
+          echo "1. Copy the content between the dashed lines."
+          echo "2. Save it to a file (e.g., ~/.kube/{{ username }}-config) on your local machine."
+          echo "3. Use it with kubectl like: kubectl --kubeconfig=~/.kube/{{ username }}-config get pods"
+          echo "4. Alternatively, merge it into your default kubeconfig using: export KUBECONFIG=~/.kube/{{ username }}-config:~/.kube/config"
     - tgt: '{{ k8s }}'
     - output_loglevel: info
     - require:
       - salt: create_user_kubeconfig
+      {% if access_type == 'cluster-admin' %}
+      - salt: create_cluster_admin_rolebinding
+      {% else %}
+      - salt: create_namespace_rolebinding
+      {% endif %}
 
-# Step 11: Clean up temporary files after user confirmation (via pillar)
+# Step 11: Clean up temporary files after logging kubeconfig
 cleanup_temporary_files:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: |
-            for file in /tmp/{{ username }}.key /tmp/{{ username }}.csr /tmp/{{ username }}.crt; do
-              if [ -f "$file" ]; then
-                rm -f "$file"
-                echo "Deleted temporary file: $file"
-              else
-                echo "Temporary file not found: $file"
-              fi
-            done
+          for file in /tmp/{{ username }}.key /tmp/{{ username }}.csr /tmp/{{ username }}.crt; do
+            if [ -f "$file" ]; then
+              rm -f "$file"
+              echo "Deleted temporary file: $file"
+            else
+              echo "Temporary file not found: $file"
+            fi
+          done
     - tgt: '{{ k8s }}'
     - output_loglevel: info
     - require:
