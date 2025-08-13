@@ -27,9 +27,11 @@ ensure_helm_installed:
 # Step 2: Add the rook-ceph Helm repository
 add_rook_helm_repo:
   helm.repo_managed:
-    - name: rook-ceph
-    - url: https://charts.rook.io/release
-    - update: True
+    - present:
+      - name: rook-ceph
+        url: https://charts.rook.io/release
+        repo_update: True
+        namespace: {{ namespace }}
     - tgt: '{{ k8s }}'
     - require:
       - salt: ensure_helm_installed
