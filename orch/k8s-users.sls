@@ -5,7 +5,44 @@
 {% set namespace = salt['pillar.get']('namespace', 'default') %}  # Default namespace if access_type is 'namespace'
 {% set user_group = salt['pillar.get']('user_group', 'developers') %}  # Optional group for organization in Kubernetes
 
-# Step 2: Create a private key for the new user on the control plane node
+# Step 1: Validate access_type to ensure it's either 'cluster-admin' or 'namespace'
+validate_access_type:
+  salt.function:
+    - name: cmd.run
+    - kwarg:
+        cmd: |
+          if [[ "{{ access_type }}" != "cluster-admin" && "{{ access_type }}" != "namespace" ]]; then
+            echo "Error: Invalid access_type '{{ access_type }}'. Must be 'cluster-admin' or 'namespace'."
+            exit 1
+          fi
+    - tgt: '{{ k8s }}'
+    - output_loglevel: info
+
+# Step 2: Check if username is already in use in the cluster
+check_username_availability:
+  salt.function:
+    - name: cmd.run
+    - kwarg:
+        cmd: |
+          if kubectl get csr {{ username }}-csr >/dev/null 2>&1; then
+            echo "Error: Username '{{ username }}' is already in use (CSR exists). Please choose a different username."
+            exit 1
+          fi
+          if [[ "{{ access_type }}" == "cluster-admin" ]] && kubectl get clusterrolebinding {{ username }}-cluster-admin-binding >/dev/null 2>&1; then
+            echo "Error: Username '{{ username }}' is already in use (ClusterRoleBinding exists). Please choose a different username."
+            exit 1
+          fi
+          if [[ "{{ access_type }}" != "cluster-admin" ]] && kubectl get rolebinding {{ username }}-rolebinding -n {{ namespace }} >/dev/null 2>&1; then
+            echo "Error: Username '{{ username }}' is already in use (RoleBinding exists in namespace {{ namespace }}). Please choose a different username."
+            exit 1
+          fi
+          echo "Username '{{ username }}' is available."
+    - tgt: '{{ k8s }}'
+    - output_loglevel: info
+    - require:
+      - salt: validate_access_type
+
+# Step 3: Create a private key for the new user on the control plane node
 create_user_private_key:
   salt.function:
     - name: cmd.run
@@ -16,9 +53,9 @@ create_user_private_key:
     - cwd: /tmp
     - creates: /tmp/{{ username }}.key
     - require:
-      - salt: ensure_kubectl_installed
+      - salt: check_username_availability
 
-# Step 3: Create a Certificate Signing Request (CSR) for the user
+# Step 4: Create a Certificate Signing Request (CSR) for the user
 create_user_csr:
   salt.function:
     - name: cmd.run
@@ -31,7 +68,7 @@ create_user_csr:
     - require:
       - salt: create_user_private_key
 
-# Step 4: Create a Kubernetes CSR object for the user
+# Step 5: Create a Kubernetes CSR object for the user
 create_k8s_csr_object:
   salt.function:
     - name: cmd.run
@@ -55,7 +92,7 @@ create_k8s_csr_object:
     - require:
       - salt: create_user_csr 
 
-# Step 5: Approve the CSR
+# Step 6: Approve the CSR
 approve_user_csr:
   salt.function:
     - name: cmd.run
@@ -66,7 +103,7 @@ approve_user_csr:
     - require:
       - salt: create_k8s_csr_object
 
-# Step 6: Retrieve the signed certificate
+# Step 7: Retrieve the signed certificate
 retrieve_user_certificate:
   salt.function:
     - name: cmd.run
@@ -78,7 +115,7 @@ retrieve_user_certificate:
     - require:
       - salt: approve_user_csr
 
-# Step 7: Create a kubeconfig file for the user
+# Step 8: Create a kubeconfig file for the user
 create_user_kubeconfig:
   salt.function:
     - name: cmd.run
@@ -94,7 +131,7 @@ create_user_kubeconfig:
     - require:
       - salt: retrieve_user_certificate
 
-# Step 8: Conditionally assign access based on access_type
+# Step 9: Conditionally assign access based on access_type
 {% if access_type == 'cluster-admin' %}
 # Assign cluster-admin access using the built-in cluster-admin ClusterRole
 create_cluster_admin_rolebinding:
@@ -173,14 +210,14 @@ create_namespace_rolebinding:
       - salt: create_namespace_role
 {% endif %}
 
-# Step 9: Optionally, move kubeconfig to a secure location or distribute it (example: log location)
+# Step 10: Optionally, move kubeconfig to a secure location or distribute it (example: log location)
 log_kubeconfig_location:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: |
-          echo "Kubeconfig for {{ username }} created at /tmp/{{ username }}.kubeconfig. Please secure and distribute it to the user. Access type: {{ access_type }}\n"
-          echo "kubeconfig:\n"
+          echo "Kubeconfig for {{ username }} created at /tmp/{{ username }}.kubeconfig. Please secure and distribute it to the user. Access type: {{ access_type }}"
+          echo "kubeconfig:"
           cat /tmp/{{ username }}.kubeconfig
     - tgt: '{{ k8s }}'
     - output_loglevel: info
