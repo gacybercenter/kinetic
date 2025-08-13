@@ -51,6 +51,8 @@ helm_install_rook_ceph_cluster:
     - namespace: {{ namespace }}
     - version: {{ rook_version }}
     - create_namespace: True
+    - flags:
+      - dry-run
     - wait: True
     - timeout: 300
     - kvflags:
