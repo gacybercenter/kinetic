@@ -24,7 +24,6 @@ install_rook_cluster_{{ rook_version }}:
     - sls: /formulas/common/k8s-rook/cluster
     - pillar:
         namespace: {{ namespace }}
-    - pillar:
         rook_version: {{ rook_version }}
         ceph_image: {{ ceph_image }}
         limits_cpu: {{ limits_cpu }}
