@@ -32,7 +32,7 @@ helm_install_rook_ceph_cluster:
       - dry-run
     - kvflags:
         # Core Rook Ceph Cluster settings (adjust as needed based on your requirements)
-        cephClusterSpec.image: {{ ceph_image }}
+        cephVersion.image: {{ ceph_image }}
         cephClusterSpec.resources.limits.cpu: {{ limits_cpu }}
         cephClusterSpec.resources.limits.memory: {{ limits_memory }}
         cephClusterSpec.resources.requests.cpu: {{ requests_cpu }}
