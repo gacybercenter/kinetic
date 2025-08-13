@@ -5,13 +5,6 @@
 {% set namespace = salt['pillar.get']('namespace', 'default') %}  # Default namespace if access_type is 'namespace'
 {% set user_group = salt['pillar.get']('user_group', 'developers') %}  # Optional group for organization in Kubernetes
 
-# Step 1: Ensure the target node has kubectl configured
-ensure_kubectl_installed:
-  salt.state:
-    - tgt: '{{ k8s }}'
-    - sls: /formulas/common/k8s/configure
-    - output_loglevel: info
-
 # Step 2: Create a private key for the new user on the control plane node
 create_user_private_key:
   salt.function:
