@@ -18,13 +18,6 @@ debug_join_params_{{ k8s }}:
     - tgt: '{{ k8s }}'
     - output_loglevel: debug
 
-k8s_deps_{{ k8s }}:
-  salt.state:
-    - tgt: '{{ k8s }}' 
-    - sls: /formulas/common/k8s-rook/cluster
-    - require:
-      - cmd: debug_join_params_{{ k8s }}
-
 # Step 1: Ensure Helm is installed on the target node
 ensure_helm_installed:
   salt.state:
