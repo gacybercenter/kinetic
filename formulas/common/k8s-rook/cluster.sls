@@ -2,7 +2,7 @@
 {% set namespace = pillar['rook']['namespace'] %}
 {% set rook_version = pillar['rook']['rook_version'] %}
 {% set ceph_image = pillar['rook']['ceph_image'] %}
-{% set limits_cpu = pillar['resources']['limits']['cpu'] %}
+{% set limits_cpu = pillar['rook']['resources']['limits']['cpu'] %}
 {% set limits_memory = pillar['rook']['resources']['limits']['memory'] %}
 {% set requests_cpu = pillar['rook']['resources']['requests']['cpu'] %}
 {% set requests_memory = pillar['rook']['resources']['requests']['memory'] %}
