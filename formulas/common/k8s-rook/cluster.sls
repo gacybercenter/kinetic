@@ -1,4 +1,4 @@
-{% set devices = pillar['osd_mappings']['storage']['osd'] %}
+{% set devices = salt['pillar.get']('osd_mappings:storage:osd') %}
 {% set namespace = pillar['rook']['namespace'] %}
 {% set rook_version = pillar['rook']['rook_version'] %}
 {% set ceph_image = pillar['rook']['ceph_image'] %}
