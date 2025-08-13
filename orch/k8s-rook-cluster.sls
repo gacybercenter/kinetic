@@ -23,8 +23,6 @@ ensure_helm_installed:
   salt.state:
     - tgt: '{{ k8s }}'
     - sls: /formulas/common/helm/install
-    - require:
-      - salt: k8s_deps_{{ k8s }}
 
 # Step 2: Add the rook-ceph Helm repository
 add_rook_helm_repo:
