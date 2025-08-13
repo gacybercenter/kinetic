@@ -18,24 +18,6 @@ debug_join_params_{{ k8s }}:
     - tgt: '{{ k8s }}'
     - output_loglevel: debug
 
-# Step 1: Ensure Helm is installed on the target node
-ensure_helm_installed:
-  salt.state:
-    - tgt: '{{ k8s }}'
-    - sls: /formulas/common/helm/install
-
-# Step 2: Add the rook-ceph Helm repository
-add_rook_helm_repo:
-  helm.repo_managed:
-    - present:
-      - name: rook-ceph
-        url: https://charts.rook.io/release
-        repo_update: True
-        namespace: {{ namespace }}
-    - tgt: '{{ k8s }}'
-    - require:
-      - salt: ensure_helm_installed
-
 install_rook_cluster_{{ rook_version }}:
   salt.state:
     - tgt: {{ k8s }}
