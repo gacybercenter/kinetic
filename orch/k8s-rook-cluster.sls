@@ -66,8 +66,8 @@ helm_install_rook_ceph_cluster:
         cephClusterSpec.storage.useAllDevices: false
         # Explicitly specify disks for OSDs from pillar data
         {% if devices %}
-        {% for idx, device in devices | enumerate %}
-        cephClusterSpec.storage.devices[{{ idx }}].name: "{{ device }}"
+        {% for device in devices %}
+        cephClusterSpec.storage.devices[{{ loop.index0 }}].name: "{{ device }}"
         {% endfor %}
         {% else %}
         # Fallback to an empty list if no devices are provided
