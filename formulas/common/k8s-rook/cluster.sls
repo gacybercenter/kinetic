@@ -1,5 +1,48 @@
-rook-cluster-{{  }}:
-  file.managed:
-    - name: /tmp/rook-cluster-{{ node }}.yaml
-    - source: salt://formulas/common/k8s-rook/files/rook-cluster.j2
-    - template: jinja
+
+# Step 3: Install or upgrade rook-ceph-cluster using Helm state with key-value flags
+helm_install_rook_ceph_cluster:
+  helm.released_present:
+    - name: rook-ceph-cluster
+    - chart: rook-ceph/rook-ceph-cluster
+    - namespace: {{ namespace }}
+    - version: {{ rook_version }}
+    - create_namespace: True
+    - flags:
+      - dry-run
+    - wait: True
+    - timeout: 300
+    - kvflags:
+        # Core Rook Ceph Cluster settings (adjust as needed based on your requirements)
+        cephClusterSpec.image: {{ ceph_image }}
+        cephClusterSpec.resources.limits.cpu: {{ limits_cpu }}
+        cephClusterSpec.resources.limits.memory: {{ limits_memory }}
+        cephClusterSpec.resources.requests.cpu: {{ requests_cpu }}
+        cephClusterSpec.resources.requests.memory: {{ requests_memory }}
+        cephClusterSpec.storage.useAllNodes: false
+        cephClusterSpec.storage.useAllDevices: false
+        # Explicitly specify disks for OSDs from pillar data
+        {% if devices %}
+        {% for device in devices %}
+        cephClusterSpec.storage.devices[{{ loop.index0 }}].name: "{{ device }}"
+        {% endfor %}
+        {% else %}
+        # Fallback to an empty list if no devices are provided
+        cephClusterSpec.storage.devices: []
+        {% endif %}
+        # Enable specific Ceph features (based on values.yaml defaults)
+        cephClusterSpec.enableCephFS: false
+        cephClusterSpec.enableRBD: true
+        cephClusterSpec.enableRGW: true
+        # Dashboard settings
+        cephClusterSpec.dashboard.enabled: true
+        cephClusterSpec.dashboard.urlPrefix: "/"
+        # Monitoring settings
+        cephClusterSpec.monitoring.enabled: true
+        # Node selection for general components (optional, can be customized via pillar if needed)
+        cephClusterSpec.placement.all.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key: "role"
+        cephClusterSpec.placement.all.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator: "In"
+        cephClusterSpec.placement.all.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0]: {{ rook_role }}
+        # Node selection specifically for OSDs to target rook-osd-node role
+        cephClusterSpec.placement.osd.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key: "role"
+        cephClusterSpec.placement.osd.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator: "In"
+        cephClusterSpec.placement.osd.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0]: {{ rook_osd_role }}
