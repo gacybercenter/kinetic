@@ -14,7 +14,18 @@
 
 debug_join_params_{{ k8s }}:
   cmd.run:
-    - name: echo "{{ namespace }}"
+    - cmd: | 
+        echo \
+        namespace: {{ namespace }} \
+        rook_version: {{ rook_version }} \
+        ceph_image: {{ ceph_image }} \
+        limits_cpu: {{ limits_cpu }} \
+        limits_memory: {{ limits_memory }} \
+        requests_cpu: {{ requests_cpu }} \
+        requests_memory: {{ requests_memory }} \
+        devices: {{ devices }} \
+        rook_role: {{ rook_role }} \
+        rook_osd_role: {{ rook_osd_role }}
     - tgt: '{{ k8s }}'
     - output_loglevel: debug
 
