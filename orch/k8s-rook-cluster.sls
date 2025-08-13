@@ -1,7 +1,7 @@
 {% set k8s = salt['pillar.get']('k8s') %}
 {% set rook_data = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': k8s}) %}
 {% set rook = rook_data.get('rook') %}
-{% set devices = rook.get('osd_mappings').get('storage').get('osd') %}
+{% set devices = rook_data.get('osd_mappings').get('storage').get('osd') %}
 {% set namespace = rook.get('namespace') %}
 {% set rook_version = rook.get('rook_version') %}
 {% set ceph_image = rook.get('ceph_image') %}
