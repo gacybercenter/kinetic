@@ -210,23 +210,28 @@ create_namespace_rolebinding:
       - salt: create_namespace_role
 {% endif %}
 
-# Step 10: Log kubeconfig details in a JSON-friendly format for salt-api
-log_kubeconfig_location:
+# Step 10: Create a Kubernetes Secret with the base64-encoded kubeconfig in the default namespace
+create_kubeconfig_secret:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: |
+          kubectl create secret generic {{ username }}-kubeconfig \
+            --from-file=kubeconfig-base64=/tmp/{{ username }}.kubeconfig \
+            --namespace=default \
+            --dry-run=client -o yaml | kubectl apply -f -
           echo "{
             \"username\": \"{{ username }}\",
             \"access_type\": \"{{ access_type }}\",
-            \"kubeconfig_base64\": \"$(base64 -w 0 /tmp/{{ username }}.kubeconfig)\",
+            \"secret_name\": \"{{ username }}-kubeconfig\",
+            \"namespace\": \"default\",
             \"instructions\": [
-              \"Decode the kubeconfig_base64 field using a base64 decoder (e.g., 'base64 -d' on Linux/Mac or online tools).\",
-              \"Save the decoded content to a file (e.g., ~/.kube/{{ username }}-config) on your local machine.\",
-              \"Use it with kubectl like: kubectl --kubeconfig=~/.kube/{{ username }}-config get pods\",
-              \"Alternatively, merge it into your default kubeconfig using: export KUBECONFIG=~/.kube/{{ username }}-config:~/.kube/config\"
+              \"Using Pepper CLI: Run 'pepper --client=local {{ k8s }} cmd.run \\\"kubectl get secret {{ username }}-kubeconfig -n default -o jsonpath=\\\\\\\"{.data.kubeconfig-base64}\\\\\\\" | base64 -d > ~/.kube/{{ username }}-config\\\"\"' to retrieve and decode the kubeconfig.\",
+              \"Parse the Secret programmatically with Python: 'import json, base64; response = client.local(\"{{ k8s }}\", \"cmd.run\", \"kubectl get secret {{ username }}-kubeconfig -n default -o json\"); secret_data = json.loads(response[\"return\"][0][\"{{ k8s }}\"])[\"data\"][\"kubeconfig-base64\"]; decoded = base64.b64decode(secret_data).decode(\"utf-8\")'.\",
+              \"Save the decoded kubeconfig to a file: 'with open(\"~/.kube/{{ username }}-config\", \"w\") as f: f.write(decoded)'.\",
+              \"Use it with kubectl: 'kubectl --kubeconfig=~/.kube/{{ username }}-config get pods' or merge into default kubeconfig with 'export KUBECONFIG=~/.kube/{{ username }}-config:~/.kube/config'.\"
             ],
-            \"status\": \"Kubeconfig created successfully for {{ username }}\"
+            \"status\": \"Kubeconfig stored as a Secret for {{ username }} in default namespace\"
           }"
     - tgt: '{{ k8s }}'
     - output_loglevel: info
@@ -238,13 +243,13 @@ log_kubeconfig_location:
       - salt: create_namespace_rolebinding
       {% endif %}
 
-# Step 11: Clean up temporary files after logging kubeconfig
+# Step 11: Clean up temporary files after creating the Secret
 cleanup_temporary_files:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: |
-          for file in /tmp/{{ username }}.key /tmp/{{ username }}.csr /tmp/{{ username }}.crt; do
+          for file in /tmp/{{ username }}.key /tmp/{{ username }}.csr /tmp/{{ username }}.crt /tmp/{{ username }}.kubeconfig; do
             if [ -f "$file" ]; then
               rm -f "$file"
               echo "Deleted temporary file: $file"
@@ -255,4 +260,4 @@ cleanup_temporary_files:
     - tgt: '{{ k8s }}'
     - output_loglevel: info
     - require:
-      - salt: log_kubeconfig_location
+      - salt: create_kubeconfig_secret
