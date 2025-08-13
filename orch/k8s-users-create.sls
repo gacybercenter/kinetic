@@ -48,7 +48,7 @@ create_user_private_key:
     - name: cmd.run
     - kwarg:
         cmd: |
-          openssl genrsa -out {{ username }}.key 4096
+          openssl genrsa -out /tmp/{{ username }}.key 4096
     - tgt: '{{ k8s }}'
     - cwd: /tmp
     - creates: /tmp/{{ username }}.key
@@ -61,7 +61,7 @@ create_user_csr:
     - name: cmd.run
     - kwarg:
         cmd: |
-          openssl req -new -key {{ username }}.key -out {{ username }}.csr -subj "/CN={{ username }}/O={{ user_group }}"
+          openssl req -new -key {{ username }}.key -out /tmp/{{ username }}.csr -subj "/CN={{ username }}/O={{ user_group }}"
     - tgt: '{{ k8s }}'
     - cwd: /tmp
     - creates: /tmp/{{ username }}.csr
@@ -108,7 +108,7 @@ retrieve_user_certificate:
   salt.function:
     - name: cmd.run
     - kwarg:
-        cmd: kubectl get csr {{ username }}-csr -o jsonpath='{.status.certificate}' | base64 -d > {{ username }}.crt
+        cmd: kubectl get csr {{ username }}-csr -o jsonpath='{.status.certificate}' | base64 -d > /tmp/{{ username }}.crt
     - tgt: '{{ k8s }}'
     - cwd: /tmp
     - creates: /tmp/{{ username }}.crt
@@ -223,3 +223,22 @@ log_kubeconfig_location:
     - output_loglevel: info
     - require:
       - salt: create_user_kubeconfig
+
+# Step 11: Clean up temporary files after user confirmation (via pillar)
+cleanup_temporary_files:
+  salt.function:
+    - name: cmd.run
+    - kwarg:
+        cmd: |
+            for file in /tmp/{{ username }}.key /tmp/{{ username }}.csr /tmp/{{ username }}.crt; do
+              if [ -f "$file" ]; then
+                rm -f "$file"
+                echo "Deleted temporary file: $file"
+              else
+                echo "Temporary file not found: $file"
+              fi
+            done
+    - tgt: '{{ k8s }}'
+    - output_loglevel: info
+    - require:
+      - salt: log_kubeconfig_location
