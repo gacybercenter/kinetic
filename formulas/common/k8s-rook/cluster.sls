@@ -37,8 +37,8 @@ helm_install_rook_ceph_cluster:
         cephClusterSpec.resources.limits.memory: {{ limits_memory }}
         cephClusterSpec.resources.requests.cpu: {{ requests_cpu }}
         cephClusterSpec.resources.requests.memory: {{ requests_memory }}
-        cephClusterSpec.storage.useAllNodes: false
-        cephClusterSpec.storage.useAllDevices: false
+        cephClusterSpec.storage.useAllNodes: "false"
+        cephClusterSpec.storage.useAllDevices: "false"
         # Explicitly specify disks for OSDs from pillar data
         {% if devices %}
         {% for device in devices %}
@@ -49,14 +49,14 @@ helm_install_rook_ceph_cluster:
         cephClusterSpec.storage.devices: []
         {% endif %}
         # Enable specific Ceph features (based on values.yaml defaults)
-        cephClusterSpec.enableCephFS: false
-        cephClusterSpec.enableRBD: true
-        cephClusterSpec.enableRGW: true
+        cephClusterSpec.enableCephFS: "false"
+        cephClusterSpec.enableRBD: "true"
+        cephClusterSpec.enableRGW: "true"
         # Dashboard settings
-        cephClusterSpec.dashboard.enabled: true
+        cephClusterSpec.dashboard.enabled: "true"
         cephClusterSpec.dashboard.urlPrefix: "/"
         # Monitoring settings
-        cephClusterSpec.monitoring.enabled: true
+        cephClusterSpec.monitoring.enabled: "true"
         # Node selection for general components (optional, can be customized via pillar if needed)
         cephClusterSpec.placement.all.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key: "role"
         cephClusterSpec.placement.all.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator: "In"
