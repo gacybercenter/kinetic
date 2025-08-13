@@ -8,5 +8,5 @@
 debug_join_params_{{ rook_minion }}:
   cmd.run:
     - name: echo "{{ osd_mappings }}"
-    - tgt: '{{ node }}'
+    - tgt: '{{ rook_minion }}'
     - output_loglevel: debug
