@@ -12,7 +12,7 @@
 {% set rook_role = rook.get('mon').get('node_role') %}
 {% set rook_osd_role = rook.get('osd').get('node_role') %}
 
-debug_join_params_{{ k8s }}:
+debug_params:
   cmd.run:
     - kwarg:
         cmd: | 
@@ -27,7 +27,6 @@ debug_join_params_{{ k8s }}:
           devices: {{ devices }} \
           rook_role: {{ rook_role }} \
           rook_osd_role: {{ rook_osd_role }}
-    - tgt: '{{ k8s }}'
     - output_loglevel: debug
 
 install_rook_cluster_{{ rook_version }}:
