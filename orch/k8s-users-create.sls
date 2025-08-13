@@ -210,23 +210,24 @@ create_namespace_rolebinding:
       - salt: create_namespace_role
 {% endif %}
 
-# Step 10: Log kubeconfig details in a cut/paste-friendly format
+# Step 10: Log kubeconfig details in a JSON-friendly format for salt-api
 log_kubeconfig_location:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: |
-          echo "Kubeconfig for {{ username }} (Access type: {{ access_type }})"
-          echo "--------------------------------------------------"
-          echo "Copy the content below and save it as ~/.kube/{{ username }}-config or use it directly with kubectl --kubeconfig"
-          echo "--------------------------------------------------"
-          cat /tmp/{{ username }}.kubeconfig
-          echo "--------------------------------------------------"
-          echo "Instructions:"
-          echo "1. Copy the content between the dashed lines."
-          echo "2. Save it to a file (e.g., ~/.kube/{{ username }}-config) on your local machine."
-          echo "3. Use it with kubectl like: kubectl --kubeconfig=~/.kube/{{ username }}-config get pods"
-          echo "4. Alternatively, merge it into your default kubeconfig using: export KUBECONFIG=~/.kube/{{ username }}-config:~/.kube/config"
+          echo "{
+            \"username\": \"{{ username }}\",
+            \"access_type\": \"{{ access_type }}\",
+            \"kubeconfig_base64\": \"$(base64 -w 0 /tmp/{{ username }}.kubeconfig)\",
+            \"instructions\": [
+              \"Decode the kubeconfig_base64 field using a base64 decoder (e.g., 'base64 -d' on Linux/Mac or online tools).\",
+              \"Save the decoded content to a file (e.g., ~/.kube/{{ username }}-config) on your local machine.\",
+              \"Use it with kubectl like: kubectl --kubeconfig=~/.kube/{{ username }}-config get pods\",
+              \"Alternatively, merge it into your default kubeconfig using: export KUBECONFIG=~/.kube/{{ username }}-config:~/.kube/config\"
+            ],
+            \"status\": \"Kubeconfig created successfully for {{ username }}\"
+          }"
     - tgt: '{{ k8s }}'
     - output_loglevel: info
     - require:
