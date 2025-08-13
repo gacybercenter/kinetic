@@ -17,7 +17,7 @@ helm_install_rook_ceph_cluster:
     - name: rook-ceph-cluster
     - chart: rook-ceph/rook-ceph-cluster
     - namespace: {{ namespace }}
-    - version: {{ pillar.get['rook_version' }}
+    - version: {{ pillar.get['rook_version'] }}
     - create_namespace: True
     - flags:
       - dry-run
