@@ -3,7 +3,7 @@
 {% set rook_minion = minions | select('match', 'rook-rsc') | first %}
 # Fetch pillar data for the selected minion if found
 {% set rook = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': rook_minion}) %}
-{% set namespace = rook.get('rook') %}
+{% set namespace = rook.get('rook').get('namespace') %}
 
 debug_join_params_{{ rook_minion }}:
   cmd.run:
