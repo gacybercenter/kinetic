@@ -23,13 +23,13 @@ install_rook_cluster_{{ rook_version }}:
     - tgt: {{ k8s }}
     - sls: /formulas/common/k8s-rook/cluster
     - pillar:
-        - namespace: {{ namespace }}
-        - rook_version: {{ rook_version }}
-        - ceph_image: {{ ceph_image }}
-        - limits_cpu: {{ limits_cpu }}
-        - limits_memory: {{ limits_memory }}
-        - requests_cpu: {{ requests_cpu }}
-        - requests_memory: {{ requests_memory }}
-        - devices: {{ devices }}
-        - rook_role: {{ rook_role }}
-        - rook_osd_role: {{ rook_osd_role }}
+        namespace: {{ namespace }}
+        rook_version: {{ rook_version }}
+        ceph_image: {{ ceph_image }}
+        limits_cpu: {{ limits_cpu }}
+        limits_memory: {{ limits_memory }}
+        requests_cpu: {{ requests_cpu }}
+        requests_memory: {{ requests_memory }}
+        devices: {{ devices }}
+        rook_role: {{ rook_role }}
+        rook_osd_role: {{ rook_osd_role }}
