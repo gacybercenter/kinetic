@@ -1,13 +1,11 @@
-# Default values for a single rook-ceph cluster
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
+{% set rooknode = salt['pillar.get']('rook') %}
+{% set rook = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': rooknode}) %}%}
 # -- Namespace of the main rook operator
-operatorNamespace: rook-ceph
+operatorNamespace: {{ op_rook_namespace }}
 
 # -- The metadata.name of the CephCluster CR
 # @default -- The same as the namespace
-clusterName:
+clusterName: {{ cephClusterName }}
 
 # -- Optional override of the target kubernetes version
 kubeVersion:
@@ -249,31 +247,40 @@ cephClusterSpec:
   # To control where various services will be scheduled by kubernetes, use the placement configuration sections below.
   # The example under 'all' would have all services scheduled on kubernetes nodes labeled with 'role=storage-node' and
   # tolerate taints with a key of 'storage-node'.
-  # placement:
-  #   all:
-  #     nodeAffinity:
-  #       requiredDuringSchedulingIgnoredDuringExecution:
-  #         nodeSelectorTerms:
-  #           - matchExpressions:
-  #             - key: role
-  #               operator: In
-  #               values:
-  #               - storage-node
-  #     podAffinity:
-  #     podAntiAffinity:
-  #     topologySpreadConstraints:
-  #     tolerations:
-  #     - key: storage-node
-  #       operator: Exists
-  #   # The above placement information can also be specified for mon, osd, and mgr components
-  #   mon:
-  #   # Monitor deployments may contain an anti-affinity rule for avoiding monitor
-  #   # collocation on the same node. This is a required rule when host network is used
-  #   # or when AllowMultiplePerNode is false. Otherwise this anti-affinity rule is a
-  #   # preferred rule with weight: 50.
-  #   osd:
-  #   mgr:
-  #   cleanup:
+  placement:
+    all:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - rook-node
+      podAffinity:
+      podAntiAffinity:
+      topologySpreadConstraints:
+      tolerations:
+      - key: storage-node
+        operator: Exists
+    # The above placement information can also be specified for mon, osd, and mgr components
+    #mon:
+    # Monitor deployments may contain an anti-affinity rule for avoiding monitor
+    # collocation on the same node. This is a required rule when host network is used
+    # or when AllowMultiplePerNode is false. Otherwise this anti-affinity rule is a
+    # preferred rule with weight: 50.
+    osd:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - rook-osd-node
+      
+    ##mgr:
+    #cleanup:
 
   # annotations:
   #   all:
@@ -371,21 +378,23 @@ cephClusterSpec:
   storage: # cluster level storage configuration and selection
     useAllNodes: true
     useAllDevices: true
-    # deviceFilter:
-    # config:
-    #   crushRoot: "custom-root" # specify a non-default root label for the CRUSH map
-    #   metadataDevice: "md0" # specify a non-rotational storage so ceph-volume will use it as block db device of bluestore.
-    #   databaseSizeMB: "1024" # uncomment if the disks are smaller than 100 GB
-    #   osdsPerDevice: "1" # this value can be overridden at the node or device level
-    #   encryptedDevice: "true" # the default value for this option is "false"
-    # # Individual nodes and their config can be specified as well, but 'useAllNodes' above must be set to false. Then, only the named
-    # # nodes below will be used as storage resources. Each node's 'name' field should match their 'kubernetes.io/hostname' label.
-    # nodes:
-    #   - name: "172.17.4.201"
-    #     devices: # specific devices to use for storage can be specified for each node
-    #       - name: "sdb"
-    #       - name: "nvme01" # multiple osds can be created on high performance devices
-    #         config:
+      deviceFilter:
+      config:
+        crushRoot: "custom-root" # specify a non-default root label for the CRUSH map
+        metadataDevice: "md0" # specify a non-rotational storage so ceph-volume will use it as block db device of bluestore.
+        databaseSizeMB: "1024" # uncomment if the disks are smaller than 100 GB
+        osdsPerDevice: "1" # this value can be overridden at the node or device level
+        encryptedDevice: "true" # the default value for this option is "false"
+      # Individual nodes and their config can be specified as well, but 'useAllNodes' above must be set to false. Then, only the named
+      # nodes below will be used as storage resources. Each node's 'name' field should match their 'kubernetes.io/hostname' label.
+      nodes:
+{% for node in p%}
+        - name:
+    #    - name: "172.17.4.201"
+    #      devices: # specific devices to use for storage can be specified for each node
+    #        - name: "sdb"
+    #        - name: "nvme01" # multiple osds can be created on high performance devices
+    #          config:
     #           osdsPerDevice: "5"
     #       - name: "/dev/disk/by-id/ata-ST4000DM004-XXXX" # devices can be specified using full udev paths
     #     config: # configuration can be specified at the node level which overrides the cluster level config
@@ -532,80 +541,80 @@ cephBlockPools:
         # in hyperconverged settings where the volume is mounted on the same node as the osds.
         csi.storage.k8s.io/fstype: ext4
 
-# -- A list of CephFileSystem configurations to deploy
-# @default -- See [below](#ceph-file-systems)
-cephFileSystems:
-  - name: ceph-filesystem
-    # see https://github.com/rook/rook/blob/master/Documentation/CRDs/Shared-Filesystem/ceph-filesystem-crd.md#filesystem-settings for available configuration
-    spec:
-      metadataPool:
-        replicated:
-          size: 3
-      dataPools:
-        - failureDomain: host
-          replicated:
-            size: 3
-          # Optional and highly recommended, 'data0' by default, see https://github.com/rook/rook/blob/master/Documentation/CRDs/Shared-Filesystem/ceph-filesystem-crd.md#pools
-          name: data0
-      metadataServer:
-        activeCount: 1
-        activeStandby: true
-        resources:
-          limits:
-            memory: "4Gi"
-          requests:
-            cpu: "1000m"
-            memory: "4Gi"
-        priorityClassName: system-cluster-critical
-    storageClass:
-      enabled: true
-      isDefault: false
-      name: ceph-filesystem
-      # (Optional) specify a data pool to use, must be the name of one of the data pools above, 'data0' by default
-      pool: data0
-      reclaimPolicy: Delete
-      allowVolumeExpansion: true
-      volumeBindingMode: "Immediate"
-      annotations: {}
-      labels: {}
-      mountOptions: []
-      # see https://github.com/rook/rook/blob/master/Documentation/Storage-Configuration/Shared-Filesystem-CephFS/filesystem-storage.md#provision-storage for available configuration
-      parameters:
-        # The secrets contain Ceph admin credentials.
-        csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
-        csi.storage.k8s.io/provisioner-secret-namespace: "{{ .Release.Namespace }}"
-        csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
-        csi.storage.k8s.io/controller-expand-secret-namespace: "{{ .Release.Namespace }}"
-        csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
-        csi.storage.k8s.io/node-stage-secret-namespace: "{{ .Release.Namespace }}"
-        # Specify the filesystem type of the volume. If not specified, csi-provisioner
-        # will set default as `ext4`. Note that `xfs` is not recommended due to potential deadlock
-        # in hyperconverged settings where the volume is mounted on the same node as the osds.
-        csi.storage.k8s.io/fstype: ext4
+# # -- A list of CephFileSystem configurations to deploy
+# # @default -- See [below](#ceph-file-systems)
+# cephFileSystems:
+#   - name: ceph-filesystem
+#     # see https://github.com/rook/rook/blob/master/Documentation/CRDs/Shared-Filesystem/ceph-filesystem-crd.md#filesystem-settings for available configuration
+#     spec:
+#       metadataPool:
+#         replicated:
+#           size: 3
+#       dataPools:
+#         - failureDomain: host
+#           replicated:
+#             size: 3
+#           # Optional and highly recommended, 'data0' by default, see https://github.com/rook/rook/blob/master/Documentation/CRDs/Shared-Filesystem/ceph-filesystem-crd.md#pools
+#           name: data0
+#       metadataServer:
+#         activeCount: 1
+#         activeStandby: true
+#         resources:
+#           limits:
+#             memory: "4Gi"
+#           requests:
+#             cpu: "1000m"
+#             memory: "4Gi"
+#         priorityClassName: system-cluster-critical
+#     storageClass:
+#       enabled: true
+#       isDefault: false
+#       name: ceph-filesystem
+#       # (Optional) specify a data pool to use, must be the name of one of the data pools above, 'data0' by default
+#       pool: data0
+#       reclaimPolicy: Delete
+#       allowVolumeExpansion: true
+#       volumeBindingMode: "Immediate"
+#       annotations: {}
+#       labels: {}
+#       mountOptions: []
+#       # see https://github.com/rook/rook/blob/master/Documentation/Storage-Configuration/Shared-Filesystem-CephFS/filesystem-storage.md#provision-storage for available configuration
+#       parameters:
+#         # The secrets contain Ceph admin credentials.
+#         csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
+#         csi.storage.k8s.io/provisioner-secret-namespace: "{{ .Release.Namespace }}"
+#         csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
+#         csi.storage.k8s.io/controller-expand-secret-namespace: "{{ .Release.Namespace }}"
+#         csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
+#         csi.storage.k8s.io/node-stage-secret-namespace: "{{ .Release.Namespace }}"
+#         # Specify the filesystem type of the volume. If not specified, csi-provisioner
+#         # will set default as `ext4`. Note that `xfs` is not recommended due to potential deadlock
+#         # in hyperconverged settings where the volume is mounted on the same node as the osds.
+#         csi.storage.k8s.io/fstype: ext4
 
-# -- Settings for the filesystem snapshot class
-# @default -- See [CephFS Snapshots](../Storage-Configuration/Ceph-CSI/ceph-csi-snapshot.md#cephfs-snapshots)
-cephFileSystemVolumeSnapshotClass:
-  enabled: false
-  name: ceph-filesystem
-  isDefault: true
-  deletionPolicy: Delete
-  annotations: {}
-  labels: {}
-  # see https://rook.io/docs/rook/v1.10/Storage-Configuration/Ceph-CSI/ceph-csi-snapshot/#cephfs-snapshots for available configuration
-  parameters: {}
+# # -- Settings for the filesystem snapshot class
+# # @default -- See [CephFS Snapshots](../Storage-Configuration/Ceph-CSI/ceph-csi-snapshot.md#cephfs-snapshots)
+# cephFileSystemVolumeSnapshotClass:
+#   enabled: false
+#   name: ceph-filesystem
+#   isDefault: true
+#   deletionPolicy: Delete
+#   annotations: {}
+#   labels: {}
+#   # see https://rook.io/docs/rook/v1.10/Storage-Configuration/Ceph-CSI/ceph-csi-snapshot/#cephfs-snapshots for available configuration
+#   parameters: {}
 
-# -- Settings for the block pool snapshot class
-# @default -- See [RBD Snapshots](../Storage-Configuration/Ceph-CSI/ceph-csi-snapshot.md#rbd-snapshots)
-cephBlockPoolsVolumeSnapshotClass:
-  enabled: false
-  name: ceph-block
-  isDefault: false
-  deletionPolicy: Delete
-  annotations: {}
-  labels: {}
-  # see https://rook.io/docs/rook/v1.10/Storage-Configuration/Ceph-CSI/ceph-csi-snapshot/#rbd-snapshots for available configuration
-  parameters: {}
+# # -- Settings for the block pool snapshot class
+# # @default -- See [RBD Snapshots](../Storage-Configuration/Ceph-CSI/ceph-csi-snapshot.md#rbd-snapshots)
+# cephBlockPoolsVolumeSnapshotClass:
+#   enabled: false
+#   name: ceph-block
+#   isDefault: false
+#   deletionPolicy: Delete
+#   annotations: {}
+#   labels: {}
+#   # see https://rook.io/docs/rook/v1.10/Storage-Configuration/Ceph-CSI/ceph-csi-snapshot/#rbd-snapshots for available configuration
+#   parameters: {}
 
 # -- A list of CephObjectStore configurations to deploy
 # @default -- See [below](#ceph-object-stores)
