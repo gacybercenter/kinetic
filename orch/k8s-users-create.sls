@@ -28,11 +28,11 @@ check_username_availability:
             echo "Error: Username '{{ username }}' is already in use (CSR exists). Please choose a different username."
             exit 1
           fi
-          if [[ "{{ access_type }}" == "cluster-admin" ]] && kubectl get clusterrolebinding {{ username }}-cluster-admin-binding >/dev/null 2>&1; then
+          if [ "{{ access_type }}" == "cluster-admin" ] && kubectl get clusterrolebinding {{ username }}-cluster-admin-binding >/dev/null 2>&1; then
             echo "Error: Username '{{ username }}' is already in use (ClusterRoleBinding exists). Please choose a different username."
             exit 1
           fi
-          if [[ "{{ access_type }}" != "cluster-admin" ]] && kubectl get rolebinding {{ username }}-rolebinding -n {{ namespace }} >/dev/null 2>&1; then
+          if [ "{{ access_type }}" != "cluster-admin" ] && kubectl get rolebinding {{ username }}-rolebinding -n {{ namespace }} >/dev/null 2>&1; then
             echo "Error: Username '{{ username }}' is already in use (RoleBinding exists in namespace {{ namespace }}). Please choose a different username."
             exit 1
           fi
