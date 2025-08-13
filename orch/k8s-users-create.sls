@@ -80,7 +80,7 @@ create_k8s_csr_object:
           metadata:
             name: {{ username }}-csr
           spec:
-            request: $(cat {{ username }}.csr | base64 | tr -d '\n')
+            request: $(cat /tmp/{{ username }}.csr | base64 | tr -d '\n')
             signerName: kubernetes.io/kube-apiserver-client
             expirationSeconds: 86400  # 1 day; adjust as needed
             usages:
