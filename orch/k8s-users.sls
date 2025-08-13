@@ -11,7 +11,7 @@ validate_access_type:
     - name: cmd.run
     - kwarg:
         cmd: |
-          if [ "{{ access_type }}" != "cluster-admin" && "{{ access_type }}" != "namespace" ]; then
+          if [ "{{ access_type }}" != "cluster-admin" ] && [ "{{ access_type }}" != "namespace" ]; then
             echo "Error: Invalid access_type '{{ access_type }}'. Must be 'cluster-admin' or 'namespace'."
             exit 1
           fi
