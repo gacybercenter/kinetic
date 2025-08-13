@@ -1,3 +1,15 @@
+{% set rook_data = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': k8s}) %}
+{% set rook = rook_data.get('rook') %}
+{% set devices = rook_data.get('osd_mappings').get('storage').get('osd') %}
+{% set namespace = rook.get('namespace') %}
+{% set rook_version = rook.get('rook_version') %}
+{% set ceph_image = rook.get('ceph_image') %}
+{% set limits_cpu = rook.get('resources').get('limits').get('cpu') %}
+{% set limits_memory = rook.get('resources').get('limits').get('memory') %}
+{% set requests_cpu = rook.get('resources').get('requests').get('cpu') %}
+{% set requests_memory = rook.get('resources').get('requests').get('memory') %}
+{% set rook_role = rook.get('mon').get('node_role') %}
+{% set rook_osd_role = rook.get('osd').get('node_role') %}
 # Step 1: Ensure Helm is installed on the target node
 include:
   - /formulas/common/helm/install
@@ -17,7 +29,7 @@ helm_install_rook_ceph_cluster:
     - name: rook-ceph-cluster
     - chart: rook-ceph/rook-ceph-cluster
     - namespace: {{ namespace }}
-    - version: {{ pillar.get['rook_version'] }}
+    - version: {{ rook_version }}
     - create_namespace: True
     - flags:
       - dry-run
