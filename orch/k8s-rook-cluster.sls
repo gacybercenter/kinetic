@@ -10,3 +10,9 @@ debug_join_params_{{ rook_minion }}:
     - name: echo "{{ namespace }}"
     - tgt: '{{ rook_minion }}'
     - output_loglevel: debug
+
+
+k8s_deps_{{ k8s }}:
+  salt.state:
+    - tgt: '{{ k8s }}' 
+    - sls: /formulas/common/k8s-rook/cluster
