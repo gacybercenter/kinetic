@@ -121,3 +121,7 @@ create_join_token:
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - require:
       - salt: init_kubernetes_cluster
+k8s_calico:
+  salt.state:
+    - tgt: '{{ first_control_node }}' 
+    - sls: /formulas/common/k8s-calico  #calico
