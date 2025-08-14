@@ -69,7 +69,7 @@ render_rook_values_file:
 # Step 5: Install or upgrade rook-ceph-cluster using Helm state with the values file
 helm_install_rook_ceph_cluster:
   helm.release_present:
-    - name: rook-ceph-release
+    - name: rook-ceph-cluster
     - chart: rook-release/rook-ceph-cluster
     - namespace: {{ namespace }}
     - version: {{ rook_version }}
