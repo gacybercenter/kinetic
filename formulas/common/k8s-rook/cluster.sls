@@ -71,7 +71,7 @@ helm_install_rook_ceph_cluster:
   helm.release_present:
     - name: rook-ceph-cluster
     - chart: rook-release/rook-ceph-cluster
-    - namespace: {{ namespace }}
+    - namespace: "rook-ceph"
     - version: {{ rook_version }}
     - flags:
       - dry-run
