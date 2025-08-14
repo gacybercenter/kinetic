@@ -30,7 +30,10 @@ cephClusterSpec:
     enabled: {{ dashboard_enabled }}
     urlPrefix: {{ dashboard_urlPrefix }}
     ssl: true
-
+  network:
+    addressRanges:
+      public: pillar['networking']['subnets']['sfe']
+      cluster: pillar['networking']['subnets']['sbe']
   placement:
     all:
       nodeAffinity:
