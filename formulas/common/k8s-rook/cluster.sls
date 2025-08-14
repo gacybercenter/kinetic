@@ -8,20 +8,17 @@
 {% set requests_memory = pillar['rook']['resources']['requests']['memory'] %}
 {% set rook_role = pillar['rook']['mon']['node_role'] %}
 {% set rook_osd_role = pillar['rook']['osd']['node_role'] %}
+
 # Step 1: Ensure Helm is installed on the target node
 include:
   - /formulas/common/helm/install
-# Step 1: Ensure the namespace exists
 
-debug_outputs:
-  cmd.run:
-    - name: echo {{ rook_version }}
-# Step 1: Ensure the namespace exists
+# Step 2: Ensure the namespace exists
 create_rook_namespace:
   k8s.namespace_present:
     - namespace: {{ namespace }}
-  
-# Step 2: Add the rook-ceph Helm repository
+
+# Step 3: Add the rook-ceph Helm repository
 add_rook_helm_repo:
   helm.repo_managed:
     - present:
@@ -29,8 +26,47 @@ add_rook_helm_repo:
         url: https://charts.rook.io/release
     - repo_update: True
     - namespace: {{ namespace }}
+    - require:
+      - k8s: create_rook_namespace
 
-# Step 3: Install or upgrade rook-ceph-cluster using Helm state with key-value flags
+# Step 4: Render the values.yaml file from the template
+render_rook_values_file:
+  file.managed:
+    - name: /tmp/rook-cluster-values.yaml
+    - source: salt://formulas/common/k8s-rook/files/rook-cluster.j2
+    - template: jinja
+    - context:
+        op_rook_namespace: "rook-ceph"
+        cephClusterName: {{ namespace }}
+        ceph_image: {{ ceph_image }}
+        mgr_limits_memory: {{ limits_memory }}
+        mgr_requests_cpu: {{ requests_cpu }}
+        mgr_requests_memory: {{ requests_memory }}
+        mon_limits_memory: {{ limits_memory }}
+        mon_requests_cpu: {{ requests_cpu }}
+        mon_requests_memory: {{ requests_memory }}
+        osd_limits_memory: {{ limits_memory }}
+        osd_requests_cpu: {{ requests_cpu }}
+        osd_requests_memory: {{ requests_memory }}
+        useAllNodes: false
+        useAllDevices: false
+        devices: {{ devices | default([]) }}
+        enableCephFS: false
+        enableRBD: true
+        enableRGW: true
+        dashboard_enabled: true
+        dashboard_urlPrefix: "/"
+        monitoring_enabled: true
+        all_node_affinity_key: "role"
+        all_node_affinity_operator: "In"
+        all_node_affinity_value: {{ rook_role }}
+        osd_node_affinity_key: "role"
+        osd_node_affinity_operator: "In"
+        osd_node_affinity_value: {{ rook_osd_role }}
+    - require:
+      - k8s: create_rook_namespace
+
+# Step 5: Install or upgrade rook-ceph-cluster using Helm state with the values file
 helm_install_rook_ceph_cluster:
   helm.release_present:
     - name: rook-ceph-release
@@ -40,5 +76,8 @@ helm_install_rook_ceph_cluster:
     - flags:
       - dry-run
       - debug
-    - kvflags:
-        set: 'operatorNamespace="rook-ceph",cephVersion.image={{ ceph_image }},cephClusterSpec.resources.limits.cpu={{ limits_cpu }},cephClusterSpec.resources.limits.memory={{ limits_memory }},cephClusterSpec.resources.requests.cpu={{ requests_cpu }},cephClusterSpec.resources.requests.memory={{ requests_memory }},cephClusterSpec.storage.useAllNodes=false,cephClusterSpec.storage.useAllDevices=false{% if devices %}{% for device in devices %},cephClusterSpec.storage.devices[{{ loop.index0 }}].name={{ device }}{% endfor %}{% else %},cephClusterSpec.storage.devices=[]{% endif %},cephClusterSpec.enableCephFS=false,cephClusterSpec.enableRBD=true,cephClusterSpec.enableRGW=true,cephClusterSpec.dashboard.enabled=true,cephClusterSpec.dashboard.urlPrefix=/,cephClusterSpec.monitoring.enabled=true,cephClusterSpec.placement.all.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key=role,cephClusterSpec.placement.all.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator=In,cephClusterSpec.placement.all.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0]={{ rook_role }},cephClusterSpec.placement.osd.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key=role,cephClusterSpec.placement.osd.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator=In,cephClusterSpec.placement.osd.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0]={{ rook_osd_role }}'
+    - values_file: /tmp/rook-cluster-values.yaml
+    - require:
+      - helm: add_rook_helm_repo
+      - file: render_rook_values_file
+      - k8s: create_rook_namespace
