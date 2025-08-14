@@ -20,7 +20,7 @@ debug_outputs:
 add_rook_helm_repo:
   helm.repo_managed:
     - present:
-      - name: rook-ceph
+      - name: rook-release
         url: https://charts.rook.io/release
         repo_update: True
         namespace: {{ namespace }}
