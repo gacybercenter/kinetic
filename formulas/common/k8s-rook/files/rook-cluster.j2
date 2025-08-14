@@ -32,8 +32,8 @@ cephClusterSpec:
     ssl: true
   network:
     addressRanges:
-      public: pillar['networking']['subnets']['sfe']
-      cluster: pillar['networking']['subnets']['sbe']
+      public: {{ pillar['networking']['subnets']['sfe'] }}
+      cluster: {{ pillar['networking']['subnets']['sbe'] }}
   placement:
     all:
       nodeAffinity:
