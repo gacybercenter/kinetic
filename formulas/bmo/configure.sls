@@ -156,12 +156,18 @@ define_{{name }}_vm:
               <driver name='qemu' type='qcow2'/>
               <target dev='vda' bus='virtio'/>
             </disk>
+            {% for network, config in pillar['hosts'][bmh_type].get('networks', {}).items() %}
+            {% set bridge_name = network + '_br' %}
+            {% set interface_name = config.get('interfaces')[0] %}
             <interface type='bridge'>
-              <source bridge='management_br'/>
+              <source bridge='{{ bridge_name }}'/>
+              {% if network == 'management' %}
               <mac address='{{ pillar['bmh'][name]['bootMACAddress'] }}'/>
-              <alias name='{{ pillar['hosts'][bmh_type]['interface'] }}'/>
+              {% endif %}
+              <alias name='{{ interface_name }}'/>
               <model type='virtio'/>
             </interface>
+            {% endfor %}
             <serial type='pty'>
               <target type='isa-serial' port='0'/>
             </serial>
