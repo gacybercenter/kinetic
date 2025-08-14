@@ -2676,3 +2676,111 @@ def namespace_present(namespace):
             'updated': False,
             'message': f"Namespace operation error: {str(e)[:50]}..."
         }
+def ceph_cluster_present(namespace, cluster_name, spec):
+    """
+    Ensure that a CephCluster Custom Resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the CephCluster resource.
+        cluster_name (str): The name of the CephCluster resource.
+        spec (dict): The specification for the CephCluster resource, including settings like cephVersion, storage, etc.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.ceph_cluster_present rook-ceph rook-ceph spec_dict
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "ceph.rook.io"
+        version = "v1"
+        plural = "cephclusters"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if CephCluster exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=cluster_name
+            )
+            exists = True
+            current_spec = resource.get('spec', {})
+            # Simple check for spec equality (deep comparison could be added if needed)
+            if current_spec == spec:
+                matches = True
+                message = f"CephCluster {cluster_name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"CephCluster {cluster_name} in namespace {namespace} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"CephCluster {cluster_name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking CephCluster {cluster_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update CephCluster
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "CephCluster",
+            "metadata": {
+                "name": cluster_name,
+                "namespace": namespace
+            },
+            "spec": spec
+        }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, body=body
+                )
+                updated = True
+                message = f"CephCluster {cluster_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create CephCluster {cluster_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if 'metadata' in resource and 'resourceVersion' in resource['metadata']:
+                    body['metadata']['resourceVersion'] = resource['metadata']['resourceVersion']
+                custom_api.replace_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, name=cluster_name, body=body
+                )
+                updated = True
+                message = f"CephCluster {cluster_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update CephCluster {cluster_name}: {str(e)[:50]}..."
+                }
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"CephCluster operation error: {str(e)[:50]}..."
+        }
