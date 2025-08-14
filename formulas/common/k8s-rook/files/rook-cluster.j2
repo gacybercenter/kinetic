@@ -1,5 +1,3 @@
-{% set rooknode = salt['pillar.get']('rook') %}
-{% set rook = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': rooknode}) %}%}
 # -- Namespace of the main rook operator
 operatorNamespace: {{ op_rook_namespace }}
 
@@ -50,7 +48,7 @@ toolbox:
 monitoring:
   # -- Enable Prometheus integration, will also create necessary RBAC rules to allow Operator to create ServiceMonitors.
   # Monitoring requires Prometheus to be pre-installed
-  enabled: false
+  enabled: {{ monitoring_enabled }}
   # -- Whether to disable the metrics reported by Ceph. If false, the prometheus mgr module and Ceph exporter are enabled
   metricsDisabled: false
   # -- Whether to create the Prometheus rules for Ceph alerts
@@ -105,7 +103,7 @@ cephClusterSpec:
     # versions running within the cluster. See tags available at https://hub.docker.com/r/ceph/ceph/tags/.
     # If you want to be more precise, you can always use a timestamp tag such as quay.io/ceph/ceph:v19.2.3-20250717
     # This tag might not contain a new Ceph version, just security fixes from the underlying operating system, which will reduce vulnerabilities
-    image: quay.io/ceph/ceph:v19.2.3
+    image: {{ ceph_image }}
     # Whether to allow unsupported versions of Ceph. Currently Reef and Squid are supported.
     # Future versions such as Tentacle (v20) would require this to be set to `true`.
     # Do not set to true in production.
@@ -159,9 +157,9 @@ cephClusterSpec:
 
   # enable the ceph dashboard for viewing cluster status
   dashboard:
-    enabled: true
+    enabled: {{ dashboard_enabled }}
     # serve the dashboard under a subpath (useful when you are accessing the dashboard via a reverse proxy)
-    # urlPrefix: /ceph-dashboard
+    urlPrefix: {{ dashboard_urlPrefix }}
     # serve the dashboard at the given port.
     # port: 8443
     # Serve the dashboard using SSL (if using ingress to expose the dashboard and `ssl: true` you need to set
@@ -253,10 +251,10 @@ cephClusterSpec:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
             - matchExpressions:
-              - key: role
-                operator: In
+              - key: {{ all_node_affinity_key }}
+                operator: {{ all_node_affinity_operator }}
                 values:
-                - rook-node
+                - {{ all_node_affinity_value }}
       podAffinity:
       podAntiAffinity:
       topologySpreadConstraints:
@@ -274,10 +272,10 @@ cephClusterSpec:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
             - matchExpressions:
-              - key: role
-                operator: In
+              - key: {{ osd_node_affinity_key }}
+                operator: {{ osd_node_affinity_operator }}
                 values:
-                - rook-osd-node
+                - {{ osd_node_affinity_value }}
       
     ##mgr:
     #cleanup:
@@ -307,22 +305,22 @@ cephClusterSpec:
   resources:
     mgr:
       limits:
-        memory: "1Gi"
+        memory: {{ mgr_limits_memory }}
       requests:
-        cpu: "500m"
-        memory: "512Mi"
+        cpu: {{ mgr_requests_cpu }}
+        memory: {{ mgr_requests_memory }}
     mon:
       limits:
-        memory: "2Gi"
+        memory: {{ mon_limits_memory }}
       requests:
-        cpu: "1000m"
-        memory: "1Gi"
+        cpu: {{ mon_requests_cpu }}
+        memory: {{ mon_requests_memory }}
     osd:
       limits:
-        memory: "4Gi"
+        memory: {{ osd_limits_memory }}
       requests:
-        cpu: "1000m"
-        memory: "4Gi"
+        cpu: {{ osd_requests_cpu }}
+        memory: {{ osd_requests_memory }}
     prepareosd:
       # limits: It is not recommended to set limits on the OSD prepare job
       #         since it's a one-time burst for memory that must be allowed to
@@ -376,30 +374,35 @@ cephClusterSpec:
     mgr: system-cluster-critical
 
   storage: # cluster level storage configuration and selection
-    useAllNodes: true
-    useAllDevices: true
-      deviceFilter:
-      config:
-        crushRoot: "custom-root" # specify a non-default root label for the CRUSH map
-        metadataDevice: "md0" # specify a non-rotational storage so ceph-volume will use it as block db device of bluestore.
-        databaseSizeMB: "1024" # uncomment if the disks are smaller than 100 GB
-        osdsPerDevice: "1" # this value can be overridden at the node or device level
-        encryptedDevice: "true" # the default value for this option is "false"
-      # Individual nodes and their config can be specified as well, but 'useAllNodes' above must be set to false. Then, only the named
-      # nodes below will be used as storage resources. Each node's 'name' field should match their 'kubernetes.io/hostname' label.
-      nodes:
-{% for node in p%}
-        - name:
-    #    - name: "172.17.4.201"
-    #      devices: # specific devices to use for storage can be specified for each node
-    #        - name: "sdb"
-    #        - name: "nvme01" # multiple osds can be created on high performance devices
-    #          config:
-    #           osdsPerDevice: "5"
-    #       - name: "/dev/disk/by-id/ata-ST4000DM004-XXXX" # devices can be specified using full udev paths
-    #     config: # configuration can be specified at the node level which overrides the cluster level config
-    #   - name: "172.17.4.301"
-    #     deviceFilter: "^sd."
+    useAllNodes: {{ useAllNodes }}
+    useAllDevices: {{ useAllDevices }}
+    deviceFilter:
+    config:
+      crushRoot: "custom-root" # specify a non-default root label for the CRUSH map
+      metadataDevice: "md0" # specify a non-rotational storage so ceph-volume will use it as block db device of bluestore.
+      databaseSizeMB: "1024" # uncomment if the disks are smaller than 100 GB
+      osdsPerDevice: "1" # this value can be overridden at the node or device level
+      encryptedDevice: "true" # the default value for this option is "false"
+    # Individual nodes and their config can be specified as well, but 'useAllNodes' above must be set to false. Then, only the named
+    # nodes below will be used as storage resources. Each node's 'name' field should match their 'kubernetes.io/hostname' label.
+    {% if not useAllNodes or not useAllDevices %}
+    nodes:
+      # Add node-specific configurations if needed
+    {% endif %}
+    devices:
+      {% if devices %}
+      {% for device in devices %}
+      - name: {{ device }}
+      {% endfor %}
+      {% else %}
+      # No devices specified
+      []
+      {% endif %}
+
+  # Enable specific Ceph features
+  enableCephFS: {{ enableCephFS }}
+  enableRBD: {{ enableRBD }}
+  enableRGW: {{ enableRGW }}
 
   # The section for configuring management of daemon disruptions during upgrade or fencing.
   disruptionManagement:
@@ -432,7 +435,6 @@ cephClusterSpec:
         disabled: false
       osd:
         disabled: false
-
 ingress:
   # -- Enable an ingress for the ceph-dashboard
   dashboard:
