@@ -33,7 +33,7 @@ add_rook_helm_repo:
 # Step 3: Install or upgrade rook-ceph-cluster using Helm state with key-value flags
 helm_install_rook_ceph_cluster:
   helm.release_present:
-    - name: rook-ceph
+    - name: rook-ceph-release
     - chart: rook-release/rook-ceph-cluster
     - namespace: {{ namespace }}
     - version: {{ rook_version }}
