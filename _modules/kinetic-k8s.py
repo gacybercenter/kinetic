@@ -2610,3 +2610,69 @@ def bmh_state(namespace, bmh_name, desired_state):
             'current_state': 'error',
             'message': f"Error checking BMH state: {str(e)[:50]}..."
         }
+def namespace_present(namespace):
+    """
+    Ensure that a Kubernetes namespace exists. If it does not exist, create it.
+
+    Args:
+        namespace (str): The name of the namespace to ensure exists.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.namespace_present my-namespace
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+        exists = False
+        updated = False
+
+        # Check if namespace exists
+        try:
+            core_v1_api.read_namespace(name=namespace)
+            exists = True
+            message = f"Namespace {namespace} already exists"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking namespace {namespace}: {str(e)[:50]}..."
+                }
+
+        # Create namespace if it does not exist
+        if not exists:
+            try:
+                namespace_body = client.V1Namespace(
+                    metadata=client.V1ObjectMeta(name=namespace)
+                )
+                core_v1_api.create_namespace(body=namespace_body)
+                updated = True
+                message = f"Namespace {namespace} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create namespace {namespace}: {str(e)[:50]}..."
+                }
+
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Namespace operation error: {str(e)[:50]}..."
+        }
