@@ -12,6 +12,10 @@
 include:
   - /formulas/common/helm/install
 
+debug_outputs:
+  cmd.run:
+    - name: echo {{ rook_version }}
+
 # Step 2: Add the rook-ceph Helm repository
 add_rook_helm_repo:
   helm.repo_managed:
