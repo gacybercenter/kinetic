@@ -74,15 +74,14 @@ cephClusterSpec:
   storage:
     useAllNodes: {{ useAllNodes }}
     useAllDevices: {{ useAllDevices }}
-    deviceFilter: '^sd.'
-    # devices:
-    #   {% if devices %}
-    #   {% for device in devices %}
-    #   - name: {{ device }}
-    #   {% endfor %}
-    #   {% else %}
-    #   []
-    #   {% endif %}
+    devices:
+      {% if devices %}
+      {% for device in devices %}
+      - name: {{ device }}
+      {% endfor %}
+      {% else %}
+      []
+      {% endif %}
 
   # Enable specific Ceph features
   enableCephFS: {{ enableCephFS }}
