@@ -584,11 +584,11 @@ cephBlockPools:
 #       parameters:
 #         # The secrets contain Ceph admin credentials.
 #         csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
-#         csi.storage.k8s.io/provisioner-secret-namespace: "{{ .Release.Namespace }}"
+#         csi.storage.k8s.io/provisioner-secret-namespace: "{{ namespace }}"
 #         csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
-#         csi.storage.k8s.io/controller-expand-secret-namespace: "{{ .Release.Namespace }}"
+#         csi.storage.k8s.io/controller-expand-secret-namespace: "{{ namespace }}"
 #         csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
-#         csi.storage.k8s.io/node-stage-secret-namespace: "{{ .Release.Namespace }}"
+#         csi.storage.k8s.io/node-stage-secret-namespace: "{{ namespace }}"
 #         # Specify the filesystem type of the volume. If not specified, csi-provisioner
 #         # will set default as `ext4`. Note that `xfs` is not recommended due to potential deadlock
 #         # in hyperconverged settings where the volume is mounted on the same node as the osds.
