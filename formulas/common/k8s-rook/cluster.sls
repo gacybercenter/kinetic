@@ -76,6 +76,8 @@ helm_install_rook_ceph_cluster:
     - flags:
       - dry-run
       - debug
+    - kvflags:
+      set: operatorNamespace="rook-ceph"
     - values: /tmp/rook-cluster-values.yaml
     - require:
       - helm: add_rook_helm_repo
