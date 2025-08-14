@@ -31,6 +31,7 @@ cephClusterSpec:
     urlPrefix: {{ dashboard_urlPrefix }}
     ssl: true
   network:
+    provider: host
     addressRanges:
       public: 
         - {{ pillar['networking']['subnets']['sfe'] }}
