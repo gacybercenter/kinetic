@@ -11,19 +11,24 @@
 # Step 1: Ensure Helm is installed on the target node
 include:
   - /formulas/common/helm/install
+# Step 1: Ensure the namespace exists
 
 debug_outputs:
   cmd.run:
     - name: echo {{ rook_version }}
-
+# Step 1: Ensure the namespace exists
+create_rook_namespace:
+  k8s.namespace_present:
+    - name: {{ namespace }}
+  
 # Step 2: Add the rook-ceph Helm repository
 add_rook_helm_repo:
   helm.repo_managed:
     - present:
       - name: rook-release
         url: https://charts.rook.io/release
-        repo_update: True
-        namespace: {{ namespace }}
+    - repo_update: True
+    - namespace: {{ namespace }}
 
 # Step 3: Install or upgrade rook-ceph-cluster using Helm state with key-value flags
 helm_install_rook_ceph_cluster:
