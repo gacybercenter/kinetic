@@ -8,6 +8,8 @@
 {% set requests_memory = pillar['rook']['resources']['requests']['memory'] %}
 {% set rook_role = pillar['rook']['mon']['node_role'] %}
 {% set rook_osd_role = pillar['rook']['osd']['node_role'] %}
+{% set rook_osd_cpu_limit = pillar['rook']['osd']['limits']['cpu'] %}
+{% set rook_osd_mem_limit = pillar['rook']['osd']['limits']['mem'] %}
 
 # Step 1: Ensure Helm is installed on the target node
 include:
@@ -45,7 +47,7 @@ render_rook_values_file:
         mon_limits_memory: {{ limits_memory }}
         mon_requests_cpu: {{ requests_cpu }}
         mon_requests_memory: {{ requests_memory }}
-        osd_limits_memory: {{ limits_memory }}
+        osd_limits_memory: {{ rook_osd_mem_limit }}
         osd_requests_cpu: {{ requests_cpu }}
         osd_requests_memory: {{ requests_memory }}
         useAllNodes: true
