@@ -48,7 +48,7 @@ render_rook_values_file:
         osd_limits_memory: {{ limits_memory }}
         osd_requests_cpu: {{ requests_cpu }}
         osd_requests_memory: {{ requests_memory }}
-        useAllNodes: false
+        useAllNodes: true
         useAllDevices: false
         devices: {{ devices | default([]) }}
         enableCephFS: false
