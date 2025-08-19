@@ -75,7 +75,8 @@ helm_install_rook_ceph_cluster:
     - version: {{ rook_version }}
     - flags:
       - debug
-    - values_file: /tmp/rook-cluster-values.yaml
+    - kvflags: 
+      - /tmp/rook-cluster-values.yaml
     - require:
       - helm: add_rook_helm_repo
       - file: render_rook_values_file
