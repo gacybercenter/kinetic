@@ -40,7 +40,7 @@ cephClusterSpec:
   placement:
     all:
       nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
+        preferredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
             - matchExpressions:
               - key: {{ all_node_affinity_key }}
