@@ -9,7 +9,7 @@
 {% set rook_role = pillar['rook']['mon']['node_role'] %}
 {% set rook_osd_role = pillar['rook']['osd']['node_role'] %}
 {% set rook_osd_cpu_limit = pillar['rook']['osd']['limits']['cpu'] %}
-{% set rook_osd_mem_limit = pillar['rook']['osd']['limits']['mem'] %}
+{% set rook_osd_mem_limit = pillar['rook']['osd']['limits']['memory'] %}
 
 # Step 1: Ensure Helm is installed on the target node
 include:
