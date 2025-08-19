@@ -30,7 +30,7 @@ resources:
 
 # -- Kubernetes [`nodeSelector`](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector) to add to the Deployment.
 nodeSelector:
-  node-role.kubernetes.io: rook-node
+  role: rook-node
 # Constraint rook-ceph-operator Deployment to nodes with label `disktype: ssd`.
 # For more info, see https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
 #  disktype: ssd
