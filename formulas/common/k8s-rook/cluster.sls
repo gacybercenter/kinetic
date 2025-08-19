@@ -42,19 +42,19 @@ deploy_rook_ceph_cluster:
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
                   - matchExpressions:
-                    - key: role
+                    - key: ceph-type
                       operator: In
                       values:
-                      - {{ rook_role }}
+                      - mon
           osd:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
                   - matchExpressions:
-                    - key: role
+                    - key: ceph-type
                       operator: In
                       values:
-                      - {{ rook_osd_role }}
+                      - osd
         resources:
           mgr:
             limits:
