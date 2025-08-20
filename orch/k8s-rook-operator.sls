@@ -18,6 +18,7 @@ assign_rook_node_role:
           for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep 'rook-rsc'); do
             kubectl label nodes "$node" node-role.kubernetes.io/rook-node= --overwrite
             kubectl label nodes "$node" ceph-type=mon
+            kubectl taint node "$node" node-role.kubernetes.io/rook-node=:NoSchedule
           done
     - tgt: '{{ k8s }}'
     - output_loglevel: info
@@ -33,6 +34,7 @@ assign_storage_node_role:
           for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep 'storage'); do
             kubectl label nodes "$node" node-role.kubernetes.io/rook-osd-node= --overwrite
             kubectl label nodes "$node" ceph-type=osd
+            kubectl taint node "$node" node-role.kubernetes.io/rook-osd-node=:NoSchedule
           done
     - tgt: '{{ k8s }}'
     - output_loglevel: info
