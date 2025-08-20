@@ -15,10 +15,10 @@ include:
   - /formulas/common/helm
 
 # Setup the Kubernetes repo
-Install Salt Kubernetes extension:
-  pip.installed:
-    - pip_bin: /opt/saltstack/salt/salt-pip
-    - name: saltext-kubernetes
+# Install Salt Kubernetes extension:
+#   pip.installed:
+#     - pip_bin: /opt/saltstack/salt/salt-pip
+#     - name: saltext-kubernetes
 kube.repo:
   pkgrepo.managed:
     - name: {{ pillar['k8s_repo'] }}
