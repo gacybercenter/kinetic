@@ -1247,3 +1247,83 @@ def bmh_state(name, namespace, bmh_name, desired_state):
         ret['changes'] = {}
 
     return ret
+def namespace_present(name, namespace):
+    """
+    Ensure that a Kubernetes namespace exists. If it does not exist, create it.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The name of the Kubernetes namespace to ensure exists.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_namespace:
+          k8s.namespace_present:
+            - namespace: my-namespace
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.namespace_present'](namespace)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'namespace_created': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure namespace {namespace}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
+def ceph_cluster_present(name, namespace, cluster_name, spec):
+    """
+    Ensure that a CephCluster Custom Resource exists in the specified namespace.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The namespace for the CephCluster resource.
+
+    cluster_name
+        The name of the CephCluster resource.
+
+    spec
+        The specification dictionary for the CephCluster resource.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ceph_cluster:
+          k8s.ceph_cluster_present:
+            - namespace: rook-ceph
+            - cluster_name: rook-ceph
+            - spec:
+                cephVersion:
+                  image: quay.io/ceph/ceph:v19.2.3
+                dataDirHostPath: /var/lib/rook
+                storage:
+                  useAllNodes: false
+                  useAllDevices: false
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.ceph_cluster_present'](namespace, cluster_name, spec)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'ceph_cluster_updated': True}
+        else:
+            ret['changes'] = {}
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure CephCluster {cluster_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
