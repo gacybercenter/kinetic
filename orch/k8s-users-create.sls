@@ -82,7 +82,7 @@ create_k8s_csr_object:
           spec:
             request: $(cat /tmp/{{ username }}.csr | base64 | tr -d '\n')
             signerName: kubernetes.io/kube-apiserver-client
-            expirationSeconds: 31,556,952  # 1 year; adjust as needed
+            expirationSeconds: 31556952  # 1 year; adjust as needed
             usages:
             - client auth
           EOF
