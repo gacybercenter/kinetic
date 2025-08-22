@@ -12,13 +12,13 @@ helm_rook_repo:
       - name: rook-release
         url: https://charts.rook.io/release
         repo_update: true
-        namespace: rook-ceph
+        namespace: rsc-ceph
 
 helm_rook_release:
   helm.release_present:
     - name: rook-ceph
     - chart: rook-release/rook-ceph
-    - namespace: rook-ceph
+    - namespace: rsc-ceph
     - kvflags:
         values: /tmp/rook.yaml
     - unless: helm list -n rook-ceph |grep rook
