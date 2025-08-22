@@ -65,6 +65,19 @@ cephClusterSpec:
       - effect: NoSchedule
         key: node-role.kubernetes.io/rook-osd-node
         operator: Exists
+    prepareosd:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ osd_node_affinity_key }}
+                operator: {{ osd_node_affinity_operator }}
+                values:
+                - {{ osd_node_affinity_value }}
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/rook-osd-node
+        operator: Exists
   resources:
     mgr:
       limits:
