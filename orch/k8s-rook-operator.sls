@@ -34,7 +34,7 @@ assign_storage_node_role:
           for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep 'storage'); do
             kubectl label nodes "$node" node-role.kubernetes.io/rook-osd-node= --overwrite
             kubectl label nodes "$node" ceph-type=osd --overwrite
-            kubectl taint node "$node" node-role.kubernetes.io/rook-osd-node=:NoSchedule
+            kubectl taint node "$node" node-role.kubernetes.io/rook-osd-node=:NoSchedule --overwrite
           done
     - tgt: '{{ k8s }}'
     - output_loglevel: info
