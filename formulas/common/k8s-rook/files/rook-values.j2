@@ -30,16 +30,12 @@ resources:
 
 # -- Kubernetes [`nodeSelector`](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector) to add to the Deployment.
 nodeSelector:
-  ceph-type: mon
 # Constraint rook-ceph-operator Deployment to nodes with label `disktype: ssd`.
 # For more info, see https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
 #  disktype: ssd
 
 # -- List of Kubernetes [`tolerations`](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) to add to the Deployment.
 tolerations:
-  - effect: NoSchedule
-    key: node-role.kubernetes.io/rook-node
-    operator: Exists
 # -- Delay to use for the `node.kubernetes.io/unreachable` pod failure toleration to override
 # the Kubernetes default of 5 minutes
 unreachableNodeTolerationSeconds: 5
