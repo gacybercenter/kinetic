@@ -55,13 +55,12 @@ cephClusterSpec:
     mgr:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
-        - weight: 1
-          preference:
-            matchExpressions:
-            - key: {{ all_node_affinity_key }}
-              operator: {{ all_node_affinity_operator }}
-              values:
-              - {{ all_node_affinity_value }}
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ all_node_affinity_key }}
+                operator: {{ all_node_affinity_operator }}
+                values:
+                - {{ all_node_affinity_value }}
       tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/rook-node
