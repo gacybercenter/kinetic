@@ -7,6 +7,7 @@ elastic_repo:
     - present:
       - name: elastic
         url: https://helm.elastic.co
+      - repo_update: True
 
 render_elasticsearch_values:
   file.managed:
