@@ -17,7 +17,7 @@ render_elasticsearch_values:
 
 elasticsearch_helm_install:
   helm.release_present:
-    - name: elasticsearch
+    - name: es-quickstart
     - chart: elastic/elasticsearch
     - version: {{ pillar.get('elasticsearch_version') }}
     - namespace: {{ pillar.get('efk_namespace') }}
