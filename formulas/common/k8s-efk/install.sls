@@ -6,8 +6,9 @@ efk_namespace:
 
 elastic_repo:
   helm.repo_managed:
-    - name: elastic
-    - url: https://helm.elastic.co
+    - present:
+      - name: elastic
+        url: https://helm.elastic.co
 
 render_elasticsearch_values:
   file.managed:
