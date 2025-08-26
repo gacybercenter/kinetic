@@ -3,9 +3,9 @@ minimumMasterNodes: {{ pillar.get('elasticsearch_minimum_master_nodes', 2) }}
 clusterName: {{ pillar.get('elasticsearch_cluster_name', 'elastic-cluster') }}
 nodeGroup: {{ pillar.get('elasticsearch_node_group', 'master') }}
 roles:
-  master: {{ pillar.get('elasticsearch_roles_master', 'true') }}
-  data: {{ pillar.get('elasticsearch_roles_data', 'true') }}
-  ingest: {{ pillar.get('elasticsearch_roles_ingest', 'true') }}
+  - master: {{ pillar.get('elasticsearch_roles_master', 'true') }}
+  - data: {{ pillar.get('elasticsearch_roles_data', 'true') }}
+  - ingest: {{ pillar.get('elasticsearch_roles_ingest', 'true') }}
 resources:
   limits:
     cpu: {{ pillar.get('elasticsearch_cpu_limit', '1000m') }}
