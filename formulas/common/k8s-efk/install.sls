@@ -1,8 +1,6 @@
 efk_namespace:
   k8s.namespace_present:
     - name: {{ pillar.get('efk_namespace', 'efk') }}
-    - require:
-      - sls: common.k8s
 
 elastic_repo:
   helm.repo_managed:
@@ -15,8 +13,6 @@ render_elasticsearch_values:
     - name: /tmp/elasticsearch-values.yaml
     - source: salt://formulas/common/k8s-efk/files/elasticsearch-values.j2
     - template: jinja
-    - require:
-      - sls: common.helm
 
 elasticsearch_helm_install:
   helm.release_present:
