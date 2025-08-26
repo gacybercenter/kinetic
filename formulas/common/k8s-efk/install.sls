@@ -15,7 +15,7 @@ elasticsearch_helm_install:
     - chart: elastic/elasticsearch
     - version: {{ pillar.get('elasticsearch_version') }}
     - namespace: {{ pillar.get('efk_namespace') }}
-    - values: {{ salt['template.render']('/formulas/common/k8s-efk/files/elasticsearch-values.j2', pillar=pillar) | yaml }}
+    - values: {{ salt['jinja.load_template']('/formulas/common/k8s-efk/files/elasticsearch-values.j2', context={'pillar': pillar}) | yaml }}
     - require:
       - k8s: efk_namespace
       - helm: elastic_repo
