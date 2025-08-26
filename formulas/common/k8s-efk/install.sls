@@ -1,6 +1,6 @@
 efk_namespace:
   k8s.namespace_present:
-    - name: {{ pillar.get('efk_namespace', 'efk') }}
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
 
 elastic_repo:
   helm.repo_managed:
