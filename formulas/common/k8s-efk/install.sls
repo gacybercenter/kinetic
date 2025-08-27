@@ -2,26 +2,26 @@ efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
 
-elastic_repo:
+opensearch_repo:
   helm.repo_managed:
     - present:
-      - name: elastic
-        url: https://helm.elastic.co
+      - name: opensearch
+        url: https://opensearch-project.github.io/helm-charts/
     - repo_update: True
 
-render_elasticsearch_values:
+render_opensearch_values:
   file.managed:
-    - name: /tmp/elasticsearch-values.yaml
-    - source: salt://formulas/common/k8s-efk/files/elasticsearch-values.j2
+    - name: /tmp/opensearch-values.yaml
+    - source: salt://formulas/common/k8s-efk/files/opensearch-values.j2
     - template: jinja
 
-elasticsearch_helm_install:
+opensearch_helm_install:
   helm.release_present:
-    - name: elasticsearch
-    - chart: elastic/elasticsearch
-    - version: {{ pillar.get('elasticsearch_version') }}
-    - namespace: {{ pillar.get('efk_namespace') }}
-    - values: /tmp/elasticsearch-values.yaml
+    - name: opensearch
+    - chart: opensearch/opensearch
+    - version: {{ pillar.get('opensearch_version', '2.12.0') }}
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - values: /tmp/opensearch-values.yaml
     - require:
       - k8s: efk_namespace
-      - helm: elastic_repo
+      - helm: opensearch_repo

@@ -1,0 +1,20 @@
+# Default values for OpenSearch Helm chart
+replicas: {{ pillar.get('opensearch_replicas', 3) }}
+clusterName: {{ pillar.get('opensearch_cluster_name', 'opensearch-cluster') }}
+masterNodes: {{ pillar.get('opensearch_master_nodes', 2) }}
+roles:
+  - master
+  - data
+  - ingest
+resources:
+  limits:
+    cpu: {{ pillar.get('opensearch_cpu_limit', '1000m') }}
+    memory: {{ pillar.get('opensearch_memory_limit', '1024Mi') }}
+  requests:
+    cpu: {{ pillar.get('opensearch_cpu_request', '500m') }}
+    memory: {{ pillar.get('opensearch_memory_request', '512Mi') }}
+persistence:
+  enabled: {{ pillar.get('opensearch_persistence_enabled', true) }}
+  size: {{ pillar.get('opensearch_persistence_size', '10Gi') }}
+service:
+  type: {{ pillar.get('opensearch_service_type', 'ClusterIP') }}
