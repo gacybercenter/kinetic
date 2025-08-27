@@ -1,16 +1,22 @@
 # Fluent Bit Helm chart values with OpenSearch backend configuration
-backend:
-  es:
-    host: {{ pillar.get('opensearch_service_host') }}
-    port: {{ pillar.get('opensearch_service_port') }}
-    tls: {{ pillar.get('opensearch_tls_enabled') }}
-    tls_verify: {{ pillar.get('opensearch_tls_verify') }}
-    suppress_type_name: {{ pillar.get('opensearch_suppress_type_name') }}
+fluent-bit:
+  config:
+    outputs: |
+      [OUTPUT]
+          Name              es
+          Match             *
+          Host              {{ pillar.get('opensearch_service_host', 'opensearch.opensearch.svc.cluster.local') }}
+          Port              {{ pillar.get('opensearch_service_port', 9200) }}
+          TLS               {{ pillar.get('opensearch_tls_enabled', 'On') }}
+          TLS.Verify        {{ pillar.get('opensearch_tls_verify', 'Off') }}
+          Suppress_Type_Name {{ pillar.get('opensearch_suppress_type_name', 'On') }}
+          Index             fluentbit
+          Type              _doc
 resources:
   requests:
-    memory: {{ pillar.get('fluent_bit_memory_request') }}
-    cpu: {{ pillar.get('fluent_bit_cpu_request') }}
+    memory: {{ pillar.get('fluent_bit_memory_request', '100Mi') }}
+    cpu: {{ pillar.get('fluent_bit_cpu_request', '100m') }}
   limits:
-    memory: {{ pillar.get('fluent_bit_memory_limit') }}
-    cpu: {{ pillar.get('fluent_bit_cpu_limit') }}
+    memory: {{ pillar.get('fluent_bit_memory_limit', '200Mi') }}
+    cpu: {{ pillar.get('fluent_bit_cpu_limit', '200m') }}
 # Additional Fluent Bit configurations can be added based on pillar data
