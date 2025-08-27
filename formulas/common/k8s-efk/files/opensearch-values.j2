@@ -1,7 +1,44 @@
 # Default values for OpenSearch Helm chart
 replicas: {{ pillar.get('opensearch_replicas', 3) }}
-clusterName: {{ pillar.get('opensearch_cluster_name', 'opensearch-cluster') }}
-masterNodes: {{ pillar.get('opensearch_master_nodes', 2) }}
+config:
+  opensearch.yml: |
+    cluster.name: {{ pillar.get('opensearch_cluster_name') }}
+    network.host: 0.0.0.0
+    plugins:
+      security:
+        ssl:
+          transport:
+            pemcert_filepath: esnode.pem
+            pemkey_filepath: esnode-key.pem
+            pemtrustedcas_filepath: root-ca.pem
+            enforce_hostname_verification: false
+        allow_unsafe_democertificates: true
+        allow_default_init_securityindex: true
+        audit.type: internal_opensearch
+        enable_snapshot_restore_privilege: true
+        check_snapshot_restore_write_privileges: true
+        restapi:
+          roles_enabled: ["all_access", "security_rest_api_access"]
+        system_indices:
+          enabled: true
+          indices:
+            [
+              ".opendistro-alerting-config",
+              ".opendistro-alerting-alert*",
+              ".opendistro-anomaly-results*",
+              ".opendistro-anomaly-detector*",
+              ".opendistro-anomaly-checkpoints",
+              ".opendistro-anomaly-detection-state",
+              ".opendistro-reports-*",
+              ".opendistro-notifications-*",
+              ".opendistro-notebooks",
+              ".opendistro-asynchronous-search-response*",
+            ]
+extraEnvs:
+  - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+    value: {{ pillar['fluentd_password']}}
+  - name: DISABLE_INSTALL_DEMO_CONFIG
+    value: true
 roles:
   - master
   - data
