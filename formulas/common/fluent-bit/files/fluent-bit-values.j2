@@ -1,0 +1,16 @@
+# Fluent Bit Helm chart values with OpenSearch backend configuration
+backend:
+  es:
+    host: {{ pillar.get('opensearch_service_host') }}
+    port: {{ pillar.get('opensearch_service_port') }}
+    tls: {{ pillar.get('opensearch_tls_enabled') }}
+    tls_verify: {{ pillar.get('opensearch_tls_verify') }}
+    suppress_type_name: {{ pillar.get('opensearch_suppress_type_name') }}
+resources:
+  requests:
+    memory: {{ pillar.get('fluent_bit_memory_request') }}
+    cpu: {{ pillar.get('fluent_bit_cpu_request') }}
+  limits:
+    memory: {{ pillar.get('fluent_bit_memory_limit') }}
+    cpu: {{ pillar.get('fluent_bit_cpu_limit') }}
+# Additional Fluent Bit configurations can be added based on pillar data

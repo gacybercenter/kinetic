@@ -17,3 +17,11 @@ k8s_efk_install:
     - sls: formulas.common.k8s-efk.install
     - require:
       - salt: create_efk_namespace
+
+# Step 3: Apply Fluent Bit configuration via Helm
+k8s_fluent_bit_install:
+  salt.state:
+    - tgt: '{{ k8s }}'
+    - sls: formulas.common.fluent-bit.install
+    - require:
+      - salt: k8s_opensearch_install
