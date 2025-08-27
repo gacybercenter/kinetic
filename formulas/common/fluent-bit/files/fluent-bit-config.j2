@@ -1,0 +1,43 @@
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: FluentBit
+metadata:
+  name: fluent-bit
+  namespace: {{ pillar.get('efk_namespace', 'efk') }}
+spec:
+  image: fluent/fluent-bit:{{ pillar.get('fluent_bit_image_version', '3.1.4') }}
+  replicas: {{ pillar.get('fluent_bit_replicas', 1) }}
+  resources:
+    limits:
+      cpu: {{ pillar.get('fluent_bit_cpu_limit', '200m') }}
+      memory: {{ pillar.get('fluent_bit_memory_limit', '200Mi') }}
+    requests:
+      cpu: {{ pillar.get('fluent_bit_cpu_request', '100m') }}
+      memory: {{ pillar.get('fluent_bit_memory_request', '100Mi') }}
+  fluentBitConfigName: fluent-bit-config
+---
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: FluentBitConfig
+metadata:
+  name: fluent-bit-config
+  namespace: {{ pillar.get('efk_namespace', 'efk') }}
+spec:
+  service:
+    parsers:
+      - name: json
+        format: json
+  input:
+    - name: tail
+      tag: kube.*
+      path: /var/log/containers/*.log
+      parser: json
+  output:
+    - name: es
+      match: kube.*
+      host: {{ pillar.get('opensearch_service_host', 'opensearch.opensearch.svc.cluster.local') }}
+      port: {{ pillar.get('opensearch_service_port', 9200) }}
+      tls:
+        enabled: {{ pillar.get('opensearch_tls_enabled', true) }}
+        verify: {{ pillar.get('opensearch_tls_verify', false) }}
+      suppressTypeName: {{ pillar.get('opensearch_suppress_type_name', true) }}
+      index: fluentbit
+      type: _doc
