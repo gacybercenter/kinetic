@@ -12,7 +12,7 @@ config:
         Index             fluentbit
         Type              _doc
         HTTP_User         {{ pillar.get('opensearch_fluentbit_username', 'fluentbit') }}
-        HTTP_Passwd       {{ pillar.get('opensearch_fluentbit_password', 'FluentBitPass123!') }
+        HTTP_Passwd       {{ pillar.get('opensearch_fluentbit_password', 'FluentBitPass123!') }}
 resources:
   requests:
     memory: {{ pillar.get('fluent_bit_memory_request', '100Mi') }}
