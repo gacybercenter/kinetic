@@ -26,7 +26,6 @@ fluent_bit_helm_install:
     - version: {{ pillar.get('fluent_bit_version', '0.47.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - values: /tmp/fluent-bit-values.yaml
-    - kubeconfig: {{ pillar.get('kubeconfig_path', '/etc/kubernetes/admin.conf') }}
     - require:
       - k8s: efk_namespace
       - helm: fluent_repo

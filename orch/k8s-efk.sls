@@ -23,5 +23,3 @@ k8s_fluent_bit_install:
   salt.state:
     - tgt: '{{ k8s }}'
     - sls: formulas.common.fluent-bit.install
-    - require:
-      - salt: k8s_opensearch_install
