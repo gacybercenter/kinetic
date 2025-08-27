@@ -2,8 +2,6 @@
 efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - require:
-      - sls: common.k8s
 
 # Manage Helm repository for Fluent
 fluent_repo:
@@ -11,10 +9,8 @@ fluent_repo:
     - present:
       - name: fluent
         url: https://fluent.github.io/helm-charts
-    - repo_update: Truefs
-    - require:
-      - sls: common.helm
-
+    - repo_update: True
+    
 # Render Fluent Bit values file
 render_fluent_bit_values:
   file.managed:
@@ -22,8 +18,6 @@ render_fluent_bit_values:
     - source: salt://formulas/common/fluent-bit/files/fluent-bit-values.j2
     - template: jinja
     - makedirs: True
-    - require:
-      - sls: common.helm
 
 # Install or upgrade Fluent Bit using direct Helm command
 fluent_bit_helm_install:
