@@ -2,7 +2,7 @@
 config:
   outputs: |
     [OUTPUT]
-        Name              opensearchfs
+        Name              opensearch
         Match             *
         Host              {{ pillar.get('opensearch_service_host', 'opensearch.opensearch.svc.cluster.local') }}
         Port              {{ pillar.get('opensearch_service_port', 9200) }}
