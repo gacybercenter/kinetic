@@ -18,7 +18,6 @@ fluent_operator_helm_install:
     - chart: fluent/fluent-operator
     - version: {{ pillar.get('fluent_operator_version', '2.10.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - force: True
     - require:
       - k8s: efk_namespace
       - helm: fluent_repo
