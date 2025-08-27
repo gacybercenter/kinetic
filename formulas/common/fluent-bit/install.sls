@@ -2,8 +2,6 @@
 efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - require:
-      - sls: common.k8s
 
 # Manage Helm repository for Fluent
 fluent_repo:
