@@ -38,7 +38,7 @@ extraEnvs:
   - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
     value: {{ pillar['fluentd_password']}}
   - name: DISABLE_INSTALL_DEMO_CONFIG
-    value: true
+    value: "true"
 roles:
   - master
   - data
