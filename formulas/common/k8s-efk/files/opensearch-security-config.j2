@@ -1,0 +1,108 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opensearch-security-config
+  namespace: {{ pillar.get('efk_namespace', 'efk') }}
+data:
+  internal_users.yml: |
+    _admin:
+      hash: "{{ pillar.get('opensearch_admin_hash', '$2y$12$YOUR_HASH_HERE') }}"
+      reserved: true
+      backend_roles:
+        - "admin"
+      description: "Admin user"
+    fluentbit:
+      hash: "{{ pillar.get('opensearch_fluentbit_hash', '$2y$12$ANOTHER_HASH_HERE') }}"
+      reserved: false
+      backend_roles:
+        - "log_writer"
+      description: "Fluent Bit log writer"
+    dashboard_user:
+      hash: "{{ pillar.get('opensearch_dashboard_user_hash', '$2y$12$YET_ANOTHER_HASH_HERE') }}"
+      reserved: false
+      backend_roles:
+        - "dashboard_reader"
+      description: "OpenSearch Dashboards read-only user"
+  roles.yml: |
+    admin:
+      reserved: true
+      cluster_permissions:
+        - "cluster_all"
+      index_permissions:
+        - index_patterns:
+            - "*"
+          allowed_actions:
+            - "indices_all"
+    log_writer:
+      reserved: false
+      cluster_permissions:
+        - "cluster_monitor"
+        - "cluster_composite_ops"
+      index_permissions:
+        - index_patterns:
+            - "fluentbit*"
+          allowed_actions:
+            - "write"
+            - "create_index"
+            - "manage"
+    dashboard_reader:
+      reserved: false
+      cluster_permissions:
+        - "cluster_monitor"
+      index_permissions:
+        - index_patterns:
+            - "fluentbit*"
+          allowed_actions:
+            - "read"
+            - "view_index_metadata"
+      tenant_permissions:
+        - tenant_patterns:
+            - "global_tenant"
+          allowed_actions:
+            - "kibana_all_read"
+  roles_mapping.yml: |
+    admin:
+      reserved: true
+      users:
+        - "_admin"
+    log_writer:
+      reserved: false
+      users:
+        - "fluentbit"
+    dashboard_reader:
+      reserved: false
+      users:
+        - "dashboard_user"
+  action_groups.yml: |
+    write:
+      - "indices:data/write/*"
+    read:
+      - "indices:data/read/*"
+    manage:
+      - "indices:admin/*"
+  config.yml: |
+    authc:
+      basic_internal_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 1
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: internal
+    authz:
+      roles_from_myldap:
+        http_enabled: false
+        transport_enabled: false
+    audit:
+      type: internal_opensearch
+      enable_rest: true
+      enable_transport: true
+      config:
+        disabled_rest_categories: []
+        disabled_transport_categories: []
+  tenants.yml: |
+    global_tenant:
+      reserved: true
+      description: "Global tenant for Dashboards"

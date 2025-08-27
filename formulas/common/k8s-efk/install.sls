@@ -2,6 +2,22 @@ efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
 
+render_opensearch_security_config:
+  file.managed:
+    - name: /tmp/opensearch-security-config.yaml
+    - source: salt://formulas/common/k8s-efk/files/opensearch-security-config.j2
+    - template: jinja
+    - makedirs: True
+
+apply_opensearch_security_config:
+  cmd.run:
+    - name: kubectl apply -f /tmp/opensearch-security-config.yaml
+    - kubeconfig: {{ pillar.get('kubeconfig_path', '/etc/kubernetes/admin.conf') }}
+    - require:
+      - file: render_opensearch_security_config
+    - onchanges:
+      - file: render_opensearch_security_config
+
 opensearch_repo:
   helm.repo_managed:
     - present:
