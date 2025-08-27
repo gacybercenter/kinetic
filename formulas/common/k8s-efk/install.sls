@@ -12,7 +12,6 @@ render_opensearch_security_config:
 apply_opensearch_security_config:
   cmd.run:
     - name: kubectl apply -f /tmp/opensearch-security-config.yaml
-    - kubeconfig: {{ pillar.get('kubeconfig_path', '/etc/kubernetes/admin.conf') }}
     - require:
       - file: render_opensearch_security_config
     - onchanges:
