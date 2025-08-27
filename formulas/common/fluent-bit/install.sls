@@ -11,7 +11,6 @@ fluent_repo:
         url: https://fluent.github.io/helm-charts
     - repo_update: True
 
-
 # Render Fluent Bit values file
 render_fluent_bit_values:
   file.managed:
@@ -28,7 +27,7 @@ fluent_bit_helm_install:
     - version: {{ pillar.get('fluent_bit_version', '0.47.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - values: /tmp/fluent-bit-values.yaml
-
+    - force: True  # Force update to ensure values are applied
     - require:
       - k8s: efk_namespace
       - helm: fluent_repo
