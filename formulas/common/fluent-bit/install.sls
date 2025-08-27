@@ -16,7 +16,7 @@ fluent_operator_helm_install:
   helm.release_present:
     - name: fluent-operator
     - chart: fluent/fluent-operator
-    - version: {{ pillar.get('fluent_operator_version', '2.10.0') }}
+    - version: {{ pillar.get('fluent_operator_version', '3.4.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - require:
       - k8s: efk_namespace
