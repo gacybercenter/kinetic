@@ -1,5 +1,10 @@
 {% set k8s = salt['pillar.get']('k8s') %}
 
+k8s_certmanager_install:
+  salt.state:
+    - tgt: '{{ k8s }}'
+    - sls: formulas.common.k8s-certmanager.install
+
 # Step 1: Create namespace for EFK if it doesn't exist
 create_efk_namespace:
   salt.function:
