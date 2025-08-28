@@ -1,6 +1,8 @@
 efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - require:
+      - sls: common.k8s
 
 render_opensearch_security_config:
   file.managed:
@@ -8,6 +10,8 @@ render_opensearch_security_config:
     - source: salt://formulas/common/k8s-efk/files/opensearch-security-config.j2
     - template: jinja
     - makedirs: True
+    - require:
+      - sls: common.k8s
 
 apply_opensearch_security_config:
   cmd.run:
@@ -17,18 +21,38 @@ apply_opensearch_security_config:
     - onchanges:
       - file: render_opensearch_security_config
 
+render_opensearch_tls_cert:
+  file.managed:
+    - name: /tmp/opensearch-tls-cert.yaml
+    - source: salt://formulas/common/k8s-efk/files/opensearch-tls-cert.j2
+    - template: jinja
+    - makedirs: True
+    - require:
+      - sls: common.k8s-certmanager.install  # Ensure Cert-Manager is installed
+
+apply_opensearch_tls_cert:
+  cmd.run:
+    - name: kubectl apply -f /tmp/opensearch-tls-cert.yaml
+    - require:
+      - file: render_opensearch_tls_cert
+    - onchanges:
+      - file: render_opensearch_tls_cert
+
 opensearch_repo:
   helm.repo_managed:
-    - present:
-      - name: opensearch
-        url: https://opensearch-project.github.io/helm-charts/
+    - name: opensearch
+    - url: https://opensearch-project.github.io/helm-charts/
     - repo_update: True
+    - require:
+      - sls: common.helm
 
 render_opensearch_values:
   file.managed:
     - name: /tmp/opensearch-values.yaml
     - source: salt://formulas/common/k8s-efk/files/opensearch-values.j2
     - template: jinja
+    - require:
+      - sls: common.helm
 
 opensearch_helm_install:
   helm.release_present:
@@ -37,6 +61,10 @@ opensearch_helm_install:
     - version: {{ pillar.get('opensearch_version', '2.12.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - values: /tmp/opensearch-values.yaml
+    - force: True
     - require:
       - k8s: efk_namespace
       - helm: opensearch_repo
+      - cmd: apply_opensearch_security_config
+      - cmd: apply_opensearch_tls_cert
+      - file: render_opensearch_values
