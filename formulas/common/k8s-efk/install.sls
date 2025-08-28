@@ -56,7 +56,6 @@ opensearch_helm_install:
     - version: {{ pillar.get('opensearch_version', '2.12.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - values: /tmp/opensearch-values.yaml
-    - force: True
     - require:
       - k8s: efk_namespace
       - helm: opensearch_repo
