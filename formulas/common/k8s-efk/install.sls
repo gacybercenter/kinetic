@@ -36,8 +36,9 @@ apply_opensearch_tls_cert:
 
 opensearch_repo:
   helm.repo_managed:
-    - name: opensearch
-    - url: https://opensearch-project.github.io/helm-charts/
+    - present:
+      - name: opensearch
+        url: https://opensearch-project.github.io/helm-charts/
     - repo_update: True
 
 
