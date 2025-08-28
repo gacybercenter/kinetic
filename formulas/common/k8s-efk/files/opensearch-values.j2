@@ -1,26 +1,37 @@
 # Default values for OpenSearch Helm chart
 replicas: {{ pillar.get('opensearch_replicas', 3) }}
-
 config:
   opensearch.yml: |
     cluster.name: {{ pillar.get('opensearch_cluster_name', 'opensearch-cluster') }}
     network.host: 0.0.0.0
-    discovery.type: multi-node
-    plugins.security.ssl.transport.enabled: true
-    plugins.security.ssl.http.enabled: true
-    plugins.security.allow_unsafe_democertificates: true  # For testing; set to false in production
-
+    plugins:
+      security:
+        enabled: true
+        restapi:
+          roles_enabled: ["all_access", "security_rest_api_access"]
+        system_indices:
+          enabled: true
+          indices:
+            - ".opendistro-alerting-config"
+            - ".opendistro-alerting-alert*"
+            - ".opendistro-anomaly-results*"
+            - ".opendistro-anomaly-detector*"
+            - ".opendistro-anomaly-checkpoints"
+            - ".opendistro-anomaly-detection-state"
+            - ".opendistro-reports-*"
+            - ".opendistro-notifications-*"
+            - ".opendistro-notebooks"
+            - ".opendistro-asynchronous-search-response*"
 securityConfig:
   enabled: true
   path: "/usr/share/opensearch/config/opensearch-security"
-  config:
-    securityConfigSecret: opensearch-security-config
-  tls:
-    transport:
-      generate: true  # Auto-generate TLS certs for node-to-node
-      perNode: true
-    http:
-      generate: true  # Auto-generate TLS certs for HTTP
+  secretName: "opensearch-security-config"
+tls:
+  enabled: true
+  secretName: "opensearch-tls-secret"  # Reference the secret created by Cert-Manager
+  transport:
+    enabled: true
+    secretName: "opensearch-tls-secret"  # Same secret for transport layer TLS
 extraEnvs:
   - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
     value: {{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}
