@@ -1,8 +1,7 @@
 efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - require:
-      - sls: common.k8s
+
 
 render_opensearch_security_config:
   file.managed:
@@ -10,8 +9,7 @@ render_opensearch_security_config:
     - source: salt://formulas/common/k8s-efk/files/opensearch-security-config.j2
     - template: jinja
     - makedirs: True
-    - require:
-      - sls: common.k8s
+
 
 apply_opensearch_security_config:
   cmd.run:
@@ -27,8 +25,6 @@ render_opensearch_tls_cert:
     - source: salt://formulas/common/k8s-efk/files/opensearch-tls-cert.j2
     - template: jinja
     - makedirs: True
-    - require:
-      - sls: common.k8s-certmanager.install  # Ensure Cert-Manager is installed
 
 apply_opensearch_tls_cert:
   cmd.run:
@@ -43,16 +39,14 @@ opensearch_repo:
     - name: opensearch
     - url: https://opensearch-project.github.io/helm-charts/
     - repo_update: True
-    - require:
-      - sls: common.helm
+
 
 render_opensearch_values:
   file.managed:
     - name: /tmp/opensearch-values.yaml
     - source: salt://formulas/common/k8s-efk/files/opensearch-values.j2
     - template: jinja
-    - require:
-      - sls: common.helm
+
 
 opensearch_helm_install:
   helm.release_present:
