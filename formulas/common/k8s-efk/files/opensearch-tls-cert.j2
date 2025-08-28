@@ -18,7 +18,7 @@ spec:
   commonName: {{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local
   dnsNames:
     - {{ pillar.get('opensearch_service_host') }}
-    - {{ pillar.get('opensearch_service_host')-headless  }}
+    - {{ pillar.get('opensearch_service_host') }}-headless
     - {{ pillar.get('opensearch_service_host') }}.{{ pillar-get('efk_namespace') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}
   usages:
     - server auth
