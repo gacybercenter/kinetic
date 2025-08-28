@@ -32,6 +32,9 @@ config:
             pemcert_filepath: /usr/share/opensearch/config/certs/tls.crt
             pemkey_filepath: /usr/share/opensearch/config/certs/tls.key
             pemtrustedcas_filepath: /usr/share/opensearch/config/certs/ca.crt
+        nodes_dn:
+          - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local"  # Match the commonName from the certificate
+
 securityConfig:
   enabled: true
   path: "/usr/share/opensearch/config/opensearch-security"
