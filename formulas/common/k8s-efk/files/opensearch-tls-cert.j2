@@ -15,7 +15,7 @@ spec:
   issuerRef:
     name: selfsigned-issuer
     kind: ClusterIssuer
-  commonName: {{ pillar.get('opensearch_service_host').pillar.get('efk_namespace').svc.cluster.local }}
+  commonName: {{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local
   dnsNames:
     - {{ pillar.get('opensearch_service_host') }}
     - {{ pillar.get('opensearch_service_host')-headless  }}
