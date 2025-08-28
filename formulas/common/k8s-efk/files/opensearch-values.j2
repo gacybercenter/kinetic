@@ -23,15 +23,37 @@ config:
             - ".opendistro-asynchronous-search-response*"
         ssl:
           transport:
-            enabled: true
+            enabled: {{ pillar.get('opensearch_transport_tls_enabled', true) }}
             pemcert_filepath: /usr/share/opensearch/config/certs/tls.crt
             pemkey_filepath: /usr/share/opensearch/config/certs/tls.key
             pemtrustedcas_filepath: /usr/share/opensearch/config/certs/ca.crt
+            enforce_hostname_verification: {{ pillar.get('opensearch_transport_ssl_hostname_verification', false) }}
+            protocols:
+              - TLSv1.2
+              - TLSv1.3
+            ciphers:
+              - TLS_AES_256_GCM_SHA384
+              - TLS_AES_128_GCM_SHA256
+              - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+              - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+              - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+              - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
           http:
             enabled: true
             pemcert_filepath: /usr/share/opensearch/config/certs/tls.crt
             pemkey_filepath: /usr/share/opensearch/config/certs/tls.key
             pemtrustedcas_filepath: /usr/share/opensearch/config/certs/ca.crt
+            clientauth_mode: OPTIONAL
+            protocols:
+              - TLSv1.2
+              - TLSv1.3
+            ciphers:
+              - TLS_AES_256_GCM_SHA384
+              - TLS_AES_128_GCM_SHA256
+              - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+              - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+              - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+              - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
         nodes_dn:
           - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local"  # Match the commonName from the certificate
 
