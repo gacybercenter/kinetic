@@ -7,19 +7,19 @@ type: Opaque
 stringData:
   internal_users.yml: |
     _admin:
-      hash: "{{ pillar.get('opensearch_admin_hash') }}"
+      hash: {{ pillar.get('opensearch_admin_hash') }}
       reserved: true
       backend_roles:
         - "admin"
       description: "Admin user"
     fluentbit:
-      hash: "{{ pillar.get('opensearch_fluentbit_hash') }}"
+      hash: {{ pillar.get('opensearch_fluentbit_hash') }}
       reserved: false
       backend_roles:
         - "log_writer"
       description: "Fluent Bit log writer"
     dashboard_user:
-      hash: "{{ pillar.get('opensearch_dashboard_user_hash') }}"
+      hash: {{ pillar.get('opensearch_dashboard_user_hash') }}
       reserved: false
       backend_roles:
         - "dashboard_reader"
