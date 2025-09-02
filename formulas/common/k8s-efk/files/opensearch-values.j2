@@ -33,6 +33,11 @@ config:
             pemcert_filepath: certs/tls.crt
             pemkey_filepath: certs/tls.key
             pemtrustedcas_filepath: certs/ca.crt
+            enabled_ciphers:
+              - "TLS_AES_128_GCM_SHA256"
+              - "TLS_AES_256_GCM_SHA384"
+            enabled_protocols:
+              - "TLSv1.3"
             clientauth_mode: OPTIONAL
         nodes_dn:
           - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local"  # Match the commonName from the certificate
