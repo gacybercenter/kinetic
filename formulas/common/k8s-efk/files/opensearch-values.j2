@@ -51,7 +51,8 @@ config:
 securityConfig:
   enabled: true
   path: "/usr/share/opensearch/config/opensearch-security"
-  secretName: "opensearch-security-config"
+  config:
+    securityConfigSecret: "opensearch-security-config"
 tls:
   enabled: true
   secretName: "opensearch-tls-secret"  # Reference the secret created by Cert-Manager
