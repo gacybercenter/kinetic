@@ -47,6 +47,14 @@ tls:
   transport:
     enabled: true
     secretName: "opensearch-tls-secret"  # Same secret for transport layer TLS
+extraVolumes:
+  - name: opensearch-tls-secret
+    secret:
+      secretName: opensearch-tls-secret
+extraVolumeMounts:
+  - name: opensearch-tls
+    mountPath: /usr/share/opensearch/config/certs
+    readOnly: true
 extraEnvs:
   - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
     value: {{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}
