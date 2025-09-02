@@ -5,7 +5,7 @@ config:
         Name              opensearch
         Match             *
         Host              {{ pillar.get('opensearch_service_host') }}
-        Port              {{ pillar.get('opensearch_service_port' }}
+        Port              {{ pillar.get('opensearch_service_port') }}
         TLS               {{ pillar.get('opensearch_tls_enabled') }}
         TLS.Verify        {{ pillar.get('opensearch_tls_verify') }}
         Suppress_Type_Name {{ pillar.get('opensearch_suppress_type_name') }}
