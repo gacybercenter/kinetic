@@ -36,6 +36,10 @@ config:
             clientauth_mode: OPTIONAL
         nodes_dn:
           - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local"  # Match the commonName from the certificate
+          - "CN={{ pillar.get('opensearch_service_host') }}"
+          - "CN={{ pillar.get('opensearch_service_host') }}-headless"
+          - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"
+
 
 securityConfig:
   enabled: true
