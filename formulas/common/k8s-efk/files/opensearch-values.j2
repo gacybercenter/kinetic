@@ -10,18 +10,18 @@ config:
           roles_enabled: ["all_access", "security_rest_api_access"]
         system_indices:
           enabled: true
-          # indices:
-          #   - ".opensearch-alerting-config"
-          #   - ".opensearch-alerting-alert*"
-          #   - ".opensearch-anomaly-results*"
-          #   - ".opensearch-anomaly-detector*"
-          #   - ".opensearch-anomaly-checkpoints"
-          #   - ".opensearch-anomaly-detection-state"
-          #   - ".opensearch-reports-*"
-          #   - ".opensearch-notifications-*"
-          #   - ".opensearch-notebooks"
-          #   - ".opensearch-security"
-          #   - ".opensearch-asynchronous-search-response*"
+          indices:
+            - ".opensearch-alerting-config"
+            - ".opensearch-alerting-alert*"
+            - ".opensearch-anomaly-results*"
+            - ".opensearch-anomaly-detector*"
+            - ".opensearch-anomaly-checkpoints"
+            - ".opensearch-anomaly-detection-state"
+            - ".opensearch-reports-*"
+            - ".opensearch-notifications-*"
+            - ".opensearch-notebooks"
+            - ".opensearch-security"
+            - ".opensearch-asynchronous-search-response*"
         ssl:
           transport:
             enabled: {{ pillar.get('opensearch_transport_tls_enabled', true) }}
