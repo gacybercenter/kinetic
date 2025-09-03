@@ -93,7 +93,7 @@ resources:
     memory: {{ pillar.get('opensearch_memory_limit', '8192Mi') }}
   requests:
     cpu: {{ pillar.get('opensearch_cpu_request', '20000m') }}
-    memory: {{ pillar.get('opensearch_memory_request', '4094Mi') }}
+    memory: {{ pillar.get('opensearch_memory_request', '8192Mi') }}
 persistence:
   enabled: {{ pillar.get('opensearch_persistence_enabled', true) }}
   size: {{ pillar.get('opensearch_persistence_size', '10Gi') }}
