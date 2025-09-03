@@ -89,10 +89,10 @@ roles:
   - ingest
 resources:
   limits:
-    cpu: {{ pillar.get('opensearch_cpu_limit', '4000m') }}
+    cpu: {{ pillar.get('opensearch_cpu_limit', '20000m') }}
     memory: {{ pillar.get('opensearch_memory_limit', '8192Mi') }}
   requests:
-    cpu: {{ pillar.get('opensearch_cpu_request', '2000m') }}
+    cpu: {{ pillar.get('opensearch_cpu_request', '20000m') }}
     memory: {{ pillar.get('opensearch_memory_request', '4094Mi') }}
 persistence:
   enabled: {{ pillar.get('opensearch_persistence_enabled', true) }}
