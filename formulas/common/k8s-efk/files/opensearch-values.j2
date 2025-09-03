@@ -11,17 +11,7 @@ config:
           roles_enabled: ["all_access", "security_rest_api_access"]
         system_indices:
           enabled: true
-          indices:
-            - ".opensearch-alerting-config"
-            - ".opensearch-alerting-alert*"
-            - ".opensearch-anomaly-results*"
-            - ".opensearch-anomaly-detector*"
-            - ".opensearch-anomaly-checkpoints"
-            - ".opensearch-anomaly-detection-state"
-            - ".opensearch-reports-*"
-            - ".opensearch-notifications-*"
-            - ".opensearch-notebooks"
-            - ".opensearch-asynchronous-search-response*"
+          indices: ['.opendistro-alerting-config', '.opendistro-ism-*', '.opendistro-reports-*', '.opensearch-notifications-*', '.opensearch-notebooks', '.opensearch-observability', '.opendistro-asynchronous-search-response*', '.replication-metadata-store']
         ssl:
           transport:
             enabled: {{ pillar.get('opensearch_transport_tls_enabled', true) }}
