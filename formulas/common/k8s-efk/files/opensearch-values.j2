@@ -7,6 +7,7 @@ config:
     plugins:
       security:
         allow_default_init_securityindex: true
+        config_index_name: .opensearch_security
         restapi:
           roles_enabled: ["all_access", "security_rest_api_access"]
         ssl:
