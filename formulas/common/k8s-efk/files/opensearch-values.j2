@@ -68,21 +68,15 @@ extraVolumes:
   - name: opensearch-tls-secret
     secret:
       secretName: opensearch-tls-secret
-  - name: security-config-dir
-    emptyDir: {}
 extraVolumeMounts:
   - name: opensearch-tls-secret
     mountPath: /usr/share/opensearch/config/certs
     readOnly: true
-  - name: security-config-dir
-    mountPath: "/usr/share/opensearch/config/opensearch-security"
 extraEnvs:
   - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
     value: {{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}
   - name: DISABLE_INSTALL_DEMO_CONFIG
     value: "true"
-  - name: OPENSEARCH_JAVA_OPTS
-    value: "-Xms4g -Xmx4g"
 roles:
   - master
   - data
