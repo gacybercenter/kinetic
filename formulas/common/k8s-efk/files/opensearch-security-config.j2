@@ -13,23 +13,24 @@ stringData:
     _meta:
       type: "internalusers"
       config_version: 2
-    _admin:
+
+    admin:
       hash: "{{ pillar.get('opensearch_admin_hash', '$2y$12$YOUR_HASH_HERE') }}"
       reserved: true
       backend_roles:
-        - "admin"
+      - "admin"
       description: "Admin user"
     fluentbit:
       hash: "{{ pillar.get('opensearch_fluentbit_hash', '$2y$12$ANOTHER_HASH_HERE') }}"
       reserved: false
       backend_roles:
-        - "log_writer"
+      - "log_writer"
       description: "Fluent Bit log writer"
     dashboard_user:
       hash: "{{ pillar.get('opensearch_dashboard_user_hash', '$2y$12$YET_ANOTHER_HASH_HERE') }}"
       reserved: false
       backend_roles:
-        - "dashboard_reader"
+      - "dashboard_reader"
       description: "OpenSearch Dashboards read-only user"
 ---
 apiVersion: v1
@@ -44,6 +45,7 @@ stringData:
     _meta:
       type: "roles"
       config_version: 2
+
     admin:
       reserved: true
       cluster_permissions:
@@ -96,15 +98,15 @@ stringData:
     admin:
       reserved: true
       users:
-        - "_admin"
+      - "admin"
     log_writer:
       reserved: false
       users:
-        - "fluentbit"
+      - "fluentbit"
     dashboard_reader:
       reserved: false
       users:
-        - "dashboard_user"
+      - "dashboard_user"
 ---
 apiVersion: v1
 kind: Secret
@@ -145,18 +147,8 @@ stringData:
           type: basic
           challenge: true
         authentication_backend:
-          type: internal
-    authz:
-      roles_from_myldap:
-        http_enabled: false
-        transport_enabled: false
-    audit:
-      type: internal_opensearch
-      enable_rest: true
-      enable_transport: true
-      config:
-        disabled_rest_categories: []
-        disabled_transport_categories: []
+          type: intern
+
 ---
 apiVersion: v1
 kind: Secret
