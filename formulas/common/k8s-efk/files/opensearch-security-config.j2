@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: opensearch-security-config
+  name: {{ pillar.get('opensearch_security_secrets', {}).get('internal_users', 'internal-users-secret') }}
   namespace: {{ pillar.get('efk_namespace', 'efk') }}
 type: Opaque
 stringData:
@@ -24,6 +24,14 @@ stringData:
       backend_roles:
         - "dashboard_reader"
       description: "OpenSearch Dashboards read-only user"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ pillar.get('opensearch_security_secrets', {}).get('roles', 'roles-secret') }}
+  namespace: {{ pillar.get('efk_namespace', 'efk') }}
+type: Opaque
+stringData:
   roles.yml: |
     admin:
       reserved: true
@@ -61,6 +69,14 @@ stringData:
             - "global_tenant"
           allowed_actions:
             - "kibana_all_read"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ pillar.get('opensearch_security_secrets', {}).get('roles_mapping', 'roles-mapping-secret') }}
+  namespace: {{ pillar.get('efk_namespace', 'efk') }}
+type: Opaque
+stringData:
   roles_mapping.yml: |
     admin:
       reserved: true
@@ -74,6 +90,14 @@ stringData:
       reserved: false
       users:
         - "dashboard_user"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ pillar.get('opensearch_security_secrets', {}).get('action_groups', 'action-groups-secret') }}
+  namespace: {{ pillar.get('efk_namespace', 'efk') }}
+type: Opaque
+stringData:
   action_groups.yml: |
     write:
       - "indices:data/write/*"
@@ -81,6 +105,14 @@ stringData:
       - "indices:data/read/*"
     manage:
       - "indices:admin/*"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ pillar.get('opensearch_security_secrets', {}).get('config', 'config-secret') }}
+  namespace: {{ pillar.get('efk_namespace', 'efk') }}
+type: Opaque
+stringData:
   config.yml: |
     authc:
       basic_internal_auth_domain:
@@ -103,6 +135,14 @@ stringData:
       config:
         disabled_rest_categories: []
         disabled_transport_categories: []
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ pillar.get('opensearch_security_secrets', {}).get('tenants', 'tenants-secret') }}
+  namespace: {{ pillar.get('efk_namespace', 'efk') }}
+type: Opaque
+stringData:
   tenants.yml: |
     global_tenant:
       reserved: true
