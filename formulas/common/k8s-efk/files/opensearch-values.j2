@@ -67,13 +67,13 @@ extraVolumes:
   - name: opensearch-tls-secret
     secret:
       secretName: opensearch-tls-secret
-  - name: security-config
+  - name: security-config-dir
     emptyDir: {}
 extraVolumeMounts:
   - name: opensearch-tls-secret
     mountPath: /usr/share/opensearch/config/certs
     readOnly: true
-  - name: security-config
+  - name: security-config-dir
     mountPath: "/usr/share/opensearch/config/opensearch-security"
 extraEnvs:
   - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
