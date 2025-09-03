@@ -9,9 +9,6 @@ config:
         allow_default_init_securityindex: true
         restapi:
           roles_enabled: ["all_access", "security_rest_api_access"]
-        system_indices:
-          enabled: true
-          indices: ['.opendistro-alerting-config', '.opendistro-ism-*', '.opendistro-reports-*', '.opensearch-notifications-*', '.opensearch-notebooks', '.opensearch-observability', '.opendistro-asynchronous-search-response*', '.replication-metadata-store']
         ssl:
           transport:
             enabled: {{ pillar.get('opensearch_transport_tls_enabled', true) }}
