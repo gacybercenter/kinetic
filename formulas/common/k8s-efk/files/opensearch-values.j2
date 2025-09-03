@@ -51,12 +51,12 @@ config:
 securityConfig:
   enabled: true
   path: "/usr/share/opensearch/config/opensearch-security"
-#  internalUsersSecret: {{ pillar.get('opensearch_security_secrets', {}).get('internal_users', 'internal-users-secret') }}
-#  rolesSecret: {{ pillar.get('opensearch_security_secrets', {}).get('roles', 'roles-secret') }}
-#  rolesMappingSecret: {{ pillar.get('opensearch_security_secrets', {}).get('roles_mapping', 'roles-mapping-secret') }}
-#  actionGroupsSecret: {{ pillar.get('opensearch_security_secrets', {}).get('action_groups', 'action-groups-secret') }}
-#  configSecret: {{ pillar.get('opensearch_security_secrets', {}).get('config', 'config-secret') }}
-#  tenantsSecret: {{ pillar.get('opensearch_security_secrets', {}).get('tenants', 'tenants-secret') }}
+  internalUsersSecret: {{ pillar.get('opensearch_security_secrets', {}).get('internal_users', 'internal-users-secret') }}
+  rolesSecret: {{ pillar.get('opensearch_security_secrets', {}).get('roles', 'roles-secret') }}
+  rolesMappingSecret: {{ pillar.get('opensearch_security_secrets', {}).get('roles_mapping', 'roles-mapping-secret') }}
+  actionGroupsSecret: {{ pillar.get('opensearch_security_secrets', {}).get('action_groups', 'action-groups-secret') }}
+  configSecret: {{ pillar.get('opensearch_security_secrets', {}).get('config', 'config-secret') }}
+  tenantsSecret: {{ pillar.get('opensearch_security_secrets', {}).get('tenants', 'tenants-secret') }}
 tls:
   enabled: true
   secretName: "opensearch-tls-secret"  # Reference the secret created by Cert-Manager
@@ -67,14 +67,14 @@ extraVolumes:
   - name: opensearch-tls-secret
     secret:
       secretName: opensearch-tls-secret
-#  - name: security-config-dir
-#    emptyDir: {}
+  - name: security-config-dir
+    emptyDir: {}
 extraVolumeMounts:
   - name: opensearch-tls-secret
     mountPath: /usr/share/opensearch/config/certs
     readOnly: true
-#  - name: security-config-dir
-#    mountPath: "/usr/share/opensearch/config/opensearch-security"
+  - name: security-config-dir
+    mountPath: "/usr/share/opensearch/config/opensearch-security"
 extraEnvs:
   - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
     value: {{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}
