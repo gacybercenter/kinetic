@@ -5,6 +5,10 @@ config:
     cluster.name: {{ pillar.get('opensearch_cluster_name', 'opensearch-cluster') }}
     network.host: 0.0.0.0
     plugins:
+      query:
+        datasources:
+          encryption:
+            masterkey: 672e64c87e2e0ada37cfcd98
       security:
         restapi:
           roles_enabled: ["all_access", "security_rest_api_access"]
