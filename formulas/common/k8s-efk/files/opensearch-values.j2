@@ -38,7 +38,7 @@ config:
           - "CN={{ pillar.get('opensearch_service_host') }}"
           - "CN={{ pillar.get('opensearch_service_host') }}-headless"
           - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"
-        system_indices
+        system_indices:
           indices: ['.opendistro-alerting-config', '.opendistro-ism-*', '.opendistro-reports-*', '.opensearch-notifications-*', '.opensearch-notebooks', '.opensearch-observability', '.opendistro-asynchronous-search-response*', '.replication-metadata-store']
 
 securityConfig:
