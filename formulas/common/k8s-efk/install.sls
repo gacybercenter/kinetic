@@ -1,7 +1,8 @@
+# Add states for installing OpenSearch Dashboards using Helm, integrating with the existing OpenSearch setup.
+
 efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-
 
 render_opensearch_security_config:
   file.managed:
@@ -9,7 +10,6 @@ render_opensearch_security_config:
     - source: salt://formulas/common/k8s-efk/files/opensearch-security-config.j2
     - template: jinja
     - makedirs: True
-
 
 apply_opensearch_security_config:
   cmd.run:
@@ -41,13 +41,11 @@ opensearch_repo:
         url: https://opensearch-project.github.io/helm-charts/
     - repo_update: True
 
-
 render_opensearch_values:
   file.managed:
     - name: /tmp/opensearch-values.yaml
     - source: salt://formulas/common/k8s-efk/files/opensearch-values.j2
     - template: jinja
-
 
 opensearch_helm_install:
   helm.release_present:
@@ -62,3 +60,23 @@ opensearch_helm_install:
       - cmd: apply_opensearch_security_config
       - cmd: apply_opensearch_tls_cert
       - file: render_opensearch_values
+
+render_opensearch_dashboards_values:
+  file.managed:
+    - name: /tmp/opensearch-dashboards-values.yaml
+    - source: salt://formulas/common/k8s-efk/files/opensearch-dashboards-values.j2
+    - template: jinja
+    - makedirs: True
+
+opensearch_dashboards_helm_install:
+  helm.release_present:
+    - name: opensearch-dashboards
+    - chart: opensearch/opensearch-dashboards
+    - version: {{ pillar.get('opensearch_dashboards_version', '2.12.0') }}
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - values: /tmp/opensearch-dashboards-values.yaml
+    - require:
+      - k8s: efk_namespace
+      - helm: opensearch_repo
+      - helm: opensearch_helm_install
+      - file: render_opensearch_dashboards_values

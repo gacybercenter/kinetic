@@ -1,0 +1,38 @@
+# Default values for OpenSearch Dashboards Helm chart
+# Based on https://github.com/opensearch-project/helm-charts/blob/main/charts/opensearch-dashboards/values.yaml
+
+replicas: {{ pillar.get('opensearch_dashboards_replicas', 1) }}
+
+# OpenSearch connection configuration
+opensearchHosts: "https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"
+opensearchUsername: "admin"
+opensearchPassword: {{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}
+
+# TLS configuration for connecting to OpenSearch
+opensearchSslVerificationMode: {{ pillar.get('opensearch_tls_verify', 'none') }}
+
+# Service configuration
+service:
+  type: {{ pillar.get('opensearch_dashboards_service_type', 'ClusterIP') }}
+  port: {{ pillar.get('opensearch_dashboards_service_port', 5601) }}
+
+# Resources configuration
+resources:
+  limits:
+    cpu: {{ pillar.get('opensearch_dashboards_cpu_limit', '500m') }}
+    memory: {{ pillar.get('opensearch_dashboards_memory_limit', '512Mi') }}
+  requests:
+    cpu: {{ pillar.get('opensearch_dashboards_cpu_request', '200m') }}
+    memory: {{ pillar.get('opensearch_dashboards_memory_request', '256Mi') }}
+
+# Ingress configuration for OpenSearch Dashboards
+ingress:
+  enabled: {{ pillar.get('opensearch_dashboards_ingress_enabled', true) }}
+  ingressClassName: {{ pillar.get('opensearch_dashboards_ingress_class', 'nginx') }}
+  hosts:
+    - host: {{ pillar.get('opensearch_dashboards_ingress_host', 'dashboards.example.com') }}
+      paths:
+        - path: /
+          pathType: Prefix
+  # TLS configuration for Ingress (optional, requires Cert-Manager or manual secret setup)
+  tls: {{ pillar.get('opensearch_dashboards_ingress_tls', []) }}
