@@ -107,7 +107,9 @@ install_nginx_ingress_controller:
           --set controller.replicaCount={{ pillar.get('nginx_ingress_replica_count', 2) }} \
           --set controller.watchIngressWithoutClass=true \
           --set controller.deployment.progressDeadlineSeconds={{ pillar.get('nginx_ingress_progress_deadline_seconds', 20) }} \
-          --set controller.service.annotations."metallb\.universe\.tf/address-pool"={{ pillar.get('nginx_ingress_metallb_pool', 'default') }} 
+          --set controller.service.annotations."metallb\.universe\.tf/address-pool"={{ pillar.get('nginx_ingress_metallb_pool', 'default') }} \
+          --set controller.admissionWebhooks.enabled=true \
+          --set controller.admissionWebhooks.certManager.enabled={{ pillar.get('nginx_ingress_webhook_certmanager_enabled', true) }}
     - require:
       - cmd: update_helm_repos
       - test: certmanager_installed
