@@ -42,7 +42,7 @@ install_nginx_ingress_controller:
           --set controller.service.type={{ pillar.get('nginx_ingress_service_type', 'LoadBalancer') }} \
           --set controller.replicaCount={{ pillar.get('nginx_ingress_replica_count', 2) }} \
           --set controller.watchIngressWithoutClass=true \
-          --set controllertpyo.progressDeadlineSeconds={{ pillar.get('nginx_ingress_progress_deadline_seconds', 600) }} \
+          --set controller.progressDeadlineSeconds={{ pillar.get('nginx_ingress_progress_deadline_seconds', 600) }} \
           --wait
     - require:
       - cmd: update_helm_repos
