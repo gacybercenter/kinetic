@@ -1,5 +1,6 @@
 # Install MetalLB for LoadBalancer IP management with a specified IP pool (10.150.1.43 - 10.150.1.50)
 # and deploy NGINX Ingress Controller with MetalLB annotations to request an IP from the pool.
+# Ensure progressDeadlineSeconds is correctly set for the Deployment.
 
 include:
   - /formulas/common/helm/install
@@ -106,12 +107,12 @@ install_nginx_ingress_controller:
           --set controller.service.type={{ pillar.get('nginx_ingress_service_type', 'LoadBalancer') }} \
           --set controller.replicaCount={{ pillar.get('nginx_ingress_replica_count', 2) }} \
           --set controller.watchIngressWithoutClass=true \
-          --set controller.deployment.progressDeadlineSeconds={{ pillar.get('nginx_ingress_progress_deadline_seconds', 20) }} \
+          --set controller.progressDeadlineSeconds={{ pillar.get('nginx_ingress_progress_deadline_seconds', 20) }} \
           --set controller.service.annotations."metallb\.universe\.tf/address-pool"={{ pillar.get('nginx_ingress_metallb_pool', 'default') }} \
           --set controller.admissionWebhooks.enabled=true \
           --set controller.admissionWebhooks.certManager.enabled={{ pillar.get('nginx_ingress_webhook_certmanager_enabled', true) }}
     - require:
       - cmd: update_helm_repos
       - test: certmanager_installed
-      - cmd: install_metallb
+      - cmd: configure_metallb_l2_advertisement
     - unless: kubectl get deployment -n {{ pillar.get('nginx_ingress_namespace', 'openstack') }} | grep -q "ingress-nginx-controller"
