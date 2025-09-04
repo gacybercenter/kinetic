@@ -2,14 +2,14 @@
 # and configure it to watch all namespaces for Ingress resources.
 
 include:
-  - /formulas/common/helm
+  - /formulas/common/helm/install
   - /formulas/common/k8s-certmanager/install
 
 # Ensure Helm is installed and configured before proceeding
 helm_installed:
   test.nop:
     - require:
-      - sls: /formulas/common/helm
+      - sls: /formulas/common/helm/install
 
 # Ensure Cert-Manager is installed for TLS support (if needed)
 certmanager_installed:
