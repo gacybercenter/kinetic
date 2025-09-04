@@ -30,7 +30,7 @@ ingress:
   enabled: {{ pillar.get('opensearch_dashboards_ingress_enabled', true) }}
   ingressClassName: {{ pillar.get('opensearch_dashboards_ingress_class', 'nginx') }}
   hosts:
-    - host: {{ pillar.get('opensearch_dashboards_ingress_host', 'dashboards.example.com') }}
+    - host: {{ pillar.get('opensearch_dashboards_ingress_host', 'logger.services.gacyberrange.org') }}
       paths:
         - path: /
           pathType: Prefix
