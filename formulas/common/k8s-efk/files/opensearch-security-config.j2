@@ -1,9 +1,9 @@
-# Update the YAML content in each secret to include the metadata header as per OpenSearch security configuration format.
+# Consolidate all individual secrets into a single secret with file names as keys under stringData.
 
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ pillar.get('opensearch_security_secrets', {}).get('internal_users', 'internal-users-secret') }}
+  name: {{ pillar.get('opensearch_security_secrets', {}).get('combined', 'opensearch-security-config') }}
   namespace: {{ pillar.get('efk_namespace', 'efk') }}
 type: Opaque
 stringData:
@@ -13,39 +13,29 @@ stringData:
     _meta:
       type: "internalusers"
       config_version: 2
-
     admin:
       hash: "{{ pillar.get('opensearch_admin_hash', '$2y$12$YOUR_HASH_HERE') }}"
       reserved: true
       backend_roles:
-      - "admin"
+        - "admin"
       description: "Admin user"
     fluentbit:
       hash: "{{ pillar.get('opensearch_fluentbit_hash', '$2y$12$ANOTHER_HASH_HERE') }}"
       reserved: false
       backend_roles:
-      - "log_writer"
+        - "log_writer"
       description: "Fluent Bit log writer"
     dashboard_user:
       hash: "{{ pillar.get('opensearch_dashboard_user_hash', '$2y$12$YET_ANOTHER_HASH_HERE') }}"
       reserved: false
       backend_roles:
-      - "dashboard_reader"
+        - "dashboard_reader"
       description: "OpenSearch Dashboards read-only user"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ pillar.get('opensearch_security_secrets', {}).get('roles', 'roles-secret') }}
-  namespace: {{ pillar.get('efk_namespace', 'efk') }}
-type: Opaque
-stringData:
   roles.yml: |
     # This defines the access control roles
     _meta:
       type: "roles"
       config_version: 2
-
     admin:
       reserved: true
       cluster_permissions:
@@ -82,14 +72,6 @@ stringData:
             - "global_tenant"
           allowed_actions:
             - "kibana_all_read"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ pillar.get('opensearch_security_secrets', {}).get('roles_mapping', 'roles-mapping-secret') }}
-  namespace: {{ pillar.get('efk_namespace', 'efk') }}
-type: Opaque
-stringData:
   roles_mapping.yml: |
     # This maps roles to users and groups
     _meta:
@@ -98,42 +80,31 @@ stringData:
     admin:
       reserved: true
       users:
-      - "admin"
+        - "admin"
     log_writer:
       reserved: false
       users:
-      - "fluentbit"
+        - "fluentbit"
     dashboard_reader:
       reserved: false
       users:
-      - "dashboard_user"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ pillar.get('opensearch_security_secrets', {}).get('action_groups', 'action-groups-secret') }}
-  namespace: {{ pillar.get('efk_namespace', 'efk') }}
-type: Opaque
-stringData:
+        - "dashboard_user"
   action_groups.yml: |
     # This defines reusable action groups for permissions
+    gcr_action_group:
+      reserved: false
+      hidden: false
+      allowed_actions:
+      - "indices:data/write/index*"
+      - "indices:data/write/update*"
+      - "indices:admin/mapping/put"
+      - "indices:data/write/bulk*"
+      - "read"
+      - "write"
+      static: false
     _meta:
       type: "actiongroups"
       config_version: 2
-    write:
-      - "indices:data/write/*"
-    read:
-      - "indices:data/read/*"
-    manage:
-      - "indices:admin/*"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ pillar.get('opensearch_security_secrets', {}).get('config', 'config-secret') }}
-  namespace: {{ pillar.get('efk_namespace', 'efk') }}
-type: Opaque
-stringData:
   config.yml: |
     _meta:
       type: "config"
@@ -143,26 +114,9 @@ stringData:
         basic_internal_auth_domain:
           http_enabled: true
           transport_enabled: true
-          order:  1
+          order: 1
           http_authenticator:
             type: basic
             challenge: false
           authentication_backend:
             type: intern
-
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ pillar.get('opensearch_security_secrets', {}).get('tenants', 'tenants-secret') }}
-  namespace: {{ pillar.get('efk_namespace', 'efk') }}
-type: Opaque
-stringData:
-  tenants.yml: |
-    # This defines the tenants for multi-tenancy
-    _meta:
-      type: "tenants"
-      config_version: 2
-    global_tenant:
-      reserved: true
-      description: "Global tenant for Dashboards"

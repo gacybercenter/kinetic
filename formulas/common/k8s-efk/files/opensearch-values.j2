@@ -31,24 +31,23 @@ config:
             clientauth_mode: OPTIONAL
         authcz:
           admin_dn:
-            - CN=gcr,OU=client
+            - CN=gcr,OU=client,O=client,L=test, C=en
 
         nodes_dn:
           - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local"  # Match the commonName from the certificate
           - "CN={{ pillar.get('opensearch_service_host') }}"
           - "CN={{ pillar.get('opensearch_service_host') }}-headless"
           - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"
-
+        system_indices
+          indices: ['.opendistro-alerting-config', '.opendistro-ism-*', '.opendistro-reports-*', '.opensearch-notifications-*', '.opensearch-notebooks', '.opensearch-observability', '.opendistro-asynchronous-search-response*', '.replication-metadata-store']
 
 securityConfig:
   enabled: true
   path: "/usr/share/opensearch/config/opensearch-security"
-  internalUsersSecret: {{ pillar.get('opensearch_security_secrets', {}).get('internal_users', 'internal-users-secret') }}
-  rolesSecret: {{ pillar.get('opensearch_security_secrets', {}).get('roles', 'roles-secret') }}
-  rolesMappingSecret: {{ pillar.get('opensearch_security_secrets', {}).get('roles_mapping', 'roles-mapping-secret') }}
-  actionGroupsSecret: {{ pillar.get('opensearch_security_secrets', {}).get('action_groups', 'action-groups-secret') }}
-  configSecret: {{ pillar.get('opensearch_security_secrets', {}).get('config', 'config-secret') }}
-  tenantsSecret: {{ pillar.get('opensearch_security_secrets', {}).get('tenants', 'tenants-secret') }}
+  config:
+    securityConfigSecret: "opensearch-security-config"
+    dataComplete: true
+    
 tls:
   enabled: true
   secretName: "opensearch-tls-secret"  # Reference the secret created by Cert-Manager
