@@ -8,6 +8,7 @@ config:
       security:
         restapi:
           roles_enabled: ["all_access", "security_rest_api_access"]
+        allow_default_init_securityindex: true
         ssl:
           transport:
             enabled: {{ pillar.get('opensearch_transport_tls_enabled', true) }}
