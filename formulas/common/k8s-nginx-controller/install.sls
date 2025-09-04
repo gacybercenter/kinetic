@@ -39,35 +39,54 @@ update_helm_repos:
     - require:
       - cmd: add_metallb_repo
 
-# Render MetalLB values file with IP pool configuration
-render_metallb_values:
-  file.managed:
-    - name: /tmp/metallb-values.yaml
-    - contents: |
-        configInline:
-          address-pools:
-          - name: {{ pillar.get('nginx_ingress_metallb_pool', 'default') }}
-            protocol: layer2
-            addresses:
-            - {{ pillar.get('metallb_ip_range_start', '10.150.1.43') }}-{{ pillar.get('metallb_ip_range_end', '10.150.1.50') }}
-    - makedirs: True
-    - require:
-      - test: helm_installed
-
-# Install or upgrade MetalLB using Helm
+# Install or upgrade MetalLB using Helm (without inline config as it's no longer supported)
 install_metallb:
   cmd.run:
     - name: |
         helm upgrade --install metallb metallb/metallb \
           --namespace {{ pillar.get('metallb_namespace', 'metallb-system') }} \
           --create-namespace \
-          --values /tmp/metallb-values.yaml \
           --wait
     - require:
       - k8s: metallb_namespace
       - cmd: update_helm_repos
-      - file: render_metallb_values
     - unless: kubectl get deployment -n {{ pillar.get('metallb_namespace', 'metallb-system') }} | grep -q "metallb-controller"
+
+# Configure MetalLB IP pool using IPAddressPool CRD
+configure_metallb_ip_pool:
+  cmd.run:
+    - name: |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: metallb.io/v1beta1
+        kind: IPAddressPool
+        metadata:
+          name: {{ pillar.get('nginx_ingress_metallb_pool', 'default') }}
+          namespace: {{ pillar.get('metallb_namespace', 'metallb-system') }}
+        spec:
+          addresses:
+          - {{ pillar.get('metallb_ip_range_start', '10.150.1.43') }}-{{ pillar.get('metallb_ip_range_end', '10.150.1.50') }}
+        EOF
+    - require:
+      - cmd: install_metallb
+    - unless: kubectl get ipaddresspool -n {{ pillar.get('metallb_namespace', 'metallb-system') }} | grep -q "{{ pillar.get('nginx_ingress_metallb_pool', 'default') }}"
+
+# Configure MetalLB L2 Advertisement for the IP pool
+configure_metallb_l2_advertisement:
+  cmd.run:
+    - name: |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: metallb.io/v1beta1
+        kind: L2Advertisement
+        metadata:
+          name: {{ pillar.get('nginx_ingress_metallb_pool', 'default') }}-l2
+          namespace: {{ pillar.get('metallb_namespace', 'metallb-system') }}
+        spec:
+          ipAddressPools:
+          - {{ pillar.get('nginx_ingress_metallb_pool', 'default') }}
+        EOF
+    - require:
+      - cmd: configure_metallb_ip_pool
+    - unless: kubectl get l2advertisement -n {{ pillar.get('metallb_namespace', 'metallb-system') }} | grep -q "{{ pillar.get('nginx_ingress_metallb_pool', 'default') }}-l2"
 
 # Add the NGINX Ingress Controller Helm repository
 add_nginx_ingress_repo:
