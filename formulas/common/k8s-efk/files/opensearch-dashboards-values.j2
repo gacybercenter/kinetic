@@ -12,17 +12,17 @@ extraVolumeMounts:
     mountPath: /usr/share/opensearch-dashboards/config/certs
     readOnly: true
 
+config:
+    # OpenSearch connection configuration
+    opensearch.hosts: 
+      - "https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"
 
-# OpenSearch connection configuration
-opensearch.hosts: 
-  - "https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"
+    opensearch.username: "admin"
+    opensearch.password: "{{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}"
 
-opensearch.username: "admin"
-opensearch.password: "{{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}"
-
-opensearch.ssl.vertificationMode: full
-opensearch.certificateAuthorities:
-  - "/usr/share/opensearch-dashboards/config/certs/ca.crt"
+    opensearch.ssl.vertificationMode: full
+    opensearch.certificateAuthorities:
+      - "/usr/share/opensearch-dashboards/config/certs/ca.crt"
 
 # Service configuration
 service:
