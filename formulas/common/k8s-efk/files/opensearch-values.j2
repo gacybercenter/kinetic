@@ -33,9 +33,6 @@ config:
             enabled_protocols:
               - "TLSv1.2"
             clientauth_mode: OPTIONAL
-        authcz:
-          admin_dn:
-            - CN=gcr,OU=client,O=client,L=test, C=en
 
         nodes_dn:
           - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local"  # Match the commonName from the certificate
