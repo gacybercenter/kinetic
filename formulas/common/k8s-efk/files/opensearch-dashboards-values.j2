@@ -33,6 +33,8 @@ config:
     opensearch.ssl.verificationMode: {{ pillar.get('opensearch_ssl_verification_mode', 'none') }}
     opensearch.ssl.certificateAuthorities: [ "/usr/share/opensearch-dashboards/config/certs/ca.crt" ]
 
+    logging.verbose: true
+
 # Service configuration
 service:
   type: {{ pillar.get('opensearch_dashboards_service_type', 'ClusterIP') }}
