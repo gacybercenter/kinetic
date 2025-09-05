@@ -20,6 +20,8 @@ extraVolumeMounts:
 extraEnvs:
   - name: OPENSEARCH_DASHBOARDS_DEFAULT_TENANT
     value: {{ pillar.get('opensearch_dashboards_default_tenant', 'global_tenant') }}
+  - name: OPENSEARCH_HOSTS
+    value: https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}
 config:
   opensearch_dashboards.yml: |
     # OpenSearch connection configuration
