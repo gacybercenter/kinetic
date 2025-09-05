@@ -3,6 +3,12 @@
 
 replicas: {{ pillar.get('opensearch_dashboards_replicas', 1) }}
 
+image:
+  repository: "opensearchproject/opensearch-dashboards"
+  # override image tag, which is .Chart.AppVersion by default
+  tag: "3.2.0"
+  pullPolicy: "IfNotPresent"
+
 extraVolumes:
   - name: opensearch-tls-secret
     secret:
