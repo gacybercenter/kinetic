@@ -1,4 +1,4 @@
-# Add a step to restart OpenSearch pods after applying security config to ensure changes are loaded.
+# Add a step to uninstall OpenSearch Dashboards Helm release if it exists to handle selector conflict.
 
 efk_namespace:
   k8s.namespace_present:
@@ -60,7 +60,7 @@ opensearch_helm_install:
   helm.release_present:
     - name: opensearch
     - chart: opensearch/opensearch
-    - version: {{ pillar.get('opensearch_version', '3.2.0') }}
+    - version: {{ pillar.get('opensearch_version', '2.12.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - values: /tmp/opensearch-values.yaml
     - require:
@@ -78,11 +78,19 @@ render_opensearch_dashboards_values:
     - template: jinja
     - makedirs: True
 
+# Uninstall OpenSearch Dashboards Helm release if it exists to handle selector conflict
+uninstall_opensearch_dashboards_if_conflict:
+  cmd.run:
+    - name: helm uninstall opensearch-dashboards -n {{ pillar.get('efk_namespace', 'efk') }} || true
+    - onlyif: helm list -n {{ pillar.get('efk_namespace', 'efk') }} | grep -q "opensearch-dashboards"
+    - require:
+      - helm: opensearch_repo
+
 opensearch_dashboards_helm_install:
   helm.release_present:
     - name: opensearch-dashboards
     - chart: opensearch/opensearch-dashboards
-    - version: {{ pillar.get('opensearch_dashboards_version', '3.2.0') }}
+    - version: {{ pillar.get('opensearch_dashboards_version', '2.12.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - values: /tmp/opensearch-dashboards-values.yaml
     - require:
@@ -90,3 +98,4 @@ opensearch_dashboards_helm_install:
       - helm: opensearch_repo
       - helm: opensearch_helm_install
       - file: render_opensearch_dashboards_values
+      - cmd: uninstall_opensearch_dashboards_if_conflict
