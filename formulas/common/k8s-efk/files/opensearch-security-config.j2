@@ -1,4 +1,5 @@
 # Consolidate all individual secrets into a single secret with file names as keys under stringData.
+# Ensure admin role has explicit permissions for indices:admin/get and all admin actions.
 
 apiVersion: v1
 kind: Secret
@@ -45,6 +46,15 @@ stringData:
             - "*"
           allowed_actions:
             - "indices_all"
+            - "indices:admin/get"  # Explicitly add for clarity
+            - "indices:admin/*"     # Cover all admin actions on indices
+      tenant_permissions:
+        - tenant_patterns:
+            - "admin_tenant"
+            - "global_tenant"
+          allowed_actions:
+            - "kibana_all_write"
+            - "kibana_all_read"   # Ensure admin has full access to tenants for Dashboards
     log_writer:
       reserved: false
       cluster_permissions:
@@ -95,12 +105,12 @@ stringData:
       reserved: false
       hidden: false
       allowed_actions:
-      - "indices:data/write/index*"
-      - "indices:data/write/update*"
-      - "indices:admin/mapping/put"
-      - "indices:data/write/bulk*"
-      - "read"
-      - "write"
+        - "indices:data/write/index*"
+        - "indices:data/write/update*"
+        - "indices:admin/mapping/put"
+        - "indices:data/write/bulk*"
+        - "read"
+        - "write"
       static: false
     _meta:
       type: "actiongroups"
@@ -131,3 +141,6 @@ stringData:
     admin_tenant:
       reserved: false
       description: "tenant for admin user"
+    global_tenant:
+      reserved: true
+      description: "Global tenant for Dashboards"
