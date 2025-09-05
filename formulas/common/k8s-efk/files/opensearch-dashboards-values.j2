@@ -17,18 +17,18 @@ extraVolumeMounts:
   - name: opensearch-tls-secret
     mountPath: /usr/share/opensearch-dashboards/config/certs
     readOnly: true
-
+extraEnvs:
+  - name: OPENSEARCH_DASHBOARDS_DEFAULT_TENANT
+    value: {{ pillar.get('opensearch_dashboards_default_tenant', 'global_tenant') }}
 config:
   opensearch_dashboards.yml: |
     # OpenSearch connection configuration
-    opensearch.hosts: 
-    - "https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"
+    opensearch.hosts: [ "https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}" ]
 
     opensearch.username: "admin"
     opensearch.password: "{{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}"
 
-    opensearch.ssl.certificateAuthorities:
-    - "/usr/share/opensearch-dashboards/config/certs/ca.crt"
+    opensearch.ssl.certificateAuthorities: [ "/usr/share/opensearch-dashboards/config/certs/ca.crt" ]
 
 # Service configuration
 service:
