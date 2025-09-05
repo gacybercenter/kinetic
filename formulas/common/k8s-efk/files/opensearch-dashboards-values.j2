@@ -28,6 +28,7 @@ config:
     opensearch.username: "admin"
     opensearch.password: "{{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}"
 
+    opensearch.ssl.verificationMode: {{ pillar.get('opensearch_ssl_verification_mode', 'none') }}
     opensearch.ssl.certificateAuthorities: [ "/usr/share/opensearch-dashboards/config/certs/ca.crt" ]
 
 # Service configuration
@@ -60,3 +61,6 @@ ingress:
                 number: {{ pillar.get('opensearch_dashboards_service_port', 5601) }}
   # TLS configuration for Ingress (optional, requires Cert-Manager or manual secret setup)
   tls: {{ pillar.get('opensearch_dashboards_ingress_tls', []) }}
+
+# Avoid overriding labels or selectors that could conflict with immutable fields
+labels: {}
