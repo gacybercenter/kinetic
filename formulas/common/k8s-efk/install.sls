@@ -1,4 +1,4 @@
-# Add states for installing OpenSearch Dashboards using Helm, integrating with the existing OpenSearch setup.
+# Add a step to restart OpenSearch pods after applying security config to ensure changes are loaded.
 
 efk_namespace:
   k8s.namespace_present:
@@ -18,6 +18,15 @@ apply_opensearch_security_config:
       - file: render_opensearch_security_config
     - onchanges:
       - file: render_opensearch_security_config
+
+# Restart OpenSearch pods to ensure security config is reloaded
+restart_opensearch_pods:
+  cmd.run:
+    - name: kubectl delete pod -l app.kubernetes.io/name=opensearch -n {{ pillar.get('efk_namespace', 'efk') }} --grace-period=0 --force || true
+    - require:
+      - cmd: apply_opensearch_security_config
+    - onchanges:
+      - cmd: apply_opensearch_security_config
 
 render_opensearch_tls_cert:
   file.managed:
@@ -51,13 +60,14 @@ opensearch_helm_install:
   helm.release_present:
     - name: opensearch
     - chart: opensearch/opensearch
-    - version: {{ pillar.get('opensearch_version', '2.12.0') }}
+    - version: {{ pillar.get('opensearch_version', '3.2.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - values: /tmp/opensearch-values.yaml
     - require:
       - k8s: efk_namespace
       - helm: opensearch_repo
       - cmd: apply_opensearch_security_config
+      - cmd: restart_opensearch_pods
       - cmd: apply_opensearch_tls_cert
       - file: render_opensearch_values
 
@@ -72,7 +82,7 @@ opensearch_dashboards_helm_install:
   helm.release_present:
     - name: opensearch-dashboards
     - chart: opensearch/opensearch-dashboards
-    - version: {{ pillar.get('opensearch_dashboards_version', '2.12.0') }}
+    - version: {{ pillar.get('opensearch_dashboards_version', '3.2.0') }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - values: /tmp/opensearch-dashboards-values.yaml
     - require:
