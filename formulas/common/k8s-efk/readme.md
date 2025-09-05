@@ -30,29 +30,48 @@ The `k8s-efk` formula includes the following components:
 Customize the deployment using pillar data. Below is an example of pillar data structure:
 
 ```yaml
-elasticsearch_version: 8.5.1
 efk_namespace: efk
-elasticsearch_values:
-  replicas: 3
-  minimumMasterNodes: 2
-  clusterName: "elastic-cluster"
-  nodeGroup: "master"
-  roles:
-    master: "true"
-    data: "true"
-    ingest: "true"
-  resources:
-    limits:
-      cpu: "1000m"
-      memory: "1024Mi"
-    requests:
-      cpu: "500m"
-      memory: "512Mi"
-  persistence:
-    enabled: true
-    size: "10Gi"
-  service:
-    type: ClusterIP
+opensearch_version: 3.2.0
+opensearch_replicas: 3
+opensearch_cluster_name: opensearch-cluster
+opensearch_admin_password: |
+  <PGP>
+opensearch_admin_hash: |
+  <PGP>
+opensearch_fluentbit_hash: |
+  <PGP>
+opensearch_dashboard_user_hash:
+  <PGP>
+opensearch_cpu_limit: 2000m
+opensearch_memory_limit: 1024Mi
+opensearch_cpu_request: 1000m
+opensearch_memory_request: 512Mi
+opensearch_persistence_enabled: true
+opensearch_persistence_size: 10Gi
+opensearch_service_type: ClusterIP
+opensearch_service_host: opensearch-cluster-master
+opensearch_service_port: 9200
+opensearch_tls_enabled: On
+opensearch_tls_verify: Off
+opensearch_suppress_type_name: On
+fluent_bit_version: 0.47.0
+opensearch_fluentbit_username: fluentbit
+opensearch_fluentbit_password: | 
+  <PGP>
+fluent_bit_memory_request: 100Mi
+fluent_bit_cpu_request: 100m
+fluent_bit_memory_limit: 200Mi
+fluent_bit_cpu_limit: 200m
+
+fluentd_password: | 
+  <PGP>
+opensearch_security_secrets:
+  internal_users: internal-users-secret
+  roles: roles-secret
+  roles_mapping: roles-mapping-secret
+  action_groups: action-groups-secret
+  config: config-secret
+  tenants: tenants-secret
 ```
 
 ## To run the orchestration script
