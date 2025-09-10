@@ -54,12 +54,12 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
   hosts: 
-    - {{ pillar.get('opensearch_dashboards_ingress_host', 'logger.services.gacyberrange.org') }}
+    - {{ pillar.get('opensearch_dashboards_ingress_host', 'api.logger.services.gacyberrange.org') }}
   path: /api
   tls: 
     - secretName: opensearch-tls-secret
       hosts:
-        - {{ pillar.get('opensearch_dashboards_ingress_host', 'logger.services.gacyberrange.org') }}
+        - {{ pillar.get('opensearch_dashboards_ingress_host', 'api.logger.services.gacyberrange.org') }}
 tls:
   enabled: true
   secretName: "opensearch-tls-secret"  # Reference the secret created by Cert-Manager
