@@ -48,7 +48,20 @@ securityConfig:
   config:
     securityConfigSecret: "opensearch-security-config"
     dataComplete: true
-    
+ingress:
+  enabled: {{ pillar.get('opensearch_ingress_enabled', true) }}
+  ingressClassName: {{ pillar.get('opensearch_ingress_class', 'nginx') }}
+  hosts:
+    - host: {{ pillar.get('opensearch_dashboards_ingress_host', 'logger.services.gacyberrange.org') }}
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}
+              port:
+                number: {{ pillar.get('opensearch_service_port', 9200) }}
+  tls: {{ pillar.get('opensearch_ingress_tls', []) }}    
 tls:
   enabled: true
   secretName: "opensearch-tls-secret"  # Reference the secret created by Cert-Manager
