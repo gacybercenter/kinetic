@@ -56,7 +56,7 @@ ingress:
   hosts:
     - host: {{ pillar.get('opensearch_dashboards_ingress_host', 'logger.services.gacyberrange.org') }}
       paths:
-        - path: /
+        - path: /dashboard
           pathType: Prefix
           backend:
             service:
