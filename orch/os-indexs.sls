@@ -7,7 +7,7 @@ check_opensearch_availability:
     - method: GET
     - username: fluentbit
     - password: {{ pillar['fluentd_password'] }}
-    - verify_ssl: True
+    - verify_ssl: False
     - status: 200
     - text: True
 
