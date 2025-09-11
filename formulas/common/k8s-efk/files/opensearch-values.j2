@@ -49,6 +49,17 @@ securityConfig:
   config:
     securityConfigSecret: "opensearch-security-config"
     dataComplete: true
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  path: /
+  hosts:
+    - {{ pillar.get('opensearch_api_ingress_host', 'api.logger.services.gacyberrange.org') }}
+  tls:
+    - secretName: opensearch-tls-secret
+      hosts:
+        - {{ pillar.get('opensearch_api_ingress_host', 'api.logger.services.gacyberrange.org') }}
 tls:
   enabled: true
   secretName: "opensearch-tls-secret"  # Reference the secret created by Cert-Manager
