@@ -23,8 +23,6 @@ check_index_existence:
     - text: False
     - require:
       - http: check_opensearch_availability
-    - require:
-      - http: check_index_existence
 
 # Create the index if it doesn't exist
 create_opensearch_index:
