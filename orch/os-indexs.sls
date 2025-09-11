@@ -59,6 +59,8 @@ create_opensearch_index:
             }
           }
         }
+    - header:
+        Content-Type: application/json
     - status: 200
     - text: True
     - unless: check_index_existence
