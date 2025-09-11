@@ -1,30 +1,44 @@
+{% set k8s = salt['pillar.get']('k8s', 'salt-master') %}
+
 check_os_health:
-  opensearch.cluster_healthy:
-    - name: check_os_health
-    - admin_user: admin
+  salt.state:
+    - tgt: {{ k8s }}
+    - sls:
+      - opensearch_states.check_os_health
+    - pillar:
+        admin_user: admin
 
 create_kvm_logs_index:
-  opensearch.index_present:
-    - name: create_kvm_logs_index
-    - index_name: kvm-logs
-    - admin_user: admin
+  salt.state:
+    - tgt: {{ k8s }}
+    - sls:
+      - opensearch_states.create_kvm_logs_index
+    - pillar:
+        admin_user: admin
+        index_name: kvm-logs
     - require:
-      - opensearch: check_os_health
+      - salt: check_os_health
 
 create_fluentbit_role:
-  opensearch.role_present:
-    - name: create_fluentbit_role
-    - role_name: fluentbit_role
-    - index_name: kvm-logs
-    - admin_user: admin
+  salt.state:
+    - tgt: {{ k8s }}
+    - sls:
+      - opensearch_states.create_fluentbit_role
+    - pillar:
+        admin_user: admin
+        role_name: fluentbit_role
+        index_name: kvm-logs
     - require:
-      - opensearch: create_kvm_logs_index
+      - salt: create_kvm_logs_index
 
 map_fluentbit_to_role:
-  opensearch.user_role_mapping_present:
-    - name: map_fluentbit_to_role
-    - role_name: fluentbit_role
-    - user_name: fluentbit
-    - admin_user: admin
+  salt.state:
+    - tgt: {{ k8s }}
+    - sls:
+      - opensearch_states.map_fluentbit_to_role
+    - pillar:
+        admin_user: admin
+        role_name: fluentbit_role
+        user_name: fluentbit
     - require:
-      - opensearch: create_fluentbit_role
+      - salt: create_fluentbit_role
