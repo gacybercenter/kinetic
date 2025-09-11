@@ -18,7 +18,7 @@ check_index_existence:
     - method: HEAD
     - username: fluentbit
     - password: {{ pillar['fluentd_password'] }}
-    - verify_ssl: True
+    - verify_ssl: False
     - status: [200, 404]
     - text: False
     - require:
@@ -37,7 +37,7 @@ create_opensearch_index:
     - method: PUT
     - username: fluentbit
     - password: {{ pillar['fluentd_password'] }}
-    - verify_ssl: True
+    - verify_ssl: False
     - data: |
         {
           "settings": {
