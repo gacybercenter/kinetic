@@ -66,4 +66,3 @@ create_opensearch_index:
     - unless: check_index_existence
     - require:
       - http: check_opensearch_availability
-      - module: check_index_existence
