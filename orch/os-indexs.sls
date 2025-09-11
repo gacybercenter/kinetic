@@ -23,10 +23,6 @@ check_index_existence:
     - text: False
     - require:
       - http: check_opensearch_availability
-  module.run:
-    - name: set_fact
-    - facts:
-        index_exists: {{ 'True' if grains['http_status'] == 200 else 'False' }}
     - require:
       - http: check_index_existence
 
