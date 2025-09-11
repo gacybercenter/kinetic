@@ -4,7 +4,7 @@ check_os_health:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - opensearch_states.check_os_health
+      - opensearch.check_os_health
     - pillar:
         admin_user: admin
 
@@ -12,7 +12,7 @@ create_kvm_logs_index:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - opensearch_states.create_kvm_logs_index
+      - opensearch.create_kvm_logs_index
     - pillar:
         admin_user: admin
         index_name: kvm-logs
@@ -23,7 +23,7 @@ create_fluentbit_role:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - opensearch_states.create_fluentbit_role
+      - opensearch.create_fluentbit_role
     - pillar:
         admin_user: admin
         role_name: fluentbit_role
@@ -35,7 +35,7 @@ map_fluentbit_to_role:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - opensearch_states.map_fluentbit_to_role
+      - opensearch.map_fluentbit_to_role
     - pillar:
         admin_user: admin
         role_name: fluentbit_role
