@@ -61,6 +61,6 @@ create_opensearch_index:
         }
     - status: 200
     - text: True
-    - unless: check_index_existence
+    - onlyif: check_index_existence
     - require:
       - http: check_opensearch_availability
