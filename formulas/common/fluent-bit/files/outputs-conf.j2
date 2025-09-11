@@ -1,0 +1,16 @@
+[OUTPUT]
+    Name          stdout
+    Match         *
+    Format        json_lines
+
+[OUTPUT]
+    Name              opensearch
+    Match             *
+    Host              api.logger.services.gacyberrange.org
+    Port              443
+    Index             kvm-logs
+    Type              _doc
+    HTTP_User         fluentbit
+    HTTP_Passwd       {{ pillar['fluentd_password' ]}}
+    TLS               On
+    Suppress_Type_Name On

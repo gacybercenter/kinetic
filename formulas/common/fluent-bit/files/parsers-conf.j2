@@ -1,0 +1,15 @@
+[PARSER]
+    Name          libvirt_log
+    Format        regex
+    Regex         ^(?<time>[^ ]+ [^ ]+) (?<log_level>[A-Z]+): (?<message>.*)$
+    Time_Key      time
+    Time_Format   %Y-%m-%d %H:%M:%S.%L
+    Time_Keep     On
+
+[PARSER]
+    Name          qemu_log
+    Format        regex
+    Regex         ^(?<time>[^ ]+ [^ ]+) (?<vm_name>[^ ]+) (?<log_level>[A-Z]+): (?<message>.*)$
+    Time_Key      time
+    Time_Format   %Y-%m-%d %H:%M:%S.%L
+    Time_Keep     On
