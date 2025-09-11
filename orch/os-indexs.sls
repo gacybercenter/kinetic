@@ -70,7 +70,7 @@ check_index_existence:
 create_opensearch_index_cmd:
   cmd.run:
     - name: |
-        curl -ku fluentbit:{{ pillar['fluentd_password'] }} -X PUT "https://api.logger.services.gacyberrange.org:443/kvm-logs" -H "Content-Type: application/json" -d '{"settings": {"index": {"number_of_shards": 1, "number_of_replicas": 1}}, "mappings": {"dynamic": "true", "_source": {"enabled": true}, "properties": {"time": {"type": "date", "format": "yyyy-MM-dd'\''T'\''HH:mm:ss.SSSZ||epoch_millis"}, "log": {"type": "text"}, "tag": {"type": "keyword"}}}}'
+        curl -ku admin:{{ pillar['fluentd_password'] }} -X PUT "https://api.logger.services.gacyberrange.org:443/kvm-logs" -H "Content-Type: application/json" -d '{"settings": {"index": {"number_of_shards": 1, "number_of_replicas": 1}}, "mappings": {"dynamic": "true", "_source": {"enabled": true}, "properties": {"time": {"type": "date", "format": "yyyy-MM-dd'\''T'\''HH:mm:ss.SSSZ||epoch_millis"}, "log": {"type": "text"}, "tag": {"type": "keyword"}}}}'
     - require:
       - http: check_opensearch_availability
     - unless: check_index_existence
