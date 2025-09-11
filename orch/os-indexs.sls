@@ -19,7 +19,7 @@ check_index_existence:
     - username: fluentbit
     - password: {{ pillar['fluentd_password'] }}
     - verify_ssl: False
-    - status: [200, 404]
+    - status: [200]
     - text: False
     - require:
       - http: check_opensearch_availability
@@ -67,10 +67,7 @@ create_opensearch_index:
         }
     - status: 200
     - text: True
-    - onlyif:
-      - fun: grains.get
-        key: index_exists
-        value: False
+    - unless: check_index_existence
     - require:
       - http: check_opensearch_availability
-      - module: check_index_existencew
+      - module: check_index_existence
