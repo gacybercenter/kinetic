@@ -19,6 +19,7 @@ stringData:
       reserved: true
       backend_roles:
         - "admin"
+        - "all_access"
       description: "Admin user"
     fluentbit:
       hash: "{{ pillar.get('opensearch_fluentbit_hash', '$2y$12$ANOTHER_HASH_HERE') }}"
