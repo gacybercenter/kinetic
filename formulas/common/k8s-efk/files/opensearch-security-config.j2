@@ -47,8 +47,9 @@ stringData:
             - "*"  # Apply to all indices
           allowed_actions:
             - "*"  # Grant all index-level actions
-            - "indices:data/write/index"  # Explicitly include index creation
-            - "indices:data/write/bulk"  # Explicitly include bulk write
+            - "indices:data/write/index*"
+            - "indices:data/write/update*"  # Explicitly include index creation
+            - "indices:data/write/bulk*"  # Explicitly include bulk write
             - "indices:admin/create"  # Explicitly include create action
             - "indices:admin/mapping/put"  # Explicitly include mapping updates
       tenant_permissions:
