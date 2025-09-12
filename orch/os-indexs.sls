@@ -1,44 +1,16 @@
 {% set k8s = salt['pillar.get']('k8s', 'salt-master') %}
 
-check_os_health:
+configure_opensearch_for_logging:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - opensearch.cluster_health
+      - formulas.k8s-logger.configure
     - pillar:
-        admin_user: admin
-
-create_kvm_logs_index:
-  salt.state:
-    - tgt: {{ k8s }}
-    - sls:
-      - opensearch.create_kvm_logs_index
-    - pillar:
-        admin_user: admin
-        index_name: kvm-logs
-    - require:
-      - salt: check_os_health
-
-create_fluentbit_role:
-  salt.state:
-    - tgt: {{ k8s }}
-    - sls:
-      - opensearch.create_fluentbit_role
-    - pillar:
-        admin_user: admin
-        role_name: fluentbit_role
-        index_name: kvm-logs
-    - require:
-      - salt: create_kvm_logs_index
-
-map_fluentbit_to_role:
-  salt.state:
-    - tgt: {{ k8s }}
-    - sls:
-      - opensearch.map_fluentbit_to_role
-    - pillar:
-        admin_user: admin
-        role_name: fluentbit_role
-        user_name: fluentbit
-    - require:
-      - salt: create_fluentbit_role
+        opensearch_admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+        fluentd_password: {{ pillar.get('fluentd_password', '') }}
+        opensearch_host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+        opensearch_index_name: {{ pillar.get('opensearch_index_name', 'kvm-logs') }}
+        opensearch_role_name: {{ pillar.get('opensearch_role_name', 'fluentbit_role') }}
+        opensearch_user_name: {{ pillar.get('opensearch_user_name', 'fluentbit') }}
+        opensearch_shards: {{ pillar.get('opensearch_shards', 1) }}
+        opensearch_replicas: {{ pillar.get('opensearch_replicas', 1) }}
