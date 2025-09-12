@@ -111,7 +111,7 @@ def create_role(role_name='fluentbit_role', index_name='kvm-logs', admin_user='a
         if admin_password is None:
             admin_password = __salt__['pillar.get']('admin_password', '')
         url = f"{host}/_plugins/_security/api/roles/{role_name}"
-        payload = {:
+        payload = {
             "cluster_permissions": [
                 "cluster_composite_ops",
                 "indices_monitor"
