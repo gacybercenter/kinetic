@@ -183,7 +183,7 @@ def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluen
 
     return ret
 
-def cluster_healthy(name, admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
+def cluster_health(name, admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
     """
     Check if the OpenSearch cluster is healthy (status is green or yellow).
 
