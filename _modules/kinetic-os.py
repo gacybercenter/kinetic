@@ -90,12 +90,6 @@ def create_index(index_name='kvm-logs', admin_user='admin', admin_password=None,
             }
         }
         response = requests.put(url, auth=HTTPBasicAuth(admin_user, admin_password), json=payload, verify=False)
-        if response.status_code == 403 or 'security_exception' in response.text.lower():
-            return {
-                'success': False,
-                'created': False,
-                'message': f"Permission denied for creating index {index_name}: {response.text[:200]}..."
-            }
         response.raise_for_status()
         return {
             'success': True,
@@ -115,24 +109,35 @@ def create_role(role_name='fluentbit_role', index_name='kvm-logs', admin_user='a
     """
     try:
         if admin_password is None:
-            admin_password = __salt__['pillar.get']('opensearch_admin_password', '')
+            admin_password = __salt__['pillar.get']('admin_password', '')
         url = f"{host}/_plugins/_security/api/roles/{role_name}"
-        payload = {
-            "cluster_permissions": ["cluster_composite_ops", "cluster_monitor"],
-            "index_permissions": {
-                index_name: {
-                    "index_patterns": [f"{index_name}*"],
-                    "allowed_actions": ["write", "read", "create_index", "indices:data/write/bulk"]
-                }
+        payload = {:
+            "cluster_permissions": [
+                "cluster_composite_ops",
+                "indices_monitor"
+            ],
+            "index_permissions": [{
+                "index_patterns": [
+                "{index_name}*"
+                ],
+                "dls": "",
+                "fls": [],
+                "masked_fields": [],
+                "allowed_actions": [
+                "read"
+                ]
+            }],
+            "tenant_permissions": [{
+                "tenant_patterns": [
+                "human_resources"
+                ],
+                "allowed_actions": [
+                "kibana_all_read"
+                ]
+            }]
             }
-        }
+            
         response = requests.put(url, auth=HTTPBasicAuth(admin_user, admin_password), json=payload, verify=False)
-        if response.status_code == 403 or 'security_exception' in response.text.lower():
-            return {
-                'success': False,
-                'updated': False,
-                'message': f"Permission denied for creating/updating role {role_name}: {response.text[:200]}..."
-            }
         response.raise_for_status()
         return {
             'success': True,
@@ -158,12 +163,6 @@ def map_user_to_role(role_name='fluentbit_role', user_name='fluentbit', admin_us
             "users": [user_name]
         }
         response = requests.put(url, auth=HTTPBasicAuth(admin_user, admin_password), json=payload, verify=False)
-        if response.status_code == 403 or 'security_exception' in response.text.lower():
-            return {
-                'success': False,
-                'updated': False,
-                'message': f"Permission denied for mapping user {user_name} to role {role_name}: {response.text[:200]}..."
-            }
         response.raise_for_status()
         return {
             'success': True,
