@@ -4,7 +4,7 @@ check_os_health:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - opensearch.check_os_health
+      - opensearch.cluster_health
     - pillar:
         admin_user: admin
 
