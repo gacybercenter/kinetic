@@ -4,7 +4,7 @@
 
 # Check OpenSearch cluster health before proceeding
 check_opensearch_health:
-  opensearch.cluster_healthy:
+  opensearch.cluster_health:
     - name: check_opensearch_health
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
     - admin_password: {{ pillar.get('fluentd_password', '') }}
