@@ -19,6 +19,7 @@ stringData:
       reserved: true
       backend_roles:
         - "admin"
+        - "all_access"
       description: "Admin user"
     fluentbit:
       hash: "{{ pillar.get('opensearch_fluentbit_hash', '$2y$12$ANOTHER_HASH_HERE') }}"
@@ -46,6 +47,11 @@ stringData:
             - "*"  # Apply to all indices
           allowed_actions:
             - "*"  # Grant all index-level actions
+            - "indices:data/write/index*"
+            - "indices:data/write/update*"  # Explicitly include index creation
+            - "indices:data/write/bulk*"  # Explicitly include bulk write
+            - "indices:admin/create"  # Explicitly include create action
+            - "indices:admin/mapping/put"  # Explicitly include mapping updates
       tenant_permissions:
         - tenant_patterns:
             - "*"  # Apply to all tenants
@@ -58,18 +64,20 @@ stringData:
         - "cluster_composite_ops"
       index_permissions:
         - index_patterns:
-            - "fluentbit*"
+            - "{{ pillar.get('opensearch_index_name', 'kvm-logs') }}*"
           allowed_actions:
             - "write"
             - "create_index"
             - "manage"
+            - "indices:data/write/index"
+            - "indices:data/write/bulk"
     dashboard_reader:
       reserved: false
       cluster_permissions:
         - "cluster_monitor"
       index_permissions:
         - index_patterns:
-            - "fluentbit*"
+            - "{{ pillar.get('opensearch_index_name', 'kvm-logs') }}*"
           allowed_actions:
             - "read"
             - "view_index_metadata"
@@ -83,10 +91,15 @@ stringData:
     _meta:
       type: "rolesmapping"
       config_version: 2
+    all_access:
+      reserved: true
+      users:
+        - "admin"
     admin:
       reserved: true
       users:
         - "admin"
+      backend_roles:
         - "all_access"
     log_writer:
       reserved: false
