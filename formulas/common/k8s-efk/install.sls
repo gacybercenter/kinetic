@@ -81,12 +81,32 @@ grafana_helm_repo:
 
 # Install Grafana in the same namespace as OpenSearch
 grafana_helm_install:
-  helm.release_present:
-    - name: grafana
-    - chart: grafana/grafana
-    - version: "{{ pillar['k8s-efk']['grafana']['version'] }}"
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+  cmd.run:
+    - name: |
+        helm upgrade --install grafana grafana/grafana \
+          --version {{ pillar.get('k8s-efk.grafana.version', 'latest') }} \
+          --namespace {{ pillar.get('efk_namespace', 'efk') }} \
+          --set replicas={{ pillar.get('k8s-efk.grafana.replicas', 1) }} \
+          --set image.repository=grafana/grafana \
+          --set image.tag={{ pillar.get('k8s-efk.grafana.version', '10.2.0') }} \
+          --set image.pullPolicy=IfNotPresent \
+          --set grafana\.ini.server.domain={{ pillar.get('k8s-efk.grafana.domain', 'grafana.logger.services.gacyberrange.org') }} \
+          --set grafana\.ini.server.root_url={{ pillar.get('k8s-efk.grafana.root_url', 'https://grafana.logger.services.gacyberrange.org/') }} \
+          --set grafana\.ini.security.admin_user={{ pillar.get('k8s-efk.grafana.admin_user', 'admin') }} \
+          --set grafana\.ini.security.admin_password={{ pillar.get('k8s-efk.grafana.admin_password', pillar.get('opensearch_admin_password', 'YourStrongPassword123!')) }} \
+          --set service.type={{ pillar.get('k8s-efk.grafana.service_type', 'ClusterIP') }} \
+          --set service.port={{ pillar.get('k8s-efk.grafana.service_port', 80) }} \
+          --set resources.limits.cpu={{ pillar.get('k8s-efk.grafana.cpu_limit', '500m') }} \
+          --set resources.limits.memory={{ pillar.get('k8s-efk.grafana.memory_limit', '512Mi') }} \
+          --set resources.requests.cpu={{ pillar.get('k8s-efk.grafana.cpu_request', '200m') }} \
+          --set resources.requests.memory={{ pillar.get('k8s-efk.grafana.memory_request', '256Mi') }} \
+          --set ingress.enabled={{ pillar.get('k8s-efk.grafana.ingress_enabled', 'true') }} \
+          --set ingress.ingressClassName={{ pillar.get('k8s-efk.grafana.ingress_class', 'nginx') }} \
+          --set ingress.hosts[0]={{ pillar.get('k8s-efk.grafana.ingress_host', 'grafana.logger.services.gacyberrange.org') }} \
+          --set ingress.path=/ \
+          --set ingress.pathType=Prefix \
+          --wait --timeout 300s || echo "Installation failed, check logs for details"
     - require:
       - k8s: efk_namespace
       - cmd: grafana_helm_repo
-      - helm: opensearch_helm_install
+      - cmd: opensearch_helm_install
