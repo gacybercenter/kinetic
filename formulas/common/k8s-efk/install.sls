@@ -84,24 +84,24 @@ grafana_helm_install:
   cmd.run:
     - name: |
         helm upgrade --install grafana grafana/grafana \
-          --namespace {{ pillar.get('efk_namespace', 'efk') }} \
-          --set replicas={{ pillar.get('k8s-efk.grafana.replicas', 1) }} \
+          --namespace {{ pillar['efk_namespace'] }} \
+          --set replicas={{ pillar['k8s-efk']['grafana']['replicas'] }} \
           --set image.repository=grafana/grafana \
-          --set image.tag={{ pillar.get('k8s-efk.grafana.version', '10.2.0') }} \
+          --set image.tag={{ pillar['k8s-efk']['grafana']['version'] }} \
           --set image.pullPolicy=IfNotPresent \
           --set grafana\.ini.server.domain={{ pillar['k8s-efk']['grafana']['domain'] }} \
-          --set grafana\.ini.server.root_url={{ pillar.get('k8s-efk.grafana.root_url', 'https://grafana.logger.services.gacyberrange.org/') }} \
-          --set grafana\.ini.security.admin_user={{ pillar.get('k8s-efk.grafana.admin_user', 'admin') }} \
-          --set grafana\.ini.security.admin_password={{ pillar.get('k8s-efk.grafana.admin_password', pillar.get('opensearch_admin_password', 'YourStrongPassword123!')) }} \
-          --set service.type={{ pillar.get('k8s-efk.grafana.service_type', 'ClusterIP') }} \
-          --set service.port={{ pillar.get('k8s-efk.grafana.service_port', 80) }} \
-          --set resources.limits.cpu={{ pillar.get('k8s-efk.grafana.cpu_limit', '500m') }} \
-          --set resources.limits.memory={{ pillar.get('k8s-efk.grafana.memory_limit', '512Mi') }} \
-          --set resources.requests.cpu={{ pillar.get('k8s-efk.grafana.cpu_request', '200m') }} \
-          --set resources.requests.memory={{ pillar.get('k8s-efk.grafana.memory_request', '256Mi') }} \
-          --set ingress.enabled={{ pillar.get('k8s-efk.grafana.ingress_enabled', 'true') }} \
-          --set ingress.ingressClassName={{ pillar.get('k8s-efk.grafana.ingress_class', 'nginx') }} \
-          --set ingress.hosts[0]={{ pillar.get('k8s-efk.grafana.ingress_host', 'grafana.logger.services.gacyberrange.org') }} \
+          --set grafana\.ini.server.root_url={{ pillar['k8s-efk']['grafana']['root_url'] }} \
+          --set grafana\.ini.security.admin_user={{ pillar['k8s-efk']['grafana.admin_user']['admin'] }} \
+          --set grafana\.ini.security.admin_password={{ pillar['opensearch_admin_password'] }} \
+          --set service.type={{ pillar['k8s-efk']['grafana']['service_type'] }} \
+          --set service.port={{ pillar['k8s-efk']['grafana']['service_port'] }} \
+          --set resources.limits.cpu={{ pillar['k8s-efk']['grafana']['cpu_limit'] }} \
+          --set resources.limits.memory={{ pillar['k8s-efk']['grafana']['memory_limit'] }} \
+          --set resources.requests.cpu={{ pillar['k8s-efk']['grafana']['cpu_request'] }} \
+          --set resources.requests.memory={{ pillar['k8s-efk']['grafana']['memory_request'] }} \
+          --set ingress.enabled={{ pillar['k8s-efk']['grafana']['ingress_enabled'] }} \
+          --set ingress.ingressClassName={{ pillar['k8s-efk']['grafana']['ingress_class'] }} \
+          --set ingress.hosts[0]={{ pillar['k8s-efk']['grafana']['ingress_host] }} \
           --set ingress.path=/ \
           --set ingress.pathType=Prefix \
           --wait --timeout 300s || echo "Installation failed, check logs for details"
