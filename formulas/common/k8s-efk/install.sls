@@ -109,4 +109,3 @@ grafana_helm_install:
     - require:
       - k8s: efk_namespace
       - cmd: grafana_helm_repo
-      - cmd: opensearch_helm_install
