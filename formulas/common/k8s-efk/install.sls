@@ -95,8 +95,6 @@ grafana_helm_install:
         - grafana\.ini.server.root_url={{ pillar.get('k8s-efk.grafana.root_url') }}
         - adminUser={{ pillar.get('k8s-efk.grafana.admin_user') }}
         - adminPassword={{ pillar.get('opensearch_admin_password') }}
-        - service.type={{ pillar.get('k8s-efk.grafana.service_type') }}
-        - service.port={{ pillar.get('k8s-efk.grafana.service_port') }}
         - resources.limits.cpu={{ pillar.get('k8s-efk.grafana.cpu_limit') }}
         - resources.limits.memory={{ pillar.get('k8s-efk.grafana.memory_limit') }}
         - resources.requests.cpu={{ pillar.get('k8s-efk.grafana.cpu_request') }}
