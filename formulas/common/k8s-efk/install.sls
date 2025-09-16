@@ -87,7 +87,6 @@ grafana_helm_install:
     - version: {{ pillar['k8s-efk']['grafana']['version'] }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - set:
-#        - replicas="{{ pillar.get('k8s-efk.grafana.replicas', 1) }}"
         - image.repository=grafana/grafana
         - image.tag="{{ pillar.get('k8s-efk.grafana.version', '10.2.0') }}"
         - image.pullPolicy=IfNotPresent
