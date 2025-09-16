@@ -84,7 +84,7 @@ grafana_helm_install:
   helm.release_present:
     - name: grafana
     - chart: grafana/grafana
-    - version: {{ pillar['k8s-efk']['grafana']['version'] }}
+    - version: "{{ pillar['k8s-efk']['grafana']['version'] }}"
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - require:
       - k8s: efk_namespace
