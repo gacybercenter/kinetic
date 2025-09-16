@@ -95,10 +95,10 @@ grafana_helm_install:
         - grafana\.ini.server.root_url={{ pillar.get('k8s-efk.grafana.root_url') }}
         - adminUser={{ pillar.get('k8s-efk.grafana.admin_user') }}
         - adminPassword={{ pillar.get('opensearch_admin_password') }}
-        - resources.limits.cpu="{{ pillar.get('k8s-efk.grafana.cpu_limit') }}"
-        - resources.limits.memory="{{ pillar.get('k8s-efk.grafana.memory_limit') }}"
-        - resources.requests.cpu="{{ pillar.get('k8s-efk.grafana.cpu_request') }}"
-        - resources.requests.memory="{{ pillar.get('k8s-efk.grafana.memory_request') }}"
+        - resources.limits.cpu="{{ pillar['k8s-efk']['grafana']['cpu_limit'] }}"
+        - resources.limits.memory="{{ pillar['k8s-efk']['grafana']['memory_limit'] }}"
+        - resources.requests.cpu="{{ pillar['k8s-efk']['grafana']['cpu_request'] }}"
+        - resources.requests.memory="{{ pillar['k8s-efk']['grafana']['memory_request'] }}"
         - ingress.enabled={{ pillar.get('k8s-efk.grafana.ingress_enabled') }}
         - ingress.ingressClassName={{ pillar.get('k8s-efk.grafana.ingress_class') }}
         - ingress.hosts[0]={{ pillar.get('k8s-efk.grafana.ingress_host') }}
