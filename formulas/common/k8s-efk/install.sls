@@ -84,13 +84,12 @@ grafana_helm_install:
   cmd.run:
     - name: |
         helm upgrade --install grafana grafana/grafana \
-          --version {{ pillar.get('k8s-efk.grafana.version', 'latest') }} \
           --namespace {{ pillar.get('efk_namespace', 'efk') }} \
           --set replicas={{ pillar.get('k8s-efk.grafana.replicas', 1) }} \
           --set image.repository=grafana/grafana \
           --set image.tag={{ pillar.get('k8s-efk.grafana.version', '10.2.0') }} \
           --set image.pullPolicy=IfNotPresent \
-          --set grafana\.ini.server.domain={{ pillar.get('k8s-efk.grafana.domain', 'grafana.logger.services.gacyberrange.org') }} \
+          --set grafana\.ini.server.domain={{ pillar['k8s-efk']['grafana']['domain'] }} \
           --set grafana\.ini.server.root_url={{ pillar.get('k8s-efk.grafana.root_url', 'https://grafana.logger.services.gacyberrange.org/') }} \
           --set grafana\.ini.security.admin_user={{ pillar.get('k8s-efk.grafana.admin_user', 'admin') }} \
           --set grafana\.ini.security.admin_password={{ pillar.get('k8s-efk.grafana.admin_password', pillar.get('opensearch_admin_password', 'YourStrongPassword123!')) }} \
