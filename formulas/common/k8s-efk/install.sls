@@ -94,7 +94,7 @@ grafana_helm_install:
         - grafana\.ini.server.domain={{ pillar.get('k8s-efk.grafana.domain') }}
         - grafana\.ini.server.root_url={{ pillar.get('k8s-efk.grafana.root_url') }}
         - grafana\.ini.security.admin_user={{ pillar.get('k8s-efk.grafana.admin_user') }}
-        - grafana\.ini.security.admin_password={{ pillar.get('k8s-efk.grafana.admin_password') }}
+        - grafana\.ini.security.admin_password={{ pillar.get('opensearch_admin_password') }}
         - service.type={{ pillar.get('k8s-efk.grafana.service_type') }}
         - service.port={{ pillar.get('k8s-efk.grafana.service_port') }}
         - resources.limits.cpu={{ pillar.get('k8s-efk.grafana.cpu_limit') }}
@@ -104,7 +104,7 @@ grafana_helm_install:
         - ingress.enabled={{ pillar.get('k8s-efk.grafana.ingress_enabled') }}
         - ingress.ingressClassName={{ pillar.get('k8s-efk.grafana.ingress_class') }}
         - ingress.hosts[0]={{ pillar.get('k8s-efk.grafana.ingress_host') }}
-        - ingress.path=/ 
+        - ingress.path=/
         - ingress.pathType=Prefix
     - require:
       - k8s: efk_namespace
