@@ -74,7 +74,7 @@ opensearch_helm_install:
 # Add Grafana Helm repository
 grafana_helm_repo:
   cmd.run:
-    - name: helm repo add grafana https://grafana.github.io/helm-charts
+    - name: helm repo add grafana https://grafana.github.io/helm-charts && helm repo update
     - unless: helm repo list | grep grafana
     - require:
       - k8s: efk_namespace
