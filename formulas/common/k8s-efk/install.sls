@@ -89,19 +89,19 @@ grafana_helm_install:
     - set:
         - replicas="{{ pillar.get('k8s-efk.grafana.replicas', 1) }}"
         - image.repository=grafana/grafana
-        - image.tag={{ pillar.get('k8s-efk.grafana.version', '10.2.0') }}
+        - image.tag="{{ pillar.get('k8s-efk.grafana.version', '10.2.0') }}"
         - image.pullPolicy=IfNotPresent
-        - grafana\.ini.server.domain={{ pillar.get('k8s-efk.grafana.domain') }}
-        - grafana\.ini.server.root_url={{ pillar.get('k8s-efk.grafana.root_url') }}
-        - adminUser={{ pillar.get('k8s-efk.grafana.admin_user') }}
-        - adminPassword={{ pillar.get('opensearch_admin_password') }}
-        - resources.limits.cpu='{{ pillar['k8s-efk']['grafana']['cpu_limit'] }}'
-        - resources.limits.memory='{{ pillar['k8s-efk']['grafana']['memory_limit'] }}'
-        - resources.requests.cpu='{{ pillar['k8s-efk']['grafana']['cpu_request'] }}'
-        - resources.requests.memory='{{ pillar['k8s-efk']['grafana']['memory_request'] }}'
-        - ingress.enabled={{ pillar.get('k8s-efk.grafana.ingress_enabled') }}
-        - ingress.ingressClassName={{ pillar.get('k8s-efk.grafana.ingress_class') }}
-        - ingress.hosts[0]={{ pillar.get('k8s-efk.grafana.ingress_host') }}
+        - grafana\.ini.server.domain="{{ pillar.get('k8s-efk.grafana.domain') }}"
+        - grafana\.ini.server.root_url="{{ pillar.get('k8s-efk.grafana.root_url') }}"
+        - adminUser="{{ pillar.get('k8s-efk.grafana.admin_user') }}"
+        - adminPassword="{{ pillar.get('opensearch_admin_password') }}"
+        - resources.limits.cpu="{{ pillar['k8s-efk']['grafana']['cpu_limit'] }}"
+        - resources.limits.memory="{{ pillar['k8s-efk']['grafana']['memory_limit'] }}"
+        - resources.requests.cpu="{{ pillar['k8s-efk']['grafana']['cpu_request'] }}"
+        - resources.requests.memory="{{ pillar['k8s-efk']['grafana']['memory_request'] }}"
+        - ingress.enabled="{{ pillar.get('k8s-efk.grafana.ingress_enabled') }}"
+        - ingress.ingressClassName="{{ pillar.get('k8s-efk.grafana.ingress_class') }}"
+        - ingress.hosts[0]="{{ pillar.get('k8s-efk.grafana.ingress_host') }}"
         - ingress.path=/
         - ingress.pathType=Prefix
     - require:
