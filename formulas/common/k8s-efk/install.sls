@@ -71,31 +71,42 @@ opensearch_helm_install:
       - cmd: apply_opensearch_tls_cert
       - file: render_opensearch_values
 
-render_opensearch_dashboards_values:
-  file.managed:
-    - name: /tmp/opensearch-dashboards-values.yaml
-    - source: salt://formulas/common/k8s-efk/files/opensearch-dashboards-values.j2
-    - template: jinja
-    - makedirs: True
-
-# Uninstall OpenSearch Dashboards Helm release if it exists to handle selector conflict
-uninstall_opensearch_dashboards_if_conflict:
+# Add Grafana Helm repository
+grafana_helm_repo:
   cmd.run:
-    - name: helm uninstall opensearch-dashboards -n {{ pillar.get('efk_namespace', 'efk') }} || true
-    - onlyif: helm list -n {{ pillar.get('efk_namespace', 'efk') }} | grep -q "opensearch-dashboards"
-    - require:
-      - helm: opensearch_repo
-
-opensearch_dashboards_helm_install:
-  helm.release_present:
-    - name: opensearch-dashboards
-    - chart: opensearch/opensearch-dashboards
-    - version: {{ pillar.get('opensearch_dashboards_version', '2.12.0') }}
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - values: /tmp/opensearch-dashboards-values.yaml
+    - name: helm repo add grafana https://grafana.github.io/helm-charts
+    - unless: helm repo list | grep grafana
     - require:
       - k8s: efk_namespace
-      - helm: opensearch_repo
+
+# Install Grafana in the same namespace as OpenSearch
+grafana_helm_install:
+  helm.release_present:
+    - name: grafana
+    - chart: grafana/grafana
+    - version: {{ pillar.get('k8s-efk.grafana.version', 'latest') }}
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - set:
+        - replicas={{ pillar.get('k8s-efk.grafana.replicas', 1) }}
+        - image.repository=grafana/grafana
+        - image.tag={{ pillar.get('k8s-efk.grafana.version', '10.2.0') }}
+        - image.pullPolicy=IfNotPresent
+        - grafana\.ini.server.domain={{ pillar.get('k8s-efk.grafana.domain') }}
+        - grafana\.ini.server.root_url={{ pillar.get('k8s-efk.grafana.root_url') }}
+        - grafana\.ini.security.admin_user={{ pillar.get('k8s-efk.grafana.admin_user') }}
+        - grafana\.ini.security.admin_password={{ pillar.get('k8s-efk.grafana.admin_password') }}
+        - service.type={{ pillar.get('k8s-efk.grafana.service_type') }}
+        - service.port={{ pillar.get('k8s-efk.grafana.service_port') }}
+        - resources.limits.cpu={{ pillar.get('k8s-efk.grafana.cpu_limit') }}
+        - resources.limits.memory={{ pillar.get('k8s-efk.grafana.memory_limit') }}
+        - resources.requests.cpu={{ pillar.get('k8s-efk.grafana.cpu_request') }}
+        - resources.requests.memory={{ pillar.get('k8s-efk.grafana.memory_request') }}
+        - ingress.enabled={{ pillar.get('k8s-efk.grafana.ingress_enabled') }}
+        - ingress.ingressClassName={{ pillar.get('k8s-efk.grafana.ingress_class') }}
+        - ingress.hosts[0]={{ pillar.get('k8s-efk.grafana.ingress_host') }}
+        - ingress.path=/ 
+        - ingress.pathType=Prefix
+    - require:
+      - k8s: efk_namespace
+      - cmd: grafana_helm_repo
       - helm: opensearch_helm_install
-      - file: render_opensearch_dashboards_values
-      - cmd: uninstall_opensearch_dashboards_if_conflict
