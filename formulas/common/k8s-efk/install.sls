@@ -101,7 +101,7 @@ grafana_helm_install:
           --set resources.requests.memory={{ pillar['k8s-efk']['grafana']['memory_request'] }} \
           --set ingress.enabled={{ pillar['k8s-efk']['grafana']['ingress_enabled'] }} \
           --set ingress.ingressClassName={{ pillar['k8s-efk']['grafana']['ingress_class'] }} \
-          --set ingress.hosts[0]={{ pillar['k8s-efk']['grafana']['ingress_host] }} \
+          --set ingress.hosts[0]={{ pillar['k8s-efk']['grafana']['ingress_host'] }} \
           --set ingress.path=/ \
           --set ingress.pathType=Prefix \
           --wait --timeout 300s || echo "Installation failed, check logs for details"
