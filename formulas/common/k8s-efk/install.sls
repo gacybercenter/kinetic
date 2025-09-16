@@ -91,7 +91,7 @@ grafana_helm_install:
           --set image.pullPolicy=IfNotPresent \
           --set grafana\.ini.server.domain={{ pillar['k8s-efk']['grafana']['domain'] }} \
           --set grafana\.ini.server.root_url={{ pillar['k8s-efk']['grafana']['root_url'] }} \
-          --set grafana\.ini.security.admin_user={{ pillar['k8s-efk']['grafana.admin_user']['admin'] }} \
+          --set grafana\.ini.security.admin_user='admin' \
           --set grafana\.ini.security.admin_password={{ pillar['opensearch_admin_password'] }} \
           --set service.type={{ pillar['k8s-efk']['grafana']['service_type'] }} \
           --set service.port={{ pillar['k8s-efk']['grafana']['service_port'] }} \
