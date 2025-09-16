@@ -93,8 +93,8 @@ grafana_helm_install:
         - image.pullPolicy=IfNotPresent
         - grafana\.ini.server.domain={{ pillar.get('k8s-efk.grafana.domain') }}
         - grafana\.ini.server.root_url={{ pillar.get('k8s-efk.grafana.root_url') }}
-        - grafana\.ini.security.admin_user={{ pillar.get('k8s-efk.grafana.admin_user') }}
-        - grafana\.ini.security.admin_password={{ pillar.get('opensearch_admin_password') }}
+        - adminUser={{ pillar.get('k8s-efk.grafana.admin_user') }}
+        - adminPassword={{ pillar.get('opensearch_admin_password') }}
         - service.type={{ pillar.get('k8s-efk.grafana.service_type') }}
         - service.port={{ pillar.get('k8s-efk.grafana.service_port') }}
         - resources.limits.cpu={{ pillar.get('k8s-efk.grafana.cpu_limit') }}
