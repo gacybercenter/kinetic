@@ -103,7 +103,7 @@ def create_index(index_name, admin_user='admin', admin_password=None, host='http
             'message': f"Failed to create index {index_name}: {str(e)[:100]}..."
         }
 
-def create_role(role_name='fluentbit_role', index_name='kvm-logs', admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
+def create_role(role_name='fluentbit_role', index_name, admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
     """
     Create or update a role in OpenSearch with permissions for a specific index.
     """
