@@ -46,7 +46,7 @@ def check_health(admin_user='admin', admin_password=None, host='https://api.logg
             'message': f"Failed to check cluster health: {str(e)[:100]}..."
         }
 
-def create_index(index_name=d, admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443', shards=1, replicas=1):
+def create_index(index_name, admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443', shards=1, replicas=1):
     """
     Create an index in OpenSearch if it doesn't exist.
     """
