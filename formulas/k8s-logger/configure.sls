@@ -14,9 +14,9 @@ check_opensearch_health:
 create_kvm_logs_index:
   opensearch.index_present:
     - name: create_kvm_logs_index
-    - index_name: {{ pillar.get('opensearch_index_name', 'kvm-logs') }}
+    - index_name: {{ pillar.get('opensearch_index_name') }}
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
-    - admin_password: {{ pillar.get('fluentd_password', '') }}
+    - admin_password: {{ pillar.get('fluentd_password') }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
     - shards: {{ pillar.get('opensearch_shards', 1) }}
     - replicas: {{ pillar.get('opensearch_replicas', 1) }}
