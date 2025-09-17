@@ -124,7 +124,11 @@ def create_role(index_name, role_name='fluentbit_role', admin_user='admin', admi
                 "fls": [],
                 "masked_fields": [],
                 "allowed_actions": [
-                "read"
+                "read",
+                "write",
+                "manage",
+                "indices:data/write/index",
+                "indices:data/write/bulk"
                 ]
             }],
             "tenant_permissions": [{
