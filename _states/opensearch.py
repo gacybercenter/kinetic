@@ -75,7 +75,7 @@ def index_present(name, index_name, admin_user='admin', admin_password=None, hos
 
     return ret
 
-def role_present(name, role_name='fluentbit_role', index_name, admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
+def role_present(name, index_name, role_name='fluentbit_role', user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
     """
     Ensure that a role exists in OpenSearch with permissions for a specific index.
 
