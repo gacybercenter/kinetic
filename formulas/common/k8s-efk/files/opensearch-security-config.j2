@@ -64,7 +64,7 @@ stringData:
         - "cluster_composite_ops"
       index_permissions:
         - index_patterns:
-            - "{{ pillar.get('opensearch_index_name', 'kvm-logs') }}*"
+            - "*"
           allowed_actions:
             - "write"
             - "create_index"
