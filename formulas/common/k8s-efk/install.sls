@@ -71,31 +71,40 @@ opensearch_helm_install:
       - cmd: apply_opensearch_tls_cert
       - file: render_opensearch_values
 
-render_opensearch_dashboards_values:
-  file.managed:
-    - name: /tmp/opensearch-dashboards-values.yaml
-    - source: salt://formulas/common/k8s-efk/files/opensearch-dashboards-values.j2
-    - template: jinja
-    - makedirs: True
-
-# Uninstall OpenSearch Dashboards Helm release if it exists to handle selector conflict
-uninstall_opensearch_dashboards_if_conflict:
+# Add Grafana Helm repository
+grafana_helm_repo:
   cmd.run:
-    - name: helm uninstall opensearch-dashboards -n {{ pillar.get('efk_namespace', 'efk') }} || true
-    - onlyif: helm list -n {{ pillar.get('efk_namespace', 'efk') }} | grep -q "opensearch-dashboards"
-    - require:
-      - helm: opensearch_repo
-
-opensearch_dashboards_helm_install:
-  helm.release_present:
-    - name: opensearch-dashboards
-    - chart: opensearch/opensearch-dashboards
-    - version: {{ pillar.get('opensearch_dashboards_version', '2.12.0') }}
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - values: /tmp/opensearch-dashboards-values.yaml
+    - name: helm repo add grafana https://grafana.github.io/helm-charts && helm repo update
+    - unless: helm repo list | grep grafana
     - require:
       - k8s: efk_namespace
-      - helm: opensearch_repo
-      - helm: opensearch_helm_install
-      - file: render_opensearch_dashboards_values
-      - cmd: uninstall_opensearch_dashboards_if_conflict
+
+# Install Grafana in the same namespace as OpenSearch
+grafana_helm_install:
+  cmd.run:
+    - name: |
+        helm upgrade --install grafana grafana/grafana \
+          --namespace {{ pillar['efk_namespace'] }} \
+          --set replicas={{ pillar['k8s-efk']['grafana']['replicas'] }} \
+          --set image.repository=grafana/grafana \
+          --set image.tag={{ pillar['k8s-efk']['grafana']['version'] }} \
+          --set image.pullPolicy=IfNotPresent \
+          --set grafana\.ini.server.domain={{ pillar['k8s-efk']['grafana']['domain'] }} \
+          --set grafana\.ini.server.root_url={{ pillar['k8s-efk']['grafana']['root_url'] }} \
+          --set grafana\.ini.security.admin_user='admin' \
+          --set grafana\.ini.security.admin_password={{ pillar['opensearch_admin_password'] }} \
+          --set service.type={{ pillar['k8s-efk']['grafana']['service_type'] }} \
+          --set service.port={{ pillar['k8s-efk']['grafana']['service_port'] }} \
+          --set resources.limits.cpu={{ pillar['k8s-efk']['grafana']['cpu_limit'] }} \
+          --set resources.limits.memory={{ pillar['k8s-efk']['grafana']['memory_limit'] }} \
+          --set resources.requests.cpu={{ pillar['k8s-efk']['grafana']['cpu_request'] }} \
+          --set resources.requests.memory={{ pillar['k8s-efk']['grafana']['memory_request'] }} \
+          --set ingress.enabled={{ pillar['k8s-efk']['grafana']['ingress_enabled'] }} \
+          --set ingress.ingressClassName={{ pillar['k8s-efk']['grafana']['ingress_class'] }} \
+          --set ingress.hosts[0]={{ pillar['k8s-efk']['grafana']['ingress_host'] }} \
+          --set ingress.path=/ \
+          --set ingress.pathType=Prefix \
+          --wait --timeout 300s || echo "Installation failed, check logs for details"
+    - require:
+      - k8s: efk_namespace
+      - cmd: grafana_helm_repo

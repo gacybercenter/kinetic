@@ -16,7 +16,7 @@ def __virtual__():
         return __virtualname__
     return (False, 'The kinetic-os execution module is not available. Ensure requests library is installed.')
 
-def index_present(name, index_name='kvm-logs', admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443', shards=1, replicas=1):
+def index_present(name, index_name, admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443', shards=1, replicas=1):
     """
     Ensure that an index exists in OpenSearch. If it does not exist, create it with the specified settings.
 
@@ -75,7 +75,7 @@ def index_present(name, index_name='kvm-logs', admin_user='admin', admin_passwor
 
     return ret
 
-def role_present(name, role_name='fluentbit_role', index_name='kvm-logs', admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
+def role_present(name, index_name, role_name='fluentbit_role', admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
     """
     Ensure that a role exists in OpenSearch with permissions for a specific index.
 
