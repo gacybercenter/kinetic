@@ -1,5 +1,5 @@
 {% set k8s = salt['pillar.get']('k8s') %}
-{% set opensearch_index_name = salt['pillar.get']('index')%}
+{% set opensearch_index_name = salt['pillar.get']('index') %}
 
 configure_opensearch_for_logging:
   salt.state:
