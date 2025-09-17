@@ -118,7 +118,7 @@ def create_role(index_name, role_name='fluentbit_role', admin_user='admin', admi
             ],
             "index_permissions": [{
                 "index_patterns": [
-                "{index_name}*"
+                    f"{index_name}*"
                 ],
                 "dls": "",
                 "fls": [],
