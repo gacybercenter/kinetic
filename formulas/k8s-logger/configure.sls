@@ -52,7 +52,7 @@ map_fluentbit_user_to_role:
 {% if role == 'controller' %}
 {% set vm_result = salt['kinetic-libvirt.list_vms'](connection_uri=pillar.get('libvirt_connection_uri', 'qemu:///system')) %}
 {% set vms = vm_result.get('vms') %}
-{% for vm in vms.iter() %}
+{% for vm in vms %}
 {% set ip = pillar.get('bmh:{{ vm }}:networks:manage_ip') %}
 create_health_vm_conf:
   file.managed:
