@@ -56,7 +56,7 @@ map_fluentbit_user_to_role:
 {% set ip = pillar.get('bmh:{{ vm }}:networks:manage_ip') %}
 create_health_{{ vm }}_conf:
   file.managed:
-    - name: {{ vm }}-vm-health.conf
+    - name: /etc/fluent-bit/{{ vm }}-vm-health.conf
     - content: |
         [INPUT]
           Name health
