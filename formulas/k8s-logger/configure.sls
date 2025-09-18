@@ -55,7 +55,6 @@ map_fluentbit_user_to_role:
 {% for vm in vms %}
 {% set bmh_data = pillar.get('bmh', {}).get(vm, {}) %}
 {% set ip = bmh_data.get('network', {}).get('management_ip', '') if bmh_data else '' %}
-{% if ip %}
 create_health_{{ vm }}_conf:
   file.managed:
     - name: /etc/fluent-bit/{{ vm }}-vm-health.conf
@@ -68,7 +67,6 @@ create_health_{{ vm }}_conf:
           Interval_Sec  10
           Interval_NSec 0
           Add_Host true
-{% endif %}
 {% endfor %}
 {% endif %}
 create_syslog_forward:
