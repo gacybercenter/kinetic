@@ -1,7 +1,7 @@
 # State formula to configure OpenSearch for logging with Fluent Bit
 # Ensures cluster health, creates an index for KVM logs, sets up a role with permissions,
 # and maps the Fluent Bit user to the role.
-
+{% set role = grains.get('type') %}
 # Check OpenSearch cluster health before proceeding
 check_opensearch_health:
   opensearch.cluster_health:
@@ -48,3 +48,33 @@ map_fluentbit_user_to_role:
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
     - require:
       - opensearch: create_fluentbit_{{ index_name }}_role
+
+{% if role == 'controller %}
+{% set vm_result = salt['kinetic-libvirt.list_vms'](connection_uri='qemu:///system') %}
+{% set vms = vm_result.get('vms', []) if vm_result.get('success', False) else [] %}
+{% for vm in vms.iter() %}
+create_health_vm_conf:
+  file.managed:
+    - name: {{ vm }}-vm-health.conf
+    - content: |
+        [INPUT]
+          Name health
+          Host 10.100.1.31
+          tag {{ vm }}
+          Port 22
+          Interval_Sec  10
+          Interval_NSec 0
+          Add_Host true
+{% endfor %}
+{% endif %}
+create_syslog_forward:
+  file.managed:
+    - name: /etc/fluent-bit/fluent-bit.conf
+    - template: jinja
+    - source: salt://formulas/k8s-logger/files/fluent-bit.j2
+
+fluent-bit-service.dead:
+  service.running:
+    - name: fluent-bit
+    - watch:
+      - file: /etc/fluent-bit/*
