@@ -49,7 +49,7 @@ map_fluentbit_user_to_role:
     - require:
       - opensearch: create_fluentbit_{{ index_name }}_role
 
-{% if role == 'controller %}
+{% if role == 'controller'wwwww %}
 {% set vm_result = salt['kinetic-libvirt.list_vms'](connection_uri='qemu:///system') %}
 {% set vms = vm_result.get('vms', []) if vm_result.get('success', False) else [] %}
 {% for vm in vms.iter() %}
