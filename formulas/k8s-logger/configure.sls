@@ -53,7 +53,9 @@ map_fluentbit_user_to_role:
 {% set vm_result = salt['kinetic-libvirt.list_vms'](connection_uri=pillar.get('libvirt_connection_uri', 'qemu:///system')) %}
 {% set vms = vm_result.get('vms') %}
 {% for vm in vms %}
-{% set ip = pillar.get('bmh:{{ vm }}:networks:manage_ip') %}
+{% set bmh_data = pillar.get('bmh', {}).get(vm, {}) %}
+{% set ip = bmh_data.get('network', {}).get('management_ip', '') if bmh_data else '' %}
+{% if ip %}
 create_health_{{ vm }}_conf:
   file.managed:
     - name: /etc/fluent-bit/{{ vm }}-vm-health.conf
@@ -61,11 +63,12 @@ create_health_{{ vm }}_conf:
         [INPUT]
           Name health
           Host {{ ip }}
-          tag {{ vm }}.health
+          Tag {{ vm }}.health
           Port 22
           Interval_Sec  10
           Interval_NSec 0
           Add_Host true
+{% endif %}
 {% endfor %}
 {% endif %}
 create_syslog_forward:
