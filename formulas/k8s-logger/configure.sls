@@ -15,7 +15,7 @@ check_opensearch_health:
 {% set index_name = pillar.get('opensearch_index_name', grains.get('host')) %}
 create_kvm_logs_index:
   opensearch.index_present:
-    - name: create_kvm_logs_index
+    - name: create_{{ index_name }}_index
     - index_name: {{ index_name }}
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
     - admin_password: {{ pillar.get('fluentd_password') }}
@@ -28,23 +28,23 @@ create_kvm_logs_index:
 # Create or ensure a role with permissions for the KVM logs index
 create_fluentbit_role:
   opensearch.role_present:
-    - name: create_fluentbit_role
+    - name: create_fluentbit_{{ index_name }}_role
     - role_name: {{ pillar.get('opensearch_role_name', 'fluentbit_role') }}
     - index_name: {{ index_name }}
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
     - admin_password: {{ pillar.get('fluentd_password') }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
     - require:
-      - opensearch: create_kvm_logs_index
+      - opensearch: create_{{ index_name }}_index
 
 # Map the Fluent Bit user to the role for access to the index
 map_fluentbit_user_to_role:
   opensearch.user_role_mapping_present:
-    - name: map_fluentbit_user_to_role
+    - name: map_fluentbit_user_to_{{ index_name }}_role
     - role_name: {{ pillar.get('opensearch_role_name', 'fluentbit_role') }}
     - user_name: {{ pillar.get('opensearch_user_name', 'fluentbit') }}
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
     - admin_password: {{ pillar.get('fluentd_password', '') }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
     - require:
-      - opensearch: create_fluentbit_role
+      - opensearch: create_fluentbit_{{ index_name }}_role
