@@ -11,7 +11,7 @@ configure_opensearch_for_logging:
         fluentd_password: {{ pillar.get('fluentd_password', '') }}
         opensearch_host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
         opensearch_index_name: {{ opensearch_index_name }}
-        opensearch_role_name: {{ pillar.get('opensearch_role_name', 'fluentbit_role') }}
+        opensearch_role_name: {{ opensearch_index_name}}_role
         opensearch_user_name: {{ pillar.get('opensearch_user_name', 'fluentbit') }}
         opensearch_shards: {{ pillar.get('opensearch_shards', 1) }}
         opensearch_replicas: {{ pillar.get('opensearch_replicas', 1) }}

@@ -7,7 +7,7 @@ check_opensearch_health:
   opensearch.cluster_health:
     - name: check_opensearch_health
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
-    - admin_password: {{ pillar.get('fluentd_password', '') }}
+    - admin_password: {{ pillar.get('fluentd_password') }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
 
 # Create or ensure the index for KVM logs exists
@@ -32,7 +32,7 @@ create_fluentbit_role:
     - role_name: {{ pillar.get('opensearch_role_name', 'fluentbit_role') }}
     - index_name: {{ index_name }}
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
-    - admin_password: {{ pillar.get('fluentd_password', '') }}
+    - admin_password: {{ pillar.get('fluentd_password') }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
     - require:
       - opensearch: create_kvm_logs_index
