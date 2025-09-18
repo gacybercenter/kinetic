@@ -2,7 +2,7 @@
 # vim: ft=jinja
 
 {## Start with  defaults from defaults.sls ##}
-{% import_yaml 'fluent-bit/defaults.yaml' as default_settings %}
+{% import_yaml '/formulas/k8s-logger/defaults.yaml' as default_settings %}
 
 {##
 Setup variable using grains['os_family'] based logic, only add key:values here

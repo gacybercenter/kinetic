@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+# vim: ft=yaml
+fluent_bit:
+  pkg: fluentbit
+  service:
+    name: fluent-bit
+  config:
+    flush: 5
+    http_monitor: off
+    http_port: 2020
