@@ -54,7 +54,7 @@ map_fluentbit_user_to_role:
 {% set vms = vm_result.get('vms') %}
 {% for vm in vms %}
 {% set ip = pillar.get('bmh:{{ vm }}:networks:manage_ip') %}
-create_health_vm_conf:
+create_health_{{ vm }}_conf:
   file.managed:
     - name: {{ vm }}-vm-health.conf
     - content: |
