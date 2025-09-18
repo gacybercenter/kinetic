@@ -15,6 +15,8 @@
 {% set type = opts.id.split('-')[0] %}
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 
+include:
+  - /formulas/k8s-logger/install
 
 initial_module_sync:
   saltutil.sync_all:
