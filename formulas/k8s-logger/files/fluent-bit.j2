@@ -86,5 +86,28 @@
     Buffer_Chunk_Size   32000
     Buffer_Max_Size     64000
     Receive_Buffer_Size 512000
+[INPUT]
+    Name node_exporter_metrics
+    metrics filesystemp
+
+
+[OUTPUT]
+    name  stdout
+    match *
+
+[OUTPUT]
+    Name              opensearch
+    Match             *
+    Host              api.logger.services.gacyberrange.org
+    Port              443
+    Index             {{ grains['host'] }}
+    Type              _doc
+    HTTP_User         fluentbit
+    HTTP_Passwd       {{ pillar['fluentd_password'] }}
+    TLS               On
+    TLS.verify        Off
+    Suppress_Type_Name On
+    Trace_Error On
+
 
 @INCLUDE ./*-vm-health.conf
