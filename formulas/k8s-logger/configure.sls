@@ -58,7 +58,7 @@ map_fluentbit_user_to_role:
 create_health_{{ vm }}_conf:
   file.managed:
     - name: /etc/fluent-bit/{{ vm }}-vm-health.conf
-    - content: |
+    - contents: |
         [INPUT]
           Name health
           Host {{ ip }}
