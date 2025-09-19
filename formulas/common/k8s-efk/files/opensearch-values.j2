@@ -53,6 +53,7 @@ ingress:
   enabled: true
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
   path: /
   hosts:
     - {{ pillar.get('opensearch_api_ingress_host', 'api.logger.services.gacyberrange.org') }}
