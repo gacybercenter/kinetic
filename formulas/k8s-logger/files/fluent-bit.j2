@@ -80,16 +80,6 @@
     # to use when processing these records.
     #
     # storage.backlog.mem_limit 5M
-[INPUT]
-    Name                syslog
-    Path                /tmp/in_syslog
-    Buffer_Chunk_Size   32000
-    Buffer_Max_Size     64000
-    Receive_Buffer_Size 512000
-[INPUT]
-    Name node_exporter_metrics
-    metrics filesystem
-
 
 [OUTPUT]
     name  stdout
@@ -110,4 +100,5 @@
     Trace_Error On
 
 
-@INCLUDE *-logger.conf
+@INCLUDE *-INPUT.conf
+@INCLUDE *-OUTPUT.conf

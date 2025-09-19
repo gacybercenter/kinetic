@@ -2,6 +2,7 @@
 # Ensures cluster health, creates an index for KVM logs, sets up a role with permissions,
 # and maps the Fluent Bit user to the role.
 {% set role = grains.get('type') %}
+{% set host = grains.get('host') %}
 # Check OpenSearch cluster health before proceeding
 check_opensearch_health:
   opensearch.cluster_health:
@@ -55,28 +56,44 @@ map_fluentbit_user_to_role:
 {% for vm in vms %}
 {% set bmh_data = pillar.get('bmh', {}).get(vm, {}) %}
 {% set ip = bmh_data.get('network', {}).get('management_ip', '') if bmh_data else '' %}
-create_health_{{ vm }}_conf:
-  file.managed:
-    - name: /etc/fluent-bit/{{ vm }}-vm-health.conf
-    - contents: |
-        [INPUT]
-          Name health
-          Host {{ ip }}
-          Tag {{ vm }}.health
-          Port 22
-          Interval_Sec  10
-          Interval_NSec 0
-          Add_Host true
 {% endfor %}
 {% endif %}
 {% set Kernel = grains.get('kernel') %}
 {% if Kernel == "Linux" %}
-create_syslog_forward:
+create_{{ host }}_syslog_conf:
+  file.managed:
+    - name: /etc/fluent-bit/{{ host }}-syslog-INPUT.conf
+    - contents: |
+        [INPUT]
+            Name                syslog
+            Path                /tmp/in_syslog
+            Buffer_Chunk_Size   32000
+            Buffer_Max_Size     64000
+            Receive_Buffer_Size 512000
+create_{{ host }}_filesystem_conf:
+  file.managed:
+    - name: /etc/fluent-bit/{{ host }}-filesys-INPUT.conf
+    - contents: |
+        [INPUT]
+            Name node_exporter_metrics
+            metrics filesystem
+create_{{ host }}_ssh_service_conf:
+  file.managed:
+    - name: /etc/fluent-bit/{{ host }}-ssh-service-INPUT.conf
+    - contents:
+        [INPUT]
+            Name systemd
+            tag  master.ssh
+            Path /var/log/journal
+            Systemd_Filter  _SYSTEMD_UNIT=ssh.service
+
+
+
+create_fluent-bit:
   file.managed:
     - name: /etc/fluent-bit/fluent-bit.conf
     - template: jinja
     - source: salt://formulas/k8s-logger/files/fluent-bit.j2
-
 {% endif %}
 
 
