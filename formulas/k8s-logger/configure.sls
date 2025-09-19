@@ -89,7 +89,7 @@ create_{{ host }}_ssh_service_conf:
 create_{{ host }}_opensearch_ssh_output:
   file.managed:
     - name: /etc/fluent--bit/{{ host }}-ssh-OUTPUT.conf
-    - content:
+    - contents:
         [OUTPUT]
             Name              opensearch
             Match             *ssh*
@@ -106,7 +106,7 @@ create_{{ host }}_opensearch_ssh_output:
 create_{{ host }}_opensearch_general_output:
   file.managed:
     - name: /etc/fluent--bit/{{ host }}-ssh-OUTPUT.conf
-    - content:
+    - contents:
         [OUTPUT]
             Name              opensearch
             Match             *
