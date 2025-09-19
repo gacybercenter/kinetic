@@ -102,7 +102,6 @@ create_{{ host }}_opensearch_ssh_output:
             TLS               On
             TLS.verify        Off
             Suppress_Type_Name On
-            Trace_Error On
 create_{{ host }}_opensearch_general_output:
   file.managed:
     - name: /etc/fluent-bit/{{ host }}-ssh-OUTPUT.conf
@@ -119,7 +118,6 @@ create_{{ host }}_opensearch_general_output:
             TLS               On
             TLS.verify        Off
             Suppress_Type_Name On
-            Trace_Error On
 create_fluent-bit:
   file.managed:
     - name: /etc/fluent-bit/fluent-bit.conf
