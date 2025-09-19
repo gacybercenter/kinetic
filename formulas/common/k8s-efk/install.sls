@@ -116,11 +116,26 @@ opensearch_dashboards_helm_install:
           --set ingress.hosts[0].paths[0].pathType=Prefix \
           --set ingress.hosts[0].paths[0].backend.service.name={{ pillar.get('opensearch_dashboards_service_name', 'opensearch-dashboards') }} \
           --set ingress.hosts[0].paths[0].backend.service.port.number={{ pillar.get('opensearch_dashboards_service_port', 5601) }} \
+          --set extraVolumes[0].name=opensearch-dashboards-config \
+          --set extraVolumes[0].configMap.name=opensearch-dashboards-config \
+          --set extraVolumeMounts[0].name=opensearch-dashboards-config \
+          --set extraVolumeMounts[0].mountPath=/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml \
+          --set extraVolumeMounts[0].subPath=opensearch_dashboards.yml \
+          --set extraVolumeMounts[0].readOnly=true \
+          --set extraVolumes[1].name=opensearch-tls-secret \
+          --set extraVolumes[1].secret.secretName=opensearch-tls-secret \
+          --set extraVolumeMounts[1].name=opensearch-tls-secret \
+          --set extraVolumeMounts[1].mountPath=/usr/share/opensearch-dashboards/config/certs \
+          --set extraVolumeMounts[1].readOnly=true \
+          --set extraEnvs[0].name=OPENSEARCH_DASHBOARDS_DEFAULT_TENANT \
+          --set extraEnvs[0].value={{ pillar.get('opensearch_dashboards_default_tenant', 'global_tenant') }} \
           --wait --timeout 300s || echo "Installation failed, check logs for details"
+    
     - require:
       - k8s: efk_namespace
       - helm: opensearch_repo
       - helm: opensearch_helm_install
+
 
 
 
