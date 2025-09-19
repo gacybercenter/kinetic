@@ -29,7 +29,7 @@ create_kvm_logs_index:
 create_fluentbit_role:
   opensearch.role_present:
     - name: create_fluentbit_{{ index_name }}_role
-    - role_name: {{ pillar.get('opensearch_role_name', 'fluentbit_role') }}
+    - role_name: {{ index_name }}
     - index_name: {{ index_name }}
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
     - admin_password: {{ pillar.get('fluentd_password') }}
@@ -41,7 +41,7 @@ create_fluentbit_role:
 map_fluentbit_user_to_role:
   opensearch.user_role_mapping_present:
     - name: map_fluentbit_user_to_{{ index_name }}_role
-    - role_name: {{ pillar.get('opensearch_role_name', 'fluentbit_role') }}
+    - role_name: {{ index_name }}
     - user_name: {{ pillar.get('opensearch_user_name', 'fluentbit') }}
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
     - admin_password: {{ pillar.get('fluentd_password', '') }}
@@ -69,11 +69,16 @@ create_health_{{ vm }}_conf:
           Add_Host true
 {% endfor %}
 {% endif %}
+{% set Kernel = grains.get('kernel') %}
+{% if Kernel == "Linux" %}
 create_syslog_forward:
   file.managed:
     - name: /etc/fluent-bit/fluent-bit.conf
     - template: jinja
     - source: salt://formulas/k8s-logger/files/fluent-bit.j2
+
+{% endif %}
+
 
 fluent-bit-service.dead:
   service.running:
