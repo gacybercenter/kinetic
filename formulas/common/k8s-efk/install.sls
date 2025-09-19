@@ -71,6 +71,27 @@ opensearch_helm_install:
       - cmd: apply_opensearch_tls_cert
       - file: render_opensearch_values
 
+# Create ConfigMap for OpenSearch Dashboards configuration
+opensearch_dashboards_configmap:
+  k8s.configmap_present:
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - configmap_name: opensearch-dashboards-config
+    - data:
+        opensearch_dashboards.yml: |
+          # OpenSearch connection configuration
+          opensearch.hosts: ["https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"]
+          opensearch.username: "admin"
+          opensearch.password: "{{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}"
+          opensearch.ssl.verificationMode: {{ pillar.get('opensearch_ssl_verification_mode', 'none') }}
+          opensearch.ssl.certificateAuthorities: ["/usr/share/opensearch-dashboards/config/certs/ca.crt"]
+          logging.verbose: true
+    - labels:
+        app: opensearch-dashboards
+    - annotations:
+        description: Configuration for OpenSearch Dashboards
+    - require:
+      - k8s: efk_namespace
+
 # Install OpenSearch Dashboards in the same namespace as OpenSearch using --set options
 opensearch_dashboards_helm_install:
   cmd.run:

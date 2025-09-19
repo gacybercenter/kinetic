@@ -2784,3 +2784,111 @@ def ceph_cluster_present(namespace, cluster_name, spec):
             'updated': False,
             'message': f"CephCluster operation error: {str(e)[:50]}..."
         }
+def configmap_present(namespace, name, data, labels=None, annotations=None):
+    """
+    Ensure that a Kubernetes ConfigMap exists in the specified namespace. If it does not exist, create it.
+    If it exists, update it if the data, labels, or annotations differ.
+
+    Args:
+        namespace (str): The namespace for the ConfigMap.
+        name (str): The name of the ConfigMap.
+        data (dict): The data to store in the ConfigMap (key-value pairs).
+        labels (dict, optional): Labels to apply to the ConfigMap. Defaults to None.
+        annotations (dict, optional): Annotations to apply to the ConfigMap. Defaults to None.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.configmap_present efk opensearch-dashboards-config "{'opensearch_dashboards.yml': 'content'}"
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if ConfigMap exists
+        try:
+            configmap = core_v1_api.read_namespaced_config_map(name=name, namespace=namespace)
+            exists = True
+            current_data = configmap.data or {}
+            current_labels = configmap.metadata.labels or {}
+            current_annotations = configmap.metadata.annotations or {}
+
+            # Check if data, labels, or annotations match
+            desired_labels = labels or {}
+            desired_annotations = annotations or {}
+            if (current_data == data and
+                current_labels == desired_labels and
+                current_annotations == desired_annotations):
+                matches = True
+                message = f"ConfigMap {name} in namespace {namespace} already exists and matches desired state"
+            else:
+                matches = False
+                message = f"ConfigMap {name} in namespace {namespace} exists but content differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"ConfigMap {name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking ConfigMap {name}: {str(e)[:50]}..."
+                }
+
+        # Create or update ConfigMap
+        configmap_body = client.V1ConfigMap(
+            metadata=client.V1ObjectMeta(
+                name=name,
+                namespace=namespace,
+                labels=labels or {},
+                annotations=annotations or {}
+            ),
+            data=data
+        )
+
+        if not exists:
+            try:
+                core_v1_api.create_namespaced_config_map(namespace=namespace, body=configmap_body)
+                updated = True
+                message = f"ConfigMap {name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create ConfigMap {name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if exists and hasattr(configmap, 'metadata') and hasattr(configmap.metadata, 'resource_version'):
+                    configmap_body.metadata.resource_version = configmap.metadata.resource_version
+                core_v1_api.replace_namespaced_config_map(name=name, namespace=namespace, body=configmap_body)
+                updated = True
+                message = f"ConfigMap {name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update ConfigMap {name}: {str(e)[:50]}..."
+                }
+
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"ConfigMap operation error: {str(e)[:50]}..."
+        }
