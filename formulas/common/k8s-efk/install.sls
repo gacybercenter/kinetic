@@ -82,7 +82,6 @@ opensearch_dashboards_helm_install:
           --set image.repository=opensearchproject/opensearch-dashboards \
           --set image.tag={{ pillar.get('opensearch_dashboards_tag', '3.2.0') }} \
           --set image.pullPolicy=IfNotPresent \
-          --set serviceName=opensearch-dashboard \
           --set service.type={{ pillar.get('opensearch_dashboards_service_type', 'ClusterIP') }} \
           --set service.port={{ pillar.get('opensearch_dashboards_service_port', 5601) }} \
           --set resources.limits.cpu={{ pillar.get('opensearch_dashboards_cpu_limit', '500m') }} \
@@ -94,6 +93,8 @@ opensearch_dashboards_helm_install:
           --set ingress.hosts[0].host={{ pillar.get('opensearch_dashboards_ingress_host', 'dashboard.logger.services.gacyberrange.org') }} \
           --set ingress.hosts[0].paths[0].path=/ \
           --set ingress.hosts[0].paths[0].pathType=Prefix \
+          --set ingress.hosts[0].paths[0].backend.service.name={{ pillar.get('opensearch_dashboards_service_name', 'opensearch-dashboards') }} \
+          --set ingress.hosts[0].paths[0].backend.service.port.number={{ pillar.get('opensearch_dashboards_service_port', 5601) }} \
           --wait --timeout 300s || echo "Installation failed, check logs for details"
     - require:
       - k8s: efk_namespace
