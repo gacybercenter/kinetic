@@ -80,7 +80,7 @@ create_{{ host }}_filesystem_conf:
 create_{{ host }}_ssh_service_conf:
   file.managed:
     - name: /etc/fluent-bit/{{ host }}-ssh-service-INPUT.conf
-    - contents:
+    - contents:  |
         [INPUT]
             Name systemd
             tag  master.ssh
@@ -89,7 +89,7 @@ create_{{ host }}_ssh_service_conf:
 create_{{ host }}_opensearch_ssh_output:
   file.managed:
     - name: /etc/fluent--bit/{{ host }}-ssh-OUTPUT.conf
-    - contents:
+    - contents:  |
         [OUTPUT]
             Name              opensearch
             Match             *ssh*
@@ -106,7 +106,7 @@ create_{{ host }}_opensearch_ssh_output:
 create_{{ host }}_opensearch_general_output:
   file.managed:
     - name: /etc/fluent--bit/{{ host }}-ssh-OUTPUT.conf
-    - contents:
+    - contents:  |
         [OUTPUT]
             Name              opensearch
             Match             *
