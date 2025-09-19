@@ -88,7 +88,7 @@
     Receive_Buffer_Size 512000
 [INPUT]
     Name node_exporter_metrics
-    metrics filesystemp
+    metrics filesystem
 
 
 [OUTPUT]
@@ -110,5 +110,4 @@
     Trace_Error On
 
 
-@INCLUDE *.conf
-@INCLUDE *.conf
+@INCLUDE *-logger.conf
