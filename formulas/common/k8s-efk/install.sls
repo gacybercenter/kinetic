@@ -82,6 +82,7 @@ opensearch_dashboards_helm_install:
           --set image.repository=opensearchproject/opensearch-dashboards \
           --set image.tag={{ pillar.get('opensearch_dashboards_tag', '3.2.0') }} \
           --set image.pullPolicy=IfNotPresent \
+          --set serviceName=opensearch-dashboard \
           --set service.type={{ pillar.get('opensearch_dashboards_service_type', 'ClusterIP') }} \
           --set service.port={{ pillar.get('opensearch_dashboards_service_port', 5601) }} \
           --set resources.limits.cpu={{ pillar.get('opensearch_dashboards_cpu_limit', '500m') }} \
