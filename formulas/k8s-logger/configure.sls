@@ -86,7 +86,40 @@ create_{{ host }}_ssh_service_conf:
             tag  master.ssh
             Path /var/log/journal
             Systemd_Filter  _SYSTEMD_UNIT=ssh.service
-
+create_{{ host }}_opensearch_ssh_output:
+  file.managed:
+    - name: /etc/fluent--bit/{{ host }}-ssh-OUTPUT.conf
+    - content:
+        [OUTPUT]
+            Name              opensearch
+            Match             *ssh*
+            Host              api.logger.services.gacyberrange.org
+            Port              443
+            Index             ssh.service
+            Type              _doc
+            HTTP_User         fluentbit
+            HTTP_Passwd       {{ pillar['fluentd_password'] }}
+            TLS               On
+            TLS.verify        Off
+            Suppress_Type_Name On
+            Trace_Error On
+create_{{ host }}_opensearch_general_output:
+  file.managed:
+    - name: /etc/fluent--bit/{{ host }}-ssh-OUTPUT.conf
+    - content:
+        [OUTPUT]
+            Name              opensearch
+            Match             *
+            Host              api.logger.services.gacyberrange.org
+            Port              443
+            Index             {{ grains['host'] }}
+            Type              _doc
+            HTTP_User         fluentbit
+            HTTP_Passwd       {{ pillar['fluentd_password'] }}
+            TLS               On
+            TLS.verify        Off
+            Suppress_Type_Name On
+            Trace_Error On
 
 
 create_fluent-bit:
