@@ -88,7 +88,7 @@ create_{{ host }}_ssh_service_conf:
             Systemd_Filter  _SYSTEMD_UNIT=ssh.service
 create_{{ host }}_opensearch_ssh_output:
   file.managed:
-    - name: /etc/fluent--bit/{{ host }}-ssh-OUTPUT.conf
+    - name: /etc/fluent-bit/{{ host }}-ssh-OUTPUT.conf
     - contents:  |
         [OUTPUT]
             Name              opensearch
@@ -105,7 +105,7 @@ create_{{ host }}_opensearch_ssh_output:
             Trace_Error On
 create_{{ host }}_opensearch_general_output:
   file.managed:
-    - name: /etc/fluent--bit/{{ host }}-ssh-OUTPUT.conf
+    - name: /etc/fluent-bit/{{ host }}-ssh-OUTPUT.conf
     - contents:  |
         [OUTPUT]
             Name              opensearch
@@ -120,8 +120,6 @@ create_{{ host }}_opensearch_general_output:
             TLS.verify        Off
             Suppress_Type_Name On
             Trace_Error On
-
-
 create_fluent-bit:
   file.managed:
     - name: /etc/fluent-bit/fluent-bit.conf
