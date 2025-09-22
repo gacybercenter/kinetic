@@ -101,12 +101,12 @@ create_{{ host }}_syslog_conf:
     - name: /etc/fluent-bit/{{ host }}-syslog-INPUT.conf
     - contents: |
         [INPUT]
-            Name                syslog
-            Path                /tmp/in_syslog
-            Buffer_Chunk_Size   32000
-            Buffer_Max_Size     64000
-            Receive_Buffer_Size 512000
-            Parser              syslog  # Added parser reference to fix the error
+            Name              syslog
+            Tag               auth.*
+            Path              /dev/log  # Or your syslog socket
+            Parser            syslog
+            Buffer_Chunk_Size 32k
+            Buffer_Max_Size   64k
 
 create_{{ host }}_filesystem_conf:
   file.managed:
@@ -139,9 +139,7 @@ create_{{ host }}_audit_conf:
             Mem_Buf_Limit     5MB
             Skip_Long_Lines   On
             Refresh_Interval  10
-            Multiline         On
-            Multiline_Flush   1s
-            Parser            audit_multiline
+            Multiline.parser  audit_multiline
 
 create_{{ host }}_auth_conf:
   file.managed:
@@ -159,18 +157,21 @@ create_{{ host }}_parsers_conf:
   file.managed:
     - name: /etc/fluent-bit/parsers.conf
     - contents: |
+        [PARSER]
+            Name        audit
+            Format      regex
+            Regex       ^type=(?<type>[^ ]+) (?<msg>audit\([^)]+\)): (?<details>.*)$
+            Time_Key    msg
+            Time_Format audit\(%Y.%m.%d:%H:%M:%S[^)]+\)
+            Time_Keep   On
+
         [MULTILINE_PARSER]
             Name              audit_multiline
             Type              regex
             Flush_Timeout     1000
-            Rule              "start_state"  "/^type=/"  "cont"
-
-        [PARSER]
-            Name        audit
-            Format      regex
-            Regex       ^type=(?<type>[^ ]+) (?<msg>audit\([^)]+\)): (?<avc>.*) (?<exe>.*) (?<key>.*) (?<auid>[^ ]+) (?<uid>[^ ]+) (?<gid>[^ ]+) (?<euid>[^ ]+) (?<suid>[^ ]+) (?<fsuid>[^ ]+) (?<egid>[^ ]+) (?<sgid>[^ ]+) (?<fsgid>[^ ]+) (?<tty>[^ ]+) (?<ses>[^ ]+) (?<comm>.*) (?<exe_path>.*) (?<pid>[^ ]+) (?<ppid>[^ ]+) (?<uid>[^ ]+) (?<gid>[^ ]+) (?<euid>[^ ]+) (?<suid>[^ ]+) (?<fsuid>[^ ]+) (?<egid>[^ ]+) (?<sgid>[^ ]+) (?<fsgid>[^ ]+) (?<tty>[^ ]+) (?<ses>[^ ]+) (?<arch>[^ ]+) (?<syscall>[^ ]+) (?<success>[^ ]+) (?<exit>[^ ]+) (?<a0>.*) (?<a1>.*) (?<a2>.*) (?<item>[^ ]+) (?<ppid>[^ ]+) (?<pid>[^ ]+) (?<auid>[^ ]+) (?<uid>[^ ]+) (?<gid>[^ ]+) (?<euid>[^ ]+) (?<suid>[^ ]+) (?<fsuid>[^ ]+) (?<egid>[^ ]+) (?<sgid>[^ ]+) (?<fsgid>[^ ]+) (?<tty>[^ ]+) (?<ses>[^ ]+) (?<comm>.*) (?<exe>.*) (?<key>.*)$
-            Time_Key   time
-            Time_Format %h %d %H:%M:%S
+            Rule              "start_state" "/^type=/" "cont_state"
+            Rule              "cont_state" "/^(?!type=).*/" "cont_state"
+            Rule              "cont_state" "/^type=/" "start_state"
 
         [PARSER]
             Name        syslog
@@ -202,6 +203,40 @@ create_{{ host }}_opensearch_ssh_output:
         [OUTPUT]
             Name              opensearch
             Match             *ssh*
+            Host              api.logger.services.gacyberrange.org
+            Port              443
+            Index             ssh.service
+            Type              _doc
+            HTTP_User         fluentbit
+            HTTP_Passwd       {{ pillar['fluentd_password'] }}
+            TLS               On
+            TLS.verify        Off
+            Suppress_Type_Name On
+
+create_{{ host }}_opensearch_audit_output:
+  file.managed:
+    - name: /etc/fluent-bit/{{ host }}-audit-OUTPUT.conf
+    - contents:  |
+        [OUTPUT]
+            Name              opensearch
+            Match             audit.*
+            Host              api.logger.services.gacyberrange.org
+            Port              443
+            Index             audit-logs
+            Type              _doc
+            HTTP_User         fluentbit
+            HTTP_Passwd       {{ pillar['fluentd_password'] }}
+            TLS               On
+            TLS.verify        Off
+            Suppress_Type_Name On
+
+create_{{ host }}_opensearch_auth_output:
+  file.managed:
+    - name: /etc/fluent-bit/{{ host }}-auth-OUTPUT.conf
+    - contents:  |
+        [OUTPUT]
+            Name              opensearch
+            Match             auth.*
             Host              api.logger.services.gacyberrange.org
             Port              443
             Index             audit-logs
