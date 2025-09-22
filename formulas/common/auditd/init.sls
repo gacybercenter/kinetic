@@ -1,2 +1,2 @@
 include:
-  - /formulas/auditd/configure
+  - /formulas/common/auditd/configure
