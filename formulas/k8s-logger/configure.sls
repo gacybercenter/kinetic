@@ -50,6 +50,42 @@ map_fluentbit_user_to_role:
     - require:
       - opensearch: create_fluentbit_{{ index_name }}_role
 
+map_fluentbit_user_to_audit_role:
+  opensearch.user_role_mapping_present:
+    - name: map_fluentbit_user_to_audit_logs_role
+    - role_name: audit-logs
+    - user_name: {{ pillar.get('opensearch_user_name', 'fluentbit') }}
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('fluentd_password', '') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+    - require:
+      - opensearch: create_fluentbit_audit_role
+
+# Create or ensure a role with permissions for the audit-logs index
+create_fluentbit_audit_role:
+  opensearch.role_present:
+    - name: create_fluentbit_audit_logs_role
+    - role_name: audit-logs
+    - index_name: audit-logs
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('fluentd_password') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+    - require:
+      - opensearch: create_audit_logs_index
+
+# Create or ensure the index for audit logs exists
+create_audit_logs_index:
+  opensearch.index_present:
+    - name: create_audit_logs_index
+    - index_name: audit-logs
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('fluentd_password') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+    - shards: {{ pillar.get('opensearch_shards', 1) }}
+    - replicas: {{ pillar.get('opensearch_replicas', 1) }}
+    - require:
+      - opensearch: check_opensearch_health
+
 {% if role == 'controller' %}
 {% set vm_result = salt['kinetic-libvirt.list_vms'](connection_uri=pillar.get('libvirt_connection_uri', 'qemu:///system')) %}
 {% set vms = vm_result.get('vms') %}
