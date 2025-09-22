@@ -12,7 +12,7 @@ auditd_service:
 auditd_rules_file:
   file.managed:
     - name: /etc/audit/rules.d/custom.rules
-    - source: salt://auditd/files/custom.rules
+    - source: salt://formulas/common/auditd/files/custom.rules
     - mode: 640
     - user: root
     - group: root
