@@ -70,6 +70,7 @@ create_{{ host }}_syslog_conf:
             Buffer_Chunk_Size   32000
             Buffer_Max_Size     64000
             Receive_Buffer_Size 512000
+
 create_{{ host }}_filesystem_conf:
   file.managed:
     - name: /etc/fluent-bit/{{ host }}-filesys-INPUT.conf
@@ -77,6 +78,7 @@ create_{{ host }}_filesystem_conf:
         [INPUT]
             Name node_exporter_metrics
             metrics filesystem
+
 create_{{ host }}_ssh_service_conf:
   file.managed:
     - name: /etc/fluent-bit/{{ host }}-ssh-service-INPUT.conf
@@ -86,6 +88,76 @@ create_{{ host }}_ssh_service_conf:
             tag  master.ssh
             Path /var/log/journal
             Systemd_Filter  _SYSTEMD_UNIT=ssh.service
+
+# New configurations for audit and auth logs
+create_{{ host }}_audit_conf:
+  file.managed:
+    - name: /etc/fluent-bit/{{ host }}-audit-INPUT.conf
+    - contents: |
+        [INPUT]
+            Name              tail
+            Tag               audit.*
+            Path              /var/log/audit/audit.log
+            DB                /var/log/flb_audit.db
+            Mem_Buf_Limit     5MB
+            Skip_Long_Lines   On
+            Refresh_Interval  10
+            Multiline         On
+            Multiline_Flush   1s
+            Parser            audit_multiline
+
+create_{{ host }}_auth_conf:
+  file.managed:
+    - name: /etc/fluent-bit/{{ host }}-auth-INPUT.conf
+    - contents: |
+        [INPUT]
+            Name              tail
+            Tag               auth.*
+            Path              /var/log/auth.log
+            DB                /var/log/flb_auth.db
+            Parser            syslog
+            Refresh_Interval  5
+
+create_{{ host }}_parsers_conf:
+  file.managed:
+    - name: /etc/fluent-bit/parsers.conf
+    - contents: |
+        [MULTILINE_PARSER]
+            Name              audit_multiline
+            Type              regex
+            Flush_Timeout     1000
+            Rule              "start_state"  "/^type=/"  "cont"
+
+        [PARSER]
+            Name        audit
+            Format      regex
+            Regex       ^type=(?<type>[^ ]+) (?<msg>audit\([^)]+\)): (?<avc>.*) (?<exe>.*) (?<key>.*) (?<auid>[^ ]+) (?<uid>[^ ]+) (?<gid>[^ ]+) (?<euid>[^ ]+) (?<suid>[^ ]+) (?<fsuid>[^ ]+) (?<egid>[^ ]+) (?<sgid>[^ ]+) (?<fsgid>[^ ]+) (?<tty>[^ ]+) (?<ses>[^ ]+) (?<comm>.*) (?<exe_path>.*) (?<pid>[^ ]+) (?<ppid>[^ ]+) (?<uid>[^ ]+) (?<gid>[^ ]+) (?<euid>[^ ]+) (?<suid>[^ ]+) (?<fsuid>[^ ]+) (?<egid>[^ ]+) (?<sgid>[^ ]+) (?<fsgid>[^ ]+) (?<tty>[^ ]+) (?<ses>[^ ]+) (?<arch>[^ ]+) (?<syscall>[^ ]+) (?<success>[^ ]+) (?<exit>[^ ]+) (?<a0>.*) (?<a1>.*) (?<a2>.*) (?<item>[^ ]+) (?<ppid>[^ ]+) (?<pid>[^ ]+) (?<auid>[^ ]+) (?<uid>[^ ]+) (?<gid>[^ ]+) (?<euid>[^ ]+) (?<suid>[^ ]+) (?<fsuid>[^ ]+) (?<egid>[^ ]+) (?<sgid>[^ ]+) (?<fsgid>[^ ]+) (?<tty>[^ ]+) (?<ses>[^ ]+) (?<comm>.*) (?<exe>.*) (?<key>.*)$
+            Time_Key   time
+            Time_Format %h %d %H:%M:%S
+
+        [PARSER]
+            Name        syslog
+            Format      regex
+            Regex       ^(?<host>[^ ]*) (?<ident>[^ ]*) (?<pid>[^ ]*) (?<msgid>[^ ]*) (?<severity>[^:]*): (?<message>.*)$
+            Time_Key    time
+            Time_Format %b %d %H:%M:%S
+
+create_{{ host }}_filters_conf:
+  file.managed:
+    - name: /etc/fluent-bit/{{ host }}-filters.conf
+    - contents: |
+        [FILTER]
+            Name            record_modifier
+            Match           *
+            Record          hostname ${HOSTNAME}
+            Record          source_host ${HOSTNAME}
+
+        [FILTER]
+            Name            grep
+            Match           audit.*
+            Regex           type USER_AUTH|SYSCALL
+            Exclude         type CRED_ACQ
+
 create_{{ host }}_opensearch_ssh_output:
   file.managed:
     - name: /etc/fluent-bit/{{ host }}-ssh-OUTPUT.conf
@@ -102,9 +174,10 @@ create_{{ host }}_opensearch_ssh_output:
             TLS               On
             TLS.verify        Off
             Suppress_Type_Name On
+
 create_{{ host }}_opensearch_general_output:
   file.managed:
-    - name: /etc/fluent-bit/{{ host }}-ssh-OUTPUT.conf
+    - name: /etc/fluent-bit/{{ host }}-general-OUTPUT.conf
     - contents:  |
         [OUTPUT]
             Name              opensearch
@@ -118,13 +191,13 @@ create_{{ host }}_opensearch_general_output:
             TLS               On
             TLS.verify        Off
             Suppress_Type_Name On
+
 create_fluent-bit:
   file.managed:
     - name: /etc/fluent-bit/fluent-bit.conf
     - template: jinja
     - source: salt://formulas/k8s-logger/files/fluent-bit.j2
 {% endif %}
-
 
 fluent-bit-service.dead:
   service.running:
