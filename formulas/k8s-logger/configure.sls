@@ -167,7 +167,7 @@ create_{{ host }}_opensearch_ssh_output:
             Match             *ssh*
             Host              api.logger.services.gacyberrange.org
             Port              443
-            Index             ssh.service
+            Index             audit-logs
             Type              _doc
             HTTP_User         fluentbit
             HTTP_Passwd       {{ pillar['fluentd_password'] }}
