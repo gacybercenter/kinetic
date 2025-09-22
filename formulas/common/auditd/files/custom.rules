@@ -1,0 +1,11 @@
+# Audit rules for login attempts
+-w /var/log/secure -p wa -k logins
+-a always,exit -F arch=b64 -S execve -F auid>=1000 -F path=/usr/sbin/sshd -k login_attempts
+
+# Audit rules for file access
+-a always,exit -F arch=b64 -S openat -F dir=/etc -F success=1 -k file_access
+-w /etc/passwd -p r -k identity
+
+# Audit rules for configuration changes
+-w /etc/ssh/sshd_config -p wa -k config_change
+-w /etc -p wa -k config_dir

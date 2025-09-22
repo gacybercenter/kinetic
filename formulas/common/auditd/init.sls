@@ -1,0 +1,2 @@
+include:
+  - /formulas/auditd/configure
