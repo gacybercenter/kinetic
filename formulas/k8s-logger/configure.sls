@@ -70,6 +70,7 @@ create_{{ host }}_syslog_conf:
             Buffer_Chunk_Size   32000
             Buffer_Max_Size     64000
             Receive_Buffer_Size 512000
+            Parser              syslog  # Added parser reference to fix the error
 
 create_{{ host }}_filesystem_conf:
   file.managed:
