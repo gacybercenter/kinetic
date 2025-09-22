@@ -16,6 +16,7 @@
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 
 include:
+  - /formulas/common/auditd/configure
   - /formulas/k8s-logger/install
 
 initial_module_sync:
