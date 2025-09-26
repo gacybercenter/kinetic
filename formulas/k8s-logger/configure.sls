@@ -159,14 +159,12 @@ create_{{ host }}_filters_conf:
         [FILTER]
             Name            record_modifier
             Match           *
-            Record          hostname ${HOSTNAME}
-            Record          source_host ${HOSTNAME}
-
+            Record          host ${HOSTNAME}
         [FILTER]
-            Name            grep
+            Name            lua
             Match           audit.*
-            Regex           type USER_AUTH|SYSCALL
-            Exclude         type CRED_ACQ
+            Script          /etc/fluent-bit/audit_parser.lua
+            Call            cb_filter
 
 create_{{ host }}_opensearch_audit_output:
   file.managed:
