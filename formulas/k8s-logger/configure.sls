@@ -96,36 +96,6 @@ create_audit_logs_index:
 {% endif %}
 {% set Kernel = grains.get('kernel') %}
 {% if Kernel == "Linux" %}
-create_{{ host }}_syslog_conf:
-  file.managed:
-    - name: /etc/fluent-bit/{{ host }}-syslog-INPUT.conf
-    - contents: |
-        [INPUT]
-            Name              syslog
-            Tag               auth.*
-            Path              /dev/log  # Or your syslog socket
-            Parser            syslog
-            Buffer_Chunk_Size 32k
-            Buffer_Max_Size   64k
-
-create_{{ host }}_filesystem_conf:
-  file.managed:
-    - name: /etc/fluent-bit/{{ host }}-filesys-INPUT.conf
-    - contents: |
-        [INPUT]
-            Name node_exporter_metrics
-            metrics filesystem
-
-create_{{ host }}_ssh_service_conf:
-  file.managed:
-    - name: /etc/fluent-bit/{{ host }}-ssh-service-INPUT.conf
-    - contents:  |
-        [INPUT]
-            Name systemd
-            tag  master.ssh
-            Path /var/log/journal
-            Systemd_Filter  _SYSTEMD_UNIT=ssh.service
-
 # New configurations for audit and auth logs
 create_{{ host }}_audit_conf:
   file.managed:
@@ -139,8 +109,12 @@ create_{{ host }}_audit_conf:
             Mem_Buf_Limit     5MB
             Skip_Long_Lines   On
             Refresh_Interval  10
-            Multiline.parser  audit_multiline
+            Parser            audit
 
+        [FILTER]
+            Name            record_modifier
+            Match           audit.*
+            Record          tag audit
 create_{{ host }}_auth_conf:
   file.managed:
     - name: /etc/fluent-bit/{{ host }}-auth-INPUT.conf
@@ -150,35 +124,33 @@ create_{{ host }}_auth_conf:
             Tag               auth.*
             Path              /var/log/auth.log
             DB                /var/log/flb_auth.db
-            Parser            syslog
+            Parser            auth
             Refresh_Interval  5
+
+        [FILTER]
+            Name            record_modifier
+            Match           auth.*
+            Record          tag auth
 
 create_{{ host }}_parsers_conf:
   file.managed:
     - name: /etc/fluent-bit/parsers.conf
     - contents: |
+        # Regex Parser for Audit Fields (Extracts AU-3 Essentials: Time, Type, User, Path)
         [PARSER]
             Name        audit
             Format      regex
-            Regex       ^type=(?<type>[^ ]+) (?<msg>audit\([^)]+\)): (?<details>.*)$
+            Regex       ^type=(?<type>[^\s]+)\s+(?<log>.*)$
             Time_Key    msg
-            Time_Format audit\(%Y.%m.%d:%H:%M:%S[^)]+\)
+            Time_Format audit\(%F:%T\.%N:%s\):
             Time_Keep   On
-
-        [MULTILINE_PARSER]
-            Name              audit_multiline
-            Type              regex
-            Flush_Timeout     1000
-            Rule              "start_state" "/^type=/" "cont_state"
-            Rule              "cont_state" "/^(?!type=).*/" "cont_state"
-            Rule              "cont_state" "/^type=/" "start_state"
-
         [PARSER]
-            Name        syslog
+            Name        auth
             Format      regex
-            Regex       ^(?<host>[^ ]*) (?<ident>[^ ]*) (?<pid>[^ ]*) (?<msgid>[^ ]*) (?<severity>[^:]*): (?<message>.*)$
+            Regex       (?<time>\S+) (?<hostname>\S+) (?<process>.+?(?=\[)|.+?(?=))[^a-zA-Z0-9](?<pid>\d{1,7}|)[^a-zA-Z0-9]{1,3}(?<info>.*)$
             Time_Key    time
-            Time_Format %b %d %H:%M:%S
+            Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+            Time_Keep   On
 
 create_{{ host }}_filters_conf:
   file.managed:
@@ -196,23 +168,6 @@ create_{{ host }}_filters_conf:
             Regex           type USER_AUTH|SYSCALL
             Exclude         type CRED_ACQ
 
-create_{{ host }}_opensearch_ssh_output:
-  file.managed:
-    - name: /etc/fluent-bit/{{ host }}-ssh-OUTPUT.conf
-    - contents:  |
-        [OUTPUT]
-            Name              opensearch
-            Match             *ssh*
-            Host              api.logger.services.gacyberrange.org
-            Port              443
-            Index             ssh.service
-            Type              _doc
-            HTTP_User         fluentbit
-            HTTP_Passwd       {{ pillar['fluentd_password'] }}
-            TLS               On
-            TLS.verify        Off
-            Suppress_Type_Name On
-
 create_{{ host }}_opensearch_audit_output:
   file.managed:
     - name: /etc/fluent-bit/{{ host }}-audit-OUTPUT.conf
@@ -222,7 +177,7 @@ create_{{ host }}_opensearch_audit_output:
             Match             audit.*
             Host              api.logger.services.gacyberrange.org
             Port              443
-            Index             audit-logs
+            Index             audit-logs-%Y.%m.%d
             Type              _doc
             HTTP_User         fluentbit
             HTTP_Passwd       {{ pillar['fluentd_password'] }}
@@ -239,24 +194,7 @@ create_{{ host }}_opensearch_auth_output:
             Match             auth.*
             Host              api.logger.services.gacyberrange.org
             Port              443
-            Index             audit-logs
-            Type              _doc
-            HTTP_User         fluentbit
-            HTTP_Passwd       {{ pillar['fluentd_password'] }}
-            TLS               On
-            TLS.verify        Off
-            Suppress_Type_Name On
-
-create_{{ host }}_opensearch_general_output:
-  file.managed:
-    - name: /etc/fluent-bit/{{ host }}-general-OUTPUT.conf
-    - contents:  |
-        [OUTPUT]
-            Name              opensearch
-            Match             *
-            Host              api.logger.services.gacyberrange.org
-            Port              443
-            Index             {{ grains['host'] }}
+            Index             audit-logs-%Y.%m.%d
             Type              _doc
             HTTP_User         fluentbit
             HTTP_Passwd       {{ pillar['fluentd_password'] }}
@@ -269,9 +207,13 @@ create_fluent-bit:
     - name: /etc/fluent-bit/fluent-bit.conf
     - template: jinja
     - source: salt://formulas/k8s-logger/files/fluent-bit.j2
+create_lua_parser_script:
+  file.managed:
+    - name: /etc/fluent-bit/audit_parser.lua
+    - source: salt://formulas/k8s-logger/files/audit_parser.lua
 {% endif %}
 
-fluent-bit-service.dead:
+fluent-bit-service:
   service.running:
     - name: fluent-bit
     - watch:
