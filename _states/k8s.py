@@ -1327,3 +1327,70 @@ def ceph_cluster_present(name, namespace, cluster_name, spec):
         ret['changes'] = {}
 
     return ret
+def configmap_present(name, namespace, configmap_name, data, labels=None, annotations=None):
+    """
+    Ensure that a Kubernetes ConfigMap exists in the specified namespace. If it does not exist, create it.
+    If it exists, update it if the data, labels, or annotations differ.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the ConfigMap.
+
+    configmap_name
+        The name of the ConfigMap resource in Kubernetes.
+
+    data
+        The data to store in the ConfigMap (dictionary of key-value pairs).
+
+    labels
+        Optional. Labels to apply to the ConfigMap. Defaults to None.
+
+    annotations
+        Optional. Annotations to apply to the ConfigMap. Defaults to None.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_configmap:
+          k8s.configmap_present:
+            - namespace: efk
+            - configmap_name: opensearch-dashboards-config
+            - data:
+                opensearch_dashboards.yml: |
+                  opensearch.hosts: ["https://opensearch-cluster-master.efk.svc.cluster.local:9200"]
+                  opensearch.username: "admin"
+                  opensearch.password: "YourStrongPassword123!"
+                  opensearch.ssl.verificationMode: none
+                  opensearch.ssl.certificateAuthorities: ["/usr/share/opensearch-dashboards/config/certs/ca.crt"]
+                  logging.verbose: true
+            - labels:
+                app: opensearch-dashboards
+            - annotations:
+                description: Configuration for OpenSearch Dashboards
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.configmap_present'](
+            namespace=namespace,
+            name=configmap_name,
+            data=data,
+            labels=labels,
+            annotations=annotations
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'configmap_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure ConfigMap {configmap_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret

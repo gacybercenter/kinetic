@@ -1,0 +1,47 @@
+# Time Changes
+-a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -F a0=0x0 -F key=time-change
+-a always,exit -F arch=b64 -F path=/etc/localtime -F perm=wa -F key=time-change
+
+# Identity Changes
+-a always,exit -F arch=b64 -F path=/etc/group -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/passwd -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/gshadow -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/shadow -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/security/opasswd -F perm=wa -F key=identity
+
+# System Locale
+-a always,exit -F arch=b64 -S sethostname,setdomainname -F key=system-locale
+-a always,exit -F arch=b64 -F path=/etc/issue -F perm=wa -F key=system-locale
+-a always,exit -F arch=b64 -F path=/etc/issue.net -F perm=wa -F key=system-locale
+-a always,exit -F arch=b64 -F path=/etc/hosts -F perm=wa -F key=system-locale
+-a always,exit -F arch=b64 -F path=/etc/hostname -F perm=wa -F key=system-locale
+
+# AppArmor (replacing SELinux)
+-a always,exit -F arch=b64 -F dir=/etc/apparmor.d/ -F perm=wa -F key=apparmor-policy
+
+# Permission Modifications
+-a always,exit -F arch=b64 -S chmod,fchmod,fchmodat,openat2 -F auid>=1000 -F auid!=-1 -F key=perm_mod
+-a always,exit -F arch=b64 -S chown,fchown,lchown,fchownat -F auid>=1000 -F auid!=-1 -F key=perm_mod
+-a always,exit -F arch=b64 -S setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr -F auid>=1000 -F auid!=-1 -F key=perm_mod
+
+# Unauthorized Access
+-a always,exit -F arch=b64 -S open,openat,creat,truncate,ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=-1 -F key=access
+-a always,exit -F arch=b64 -S open,openat,creat,truncate,ftruncate -F exit=-EPERM -F auid>=1000 -F auid!=-1 -F key=access
+
+# Exports
+-a always,exit -F arch=b64 -S mount,mount_setattr -F auid>=1000 -F auid!=-1 -F key=export
+
+# Deletions
+-a always,exit -F arch=b64 -S unlink,unlinkat,rename,renameat -F auid>=1000 -F auid!=-1 -F key=delete
+
+# Actions (Sudo)
+-a always,exit -F arch=b64 -F path=/etc/sudoers -F perm=wa -F key=actions
+-a always,exit -F arch=b64 -F dir=/etc/sudoers.d/ -F perm=wa -F key=actions
+
+# Escalation
+-a always,exit -F arch=b64 -F path=/usr/bin/systemd-run -F perm=x -F auid!=-1 -F key=maybe-escalation
+-a always,exit -F arch=b64 -F path=/usr/bin/pkexec -F perm=x -F auid!=-1 -F key=maybe-escalation
+
+# Login Attempts (PAM/SSHD)
+-a always,exit -F arch=b64 -F path=/var/log/auth.log -F perm=wa -F key=logins
+-a always,exit -F arch=b64 -F path=/var/run/faillock -F perm=wa -F key=logins

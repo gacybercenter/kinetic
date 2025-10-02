@@ -1,0 +1,9 @@
+[SERVICE]
+    Flush         1
+    Log_Level     info
+    Daemon        Off
+    Parsers_File  parsers.conf
+
+@INCLUDE /etc/fluent-bit/*-INPUT.conf
+@INCLUDE /etc/fluent-bit/*-filters.conf
+@INCLUDE /etc/fluent-bit/*-OUTPUT.conf

@@ -1,0 +1,22 @@
+[INPUT]
+    Name              tail
+    Tag               libvirt
+    Path              /var/log/libvirt/libvirtd.log
+    Parser            libvirt_log
+    DB                /var/log/fluent-bit/libvirtd.db
+    Mem_Buf_Limit     5MB
+    Refresh_Interval  10
+
+[INPUT]
+    Name              tail
+    Tag               qemu
+    Path              /var/log/libvirt/qemu/*.log
+    Parser            qemu_log
+    DB                /var/log/fluent-bit/qemu.db
+    Mem_Buf_Limit     5MB
+    Refresh_Interval  10
+
+[INPUT]
+    Name              node_exporter_metrics
+    Tag               node_metrics
+    Scrape_Interval   15
