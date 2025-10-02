@@ -35,7 +35,7 @@ install_gitlab_runner:
   cmd.run:
     - name: |
         helm upgrade --install gitlab-runner gitlab-runner/gitlab-runner \
-          --namespace {{ pillar['res-k8s-git-runner']['gitlab_runner_namespace']) }} \
+          --namespace {{ pillar['res-k8s-git-runner']['gitlab_runner_namespace'] }} \
           --create-namespace \
           --set gitlabUrl={{ pillar['res-k8s-git-runner']['gitlab_url'] }} \
           --set runnerRegistrationToken={{ pillar['res-k8s-git-runner']['runner_registration_token'] }} \
