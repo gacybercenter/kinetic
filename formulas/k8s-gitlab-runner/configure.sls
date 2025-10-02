@@ -38,7 +38,7 @@ install_gitlab_runner:
           --namespace {{ pillar['res-k8s-git-runner']['gitlab_runner_namespace'] }} \
           --create-namespace \
           --set gitlabUrl={{ pillar['res-k8s-git-runner']['gitlab_url'] }} \
-          --set runnerRegistrationToken={{ pillar['res-k8s-git-runner']['runner_registration_token'] }} \
+          --set runnerRegistrationToken='{{ pillar['res-k8s-git-runner']['runner_registration_token'] }}' \
           --set runners.privileged={{ pillar['res-k8s-git-runner']['runner_privileged'] }} \
           --set runners.tags={{ pillar['res-k8s-git-runner']['runner_tags'] }} \
           --wait
