@@ -190,3 +190,47 @@ def check_qemu_address(connection_uri="qemu:///system"):
             'available': False,
             'message': f"Error checking QEMU address {connection_uri}: {str(e)[:100]}..."
         }
+def list_vms(connection_uri="qemu:///system"):
+    """
+    Retrieve a list of all defined and active virtual machines (domains) on the libvirt connection.
+    
+    Args:
+        connection_uri (str): The libvirt connection URI (e.g., 'qemu+ssh://user@host/system')
+    
+    Returns:
+        dict: A dictionary with 'success' (bool), 'vms' (list of VM names), and 'message' (str)
+    """
+    conn_result = connect_to_libvirt(connection_uri)
+    if not conn_result['success']:
+        return {
+            'success': False,
+            'vms': [],
+            'message': conn_result['message']
+        }
+    
+    conn = conn_result['connection']
+    vm_names = set()
+    
+    try:
+        # Get active domains
+        for domain_id in conn.listDomainsID():
+            domain = conn.lookupByID(domain_id)
+            vm_names.add(domain.name())
+        
+        # Get defined (inactive) domains
+        for domain_name in conn.listDefinedDomains():
+            vm_names.add(domain_name)
+        
+        conn.close()
+        return {
+            'success': True,
+            'vms': sorted(list(vm_names)),
+            'message': f"Found {len(vm_names)} virtual machines"
+        }
+    except libvirt.libvirtError as e:
+        conn.close()
+        return {
+            'success': False,
+            'vms': [],
+            'message': f"Error retrieving virtual machines: {str(e)}"
+        }

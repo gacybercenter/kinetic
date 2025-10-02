@@ -19,7 +19,7 @@
 
 include:
   - /formulas/common/salt/repo
-  - /formulas/common/fluentd/repo
+  - /formulas/k8s-logger/install
 
 systemd-resolved_service:
   service.dead:

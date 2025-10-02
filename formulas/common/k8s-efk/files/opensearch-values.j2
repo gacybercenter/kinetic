@@ -39,6 +39,7 @@ config:
           - "CN={{ pillar.get('opensearch_service_host') }}"
           - "CN={{ pillar.get('opensearch_service_host') }}-headless"
           - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"
+          - "CN=api.logger.gacyberrange.org"
         system_indices:
           indices: ['.opendistro-alerting-config', '.opendistro-ism-*', '.opendistro-reports-*', '.opensearch-notifications-*', '.opensearch-notebooks', '.opensearch-observability', '.opendistro-asynchronous-search-response*', '.replication-metadata-store']
 
@@ -48,7 +49,18 @@ securityConfig:
   config:
     securityConfigSecret: "opensearch-security-config"
     dataComplete: true
-    
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+  path: /
+  hosts:
+    - {{ pillar.get('opensearch_api_ingress_host', 'api.logger.services.gacyberrange.org') }}
+  tls:
+    - secretName: opensearch-tls-secret
+      hosts:
+        - {{ pillar.get('opensearch_api_ingress_host', 'api.logger.services.gacyberrange.org') }}
 tls:
   enabled: true
   secretName: "opensearch-tls-secret"  # Reference the secret created by Cert-Manager

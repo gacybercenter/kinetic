@@ -3,6 +3,7 @@ include:
   - /formulas/common/vbmc
   - /formulas/common/k8s-mariadb
   - /formulas/ironic-operator
+  - /formulas/k8s-logger/install
 
 ingress_values:
   file.managed:
