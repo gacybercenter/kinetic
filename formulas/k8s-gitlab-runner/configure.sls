@@ -1,5 +1,5 @@
 include:
-  - /formulas/common/k8s-gitlab-runner/install
+  - /formulas/k8s-gitlab-runner/install
   - /formulas/common/helm/install
 
 # Ensure Helm is installed and configured before proceeding

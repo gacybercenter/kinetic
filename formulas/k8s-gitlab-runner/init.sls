@@ -1,2 +1,2 @@
 include:
-  - /formulas/common/k8s-gitlab-runner/configure
+  - /formulas/k8s-gitlab-runner/configure
