@@ -7,4 +7,4 @@ deploy_gitlab_runner:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.common.k8s-gitlab-runner
+      - formulas.k8s-gitlab-runner
