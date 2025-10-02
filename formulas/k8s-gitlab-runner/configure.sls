@@ -34,14 +34,7 @@ update_helm_repos:
 install_gitlab_runner:
   cmd.run:
     - name: |
-        helm upgrade --install gitlab-runner gitlab-runner/gitlab-runner \
-          --namespace {{ pillar['res-k8s-git-runner']['gitlab_runner_namespace'] }} \
-          --create-namespace \
-          --set gitlabUrl={{ pillar['res-k8s-git-runner']['gitlab_url'] }} \
-          --set runnerRegistrationToken='{{ pillar['res-k8s-git-runner']['runner_registration_token'] }}' \
-          --set runners.privileged={{ pillar['res-k8s-git-runner']['runner_privileged'] }} \
-          --set runners.tags={{ pillar['res-k8s-git-runner']['runner_tags'] }} \
-          --wait
+        helm upgrade --install gitlab-runner gitlab-runner/gitlab-runner --namespace {{ pillar['res-k8s-git-runner']['gitlab_runner_namespace'] }} --create-namespace --set gitlabUrl={{ pillar['res-k8s-git-runner']['gitlab_url'] }} --set runnerRegistrationToken='{{ pillar['res-k8s-git-runner']['runner_registration_token'] }}' --set runners.privileged={{ pillar['res-k8s-git-runner']['runner_privileged'] }} --set runners.tags={{ pillar['res-k8s-git-runner']['runner_tags'] }} --wait
     - require:
       - k8s: gitlab_runner_namespace
       - cmd: update_helm_repos
