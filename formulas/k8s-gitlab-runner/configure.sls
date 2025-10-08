@@ -15,29 +15,29 @@ gitlab_runner_namespace:
     - require:
       - test: helm_installed
 
-# Add the GitLab Runner Helm repository
+# Add the GitLab Runner Helm repository using the custom Helm module
 add_gitlab_runner_repo:
-  cmd.run:
-    - name: helm repo add gitlab-runner https://charts.gitlab.io
-    - unless: helm repo list | grep -q "gitlab-runner"
+  k8s_helm.helm_repo_present:
+    - repo_name: gitlab-runner
+    - repo_url: https://charts.gitlab.io
     - require:
       - test: helm_installed
 
-# Update Helm repositories to ensure the latest charts are available
-update_helm_repos:
-  cmd.run:
-    - name: helm repo update
-    - require:
-      - cmd: add_gitlab_runner_repo
-
-# Install or upgrade GitLab Runner using Helm with configurable settings
+# Install or upgrade GitLab Runner using the custom Helm module with configurable settings
 install_gitlab_runner:
-  cmd.run:
-    - name: |
-      helm upgrade --install gitlab-runner gitlab-runner/gitlab-runner --namespace {{ pillar['res-k8s-git-runner']['gitlab_runner_namespace'] }} --create-namespace --set gitlabUrl='{{ pillar['res-k8s-git-runner']['gitlab_url'] }}' --set runnerRegistrationToken='{{ pillar['res-k8s-git-runner']['runner_registration_token'] }}' --set runners.privileged={{ pillar['res-k8s-git-runner']['runner_privileged'] }} --set rbac.create=true \
-      -f \
-      --wait
+  k8s_helm.helm_release_present:
+    - release_name: gitlab-runner
+    - chart_name: gitlab-runner/gitlab-runner
+    - namespace: {{ pillar['res-k8s-git-runner']['gitlab_runner_namespace'] }}
+    - values_dict:
+        gitlabUrl: {{ pillar['res-k8s-git-runner']['gitlab_url'] | json }}
+        runnerRegistrationToken: {{ pillar['res-k8s-git-runner']['runner_registration_token'] | json }}
+        podAnnotations:
+          container.apparmor.security.beta.kubernetes.io/build: unconfined
+        rbac:
+          create: true
+    - wait_timeout: 300
+    - wait_interval: 10
     - require:
       - k8s: gitlab_runner_namespace
-      - cmd: update_helm_repos
-    - unless: kubectl get deployment -n {{ pillar['res-k8s-git-runner']['gitlab_runner_namespace'] }} | grep -q "gitlab-runner"
+      - k8s_helm: add_gitlab_runner_repo
