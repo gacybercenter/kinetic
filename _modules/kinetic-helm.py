@@ -41,8 +41,8 @@ def helm_repo_present(repo_name, repo_url):
         message = f"Configuring Helm repository {repo_name}"
 
         # Step 1: Check if repository exists
-        repo_list_cmd = "helm repo list -o json"
-        repo_list_result = __salt__['cmd.run'](repo_list_cmd, shell=True, ignore_retcode=True, python_shell=False)
+        repo_list_cmd = ["helm", "repo", "list", "-o", "json"]
+        repo_list_result = __salt__['cmd.run'](repo_list_cmd, python_shell=False, ignore_retcode=True)
         if repo_list_result and "error" not in repo_list_result.lower():
             try:
                 repos = json.loads(repo_list_result)
@@ -60,8 +60,8 @@ def helm_repo_present(repo_name, repo_url):
 
         # Step 2: Add or update repository if necessary
         if not repo_exists or repo_updated:
-            repo_add_cmd = f"helm repo add {repo_name} {repo_url} --force-update"
-            repo_add_result = __salt__['cmd.run'](repo_add_cmd, shell=True, ignore_retcode=True, python_shell=False)
+            repo_add_cmd = ["helm", "repo", "add", repo_name, repo_url, "--force-update"]
+            repo_add_result = __salt__['cmd.run'](repo_add_cmd, python_shell=False, ignore_retcode=True)
             if repo_add_result and "error" in repo_add_result.lower():
                 return {
                     'success': False,
@@ -72,8 +72,8 @@ def helm_repo_present(repo_name, repo_url):
             message += f"; Helm repository {repo_name} added or updated"
 
             # Update repo cache
-            repo_update_cmd = "helm repo update"
-            repo_update_result = __salt__['cmd.run'](repo_update_cmd, shell=True, ignore_retcode=True, python_shell=False)
+            repo_update_cmd = ["helm", "repo", "update"]
+            repo_update_result = __salt__['cmd.run'](repo_update_cmd, python_shell=False, ignore_retcode=True)
             if repo_update_result and "error" in repo_update_result.lower():
                 return {
                     'success': False,
@@ -132,8 +132,8 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
             message += f"; No values provided, using default chart values"
 
         # Step 2: Check if release exists
-        release_list_cmd = f"helm list -n {namespace} -o json"
-        release_list_result = __salt__['cmd.run'](release_list_cmd, shell=True, ignore_retcode=True, python_shell=False)
+        release_list_cmd = ["helm", "list", "-n", namespace, "-o", "json"]
+        release_list_result = __salt__['cmd.run'](release_list_cmd, python_shell=False, ignore_retcode=True)
         if release_list_result and "error" not in release_list_result.lower():
             try:
                 releases = json.loads(release_list_result)
@@ -166,10 +166,19 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
                     values_file = f.name
                     message += f"; Using temporary values file {values_file}"
 
-            version_arg = f"--version {version}" if version else ""
-            values_arg = f"--values {values_file}" if values_file else ""
-            helm_cmd = f"helm {'upgrade' if release_exists else 'install'} {release_name} {chart_name} -n {namespace} --create-namespace {version_arg} {values_arg} --wait --timeout {wait_timeout}s"
-            helm_result = __salt__['cmd.run'](helm_cmd, shell=True, ignore_retcode=True, python_shell=False)
+            # Build the Helm command as a list to avoid shell=True
+            helm_cmd = ["helm"]
+            if release_exists:
+                helm_cmd.append("upgrade")
+            else:
+                helm_cmd.append("install")
+            helm_cmd.extend([release_name, chart_name, "-n", namespace, "--create-namespace", "--wait", f"--timeout={wait_timeout}s"])
+            if version:
+                helm_cmd.extend(["--version", version])
+            if values_file:
+                helm_cmd.extend(["--values", values_file])
+
+            helm_result = __salt__['cmd.run'](helm_cmd, python_shell=False, ignore_retcode=True)
 
             if values_file:
                 __salt__['file.remove'](values_file)
