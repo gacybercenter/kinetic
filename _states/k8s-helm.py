@@ -59,7 +59,7 @@ def helm_repo_present(name, repo_name, repo_url):
 
     return ret
 
-def helm_release_present(name, release_name, chart_name, namespace, values_dict=None, pillar_key=None, version=None, wait_timeout=300, wait_interval=10):
+def helm_release_present(name, release_name, chart_name, namespace, values_dict=None, pillar_key=None, version=None, wait_timeout=300, wait_interval=10, keep_values_file=False):
     """
     Ensure that a Helm release is installed or upgraded in Kubernetes with the specified values.
     Values can be provided directly as a dictionary or fetched from a pillar key.
@@ -91,6 +91,9 @@ def helm_release_present(name, release_name, chart_name, namespace, values_dict=
     wait_interval
         Optional. Interval in seconds between checks for release readiness. Defaults to 10.
 
+    keep_values_file
+        Optional. If True, retain the temporary values file for debugging. Defaults to False.
+
     Example:
     .. code-block:: yaml
 
@@ -103,6 +106,7 @@ def helm_release_present(name, release_name, chart_name, namespace, values_dict=
             - version: 9.3.6
             - wait_timeout: 300
             - wait_interval: 10
+            - keep_values_file: True
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
@@ -115,13 +119,17 @@ def helm_release_present(name, release_name, chart_name, namespace, values_dict=
             pillar_key=pillar_key,
             version=version,
             wait_timeout=wait_timeout,
-            wait_interval=wait_interval
+            wait_interval=wait_interval,
+            keep_values_file=keep_values_file
         )
 
         ret['result'] = result['success']
         ret['comment'] = result['message']
         if result['updated']:
             ret['changes'] = {'release_updated': True}
+        if result.get('values_file_path'):
+            ret['comment'] += f"; Values file retained at: {result['values_file_path']}"
+            ret['changes']['values_file_path'] = result['values_file_path']
         else:
             ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 

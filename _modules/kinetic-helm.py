@@ -96,7 +96,7 @@ def helm_repo_present(repo_name, repo_url):
             'message': f"Helm repository operation error for {repo_name}: {str(e)[:100]}..."
         }
 
-def helm_release_present(release_name, chart_name, namespace, values_dict=None, pillar_key=None, version=None, wait_timeout=300, wait_interval=10):
+def helm_release_present(release_name, chart_name, namespace, values_dict=None, pillar_key=None, version=None, wait_timeout=300, wait_interval=10, keep_values_file=False):
     """
     Ensure that a Helm release is installed or upgraded with the specified values.
     Values can be provided directly as a dictionary or fetched from a pillar key.
@@ -110,17 +110,19 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
         version (str, optional): Specific version of the chart to install. Defaults to None (latest).
         wait_timeout (int, optional): Maximum time in seconds to wait for Helm release to be ready. Defaults to 300.
         wait_interval (int, optional): Interval in seconds between checks for release readiness. Defaults to 10.
+        keep_values_file (bool, optional): If True, retain the temporary values file for debugging. Defaults to False.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'values_file_path' (str, optional), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-helm.helm_release_present my-release my-repo/my-chart my-namespace pillar_key='helm:values'
+        salt '*' kinetic-helm.helm_release_present my-release my-repo/my-chart my-namespace pillar_key='helm:values' keep_values_file=True
     """
     try:
         release_updated = False
         release_exists = False
         release_matches = False
+        values_file_path = ""
         message = f"Configuring Helm release {release_name} in namespace {namespace}"
 
         # Step 1: Fetch values from pillar if pillar_key is provided and values_dict is not
@@ -164,6 +166,7 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
                     json.dump(values_dict, f)
                     f.flush()
                     values_file = f.name
+                    values_file_path = values_file
                     message += f"; Using temporary values file {values_file}"
 
             # Build the Helm command as a list to avoid shell=True
@@ -180,15 +183,18 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
 
             helm_result = __salt__['cmd.run'](helm_cmd, python_shell=False, ignore_retcode=True)
 
-            if values_file:
+            if values_file and not keep_values_file:
                 __salt__['file.remove'](values_file)
                 message += f"; Removed temporary values file {values_file}"
+            elif values_file and keep_values_file:
+                message += f"; Kept temporary values file {values_file} for debugging"
 
             if helm_result and "error" in helm_result.lower():
                 return {
                     'success': False,
                     'updated': False,
-                    'message': f"Failed to {'upgrade' if release_exists else 'install'} Helm release {release_name}: {helm_result[:100]}...; {message}"
+                    'values_file_path': values_file_path if keep_values_file else "",
+                    'message': f"Failed to {'upgrade' if release_exists else 'install'} Helm release {release_name}: {helm_result[:200]}...; {message}"
                 }
             release_updated = True
             message += f"; Helm release {release_name} {'upgraded' if release_exists else 'installed'}"
@@ -198,11 +204,13 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
         return {
             'success': True if release_updated or (release_exists and release_matches) else False,
             'updated': release_updated,
+            'values_file_path': values_file_path if keep_values_file and values_file_path else "",
             'message': message
         }
     except Exception as e:
         return {
             'success': False,
             'updated': False,
+            'values_file_path': "",
             'message': f"Helm release operation error for {release_name}: {str(e)[:100]}..."
         }

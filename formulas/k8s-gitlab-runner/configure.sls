@@ -32,12 +32,15 @@ install_gitlab_runner:
     - values_dict:
         gitlabUrl: {{ pillar['res-k8s-git-runner']['gitlab_url'] | json }}
         runnerRegistrationToken: {{ pillar['res-k8s-git-runner']['runner_registration_token'] | json }}
-        podAnnotations:
-          container.apparmor.security.beta.kubernetes.io/build: unconfined
+        runners:
+          privileged: {{ pillar['res-k8s-git-runner']['runner_privileged'] | json }}
+          podAnnotations:
+            container.apparmor.security.beta.kubernetes.io/build: unconfined
         rbac:
           create: true
     - wait_timeout: 300
     - wait_interval: 10
+    - keep_values_file: True
     - require:
       - k8s: gitlab_runner_namespace
       - k8s_helm: add_gitlab_runner_repo
