@@ -2892,3 +2892,162 @@ def configmap_present(namespace, name, data, labels=None, annotations=None):
             'updated': False,
             'message': f"ConfigMap operation error: {str(e)[:50]}..."
         }
+def service_present(namespace, service_name, service_type="LoadBalancer", selector=None, ports=None, annotations=None, external_ip=None):
+    """
+    Ensure that a Kubernetes Service is present in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the Service.
+        service_name (str): The name of the Service.
+        service_type (str, optional): The type of Service ('ClusterIP', 'NodePort', 'LoadBalancer'). Defaults to 'LoadBalancer'.
+        selector (dict, optional): The selector labels to match target pods. Defaults to None.
+        ports (list, optional): List of port mappings (each with 'name', 'port', 'targetPort', 'protocol'). Defaults to None.
+        annotations (dict, optional): Annotations to apply to the Service (e.g., for MetalLB). Defaults to None.
+        external_ip (str, optional): An external IP to assign to the Service if supported. Defaults to None.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.service_present openstack openstack-public service_type=LoadBalancer selector="{'app.kubernetes.io/name': 'ingress-nginx'}" ports="[{ 'name': 'http', 'port': 80, 'targetPort': 80, 'protocol': 'TCP' }]" annotations="{'metallb.universe.tf/address-pool': 'default'}"
+    """
+    try:
+        try:
+            config.load_incluster_config()
+            message = f"Loaded in-cluster config for Service {service_name} in namespace {namespace}"
+        except config.ConfigException:
+            config.load_kube_config()
+            message = f"Loaded kubeconfig for Service {service_name} in namespace {namespace}"
+
+        core_v1_api = client.CoreV1Api()
+        exists = False
+        updated = False
+        matches = False
+
+        # Default ports if none provided
+        if ports is None:
+            ports = [
+                {'name': 'http', 'port': 80, 'targetPort': 80, 'protocol': 'TCP'},
+                {'name': 'https', 'port': 443, 'targetPort': 443, 'protocol': 'TCP'}
+            ]
+
+        message += f"; Configuring as type {service_type}"
+
+        # Check if Service exists
+        try:
+            service = core_v1_api.read_namespaced_service(name=service_name, namespace=namespace)
+            exists = True
+            current_spec = service.spec
+            current_annotations = service.metadata.annotations or {}
+            desired_annotations = annotations or {}
+            desired_selector = selector or {}
+            current_selector = current_spec.selector or {}
+            desired_ports = ports
+            current_ports = current_spec.ports if current_spec.ports else []
+            current_type = current_spec.type if current_spec.type else "ClusterIP"
+            current_external_ips = current_spec.external_i_ps if hasattr(current_spec, 'external_i_ps') else []
+
+            # Normalize ports for comparison (convert target_port to int if possible)
+            normalized_current_ports = []
+            for p in current_ports:
+                port_dict = {
+                    'name': p.name if p.name else '',
+                    'port': p.port,
+                    'targetPort': int(p.target_port) if isinstance(p.target_port, (int, str)) and str(p.target_port).isdigit() else p.target_port,
+                    'protocol': p.protocol if p.protocol else 'TCP'
+                }
+                normalized_current_ports.append(port_dict)
+
+            normalized_desired_ports = []
+            for p in desired_ports:
+                port_dict = {
+                    'name': p.get('name', ''),
+                    'port': p['port'],
+                    'targetPort': int(p['targetPort']) if isinstance(p['targetPort'], str) and p['targetPort'].isdigit() else p['targetPort'],
+                    'protocol': p.get('protocol', 'TCP')
+                }
+                normalized_desired_ports.append(port_dict)
+
+            # Check if spec and annotations match
+            if (current_type == service_type and
+                current_selector == desired_selector and
+                normalized_current_ports == normalized_desired_ports and
+                current_annotations == desired_annotations and
+                (not external_ip or current_external_ips == [external_ip])):
+                matches = True
+                message += f"; Service {service_name} already up-to-date"
+            else:
+                matches = False
+                message += f"; Service {service_name} exists but spec or annotations differ (Type: {current_type} vs {service_type}, Selector: {current_selector} vs {desired_selector}, Ports: {normalized_current_ports} vs {normalized_desired_ports}, Annotations: {current_annotations} vs {desired_annotations}, External IP: {current_external_ips} vs {[external_ip] if external_ip else []})"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message += f"; Service {service_name} does not exist, will create"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error fetching Service {service_name}: Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}, Body: {str(e.body)[:200] if hasattr(e, 'body') else 'N/A'}...; {message}"
+                }
+
+        # Build Service spec
+        service_spec = client.V1ServiceSpec(
+            selector=selector if selector else {},
+            type=service_type,
+            ports=[client.V1ServicePort(
+                name=p.get('name', ''),
+                port=p['port'],
+                target_port=p['targetPort'],
+                protocol=p.get('protocol', 'TCP')
+            ) for p in ports]
+        )
+        if external_ip and service_type in ["ClusterIP", "LoadBalancer"]:
+            service_spec.external_i_ps = [external_ip]
+            message += f"; Configured with external IP {external_ip}"
+
+        service_body = client.V1Service(
+            metadata=client.V1ObjectMeta(
+                name=service_name,
+                namespace=namespace,
+                annotations=annotations if annotations else {}
+            ),
+            spec=service_spec
+        )
+
+        # Create or update Service if necessary
+        if not exists:
+            try:
+                core_v1_api.create_namespaced_service(namespace=namespace, body=service_body)
+                updated = True
+                message += f"; Service {service_name} created"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create Service {service_name}: Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}, Body: {str(e.body)[:200] if hasattr(e, 'body') else 'N/A'}...; {message}"
+                }
+        elif not matches:
+            try:
+                core_v1_api.replace_namespaced_service(name=service_name, namespace=namespace, body=service_body)
+                updated = True
+                message += f"; Service {service_name} updated"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update Service {service_name}: Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}, Body: {str(e.body)[:200] if hasattr(e, 'body') else 'N/A'}...; {message}"
+                }
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Service operation error for {service_name}: {str(e)[:200]}..."
+        }
+    return ret
