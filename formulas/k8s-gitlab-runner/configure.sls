@@ -32,7 +32,7 @@ install_gitlab_runner:
     - values_dict:
         gitlabUrl: {{ pillar['res-k8s-git-runner']['gitlab_url'] | json }}
         runnerRegistrationToken: {{ pillar['res-k8s-git-runner']['runner_registration_token'] | json }}
-        runner:
+        runners:
           config: |
             [[runners]]
               [runners.kubernetes]
