@@ -1450,7 +1450,6 @@ def service_present(name, namespace, service_name, service_type="LoadBalancer", 
 
     try:
         result = __salt__['kinetic-k8s.service_present'](
-            name=name,
             namespace=namespace,
             service_name=service_name,
             service_type=service_type,
@@ -1460,16 +1459,18 @@ def service_present(name, namespace, service_name, service_type="LoadBalancer", 
             external_ip=external_ip
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
+        # Ensure 'success' key exists in result, default to False if not
+        success = result.get('success', False)
+        ret['result'] = success
+        ret['comment'] = result.get('message', 'Unknown error in service operation')
+        if result.get('updated', False):
             ret['changes'] = {'service_updated': True}
         else:
             ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
         ret['result'] = False
-        ret['comment'] = f"Failed to ensure Service {service_name}: {str(e)[:100]}..."
+        ret['comment'] = f"Failed to ensure Service {service_name}: Exception occurred: {str(e)[:200]}..."
         ret['changes'] = {}
 
     return ret
