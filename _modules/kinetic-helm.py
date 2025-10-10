@@ -172,7 +172,7 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
             # Build the Helm command as a list to avoid shell=True
             helm_cmd = ["helm"]
             if release_exists:
-                helm_cmd.append("upgrade --install")
+                helm_cmd.append("upgrade")
             else:
                 helm_cmd.append("install")
             helm_cmd.extend([release_name, chart_name, "-n", namespace, "--create-namespace", "--wait", f"--timeout={wait_timeout}s"])
