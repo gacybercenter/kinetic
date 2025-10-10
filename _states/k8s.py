@@ -1394,3 +1394,83 @@ def configmap_present(name, namespace, configmap_name, data, labels=None, annota
         ret['changes'] = {}
 
     return ret
+def service_present(name, namespace, service_name, service_type="LoadBalancer", selector=None, ports=None, annotations=None, external_ip=None):
+    """
+    Ensure that a Kubernetes Service is present in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the Service.
+
+    service_name
+        The name of the Service resource in Kubernetes.
+
+    service_type
+        Optional. The type of Service ('ClusterIP', 'NodePort', 'LoadBalancer'). Defaults to 'LoadBalancer'.
+
+    selector
+        Optional. The selector labels to match target pods (dictionary). Defaults to None.
+
+    ports
+        Optional. List of port mappings, each with 'name', 'port', 'targetPort', and 'protocol'. Defaults to HTTP (80) and HTTPS (443).
+
+    annotations
+        Optional. Annotations to apply to the Service (e.g., for MetalLB IP pool). Defaults to None.
+
+    external_ip
+        Optional. An external IP to assign to the Service if supported by the cluster. Defaults to None.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_openstack_public_service:
+          k8s.service_present:
+            - namespace: openstack
+            - service_name: openstack-public
+            - service_type: LoadBalancer
+            - selector:
+                app.kubernetes.io/name: ingress-nginx
+                app.kubernetes.io/instance: ingress-nginx
+            - ports:
+                - name: http
+                  port: 80
+                  targetPort: 80
+                  protocol: TCP
+                - name: https
+                  port: 443
+                  targetPort: 443
+                  protocol: TCP
+            - annotations:
+                metallb.universe.tf/address-pool: default
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.service_present'](
+            namespace=namespace,
+            service_name=service_name,
+            service_type=service_type,
+            selector=selector,
+            ports=ports,
+            annotations=annotations,
+            external_ip=external_ip
+        )
+
+        # Ensure 'success' key exists in result, default to False if not
+        success = result.get('success', False)
+        ret['result'] = success
+        ret['comment'] = result.get('message', 'Unknown error in service operation')
+        if result.get('updated', False):
+            ret['changes'] = {'service_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Service {service_name}: Exception occurred: {str(e)[:200]}..."
+        ret['changes'] = {}
+
+    return ret
