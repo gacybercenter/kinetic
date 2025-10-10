@@ -18,6 +18,7 @@ openstack_namespace:
 # Create a LoadBalancer Service for OpenStack public endpoint with MetalLB annotations
 create_openstack_public_service:
   k8s.service_present:
+    - name: openstack-public-service
     - namespace: {{ pillar.get('nginx_ingress_namespace', 'openstack') }}
     - service_name: {{ pillar.get('openstack_public_service_name', 'openstack-public') }}
     - service_type: LoadBalancer
