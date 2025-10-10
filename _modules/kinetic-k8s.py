@@ -2892,7 +2892,7 @@ def configmap_present(namespace, name, data, labels=None, annotations=None):
             'updated': False,
             'message': f"ConfigMap operation error: {str(e)[:50]}..."
         }
-def service_present(name, namespace, service_name, service_type="LoadBalancer", selector=None, ports=None, annotations=None, external_ip=None):
+def service_present(namespace, service_name, service_type="LoadBalancer", selector=None, ports=None, annotations=None, external_ip=None):
     """
     Ensure that a Kubernetes Service is present in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
