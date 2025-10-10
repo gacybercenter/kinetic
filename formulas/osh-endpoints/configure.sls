@@ -1,7 +1,5 @@
 include:
   - /formulas/osh-endpoints/install
-include:
-  - /formulas/osh-endpoints/install
   - /formulas/common/k8s-nginx-controller/install
 
 # Ensure NGINX Ingress Controller and MetalLB are installed before proceeding
