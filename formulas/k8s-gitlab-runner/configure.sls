@@ -32,8 +32,11 @@ install_gitlab_runner:
     - values_dict:
         gitlabUrl: {{ pillar['res-k8s-git-runner']['gitlab_url'] | json }}
         runnerRegistrationToken: {{ pillar['res-k8s-git-runner']['runner_registration_token'] | json }}
-        runners:
-          privileged: {{ pillar['res-k8s-git-runner']['runner_privileged'] | json }}
+        config: |
+          [[runners]]
+            [runners.kubernetes]
+              privileged: {{ pillar['res-k8s-git-runner']['runner_privileged'] }}
+              allow_privileged_escalation = true
         podAnnotations:
           container.apparmor.security.beta.kubernetes.io/build: unconfined
         rbac:
