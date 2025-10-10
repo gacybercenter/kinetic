@@ -1450,6 +1450,7 @@ def service_present(name, namespace, service_name, service_type="LoadBalancer", 
 
     try:
         result = __salt__['kinetic-k8s.service_present'](
+            name=name,
             namespace=namespace,
             service_name=service_name,
             service_type=service_type,
