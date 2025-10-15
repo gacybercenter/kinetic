@@ -9,6 +9,3 @@ install_ceph_adapter_rook:
     - namespace: openstack
     - wait_timeout: 300
     - wait_interval: 10
-    - require:
-      - sls: /formulas/osh-rook-adapter/install
-      - sls: /formulas/osh-helm-repos/configure
