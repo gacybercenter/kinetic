@@ -9,3 +9,5 @@ install_ceph_adapter_rook:
     - namespace: openstack
     - wait_timeout: 300
     - wait_interval: 10
+    - values_dict:
+        ceph_cluster_namespace: rook-ceph
