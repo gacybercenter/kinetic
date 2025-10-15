@@ -1474,3 +1474,47 @@ def service_present(name, namespace, service_name, service_type="LoadBalancer", 
         ret['changes'] = {}
 
     return ret
+def node_label_present(name, namespace, node_name, labels):
+    """
+    Ensure that the specified labels are present on a Kubernetes node.
+    If a label key exists with a different value, it will be updated. If it doesn't exist, it will be added.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The namespace is not used for node operations but kept for consistency.
+
+    node_name
+        The name of the Kubernetes node to apply labels to.
+
+    labels
+        A dictionary of key-value pairs representing the labels to apply to the node.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_node_labels:
+          k8s.node_label_present:
+            - namespace: unused-namespace
+            - node_name: k8s-node-1
+            - labels:
+                key1: value1
+                key2: value2
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.node_label_present'](namespace, node_name, labels)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'labels_updated': result['changes']}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure labels on node {node_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
