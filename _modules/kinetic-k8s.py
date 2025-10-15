@@ -3051,3 +3051,70 @@ def service_present(namespace, service_name, service_type="LoadBalancer", select
             'message': f"Service operation error for {service_name}: {str(e)[:200]}..."
         }
     return ret
+def node_label_present(namespace, node_name, labels):
+    """
+    Ensure that the specified labels are present on a Kubernetes node.
+    If a label key exists with a different value, it will be updated. If it doesn't exist, it will be added.
+
+    Args:
+        namespace (str): The namespace is not used for node operations but kept for consistency.
+        node_name (str): The name of the node to apply labels to.
+        labels (dict): A dictionary of key-value pairs representing the labels to apply.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'changes' (dict).
+
+    CLI Example:
+        salt '*' kinetic-k8s.node_label_present unused-namespace k8s-node-1 "{'key1': 'value1', 'key2': 'value2'}"
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+        updated = False
+        changes = {}
+
+        # Retrieve the current node object
+        node = core_v1_api.read_node(name=node_name)
+        current_labels = node.metadata.labels or {}
+
+        # Determine labels to update or add
+        labels_to_apply = {}
+        for key, value in labels.items():
+            if key not in current_labels or current_labels[key] != value:
+                labels_to_apply[key] = value
+                changes[key] = {'old': current_labels.get(key, 'not set'), 'new': value}
+
+        if labels_to_apply:
+            # Update the node labels
+            node.metadata.labels.update(labels_to_apply)
+            core_v1_api.replace_node(name=node_name, body=node)
+            updated = True
+            message = f"Labels updated on node {node_name}"
+        else:
+            message = f"All specified labels already present on node {node_name}"
+
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message,
+            'changes': changes
+        }
+
+    except ApiException as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Kubernetes API error while updating labels on node {node_name}: {str(e)[:50]}...",
+            'changes': {}
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Error updating labels on node {node_name}: {str(e)[:50]}...",
+            'changes': {}
+        }
