@@ -10,11 +10,4 @@ install_rabbitmq:
     - wait_timeout: 600
     - wait_interval: 10
     - keep_values_file: true
-    - values_dict:
-        pod:
-          replicas:
-            server: 1
-        images:
-          tags:
-            prometheus_rabbitmq_exporter_helm_tests: {{ pillar['osh_values']['rabbitmq']['images']['tags']['prometheus_rabbitmq_exporter_helm_tests'] }}
-            rabbitmq_init: {{ pillar['osh_values']['rabbitmq']['images']['tags']['rabbitmq_init'] }}
+    - pillar_key: osh_values:rabbitmq
