@@ -9,6 +9,7 @@ install_rabbitmq:
     - namespace: openstack
     - wait_timeout: 600
     - wait_interval: 10
+    - keep_values_file: true
     - values_dict:
         pod:
           replicas:
