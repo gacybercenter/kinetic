@@ -17,6 +17,3 @@ install_rabbitmq:
           tags:
             prometheus_rabbitmq_exporter_helm_tests: {{ pillar['osh_values']['rabbitmq']['images']['tags']['prometheus_rabbitmq_exporter_helm_tests'] }}
             rabbitmq_init: {{ pillar['osh_values']['rabbitmq']['images']['tags']['rabbitmq_init'] }}
-    - require:
-      - sls: /formulas/osh-rabbitmq/install
-      - sls: /formulas/osh-helm-repos/configure
