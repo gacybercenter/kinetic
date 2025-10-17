@@ -157,7 +157,7 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
         else:
             release_exists = False
 
-        # Step 3: Install or upgrade release if necessary
+        # Step 3: Always use 'helm upgrade --install' to install or upgrade the release
         if not release_exists or not release_matches:
             values_file = None
             if values_dict:
@@ -169,13 +169,8 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
                     values_file_path = values_file
                     message += f"; Using temporary values file {values_file}"
 
-            # Build the Helm command as a list to avoid shell=True
-            helm_cmd = ["helm"]
-            if release_exists:
-                helm_cmd.append("upgrade")
-            else:
-                helm_cmd.append("install")
-            helm_cmd.extend([release_name, chart_name, "-n", namespace, "--create-namespace", "--wait", f"--timeout={wait_timeout}s"])
+            # Build the Helm command as a list to avoid shell=True, always using 'upgrade --install'
+            helm_cmd = ["helm", "upgrade", "--install", release_name, chart_name, "-n", namespace, "--create-namespace", "--wait", f"--timeout={wait_timeout}s"]
             if version:
                 helm_cmd.extend(["--version", version])
             if values_file:
@@ -194,10 +189,10 @@ def helm_release_present(release_name, chart_name, namespace, values_dict=None, 
                     'success': False,
                     'updated': False,
                     'values_file_path': values_file_path if keep_values_file else "",
-                    'message': f"Failed to {'upgrade' if release_exists else 'install'} Helm release {release_name}: {helm_result[:200]}...; {message}"
+                    'message': f"Failed to upgrade/install Helm release {release_name}: {helm_result[:200]}...; {message}"
                 }
             release_updated = True
-            message += f"; Helm release {release_name} {'upgraded' if release_exists else 'installed'}"
+            message += f"; Helm release {release_name} upgraded or installed"
         else:
             message += f"; Helm release {release_name} already exists and up-to-date"
 
