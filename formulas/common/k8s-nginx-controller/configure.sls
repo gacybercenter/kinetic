@@ -1,3 +1,6 @@
+include:
+  - /formulas/common/k8s-nginx-controller/install
+
 # Create namespace for MetalLB
 metallb_namespace:
   k8s.namespace_present:
