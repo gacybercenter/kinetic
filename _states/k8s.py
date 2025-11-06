@@ -1613,4 +1613,4 @@ def metallb_l2_advertisement_present(name, namespace, advertisement_name, pool_n
         ret['comment'] = f"Failed to ensure L2Advertisement {advertisement_name}: {str(e)[:100]}..."
         ret['changes'] = {}
 
-    return retx
+    return ret
