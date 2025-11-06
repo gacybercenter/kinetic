@@ -3118,3 +3118,224 @@ def node_label_present(namespace, node_name, labels):
             'message': f"Error updating labels on node {node_name}: {str(e)[:50]}...",
             'changes': {}
         }
+def metallb_pool_present(namespace, pool_name, addresses, metallb_namespace="metallb-system"):
+    """
+    Ensure that a MetalLB IPAddressPool Custom Resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the IPAddressPool resource (unused, kept for consistency).
+        pool_name (str): The name of the IPAddressPool resource.
+        addresses (list): List of IP address ranges (e.g., ["10.150.1.43-10.150.1.50"]).
+        metallb_namespace (str, optional): The namespace where MetalLB is installed. Defaults to 'metallb-system'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.metallb_pool_present unused-namespace default ["10.150.1.43-10.150.1.50"]
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "metallb.io"
+        version = "v1beta1"
+        plural = "ipaddresspools"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if IPAddressPool exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=metallb_namespace, plural=plural, name=pool_name
+            )
+            exists = True
+            current_addresses = resource.get('spec', {}).get('addresses', [])
+            if current_addresses == addresses:
+                matches = True
+                message = f"IPAddressPool {pool_name} in namespace {metallb_namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"IPAddressPool {pool_name} in namespace {metallb_namespace} exists but addresses differ"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"IPAddressPool {pool_name} in namespace {metallb_namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking IPAddressPool {pool_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update IPAddressPool
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "IPAddressPool",
+            "metadata": {
+                "name": pool_name,
+                "namespace": metallb_namespace
+            },
+            "spec": {
+                "addresses": addresses
+            }
+        }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group, version=version, namespace=metallb_namespace, plural=plural, body=body
+                )
+                updated = True
+                message = f"IPAddressPool {pool_name} created in namespace {metallb_namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create IPAddressPool {pool_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if 'metadata' in resource and 'resourceVersion' in resource['metadata']:
+                    body['metadata']['resourceVersion'] = resource['metadata']['resourceVersion']
+                custom_api.replace_namespaced_custom_object(
+                    group=group, version=version, namespace=metallb_namespace, plural=plural, name=pool_name, body=body
+                )
+                updated = True
+                message = f"IPAddressPool {pool_name} updated in namespace {metallb_namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update IPAddressPool {pool_name}: {str(e)[:50]}..."
+                }
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"IPAddressPool operation error: {str(e)[:50]}..."
+        }
+
+def metallb_l2_advertisement_present(namespace, advertisement_name, pool_names, metallb_namespace="metallb-system"):
+    """
+    Ensure that a MetalLB L2Advertisement Custom Resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the L2Advertisement resource (unused, kept for consistency).
+        advertisement_name (str): The name of the L2Advertisement resource.
+        pool_names (list): List of IPAddressPool names to advertise.
+        metallb_namespace (str, optional): The namespace where MetalLB is installed. Defaults to 'metallb-system'.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.metallb_l2_advertisement_present unused-namespace default-l2 ["default"]
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "metallb.io"
+        version = "v1beta1"
+        plural = "l2advertisements"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if L2Advertisement exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=metallb_namespace, plural=plural, name=advertisement_name
+            )
+            exists = True
+            current_pools = resource.get('spec', {}).get('ipAddressPools', [])
+            if current_pools == pool_names:
+                matches = True
+                message = f"L2Advertisement {advertisement_name} in namespace {metallb_namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"L2Advertisement {advertisement_name} in namespace {metallb_namespace} exists but pools differ"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"L2Advertisement {advertisement_name} in namespace {metallb_namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking L2Advertisement {advertisement_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update L2Advertisement
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "L2Advertisement",
+            "metadata": {
+                "name": advertisement_name,
+                "namespace": metallb_namespace
+            },
+            "spec": {
+                "ipAddressPools": pool_names
+            }
+        }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group, version=version, namespace=metallb_namespace, plural=plural, body=body
+                )
+                updated = True
+                message = f"L2Advertisement {advertisement_name} created in namespace {metallb_namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create L2Advertisement {advertisement_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if 'metadata' in resource and 'resourceVersion' in resource['metadata']:
+                    body['metadata']['resourceVersion'] = resource['metadata']['resourceVersion']
+                custom_api.replace_namespaced_custom_object(
+                    group=group, version=version, namespace=metallb_namespace, plural=plural, name=advertisement_name, body=body
+                )
+                updated = True
+                message = f"L2Advertisement {advertisement_name} updated in namespace {metallb_namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update L2Advertisement {advertisement_name}: {str(e)[:50]}..."
+                }
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"L2Advertisement operation error: {str(e)[:50]}..."
+        }
