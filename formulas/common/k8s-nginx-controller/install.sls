@@ -18,13 +18,6 @@ certmanager_installed:
     - require:
       - sls: /formulas/common/k8s-certmanager/install
 
-# Create namespace for MetalLB
-metallb_namespace:
-  k8s.namespace_present:
-    - namespace: {{ pillar.get('metallb_namespace', 'metallb-system') }}
-    - require:
-      - test: helm_installed
-
 # Add the MetalLB Helm repository
 add_metallb_repo:
   k8s_helm.helm_repo_present:
