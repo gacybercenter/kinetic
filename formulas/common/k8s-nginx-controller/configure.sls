@@ -14,6 +14,7 @@ metallb_namespace:
   {% set lb_ip = lb_entry.keys() | first %}
   {% set lb_config = lb_entry[lb_ip] %}
   {% set pool_name = "lb-pool-" + lb_ip.replace('.', '-') %}
+  {% set service_name = lb_entry[service_name] %}
 
 # Create a MetalLB IPAddressPool for each IP
 ensure_metallb_pool_{{ lb_ip }}:
@@ -39,7 +40,7 @@ ensure_metallb_advertisement_{{ lb_ip }}:
 ensure_service_{{ lb_ip }}:
   k8s.service_present:
     - namespace: openstack
-    - service_name: lb-service-{{ lb_ip.replace('.', '-') }}
+    - service_name: {{ service_name }}
     - service_type: LoadBalancer
     - selector:
         app.kubernetes.io/name: ingress-nginx
