@@ -95,18 +95,19 @@ cephClusterSpec:
     - name: ceph-filesystem
       spec:
         metadataServer:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                  - key: {{ all_node_affinity_key }}
-                  operator: {{ all_node_affinity_operator }}
-                  values:
-                  - {{ all_node_affinity_value }}
-        tolerations:
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/rook-node
-          operator: Exists
+          placement:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: {{ all_node_affinity_key }}
+                      operator: {{ all_node_affinity_operator }}
+                      values:
+                      - {{ all_node_affinity_value }}
+            tolerations:
+            - effect: NoSchedule
+              key: node-role.kubernetes.io/rook-node
+              operator: Exists
   resources:
     mgr:
       limits:
