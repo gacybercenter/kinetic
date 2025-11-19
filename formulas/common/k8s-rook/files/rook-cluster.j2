@@ -112,15 +112,15 @@ cephFileSystems:
             cpu: "1000m"
             memory: "4Gi"
         priorityClassName: system-cluster-critical
-          placement:
-            nodeAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                nodeSelectorTerms:
-                  - matchExpressions:
-                    - key: {{ all_node_affinity_key }}
-                      operator: {{ all_node_affinity_operator }}
-                      values:
-                      - {{ all_node_affinity_value }}
+        placement:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                  - key: {{ all_node_affinity_key }}
+                    operator: {{ all_node_affinity_operator }}
+                    values:
+                    - {{ all_node_affinity_value }}
             tolerations:
             - effect: NoSchedule
               key: node-role.kubernetes.io/rook-node
