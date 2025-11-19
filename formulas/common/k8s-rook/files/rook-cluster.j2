@@ -128,12 +128,6 @@ cephFileSystems:
       enabled: true
       isDefault: false
       name: ceph-filesystem
-      reclaimPolicy: Delete
-      allowVolumeExpansion: true
-      volumeBindingMode: "Immediate"
-      annotations: {}
-      labels: {}
-      mountOptions: []
     spec:
       metadataPool:
         replicated:
