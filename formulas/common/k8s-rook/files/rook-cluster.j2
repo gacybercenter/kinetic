@@ -121,10 +121,10 @@ cephFileSystems:
                     operator: {{ all_node_affinity_operator }}
                     values:
                     - {{ all_node_affinity_value }}
-            tolerations:
-            - effect: NoSchedule
-              key: node-role.kubernetes.io/rook-node
-              operator: Exists
+          tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/rook-node
+            operator: Exists
   resources:
     mgr:
       limits:
