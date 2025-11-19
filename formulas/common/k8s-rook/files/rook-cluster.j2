@@ -91,6 +91,37 @@ cephClusterSpec:
       - effect: NoSchedule
         key: node-role.kubernetes.io/rook-osd-node
         operator: Exists
+  resources:
+    mgr:
+      limits:
+        memory: {{ mgr_limits_memory }}
+      requests:
+        cpu: {{ mgr_requests_cpu }}
+        memory: {{ mgr_requests_memory }}
+    mon:
+      limits:
+        memory: {{ mon_limits_memory }}
+      requests:
+        cpu: {{ mon_requests_cpu }}
+        memory: {{ mon_requests_memory }}
+    osd:
+      limits:
+        memory: {{ osd_limits_memory }}
+      requests:
+        cpu: {{ osd_requests_cpu }}
+        memory: {{ osd_requests_memory }}
+
+  storage:
+    useAllNodes: {{ useAllNodes }}
+    useAllDevices: {{ useAllDevices }}
+    devices:
+      {% if devices %}
+      {% for device in devices %}
+      - name: {{ device }}
+      {% endfor %}
+      {% else %}
+      []
+      {% endif %}
 cephFileSystems:
   - name: ceph-filesystem
     spec:
@@ -125,34 +156,3 @@ cephFileSystems:
           - effect: NoSchedule
             key: node-role.kubernetes.io/rook-node
             operator: Exists
-  resources:
-    mgr:
-      limits:
-        memory: {{ mgr_limits_memory }}
-      requests:
-        cpu: {{ mgr_requests_cpu }}
-        memory: {{ mgr_requests_memory }}
-    mon:
-      limits:
-        memory: {{ mon_limits_memory }}
-      requests:
-        cpu: {{ mon_requests_cpu }}
-        memory: {{ mon_requests_memory }}
-    osd:
-      limits:
-        memory: {{ osd_limits_memory }}
-      requests:
-        cpu: {{ osd_requests_cpu }}
-        memory: {{ osd_requests_memory }}
-
-  storage:
-    useAllNodes: {{ useAllNodes }}
-    useAllDevices: {{ useAllDevices }}
-    devices:
-      {% if devices %}
-      {% for device in devices %}
-      - name: {{ device }}
-      {% endfor %}
-      {% else %}
-      []
-      {% endif %}
