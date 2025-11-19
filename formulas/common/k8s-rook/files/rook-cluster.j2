@@ -124,6 +124,17 @@ cephClusterSpec:
       {% endif %}
 cephFileSystems:
   - name: ceph-filesystem
+    storageClass:
+      enabled: true
+      isDefault: false
+      name: ceph-filesystem
+      pool: data0
+      reclaimPolicy: Delete
+      allowVolumeExpansion: true
+      volumeBindingMode: "Immediate"
+      annotations: {}
+      labels: {}
+      mountOptions: []
     spec:
       metadataPool:
         replicated:
