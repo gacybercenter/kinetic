@@ -91,10 +91,27 @@ cephClusterSpec:
       - effect: NoSchedule
         key: node-role.kubernetes.io/rook-osd-node
         operator: Exists
-  cephFilesystems:
-    - name: ceph-filesystem
-      spec:
-        metadataServer:
+cephFileSystems:
+  - name: ceph-filesystem
+    spec:
+      metadataPool:
+        replicated:
+          size: 3
+      dataPools:
+        - failureDomain: host
+          replicated:
+            size: 3
+          name: data0
+      metadataServer:
+        activeCount: 1
+        activeStandby: true
+        resources:
+          limits:
+            memory: "4Gi"
+          requests:
+            cpu: "1000m"
+            memory: "4Gi"
+        priorityClassName: system-cluster-critical
           placement:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
