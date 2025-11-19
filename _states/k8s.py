@@ -1518,3 +1518,99 @@ def node_label_present(name, namespace, node_name, labels):
         ret['changes'] = {}
 
     return ret
+def metallb_pool_present(name, namespace, pool_name, addresses, metallb_namespace="metallb-system"):
+    """
+    Ensure that a MetalLB IPAddressPool Custom Resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The namespace for the IPAddressPool resource (unused, kept for consistency).
+
+    pool_name
+        The name of the IPAddressPool resource.
+
+    addresses
+        List of IP address ranges (e.g., ["10.150.1.43-10.150.1.50"]).
+
+    metallb_namespace
+        Optional. The namespace where MetalLB is installed. Defaults to 'metallb-system'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_metallb_pool:
+          k8s.metallb_pool_present:
+            - namespace: unused-namespace
+            - pool_name: default
+            - addresses:
+                - 10.150.1.43-10.150.1.50
+                - 10.150.1.247-10.150.1.247
+            - metallb_namespace: metallb-system
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.metallb_pool_present'](namespace, pool_name, addresses, metallb_namespace)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'pool_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure IPAddressPool {pool_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
+
+def metallb_l2_advertisement_present(name, namespace, advertisement_name, pool_names, metallb_namespace="metallb-system"):
+    """
+    Ensure that a MetalLB L2Advertisement Custom Resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The namespace for the L2Advertisement resource (unused, kept for consistency).
+
+    advertisement_name
+        The name of the L2Advertisement resource.
+
+    pool_names
+        List of IPAddressPool names to advertise.
+
+    metallb_namespace
+        Optional. The namespace where MetalLB is installed. Defaults to 'metallb-system'.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_metallb_advertisement:
+          k8s.metallb_l2_advertisement_present:
+            - namespace: unused-namespace
+            - advertisement_name: default-l2
+            - pool_names:
+                - default
+            - metallb_namespace: metallb-system
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.metallb_l2_advertisement_present'](namespace, advertisement_name, pool_names, metallb_namespace)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'advertisement_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure L2Advertisement {advertisement_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
