@@ -54,28 +54,28 @@ install_metallb:
       - k8s: metallb_namespace
       - cmd: update_helm_repos
 
-# Install or upgrade NGINX Ingress Controller using Helm via k8s_helm state with custom values
-install_nginx_ingress_controller:
-  k8s_helm.helm_release_present:
-    - release_name: ingress-nginx
-    - chart_name: ingress-nginx/ingress-nginx
-    - namespace: {{ pillar.get('nginx_ingress_namespace', 'openstack') }}
-    - values_dict:
-        controller:
-          service:
-            type: {{ pillar.get('nginx_ingress_service_type', 'LoadBalancer') }}
-            annotations:
-              metallb.universe.tf/address-pool: {{ pillar.get('nginx_ingress_metallb_pool', 'default') }}
-          replicaCount: {{ pillar.get('nginx_ingress_replica_count', 2) }}
-          watchIngressWithoutClass: true
-          progressDeadlineSeconds: {{ pillar.get('nginx_ingress_progress_deadline_seconds', 20) }}
-          admissionWebhooks:
-            enabled: true
-            certManager:
-              enabled: {{ pillar.get('nginx_ingress_webhook_certmanager_enabled', true) }}
-    - wait_timeout: 300
-    - wait_interval: 10
-    - require:
-      - cmd: update_helm_repos
-      - test: certmanager_installed
-      - k8s_helm: install_metallb
+# # Install or upgrade NGINX Ingress Controller using Helm via k8s_helm state with custom values
+# install_nginx_ingress_controller:
+#   k8s_helm.helm_release_present:
+#     - release_name: ingress-nginx
+#     - chart_name: ingress-nginx/ingress-nginx
+#     - namespace: {{ pillar.get('nginx_ingress_namespace', 'openstack') }}
+#     - values_dict:
+#         controller:
+#           service:
+#             type: {{ pillar.get('nginx_ingress_service_type', 'LoadBalancer') }}
+#             annotations:
+#               metallb.universe.tf/address-pool: {{ pillar.get('nginx_ingress_metallb_pool', 'default') }}
+#           replicaCount: {{ pillar.get('nginx_ingress_replica_count', 2) }}
+#           watchIngressWithoutClass: true
+#           progressDeadlineSeconds: {{ pillar.get('nginx_ingress_progress_deadline_seconds', 20) }}
+#           admissionWebhooks:
+#             enabled: true
+#             certManager:
+#               enabled: {{ pillar.get('nginx_ingress_webhook_certmanager_enabled', true) }}
+#     - wait_timeout: 300
+#     - wait_interval: 10
+#     - require:
+#       - cmd: update_helm_repos
+#       - test: certmanager_installed
+#       - k8s_helm: install_metallb
