@@ -1,4 +1,5 @@
-include: /formulas/common/k8s-certmanager/install
+include: 
+  - /formulas/common/k8s-certmanager/install
 
 {% set cert_manager_namespace = 'cert-manager' %}
 
