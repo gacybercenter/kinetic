@@ -63,7 +63,7 @@ install_nginx_ingress_controller:
     - values_dict:
         controller:
           service:
-            type: {{ pillar.get('nginx_ingress_service_type', 'LoadBalancer') }}
+            type: {{ pillar.get('nginx_ingress_service_type', 'ClusterIP') }}
           replicaCount: {{ pillar.get('nginx_ingress_replica_count', 2) }}
           watchIngressWithoutClass: true
           progressDeadlineSeconds: {{ pillar.get('nginx_ingress_progress_deadline_seconds', 20) }}
