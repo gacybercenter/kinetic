@@ -1614,3 +1614,58 @@ def metallb_l2_advertisement_present(name, namespace, advertisement_name, pool_n
         ret['changes'] = {}
 
     return ret
+def certmanager_issuer_present(name, namespace, issuer_name, issuer_kind="Issuer", spec=None):
+    """
+    Ensure that a Cert-Manager Issuer or ClusterIssuer resource is present in Kubernetes.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the Issuer resource. Use 'cluster-wide' for ClusterIssuer.
+
+    issuer_name
+        The name of the Issuer or ClusterIssuer resource.
+
+    issuer_kind
+        Optional. The kind of issuer, either 'Issuer' or 'ClusterIssuer'. Defaults to 'Issuer'.
+
+    spec
+        Optional. The specification dictionary for the Issuer resource. If not provided, a basic self-signed issuer will be created.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_selfsigned_issuer:
+          k8s.certmanager_issuer_present:
+            - namespace: cert-manager
+            - issuer_name: selfsigned-issuer
+            - issuer_kind: Issuer
+            - spec:
+                selfSigned: {}
+
+        ensure_ca_issuer:
+          k8s.certmanager_issuer_present:
+            - namespace: cert-manager
+            - issuer_name: ca-issuer
+            - issuer_kind: Issuer
+            - spec:
+                ca:
+                  secretName: ca-key-pair
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.certmanager_issuer_present'](namespace, issuer_name, issuer_kind, spec)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {f'{issuer_kind.lower()}_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure {issuer_kind} {issuer_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
