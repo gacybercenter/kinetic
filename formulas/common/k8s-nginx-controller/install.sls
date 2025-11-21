@@ -16,7 +16,7 @@ helm_installed:
 certmanager_installed:
   test.nop:
     - require:
-      - sls: /formulas/common/k8s-certmanager/configured
+      - sls: /formulas/common/k8s-certmanager/configure
 
 # Add the MetalLB Helm repository
 add_metallb_repo:
