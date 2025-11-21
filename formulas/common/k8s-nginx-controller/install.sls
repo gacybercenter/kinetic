@@ -4,7 +4,7 @@
 
 include:
   - /formulas/common/helm/install
-  - /formulas/common/k8s-certmanager/configure
+  - /formulas/common/k8s-certmanager
 
 # Ensure Helm is installed and configured before proceeding
 helm_installed:
