@@ -1,5 +1,5 @@
 include:
-  - /formulas/common/k8s-nginx-controller/install
+  - /formulas/common/k8s-nginx-controller/configure
 
 # Create namespace for MetalLB
 metallb_namespace:
