@@ -12,11 +12,11 @@ helm_installed:
     - require:
       - sls: /formulas/common/helm/install
 
-# Ensure Cert-Manager is installed for TLS support (if needed)
-certmanager_installed:
-  test.nop:
-    - require:
-      - sls: /formulas/common/k8s-certmanager
+# # Ensure Cert-Manager is installed for TLS support (if needed)
+# certmanager_installed:
+#   test.nop:
+#     - require:
+#       - sls: /formulas/common/k8s-certmanager
 
 # Add the MetalLB Helm repository
 add_metallb_repo:
