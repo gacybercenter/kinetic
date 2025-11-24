@@ -75,5 +75,4 @@ install_nginx_ingress_controller:
     - wait_interval: 10
     - require:
       - cmd: update_helm_repos
-      - test: certmanager_installed
       - k8s_helm: install_metallb
