@@ -3468,3 +3468,107 @@ def certmanager_issuer_present(namespace, issuer_name, issuer_kind="Issuer", spe
             'updated': False,
             'message': f"{issuer_kind} operation error: {str(e)[:50]}..."
         }
+
+def ingress_present(namespace, ingress_name, spec, annotations=None):
+    """
+    Ensure that a Kubernetes Ingress resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the Ingress resource.
+        ingress_name (str): The name of the Ingress resource.
+        spec (dict): The specification for the Ingress resource, including rules, tls, etc.
+        annotations (dict, optional): Annotations to apply to the Ingress (e.g., for ingress controller settings). Defaults to None.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.ingress_present openstack my-ingress spec_dict annotations_dict
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        networking_v1_api = client.NetworkingV1Api()
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if Ingress exists
+        try:
+            ingress = networking_v1_api.read_namespaced_ingress(name=ingress_name, namespace=namespace)
+            exists = True
+            current_spec = ingress.spec.to_dict() if ingress.spec else {}
+            current_annotations = ingress.metadata.annotations or {}
+            desired_annotations = annotations or {}
+            desired_spec = spec
+
+            # Check if spec and annotations match
+            if current_spec == desired_spec and current_annotations == desired_annotations:
+                matches = True
+                message = f"Ingress {ingress_name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"Ingress {ingress_name} in namespace {namespace} exists but spec or annotations differ"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"Ingress {ingress_name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking Ingress {ingress_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update Ingress
+        ingress_body = client.V1Ingress(
+            metadata=client.V1ObjectMeta(
+                name=ingress_name,
+                namespace=namespace,
+                annotations=annotations or {}
+            ),
+            spec=client.V1IngressSpec(**spec)
+        )
+
+        if not exists:
+            try:
+                networking_v1_api.create_namespaced_ingress(namespace=namespace, body=ingress_body)
+                updated = True
+                message = f"Ingress {ingress_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create Ingress {ingress_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if exists and hasattr(ingress, 'metadata') and hasattr(ingress.metadata, 'resource_version'):
+                    ingress_body.metadata.resource_version = ingress.metadata.resource_version
+                networking_v1_api.replace_namespaced_ingress(name=ingress_name, namespace=namespace, body=ingress_body)
+                updated = True
+                message = f"Ingress {ingress_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update Ingress {ingress_name}: {str(e)[:50]}..."
+                }
+
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Ingress operation error: {str(e)[:50]}..."
+        }
