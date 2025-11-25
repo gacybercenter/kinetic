@@ -16,7 +16,7 @@ def __virtual__():
         return __virtualname__
     return (False, 'The kinetic-helm execution module is not available.')
 
-def helm_repo_present(name, repo_name, repo_url):
+def helm_repo_present(name, repo_name, repo_url, update_cache=True):
     """
     Ensure that a Helm repository is added or updated with the specified URL.
 
@@ -29,6 +29,9 @@ def helm_repo_present(name, repo_name, repo_url):
     repo_url
         The URL of the Helm repository.
 
+    update_cache
+        Optional. Whether to update the Helm repository cache after adding or updating. Defaults to True.
+
     Example:
     .. code-block:: yaml
 
@@ -36,13 +39,15 @@ def helm_repo_present(name, repo_name, repo_url):
           k8s_helm.helm_repo_present:
             - repo_name: bitnami
             - repo_url: https://charts.bitnami.com/bitnami
+            - update_cache: False
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
     try:
         result = __salt__['kinetic-helm.helm_repo_present'](
             repo_name=repo_name,
-            repo_url=repo_url
+            repo_url=repo_url,
+            update_cache=update_cache
         )
 
         ret['result'] = result['success']

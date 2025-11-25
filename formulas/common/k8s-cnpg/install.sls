@@ -6,13 +6,6 @@ add_cnpg_repo:
     - require:
       - pkg: helm_installed
 
-# Update Helm repositories to ensure the latest charts are available
-update_helm_repos:
-  cmd.run:
-    - name: helm repo update
-    - require:
-      - k8s_helm: add_cnpg_repo
-
 # Install or upgrade CloudNativePG operator using Helm via k8s_helm state
 install_cnpg_operator:
   k8s_helm.helm_release_present:
