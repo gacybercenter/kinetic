@@ -83,7 +83,6 @@ ensure_certificate_{{ lb_config['service_name'] }}:
     - annotations:
         description: TLS certificate for {{ lb_config['service_name'] }}
     - require:
-        - test: certmanager_installed
         - k8s: ensure_service_{{ lb_ip }}
 {% endif %}
 {% endfor %}
