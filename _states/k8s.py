@@ -1800,3 +1800,57 @@ def certmanager_certificate_present(name, namespace, certificate_name, spec, ann
         ret['changes'] = {}
 
     return ret
+def cnpg_cluster_present(name, namespace, cluster_name, spec):
+    """
+    Ensure that a CloudNativePG Cluster Custom Resource is present in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the Cluster resource.
+
+    cluster_name
+        The name of the Cluster resource.
+
+    spec
+        The specification for the Cluster resource, including instances, imageName, storage, etc.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_cnpg_cluster:
+          k8s.cnpg_cluster_present:
+            - namespace: cnpg-system
+            - cluster_name: my-cluster
+            - spec:
+                instances: 2
+                imageName: ghcr.io/cloudnative-pg/postgres:16
+                storage:
+                  size: 10Gi
+                  storageClass: standard
+                resources:
+                  limits:
+                    cpu: 1000m
+                    memory: 1024Mi
+                  requests:
+                    cpu: 500m
+                    memory: 512Mi
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.cnpg_cluster_present'](namespace, cluster_name, spec)
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'cluster_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Cluster {cluster_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret

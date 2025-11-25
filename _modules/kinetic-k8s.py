@@ -3687,3 +3687,110 @@ def certmanager_certificate_present(namespace, certificate_name, spec, annotatio
             'updated': False,
             'message': f"Certificate operation error: {str(e)[:50]}..."
         }
+def cnpg_cluster_present(namespace, cluster_name, spec):
+    """
+    Ensure that a CloudNativePG Cluster Custom Resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the Cluster resource.
+        cluster_name (str): The name of the Cluster resource.
+        spec (dict): The specification for the Cluster resource, including instances, imageName, storage, etc.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.cnpg_cluster_present cnpg-system my-cluster spec_dict
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "postgresql.cnpg.io"
+        version = "v1"
+        plural = "clusters"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if Cluster exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=cluster_name
+            )
+            exists = True
+            current_spec = resource.get('spec', {})
+            if current_spec == spec:
+                matches = True
+                message = f"Cluster {cluster_name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"Cluster {cluster_name} in namespace {namespace} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"Cluster {cluster_name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking Cluster {cluster_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update Cluster
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Cluster",
+            "metadata": {
+                "name": cluster_name,
+                "namespace": namespace
+            },
+            "spec": spec
+        }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, body=body
+                )
+                updated = True
+                message = f"Cluster {cluster_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create Cluster {cluster_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if 'metadata' in resource and 'resourceVersion' in resource['metadata']:
+                    body['metadata']['resourceVersion'] = resource['metadata']['resourceVersion']
+                custom_api.replace_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, name=cluster_name, body=body
+                )
+                updated = True
+                message = f"Cluster {cluster_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update Cluster {cluster_name}: {str(e)[:50]}..."
+                }
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Cluster operation error: {str(e)[:50]}..."
+        }
