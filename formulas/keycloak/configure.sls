@@ -7,7 +7,6 @@ ensure_keycloak_namespace:
     - namespace: {{ pillar['kc-db']['namespace'] }}
 
 # Create a Kubernetes Secret for the database superuser credentials
-{% set dbsuperuser = pillar.get('kc-db:dbsuperuser', {}) %}
 create_dbsuperuser_secret:
   k8s.secret_present:
     - namespace: {{ pillar['kc-db']['namespace'] }}
@@ -23,3 +22,8 @@ create_dbsuperuser_secret:
         description: Superuser credentials for Keycloak database
     - require:
       - k8s: ensure_keycloak_namespace
+create_auth_pg_cluster:
+  k8s.cnpg_cluster_present:
+    - name: {{ pillar['kc-db']['db']['name'] }}
+    - namespace: {{ pillar['kc-db']['name'] }}
+    - spec: {{ pillar['kc-db']['db']['spec'] }}
