@@ -1921,3 +1921,62 @@ def secret_present(name, namespace, secret_name, data, secret_type='Opaque', lab
         ret['changes'] = {}
 
     return ret
+def keycloak_cluster_present(name, namespace, cluster_name, spec=None, pillar_key=None):
+    """
+    Ensure that a Keycloak Custom Resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the Keycloak resource.
+
+    cluster_name
+        The name of the Keycloak resource.
+
+    spec
+        Optional. The specification for the Keycloak resource, including instances, hostname, etc.
+        If not provided, it will be fetched from pillar_key.
+
+    pillar_key
+        Optional. The pillar key to fetch the Keycloak spec from. Used if spec is not provided.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_keycloak_cluster:
+          k8s.keycloak_cluster_present:
+            - namespace: keycloak
+            - cluster_name: keycloak-cluster
+            - pillar_key: kc-cluster:spec
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        # If spec is not provided, fetch it from pillar_key
+        if spec is None:
+            if pillar_key is None:
+                raise SaltInvocationError('Either spec or pillar_key must be provided.')
+            spec = __salt__['pillar.get'](pillar_key, {})
+            debug_msg = f"Spec fetched from pillar key '{pillar_key}': {spec}"
+        else:
+            debug_msg = "Spec provided directly"
+
+        # Call the execution module function
+        result = __salt__['kinetic-k8s.keycloak_cluster_present'](namespace, cluster_name, spec)
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        ret['comment'] += f" Debug: {debug_msg}"
+        if result['updated']:
+            ret['changes'] = {'keycloak_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Keycloak {cluster_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret

@@ -22,8 +22,10 @@ create_dbsuperuser_secret:
         description: Superuser credentials for Keycloak database
     - require:
       - k8s: ensure_keycloak_namespace
+
 create_auth_pg_cluster:
   k8s.cnpg_cluster_present:
     - cluster_name: {{ pillar['kc-db']['db']['name'] }}
     - namespace: {{ pillar['kc-db']['namespace'] }}
     - spec: {{ pillar['kc-db']['db']['spec'] }}
+
