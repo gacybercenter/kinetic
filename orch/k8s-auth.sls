@@ -8,3 +8,8 @@ deploy_cnpg_operator:
     - tgt: {{ k8s }}
     - sls:
       - formulas.common.k8s-cnpg
+deploy_keycloak:
+  salt.state:
+    - tgt: {{ k8s }}
+    - sls:
+      - formulas.keycloak
