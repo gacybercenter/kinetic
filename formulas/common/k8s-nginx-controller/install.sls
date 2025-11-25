@@ -4,7 +4,7 @@
 
 include:
   - /formulas/common/helm/install
-  - /formulas/common/k8s-certmanager/install
+  - /formulas/common/k8s-certmanager
 
 # Ensure Helm is installed and configured before proceeding
 helm_installed:
@@ -12,11 +12,11 @@ helm_installed:
     - require:
       - sls: /formulas/common/helm/install
 
-# Ensure Cert-Manager is installed for TLS support (if needed)
-certmanager_installed:
-  test.nop:
-    - require:
-      - sls: /formulas/common/k8s-certmanager/install
+# # Ensure Cert-Manager is installed for TLS support (if needed)
+# certmanager_installed:
+#   test.nop:
+#     - require:
+#       - sls: /formulas/common/k8s-certmanager
 
 # Add the MetalLB Helm repository
 add_metallb_repo:
@@ -63,9 +63,7 @@ install_nginx_ingress_controller:
     - values_dict:
         controller:
           service:
-            type: {{ pillar.get('nginx_ingress_service_type', 'LoadBalancer') }}
-            annotations:
-              metallb.universe.tf/address-pool: {{ pillar.get('nginx_ingress_metallb_pool', 'default') }}
+            type: {{ pillar.get('nginx_ingress_service_type', 'ClusterIP') }}
           replicaCount: {{ pillar.get('nginx_ingress_replica_count', 2) }}
           watchIngressWithoutClass: true
           progressDeadlineSeconds: {{ pillar.get('nginx_ingress_progress_deadline_seconds', 20) }}
@@ -77,5 +75,4 @@ install_nginx_ingress_controller:
     - wait_interval: 10
     - require:
       - cmd: update_helm_repos
-      - test: certmanager_installed
       - k8s_helm: install_metallb

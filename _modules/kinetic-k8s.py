@@ -3339,3 +3339,351 @@ def metallb_l2_advertisement_present(namespace, advertisement_name, pool_names, 
             'updated': False,
             'message': f"L2Advertisement operation error: {str(e)[:50]}..."
         }
+def certmanager_issuer_present(namespace, issuer_name, issuer_kind="Issuer", spec=None):
+    """
+    Ensure that a Cert-Manager Issuer or ClusterIssuer resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the Issuer resource. Use 'cluster-wide' for ClusterIssuer.
+        issuer_name (str): The name of the Issuer or ClusterIssuer resource.
+        issuer_kind (str, optional): The kind of issuer, either 'Issuer' or 'ClusterIssuer'. Defaults to 'Issuer'.
+        spec (dict, optional): The specification for the Issuer resource. If not provided, a basic self-signed issuer spec will be used.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.certmanager_issuer_present cert-manager my-issuer spec_dict
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "cert-manager.io"
+        version = "v1"
+        plural = "issuers" if issuer_kind == "Issuer" else "clusterissuers"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Default spec for a self-signed issuer if none provided
+        if spec is None:
+            spec = {
+                "selfSigned": {}
+            }
+
+        # Check if Issuer/ClusterIssuer exists
+        try:
+            if issuer_kind == "Issuer":
+                resource = custom_api.get_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, name=issuer_name
+                )
+            else:
+                resource = custom_api.get_cluster_custom_object(
+                    group=group, version=version, plural=plural, name=issuer_name
+                )
+            exists = True
+            current_spec = resource.get('spec', {})
+            if current_spec == spec:
+                matches = True
+                message = f"{issuer_kind} {issuer_name} already exists and matches desired spec in {namespace if issuer_kind == 'Issuer' else 'cluster-wide'}"
+            else:
+                matches = False
+                message = f"{issuer_kind} {issuer_name} exists but spec differs in {namespace if issuer_kind == 'Issuer' else 'cluster-wide'}"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"{issuer_kind} {issuer_name} does not exist in {namespace if issuer_kind == 'Issuer' else 'cluster-wide'}"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking {issuer_kind} {issuer_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update Issuer/ClusterIssuer
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": issuer_kind,
+            "metadata": {
+                "name": issuer_name
+            },
+            "spec": spec
+        }
+        if issuer_kind == "Issuer":
+            body["metadata"]["namespace"] = namespace
+
+        if not exists:
+            try:
+                if issuer_kind == "Issuer":
+                    custom_api.create_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, body=body
+                    )
+                else:
+                    custom_api.create_cluster_custom_object(
+                        group=group, version=version, plural=plural, body=body
+                    )
+                updated = True
+                message = f"{issuer_kind} {issuer_name} created in {namespace if issuer_kind == 'Issuer' else 'cluster-wide'}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create {issuer_kind} {issuer_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                if 'metadata' in resource and 'resourceVersion' in resource['metadata']:
+                    body['metadata']['resourceVersion'] = resource['metadata']['resourceVersion']
+                if issuer_kind == "Issuer":
+                    custom_api.replace_namespaced_custom_object(
+                        group=group, version=version, namespace=namespace, plural=plural, name=issuer_name, body=body
+                    )
+                else:
+                    custom_api.replace_cluster_custom_object(
+                        group=group, version=version, plural=plural, name=issuer_name, body=body
+                    )
+                updated = True
+                message = f"{issuer_kind} {issuer_name} updated in {namespace if issuer_kind == 'Issuer' else 'cluster-wide'}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update {issuer_kind} {issuer_name}: {str(e)[:50]}..."
+                }
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"{issuer_kind} operation error: {str(e)[:50]}..."
+        }
+
+def ingress_present(namespace, ingress_name, spec, annotations=None):
+    """
+    Ensure that a Kubernetes Ingress resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the Ingress resource.
+        ingress_name (str): The name of the Ingress resource.
+        spec (dict): The specification for the Ingress resource, including rules, tls, etc.
+        annotations (dict, optional): Annotations to apply to the Ingress (e.g., for ingress controller settings). Defaults to None.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.ingress_present openstack my-ingress spec_dict annotations_dict
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        networking_v1_api = client.NetworkingV1Api()
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if Ingress exists
+        try:
+            ingress = networking_v1_api.read_namespaced_ingress(name=ingress_name, namespace=namespace)
+            exists = True
+            current_spec = ingress.spec.to_dict() if ingress.spec else {}
+            current_annotations = ingress.metadata.annotations or {}
+            desired_annotations = annotations or {}
+            desired_spec = spec
+
+            # Check if spec and annotations match
+            if current_spec == desired_spec and current_annotations == desired_annotations:
+                matches = True
+                message = f"Ingress {ingress_name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"Ingress {ingress_name} in namespace {namespace} exists but spec or annotations differ"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"Ingress {ingress_name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking Ingress {ingress_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update Ingress
+        ingress_body = client.V1Ingress(
+            metadata=client.V1ObjectMeta(
+                name=ingress_name,
+                namespace=namespace,
+                annotations=annotations or {}
+            ),
+            spec=client.V1IngressSpec(**spec)
+        )
+
+        if not exists:
+            try:
+                networking_v1_api.create_namespaced_ingress(namespace=namespace, body=ingress_body)
+                updated = True
+                message = f"Ingress {ingress_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create Ingress {ingress_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if exists and hasattr(ingress, 'metadata') and hasattr(ingress.metadata, 'resource_version'):
+                    ingress_body.metadata.resource_version = ingress.metadata.resource_version
+                networking_v1_api.replace_namespaced_ingress(name=ingress_name, namespace=namespace, body=ingress_body)
+                updated = True
+                message = f"Ingress {ingress_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update Ingress {ingress_name}: {str(e)[:50]}..."
+                }
+
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Ingress operation error: {str(e)[:50]}..."
+        }
+def certmanager_certificate_present(namespace, certificate_name, spec, annotations=None):
+    """
+    Ensure that a Cert-Manager Certificate resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the Certificate resource.
+        certificate_name (str): The name of the Certificate resource.
+        spec (dict): The specification for the Certificate resource, including issuerRef, commonName, dnsNames, etc.
+        annotations (dict, optional): Annotations to apply to the Certificate. Defaults to None.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.certmanager_certificate_present cert-manager my-certificate spec_dict annotations_dict
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "cert-manager.io"
+        version = "v1"
+        plural = "certificates"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if Certificate exists
+        try:
+            certificate = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=certificate_name
+            )
+            exists = True
+            current_spec = certificate.get('spec', {})
+            current_annotations = certificate.get('metadata', {}).get('annotations', {})
+            desired_annotations = annotations or {}
+            desired_spec = spec
+
+            # Check if spec and annotations match
+            if current_spec == desired_spec and current_annotations == desired_annotations:
+                matches = True
+                message = f"Certificate {certificate_name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"Certificate {certificate_name} in namespace {namespace} exists but spec or annotations differ"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"Certificate {certificate_name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking Certificate {certificate_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update Certificate
+        certificate_body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Certificate",
+            "metadata": {
+                "name": certificate_name,
+                "namespace": namespace,
+                "annotations": annotations or {}
+            },
+            "spec": spec
+        }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, body=certificate_body
+                )
+                updated = True
+                message = f"Certificate {certificate_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create Certificate {certificate_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if exists and 'metadata' in certificate and 'resourceVersion' in certificate['metadata']:
+                    certificate_body['metadata']['resourceVersion'] = certificate['metadata']['resourceVersion']
+                custom_api.replace_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, name=certificate_name, body=certificate_body
+                )
+                updated = True
+                message = f"Certificate {certificate_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update Certificate {certificate_name}: {str(e)[:50]}..."
+                }
+
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Certificate operation error: {str(e)[:50]}..."
+        }

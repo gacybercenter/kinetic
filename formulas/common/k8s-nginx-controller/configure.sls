@@ -1,5 +1,6 @@
 include:
   - /formulas/common/k8s-nginx-controller/install
+  - /formulas/common/k8s-certmanager
 
 # Create namespace for MetalLB
 metallb_namespace:
@@ -39,7 +40,7 @@ ensure_metallb_advertisement_{{ lb_ip }}:
 ensure_service_{{ lb_ip }}:
   k8s.service_present:
     - namespace: openstack
-    - service_name: lb-service-{{ lb_ip.replace('.', '-') }}
+    - service_name: {{ lb_config['service_name'] }}
     - service_type: LoadBalancer
     - selector:
         app.kubernetes.io/name: ingress-nginx
@@ -65,4 +66,23 @@ ensure_service_{{ lb_ip }}:
         metallb.universe.tf/address-pool: {{ pool_name }}
     - require:
         - k8s: ensure_metallb_advertisement_{{ lb_ip }}
+
+# Create a Certificate for this service if cert configuration is present in pillar
+{% if 'cert' in lb_config %}
+ensure_certificate_{{ lb_config['service_name'] }}:
+  k8s.certmanager_certificate_present:
+    - namespace: {{ pillar.get('nginx_ingress_namespace', 'openstack') }}
+    - certificate_name: {{ lb_config['service_name'] }}-tls
+    - spec:
+        secretName: {{ lb_config['service_name'] }}-tls
+        commonName: {{ lb_config['cert']['dns'][0] }}
+        dnsNames: {{ lb_config['cert']['dns'] | yaml }}
+        issuerRef:
+          name: {{ lb_config['cert']['issuer'] }}
+          kind: ClusterIssuer
+    - annotations:
+        description: TLS certificate for {{ lb_config['service_name'] }}
+    - require:
+        - k8s: ensure_service_{{ lb_ip }}
+{% endif %}
 {% endfor %}

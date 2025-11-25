@@ -5,4 +5,4 @@
 k8s_certmanager_install:
   salt.state:
     - tgt: '{{ k8s }}'
-    - sls: formulas.common.k8s-certmanager.install
+    - sls: formulas.common.k8s-certmanager.configure
