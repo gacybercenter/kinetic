@@ -7,7 +7,6 @@ add_adfinis_repo:
   k8s_helm.helm_repo_present:
     - repo_name: adfinis
     - repo_url: https://adfinis.github.io/helm-charts/
-    - update: true
 # Install or upgrade Keycloak operator using Helm via k8s_helm state with values from pillar
 install_keycloak_operator:
   k8s_helm.helm_release_present:
