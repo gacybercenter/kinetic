@@ -10,11 +10,11 @@ ensure_keycloak_namespace:
 {% set dbsuperuser = pillar.get('kc-db:dbsuperuser', {}) %}
 create_dbsuperuser_secret:
   k8s.secret_present:
-    - namespace: {{ pillar.get('kc-db:auth:0:namespace', 'keycloak') }}
+    - namespace: {{ pillar.get('kc-db:namespace', 'keycloak') }}
     - secret_name: auth-superuser
     - data:
-        username: {{ dbsuperuser.get('user') }}
-        password: {{ dbsuperuser.get('password') }}
+        username: {{ kc-db:dbsuperuser.get('user') }}
+        password: {{ kc-db:dbsuperuser.get('password') }}
     - secret_type: Opaque
     - labels:
         app: keycloak-db
