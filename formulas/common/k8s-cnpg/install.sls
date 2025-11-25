@@ -1,8 +1,3 @@
-# Ensure Helm is installed on the system
-helm_installed:
-  pkg.installed:
-    - name: helm
-
 # Add or update the CloudNativePG Helm repository using helm_repo_present
 add_cnpg_repo:
   k8s_helm.helm_repo_present:
