@@ -13,7 +13,7 @@ install_keycloak_operator:
     - release_name: keycloak-operator
     - chart_name: adfinis/keycloak-operator
     - namespace: {{ pillar.get('keycloak_namespace', 'keycloak') }}
-    - values_dict: {{ pillar.get('kc-op:operator', {}) }}
+    - values_dict: {{ pillar.get('kc-op', {}) }}
     - wait_timeout: 300
     - wait_interval: 10
     - require:
