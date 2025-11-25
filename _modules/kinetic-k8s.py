@@ -3572,3 +3572,118 @@ def ingress_present(namespace, ingress_name, spec, annotations=None):
             'updated': False,
             'message': f"Ingress operation error: {str(e)[:50]}..."
         }
+def certmanager_certificate_present(namespace, certificate_name, spec, annotations=None):
+    """
+    Ensure that a Cert-Manager Certificate resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the Certificate resource.
+        certificate_name (str): The name of the Certificate resource.
+        spec (dict): The specification for the Certificate resource, including issuerRef, commonName, dnsNames, etc.
+        annotations (dict, optional): Annotations to apply to the Certificate. Defaults to None.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.certmanager_certificate_present cert-manager my-certificate spec_dict annotations_dict
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "cert-manager.io"
+        version = "v1"
+        plural = "certificates"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if Certificate exists
+        try:
+            certificate = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=certificate_name
+            )
+            exists = True
+            current_spec = certificate.get('spec', {})
+            current_annotations = certificate.get('metadata', {}).get('annotations', {})
+            desired_annotations = annotations or {}
+            desired_spec = spec
+
+            # Check if spec and annotations match
+            if current_spec == desired_spec and current_annotations == desired_annotations:
+                matches = True
+                message = f"Certificate {certificate_name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"Certificate {certificate_name} in namespace {namespace} exists but spec or annotations differ"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"Certificate {certificate_name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking Certificate {certificate_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update Certificate
+        certificate_body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Certificate",
+            "metadata": {
+                "name": certificate_name,
+                "namespace": namespace,
+                "annotations": annotations or {}
+            },
+            "spec": spec
+        }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, body=certificate_body
+                )
+                updated = True
+                message = f"Certificate {certificate_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create Certificate {certificate_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if exists and 'metadata' in certificate and 'resourceVersion' in certificate['metadata']:
+                    certificate_body['metadata']['resourceVersion'] = certificate['metadata']['resourceVersion']
+                custom_api.replace_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, name=certificate_name, body=certificate_body
+                )
+                updated = True
+                message = f"Certificate {certificate_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update Certificate {certificate_name}: {str(e)[:50]}..."
+                }
+
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Certificate operation error: {str(e)[:50]}..."
+        }

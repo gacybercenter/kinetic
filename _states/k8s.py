@@ -1739,3 +1739,64 @@ def ingress_present(name, namespace, ingress_name, spec, annotations=None):
         ret['changes'] = {}
 
     return ret
+
+def certmanager_certificate_present(name, namespace, certificate_name, spec, annotations=None):
+    """
+    Ensure that a Cert-Manager Certificate resource is present in the specified namespace.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the Certificate resource.
+
+    certificate_name
+        The name of the Certificate resource in Kubernetes.
+
+    spec
+        The specification dictionary for the Certificate resource, including issuerRef, commonName, dnsNames, etc.
+
+    annotations
+        Optional. Annotations to apply to the Certificate. Defaults to None.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_certificate:
+          k8s.certmanager_certificate_present:
+            - namespace: openstack
+            - certificate_name: my-app-tls
+            - spec:
+                secretName: my-app-tls
+                commonName: myapp.example.com
+                dnsNames:
+                  - myapp.example.com
+                issuerRef:
+                  name: letsencrypt-prod
+                  kind: ClusterIssuer
+            - annotations:
+                description: TLS certificate for my app
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.certmanager_certificate_present'](
+            namespace=namespace,
+            certificate_name=certificate_name,
+            spec=spec,
+            annotations=annotations
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'certificate_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Certificate {certificate_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
