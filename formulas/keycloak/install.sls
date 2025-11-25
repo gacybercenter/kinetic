@@ -1,6 +1,6 @@
 include:
   - /formulas/common/helm
-  - /formluas/common/k8s-cnpg
+  - /formulas/common/k8s-cnpg
 
 # Add or update the Adfinis Helm repository for Keycloak operator
 add_adfinis_repo:
