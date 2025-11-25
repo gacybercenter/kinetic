@@ -3794,3 +3794,127 @@ def cnpg_cluster_present(namespace, cluster_name, spec):
             'updated': False,
             'message': f"Cluster operation error: {str(e)[:50]}..."
         }
+def secret_present(namespace, secret_name, data, secret_type='Opaque', labels=None, annotations=None):
+    """
+    Ensure that a Kubernetes Secret exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if the data, labels, or annotations differ.
+
+    Args:
+        namespace (str): The namespace for the Secret.
+        secret_name (str): The name of the Secret.
+        data (dict): The data to store in the Secret (key-value pairs). Values will be base64 encoded.
+        secret_type (str, optional): The type of Secret (e.g., 'Opaque', 'kubernetes.io/tls'). Defaults to 'Opaque'.
+        labels (dict, optional): Labels to apply to the Secret. Defaults to None.
+        annotations (dict, optional): Annotations to apply to the Secret. Defaults to None.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.secret_present my-namespace my-secret "{'key1': 'value1', 'key2': 'value2'}"
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        core_v1_api = client.CoreV1Api()
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if Secret exists
+        try:
+            secret = core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+            exists = True
+            current_data = secret.data or {}
+            current_labels = secret.metadata.labels or {}
+            current_annotations = secret.metadata.annotations or {}
+            current_type = secret.type or 'Opaque'
+
+            # Decode current data from base64 for comparison
+            decoded_current_data = {}
+            for k, v in current_data.items():
+                try:
+                    decoded_current_data[k] = base64.b64decode(v).decode('utf-8')
+                except Exception:
+                    decoded_current_data[k] = v  # If decoding fails, keep as is for comparison
+
+            desired_labels = labels or {}
+            desired_annotations = annotations or {}
+            if (decoded_current_data == data and
+                current_labels == desired_labels and
+                current_annotations == desired_annotations and
+                current_type == secret_type):
+                matches = True
+                message = f"Secret {secret_name} in namespace {namespace} already exists and matches desired state"
+            else:
+                matches = False
+                message = f"Secret {secret_name} in namespace {namespace} exists but content differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"Secret {secret_name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking Secret {secret_name}: {str(e)[:50]}..."
+                }
+
+        # Encode data to base64 for Secret creation/update
+        encoded_data = {}
+        for k, v in data.items():
+            if isinstance(v, str):
+                encoded_data[k] = base64.b64encode(v.encode('utf-8')).decode('utf-8')
+            else:
+                encoded_data[k] = base64.b64encode(str(v).encode('utf-8')).decode('utf-8')
+
+        # Create or update Secret
+        secret_body = client.V1Secret(
+            metadata=client.V1ObjectMeta(
+                name=secret_name,
+                namespace=namespace,
+                labels=labels or {},
+                annotations=annotations or {}
+            ),
+            data=encoded_data,
+            type=secret_type
+        )
+
+        if not exists:
+            try:
+                core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
+                updated = True
+                message = f"Secret {secret_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create Secret {secret_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                core_v1_api.replace_namespaced_secret(name=secret_name, namespace=namespace, body=secret_body)
+                updated = True
+                message = f"Secret {secret_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update Secret {secret_name}: {str(e)[:50]}..."
+                }
+
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Secret operation error: {str(e)[:50]}..."
+        }

@@ -1854,3 +1854,70 @@ def cnpg_cluster_present(name, namespace, cluster_name, spec):
         ret['changes'] = {}
 
     return ret
+def secret_present(name, namespace, secret_name, data, secret_type='Opaque', labels=None, annotations=None):
+    """
+    Ensure that a Kubernetes Secret exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if the data, labels, or annotations differ.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the Secret.
+
+    secret_name
+        The name of the Secret resource in Kubernetes.
+
+    data
+        The data to store in the Secret (dictionary of key-value pairs).
+
+    secret_type
+        Optional. The type of Secret (e.g., 'Opaque', 'kubernetes.io/tls'). Defaults to 'Opaque'.
+
+    labels
+        Optional. Labels to apply to the Secret. Defaults to None.
+
+    annotations
+        Optional. Annotations to apply to the Secret. Defaults to None.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_secret:
+          k8s.secret_present:
+            - namespace: my-namespace
+            - secret_name: my-secret
+            - data:
+                key1: value1
+                key2: value2
+            - secret_type: Opaque
+            - labels:
+                app: my-app
+            - annotations:
+                description: My secret description
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.secret_present'](
+            namespace=namespace,
+            secret_name=secret_name,
+            data=data,
+            secret_type=secret_type,
+            labels=labels,
+            annotations=annotations
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'secret_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Secret {secret_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret
