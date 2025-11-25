@@ -3,8 +3,6 @@ add_cnpg_repo:
   k8s_helm.helm_repo_present:
     - repo_name: cloudnative-pg
     - repo_url: https://cloudnative-pg.github.io/charts
-    - require:
-      - pkg: helm_installed
 
 # Install or upgrade CloudNativePG operator using Helm via k8s_helm state
 install_cnpg_operator:
