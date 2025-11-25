@@ -14,4 +14,4 @@ install_cnpg_operator:
     - wait_timeout: 300
     - wait_interval: 10
     - require:
-      - cmd: update_helm_repos
+      - k8s_helm.helm_repo_present: add_cnpg_repo
