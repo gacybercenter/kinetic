@@ -1980,3 +1980,76 @@ def keycloak_cluster_present(name, namespace, cluster_name, spec=None, pillar_ke
         ret['changes'] = {}
 
     return ret
+def certificate_present(name, namespace, certificate_name, common_name, email_address, dns_name=None, duration="2160h", renew_before="360h", issuer_ref="self-signed"):
+    """
+    Ensure that a Cert-Manager Certificate resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the Certificate.
+
+    certificate_name
+        The name of the Certificate resource in Kubernetes.
+
+    common_name
+        The Common Name (CN) for the certificate.
+
+    email_address
+        The email address for the certificate subject.
+
+    dns_name
+        Optional. DNS name for the certificate. Defaults to None.
+
+    duration
+        Optional. Duration of the certificate validity. Defaults to "2160h" (90 days).
+
+    renew_before
+        Optional. Time before expiration to renew the certificate. Defaults to "360h" (15 days).
+
+    issuer_ref
+        Optional. Reference to the issuer for this certificate. Defaults to "self-signed".
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_certificate:
+          k8s.certificate_present:
+            - namespace: my-namespace
+            - certificate_name: my-cert
+            - common_name: example.com
+            - email_address: admin@example.com
+            - dns_name: www.example.com
+            - duration: 2160h
+            - renew_before: 360h
+            - issuer_ref: self-signed
+    """
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+
+    try:
+        result = __salt__['kinetic-k8s.certificate_present'](
+            namespace=namespace,
+            certificate_name=certificate_name,
+            common_name=common_name,
+            email_address=email_address,
+            dns_name=dns_name,
+            duration=duration,
+            renew_before=renew_before,
+            issuer_ref=issuer_ref
+        )
+
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'certificate_updated': True}
+        else:
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Certificate {certificate_name}: {str(e)[:100]}..."
+        ret['changes'] = {}
+
+    return ret

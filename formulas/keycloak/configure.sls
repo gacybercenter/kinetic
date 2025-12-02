@@ -29,3 +29,12 @@ create_auth_pg_cluster:
     - namespace: {{ pillar['kc-db']['namespace'] }}
     - spec: {{ pillar['kc-db']['db']['spec'] }}
 
+{% set kcert = pillar['kc-cluster']['cert'] %}
+create_keycloak_cert:
+  k8s.certificate_present:
+    - namespace: {{ kcert['namespace'] }}
+    - name: {{ kcert['name'] }}
+    - certificate_name: {{ kcert['name'] }}
+    - email_address: {{ kcert['emailAddress'] }}
+    - issuer_ref: {{ kcert['issuerRef'] }}
+

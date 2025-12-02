@@ -4025,3 +4025,131 @@ def keycloak_cluster_present(namespace, cluster_name, spec):
             'updated': False,
             'message': f"Keycloak operation error: {str(e)[:50]}..."
         }
+def certificate_present(namespace, certificate_name, common_name, email_address, dns_name=None, duration="2160h", renew_before="360h", issuer_ref="self-signed"):
+    """
+    Ensure that a Cert-Manager Certificate resource exists in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    Args:
+        namespace (str): The namespace for the Certificate resource.
+        certificate_name (str): The name of the Certificate resource.
+        common_name (str): The Common Name (CN) for the certificate.
+        email_address (str): The email address for the certificate subject.
+        dns_name (str, optional): DNS name for the certificate. Defaults to None.
+        duration (str, optional): Duration of the certificate validity. Defaults to "2160h" (90 days).
+        renew_before (str, optional): Time before expiration to renew the certificate. Defaults to "360h" (15 days).
+        issuer_ref (str, optional): Reference to the issuer for this certificate. Defaults to "self-signed".
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-k8s.certificate_present my-namespace my-cert "example.com" "admin@example.com" dns_name="www.example.com"
+    """
+    try:
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "cert-manager.io"
+        version = "v1"
+        plural = "certificates"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Build the spec for the certificate
+        spec = {
+            "commonName": common_name,
+            "secretName": f"{certificate_name}-tls",
+            "duration": duration,
+            "renewBefore": renew_before,
+            "issuerRef": {
+                "name": issuer_ref,
+                "kind": "Issuer" if issuer_ref != "self-signed" else "ClusterIssuer"
+            },
+            "emailAddresses": [email_address]
+        }
+        
+        if dns_name:
+            spec["dnsNames"] = [dns_name]
+
+        # Check if Certificate exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=certificate_name
+            )
+            exists = True
+            current_spec = resource.get('spec', {})
+            if current_spec == spec:
+                matches = True
+                message = f"Certificate {certificate_name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"Certificate {certificate_name} in namespace {namespace} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"Certificate {certificate_name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Error checking Certificate {certificate_name}: {str(e)[:50]}..."
+                }
+
+        # Create or update Certificate
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Certificate",
+            "metadata": {
+                "name": certificate_name,
+                "namespace": namespace
+            },
+            "spec": spec
+        }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, body=body
+                )
+                updated = True
+                message = f"Certificate {certificate_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to create Certificate {certificate_name}: {str(e)[:50]}..."
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if 'metadata' in resource and 'resourceVersion' in resource['metadata']:
+                    body['metadata']['resourceVersion'] = resource['metadata']['resourceVersion']
+                custom_api.replace_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, name=certificate_name, body=body
+                )
+                updated = True
+                message = f"Certificate {certificate_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'message': f"Failed to update Certificate {certificate_name}: {str(e)[:50]}..."
+                }
+        return {
+            'success': True,
+            'updated': updated,
+            'message': message
+        }
+
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Certificate operation error: {str(e)[:50]}..."
+        }
