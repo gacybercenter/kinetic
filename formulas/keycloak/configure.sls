@@ -40,6 +40,8 @@ create_keycloak_cert_secret:
 create_keycloak_cert:
   k8s.certificate_present:
     - namespace: {{ kcert['namespace'] }}
+    - secret_type: kubernetes.io/tls
+    - data: '{}'
     - name: {{ kcert['name'] }}
     - certificate_name: {{ kcert['name'] }} 
     - common_name: {{ kcert['commonName'] }}
