@@ -34,7 +34,7 @@ create_keycloak_cert:
   k8s.certificate_present:
     - namespace: {{ kcert['namespace'] }}
     - name: {{ kcert['name'] }}
-    - certificate_name: {{ kcert['name'] }}
+    - common_name: {{ kcert['name'] }}
     - email_address: {{ kcert['emailAddress'] }}
     - issuer_ref: {{ kcert['issuerRef'] }}
 
