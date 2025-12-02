@@ -34,7 +34,8 @@ create_auth_pg_cluster:
 {% set kcert = pillar['kc-cluster']['cert'] %}
 create_keycloak_cert_secret:
   k8s.secret_present:
-    - name: {{ kcert['name'] }}-tls
+    - name: {{ kcert['name'] }}
+    - secret_name: {{ kcert['name'] }}-tls
     - namespace: {{ kcert['namespace'] }}
     - data: {}
     - secret_type: kubernetes.io/tls
