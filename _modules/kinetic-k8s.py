@@ -4094,8 +4094,16 @@ def certificate_present(namespace, certificate_name, common_name, email_address,
             "emailAddresses": [email_address]
         }
         
+        # Ensure common_name is in dnsNames list
         if dns_name:
-            spec["dnsNames"] = [dns_name]
+            # If dns_name is provided, create a list and append common_name if it's not already included
+            dns_names = [dns_name] if isinstance(dns_name, str) else dns_name
+            if common_name not in dns_names:
+                dns_names.append(common_name)
+            spec["dnsNames"] = dns_names
+        else:
+            # If no dns_name is provided, create a list with just common_name
+            spec["dnsNames"] = [common_name]
 
         # Check if Certificate exists
         try:
