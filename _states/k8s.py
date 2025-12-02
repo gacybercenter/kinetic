@@ -1921,7 +1921,8 @@ def secret_present(name, namespace, secret_name, data, secret_type='Opaque', lab
         ret['changes'] = {}
 
     return ret
-def keycloak_cluster_present(name, namespace, cluster_name, spec=None, pillar_key=None):
+
+def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded"):
     """
     Ensure that a Keycloak Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -1930,17 +1931,46 @@ def keycloak_cluster_present(name, namespace, cluster_name, spec=None, pillar_ke
         The name of the state (arbitrary, for SaltStack identification).
 
     namespace
-        The Kubernetes namespace for the Keycloak resource.
+        The namespace for the Keycloak resource.
 
     cluster_name
         The name of the Keycloak resource.
 
-    spec
-        Optional. The specification for the Keycloak resource, including instances, hostname, etc.
-        If not provided, it will be fetched from pillar_key.
+    start_optimized
+        Optional. Whether to start Keycloak with optimized settings. Defaults to False.
 
-    pillar_key
-        Optional. The pillar key to fetch the Keycloak spec from. Used if spec is not provided.
+    instances
+        Optional. Number of Keycloak instances. Defaults to 2.
+
+    image
+        Required. The Docker image for Keycloak.
+
+    db_vendor
+        Optional. Database vendor for Keycloak. Defaults to "postgres".
+
+    db_host
+        Required. Database host for Keycloak.
+
+    db_port
+        Optional. Database port for Keycloak. Defaults to 5432.
+
+    db_user_name_secret_name
+        Required. Name of the Secret containing the database username.
+
+    db_user_name_secret_key
+        Required. Key in the Secret for the database username.
+
+    db_password_secret_name
+        Required. Name of the Secret containing the database password.
+
+    db_password_secret_key
+        Required. Key in the Secret for the database password.
+
+    ingress_enabled
+        Optional. Whether to enable ingress for Keycloak. Defaults to False.
+
+    proxy_headers
+        Optional. Proxy headers setting for Keycloak. Defaults to "xforwarded".
 
     Example:
     .. code-block:: yaml
@@ -1949,28 +1979,45 @@ def keycloak_cluster_present(name, namespace, cluster_name, spec=None, pillar_ke
           k8s.keycloak_cluster_present:
             - namespace: keycloak
             - cluster_name: keycloak-cluster
-            - pillar_key: kc-cluster:spec
+            - start_optimized: False
+            - instances: 2
+            - image: quay.io/keycloak/keycloak:22.0.1
+            - db_vendor: postgres
+            - db_host: postgres-service
+            - db_port: 5432
+            - db_user_name_secret_name: keycloak-db-credentials
+            - db_user_name_secret_key: username
+            - db_password_secret_name: keycloak-db-credentials
+            - db_password_secret_key: password
+            - ingress_enabled: False
+            - proxy_headers: xforwarded
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
     try:
-        # If spec is not provided, fetch it from pillar_key
-        if spec is None:
-            if pillar_key is None:
-                raise SaltInvocationError('Either spec or pillar_key must be provided.')
-            spec = __salt__['pillar.get'](pillar_key, {})
-            debug_msg = f"Spec fetched from pillar key '{pillar_key}': {spec}"
-        else:
-            debug_msg = "Spec provided directly"
-
-        # Call the execution module function
-        result = __salt__['kinetic-k8s.keycloak_cluster_present'](namespace, cluster_name, spec)
+        result = __salt__['kinetic-k8s.keycloak_cluster_present'](
+            namespace=namespace,
+            name=cluster_name,
+            start_optimized=start_optimized,
+            instances=instances,
+            image=image,
+            db_vendor=db_vendor,
+            db_host=db_host,
+            db_port=db_port,
+            db_user_name_secret_name=db_user_name_secret_name,
+            db_user_name_secret_key=db_user_name_secret_key,
+            db_password_secret_name=db_password_secret_name,
+            db_password_secret_key=db_password_secret_key,
+            ingress_enabled=ingress_enabled,
+            proxy_headers=proxy_headers
+        )
 
         ret['result'] = result['success']
         ret['comment'] = result['message']
-        ret['comment'] += f" Debug: {debug_msg}"
         if result['updated']:
-            ret['changes'] = {'keycloak_updated': True}
+            ret['changes'] = {
+                'keycloak_updated': True
+            }
         else:
             ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
 
@@ -1980,77 +2027,6 @@ def keycloak_cluster_present(name, namespace, cluster_name, spec=None, pillar_ke
         ret['changes'] = {}
 
     return ret
-def certificate_present(name, namespace, certificate_name, common_name, email_address, dns_name=None, duration="2160h", renew_before="360h", issuer_ref="self-signed"):
-    """
-    Ensure that a Cert-Manager Certificate resource exists in the specified namespace.
-    If it does not exist, create it. If it exists, update it if necessary.
-
-    name
-        The name of the state (arbitrary, for SaltStack identification).
-
-    namespace
-        The Kubernetes namespace for the Certificate.
-
-    certificate_name
-        The name of the Certificate resource in Kubernetes.
-
-    common_name
-        The Common Name (CN) for the certificate.
-
-    email_address
-        The email address for the certificate subject.
-
-    dns_name
-        Optional. DNS name for the certificate. Defaults to None.
-
-    duration
-        Optional. Duration of the certificate validity. Defaults to "2160h" (90 days).
-
-    renew_before
-        Optional. Time before expiration to renew the certificate. Defaults to "360h" (15 days).
-
-    issuer_ref
-        Optional. Reference to the issuer for this certificate. Defaults to "self-signed".
-
-    Example:
-    .. code-block:: yaml
-
-        ensure_certificate:
-          k8s.certificate_present:
-            - namespace: my-namespace
-            - certificate_name: my-cert
-            - common_name: example.com
-            - email_address: admin@example.com
-            - dns_name: www.example.com
-            - duration: 2160h
-            - renew_before: 360h
-            - issuer_ref: self-signed
-    """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
-
-    try:
-        result = __salt__['kinetic-k8s.certificate_present'](
-            namespace=namespace,
-            certificate_name=certificate_name,
-            common_name=common_name,
-            email_address=email_address,
-            dns_name=dns_name,
-            duration=duration,
-            renew_before=renew_before,
-            issuer_ref=issuer_ref
-        )
-
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'certificate_updated': True}
-        else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
-
-    except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Certificate {certificate_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
 
     return ret
 def certificate_present(name, namespace, certificate_name, common_name, email_address, dns_name=None, duration="2160h", renew_before="360h", issuer_ref="self-signed"):

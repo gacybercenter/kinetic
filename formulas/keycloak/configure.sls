@@ -29,10 +29,7 @@ create_auth_pg_cluster:
     - namespace: {{ pillar['kc-db']['namespace'] }}
     - spec: {{ pillar['kc-db']['db']['spec'] }}
 
-
-
 {% set kcert = pillar['kc-cluster']['cert'] %}
-
 create_keycloak_cert:
   k8s.certificate_present:
     - namespace: {{ kcert['namespace'] }}
@@ -43,4 +40,26 @@ create_keycloak_cert:
     - issuer_ref: 
       - name: {{ kcert['issuerRef']['name'] }}
       - kind: {{ kcert['issuerRef']['kind'] }}
-
+create_keycloak_ingress:
+  k8s.ingress_present:
+    - namespace: {{ kcert['namespace'] }}
+    - ingress_name: {{ kcert['name'] }}-ingress
+    - spec:
+        ingressClassName: nginx
+        rules:
+          - host: {{ kcert['commonName'] }}
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: {{ kc-cluster['svc_name'] }}
+                      port:
+                        number: {{ kc-cluster['svc_port'] }}
+        tls:
+          - hosts:
+              - {{ kcert['commonName'] }}
+            secretName: {{ kcert['name'] }}-tls
+    - annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /
