@@ -3952,7 +3952,7 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
             config.load_kube_config()
 
         custom_api = client.CustomObjectsApi()
-        group = "keycloak.org"
+        group = "k8s.keycloak.org"
         version = "v2alpha1"
         plural = "keycloaks"
 
