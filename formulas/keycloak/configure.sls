@@ -11,7 +11,7 @@ ensure_keycloak_namespace:
 create_dbsuperuser_secret:
   k8s.secret_present:
     - namespace: {{ pillar['kc-db']['namespace'] }}
-    - secret_name: {{ kdb['name'] }}-superuser
+    - secret_name: {{ kdb['db']['name'] }}-superuser
     - data:
         username: {{ pillar['kc-db']['dbsuperuser']['user'] }}
         password: {{ pillar['kc-db']['dbsuperuser']['password'] }}
