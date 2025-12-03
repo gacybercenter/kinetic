@@ -3918,7 +3918,7 @@ def secret_present(namespace, secret_name, data, secret_type='Opaque', labels=No
             'updated': False,
             'message': f"Secret operation error: {str(e)[:50]}..."
         }
-def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded"):
+def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
     """
     Ensure that a Keycloak Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -3938,12 +3938,13 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
         db_password_secret_key (str, optional): Key in the Secret for the database password. Required, no default.
         ingress_enabled (bool, optional): Whether to enable ingress for Keycloak. Defaults to False.
         proxy_headers (str, optional): Proxy headers setting for Keycloak. Defaults to "xforwarded".
+        tls_secret (str, optional): Name of the TLS Secret for securing HTTP traffic. Defaults to None.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.keycloak_cluster_present keycloak keycloak-cluster start_optimized=False instances=2 image="quay.io/keycloak/keycloak:22.0.1" db_host="postgres-service" db_user_name_secret_name="keycloak-db-credentials" db_user_name_secret_key="username" db_password_secret_name="keycloak-db-credentials" db_password_secret_key="password"
+        salt '*' kinetic-k8s.keycloak_cluster_present keycloak keycloak-cluster start_optimized=False instances=2 image="quay.io/keycloak/keycloak:22.0.1" db_host="postgres-service" db_user_name_secret_name="keycloak-db-credentials" db_user_name_secret_key="username" db_password_secret_name="keycloak-db-credentials" db_password_secret_key="password" tls_secret="keycloak-tls"
     """
     try:
         try:
@@ -3986,7 +3987,7 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
                 'message': "Error: 'db_password_secret_name' and 'db_password_secret_key' are required fields for Keycloak configuration."
             }
 
-        # Build the spec for Keycloak with hostname nested under hostname key
+        # Build the spec for Keycloak with hostname nested under hostname key and tlsSecret under http
         spec = {
             "startOptimized": start_optimized,
             "instances": instances,
@@ -4012,8 +4013,13 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
             },
             "proxy": {
                 "headers": proxy_headers
-            }
+            },
+            "http": {}
         }
+
+        # Add tlsSecret to http if provided
+        if tls_secret:
+            spec["http"]["tlsSecret"] = tls_secret
 
         # Check if Keycloak exists
         try:
@@ -4091,7 +4097,6 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
             'updated': False,
             'message': f"Keycloak operation error: {str(e)[:50]}..."
         }
-
 def certificate_present(namespace, certificate_name, common_name, email_address, dns_name=None, duration="2160h", renew_before="360h", issuer_ref="self-signed"):
     """
     Ensure that a Cert-Manager Certificate resource exists in the specified namespace.

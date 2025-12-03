@@ -81,3 +81,4 @@ ensure_keycloak_cluster:
     - db_password_secret_key: password
     - ingress_enabled: False
     - proxy_headers: xforwarded
+    - tls_secret: {{ kcert['name']-tls }}

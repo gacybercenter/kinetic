@@ -1922,7 +1922,7 @@ def secret_present(name, namespace, secret_name, data, secret_type='Opaque', lab
 
     return ret
 
-def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded"):
+def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
     """
     Ensure that a Keycloak Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -1972,6 +1972,9 @@ def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=Fals
     proxy_headers
         Optional. Proxy headers setting for Keycloak. Defaults to "xforwarded".
 
+    tls_secret
+        Optional. Name of the TLS Secret for securing HTTP traffic. Defaults to None.
+
     Example:
     .. code-block:: yaml
 
@@ -1991,6 +1994,7 @@ def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=Fals
             - db_password_secret_key: password
             - ingress_enabled: False
             - proxy_headers: xforwarded
+            - tls_secret: keycloak-tls
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
@@ -2009,7 +2013,8 @@ def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=Fals
             db_password_secret_name=db_password_secret_name,
             db_password_secret_key=db_password_secret_key,
             ingress_enabled=ingress_enabled,
-            proxy_headers=proxy_headers
+            proxy_headers=proxy_headers,
+            tls_secret=tls_secret
         )
 
         ret['result'] = result['success']
@@ -2028,7 +2033,6 @@ def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=Fals
 
     return ret
 
-    return ret
 def certificate_present(name, namespace, certificate_name, common_name, email_address, dns_name=None, duration="2160h", renew_before="360h", issuer_ref="self-signed"):
     """
     Ensure that a Cert-Manager Certificate resource exists in the specified namespace.
