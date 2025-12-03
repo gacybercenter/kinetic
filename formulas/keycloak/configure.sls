@@ -41,6 +41,7 @@ create_keycloak_cert:
     - issuer_ref: 
       - name: {{ kcert['issuerRef']['name'] }}
       - kind: {{ kcert['issuerRef']['kind'] }}
+
 create_keycloak_ingress:
   k8s.ingress_present:
     - namespace: {{ kcert['namespace'] }}
@@ -54,7 +55,7 @@ create_keycloak_ingress:
                   pathType: Prefix
                   backend:
                     service:
-                      name: {{ kdb['db']['name'] }}-rw
+                      name: {{ kcluster['name'] }}-cluster-service
                       port:
                         number: 5432
         tls:
