@@ -3986,11 +3986,12 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
                 'message': "Error: 'db_password_secret_name' and 'db_password_secret_key' are required fields for Keycloak configuration."
             }
 
-        # Build the spec for Keycloak
+        # Build the spec for Keycloak with hostname set to the cluster name
         spec = {
             "startOptimized": start_optimized,
             "instances": instances,
             "image": image,
+            "hostname": name,  # Set hostname to the name of the Keycloak cluster
             "db": {
                 "vendor": db_vendor,
                 "host": db_host,
@@ -4058,7 +4059,7 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
                 return {
                     'success': False,
                     'updated': False,
-                    'message': f"Failed to create Keycloak {name}: {str(e)[:100]}..."
+                    'message': f"Failed to create Keycloak {name}: {str(e)[:50]}..."
                 }
         elif not matches:
             try:
