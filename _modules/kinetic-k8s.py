@@ -3986,12 +3986,14 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
                 'message': "Error: 'db_password_secret_name' and 'db_password_secret_key' are required fields for Keycloak configuration."
             }
 
-        # Build the spec for Keycloak with hostname set to the cluster name
+        # Build the spec for Keycloak with hostname nested under hostname key
         spec = {
             "startOptimized": start_optimized,
             "instances": instances,
             "image": image,
-            "hostname": name,  # Set hostname to the name of the Keycloak cluster
+            "hostname": {
+                "hostname": name  # Nested hostname as per Keycloak Operator documentation
+            },
             "db": {
                 "vendor": db_vendor,
                 "host": db_host,
@@ -4075,7 +4077,7 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
                 return {
                     'success': False,
                     'updated': False,
-                    'message': f"Failed to update Keycloak {name}: {str(e)}..."
+                    'message': f"Failed to update Keycloak {name}: {str(e)[:50]}..."
                 }
         return {
             'success': True,
