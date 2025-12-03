@@ -68,7 +68,7 @@ create_keycloak_ingress:
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
     - namespace: {{ kcluster['ingress']['namespace'] }}
-    - cluster_name: {{kcluster['ingress']['name'] }}-cluster
+    - cluster_name: {{ kcluster['name'] }}-cluster
     - start_optimized: False
     - instances: 2
     - image: quay.io/keycloak/keycloak:{{ kcluster['version'] }}
