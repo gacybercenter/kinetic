@@ -58,7 +58,7 @@ create_keycloak_ingress:
                     service:
                       name: {{ kcluster['name'] }}-cluster-service
                       port:
-                        number: 5432
+                        number: 8443
         tls:
           - hosts:
               - {{ kcert['commonName'] }}
