@@ -55,9 +55,9 @@ create_keycloak_ingress:
                   pathType: Prefix
                   backend:
                     service:
-                      name: {{ kc-cluster['svc_name'] }}
+                      name: {{ kdb['db']['name'] }}-rw
                       port:
-                        number: {{ kc-cluster['svc_port'] }}
+                        number: 5432
         tls:
           - hosts:
               - {{ kcert['commonName'] }}
