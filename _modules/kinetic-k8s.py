@@ -3570,7 +3570,7 @@ def ingress_present(namespace, ingress_name, spec, annotations=None):
         return {
             'success': False,
             'updated': False,
-            'message': f"Ingress operation error: {str(e)[:50]}..."
+            'message': f"Ingress operation error: {str(e)[:100]}..."
         }
 def certmanager_certificate_present(namespace, certificate_name, spec, annotations=None):
     """
