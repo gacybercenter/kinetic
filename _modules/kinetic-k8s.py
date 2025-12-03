@@ -4058,7 +4058,7 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
                 return {
                     'success': False,
                     'updated': False,
-                    'message': f"Failed to create Keycloak {name}: {str(e)[:50]}..."
+                    'message': f"Failed to create Keycloak {name}: {str(e)[:100]}..."
                 }
         elif not matches:
             try:
