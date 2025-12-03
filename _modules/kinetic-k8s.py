@@ -4101,23 +4101,23 @@ def certificate_present(namespace, certificate_name, common_name, email_address,
     """
     Ensure that a Cert-Manager Certificate resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
-    Also verifies that the associated Secret resource exists after Certificate creation.
+    Also checks if the associated Secret resource exists.
 
     Args:
         namespace (str): The namespace for the Certificate resource.
         certificate_name (str): The name of the Certificate resource.
         common_name (str): The Common Name (CN) for the certificate.
-        email_address (str): The email address for the certificate subject.
+        email_address (str): Ignored. Previously used for the certificate subject, now omitted for ACME compatibility.
         dns_name (str, optional): DNS name for the certificate. Defaults to None.
         duration (str, optional): Duration of the certificate validity. Defaults to "2160h" (90 days).
         renew_before (str, optional): Time before expiration to renew the certificate. Defaults to "360h" (15 days).
-        issuer_ref (str or dict or list, optional): Reference to the issuer for this certificate. Can be a string (name only, defaults to ClusterIssuer for 'self-signed'), or a dict/list with 'name' and 'kind'. Defaults to "self-signed".
+        issuer_ref (str or dict/list, optional): Reference to the issuer. Can be a string (name only), or a dict/list with 'name' and 'kind'. Defaults to "self-signed".
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_exists' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.certificate_present my-namespace my-cert "example.com" "admin@example.com" dns_name="www.example.com" issuer_ref="{'name': 'letsencrypt-stage', 'kind': 'ClusterIssuer'}"
+        salt '*' kinetic-k8s.certificate_present my-namespace my-cert example.com admin@example.com dns_name=www.example.com issuer_ref="{'name': 'letsencrypt-prod', 'kind': 'ClusterIssuer'}"
     """
     try:
         try:
@@ -4136,46 +4136,39 @@ def certificate_present(namespace, certificate_name, common_name, email_address,
         matches = False
         secret_exists = False
 
-        # Process issuer_ref to extract name and kind
+        # Parse issuer_ref to extract name and kind
         issuer_name = "self-signed"
-        issuer_kind = "ClusterIssuer"  # Default for self-signed or when not specified
-
-        if isinstance(issuer_ref, str):
+        issuer_kind = "Issuer"
+        if isinstance(issuer_ref, (dict, list)):
+            if isinstance(issuer_ref, dict):
+                issuer_name = issuer_ref.get('name', 'self-signed')
+                issuer_kind = issuer_ref.get('kind', 'Issuer')
+            else:  # list format as in pillar example
+                for item in issuer_ref:
+                    if 'name' in item:
+                        issuer_name = item['name']
+                    if 'kind' in item:
+                        issuer_kind = item['kind']
+        else:
             issuer_name = issuer_ref
-            issuer_kind = "Issuer" if issuer_ref != "self-signed" else "ClusterIssuer"
-        elif isinstance(issuer_ref, dict):
-            issuer_name = issuer_ref.get('name', 'self-signed')
-            issuer_kind = issuer_ref.get('kind', 'Issuer' if issuer_name != 'self-signed' else 'ClusterIssuer')
-        elif isinstance(issuer_ref, list):
-            issuer_name_dict = next((item for item in issuer_ref if isinstance(item, dict) and 'name' in item), {})
-            issuer_kind_dict = next((item for item in issuer_ref if isinstance(item, dict) and 'kind' in item), {})
-            issuer_name = issuer_name_dict.get('name', 'self-signed')
-            issuer_kind = issuer_kind_dict.get('kind', 'Issuer' if issuer_name != 'self-signed' else 'ClusterIssuer')
 
-        # Build the spec for the certificate
-        secret_name = f"{certificate_name}-tls"
+        # Ensure dnsNames includes common_name if applicable for ACME
+        dns_names = [common_name]
+        if dns_name and dns_name not in dns_names:
+            dns_names.append(dns_name)
+
+        # Build the spec for Certificate (email_address is ignored for ACME compatibility)
         spec = {
+            "secretName": certificate_name,
             "commonName": common_name,
-            "secretName": secret_name,
+            "dnsNames": dns_names,
             "duration": duration,
             "renewBefore": renew_before,
             "issuerRef": {
                 "name": issuer_name,
                 "kind": issuer_kind
-            },
-            "emailAddresses": [email_address]
+            }
         }
-        
-        # Ensure common_name is in dnsNames list
-        if dns_name:
-            # If dns_name is provided, create a list and append common_name if it's not already included
-            dns_names = [dns_name] if isinstance(dns_name, str) else dns_name
-            if common_name not in dns_names:
-                dns_names.append(common_name)
-            spec["dnsNames"] = dns_names
-        else:
-            # If no dns_name is provided, create a list with just common_name
-            spec["dnsNames"] = [common_name]
 
         # Check if Certificate exists
         try:
@@ -4202,6 +4195,21 @@ def certificate_present(namespace, certificate_name, common_name, email_address,
                     'message': f"Error checking Certificate {certificate_name}: {str(e)[:50]}..."
                 }
 
+        # Check if associated Secret exists
+        try:
+            core_v1_api.read_namespaced_secret(name=certificate_name, namespace=namespace)
+            secret_exists = True
+        except ApiException as e:
+            if e.status == 404:
+                secret_exists = False
+            else:
+                return {
+                    'success': False,
+                    'updated': False,
+                    'secret_exists': False,
+                    'message': f"Error checking Secret {certificate_name}: {str(e)[:50]}..."
+                }
+
         # Create or update Certificate
         body = {
             "apiVersion": f"{group}/{version}",
@@ -4224,7 +4232,7 @@ def certificate_present(namespace, certificate_name, common_name, email_address,
                 return {
                     'success': False,
                     'updated': False,
-                    'secret_exists': False,
+                    'secret_exists': secret_exists,
                     'message': f"Failed to create Certificate {certificate_name}: {str(e)[:50]}..."
                 }
         elif not matches:
@@ -4241,23 +4249,9 @@ def certificate_present(namespace, certificate_name, common_name, email_address,
                 return {
                     'success': False,
                     'updated': False,
-                    'secret_exists': False,
+                    'secret_exists': secret_exists,
                     'message': f"Failed to update Certificate {certificate_name}: {str(e)[:50]}..."
                 }
-
-        # Check if the associated Secret exists
-        try:
-            core_v1_api.read_namespaced_secret(name=secret_name, namespace=namespace)
-            secret_exists = True
-            message += f"; Secret {secret_name} exists"
-        except ApiException as e:
-            if e.status == 404:
-                secret_exists = False
-                message += f"; Secret {secret_name} does not exist yet (Cert-Manager may still be processing the certificate)"
-            else:
-                secret_exists = False
-                message += f"; Error checking Secret {secret_name}: {str(e)[:50]}..."
-
         return {
             'success': True,
             'updated': updated,
