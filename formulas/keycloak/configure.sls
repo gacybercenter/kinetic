@@ -35,7 +35,7 @@ create_auth_pg_cluster:
 create_keycloak_cert:
   k8s.certificate_present:
     - namespace: {{ kcert['namespace'] }}
-    - name: {{ kcert['name'] }}
+    - name: {{ kcert['name'] }}-tls
     - certificate_name: {{ kcert['name'] }} 
     - common_name: {{ kcert['commonName'] }}
     - email_address: {{ kcert['emailAddress'] }}
