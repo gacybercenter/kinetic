@@ -62,7 +62,7 @@ create_keycloak_ingress:
         tls:
           - hosts:
               - {{ kcert['commonName'] }}
-            secretName: {{ kcert['name'] }}-tls
+            secretName: {{ kcert['name'] }}
     - annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /
         kubernetes.io/ingress.class: nginx
