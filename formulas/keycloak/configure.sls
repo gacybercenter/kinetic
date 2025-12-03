@@ -11,7 +11,7 @@ ensure_keycloak_namespace:
 create_dbsuperuser_secret:
   k8s.secret_present:
     - namespace: {{ pillar['kc-db']['namespace'] }}
-    - secret_name: {{ kdb['superuser'] }}-superuser
+    - secret_name: {{ kdb['name'] }}-superuser
     - data:
         username: {{ pillar['kc-db']['dbsuperuser']['user'] }}
         password: {{ pillar['kc-db']['dbsuperuser']['password'] }}
@@ -64,7 +64,7 @@ create_keycloak_ingress:
             secretName: {{ kcert['name'] }}-tls
     - annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /
-{% set dkcluster = pillar['kc-cluster'] %}
+{% set kcluster = pillar['kc-cluster'] %}
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
     - namespace: {{ kcluster['namespace'] }}
