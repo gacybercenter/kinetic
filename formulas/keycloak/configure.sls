@@ -64,7 +64,7 @@ create_keycloak_ingress:
             secretName: {{ kcert['name'] }}-tls
     - annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /
-{% kcluster = pillar['kc-cluster'] %}
+{% set dkcluster = pillar['kc-cluster'] %}
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
     - namespace: {{ kcluster['namespace'] }}
