@@ -2,6 +2,7 @@ include:
   - /formulas/keycloak/install
 
 # Ensure the namespace for Keycloak exists
+{% set kcluster = pillar['kc-cluster'] %}
 {% set kdb = pillar['kc-db'] %}
 ensure_keycloak_namespace:
   k8s.namespace_present:
@@ -65,7 +66,6 @@ create_keycloak_ingress:
     - annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /
         kubernetes.io/ingress.class: nginx
-{% set kcluster = pillar['kc-cluster'] %}
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
     - namespace: {{ kcluster['ingress']['namespace'] }}
