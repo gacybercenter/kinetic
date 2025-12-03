@@ -2,15 +2,16 @@ include:
   - /formulas/keycloak/install
 
 # Ensure the namespace for Keycloak exists
+{% set kdb = pillar['kc-db'] %}
 ensure_keycloak_namespace:
   k8s.namespace_present:
-    - namespace: {{ pillar['kc-db']['namespace'] }}
+    - namespace: {{ kdb['namespace'] }}
 
 # Create a Kubernetes Secret for the database superuser credentials
 create_dbsuperuser_secret:
   k8s.secret_present:
     - namespace: {{ pillar['kc-db']['namespace'] }}
-    - secret_name: auth-superuser
+    - secret_name: {{ kdb['superuser'] }}-superuser
     - data:
         username: {{ pillar['kc-db']['dbsuperuser']['user'] }}
         password: {{ pillar['kc-db']['dbsuperuser']['password'] }}
@@ -63,3 +64,20 @@ create_keycloak_ingress:
             secretName: {{ kcert['name'] }}-tls
     - annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /
+{% kcluster = pillar['kc-cluster'] %}
+ensure_keycloak_cluster:
+  k8s.keycloak_cluster_present:
+    - namespace: {{ kcluster['namespace'] }}
+    - cluster_name: {{kcluster['name'] }}-cluster
+    - start_optimized: False
+    - instances: 2
+    - image: quay.io/keycloak/keycloak:{{ kcluster['version'] }}
+    - db_vendor: postgres
+    - db_host: {{kdb['db']['name'] }}
+    - db_port: 5432
+    - db_user_name_secret_name: {{ kdb['dbsuperuser']['spec']['superuserSecret']['name'] }}
+    - db_user_name_secret_key: username
+    - db_password_secret_name: {{ kdb['dbsuperuser']['spec']['superuserSecret']['name'] }}
+    - db_password_secret_key: password
+    - ingress_enabled: False
+    - proxy_headers: xforwarded
