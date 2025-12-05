@@ -61,8 +61,6 @@ install_traefik_internal_ingress_controller:
           name: traefik-internal
           isDefaultClass: false
         additionalArguments:
-          - "--entryPoints.web.address=:80"
-          - "--entryPoints.websecure.address=:443"
     - wait_timeout: 300
     - wait_interval: 10
     - require:
@@ -82,9 +80,6 @@ install_traefik_external_ingress_controller:
         ingressClass:
           name: traefik-external
           isDefaultClass: false
-        additionalArguments:
-          - "--entryPoints.web.address=:80"
-          - "--entryPoints.websecure.address=:443"
     - wait_timeout: 300
     - wait_interval: 10
     - require:
