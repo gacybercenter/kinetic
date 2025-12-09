@@ -18,6 +18,8 @@ add_metallb_repo:
     - repo_url: https://metallb.github.io/metallb
     - require:
       - test: helm_installed
+{% set internal_ip = pillar['res-k8s']['lbs']['internal']['ip'] %}
+{% set external_ip = pillar['res-k8s']['lbs']['external']['ip'] %}
 
 # Add the Traefik Ingress Controller Helm repository
 add_traefik_ingress_repo:
@@ -56,6 +58,7 @@ install_traefik_internal_ingress_controller:
     - values_dict:
         service:
           type: {{ pillar.get('traefik_internal_service_type', 'LoadBalancer') }}
+          loadBalancerIP: {{ internal_ip }}
         replicas: {{ pillar.get('traefik_internal_replica_count', 2) }}
         ingressClass:
           name: traefik-internal
@@ -76,6 +79,7 @@ install_traefik_external_ingress_controller:
     - values_dict:
         service:
           type: {{ pillar.get('traefik_external_service_type', 'LoadBalancer') }}
+          loadBalancerIP: {{ external_ip }}
         replicas: {{ pillar.get('traefik_external_replica_count', 2) }}
         ingressClass:
           name: traefik-external
