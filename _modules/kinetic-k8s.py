@@ -3764,7 +3764,7 @@ def cnpg_cluster_present(namespace, cluster_name, spec):
                 return {
                     'success': False,
                     'updated': False,
-                    'message': f"Failed to create Cluster {cluster_name}: {str(e)[:50]}..."
+                    'message': f"Failed to create Cluster {cluster_name}: {str(e)[:100]}..."
                 }
         elif not matches:
             try:
