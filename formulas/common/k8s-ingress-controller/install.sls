@@ -58,7 +58,8 @@ install_traefik_internal_ingress_controller:
     - values_dict:
         service:
           type: {{ pillar.get('traefik_internal_service_type', 'LoadBalancer') }}
-          loadBalancerIP: {{ internal_ip }}
+          spec:
+            loadBalancerIP: {{ internal_ip }}
         replicas: {{ pillar.get('traefik_internal_replica_count', 2) }}
         ingressClass:
           name: traefik-internal
