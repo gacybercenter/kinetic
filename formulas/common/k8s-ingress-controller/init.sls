@@ -1,2 +1,2 @@
 include:
-  - /formulas/common/k8s-nginx-controller/configure
+  - /formulas/common/k8s-ingress-controller/configure
