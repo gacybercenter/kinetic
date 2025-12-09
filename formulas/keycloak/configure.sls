@@ -83,5 +83,5 @@ ensure_keycloak_cluster:
     - db_password_secret_name: {{ kdb['db']['spec']['superuserSecret']['name'] }}
     - db_password_secret_key: password
     - ingress_enabled: False
-    - proxy_headers: xforwarded
+    - proxy_headers: forwarded
     - tls_secret: {{ kcert['name'] }}-tls
