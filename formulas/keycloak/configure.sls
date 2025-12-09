@@ -36,7 +36,7 @@ create_keycloak_cert:
   k8s.certificate_present:
     - namespace: {{ kcert['namespace'] }}
     - name: {{ kcert['name'] }}-tls
-    - certificate_name: {{ kcert['name'] }} 
+    - certificate_name: {{ kcert['name'] }}-tls
     - common_name: {{ kcert['commonName'] }}
     - email_address: {{ kcert['emailAddress'] }}
     - issuer_ref: 
@@ -62,10 +62,10 @@ create_keycloak_ingress:
         tls:
           - hosts:
               - {{ kcert['commonName'] }}
-            secretName: {{ kcert['name'] }}
+            secretName: {{ kcert['name'] }}-tls
     - annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /
-        kubernetes.io/ingress.class: nginx
+        kubernetes.io/ingress.class: traefik-external
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
     - namespace: {{ kcluster['ingress']['namespace'] }}
