@@ -48,7 +48,7 @@ create_keycloak_ingress:
     - namespace: {{ kcert['namespace'] }}
     - ingress_name: {{ kcert['name'] }}-ingress
     - spec:
-        ingress_class_name: taefik-external
+        ingress_class_name: traefik-external
         rules:
           - host: {{ kcert['commonName'] }}
             http:
