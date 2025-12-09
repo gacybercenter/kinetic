@@ -48,6 +48,7 @@ create_keycloak_ingress:
     - namespace: {{ kcert['namespace'] }}
     - ingress_name: {{ kcert['name'] }}-ingress
     - spec:
+        ingressClassName: taefik-external
         rules:
           - host: {{ kcert['commonName'] }}
             http:
@@ -74,7 +75,7 @@ ensure_keycloak_cluster:
     - instances: 2
     - image: quay.io/keycloak/keycloak:{{ kcluster['version'] }}
     - db_vendor: postgres
-    - db_host: {{kdb['db']['name'] }}
+    - db_host: {{kdb['db']['name'] }}-rw
     - db_port: 5432
     - db_user_name_secret_name: {{ kdb['db']['spec']['superuserSecret']['name'] }}
     - db_user_name_secret_key: username
