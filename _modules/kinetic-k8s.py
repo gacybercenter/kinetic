@@ -4026,7 +4026,7 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
                 "host": db_host,
                 "port": db_port,
                 "database": db_name,  # Added database name field
-                "userNameSecret": {
+                "usernameSecret": {
                     "name": db_user_name_secret_name,
                     "key": db_user_name_secret_key
                 },
