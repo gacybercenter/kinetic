@@ -79,7 +79,8 @@ install_traefik_external_ingress_controller:
     - values_dict:
         service:
           type: {{ pillar.get('traefik_external_service_type', 'LoadBalancer') }}
-          loadBalancerIP: {{ external_ip }}
+          spec:
+            loadBalancerIP: {{ external_ip }}
         replicas: {{ pillar.get('traefik_external_replica_count', 2) }}
         ingressClass:
           name: traefik-external
