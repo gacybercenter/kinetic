@@ -3918,33 +3918,59 @@ def secret_present(namespace, secret_name, data, secret_type='Opaque', labels=No
             'updated': False,
             'message': f"Secret operation error: {str(e)[:50]}..."
         }
-def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
+        
+def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name="keycloak", db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
     """
     Ensure that a Keycloak Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
 
-    Args:
-        namespace (str): The namespace for the Keycloak resource.
-        name (str): The name of the Keycloak resource.
-        start_optimized (bool, optional): Whether to start Keycloak with optimized settings. Defaults to False.
-        instances (int, optional): Number of Keycloak instances. Defaults to 2.
-        image (str, optional): The Docker image for Keycloak. Required, no default.
-        db_vendor (str, optional): Database vendor for Keycloak. Defaults to "postgres".
-        db_host (str, optional): Database host for Keycloak. Required, no default.
-        db_port (int, optional): Database port for Keycloak. Defaults to 5432.
-        db_user_name_secret_name (str, optional): Name of the Secret containing the database username. Required, no default.
-        db_user_name_secret_key (str, optional): Key in the Secret for the database username. Required, no default.
-        db_password_secret_name (str, optional): Name of the Secret containing the database password. Required, no default.
-        db_password_secret_key (str, optional): Key in the Secret for the database password. Required, no default.
-        ingress_enabled (bool, optional): Whether to enable ingress for Keycloak. Defaults to False.
-        proxy_headers (str, optional): Proxy headers setting for Keycloak. Defaults to "xforwarded".
-        tls_secret (str, optional): Name of the TLS Secret for securing HTTP traffic. Defaults to None.
+    namespace
+        The namespace for the Keycloak resource.
 
-    Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+    name
+        The name of the Keycloak resource.
 
-    CLI Example:
-        salt '*' kinetic-k8s.keycloak_cluster_present keycloak keycloak-cluster start_optimized=False instances=2 image="quay.io/keycloak/keycloak:22.0.1" db_host="postgres-service" db_user_name_secret_name="keycloak-db-credentials" db_user_name_secret_key="username" db_password_secret_name="keycloak-db-credentials" db_password_secret_key="password" tls_secret="keycloak-tls"
+    start_optimized
+        Optional. Whether to start Keycloak with optimized settings. Defaults to False.
+
+    instances
+        Optional. Number of Keycloak instances. Defaults to 2.
+
+    image
+        Required. The Docker image for Keycloak.
+
+    db_vendor
+        Optional. Database vendor for Keycloak. Defaults to "postgres".
+
+    db_host
+        Required. Database host for Keycloak.
+
+    db_port
+        Optional. Database port for Keycloak. Defaults to 5432.
+
+    db_name
+        Optional. Database name for Keycloak. Defaults to "keycloak".
+
+    db_user_name_secret_name
+        Required. Name of the Secret containing the database username.
+
+    db_user_name_secret_key
+        Required. Key in the Secret for the database username.
+
+    db_password_secret_name
+        Required. Name of the Secret containing the database password.
+
+    db_password_secret_key
+        Required. Key in the Secret for the database password.
+
+    ingress_enabled
+        Optional. Whether to enable ingress for Keycloak. Defaults to False.
+
+    proxy_headers
+        Optional. Proxy headers setting for Keycloak. Defaults to "xforwarded".
+
+    tls_secret
+        Optional. Name of the TLS Secret for securing HTTP traffic. Defaults to None.
     """
     try:
         try:
@@ -3999,6 +4025,7 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
                 "vendor": db_vendor,
                 "host": db_host,
                 "port": db_port,
+                "database": db_name,  # Added database name field
                 "userNameSecret": {
                     "name": db_user_name_secret_name,
                     "key": db_user_name_secret_key
@@ -4097,6 +4124,7 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
             'updated': False,
             'message': f"Keycloak operation error: {str(e)[:50]}..."
         }
+
 def certificate_present(namespace, certificate_name, common_name, email_address, dns_name=None, duration="2160h", renew_before="360h", issuer_ref="self-signed"):
     """
     Ensure that a Cert-Manager Certificate resource exists in the specified namespace.

@@ -77,6 +77,7 @@ ensure_keycloak_cluster:
     - db_vendor: postgres
     - db_host: {{ kdb['db']['name'] }}-rw
     - db_port: 5432
+    - db_name: {{ kdb['db']['name'] }}
     - db_user_name_secret_name: {{ kdb['db']['spec']['superuserSecret']['name'] }}
     - db_user_name_secret_key: username
     - db_password_secret_name: {{ kdb['db']['spec']['superuserSecret']['name'] }}

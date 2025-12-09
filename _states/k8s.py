@@ -1922,7 +1922,7 @@ def secret_present(name, namespace, secret_name, data, secret_type='Opaque', lab
 
     return ret
 
-def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
+def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name="keycloak", db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
     """
     Ensure that a Keycloak Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -1954,6 +1954,9 @@ def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=Fals
     db_port
         Optional. Database port for Keycloak. Defaults to 5432.
 
+    db_name
+        Optional. Database name for Keycloak. Defaults to "keycloak".
+
     db_user_name_secret_name
         Required. Name of the Secret containing the database username.
 
@@ -1974,27 +1977,6 @@ def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=Fals
 
     tls_secret
         Optional. Name of the TLS Secret for securing HTTP traffic. Defaults to None.
-
-    Example:
-    .. code-block:: yaml
-
-        ensure_keycloak_cluster:
-          k8s.keycloak_cluster_present:
-            - namespace: keycloak
-            - cluster_name: keycloak-cluster
-            - start_optimized: False
-            - instances: 2
-            - image: quay.io/keycloak/keycloak:22.0.1
-            - db_vendor: postgres
-            - db_host: postgres-service
-            - db_port: 5432
-            - db_user_name_secret_name: keycloak-db-credentials
-            - db_user_name_secret_key: username
-            - db_password_secret_name: keycloak-db-credentials
-            - db_password_secret_key: password
-            - ingress_enabled: False
-            - proxy_headers: xforwarded
-            - tls_secret: keycloak-tls
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
@@ -2008,6 +1990,7 @@ def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=Fals
             db_vendor=db_vendor,
             db_host=db_host,
             db_port=db_port,
+            db_name=db_name,  # Added parameter for database name
             db_user_name_secret_name=db_user_name_secret_name,
             db_user_name_secret_key=db_user_name_secret_key,
             db_password_secret_name=db_password_secret_name,
