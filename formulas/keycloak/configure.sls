@@ -57,7 +57,7 @@ create_keycloak_ingress:
                   pathType: Prefix
                   backend:
                     service:
-                      name: {{ kcluster['name'] }}-cluster-service
+                      name: {{ kcluster['name'] }}-service
                       port:
                         number: 8443
         tls:
