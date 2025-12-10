@@ -48,8 +48,6 @@ create_keycloak_admin_ingress:
     - namespace: {{ kcert['namespace'] }}
     - ingress_name: {{ kcert['name'] }}-ingress
     - spec:
-        annotations:
-          nginx.ingress.kubernetes.io/whitelist-source-range: "192.168.31.0/24"
         ingress_class_name: traefik-external
         rules:
           - host: {{ kcert['commonName'] }}
@@ -62,6 +60,8 @@ create_keycloak_admin_ingress:
                       name: {{ kcert['name'] }}-service
                       port:
                         number: 9000
+    - annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: "192.168.31.0/24"
 
 create_keycloak_ingress:
   k8s.ingress_present:
