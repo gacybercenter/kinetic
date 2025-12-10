@@ -56,6 +56,9 @@ install_traefik_internal_ingress_controller:
     - chart_name: traefik/traefik
     - namespace: {{ pillar.get('traefik_internal_namespace', 'internal-ingress') }}
     - values_dict:
+        logs:
+          general:
+            level: DEBUG
         service:
           type: {{ pillar.get('traefik_internal_service_type', 'LoadBalancer') }}
           spec:
@@ -79,6 +82,9 @@ install_traefik_external_ingress_controller:
     - chart_name: traefik/traefik
     - namespace: {{ pillar.get('traefik_external_namespace', 'external-ingress') }}
     - values_dict:
+        logs:
+          general:
+            level: DEBUG
         service:
           type: {{ pillar.get('traefik_external_service_type', 'LoadBalancer') }}
           spec:
