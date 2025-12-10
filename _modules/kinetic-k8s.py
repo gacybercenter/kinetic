@@ -3557,7 +3557,7 @@ def ingress_present(namespace, ingress_name, spec, annotations=None):
                 return {
                     'success': False,
                     'updated': False,
-                    'message': f"Failed to update Ingress {ingress_name}: {str(e)[:50]}..."
+                    'message': f"Failed to update Ingress {ingress_name}: {str(e)}..."
                 }
 
         return {
