@@ -60,6 +60,13 @@ create_keycloak_ingress:
                       name: {{ kcluster['name'] }}-cluster-service
                       port:
                         number: 8443
+                - path: /admin
+                  pathType: Prefix
+                  backend:
+                    service.dead:
+                      name: {{ kcluster['name'] }}-cluster-service
+                      port:
+                        name: 9000
         tls:
           - hosts:
               - {{ kcert['commonName'] }}
