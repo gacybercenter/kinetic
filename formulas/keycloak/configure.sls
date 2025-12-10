@@ -39,9 +39,32 @@ create_keycloak_cert:
     - certificate_name: {{ kcert['name'] }}-tls
     - common_name: {{ kcert['commonName'] }}
     - email_address: {{ kcert['emailAddress'] }}
+    - dns_name: {{ kcert['adminCommonName']}}
     - issuer_ref: 
       - name: {{ kcert['issuerRef']['name'] }}
       - kind: {{ kcert['issuerRef']['kind'] }}
+
+create_keycloak_ingress_internal:
+  k8s.ingress_present:
+    - namespace: {{ kcert['namespace'] }}
+    - ingress_name: {{ kcert['name'] }}-internal-ingress
+    - spec:
+        ingress_class_name: traefik-internal
+        rules:
+          - host: {{ kcert['commonName'] }}
+            http:
+              paths:
+                - path: /admin
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: {{ kcert['name'] }}-service
+                      port:
+                        number: 9000
+        tls:
+          - hosts:
+              - {{ kcert['commonName'] }}
+            secretName: {{ kcert['name'] }}-tls
 
 create_keycloak_ingress:
   k8s.ingress_present:
@@ -64,9 +87,6 @@ create_keycloak_ingress:
           - hosts:
               - {{ kcert['commonName'] }}
             secretName: {{ kcert['name'] }}-tls
-    - annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /
-        kubernetes.io/ingress.class: traefik-external
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
     - namespace: {{ kcluster['ingress']['namespace'] }}
