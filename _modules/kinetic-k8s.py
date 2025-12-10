@@ -4019,7 +4019,10 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
             "instances": instances,
             "image": image,
             "hostname": {
-                "hostname": name  # Nested hostname as per Keycloak Operator documentation
+                "hostname": 'https://' + name  # Nested hostname as per Keycloak Operator documentation
+                "admin": 'https://' + name + '/admin'
+                "strict": false
+                "backchannelDynamic": true
             },
             "db": {
                 "vendor": db_vendor,
