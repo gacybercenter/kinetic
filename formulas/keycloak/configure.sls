@@ -46,7 +46,7 @@ create_keycloak_cert:
 create_keycloak_admin_ingress:
   k8s.ingress_present:
     - namespace: {{ kcert['namespace'] }}
-    - ingress_name: {{ kcert['name'] }}-ingress
+    - ingress_name: {{ kcert['name'] }}-admin-ingress
     - spec:
         ingress_class_name: traefik-external
         rules:
