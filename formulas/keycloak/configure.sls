@@ -43,7 +43,7 @@ create_keycloak_cert:
       - name: {{ kcert['issuerRef']['name'] }}
       - kind: {{ kcert['issuerRef']['kind'] }}
 
-create_keycloak_ingress:
+create_keycloak_admin_ingress:
   k8s.ingress_present:
     - namespace: {{ kcert['namespace'] }}
     - ingress_name: {{ kcert['name'] }}-ingress
