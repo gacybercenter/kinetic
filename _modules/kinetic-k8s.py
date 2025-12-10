@@ -3543,7 +3543,7 @@ def ingress_present(namespace, ingress_name, spec, annotations=None):
                 return {
                     'success': False,
                     'updated': False,
-                    'message': f"Failed to create Ingress {ingress_name}: {str(e)[:100]}..."
+                    'message': f"Failed to create Ingress {ingress_name}: {str(e)}..."
                 }
         elif not matches:
             try:
