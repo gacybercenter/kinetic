@@ -4021,8 +4021,8 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
             "hostname": {
                 "hostname": 'https://' + name,  # Nested hostname as per Keycloak Operator documentation
                 "admin": 'https://' + name + '/admin',
-                "strict": false,
-                "backchannelDynamic": true
+                "strict": "false",
+                "backchannelDynamic": "true"
             },
             "db": {
                 "vendor": db_vendor,
