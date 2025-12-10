@@ -4023,7 +4023,6 @@ def keycloak_cluster_present(namespace, name, hostname, start_optimized=False, i
             "hostname": {
                 "hostname": 'https://' + hostname,  # Nested hostname as per Keycloak Operator documentation
                 "admin": 'https://' + hostname + '/admin',
-                "strict": False,
                 "backchannelDynamic": True
             },
             "db": {
