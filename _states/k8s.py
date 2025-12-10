@@ -1922,14 +1922,15 @@ def secret_present(name, namespace, secret_name, data, secret_type='Opaque', lab
 
     return ret
 
-def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name="keycloak", db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
+def keycloak_cluster_present(name, namespace, hostname, cluster_name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name="keycloak", db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
     """
     Ensure that a Keycloak Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
 
     name
         The name of the state (arbitrary, for SaltStack identification).
-
+    hostname
+        the FQDN of the cluster
     namespace
         The namespace for the Keycloak resource.
 
@@ -1984,6 +1985,7 @@ def keycloak_cluster_present(name, namespace, cluster_name, start_optimized=Fals
         result = __salt__['kinetic-k8s.keycloak_cluster_present'](
             namespace=namespace,
             name=cluster_name,
+            hostname=hostname,
             start_optimized=start_optimized,
             instances=instances,
             image=image,

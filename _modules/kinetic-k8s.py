@@ -3919,7 +3919,7 @@ def secret_present(namespace, secret_name, data, secret_type='Opaque', labels=No
             'message': f"Secret operation error: {str(e)[:50]}..."
         }
         
-def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name="keycloak", db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
+def keycloak_cluster_present(namespace, name, hostname, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name="keycloak", db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
     """
     Ensure that a Keycloak Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -3929,6 +3929,8 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
 
     name
         The name of the Keycloak resource.
+    hostname
+        the fqdn of the service
 
     start_optimized
         Optional. Whether to start Keycloak with optimized settings. Defaults to False.
@@ -4019,8 +4021,8 @@ def keycloak_cluster_present(namespace, name, start_optimized=False, instances=2
             "instances": instances,
             "image": image,
             "hostname": {
-                "hostname": 'https://' + name,  # Nested hostname as per Keycloak Operator documentation
-                "admin": 'https://' + name + '/admin',
+                "hostname": 'https://' + hostname,  # Nested hostname as per Keycloak Operator documentation
+                "admin": 'https://' + hostname + '/admin',
                 "strict": False,
                 "backchannelDynamic": True
             },
