@@ -43,28 +43,6 @@ create_keycloak_cert:
       - name: {{ kcert['issuerRef']['name'] }}
       - kind: {{ kcert['issuerRef']['kind'] }}
 
-create_keycloak_ingress_internal:
-  k8s.ingress_present:
-    - namespace: {{ kcert['namespace'] }}
-    - ingress_name: {{ kcert['name'] }}-internal-ingress
-    - spec:
-        ingress_class_name: traefik-internal
-        rules:
-          - host: {{ kcert['commonName'] }}
-            http:
-              paths:
-                - path: /admin
-                  pathType: Prefix
-                  backend:
-                    service:
-                      name: {{ kcert['name'] }}-service
-                      port:
-                        number: 9000
-        tls:
-          - hosts:
-              - {{ kcert['commonName'] }}
-            secretName: {{ kcert['name'] }}-tls
-
 create_keycloak_ingress:
   k8s.ingress_present:
     - namespace: {{ kcert['namespace'] }}
