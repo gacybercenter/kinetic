@@ -28,7 +28,5 @@ install_openldap_ha:
     - keep_values_file: False
     - require:
       - k8s_helm: add_openldap_repo
-
-
     - require:
       - k8s_helm: install_openldap_ha
