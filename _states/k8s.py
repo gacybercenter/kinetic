@@ -6,19 +6,22 @@ This module provides states for managing Bare Metal Hosts (BMH), Secrets for net
 BMC authentication, and UUIDs, as well as querying hardware data from Kubernetes Custom Resources.
 """
 
-from salt.exceptions import SaltInvocationError
+import base64
+
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
-import base64
-__virtualname__ = 'k8s'
+
+__virtualname__ = "k8s"
+
 
 def __virtual__():
     """
     Check if the kinetic-k8s execution module is available.
-    """ 
-    if 'kubeadm.init' in __salt__:
+    """
+    if "kubeadm.init" in __salt__:
         return __virtualname__
-    return (False, 'The kubeadm execution module is not available.')
+    return (False, "The kubeadm execution module is not available.")
+
 
 def mac_by_interface_name(name, namespace, resource_name, interface_name):
     """
@@ -46,22 +49,25 @@ def mac_by_interface_name(name, namespace, resource_name, interface_name):
             - resource_name: compute-133-26
             - interface_name: enp97s0f0
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.get_mac_by_interface_name'](namespace, resource_name, interface_name)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['success']:
-            ret['changes'] = {'mac': result['mac']}
+        result = __salt__["kinetic-k8s.get_mac_by_interface_name"](
+            namespace, resource_name, interface_name
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["success"]:
+            ret["changes"] = {"mac": result["mac"]}
         else:
-            ret['changes'] = {}
+            ret["changes"] = {}
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to retrieve MAC address: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to retrieve MAC address: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
+
 
 def all_interfaces(name, namespace, resource_name):
     """
@@ -85,24 +91,32 @@ def all_interfaces(name, namespace, resource_name):
             - namespace: baremetal-operator-system
             - resource_name: compute-133-26
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.get_all_interfaces'](namespace, resource_name)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['success']:
-            ret['changes'] = {'interfaces': result['interfaces']}
+        result = __salt__["kinetic-k8s.get_all_interfaces"](namespace, resource_name)
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["success"]:
+            ret["changes"] = {"interfaces": result["interfaces"]}
         else:
-            ret['changes'] = {}
+            ret["changes"] = {}
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to retrieve interfaces: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to retrieve interfaces: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
 
-def bmh_present(name, namespace, bmh_name, pillar_data=None, pillar_key="bmh", bmh_template_path='salt://formulas/bmo/files/bmh.j2'):
+
+def bmh_present(
+    name,
+    namespace,
+    bmh_name,
+    pillar_data=None,
+    pillar_key="bmh",
+    bmh_template_path="salt://formulas/bmo/files/bmh.j2",
+):
     """
     Ensure that a Bare Metal Host (BMH) object in Kubernetes matches the desired state
     defined by pillar data and a Jinja2 template.
@@ -136,22 +150,30 @@ def bmh_present(name, namespace, bmh_name, pillar_data=None, pillar_key="bmh", b
             - bmh_name: compute-133-26
             - pillar_key: bmh
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
         # If pillar_data is not provided, fetch it using pillar_key and bmh_name
         if pillar_data is None:
             if pillar_key is None:
-                raise SaltInvocationError('Either pillar_data or pillar_key must be provided.')
+                raise SaltInvocationError(
+                    "Either pillar_data or pillar_key must be provided."
+                )
             # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__['pillar.get'](pillar_key, {})
+            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
             debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
             if isinstance(full_pillar_data, dict):
                 debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if 'bmh' in full_pillar_data and isinstance(full_pillar_data['bmh'], dict):
-                    debug_pillar_msg += f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    pillar_data = full_pillar_data['bmh'].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(full_pillar_data.get(bmh_name), dict):
+                if "bmh" in full_pillar_data and isinstance(
+                    full_pillar_data["bmh"], dict
+                ):
+                    debug_pillar_msg += (
+                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
+                    )
+                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
+                elif full_pillar_data.get(bmh_name) and isinstance(
+                    full_pillar_data.get(bmh_name), dict
+                ):
                     pillar_data = full_pillar_data.get(bmh_name, {})
                     debug_pillar_msg += f"direct host data for {bmh_name} found; "
                 else:
@@ -164,27 +186,37 @@ def bmh_present(name, namespace, bmh_name, pillar_data=None, pillar_key="bmh", b
             debug_pillar_msg = "Pillar data provided directly; "
 
         # Call the execution module function
-        result = __salt__['kinetic-k8s.bmh_present'](namespace, bmh_name, pillar_data, bmh_template_path)
+        result = __salt__["kinetic-k8s.bmh_present"](
+            namespace, bmh_name, pillar_data, bmh_template_path
+        )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        ret['comment'] += f" Debug: {debug_pillar_msg}"
-        if result['updated']:
-            ret['changes'] = {
-                'bmh_updated': True,
-                'recreated': result['recreated']
-            }
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        ret["comment"] += f" Debug: {debug_pillar_msg}"
+        if result["updated"]:
+            ret["changes"] = {"bmh_updated": True, "recreated": result["recreated"]}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure BMH {bmh_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure BMH {bmh_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
 
-def networkdata_present(name, namespace, bmh_name, defaults, pillar_data=None, pillar_key="bmh", network_template_path='salt://formulas/bmo/files/network-data.j2'):
+
+def networkdata_present(
+    name,
+    namespace,
+    bmh_name,
+    defaults,
+    pillar_data=None,
+    pillar_key="bmh",
+    network_template_path="salt://formulas/bmo/files/network-data.j2",
+):
     """
     Ensure that a network data Secret in Kubernetes matches the desired state
     defined by pillar data and a Jinja2 template.
@@ -228,22 +260,30 @@ def networkdata_present(name, namespace, bmh_name, defaults, pillar_data=None, p
                 nameserver: 8.8.8.8
             - pillar_key: bmh
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
         # If pillar_data is not provided, fetch it using pillar_key and bmh_name
         if pillar_data is None:
             if pillar_key is None:
-                raise SaltInvocationError('Either pillar_data or pillar_key must be provided.')
+                raise SaltInvocationError(
+                    "Either pillar_data or pillar_key must be provided."
+                )
             # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__['pillar.get'](pillar_key, {})
+            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
             debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
             if isinstance(full_pillar_data, dict):
                 debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if 'bmh' in full_pillar_data and isinstance(full_pillar_data['bmh'], dict):
-                    debug_pillar_msg += f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    pillar_data = full_pillar_data['bmh'].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(full_pillar_data.get(bmh_name), dict):
+                if "bmh" in full_pillar_data and isinstance(
+                    full_pillar_data["bmh"], dict
+                ):
+                    debug_pillar_msg += (
+                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
+                    )
+                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
+                elif full_pillar_data.get(bmh_name) and isinstance(
+                    full_pillar_data.get(bmh_name), dict
+                ):
                     pillar_data = full_pillar_data.get(bmh_name, {})
                     debug_pillar_msg += f"direct host data for {bmh_name} found; "
                 else:
@@ -256,24 +296,38 @@ def networkdata_present(name, namespace, bmh_name, defaults, pillar_data=None, p
             debug_pillar_msg = "Pillar data provided directly; "
 
         # Call the execution module function
-        result = __salt__['kinetic-k8s.networkdata_present'](namespace, bmh_name, defaults, pillar_data, network_template_path)
+        result = __salt__["kinetic-k8s.networkdata_present"](
+            namespace, bmh_name, defaults, pillar_data, network_template_path
+        )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        ret['comment'] += f" Debug: {debug_pillar_msg}"
-        if result['updated']:
-            ret['changes'] = {'networkdata_updated': True}
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        ret["comment"] += f" Debug: {debug_pillar_msg}"
+        if result["updated"]:
+            ret["changes"] = {"networkdata_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure network data Secret for {bmh_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure network data Secret for {bmh_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
 
-def userdata_present(name, namespace, bmh_name, pillar_data=None, pillar_key="bmh", userdata_template_path='salt://formulas/bmo/files/cloudinit.j2'):
+
+def userdata_present(
+    name,
+    namespace,
+    bmh_name,
+    pillar_data=None,
+    pillar_key="bmh",
+    userdata_template_path="salt://formulas/bmo/files/cloudinit.j2",
+):
     """
     Ensure that a userdata Secret in Kubernetes matches the desired state
     defined by pillar data and a Jinja2 template.
@@ -307,22 +361,30 @@ def userdata_present(name, namespace, bmh_name, pillar_data=None, pillar_key="bm
             - bmh_name: compute-133-26
             - pillar_key: bmh
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
         # If pillar_data is not provided, fetch it using pillar_key and bmh_name
         if pillar_data is None:
             if pillar_key is None:
-                raise SaltInvocationError('Either pillar_data or pillar_key must be provided.')
+                raise SaltInvocationError(
+                    "Either pillar_data or pillar_key must be provided."
+                )
             # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__['pillar.get'](pillar_key, {})
+            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
             debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
             if isinstance(full_pillar_data, dict):
                 debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if 'bmh' in full_pillar_data and isinstance(full_pillar_data['bmh'], dict):
-                    debug_pillar_msg += f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    pillar_data = full_pillar_data['bmh'].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(full_pillar_data.get(bmh_name), dict):
+                if "bmh" in full_pillar_data and isinstance(
+                    full_pillar_data["bmh"], dict
+                ):
+                    debug_pillar_msg += (
+                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
+                    )
+                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
+                elif full_pillar_data.get(bmh_name) and isinstance(
+                    full_pillar_data.get(bmh_name), dict
+                ):
                     pillar_data = full_pillar_data.get(bmh_name, {})
                     debug_pillar_msg += f"direct host data for {bmh_name} found; "
                 else:
@@ -335,24 +397,39 @@ def userdata_present(name, namespace, bmh_name, pillar_data=None, pillar_key="bm
             debug_pillar_msg = "Pillar data provided directly; "
 
         # Call the execution module function
-        result = __salt__['kinetic-k8s.userdata_present'](namespace, bmh_name, pillar_data, userdata_template_path)
+        result = __salt__["kinetic-k8s.userdata_present"](
+            namespace, bmh_name, pillar_data, userdata_template_path
+        )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        ret['comment'] += f" Debug: {debug_pillar_msg}"
-        if result['updated']:
-            ret['changes'] = {'userdata_updated': True}
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        ret["comment"] += f" Debug: {debug_pillar_msg}"
+        if result["updated"]:
+            ret["changes"] = {"userdata_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure userdata Secret for {bmh_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure userdata Secret for {bmh_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
 
-def host_bmc_auth_present(name, namespace, bmh_name, ipmi, pillar_data=None, pillar_key="bmh", bmc_auth_template_path='salt://formulas/bmo/files/bmc-auth.j2'):
+
+def host_bmc_auth_present(
+    name,
+    namespace,
+    bmh_name,
+    ipmi,
+    pillar_data=None,
+    pillar_key="bmh",
+    bmc_auth_template_path="salt://formulas/bmo/files/bmc-auth.j2",
+):
     """
     Ensure that a host-specific BMC authentication Secret in Kubernetes matches the desired state
     defined by pillar data and a Jinja2 template.
@@ -390,22 +467,30 @@ def host_bmc_auth_present(name, namespace, bmh_name, ipmi, pillar_data=None, pil
             - ipmi: default_password
             - pillar_key: bmh
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
         # If pillar_data is not provided, fetch it using pillar_key and bmh_name
         if pillar_data is None:
             if pillar_key is None:
-                raise SaltInvocationError('Either pillar_data or pillar_key must be provided.')
+                raise SaltInvocationError(
+                    "Either pillar_data or pillar_key must be provided."
+                )
             # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__['pillar.get'](pillar_key, {})
+            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
             debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
             if isinstance(full_pillar_data, dict):
                 debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if 'bmh' in full_pillar_data and isinstance(full_pillar_data['bmh'], dict):
-                    debug_pillar_msg += f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    pillar_data = full_pillar_data['bmh'].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(full_pillar_data.get(bmh_name), dict):
+                if "bmh" in full_pillar_data and isinstance(
+                    full_pillar_data["bmh"], dict
+                ):
+                    debug_pillar_msg += (
+                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
+                    )
+                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
+                elif full_pillar_data.get(bmh_name) and isinstance(
+                    full_pillar_data.get(bmh_name), dict
+                ):
                     pillar_data = full_pillar_data.get(bmh_name, {})
                     debug_pillar_msg += f"direct host data for {bmh_name} found; "
                 else:
@@ -418,24 +503,43 @@ def host_bmc_auth_present(name, namespace, bmh_name, ipmi, pillar_data=None, pil
             debug_pillar_msg = "Pillar data provided directly; "
 
         # Call the execution module function
-        result = __salt__['kinetic-k8s.host_bmc_auth_present'](namespace, bmh_name, ipmi, pillar_data, bmc_auth_template_path)
+        result = __salt__["kinetic-k8s.host_bmc_auth_present"](
+            namespace, bmh_name, ipmi, pillar_data, bmc_auth_template_path
+        )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        ret['comment'] += f" Debug: {debug_pillar_msg}"
-        if result['updated']:
-            ret['changes'] = {'bmc_auth_updated': True}
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        ret["comment"] += f" Debug: {debug_pillar_msg}"
+        if result["updated"]:
+            ret["changes"] = {"bmc_auth_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure BMC auth Secret for {bmh_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure BMC auth Secret for {bmh_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
 
-def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="bmh", deployment_name="salt-master", wait_timeout=300, wait_interval=10, salt_check_timeout=120, salt_check_interval=5, salt_check_key="bmh"):
+
+def uuids_present(
+    name,
+    namespace,
+    secret_name,
+    pillar_data=None,
+    pillar_key="bmh",
+    deployment_name="salt-master",
+    wait_timeout=300,
+    wait_interval=10,
+    salt_check_timeout=120,
+    salt_check_interval=5,
+    salt_check_key="bmh",
+):
     """
     Ensure that a Kubernetes Secret with UUIDs is present and matches the desired state.
     If the secret is updated, the specified deployment will be restarted, and the state will wait
@@ -488,21 +592,27 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="bm
             - wait_timeout: 300
             - wait_interval: 10
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
         # If pillar_data is not provided, fetch it using pillar_key
         if pillar_data is None:
             if pillar_key is None:
-                raise SaltInvocationError('Either pillar_data or pillar_key must be provided.')
+                raise SaltInvocationError(
+                    "Either pillar_data or pillar_key must be provided."
+                )
             # Fetch the pillar data as a dictionary with the provided key
-            pillar_data = __salt__['pillar.get'](pillar_key, {})
+            pillar_data = __salt__["pillar.get"](pillar_key, {})
             debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(pillar_data).__name__}; "
             if isinstance(pillar_data, dict):
                 debug_pillar_msg += f"keys={list(pillar_data.keys())[:5]}; "
-                if 'bmh' in pillar_data and isinstance(pillar_data['bmh'], dict):
-                    debug_pillar_msg += f"bmh keys={list(pillar_data['bmh'].keys())[:5]}; "
-                elif pillar_data and any(isinstance(v, dict) and 'uuid' in v for v in pillar_data.values()):
+                if "bmh" in pillar_data and isinstance(pillar_data["bmh"], dict):
+                    debug_pillar_msg += (
+                        f"bmh keys={list(pillar_data['bmh'].keys())[:5]}; "
+                    )
+                elif pillar_data and any(
+                    isinstance(v, dict) and "uuid" in v for v in pillar_data.values()
+                ):
                     debug_pillar_msg += f"direct host data detected in keys; "
             else:
                 debug_pillar_msg += f"value preview={repr(pillar_data)[:50]}...; "
@@ -511,29 +621,59 @@ def uuids_present(name, namespace, secret_name, pillar_data=None, pillar_key="bm
                 pillar_data = {pillar_key: pillar_data}
 
         # Call the execution module function
-        result = __salt__['kinetic-k8s.uuids_secret_present'](namespace, secret_name, pillar_data, deployment_name, wait_timeout, wait_interval, salt_check_timeout, salt_check_interval, salt_check_key)
+        result = __salt__["kinetic-k8s.uuids_secret_present"](
+            namespace,
+            secret_name,
+            pillar_data,
+            deployment_name,
+            wait_timeout,
+            wait_interval,
+            salt_check_timeout,
+            salt_check_interval,
+            salt_check_key,
+        )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
         if pillar_data is not None and debug_pillar_msg:
-            ret['comment'] += f" Debug: {debug_pillar_msg}"
-        if result['updated']:
-            ret['changes'] = {
-                'secret_updated': True,
-                'deployment_restarted': result['restarted'],
-                'deployment_waited': result['waited'],
-                'salt_responded': result['salt_responded']
+            ret["comment"] += f" Debug: {debug_pillar_msg}"
+        if result["updated"]:
+            ret["changes"] = {
+                "secret_updated": True,
+                "deployment_restarted": result["restarted"],
+                "deployment_waited": result["waited"],
+                "salt_responded": result["salt_responded"],
             }
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Secret {secret_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Secret {secret_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
-def mariadb_instance_present(name, namespace, instance_name, root_password, secret_name="mariadb-root-password", image="mariadb:10.6", storage_size="1Gi", storage_class="standard", pvc_name=None, replicas=1, limits_cpu="500m", limits_memory="512Mi", requests_cpu="200m", requests_memory="256Mi", admin_host_access="%"):
+
+
+def mariadb_instance_present(
+    name,
+    namespace,
+    instance_name,
+    root_password,
+    secret_name="mariadb-root-password",
+    image="mariadb:10.6",
+    storage_size="1Gi",
+    storage_class="standard",
+    pvc_name=None,
+    replicas=1,
+    limits_cpu="500m",
+    limits_memory="512Mi",
+    requests_cpu="200m",
+    requests_memory="256Mi",
+    admin_host_access="%",
+):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
     Creates or updates a root password Secret and the MariaDB instance Custom Resource with specified storage class, size, and optional PVC name.
@@ -604,11 +744,11 @@ def mariadb_instance_present(name, namespace, instance_name, root_password, secr
             - requests_memory: 256Mi
             - admin_host_access: 192.168.1.41
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
         # Call the execution module function
-        result = __salt__['kinetic-k8s.mariadb_instance_present'](
+        result = __salt__["kinetic-k8s.mariadb_instance_present"](
             namespace=namespace,
             instance_name=instance_name,
             root_password=root_password,
@@ -622,28 +762,47 @@ def mariadb_instance_present(name, namespace, instance_name, root_password, secr
             limits_memory=limits_memory,
             requests_cpu=requests_cpu,
             requests_memory=requests_memory,
-            admin_host_access=admin_host_access
+            admin_host_access=admin_host_access,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated'] or result['secret_updated'] or result['root_access_updated']:
-            ret['changes'] = {
-                'instance_updated': result['updated'],
-                'secret_updated': result['secret_updated'],
-                'pvc_available': result['pvc_available'],
-                'root_access_updated': result['root_access_updated']
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if (
+            result["updated"]
+            or result["secret_updated"]
+            or result["root_access_updated"]
+        ):
+            ret["changes"] = {
+                "instance_updated": result["updated"],
+                "secret_updated": result["secret_updated"],
+                "pvc_available": result["pvc_available"],
+                "root_access_updated": result["root_access_updated"],
             }
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure MariaDB instance {instance_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure MariaDB instance {instance_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
-def local_storage_pv_pvc_present(name, namespace, pv_name, pvc_name, storage_size="1Gi", node_name=None, path="/mnt/local-storage", storage_class="local-storage"):
+
+
+def local_storage_pv_pvc_present(
+    name,
+    namespace,
+    pv_name,
+    pvc_name,
+    storage_size="1Gi",
+    node_name=None,
+    path="/mnt/local-storage",
+    storage_class="local-storage",
+):
     """
     Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using a specified storage class for local storage.
     The PV is tied to a local path for local storage. Checks if the local path exists on the node before proceeding.
@@ -685,30 +844,51 @@ def local_storage_pv_pvc_present(name, namespace, pv_name, pvc_name, storage_siz
             - path: /mnt/local-storage
             - storage_class: local-storage
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
         # Call the execution module function
-        result = __salt__['kinetic-k8s.local_storage_pv_pvc_present'](namespace, pv_name, pvc_name, storage_size, node_name, path, storage_class)
+        result = __salt__["kinetic-k8s.local_storage_pv_pvc_present"](
+            namespace, pv_name, pvc_name, storage_size, node_name, path, storage_class
+        )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['pv_updated'] or result['pvc_updated']:
-            ret['changes'] = {
-                'pv_updated': result['pv_updated'],
-                'pvc_updated': result['pvc_updated'],
-                'bound': result['bound']
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["pv_updated"] or result["pvc_updated"]:
+            ret["changes"] = {
+                "pv_updated": result["pv_updated"],
+                "pvc_updated": result["pvc_updated"],
+                "bound": result["bound"],
             }
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure local storage PV {pv_name} and PVC {pvc_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure local storage PV {pv_name} and PVC {pvc_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
-def ironic_db_user_present(name, namespace, mariadb_name, mariadb_namespace, user_name, user_password, secret_name, database_name="ironic-database", host="%", max_user_connections=100, privileges=["ALL PRIVILEGES"], table="*"):
+
+
+def ironic_db_user_present(
+    name,
+    namespace,
+    mariadb_name,
+    mariadb_namespace,
+    user_name,
+    user_password,
+    secret_name,
+    database_name="ironic-database",
+    host="%",
+    max_user_connections=100,
+    privileges=["ALL PRIVILEGES"],
+    table="*",
+):
     """
     Ensure that the necessary Kubernetes resources for an Ironic database user are present.
     This includes a Secret for user credentials, a User custom resource, and a Grant custom resource.
@@ -767,10 +947,10 @@ def ironic_db_user_present(name, namespace, mariadb_name, mariadb_namespace, use
               - ALL PRIVILEGES
             - table: '*'
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.ironic_db_user_setup'](
+        result = __salt__["kinetic-k8s.ironic_db_user_setup"](
             namespace=namespace,
             mariadb_name=mariadb_name,
             mariadb_namespace=mariadb_namespace,
@@ -781,28 +961,46 @@ def ironic_db_user_present(name, namespace, mariadb_name, mariadb_namespace, use
             host=host,
             max_user_connections=max_user_connections,
             privileges=privileges,
-            table=table
+            table=table,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['secret_updated'] or result['user_updated'] or result['grant_updated']:
-            ret['changes'] = {
-                'secret_updated': result['secret_updated'],
-                'user_updated': result['user_updated'],
-                'grant_updated': result['grant_updated']
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if (
+            result["secret_updated"]
+            or result["user_updated"]
+            or result["grant_updated"]
+        ):
+            ret["changes"] = {
+                "secret_updated": result["secret_updated"],
+                "user_updated": result["user_updated"],
+                "grant_updated": result["grant_updated"],
             }
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Ironic DB user setup for {user_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure Ironic DB user setup for {user_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
-def mariadb_database_present(name, namespace, database_name, mariadb_name, mariadb_namespace, character_set="utf8", collate="utf8_general_ci", cleanup_policy="Delete"):
 
+
+def mariadb_database_present(
+    name,
+    namespace,
+    database_name,
+    mariadb_name,
+    mariadb_namespace,
+    character_set="utf8",
+    collate="utf8_general_ci",
+    cleanup_policy="Delete",
+):
     """
     Ensure that a Database custom resource is present in Kubernetes using the MariaDB Operator.
     Creates or updates the Database resource to ensure a specific database exists in the MariaDB instance.
@@ -844,35 +1042,39 @@ def mariadb_database_present(name, namespace, database_name, mariadb_name, maria
             - collate: utf8_general_ci
             - cleanup_policy: Delete
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.mariadb_database_present'](
+        result = __salt__["kinetic-k8s.mariadb_database_present"](
             namespace=namespace,
             database_name=database_name,
             mariadb_name=mariadb_name,
             mariadb_namespace=mariadb_namespace,
             character_set=character_set,
             collate=collate,
-            cleanup_policy=cleanup_policy
+            cleanup_policy=cleanup_policy,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {
-                'database_updated': True
-            }
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"database_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Database {database_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Database {database_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
-def tls_secret_present(name, namespace, secret_name, common_name="ironic-operator", validity_days=365):
+
+
+def tls_secret_present(
+    name, namespace, secret_name, common_name="ironic-operator", validity_days=365
+):
     """
     Ensure that a Kubernetes Secret with a TLS key pair is present.
     Generates a private key and self-signed certificate, then stores them in the Secret.
@@ -902,32 +1104,39 @@ def tls_secret_present(name, namespace, secret_name, common_name="ironic-operato
             - common_name: ironic-operator
             - validity_days: 365
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.generate_tls_secret'](
+        result = __salt__["kinetic-k8s.generate_tls_secret"](
             namespace=namespace,
             secret_name=secret_name,
             common_name=common_name,
-            validity_days=validity_days
+            validity_days=validity_days,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {
-                'secret_updated': True
-            }
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"secret_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure TLS Secret {secret_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure TLS Secret {secret_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
-def ironic_operator_present(name, namespace="ironic-standalone-operator-system", deployment_name="ironic-standalone-operator-controller-manager", timeout=60):
+
+
+def ironic_operator_present(
+    name,
+    namespace="ironic-standalone-operator-system",
+    deployment_name="ironic-standalone-operator-controller-manager",
+    timeout=60,
+):
     """
     Ensure that the Ironic Operator is installed and available in Kubernetes by checking the deployment status.
 
@@ -949,26 +1158,65 @@ def ironic_operator_present(name, namespace="ironic-standalone-operator-system",
             - deployment_name: ironic-standalone-operator-controller-manager
             - timeout: 60
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.check_ironic_operator'](namespace, deployment_name, timeout)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
+        result = __salt__["kinetic-k8s.check_ironic_operator"](
+            namespace, deployment_name, timeout
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
         # Only report changes if needed; keep empty for check-only state
-        ret['changes'] = {}
+        ret["changes"] = {}
         # If the state fails, append a message with the command to run
-        if not result['success']:
-            ironic_op_dir = __salt__['pillar.get']('ironic_op_dir', '<path-to-ironic-operator-repo>')
-            ret['comment'] += f"; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {ironic_op_dir} to install it."
+        if not result["success"]:
+            ironic_op_dir = __salt__["pillar.get"](
+                "ironic_op_dir", "<path-to-ironic-operator-repo>"
+            )
+            ret["comment"] += (
+                f"; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {ironic_op_dir} to install it."
+            )
     except Exception as e:
-        ret['result'] = False
-        ironic_op_dir = __salt__['pillar.get']('ironic_op_dir', '<path-to-ironic-operator-repo>')
-        ret['comment'] = f"Failed to check Ironic Operator: {str(e)[:100]}...; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {ironic_op_dir} to install it."
-        ret['changes'] = {}
+        ret["result"] = False
+        ironic_op_dir = __salt__["pillar.get"](
+            "ironic_op_dir", "<path-to-ironic-operator-repo>"
+        )
+        ret["comment"] = (
+            f"Failed to check Ironic Operator: {str(e)[:100]}...; If the Ironic Operator is not installed, please run 'make install deploy' in the directory {ironic_op_dir} to install it."
+        )
+        ret["changes"] = {}
 
     return ret
-def ironic_instance_present(name, namespace, instance_name="ironic", database_secret_name="ironic-user", database_host="ironic-mariadb", database_port=3306, database_user="ironic", database_name="ironic", http_port=6385, networking_interface="", networking_ip="", networking_dhcp_range_start="", networking_dhcp_range_end="", networking_dhcp_range_gateway="", networking_dhcp_network_cidr="", networking_dhcp_serve_dns=False, networking_dhcp_dns_address="", inspection_dhcp_all_interfaces=False, enable_keepalived=False, keepalived_vip="", keepalived_interface="eth0", tls_secret_name="ironic-tls", ssh_public_key="", api_secret_name="ironic-api-creds", api_username="ironic", api_password=""):
+
+
+def ironic_instance_present(
+    name,
+    namespace,
+    instance_name="ironic",
+    database_secret_name="ironic-user",
+    database_host="ironic-mariadb",
+    database_port=3306,
+    database_user="ironic",
+    database_name="ironic",
+    http_port=6385,
+    networking_interface="",
+    networking_ip="",
+    networking_dhcp_range_start="",
+    networking_dhcp_range_end="",
+    networking_dhcp_range_gateway="",
+    networking_dhcp_network_cidr="",
+    networking_dhcp_serve_dns=False,
+    networking_dhcp_dns_address="",
+    inspection_dhcp_all_interfaces=False,
+    enable_keepalived=False,
+    keepalived_vip="",
+    keepalived_interface="eth0",
+    tls_secret_name="ironic-tls",
+    ssh_public_key="",
+    api_secret_name="ironic-api-creds",
+    api_username="ironic",
+    api_password="",
+):
     """
     Ensure that an Ironic instance is present in Kubernetes using the Ironic Standalone Operator.
     Configures database connection, networking, optional Keepalived for HA, TLS, SSH key for deploy ramdisk, and API credentials.
@@ -1082,10 +1330,10 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
             - api_username: ironic
             - api_password: mysecureapipassword
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.ironic_instance_present'](
+        result = __salt__["kinetic-k8s.ironic_instance_present"](
             namespace=namespace,
             instance_name=instance_name,
             database_secret_name=database_secret_name,
@@ -1110,27 +1358,46 @@ def ironic_instance_present(name, namespace, instance_name="ironic", database_se
             ssh_public_key=ssh_public_key,
             api_secret_name=api_secret_name,
             api_username=api_username,
-            api_password=api_password
+            api_password=api_password,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated'] or result['api_secret_updated']:
-            ret['changes'] = {
-                'instance_updated': result['updated'],
-                'api_secret_updated': result['api_secret_updated']
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"] or result["api_secret_updated"]:
+            ret["changes"] = {
+                "instance_updated": result["updated"],
+                "api_secret_updated": result["api_secret_updated"],
             }
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Ironic instance {instance_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure Ironic instance {instance_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
 
-def image_server_present(name, namespace, deployment_name="ironic-image-server", service_name="ironic-image-server", image="python:3.9-slim", port=6180, tls_port=6183, storage_path="/images", pvc_name="ironic-images-pvc", storage_size="10Gi", storage_class="local-storage", service_type="ClusterIP", external_ip=None):
+
+def image_server_present(
+    name,
+    namespace,
+    deployment_name="ironic-image-server",
+    service_name="ironic-image-server",
+    image="python:3.9-slim",
+    port=6180,
+    tls_port=6183,
+    storage_path="/images",
+    pvc_name="ironic-images-pvc",
+    storage_size="10Gi",
+    storage_class="local-storage",
+    service_type="ClusterIP",
+    external_ip=None,
+):
     """
     State to ensure that an image server for Ironic is present in Kubernetes.
     This state uses the kinetic-k8s.image_server_present execution module to manage the image server resources.
@@ -1161,15 +1428,10 @@ def image_server_present(name, namespace, deployment_name="ironic-image-server",
             - service_type: LoadBalancer
             - external_ip: 192.168.1.100
     """
-    ret = {
-        'name': name,
-        'result': False,
-        'changes': {},
-        'comment': ''
-    }
+    ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 
     try:
-        result = __salt__['kinetic-k8s.image_server_present'](
+        result = __salt__["kinetic-k8s.image_server_present"](
             namespace=namespace,
             deployment_name=deployment_name,
             service_name=service_name,
@@ -1181,27 +1443,31 @@ def image_server_present(name, namespace, deployment_name="ironic-image-server",
             storage_size=storage_size,
             storage_class=storage_class,
             service_type=service_type,
-            external_ip=external_ip
+            external_ip=external_ip,
         )
 
-        ret['result'] = result.get('success', False)
-        ret['comment'] = result.get('message', 'Unknown error')
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
 
-        if result.get('success', False):
+        if result.get("success", False):
             changes = {}
-            if result.get('deployment_updated', False):
-                changes['deployment'] = f"Deployment {deployment_name} updated or created"
-            if result.get('service_updated', False):
-                changes['service'] = f"Service {service_name} updated or created"
-            if result.get('pvc_updated', False):
-                changes['pvc'] = f"PVC {pvc_name} updated or created"
-            ret['changes'] = changes
+            if result.get("deployment_updated", False):
+                changes["deployment"] = (
+                    f"Deployment {deployment_name} updated or created"
+                )
+            if result.get("service_updated", False):
+                changes["service"] = f"Service {service_name} updated or created"
+            if result.get("pvc_updated", False):
+                changes["pvc"] = f"PVC {pvc_name} updated or created"
+            ret["changes"] = changes
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure image server: {str(e)[:100]}..."
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure image server: {str(e)[:100]}..."
 
     return ret
+
+
 def bmh_state(name, namespace, bmh_name, desired_state):
     """
     Check if a Bare Metal Host (BMH) object in Kubernetes is in the specified state.
@@ -1228,25 +1494,27 @@ def bmh_state(name, namespace, bmh_name, desired_state):
             - bmh_name: compute-133-26
             - desired_state: provisioned
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.bmh_state'](namespace, bmh_name, desired_state)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['success']:
-            ret['changes'] = {
-                'in_state': result['in_state'],
-                'current_state': result['current_state']
+        result = __salt__["kinetic-k8s.bmh_state"](namespace, bmh_name, desired_state)
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["success"]:
+            ret["changes"] = {
+                "in_state": result["in_state"],
+                "current_state": result["current_state"],
             }
         else:
-            ret['changes'] = {}
+            ret["changes"] = {}
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to check BMH state for {bmh_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to check BMH state for {bmh_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
+
+
 def namespace_present(name, namespace):
     """
     Ensure that a Kubernetes namespace exists. If it does not exist, create it.
@@ -1264,22 +1532,26 @@ def namespace_present(name, namespace):
           k8s.namespace_present:
             - namespace: my-namespace
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.namespace_present'](namespace)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'namespace_created': True}
+        result = __salt__["kinetic-k8s.namespace_present"](namespace)
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"namespace_created": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure namespace {namespace}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure namespace {namespace}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
+
+
 def ceph_cluster_present(name, namespace, cluster_name, spec):
     """
     Ensure that a CephCluster Custom Resource exists in the specified namespace.
@@ -1311,23 +1583,31 @@ def ceph_cluster_present(name, namespace, cluster_name, spec):
                   useAllNodes: false
                   useAllDevices: false
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.ceph_cluster_present'](namespace, cluster_name, spec)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'ceph_cluster_updated': True}
+        result = __salt__["kinetic-k8s.ceph_cluster_present"](
+            namespace, cluster_name, spec
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"ceph_cluster_updated": True}
         else:
-            ret['changes'] = {}
+            ret["changes"] = {}
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure CephCluster {cluster_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure CephCluster {cluster_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
-def configmap_present(name, namespace, configmap_name, data, labels=None, annotations=None):
+
+
+def configmap_present(
+    name, namespace, configmap_name, data, labels=None, annotations=None
+):
     """
     Ensure that a Kubernetes ConfigMap exists in the specified namespace. If it does not exist, create it.
     If it exists, update it if the data, labels, or annotations differ.
@@ -1370,31 +1650,46 @@ def configmap_present(name, namespace, configmap_name, data, labels=None, annota
             - annotations:
                 description: Configuration for OpenSearch Dashboards
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.configmap_present'](
+        result = __salt__["kinetic-k8s.configmap_present"](
             namespace=namespace,
             name=configmap_name,
             data=data,
             labels=labels,
-            annotations=annotations
+            annotations=annotations,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'configmap_updated': True}
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"configmap_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure ConfigMap {configmap_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure ConfigMap {configmap_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
-def service_present(name, namespace, service_name, service_type="LoadBalancer", selector=None, ports=None, annotations=None, external_ip=None):
+
+
+def service_present(
+    name,
+    namespace,
+    service_name,
+    service_type="LoadBalancer",
+    selector=None,
+    ports=None,
+    annotations=None,
+    external_ip=None,
+):
     """
     Ensure that a Kubernetes Service is present in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -1446,34 +1741,40 @@ def service_present(name, namespace, service_name, service_type="LoadBalancer", 
             - annotations:
                 metallb.universe.tf/address-pool: default
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.service_present'](
+        result = __salt__["kinetic-k8s.service_present"](
             namespace=namespace,
             service_name=service_name,
             service_type=service_type,
             selector=selector,
             ports=ports,
             annotations=annotations,
-            external_ip=external_ip
+            external_ip=external_ip,
         )
 
         # Ensure 'success' key exists in result, default to False if not
-        success = result.get('success', False)
-        ret['result'] = success
-        ret['comment'] = result.get('message', 'Unknown error in service operation')
-        if result.get('updated', False):
-            ret['changes'] = {'service_updated': True}
+        success = result.get("success", False)
+        ret["result"] = success
+        ret["comment"] = result.get("message", "Unknown error in service operation")
+        if result.get("updated", False):
+            ret["changes"] = {"service_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Service {service_name}: Exception occurred: {str(e)[:200]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure Service {service_name}: Exception occurred: {str(e)[:200]}..."
+        )
+        ret["changes"] = {}
 
     return ret
+
+
 def node_label_present(name, namespace, node_name, labels):
     """
     Ensure that the specified labels are present on a Kubernetes node.
@@ -1502,23 +1803,33 @@ def node_label_present(name, namespace, node_name, labels):
                 key1: value1
                 key2: value2
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.node_label_present'](namespace, node_name, labels)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'labels_updated': result['changes']}
+        result = __salt__["kinetic-k8s.node_label_present"](
+            namespace, node_name, labels
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"labels_updated": result["changes"]}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure labels on node {node_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure labels on node {node_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
-def metallb_pool_present(name, namespace, pool_name, addresses, metallb_namespace="metallb-system"):
+
+
+def metallb_pool_present(
+    name, namespace, pool_name, addresses, metallb_namespace="metallb-system"
+):
     """
     Ensure that a MetalLB IPAddressPool Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -1550,24 +1861,33 @@ def metallb_pool_present(name, namespace, pool_name, addresses, metallb_namespac
                 - 10.150.1.247-10.150.1.247
             - metallb_namespace: metallb-system
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.metallb_pool_present'](namespace, pool_name, addresses, metallb_namespace)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'pool_updated': True}
+        result = __salt__["kinetic-k8s.metallb_pool_present"](
+            namespace, pool_name, addresses, metallb_namespace
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"pool_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure IPAddressPool {pool_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure IPAddressPool {pool_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
 
-def metallb_l2_advertisement_present(name, namespace, advertisement_name, pool_names, metallb_namespace="metallb-system"):
+
+def metallb_l2_advertisement_present(
+    name, namespace, advertisement_name, pool_names, metallb_namespace="metallb-system"
+):
     """
     Ensure that a MetalLB L2Advertisement Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -1598,23 +1918,33 @@ def metallb_l2_advertisement_present(name, namespace, advertisement_name, pool_n
                 - default
             - metallb_namespace: metallb-system
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.metallb_l2_advertisement_present'](namespace, advertisement_name, pool_names, metallb_namespace)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'advertisement_updated': True}
+        result = __salt__["kinetic-k8s.metallb_l2_advertisement_present"](
+            namespace, advertisement_name, pool_names, metallb_namespace
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"advertisement_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure L2Advertisement {advertisement_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure L2Advertisement {advertisement_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
-def certmanager_issuer_present(name, namespace, issuer_name, issuer_kind="Issuer", spec=None):
+
+
+def certmanager_issuer_present(
+    name, namespace, issuer_name, issuer_kind="Issuer", spec=None
+):
     """
     Ensure that a Cert-Manager Issuer or ClusterIssuer resource is present in Kubernetes.
 
@@ -1653,22 +1983,29 @@ def certmanager_issuer_present(name, namespace, issuer_name, issuer_kind="Issuer
                 ca:
                   secretName: ca-key-pair
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.certmanager_issuer_present'](namespace, issuer_name, issuer_kind, spec)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {f'{issuer_kind.lower()}_updated': True}
+        result = __salt__["kinetic-k8s.certmanager_issuer_present"](
+            namespace, issuer_name, issuer_kind, spec
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {f"{issuer_kind.lower()}_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure {issuer_kind} {issuer_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure {issuer_kind} {issuer_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
+
 
 def ingress_present(name, namespace, ingress_name, spec, annotations=None):
     """
@@ -1716,31 +2053,36 @@ def ingress_present(name, namespace, ingress_name, spec, annotations=None):
             - annotations:
                 nginx.ingress.kubernetes.io/rewrite-target: /
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.ingress_present'](
+        result = __salt__["kinetic-k8s.ingress_present"](
             namespace=namespace,
             ingress_name=ingress_name,
             spec=spec,
-            annotations=annotations
+            annotations=annotations,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'ingress_updated': True}
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"ingress_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Ingress {ingress_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Ingress {ingress_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
 
-def certmanager_certificate_present(name, namespace, certificate_name, spec, annotations=None):
+
+def certmanager_certificate_present(
+    name, namespace, certificate_name, spec, annotations=None
+):
     """
     Ensure that a Cert-Manager Certificate resource is present in the specified namespace.
 
@@ -1777,29 +2119,35 @@ def certmanager_certificate_present(name, namespace, certificate_name, spec, ann
             - annotations:
                 description: TLS certificate for my app
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.certmanager_certificate_present'](
+        result = __salt__["kinetic-k8s.certmanager_certificate_present"](
             namespace=namespace,
             certificate_name=certificate_name,
             spec=spec,
-            annotations=annotations
+            annotations=annotations,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'certificate_updated': True}
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"certificate_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Certificate {certificate_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure Certificate {certificate_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
+
+
 def cnpg_cluster_present(name, namespace, cluster_name, spec):
     """
     Ensure that a CloudNativePG Cluster Custom Resource is present in the specified namespace.
@@ -1838,23 +2186,37 @@ def cnpg_cluster_present(name, namespace, cluster_name, spec):
                     cpu: 500m
                     memory: 512Mi
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.cnpg_cluster_present'](namespace, cluster_name, spec)
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'cluster_updated': True}
+        result = __salt__["kinetic-k8s.cnpg_cluster_present"](
+            namespace, cluster_name, spec
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"cluster_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Cluster {cluster_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Cluster {cluster_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
-def secret_present(name, namespace, secret_name, data, secret_type='Opaque', labels=None, annotations=None):
+
+
+def secret_present(
+    name,
+    namespace,
+    secret_name,
+    data,
+    secret_type="Opaque",
+    labels=None,
+    annotations=None,
+):
     """
     Ensure that a Kubernetes Secret exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if the data, labels, or annotations differ.
@@ -1896,33 +2258,55 @@ def secret_present(name, namespace, secret_name, data, secret_type='Opaque', lab
             - annotations:
                 description: My secret description
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.secret_present'](
+        result = __salt__["kinetic-k8s.secret_present"](
             namespace=namespace,
             secret_name=secret_name,
             data=data,
             secret_type=secret_type,
             labels=labels,
-            annotations=annotations
+            annotations=annotations,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'secret_updated': True}
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"secret_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Secret {secret_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Secret {secret_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
 
-def keycloak_cluster_present(name, namespace, hostname, cluster_name, start_optimized=False, instances=2, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name="keycloak", db_user_name_secret_name=None, db_user_name_secret_key=None, db_password_secret_name=None, db_password_secret_key=None, ingress_enabled=False, proxy_headers="xforwarded", tls_secret=None):
+
+def keycloak_cluster_present(
+    name,
+    namespace,
+    hostname,
+    cluster_name,
+    start_optimized=False,
+    instances=2,
+    image=None,
+    db_vendor="postgres",
+    db_host=None,
+    db_port=5432,
+    db_name="keycloak",
+    db_user_name_secret_name=None,
+    db_user_name_secret_key=None,
+    db_password_secret_name=None,
+    db_password_secret_key=None,
+    ingress_enabled=False,
+    proxy_headers="xforwarded",
+    tls_secret=None,
+):
     """
     Ensure that a Keycloak Custom Resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -1979,10 +2363,10 @@ def keycloak_cluster_present(name, namespace, hostname, cluster_name, start_opti
     tls_secret
         Optional. Name of the TLS Secret for securing HTTP traffic. Defaults to None.
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.keycloak_cluster_present'](
+        result = __salt__["kinetic-k8s.keycloak_cluster_present"](
             namespace=namespace,
             name=cluster_name,
             hostname=hostname,
@@ -1999,26 +2383,37 @@ def keycloak_cluster_present(name, namespace, hostname, cluster_name, start_opti
             db_password_secret_key=db_password_secret_key,
             ingress_enabled=ingress_enabled,
             proxy_headers=proxy_headers,
-            tls_secret=tls_secret
+            tls_secret=tls_secret,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {
-                'keycloak_updated': True
-            }
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"keycloak_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Keycloak {cluster_name}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Keycloak {cluster_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
 
-def certificate_present(name, namespace, certificate_name, common_name, email_address, dns_name=None, duration="2160h", renew_before="360h", issuer_ref="self-signed"):
+
+def certificate_present(
+    name,
+    namespace,
+    certificate_name,
+    common_name,
+    email_address,
+    dns_name=None,
+    duration="2160h",
+    renew_before="360h",
+    issuer_ref="self-signed",
+):
     """
     Ensure that a Cert-Manager Certificate resource exists in the specified namespace.
     If it does not exist, create it. If it exists, update it if necessary.
@@ -2067,10 +2462,10 @@ def certificate_present(name, namespace, certificate_name, common_name, email_ad
               - name: letsencrypt-stage
               - kind: ClusterIssuer
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.certificate_present'](
+        result = __salt__["kinetic-k8s.certificate_present"](
             namespace=namespace,
             certificate_name=certificate_name,
             common_name=common_name,
@@ -2078,24 +2473,107 @@ def certificate_present(name, namespace, certificate_name, common_name, email_ad
             dns_name=dns_name,
             duration=duration,
             renew_before=renew_before,
-            issuer_ref=issuer_ref
+            issuer_ref=issuer_ref,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {
-                'certificate_updated': True,
-                'secret_exists': result['secret_exists']
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {
+                "certificate_updated": True,
+                "secret_exists": result["secret_exists"],
             }
         else:
-            ret['changes'] = {
-                'secret_exists': result['secret_exists']
+            ret["changes"] = {
+                "secret_exists": result["secret_exists"]
             }  # Report secret status even if no update was needed
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Certificate {certificate_name}: {str(e)[:100]}..."
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure Certificate {certificate_name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
+
+    return ret
+
+
+def pvc_present(
+    name,
+    pvc_name,
+    namespace,
+    storage_class,
+    storage_size,
+    access_modes=None,
+    selector=None,
+):
+    """
+    Ensure a PersistentVolumeClaim (PVC) exists in the specified Kubernetes namespace.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    pvc_name
+        The name of the PVC to create or update.
+
+    namespace
+        The Kubernetes namespace for the PVC.
+
+    storage_class
+        The storage class name to use for the PVC.
+
+    storage_size
+        The storage capacity to request (e.g., '5Gi', '10Gi').
+
+    access_modes
+        Optional. List of access modes (e.g., ['ReadWriteOnce']). Defaults to ['ReadWriteOnce'].
+
+    selector
+        Optional. Label selector to match a specific PV (e.g., {'matchLabels': {'type': 'local'}}). Defaults to None.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_ldap_pvc:
+          k8s.pvc_present:
+            - pvc_name: ldap-pvc
+            - namespace: ldap
+            - storage_class: local-storage
+            - storage_size: 5Gi
+            - access_modes:
+              - ReadWriteOnce
+            - selector:
+                matchLabels:
+                  type: local-storage
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        result = __salt__["kinetic-k8s.pvc_present"](
+            name=pvc_name,
+            namespace=namespace,
+            storage_class=storage_class,
+            storage_size=storage_size,
+            access_modes=access_modes,
+            selector=selector,
+        )
+
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"pvc_updated": True}
+        else:
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure PVC {pvc_name} in namespace {namespace}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
+        ret['comment'] = f"Failed to ensure PVC {pvc_name} in namespace {namespace}: {str(e)[:100]}..."
         ret['changes'] = {}
 
     return ret
