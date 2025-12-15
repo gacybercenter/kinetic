@@ -17,3 +17,15 @@ ldap_tls_cert:
     - ip_addresses: {{ pillar.get('ldap:cert:ip_addresses', ['127.0.0.1']) }}
     - duration: {{ pillar.get('ldap:cert:duration', '2160h') }}
     - renew_before: {{ pillar.get('ldap:cert:renew_before', '360h') }}
+
+# Create a PersistentVolumeClaim for LDAP storage using the new state
+ldap_pvc:
+  k8s.pvc_present:
+    - pvc_name: {{ pillar.get('ldap:pv:name', 'ldap-pvc') }}
+    - namespace: {{ pillar.get('ldap:namespace', 'ldap') }}
+    - storage_class: {{ pillar.get('ldap:pv:storage_class', 'local-storage') }}
+    - storage_size: {{ pillar.get('ldap:pv:capacity', '5Gi') }}
+    - access_modes: {{ pillar.get('ldap:pv:access_modes', ['ReadWriteOnce']) }}
+    - selector: {{ pillar.get('ldap:pv:selector', {'matchLabels': {'type': 'local-storage'}}) }}
+    - require:
+      - k8s_helm: install_openldap_ha
