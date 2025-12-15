@@ -1,3 +1,6 @@
+include:
+  - /formulas/common/ldap/install
+
 # Manage Certificate for TLS using certmanager_certificate_present from k8s.py, with pillar-driven values
 ldap_tls_cert:
   k8s.certmanager_certificate_present:
