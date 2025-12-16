@@ -2081,52 +2081,87 @@ def ingress_present(name, namespace, ingress_name, spec, annotations=None):
 
 
 def certmanager_certificate_present(
-    name, namespace, certificate_name, spec, annotations=None
+    name,
+    certificate_name,
+    namespace,
+    secret_name,
+    issuer_name,
+    issuer_kind,
+    common_name,
+    dns_names=None,
+    ip_addresses=None,
+    duration=None,
+    renew_before=None,
 ):
     """
-    Ensure that a Cert-Manager Certificate resource is present in the specified namespace.
+    Ensure a cert-manager Certificate exists in the specified Kubernetes namespace.
 
     name
         The name of the state (arbitrary, for SaltStack identification).
 
-    namespace
-        The Kubernetes namespace for the Certificate resource.
-
     certificate_name
-        The name of the Certificate resource in Kubernetes.
+        The name of the Certificate resource to create or update.
 
-    spec
-        The specification dictionary for the Certificate resource, including issuerRef, commonName, dnsNames, etc.
+    namespace
+        The Kubernetes namespace for the Certificate.
 
-    annotations
-        Optional. Annotations to apply to the Certificate. Defaults to None.
+    secret_name
+        The name of the Secret where the certificate will be stored.
+
+    issuer_name
+        The name of the Issuer or ClusterIssuer to use.
+
+    issuer_kind
+        The kind of the Issuer (e.g., 'Issuer' or 'ClusterIssuer').
+
+    common_name
+        The common name (CN) for the certificate.
+
+    dns_names
+        Optional. List of DNS names (SANs) for the certificate. Defaults to None.
+
+    ip_addresses
+        Optional. List of IP addresses (SANs) for the certificate. Defaults to None.
+
+    duration
+        Optional. Duration of the certificate validity (e.g., '2160h'). Defaults to None.
+
+    renew_before
+        Optional. Time before expiration to renew the certificate (e.g., '360h'). Defaults to None.
 
     Example:
     .. code-block:: yaml
 
-        ensure_certificate:
+        ensure_ldap_cert:
           k8s.certmanager_certificate_present:
-            - namespace: openstack
-            - certificate_name: my-app-tls
-            - spec:
-                secretName: my-app-tls
-                commonName: myapp.example.com
-                dnsNames:
-                  - myapp.example.com
-                issuerRef:
-                  name: letsencrypt-prod
-                  kind: ClusterIssuer
-            - annotations:
-                description: TLS certificate for my app
+            - certificate_name: ldap-tls-cert
+            - namespace: ldap
+            - secret_name: tls-cert
+            - issuer_name: selfsigned-issuer
+            - issuer_kind: ClusterIssuer
+            - common_name: ldap.example.com
+            - dns_names:
+              - ldap.example.com
+              - ldap.service.local
+            - ip_addresses:
+              - 127.0.0.1
+            - duration: 2160h
+            - renew_before: 360h
     """
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
         result = __salt__["kinetic-k8s.certmanager_certificate_present"](
+            name=certificate_name,
             namespace=namespace,
-            certificate_name=certificate_name,
-            spec=spec,
-            annotations=annotations,
+            secret_name=secret_name,
+            issuer_name=issuer_name,
+            issuer_kind=issuer_kind,
+            common_name=common_name,
+            dns_names=dns_names,
+            ip_addresses=ip_addresses,
+            duration=duration,
+            renew_before=renew_before,
         )
 
         ret["result"] = result["success"]
@@ -2141,7 +2176,7 @@ def certmanager_certificate_present(
     except Exception as e:
         ret["result"] = False
         ret["comment"] = (
-            f"Failed to ensure Certificate {certificate_name}: {str(e)[:100]}..."
+            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]}..."
         )
         ret["changes"] = {}
 
@@ -2573,7 +2608,9 @@ def pvc_present(
             f"Failed to ensure PVC {pvc_name} in namespace {namespace}: {str(e)[:100]}..."
         )
         ret["changes"] = {}
-        ret['comment'] = f"Failed to ensure PVC {pvc_name} in namespace {namespace}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["comment"] = (
+            f"Failed to ensure PVC {pvc_name} in namespace {namespace}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret

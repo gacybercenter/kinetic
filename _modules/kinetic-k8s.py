@@ -4331,143 +4331,126 @@ def ingress_present(namespace, ingress_name, spec, annotations=None):
 
 
 def certmanager_certificate_present(
-    namespace, certificate_name, spec, annotations=None
+    name,
+    namespace,
+    secret_name,
+    issuer_name,
+    issuer_kind,
+    common_name,
+    dns_names=None,
+    ip_addresses=None,
+    duration=None,
+    renew_before=None,
 ):
     """
-    Ensure that a Cert-Manager Certificate resource exists in the specified namespace.
-    If it does not exist, create it. If it exists, update it if necessary.
+    Ensure a cert-manager Certificate exists in the specified Kubernetes namespace with the given spec.
 
     Args:
-        namespace (str): The namespace for the Certificate resource.
-        certificate_name (str): The name of the Certificate resource.
-        spec (dict): The specification for the Certificate resource, including issuerRef, commonName, dnsNames, etc.
-        annotations (dict, optional): Annotations to apply to the Certificate. Defaults to None.
+        name (str): The name of the Certificate resource.
+        namespace (str): The Kubernetes namespace for the Certificate.
+        secret_name (str): The name of the Secret where the certificate will be stored.
+        issuer_name (str): The name of the Issuer or ClusterIssuer to use.
+        issuer_kind (str): The kind of the Issuer (e.g., 'Issuer' or 'ClusterIssuer').
+        common_name (str): The common name (CN) for the certificate.
+        dns_names (list, optional): List of DNS names (SANs) for the certificate. Defaults to None.
+        ip_addresses (list, optional): List of IP addresses (SANs) for the certificate. Defaults to None.
+        duration (str, optional): Duration of the certificate validity (e.g., '2160h'). Defaults to None.
+        renew_before (str, optional): Time before expiration to renew the certificate (e.g., '360h'). Defaults to None.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
 
     CLI Example:
-        salt '*' kinetic-k8s.certmanager_certificate_present cert-manager my-certificate spec_dict annotations_dict
+        salt '*' kinetic-k8s.certmanager_certificate_present ldap-tls-cert ldap tls-cert selfsigned-issuer ClusterIssuer ldap.example.com dns_names="['ldap.example.com']" duration="2160h"
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
-
+        # Load Kubernetes configuration (in-cluster or from kubeconfig)
+        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
         custom_api = client.CustomObjectsApi()
-        group = "cert-manager.io"
-        version = "v1"
-        plural = "certificates"
 
-        exists = False
-        updated = False
-        matches = False
+        # Construct the spec for the Certificate
+        spec = {
+            "secretName": secret_name,
+            "issuerRef": {"name": issuer_name, "kind": issuer_kind},
+            "commonName": common_name,
+        }
+        if dns_names:
+            spec["dnsNames"] = dns_names
+        if ip_addresses:
+            spec["ipAddresses"] = ip_addresses
+        if duration:
+            spec["duration"] = duration
+        if renew_before:
+            spec["renewBefore"] = renew_before
 
-        # Check if Certificate exists
-        try:
-            certificate = custom_api.get_namespaced_custom_object(
-                group=group,
-                version=version,
-                namespace=namespace,
-                plural=plural,
-                name=certificate_name,
-            )
-            exists = True
-            current_spec = certificate.get("spec", {})
-            current_annotations = certificate.get("metadata", {}).get("annotations", {})
-            desired_annotations = annotations or {}
-            desired_spec = spec
-
-            # Check if spec and annotations match
-            if (
-                current_spec == desired_spec
-                and current_annotations == desired_annotations
-            ):
-                matches = True
-                message = f"Certificate {certificate_name} in namespace {namespace} already exists and matches desired spec"
-            else:
-                matches = False
-                message = f"Certificate {certificate_name} in namespace {namespace} exists but spec or annotations differ"
-        except ApiException as e:
-            if e.status == 404:
-                exists = False
-                message = f"Certificate {certificate_name} in namespace {namespace} does not exist"
-            else:
-                return {
-                    "success": False,
-                    "updated": False,
-                    "message": f"Error checking Certificate {certificate_name}: {str(e)[:50]}...",
-                }
-
-        # Create or update Certificate
-        certificate_body = {
-            "apiVersion": f"{group}/{version}",
+        # Define the full Certificate object
+        cert_body = {
+            "apiVersion": "cert-manager.io/v1",
             "kind": "Certificate",
-            "metadata": {
-                "name": certificate_name,
-                "namespace": namespace,
-                "annotations": annotations or {},
-            },
+            "metadata": {"name": name, "namespace": namespace},
             "spec": spec,
         }
 
-        if not exists:
-            try:
-                custom_api.create_namespaced_custom_object(
-                    group=group,
-                    version=version,
-                    namespace=namespace,
-                    plural=plural,
-                    body=certificate_body,
+        # Check if Certificate already exists
+        group, version = "cert-manager.io", "v1"
+        plural = "certificates"
+        try:
+            existing_cert = custom_api.get_namespaced_custom_object(
+                group, version, namespace, plural, name
+            )
+            # Compare spec fields to determine if update is needed
+            existing_spec = existing_cert.get("spec", {})
+            if (
+                existing_spec.get("secretName") != secret_name
+                or existing_spec.get("issuerRef", {}).get("name") != issuer_name
+                or existing_spec.get("issuerRef", {}).get("kind") != issuer_kind
+                or existing_spec.get("commonName") != common_name
+                or existing_spec.get("dnsNames", []) != (dns_names or [])
+                or existing_spec.get("ipAddresses", []) != (ip_addresses or [])
+                or (duration and existing_spec.get("duration") != duration)
+                or (renew_before and existing_spec.get("renewBefore") != renew_before)
+            ):
+                # Update the Certificate
+                updated_cert = custom_api.replace_namespaced_custom_object(
+                    group, version, namespace, plural, name, cert_body
                 )
-                updated = True
-                message = (
-                    f"Certificate {certificate_name} created in namespace {namespace}"
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Certificate {name} updated in namespace {namespace}.",
+                    "resource": updated_cert,
+                }
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"Certificate {name} already exists in namespace {namespace} with matching spec.",
+                "resource": existing_cert,
+            }
+        except ApiException as e:
+            if e.status == 404:
+                # Certificate does not exist, create it
+                created_cert = custom_api.create_namespaced_custom_object(
+                    group, version, namespace, plural, cert_body
                 )
-            except ApiException as e:
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Certificate {name} created in namespace {namespace}.",
+                    "resource": created_cert,
+                }
+            else:
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to create Certificate {certificate_name}: {str(e)[:50]}...",
+                    "message": f"Failed to manage Certificate {name} in namespace {namespace}: {str(e)[:100]}...",
+                    "resource": {},
                 }
-        elif not matches:
-            try:
-                # Include resourceVersion if updating to avoid conflicts
-                if (
-                    exists
-                    and "metadata" in certificate
-                    and "resourceVersion" in certificate["metadata"]
-                ):
-                    certificate_body["metadata"]["resourceVersion"] = certificate[
-                        "metadata"
-                    ]["resourceVersion"]
-                custom_api.replace_namespaced_custom_object(
-                    group=group,
-                    version=version,
-                    namespace=namespace,
-                    plural=plural,
-                    name=certificate_name,
-                    body=certificate_body,
-                )
-                updated = True
-                message = (
-                    f"Certificate {certificate_name} updated in namespace {namespace}"
-                )
-            except ApiException as e:
-                return {
-                    "success": False,
-                    "updated": False,
-                    "message": f"Failed to update Certificate {certificate_name}: {str(e)[:50]}...",
-                }
-
-        return {"success": True, "updated": updated, "message": message}
-
     except Exception as e:
         return {
             "success": False,
             "updated": False,
-            "message": f"Certificate operation error: {str(e)[:50]}...",
+            "message": f"Error managing Certificate {name} in namespace {namespace}: {str(e)[:100]}...",
+            "resource": {},
         }
 
 
