@@ -27,7 +27,7 @@ ldap_ingress:
     - ingress_class_name: {{ pillar.get('ldap:ingress:class_name') }}
     - annotations: {{ pillar.get('ldap:ingress:annotations') }}
     - require:
-      - k8s.certmanager_certificate_present: ldap_tls_cert
+      - k8s: ldap_tls_cert
 
 # # Create a PersistentVolumeClaim for LDAP storage using the new state
 # ldap_pvc:
