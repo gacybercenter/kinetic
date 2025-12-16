@@ -19,6 +19,6 @@ deploy_ldap:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.common.ldap.install
+      - formulas.common.ldap
     - require:
       - salt: deploy_cnpg_operator
