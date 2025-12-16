@@ -4373,16 +4373,11 @@ def certmanager_certificate_present(
             "secretName": secret_name,
             "issuerRef": {"name": issuer_name, "kind": issuer_kind},
             "commonName": common_name,
+            "dnsNames": dns_names,
+            "ipAddresses": ip_addresses,
+            "duration": duration,
+            "renewBefore": renew_before,
         }
-        if dns_names:
-            spec["dnsNames"] = dns_names
-        if ip_addresses:
-            spec["ipAddresses"] = ip_addresses
-        if duration:
-            spec["duration"] = duration
-        if renew_before:
-            spec["renewBefore"] = renew_before
-
         # Define the full Certificate object
         cert_body = {
             "apiVersion": "cert-manager.io/v1",
@@ -4400,16 +4395,7 @@ def certmanager_certificate_present(
             )
             # Compare spec fields to determine if update is needed
             existing_spec = existing_cert.get("spec", {})
-            if (
-                existing_spec.get("secretName") != secret_name
-                or existing_spec.get("issuerRef", {}).get("name") != issuer_name
-                or existing_spec.get("issuerRef", {}).get("kind") != issuer_kind
-                or existing_spec.get("commonName") != common_name
-                or existing_spec.get("dnsNames", []) != (dns_names or [])
-                or existing_spec.get("ipAddresses", []) != (ip_addresses or [])
-                or (duration and existing_spec.get("duration") != duration)
-                or (renew_before and existing_spec.get("renewBefore") != renew_before)
-            ):
+            if existing_spec != spec:
                 # Update the Certificate
                 updated_cert = custom_api.replace_namespaced_custom_object(
                     group, version, namespace, plural, name, cert_body
