@@ -15,6 +15,20 @@ ldap_tls_cert:
     - duration: {{ pillar.get('ldap:cert:duration') }}
     - renew_before: {{ pillar.get('ldap:cert:renew_before') }}
 
+# Create an Ingress for LDAP to route external traffic to the service
+ldap_ingress:
+  k8s.ingress_present:
+    - name: {{ pillar.get('ldap:ingress:name') }}
+    - namespace: {{ pillar.get('ldap:namespace') }}
+    - hosts: {{ pillar.get('ldap:ingress:hosts') }}
+    - tls:
+      - secret_name: {{ pillar.get('ldap:cert:secret_name') }}
+        hosts: {{ pillar.get('ldap:cert:dns_names') }}
+    - ingress_class_name: {{ pillar.get('ldap:ingress:class_name') }}
+    - annotations: {{ pillar.get('ldap:ingress:annotations') }}
+    - require:
+      - k8s.certmanager_certificate_present: ldap_tls_cert
+
 # # Create a PersistentVolumeClaim for LDAP storage using the new state
 # ldap_pvc:
 #   k8s.pvc_present:
