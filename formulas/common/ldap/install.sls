@@ -12,8 +12,9 @@ add_openldap_repo:
       - sls: formulas.common.helm.install
 
 # Fetch additional configurable parameters from pillar with defaults
-{% set ldap_namespace = pillar.get('ldap:namespace', 'ldap') %}
-{% set ldap_version = pillar.get('ldap:version', '4.3.3') %}
+{% set ldap_namespace = pillar['ldap']['namespace'] %}
+{% set ldap_version = pillar['ldap']['version'] %}
+{% set ldap_values = pillar['ldap']['values'] %}
 
 # Install or upgrade OpenLDAP HA stack using Helm via k8s_helm state
 install_openldap_ha:
