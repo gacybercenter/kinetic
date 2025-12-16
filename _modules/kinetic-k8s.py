@@ -4442,14 +4442,14 @@ def certmanager_certificate_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to manage Certificate {name} in namespace {namespace}: {str(e)[:100]}...",
+                    "message": f"Failed to manage Certificate {name} in namespace {namespace}: {str(e)}...",
                     "resource": {},
                 }
     except Exception as e:
         return {
             "success": False,
             "updated": False,
-            "message": f"Error managing Certificate {name} in namespace {namespace}: {str(e)[:100]}...",
+            "message": f"Error managing Certificate {name} in namespace {namespace}: {str(e)}...",
             "resource": {},
         }
 
