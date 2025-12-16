@@ -4,7 +4,6 @@ include:
 # Manage Certificate for TLS using certmanager_certificate_present from k8s.py, with pillar-driven values
 ldap_tls_cert:
   k8s.certmanager_certificate_present:
-    - name: {{ pillar.get('ldap:cert:name') }}
     - certificate_name: {{ pillar.get('ldap:cert:name') }}
     - namespace: {{ pillar.get('ldap:cert:namespace') }}
     - secret_name: {{ pillar.get('ldap:cert:secret_name') }}
