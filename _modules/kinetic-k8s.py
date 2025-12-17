@@ -4241,13 +4241,17 @@ def ingress_present(
     ret = {"name": name, "result": None, "changes": {}, "comment": ""}
 
     try:
-        # Check if the Ingress already exists
-        existing_ingress = __salt__["k8s.get"](
-            api_version="networking.k8s.io/v1",
-            kind="Ingress",
-            name=name,
-            namespace=namespace,
-        )
+        # Load Kubernetes configuration
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        # Initialize Kubernetes API clients
+        custom_api = client.CustomObjectsApi()
+        group = "networking.k8s.io"
+        version = "v1"
+        plural = "ingresses"
 
         # Build the spec dictionary
         spec = {"rules": []}
@@ -4266,7 +4270,7 @@ def ingress_present(
                                     "service": {
                                         "name": name,  # Assuming service name matches ingress name
                                         "port": {
-                                            "number": 80  # Default port, can be overridden if needed
+                                            "number": 389  # Using 389 for LDAP
                                         },
                                     }
                                 },
@@ -4288,7 +4292,7 @@ def ingress_present(
 
         # Build the desired Ingress resource
         desired_ingress = {
-            "apiVersion": "networking.k8s.io/v1",
+            "apiVersion": f"{group}/{version}",
             "kind": "Ingress",
             "metadata": {"name": name, "namespace": namespace},
             "spec": spec,
@@ -4298,6 +4302,24 @@ def ingress_present(
         if annotations:
             desired_ingress["metadata"]["annotations"] = annotations
 
+        # Check if the Ingress already exists
+        existing_ingress = None
+        try:
+            existing_ingress = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=name,
+            )
+        except ApiException as e:
+            if e.status != 404:
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Error checking Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
+                )
+                return ret
+
         if existing_ingress:
             # Update existing Ingress if it differs
             if (
@@ -4305,10 +4327,33 @@ def ingress_present(
                 or existing_ingress.get("metadata", {}).get("annotations", {})
                 != annotations
             ):
-                __salt__["k8s.apply"](manifest=desired_ingress, **kwargs)
-                ret["result"] = True
-                ret["changes"] = {"updated": f"Ingress {name} in namespace {namespace}"}
-                ret["comment"] = f"Ingress {name} updated in namespace {namespace}."
+                try:
+                    # Include resourceVersion to avoid conflicts
+                    if (
+                        "metadata" in existing_ingress
+                        and "resourceVersion" in existing_ingress["metadata"]
+                    ):
+                        desired_ingress["metadata"]["resourceVersion"] = (
+                            existing_ingress["metadata"]["resourceVersion"]
+                        )
+                    custom_api.replace_namespaced_custom_object(
+                        group=group,
+                        version=version,
+                        namespace=namespace,
+                        plural=plural,
+                        name=name,
+                        body=desired_ingress,
+                    )
+                    ret["result"] = True
+                    ret["changes"] = {
+                        "updated": f"Ingress {name} in namespace {namespace}"
+                    }
+                    ret["comment"] = f"Ingress {name} updated in namespace {namespace}."
+                except ApiException as e:
+                    ret["result"] = False
+                    ret["comment"] = (
+                        f"Failed to update Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
+                    )
             else:
                 ret["result"] = True
                 ret["comment"] = (
@@ -4316,14 +4361,26 @@ def ingress_present(
                 )
         else:
             # Create new Ingress
-            __salt__["k8s.apply"](manifest=desired_ingress, **kwargs)
-            ret["result"] = True
-            ret["changes"] = {"created": f"Ingress {name} in namespace {namespace}"}
-            ret["comment"] = f"Ingress {name} created in namespace {namespace}."
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=desired_ingress,
+                )
+                ret["result"] = True
+                ret["changes"] = {"created": f"Ingress {name} in namespace {namespace}"}
+                ret["comment"] = f"Ingress {name} created in namespace {namespace}."
+            except ApiException as e:
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to create Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
+                )
     except Exception as e:
         ret["result"] = False
         ret["comment"] = (
-            f"Error managing Ingress {name} in namespace {namespace}: {str(e)}"
+            f"Error managing Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
         )
 
     return ret
