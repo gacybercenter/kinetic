@@ -40,8 +40,8 @@ create_keycloak_cert:
     - common_name: {{ kcert['commonName'] }}
     - email_address: {{ kcert['emailAddress'] }}
     - dns_names: {{ kcert['dns_names'] }}
-    - issuer_name: {{ kcert['issuerRef']['name'] }}
-    - issue_kind: {{ kcert['issuerRef']['kind'] }}
+    - issuer_name: {{ kcert['issuer_name'] }}
+    - issue_kind: {{ kcert['issuer_kind'] }}
 
 create_keycloak_ingress:
   k8s.ingress_present:
