@@ -39,31 +39,23 @@ create_keycloak_cert:
     - certificate_name: {{ kcert['name'] }}-tls
     - common_name: {{ kcert['commonName'] }}
     - email_address: {{ kcert['emailAddress'] }}
-    - issuer_ref: 
+    - issuer_ref:
       - name: {{ kcert['issuerRef']['name'] }}
       - kind: {{ kcert['issuerRef']['kind'] }}
 
 create_keycloak_ingress:
   k8s.ingress_present:
-    - namespace: {{ kcert['namespace'] }}
-    - ingress_name: {{ kcert['name'] }}-ingress
-    - spec:
-        ingress_class_name: traefik-external
-        rules:
-          - host: {{ kcert['commonName'] }}
-            http:
-              paths:
-                - path: /
-                  pathType: Prefix
-                  backend:
-                    service:
-                      name: {{ kcert['name'] }}-service
-                      port:
-                        number: 8443
-        tls:
-          - hosts:
-              - {{ kcert['commonName'] }}
-            secretName: {{ kcert['name'] }}-tls
+    - name: {{ kcluster['ingress']['name'] }}
+    - namespace: {{ kcluster['ingress']['namespace'] }}
+    - hosts:
+      - {{ kcert['commonName'] }}
+    - tls:
+      - secret_name: {{ kcert['name'] }}-tls
+        hosts:
+          - {{ kcert['commonName'] }}
+    - ingress_class_name: {{ kcluster['ingress']['spec']['ingressClassName'] }}
+    - require:
+      - k8s: create_keycloak_cert
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
     - namespace: {{ kcluster['ingress']['namespace'] }}
