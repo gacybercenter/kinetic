@@ -2007,75 +2007,72 @@ def certmanager_issuer_present(
     return ret
 
 
-def ingress_present(name, namespace, ingress_name, spec, annotations=None):
+def ingress_present(
+    name,
+    namespace,
+    hosts,
+    tls=None,
+    ingress_class_name=None,
+    annotations=None,
+    **kwargs,
+):
     """
-    Ensure that a Kubernetes Ingress resource is present in the specified namespace.
+    Ensures that an Ingress resource is present in the specified namespace.
+    This is useful for routing external traffic to services within the cluster.
 
-    name
-        The name of the state (arbitrary, for SaltStack identification).
+    Args:
+        name (str): The name of the Ingress resource.
+        namespace (str): The namespace in which the Ingress should exist.
+        hosts (list): List of hostnames or host configurations for the Ingress rules.
+        tls (list, optional): List of TLS configurations, each containing secretName and hosts.
+        ingress_class_name (str, optional): The name of the IngressClass to use.
+        annotations (dict, optional): Additional annotations for the Ingress.
+        **kwargs: Additional arguments to pass to the Kubernetes API.
 
-    namespace
-        The Kubernetes namespace for the Ingress resource.
-
-    ingress_name
-        The name of the Ingress resource in Kubernetes.
-
-    spec
-        The specification dictionary for the Ingress resource, including rules, tls, etc.
-
-    annotations
-        Optional. Annotations to apply to the Ingress (e.g., for ingress controller settings). Defaults to None.
-
-    Example:
-    .. code-block:: yaml
-
-        ensure_ingress:
-          k8s.ingress_present:
-            - namespace: openstack
-            - ingress_name: my-ingress
-            - spec:
-                ingressClassName: nginx
-                rules:
-                  - host: example.com
-                    http:
-                      paths:
-                        - path: /
-                          pathType: Prefix
-                          backend:
-                            service:
-                              name: my-service
-                              port:
-                                number: 80
-                tls:
-                  - hosts:
-                      - example.com
-                    secretName: example-tls
-            - annotations:
-                nginx.ingress.kubernetes.io/rewrite-target: /
+    Returns:
+        dict: A dictionary containing the result of the operation.
     """
-    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+    ret = {"name": name, "result": None, "changes": {}, "comment": ""}
 
     try:
-        result = __salt__["kinetic-k8s.ingress_present"](
+        # Check if the Ingress already exists
+        existing_ingress = __salt__["k8s.get"](
+            api_version="networking.k8s.io/v1",
+            kind="Ingress",
+            name=name,
             namespace=namespace,
-            ingress_name=ingress_name,
-            spec=spec,
-            annotations=annotations,
         )
 
-        ret["result"] = result["success"]
-        ret["comment"] = result["message"]
-        if result["updated"]:
-            ret["changes"] = {"ingress_updated": True}
+        if existing_ingress:
+            ret["result"] = True
+            ret["comment"] = f"Ingress {name} already exists in namespace {namespace}."
         else:
-            ret[
-                "changes"
-            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            # Create the Ingress if it does not exist
+            result = __salt__["k8s.ingress_present"](
+                name=name,
+                namespace=namespace,
+                hosts=hosts,
+                tls=tls,
+                ingress_class_name=ingress_class_name,
+                annotations=annotations,
+                **kwargs,
+            )
 
+            if result.get("result"):
+                ret["result"] = True
+                ret["changes"] = {"created": f"Ingress {name} in namespace {namespace}"}
+                ret["comment"] = f"Ingress {name} created in namespace {namespace}."
+            else:
+                ret["result"] = False
+                ret["comment"] = result.get(
+                    "comment",
+                    f"Failed to create Ingress {name} in namespace {namespace}.",
+                )
     except Exception as e:
         ret["result"] = False
-        ret["comment"] = f"Failed to ensure Ingress {ingress_name}: {str(e)[:100]}..."
-        ret["changes"] = {}
+        ret["comment"] = (
+            f"Error managing Ingress {name} in namespace {namespace}: {str(e)}"
+        )
 
     return ret
 
