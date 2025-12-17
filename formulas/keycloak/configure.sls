@@ -33,16 +33,15 @@ create_auth_pg_cluster:
 
 {% set kcert = pillar['kc-cluster']['cert'] %}
 create_keycloak_cert:
-  k8s.certificate_present:
+  k8s.certmanager_certificate_present:
     - namespace: {{ kcert['namespace'] }}
-    - name: {{ kcert['name'] }}-tls
-    - certificate_name: {{ kcert['name'] }}-tls
+    - certificate_name: {{ kcert['name'] }}
+    - secret_name: {{ kcert['secret_name'] }}-tls
     - common_name: {{ kcert['commonName'] }}
     - email_address: {{ kcert['emailAddress'] }}
     - dns_names: {{ kcert['dns_names'] }}
-    - issuer_ref:
-      - name: {{ kcert['issuerRef']['name'] }}
-      - kind: {{ kcert['issuerRef']['kind'] }}
+    - issuer_name: {{ kcert['issuerRef']['name'] }}
+    - issue_kind: {{ kcert['issuerRef']['kind'] }}
 
 create_keycloak_ingress:
   k8s.ingress_present:
