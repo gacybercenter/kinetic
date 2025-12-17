@@ -2035,43 +2035,38 @@ def ingress_present(
     ret = {"name": name, "result": None, "changes": {}, "comment": ""}
 
     try:
-        # Check if the Ingress already exists
-        existing_ingress = __salt__["k8s.get"](
-            api_version="networking.k8s.io/v1",
-            kind="Ingress",
+        # Delegate to the execution module for managing the Ingress
+        result = __salt__["kinetic-k8s.ingress_present"](
             name=name,
             namespace=namespace,
+            hosts=hosts,
+            tls=tls,
+            ingress_class_name=ingress_class_name,
+            annotations=annotations,
+            **kwargs,
         )
 
-        if existing_ingress:
+        if result.get("result"):
             ret["result"] = True
-            ret["comment"] = f"Ingress {name} already exists in namespace {namespace}."
-        else:
-            # Create the Ingress if it does not exist
-            result = __salt__["k8s.ingress_present"](
-                name=name,
-                namespace=namespace,
-                hosts=hosts,
-                tls=tls,
-                ingress_class_name=ingress_class_name,
-                annotations=annotations,
-                **kwargs,
-            )
-
-            if result.get("result"):
-                ret["result"] = True
+            if "created" in result.get("changes", {}):
                 ret["changes"] = {"created": f"Ingress {name} in namespace {namespace}"}
                 ret["comment"] = f"Ingress {name} created in namespace {namespace}."
+            elif "updated" in result.get("changes", {}):
+                ret["changes"] = {"updated": f"Ingress {name} in namespace {namespace}"}
+                ret["comment"] = f"Ingress {name} updated in namespace {namespace}."
             else:
-                ret["result"] = False
-                ret["comment"] = result.get(
-                    "comment",
-                    f"Failed to create Ingress {name} in namespace {namespace}.",
+                ret["comment"] = (
+                    f"Ingress {name} already exists in namespace {namespace} with the desired configuration."
                 )
+        else:
+            ret["result"] = False
+            ret["comment"] = result.get(
+                "comment", f"Failed to manage Ingress {name} in namespace {namespace}."
+            )
     except Exception as e:
         ret["result"] = False
         ret["comment"] = (
-            f"Error managing Ingress {name} in namespace {namespace}: {str(e)}"
+            f"Error managing Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
         )
 
     return ret
