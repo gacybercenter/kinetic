@@ -51,7 +51,8 @@ create_keycloak_ingress:
     - tls:
       - secret_name: {{ kcert['name'] }}-tls
         hosts: {{ kcert['dns_names'] }}
-    - ingress_class_name: {{ kcluster['ingress']['spec']['ingressClassName'] }}
+    - ingress_class_name: {{ kcluster['ingress']['class_name'] }}
+    - annotations: {{ kcluster['ingress']['annotations'] }}
     - require:
       - k8s: create_keycloak_cert
 ensure_keycloak_cluster:
