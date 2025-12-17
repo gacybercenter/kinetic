@@ -41,7 +41,7 @@ create_keycloak_cert:
     - email_address: {{ kcert['emailAddress'] }}
     - dns_names: {{ kcert['dns_names'] }}
     - issuer_name: {{ kcert['issuer_name'] }}
-    - issue_kind: {{ kcert['issuer_kind'] }}
+    - issuer_kind: {{ kcert['issuer_kind'] }}
 
 create_keycloak_ingress:
   k8s.ingress_present:
