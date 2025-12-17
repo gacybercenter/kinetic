@@ -4214,56 +4214,204 @@ def certmanager_issuer_present(namespace, issuer_name, issuer_kind="Issuer", spe
         }
 
 
-# Handle hosts and rules from pillar data
-for host_entry in hosts:
-    if isinstance(host_entry, str):
-        # Simple hostname string
-        rule = {
-            "host": host_entry,
-            "http": {
-                "paths": [
-                    {
-                        "path": "/",
-                        "pathType": "Prefix",
-                        "backend": {
-                            "service": {
-                                "name": name,  # Fallback to ingress name if service name not specified
-                                "port": {
-                                    "number": 389  # Default for LDAP
+def ingress_present(
+    name,
+    namespace,
+    hosts,
+    tls=None,
+    ingress_class_name=None,
+    annotations=None,
+    **kwargs,
+):
+    """
+    Ensures that an Ingress resource is present in the specified namespace.
+
+    Args:
+        name (str): The name of the Ingress resource.
+        namespace (str): The namespace in which the Ingress should exist.
+        hosts (list): List of host configurations for the Ingress rules. Can be simple strings (hostnames)
+                      or dictionaries with host, paths, path_type, service_name, and service_port.
+        tls (list, optional): List of TLS configurations, each containing secretName and hosts.
+        ingress_class_name (str, optional): The name of the IngressClass to use.
+        annotations (dict, optional): Additional annotations for the Ingress.
+        **kwargs: Additional arguments to pass to the Kubernetes API.
+
+    Returns:
+        dict: A dictionary containing the result of the operation.
+    """
+    ret = {"name": name, "result": None, "changes": {}, "comment": ""}
+
+    try:
+        # Load Kubernetes configuration
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
+        # Initialize Kubernetes API clients
+        custom_api = client.CustomObjectsApi()
+        group = "networking.k8s.io"
+        version = "v1"
+        plural = "ingresses"
+
+        # Build the spec dictionary
+        spec = {"rules": []}
+
+        # Handle hosts and rules from pillar data
+        for host_entry in hosts:
+            if isinstance(host_entry, str):
+                # Simple hostname string
+                rule = {
+                    "host": host_entry,
+                    "http": {
+                        "paths": [
+                            {
+                                "path": "/",
+                                "pathType": "Prefix",
+                                "backend": {
+                                    "service": {
+                                        "name": name,  # Fallback to ingress name if service name not specified
+                                        "port": {
+                                            "number": 389  # Default for LDAP
+                                        },
+                                    }
                                 },
                             }
-                        },
-                    }
-                ]
-            },
-        }
-        spec["rules"].append(rule)
-    elif isinstance(host_entry, dict):
-        # Detailed configuration from pillar (e.g., ldap:ingress:hosts)
-        host_name = host_entry.get("host", "")
-        paths = host_entry.get("paths", [])
-        rule = {"host": host_name, "http": {"paths": []}}
-        for path_data in paths:
-            path = path_data.get("path", "/")
-            path_type = path_data.get("path_type", "Prefix")
-            service_name = path_data.get(
-                "service_name", name
-            )  # Fallback to ingress name
-            service_port = path_data.get("service_port", 389)  # Default for LDAP
-            rule["http"]["paths"].append(
-                {
-                    "path": path,
-                    "pathType": path_type,
-                    "backend": {
-                        "service": {
-                            "name": service_name,
-                            "port": {"number": service_port},
-                        }
+                        ]
                     },
                 }
+                spec["rules"].append(rule)
+            elif isinstance(host_entry, dict):
+                # Detailed configuration from pillar (e.g., ldap:ingress:hosts)
+                host_name = host_entry.get("host", "")
+                paths = host_entry.get("paths", [])
+                rule = {"host": host_name, "http": {"paths": []}}
+                for path_data in paths:
+                    path = path_data.get("path", "/")
+                    path_type = path_data.get("path_type", "Prefix")
+                    service_name = path_data.get(
+                        "service_name", name
+                    )  # Fallback to ingress name
+                    service_port = path_data.get(
+                        "service_port", 389
+                    )  # Default for LDAP
+                    rule["http"]["paths"].append(
+                        {
+                            "path": path,
+                            "pathType": path_type,
+                            "backend": {
+                                "service": {
+                                    "name": service_name,
+                                    "port": {"number": service_port},
+                                }
+                            },
+                        }
+                    )
+                if rule["http"]["paths"]:  # Only add rule if paths are defined
+                    spec["rules"].append(rule)
+
+        # Add TLS configuration if provided
+        if tls:
+            spec["tls"] = tls
+
+        # Add ingressClassName if provided
+        if ingress_class_name:
+            spec["ingressClassName"] = ingress_class_name
+
+        # Build the desired Ingress resource
+        desired_ingress = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Ingress",
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        # Add annotations if provided
+        if annotations:
+            desired_ingress["metadata"]["annotations"] = annotations
+
+        # Check if the Ingress already exists
+        existing_ingress = None
+        try:
+            existing_ingress = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=name,
             )
-        if rule["http"]["paths"]:  # Only add rule if paths are defined
-            spec["rules"].append(rule)
+        except ApiException as e:
+            if e.status != 404:
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Error checking Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
+                )
+                return ret
+
+        if existing_ingress:
+            # Update existing Ingress if it differs
+            if (
+                existing_ingress.get("spec", {}) != spec
+                or existing_ingress.get("metadata", {}).get("annotations", {})
+                != annotations
+            ):
+                try:
+                    # Include resourceVersion to avoid conflicts
+                    if (
+                        "metadata" in existing_ingress
+                        and "resourceVersion" in existing_ingress["metadata"]
+                    ):
+                        desired_ingress["metadata"]["resourceVersion"] = (
+                            existing_ingress["metadata"]["resourceVersion"]
+                        )
+                    custom_api.replace_namespaced_custom_object(
+                        group=group,
+                        version=version,
+                        namespace=namespace,
+                        plural=plural,
+                        name=name,
+                        body=desired_ingress,
+                    )
+                    ret["result"] = True
+                    ret["changes"] = {
+                        "updated": f"Ingress {name} in namespace {namespace}"
+                    }
+                    ret["comment"] = f"Ingress {name} updated in namespace {namespace}."
+                except ApiException as e:
+                    ret["result"] = False
+                    ret["comment"] = (
+                        f"Failed to update Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
+                    )
+            else:
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Ingress {name} already exists in namespace {namespace} with the desired configuration."
+                )
+        else:
+            # Create new Ingress
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=desired_ingress,
+                )
+                ret["result"] = True
+                ret["changes"] = {"created": f"Ingress {name} in namespace {namespace}"}
+                ret["comment"] = f"Ingress {name} created in namespace {namespace}."
+            except ApiException as e:
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to create Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
+                )
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Error managing Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
+        )
+
+    return ret
 
 
 def certmanager_certificate_present(
