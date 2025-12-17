@@ -47,12 +47,10 @@ create_keycloak_ingress:
   k8s.ingress_present:
     - name: {{ kcluster['ingress']['name'] }}
     - namespace: {{ kcluster['ingress']['namespace'] }}
-    - hosts:
-      - {{ kcert['commonName'] }}
+    - hosts: {{ kcluster['ingress']['hosts']
     - tls:
       - secret_name: {{ kcert['name'] }}-tls
-        hosts:
-          - {{ kcert['commonName'] }}
+        hosts: {{ kcert['dns_names'] }}
     - ingress_class_name: {{ kcluster['ingress']['spec']['ingressClassName'] }}
     - require:
       - k8s: create_keycloak_cert
