@@ -5,7 +5,7 @@ include:
 ldap_tls_cert:
   k8s.certmanager_certificate_present:
     - certificate_name: {{ pillar.get('ldap:cert:name') }}
-    - namespace: {{ pillar.get('ldap:cert:namespace') }}
+    - namespace: {{ pillar['ldap']['cert']['namespace'] }}
     - secret_name: {{ pillar.get('ldap:cert:secret_name') }}
     - issuer_name: {{ pillar.get('ldap:cert:issuer_name') }}
     - issuer_kind: {{ pillar.get('ldap:cert:issuer_kind') }}
