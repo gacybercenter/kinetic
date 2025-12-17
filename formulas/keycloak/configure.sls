@@ -36,7 +36,7 @@ create_keycloak_cert:
   k8s.certmanager_certificate_present:
     - namespace: {{ kcert['namespace'] }}
     - certificate_name: {{ kcert['name'] }}
-    - secret_name: {{ kcert['secret_name'] }}-tls
+    - secret_name: {{ kcert['name'] }}-tls
     - common_name: {{ kcert['commonName'] }}
     - email_address: {{ kcert['emailAddress'] }}
     - dns_names: {{ kcert['dns_names'] }}
