@@ -39,6 +39,7 @@ create_keycloak_cert:
     - certificate_name: {{ kcert['name'] }}-tls
     - common_name: {{ kcert['commonName'] }}
     - email_address: {{ kcert['emailAddress'] }}
+    - dns_names: {{ kcert['dns_names'] }}
     - issuer_ref:
       - name: {{ kcert['issuerRef']['name'] }}
       - kind: {{ kcert['issuerRef']['kind'] }}
