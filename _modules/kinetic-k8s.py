@@ -4214,120 +4214,119 @@ def certmanager_issuer_present(namespace, issuer_name, issuer_kind="Issuer", spe
         }
 
 
-def ingress_present(namespace, ingress_name, spec, annotations=None):
+def ingress_present(
+    name,
+    namespace,
+    hosts,
+    tls=None,
+    ingress_class_name=None,
+    annotations=None,
+    **kwargs,
+):
     """
-    Ensure that a Kubernetes Ingress resource exists in the specified namespace.
-    If it does not exist, create it. If it exists, update it if necessary.
+    Ensures that an Ingress resource is present in the specified namespace.
 
     Args:
-        namespace (str): The namespace for the Ingress resource.
-        ingress_name (str): The name of the Ingress resource.
-        spec (dict): The specification for the Ingress resource, including rules, tls, etc.
-        annotations (dict, optional): Annotations to apply to the Ingress (e.g., for ingress controller settings). Defaults to None.
+        name (str): The name of the Ingress resource.
+        namespace (str): The namespace in which the Ingress should exist.
+        hosts (list): List of hostnames or host configurations for the Ingress rules.
+        tls (list, optional): List of TLS configurations, each containing secretName and hosts.
+        ingress_class_name (str, optional): The name of the IngressClass to use.
+        annotations (dict, optional): Additional annotations for the Ingress.
+        **kwargs: Additional arguments to pass to the Kubernetes API.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
-
-    CLI Example:
-        salt '*' kinetic-k8s.ingress_present openstack my-ingress spec_dict annotations_dict
+        dict: A dictionary containing the result of the operation.
     """
+    ret = {"name": name, "result": None, "changes": {}, "comment": ""}
+
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
-
-        networking_v1_api = client.NetworkingV1Api()
-        exists = False
-        updated = False
-        matches = False
-
-        # Check if Ingress exists
-        try:
-            ingress = networking_v1_api.read_namespaced_ingress(
-                name=ingress_name, namespace=namespace
-            )
-            exists = True
-            current_spec = ingress.spec.to_dict() if ingress.spec else {}
-            current_annotations = ingress.metadata.annotations or {}
-            desired_annotations = annotations or {}
-            desired_spec = spec
-
-            # Check if spec and annotations match
-            if (
-                current_spec == desired_spec
-                and current_annotations == desired_annotations
-            ):
-                matches = True
-                message = f"Ingress {ingress_name} in namespace {namespace} already exists and matches desired spec"
-            else:
-                matches = False
-                message = f"Ingress {ingress_name} in namespace {namespace} exists but spec or annotations differ"
-        except ApiException as e:
-            if e.status == 404:
-                exists = False
-                message = (
-                    f"Ingress {ingress_name} in namespace {namespace} does not exist"
-                )
-            else:
-                return {
-                    "success": False,
-                    "updated": False,
-                    "message": f"Error checking Ingress {ingress_name}: {str(e)[:50]}...",
-                }
-
-        # Create or update Ingress
-        ingress_body = client.V1Ingress(
-            metadata=client.V1ObjectMeta(
-                name=ingress_name, namespace=namespace, annotations=annotations or {}
-            ),
-            spec=client.V1IngressSpec(**spec),
+        # Check if the Ingress already exists
+        existing_ingress = __salt__["k8s.get"](
+            api_version="networking.k8s.io/v1",
+            kind="Ingress",
+            name=name,
+            namespace=namespace,
         )
 
-        if not exists:
-            try:
-                networking_v1_api.create_namespaced_ingress(
-                    namespace=namespace, body=ingress_body
-                )
-                updated = True
-                message = f"Ingress {ingress_name} created in namespace {namespace}"
-            except ApiException as e:
-                return {
-                    "success": False,
-                    "updated": False,
-                    "message": f"Failed to create Ingress {ingress_name}: {str(e)}...",
-                }
-        elif not matches:
-            try:
-                # Include resourceVersion if updating to avoid conflicts
-                if (
-                    exists
-                    and hasattr(ingress, "metadata")
-                    and hasattr(ingress.metadata, "resource_version")
-                ):
-                    ingress_body.metadata.resource_version = (
-                        ingress.metadata.resource_version
-                    )
-                networking_v1_api.replace_namespaced_ingress(
-                    name=ingress_name, namespace=namespace, body=ingress_body
-                )
-                updated = True
-                message = f"Ingress {ingress_name} updated in namespace {namespace}"
-            except ApiException as e:
-                return {
-                    "success": False,
-                    "updated": False,
-                    "message": f"Failed to update Ingress {ingress_name}: {str(e)}...",
-                }
+        # Build the spec dictionary
+        spec = {"rules": []}
 
-        return {"success": True, "updated": updated, "message": message}
+        # Handle hosts and rules
+        for host in hosts:
+            if isinstance(host, str):
+                rule = {
+                    "host": host,
+                    "http": {
+                        "paths": [
+                            {
+                                "path": "/",
+                                "pathType": "Prefix",
+                                "backend": {
+                                    "service": {
+                                        "name": name,  # Assuming service name matches ingress name
+                                        "port": {
+                                            "number": 80  # Default port, can be overridden if needed
+                                        },
+                                    }
+                                },
+                            }
+                        ]
+                    },
+                }
+                spec["rules"].append(rule)
+            elif isinstance(host, dict):
+                spec["rules"].append(host)  # Assume it's a pre-configured rule
 
-    except Exception as e:
-        return {
-            "success": False,
-            "updated": False,
-            "message": f"Ingress operation error: {str(e)[:100]}...",
+        # Add TLS configuration if provided
+        if tls:
+            spec["tls"] = tls
+
+        # Add ingressClassName if provided
+        if ingress_class_name:
+            spec["ingressClassName"] = ingress_class_name
+
+        # Build the desired Ingress resource
+        desired_ingress = {
+            "apiVersion": "networking.k8s.io/v1",
+            "kind": "Ingress",
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": spec,
         }
+
+        # Add annotations if provided
+        if annotations:
+            desired_ingress["metadata"]["annotations"] = annotations
+
+        if existing_ingress:
+            # Update existing Ingress if it differs
+            if (
+                existing_ingress.get("spec", {}) != spec
+                or existing_ingress.get("metadata", {}).get("annotations", {})
+                != annotations
+            ):
+                __salt__["k8s.apply"](manifest=desired_ingress, **kwargs)
+                ret["result"] = True
+                ret["changes"] = {"updated": f"Ingress {name} in namespace {namespace}"}
+                ret["comment"] = f"Ingress {name} updated in namespace {namespace}."
+            else:
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Ingress {name} already exists in namespace {namespace} with the desired configuration."
+                )
+        else:
+            # Create new Ingress
+            __salt__["k8s.apply"](manifest=desired_ingress, **kwargs)
+            ret["result"] = True
+            ret["changes"] = {"created": f"Ingress {name} in namespace {namespace}"}
+            ret["comment"] = f"Ingress {name} created in namespace {namespace}."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Error managing Ingress {name} in namespace {namespace}: {str(e)}"
+        )
+
+    return ret
 
 
 def certmanager_certificate_present(
