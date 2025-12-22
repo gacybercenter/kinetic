@@ -32,25 +32,81 @@ def __virtual__():
         )
 
 
-def sanitize_resource_version(body):
+def handle_certmanager_resource_version(
+    body,
+    existing_resource=None,
+    api_instance=None,
+    group=None,
+    version=None,
+    namespace=None,
+    plural=None,
+    name=None,
+):
     """
-    Remove resourceVersion from the metadata of a resource body if it exists,
-    especially if it's invalid (like set to '0').
+    Handle resourceVersion for cert-manager resource updates.
+    Use the existing resource's resourceVersion if valid.
+    If invalid (like '0') or missing, remove it from the body to mimic restore behavior.
+    Optionally attempt to fetch the latest resource if api_instance details are provided.
 
     Args:
-        body (dict): The resource body to sanitize.
+        body (dict): The resource body to update.
+        existing_resource (dict, optional): The existing resource data if already fetched.
+        api_instance (CustomObjectsApi, optional): API instance to fetch the resource if needed.
+        group (str, optional): API group for fetching.
+        version (str, optional): API version for fetching.
+        namespace (str, optional): Namespace for fetching.
+        plural (str, optional): Resource plural name for fetching.
+        name (str, optional): Resource name for fetching.
 
     Returns:
-        dict: The sanitized resource body with resourceVersion removed if it was present.
+        dict: The updated resource body with resourceVersion handled appropriately.
+        str: A message indicating the status of resourceVersion handling.
     """
-    if isinstance(body, dict) and "metadata" in body:
-        metadata = body.get("metadata", {})
-        if "resourceVersion" in metadata:
-            resource_version = metadata.get("resourceVersion", "")
-            if resource_version == "0" or not resource_version:
-                metadata.pop("resourceVersion", None)
-                body["metadata"] = metadata
-    return body
+    message = ""
+    if (
+        existing_resource
+        and "metadata" in existing_resource
+        and "resourceVersion" in existing_resource["metadata"]
+    ):
+        resource_version = existing_resource["metadata"].get("resourceVersion", "")
+        if resource_version and resource_version != "0":
+            body.setdefault("metadata", {}).update(
+                {"resourceVersion": resource_version}
+            )
+            message = "Using existing resourceVersion for update."
+        else:
+            if "metadata" in body:
+                body["metadata"].pop("resourceVersion", None)
+            message = "Existing resourceVersion is invalid or zero, removed for update."
+    else:
+        if "metadata" in body:
+            body["metadata"].pop("resourceVersion", None)
+        message = "No valid existing resource data, resourceVersion removed for update."
+
+    # Optional: Attempt to fetch latest if resourceVersion was invalid or missing
+    if message.startswith("Existing resourceVersion is invalid") or message.startswith(
+        "No valid existing resource data"
+    ):
+        if api_instance and all([group, version, namespace, plural, name]):
+            try:
+                latest_resource = api_instance.get_namespaced_custom_object(
+                    group, version, namespace, plural, name
+                )
+                if (
+                    "metadata" in latest_resource
+                    and "resourceVersion" in latest_resource["metadata"]
+                ):
+                    resource_version = latest_resource["metadata"].get(
+                        "resourceVersion", ""
+                    )
+                    if resource_version and resource_version != "0":
+                        body.setdefault("metadata", {}).update(
+                            {"resourceVersion": resource_version}
+                        )
+                        message = "Fetched latest resourceVersion for update."
+            except Exception as e:
+                message += f" Failed to fetch latest resourceVersion: {str(e)[:50]}..."
+    return body, message
 
 
 def get_mac_by_interface_name(namespace, resource_name, interface_name):
@@ -4501,24 +4557,33 @@ def certmanager_certificate_present(
             # Compare spec fields to determine if update is needed
             existing_spec = existing_cert.get("spec", {})
             if existing_spec != spec:
-                # Sanitize the resourceVersion to avoid update errors
-                sanitized_body = sanitize_resource_version(cert_body)
+                # Handle resourceVersion for cert-manager update
+                cert_body, rv_message = handle_certmanager_resource_version(
+                    body=cert_body,
+                    existing_resource=existing_cert,
+                    api_instance=custom_api,
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=name,
+                )
                 # Update the Certificate
                 updated_cert = custom_api.replace_namespaced_custom_object(
-                    group, version, namespace, plural, name, sanitized_body
+                    group, version, namespace, plural, name, cert_body
                 )
                 return {
                     "success": True,
                     "updated": True,
-                    "message": f"Certificate {name} updated in namespace {namespace}.",
+                    "message": f"Certificate {name} updated in namespace {namespace}. {rv_message}",
                     "resource": updated_cert,
                 }
-            return {
-                "success": True,
-                "updated": False,
-                "message": f"Certificate {name} already exists in namespace {namespace} with matching spec.",
-                "resource": existing_cert,
-            }
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"Certificate {name} already exists in namespace {namespace} with matching spec.",
+                    "resource": existing_cert,
+                }
         except ApiException as e:
             if e.status == 404:
                 # Certificate does not exist, create it
