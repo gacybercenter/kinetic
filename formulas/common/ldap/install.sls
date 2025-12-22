@@ -11,6 +11,18 @@ add_openldap_repo:
     - require:
       - sls: formulas.common.helm.install
 
+{% set ldap_lb_1 = pillar['ldap']['cert']['ip_addresses'][0] %}
+{% set ldap_lb_2 = pillar['ldap']['cert']['ip_addresses'][1] %}
+
+# Configure MetalLB pool and advertisement for internal IP
+ensure_metallb_pool_ldap:
+  k8s.metallb_pool_present:
+    - namespace: unused-namespace
+    - pool_name: ldap-lb-pool
+    - addresses:
+        - {{ ldap_lb_1 }}-{{ ldap_lb_2 }}
+    - metallb_namespace: metallb-system
+
 # Fetch additional configurable parameters from pillar with defaults
 {% set ldap_namespace = pillar['ldap']['namespace'] %}
 {% set ldap_version = pillar['ldap']['version'] %}

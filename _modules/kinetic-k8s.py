@@ -32,6 +32,27 @@ def __virtual__():
         )
 
 
+def sanitize_resource_version(body):
+    """
+    Remove resourceVersion from the metadata of a resource body if it exists,
+    especially if it's invalid (like set to '0').
+
+    Args:
+        body (dict): The resource body to sanitize.
+
+    Returns:
+        dict: The sanitized resource body with resourceVersion removed if it was present.
+    """
+    if isinstance(body, dict) and "metadata" in body:
+        metadata = body.get("metadata", {})
+        if "resourceVersion" in metadata:
+            resource_version = metadata.get("resourceVersion", "")
+            if resource_version == "0" or not resource_version:
+                metadata.pop("resourceVersion", None)
+                body["metadata"] = metadata
+    return body
+
+
 def get_mac_by_interface_name(namespace, resource_name, interface_name):
     """
     Retrieve the MAC address of a network interface from a HardwareData Custom Resource in Kubernetes.
@@ -4480,9 +4501,11 @@ def certmanager_certificate_present(
             # Compare spec fields to determine if update is needed
             existing_spec = existing_cert.get("spec", {})
             if existing_spec != spec:
+                # Sanitize the resourceVersion to avoid update errors
+                sanitized_body = sanitize_resource_version(cert_body)
                 # Update the Certificate
                 updated_cert = custom_api.replace_namespaced_custom_object(
-                    group, version, namespace, plural, name, cert_body
+                    group, version, namespace, plural, name, sanitized_body
                 )
                 return {
                     "success": True,
