@@ -2116,10 +2116,10 @@ def certmanager_certificate_present(
         Optional. List of IP addresses (SANs) for the certificate. Defaults to None.
 
     duration
-        Optional. Duration of the certificate validity (e.g., '2160h'). Defaults to None.
+        Optional. Duration of the certificate validity (e.g., '2160h'). Defaults to '2160h'.
 
     renew_before
-        Optional. Time before expiration to renew the certificate (e.g., '360h'). Defaults to None.
+        Optional. Time before expiration to renew the certificate (e.g., '360h'). Defaults to '360h'.
 
     Example:
     .. code-block:: yaml
@@ -2156,8 +2156,8 @@ def certmanager_certificate_present(
             renew_before=renew_before,
         )
 
-        # Ensure result is a dictionary with expected keys
-        if not isinstance(result, dict):
+        # Check if result is None or not a dictionary
+        if result is None or not isinstance(result, dict):
             raise ValueError(
                 f"Unexpected return type from kinetic-k8s.certmanager_certificate_present: {type(result)}"
             )
@@ -2173,8 +2173,21 @@ def certmanager_certificate_present(
 
     except Exception as e:
         ret["result"] = False
+        error_details = {
+            "certificate_name": certificate_name,
+            "namespace": namespace,
+            "secret_name": secret_name,
+            "issuer_name": issuer_name,
+            "issuer_kind": issuer_kind,
+            "common_name": common_name,
+            "dns_names": dns_names if dns_names is not None else "None",
+            "ip_addresses": ip_addresses if ip_addresses is not None else "None",
+            "duration": duration,
+            "renew_before": renew_before,
+        }
         ret["comment"] = (
-            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)}..."
+            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]}...\n"
+            f"Input variables: {error_details}"
         )
         ret["changes"] = {}
 
