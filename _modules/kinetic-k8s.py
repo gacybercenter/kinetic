@@ -4524,6 +4524,8 @@ def certmanager_certificate_present(
     CLI Example:
         salt '*' kinetic-k8s.certmanager_certificate_present ldap-tls-cert ldap tls-cert selfsigned-issuer ClusterIssuer ldap.example.com dns_names="['ldap.example.com']" duration="2160h"
     """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
     try:
         # Load Kubernetes configuration (in-cluster or from kubeconfig)
         config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
@@ -4589,12 +4591,16 @@ def certmanager_certificate_present(
                 "updated": False,
                 "message": f"ApiException: Failed to manage Certificate {name} in namespace {namespace}: {str(e)[:50]}...",
             }
-        except Exception as e:
-            return {
-                "success": False,
-                "updated": False,
-                "message": f"Unexpected error managing Certificate {name} in namespace {namespace}: {str(e)[:50]}...",
-            }
+    except Exception as e:
+        ret["result"] = False
+
+        ret["comment"] = (
+            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]}...\n"
+            f"Input variables: {error_details}"
+        )
+        ret["changes"] = {}
+
+    return ret
 
 
 def cnpg_cluster_present(namespace, cluster_name, spec):
