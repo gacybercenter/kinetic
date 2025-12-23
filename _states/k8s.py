@@ -2082,8 +2082,8 @@ def certmanager_certificate_present(
     common_name,
     dns_names=None,
     ip_addresses=None,
-    duration=None,
-    renew_before=None,
+    duration="2160h",
+    renew_before="360h",
 ):
     """
     Ensure a cert-manager Certificate exists in the specified Kubernetes namespace.
