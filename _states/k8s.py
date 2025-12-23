@@ -2168,7 +2168,7 @@ def certmanager_certificate_present(
     except Exception as e:
         ret["result"] = False
         ret["comment"] = (
-            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]}..."
+            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)}..."
         )
         ret["changes"] = {}
 
