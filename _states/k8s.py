@@ -2156,9 +2156,15 @@ def certmanager_certificate_present(
             renew_before=renew_before,
         )
 
-        ret["result"] = result["success"]
-        ret["comment"] = result["message"]
-        if result["updated"]:
+        # Ensure result is a dictionary with expected keys
+        if not isinstance(result, dict):
+            raise ValueError(
+                f"Unexpected return type from kinetic-k8s.certmanager_certificate_present: {type(result)}"
+            )
+
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "No message provided.")
+        if result.get("updated", False):
             ret["changes"] = {"certificate_updated": True}
         else:
             ret[
@@ -2180,9 +2186,12 @@ def certmanager_certificate_present(
             "renew_before": renew_before,
         }
         ret["comment"] = (
-            f"Failed to ensure Certificate {certificate_name} in namespace {namespace} \n {error_details}: {str(e)[:100]}"
+            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]}...\n"
+            f"Input variables: {error_details}"
         )
         ret["changes"] = {}
+
+    return ret
 
 
 def cnpg_cluster_present(name, namespace, cluster_name, spec):
