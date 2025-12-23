@@ -4551,23 +4551,11 @@ def certmanager_certificate_present(
         group, version = "cert-manager.io", "v1"
         plural = "certificates"
         try:
-            existing_cert = custom_api.get_namespaced_custom_object(
-                group, version, namespace, plural, name
-            )
             # Compare spec fields to determine if update is needed
             existing_spec = existing_cert.get("spec", {})
             if existing_spec != spec:
-                # Handle resourceVersion for cert-manager update
-                cert_body, rv_message = handle_certmanager_resource_version(
-                    body=cert_body,
-                    existing_resource=existing_cert,
-                    api_instance=custom_api,
-                    group=group,
-                    version=version,
-                    namespace=namespace,
-                    plural=plural,
-                    name=name,
-                )
+                # Handle resourceVersion for cert-manager update (if utility function is added)
+                # cert_body, rv_message = handle_certmanager_resource_version(...)
                 # Update the Certificate
                 updated_cert = custom_api.replace_namespaced_custom_object(
                     group, version, namespace, plural, name, cert_body
@@ -4575,15 +4563,15 @@ def certmanager_certificate_present(
                 return {
                     "success": True,
                     "updated": True,
-                    "message": f"Certificate {name} updated in namespace {namespace}. {rv_message}",
+                    "message": f"Certificate {name} updated in namespace {namespace}.",
                     "resource": updated_cert,
                 }
-                return {
-                    "success": True,
-                    "updated": False,
-                    "message": f"Certificate {name} already exists in namespace {namespace} with matching spec.",
-                    "resource": existing_cert,
-                }
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"Certificate {name} already exists in namespace {namespace} with matching spec.",
+                "resource": existing_cert,
+            }
         except ApiException as e:
             if e.status == 404:
                 # Certificate does not exist, create it
@@ -4596,20 +4584,17 @@ def certmanager_certificate_present(
                     "message": f"Certificate {name} created in namespace {namespace}.",
                     "resource": created_cert,
                 }
-            else:
-                return {
-                    "success": False,
-                    "updated": False,
-                    "message": f"Failed to manage Certificate {name} in namespace {namespace}: {str(e)}...",
-                    "resource": {},
-                }
-    except Exception as e:
-        return {
-            "success": False,
-            "updated": False,
-            "message": f"Error managing Certificate {name} in namespace {namespace}: {str(e)}...",
-            "resource": {},
-        }
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"ApiException: Failed to manage Certificate {name} in namespace {namespace}: {str(e)[:50]}...",
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Unexpected error managing Certificate {name} in namespace {namespace}: {str(e)[:50]}...",
+            }
 
 
 def cnpg_cluster_present(namespace, cluster_name, spec):
