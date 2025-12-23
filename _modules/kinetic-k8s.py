@@ -4524,11 +4524,13 @@ def certmanager_certificate_present(
     CLI Example:
         salt '*' kinetic-k8s.certmanager_certificate_present ldap-tls-cert ldap tls-cert selfsigned-issuer ClusterIssuer ldap.example.com dns_names="['ldap.example.com']" duration="2160h"
     """
-    ret = {"name": name, "result": False, "comment": "", "changes": {}}
-
     try:
         # Load Kubernetes configuration (in-cluster or from kubeconfig)
-        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+        try:
+            config.load_incluster_config()
+        except config.ConfigException:
+            config.load_kube_config()
+
         custom_api = client.CustomObjectsApi()
 
         # Construct the spec for the Certificate
@@ -4536,11 +4538,16 @@ def certmanager_certificate_present(
             "secretName": secret_name,
             "issuerRef": {"name": issuer_name, "kind": issuer_kind},
             "commonName": common_name,
-            "dnsNames": dns_names,
-            "ipAddresses": ip_addresses,
-            "duration": duration,
-            "renewBefore": renew_before,
         }
+        if dns_names:
+            spec["dnsNames"] = dns_names
+        if ip_addresses:
+            spec["ipAddresses"] = ip_addresses
+        if duration:
+            spec["duration"] = duration
+        if renew_before:
+            spec["renewBefore"] = renew_before
+
         # Define the full Certificate object
         cert_body = {
             "apiVersion": "cert-manager.io/v1",
@@ -4553,11 +4560,23 @@ def certmanager_certificate_present(
         group, version = "cert-manager.io", "v1"
         plural = "certificates"
         try:
+            existing_cert = custom_api.get_namespaced_custom_object(
+                group, version, namespace, plural, name
+            )
             # Compare spec fields to determine if update is needed
             existing_spec = existing_cert.get("spec", {})
             if existing_spec != spec:
-                # Handle resourceVersion for cert-manager update (if utility function is added)
-                # cert_body, rv_message = handle_certmanager_resource_version(...)
+                # Handle resourceVersion for cert-manager update
+                cert_body, rv_message = handle_certmanager_resource_version(
+                    body=cert_body,
+                    existing_resource=existing_cert,
+                    api_instance=custom_api,
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=name,
+                )
                 # Update the Certificate
                 updated_cert = custom_api.replace_namespaced_custom_object(
                     group, version, namespace, plural, name, cert_body
@@ -4565,7 +4584,7 @@ def certmanager_certificate_present(
                 return {
                     "success": True,
                     "updated": True,
-                    "message": f"Certificate {name} updated in namespace {namespace}.",
+                    "message": f"Certificate {name} updated in namespace {namespace}. {rv_message}",
                     "resource": updated_cert,
                 }
             return {
@@ -4591,16 +4610,18 @@ def certmanager_certificate_present(
                 "updated": False,
                 "message": f"ApiException: Failed to manage Certificate {name} in namespace {namespace}: {str(e)[:50]}...",
             }
+        except Exception as e:
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Unexpected error managing Certificate {name} in namespace {namespace}: {str(e)[:50]}...",
+            }
     except Exception as e:
-        ret["result"] = False
-
-        ret["comment"] = (
-            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]}...\n"
-            f"Input variables: {error_details}"
-        )
-        ret["changes"] = {}
-
-    return ret
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Initialization error for Certificate {name} in namespace {namespace}: {str(e)[:50]}...",
+        }
 
 
 def cnpg_cluster_present(namespace, cluster_name, spec):
