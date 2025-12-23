@@ -2180,8 +2180,7 @@ def certmanager_certificate_present(
             "renew_before": renew_before,
         }
         ret["comment"] = (
-            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]}...\n"
-            f"Input variables: {error_details}"
+            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]} {error_details}"
         )
         ret["changes"] = {}
 
