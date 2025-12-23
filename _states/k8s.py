@@ -2173,21 +2173,8 @@ def certmanager_certificate_present(
 
     except Exception as e:
         ret["result"] = False
-        error_details = {
-            "certificate_name": certificate_name,
-            "namespace": namespace,
-            "secret_name": secret_name,
-            "issuer_name": issuer_name,
-            "issuer_kind": issuer_kind,
-            "common_name": common_name,
-            "dns_names": dns_names,
-            "ip_addresses": ip_addresses,
-            "duration": duration,
-            "renew_before": renew_before,
-        }
         ret["comment"] = (
             f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)}..."
-            f"Input variables: {error_details}"
         )
         ret["changes"] = {}
 
