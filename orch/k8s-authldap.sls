@@ -8,5 +8,3 @@ deploy_ldap:
     - tgt: {{ k8s }}
     - sls:
       - formulas.common.ldap
-    - require:
-      - salt: deploy_cnpg_operator
