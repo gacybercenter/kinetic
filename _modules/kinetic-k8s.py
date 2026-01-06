@@ -1194,7 +1194,7 @@ def uuids_secret_present(
 
                 # Step 3: If deployment is ready, wait a mandatory 20 seconds before checking salt-master responsiveness
                 if waited:
-                    message += f"; Pausing for 20 seconds before salt-master responsiveness check"
+                    message += "; Pausing for 20 seconds before salt-master responsiveness check"
                     time.sleep(20)
 
                     # Step 4: Verify salt-master responsiveness by fetching pillar data
