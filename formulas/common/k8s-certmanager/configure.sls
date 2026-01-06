@@ -25,3 +25,15 @@ ensure_cyberrange_ca:
     - duration: 8760h  # 1 year
     - renew_before: 720h  # 30 days before expiry
     - is_ca: True
+
+# Create a ClusterIssuer based on the CA certificate secret
+ensure_cyberrange_ca_cluster_issuer:
+  k8s.certmanager_issuer_present:
+    - namespace: {{ cert_manager_namespace }}
+    - issuer_name: cyberrange-ca-issuer
+    - issuer_kind: ClusterIssuer
+    - spec:
+        ca:
+          secretName: ca-cyberrange-secret
+    - require:
+      - k8s: ensure_cyberrange_ca
