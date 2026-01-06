@@ -2084,6 +2084,7 @@ def certmanager_certificate_present(
     ip_addresses=None,
     duration="2160h",
     renew_before="360h",
+    is_ca=False,
 ):
     """
     Ensure a cert-manager Certificate exists in the specified Kubernetes namespace.
@@ -2121,24 +2122,25 @@ def certmanager_certificate_present(
     renew_before
         Optional. Time before expiration to renew the certificate (e.g., '360h'). Defaults to '360h'.
 
+    is_ca
+        Optional. If True, the certificate will be marked as a CA certificate. Defaults to False.
+
     Example:
     .. code-block:: yaml
 
-        ensure_ldap_cert:
+        ensure_ca_cert:
           k8s.certmanager_certificate_present:
-            - certificate_name: ldap-tls-cert
-            - namespace: ldap
-            - secret_name: tls-cert
+            - certificate_name: ca-cert
+            - namespace: cert-manager
+            - secret_name: ca-cert-secret
             - issuer_name: selfsigned-issuer
-            - issuer_kind: ClusterIssuer
-            - common_name: ldap.example.com
+            - issuer_kind: Issuer
+            - common_name: "My CA"
             - dns_names:
-              - ldap.example.com
-              - ldap.service.local
-            - ip_addresses:
-              - 127.0.0.1
-            - duration: 2160h
-            - renew_before: 360h
+              - ca.local
+            - duration: 8760h
+            - renew_before: 720h
+            - is_ca: True
     """
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
@@ -2154,6 +2156,7 @@ def certmanager_certificate_present(
             ip_addresses=ip_addresses,
             duration=duration,
             renew_before=renew_before,
+            is_ca=is_ca,
         )
 
         # Check if result is None or not a dictionary
@@ -2184,6 +2187,7 @@ def certmanager_certificate_present(
             "ip_addresses": ip_addresses if ip_addresses is not None else "None",
             "duration": duration,
             "renew_before": renew_before,
+            "is_ca": is_ca,
         }
         ret["comment"] = (
             f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]}...\n"

@@ -4502,6 +4502,7 @@ def certmanager_certificate_present(
     ip_addresses=None,
     duration=None,
     renew_before=None,
+    is_ca=False,
 ):
     """
     Ensure a cert-manager Certificate exists in the specified Kubernetes namespace with the given spec.
@@ -4517,12 +4518,13 @@ def certmanager_certificate_present(
         ip_addresses (list, optional): List of IP addresses (SANs) for the certificate. Defaults to None.
         duration (str, optional): Duration of the certificate validity (e.g., '2160h'). Defaults to None.
         renew_before (str, optional): Time before expiration to renew the certificate (e.g., '360h'). Defaults to None.
+        is_ca (bool, optional): If True, the certificate will be marked as a CA certificate. Defaults to False.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
 
     CLI Example:
-        salt '*' kinetic-k8s.certmanager_certificate_present ldap-tls-cert ldap tls-cert selfsigned-issuer ClusterIssuer ldap.example.com dns_names="['ldap.example.com']" duration="2160h"
+        salt '*' kinetic-k8s.certmanager_certificate_present ldap-tls-cert ldap tls-cert selfsigned-issuer ClusterIssuer ldap.example.com dns_names="['ldap.example.com']" duration="2160h" is_ca=True
     """
     try:
         # Load Kubernetes configuration (in-cluster or from kubeconfig)
@@ -4547,6 +4549,8 @@ def certmanager_certificate_present(
             spec["duration"] = duration
         if renew_before:
             spec["renewBefore"] = renew_before
+        if is_ca:
+            spec["isCA"] = True
 
         # Define the full Certificate object
         cert_body = {
