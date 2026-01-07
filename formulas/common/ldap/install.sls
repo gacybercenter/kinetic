@@ -6,7 +6,7 @@ include:
 add_openldap_repo:
   k8s_helm.helm_repo_present:
     - repo_name: helm-openldap
-    - repo_url: https://symas.github.io/helm-openldap/
+    - repo_url: https://jp-gouin.github.io/helm-openldap/
     - update_cache: True
     - require:
       - sls: formulas.common.helm.install
