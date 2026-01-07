@@ -26,7 +26,17 @@ ensure_metallb_pool_ldap:
 # Fetch additional configurable parameters from pillar with defaults
 {% set ldap_namespace = pillar['ldap']['namespace'] %}
 {% set ldap_version = pillar['ldap']['version'] %}
+{% set ldap_admin_secret = pillar['ldap']['values']['global']['existingSecret'] %}
 {% set ldap_values = pillar['ldap']['values'] %}
+
+# Create Kubernetes secret for LDAP admin credentials
+ensure_ldap_admin_secret:
+  k8s.secret_present:
+    - secret_name: {{ ldap_admin_secret }}
+    - namespace: {{ ldap_namespace }}
+    - data:
+        LDAP_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] }}
+        LDAP_CONFIG_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] }}
 
 # Install or upgrade OpenLDAP HA stack using Helm via k8s_helm state
 install_openldap_ha:
