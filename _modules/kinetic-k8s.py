@@ -4948,7 +4948,6 @@ def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=
                     'name': db_password_secret_name,
                     'key': db_password_secret_key
                 }
-            }
         if proxy_headers:
             spec['proxy'] = {
                 'headers': proxy_headers
