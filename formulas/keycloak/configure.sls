@@ -54,6 +54,7 @@ create_keycloak_ingress:
     - annotations: {{ kcluster['ingress']['annotations'] }}
     - require:
       - k8s: create_keycloak_cert
+
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
     - namespace: {{ kcluster['ingress']['namespace'] }}
@@ -73,3 +74,7 @@ ensure_keycloak_cluster:
     - ingress_enabled: False
     - proxy_headers: forwarded
     - tls_secret: {{ kcert['name'] }}-tls
+    - truststores: {{ pillar.get('kc-cluster:truststores', {}) }}
+    - require:
+      - k8s: create_auth_pg_cluster
+      - k8s: create_keycloak_cert

@@ -2336,97 +2336,108 @@ def secret_present(
 
     return ret
 
-
-def keycloak_cluster_present(
-    name,
-    namespace,
-    hostname,
-    cluster_name,
-    start_optimized=False,
-    instances=2,
-    image=None,
-    db_vendor="postgres",
-    db_host=None,
-    db_port=5432,
-    db_name="keycloak",
-    db_user_name_secret_name=None,
-    db_user_name_secret_key=None,
-    db_password_secret_name=None,
-    db_password_secret_key=None,
-    ingress_enabled=False,
-    proxy_headers="xforwarded",
-    tls_secret=None,
-):
+def keycloak_cluster_present(name, namespace, hostname, cluster_name, start_optimized=False, instances=1, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name=None, db_user_name_secret_name=None, db_user_name_secret_key="username", db_password_secret_name=None, db_password_secret_key="password", ingress_enabled=False, proxy_headers=None, tls_secret=None, truststores=None):
     """
-    Ensure that a Keycloak Custom Resource exists in the specified namespace.
-    If it does not exist, create it. If it exists, update it if necessary.
+    Ensure a Keycloak Cluster exists in the specified Kubernetes namespace.
 
     name
         The name of the state (arbitrary, for SaltStack identification).
-    hostname
-        the FQDN of the cluster
+
     namespace
-        The namespace for the Keycloak resource.
+        The Kubernetes namespace for the Keycloak Cluster.
+
+    hostname
+        The hostname for the Keycloak instance.
 
     cluster_name
-        The name of the Keycloak resource.
+        The name of the Keycloak Cluster resource.
 
     start_optimized
-        Optional. Whether to start Keycloak with optimized settings. Defaults to False.
+        Optional. Whether to start Keycloak in optimized mode. Defaults to False.
 
     instances
-        Optional. Number of Keycloak instances. Defaults to 2.
+        Optional. Number of Keycloak instances. Defaults to 1.
 
     image
-        Required. The Docker image for Keycloak.
+        Optional. Docker image for Keycloak. Defaults to None (uses operator default).
 
     db_vendor
-        Optional. Database vendor for Keycloak. Defaults to "postgres".
+        Optional. Database vendor (e.g., 'postgres'). Defaults to 'postgres'.
 
     db_host
-        Required. Database host for Keycloak.
+        Optional. Database host. Defaults to None.
 
     db_port
-        Optional. Database port for Keycloak. Defaults to 5432.
+        Optional. Database port. Defaults to 5432.
 
     db_name
-        Optional. Database name for Keycloak. Defaults to "keycloak".
+        Optional. Database name. Defaults to None.
 
     db_user_name_secret_name
-        Required. Name of the Secret containing the database username.
+        Optional. Secret name for database username. Defaults to None.
 
     db_user_name_secret_key
-        Required. Key in the Secret for the database username.
+        Optional. Key in the secret for username. Defaults to 'username'.
 
     db_password_secret_name
-        Required. Name of the Secret containing the database password.
+        Optional. Secret name for database password. Defaults to None.
 
     db_password_secret_key
-        Required. Key in the Secret for the database password.
+        Optional. Key in the secret for password. Defaults to 'password'.
 
     ingress_enabled
-        Optional. Whether to enable ingress for Keycloak. Defaults to False.
+        Optional. Whether to enable ingress. Defaults to False.
 
     proxy_headers
-        Optional. Proxy headers setting for Keycloak. Defaults to "xforwarded".
+        Optional. Proxy headers configuration (e.g., 'forwarded'). Defaults to None.
 
     tls_secret
-        Optional. Name of the TLS Secret for securing HTTP traffic. Defaults to None.
+        Optional. Name of the TLS secret for HTTPS. Defaults to None.
+
+    truststores
+        Optional. Dictionary mapping truststore names to configurations with secret names. Defaults to None.
+            Example: {'my-truststore': {'secret': {'name': 'my-secret'}}}
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_keycloak_cluster:
+          k8s.keycloak_cluster_present:
+            - namespace: keycloak
+            - hostname: keycloak.example.com
+            - cluster_name: keycloak-cluster
+            - instances: 2
+            - image: quay.io/keycloak/keycloak:22.0.1
+            - db_vendor: postgres
+            - db_host: postgres-rw
+            - db_port: 5432
+            - db_name: keycloak
+            - db_user_name_secret_name: keycloak-db-cred
+            - db_user_name_secret_key: username
+            - db_password_secret_name: keycloak-db-cred
+            - db_password_secret_key: password
+            - ingress_enabled: False
+            - proxy_headers: forwarded
+            - tls_secret: keycloak-tls
+            - truststores:
+                my-truststore:
+                  secret:
+                    name: my-secret
     """
-    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
     try:
-        result = __salt__["kinetic-k8s.keycloak_cluster_present"](
+        result = __salt__['kinetic-k8s.keycloak_cluster_present'](
             namespace=namespace,
-            name=cluster_name,
             hostname=hostname,
+            cluster_name=cluster_name,
             start_optimized=start_optimized,
             instances=instances,
             image=image,
             db_vendor=db_vendor,
             db_host=db_host,
             db_port=db_port,
-            db_name=db_name,  # Added parameter for database name
+            db_name=db_name,
             db_user_name_secret_name=db_user_name_secret_name,
             db_user_name_secret_key=db_user_name_secret_key,
             db_password_secret_name=db_password_secret_name,
@@ -2434,24 +2445,22 @@ def keycloak_cluster_present(
             ingress_enabled=ingress_enabled,
             proxy_headers=proxy_headers,
             tls_secret=tls_secret,
+            truststores=truststores
         )
 
-        ret["result"] = result["success"]
-        ret["comment"] = result["message"]
-        if result["updated"]:
-            ret["changes"] = {"keycloak_updated": True}
+        ret['result'] = result['success']
+        ret['comment'] = result['message']
+        if result['updated']:
+            ret['changes'] = {'keycloak_cluster_updated': True}
         else:
-            ret[
-                "changes"
-            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes
+            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret["result"] = False
-        ret["comment"] = f"Failed to ensure Keycloak {cluster_name}: {str(e)[:100]}..."
-        ret["changes"] = {}
+        ret['result'] = False
+        ret['comment'] = f"Failed to ensure Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)[:100]}..."
+        ret['changes'] = {}
 
     return ret
-
 
 def certificate_present(
     name,
