@@ -4884,213 +4884,147 @@ def secret_present(
             "message": f"Secret operation error: {str(e)[:50]}...",
         }
 
-def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=False, instances=1, image=None, ingress_enabled=False, proxy_headers=None, truststores=None, http_enabled=False, http_port=8180, https_port=8543, tls_secret=None, db_vendor="postgres", db_host=None, db_port=5432, db_name=None, db_schema=None, db_username_secret_name=None, db_username_secret_key="username", db_password_secret_name=None, db_password_secret_key="password", db_pool_initial_size=1, db_pool_min_size=2, db_pool_max_size=3):
-            """
-            Ensure a Keycloak Cluster exists in the specified Kubernetes namespace with the given configuration.
+def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=False, instances=1, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name=None, db_user_name_secret_name=None, db_user_name_secret_key="username", db_password_secret_name=None, db_password_secret_key="password", ingress_enabled=False, proxy_headers=None, tls_secret=None, truststores=None):
+    """
+    Ensure a Keycloak Cluster exists in the specified Kubernetes namespace with the given configuration.
 
-            Args:
-                namespace (str): The Kubernetes namespace for the Keycloak Cluster.
-                hostname (str): The hostname for the Keycloak instance (will be structured as an object).
-                cluster_name (str): The name of the Keycloak Cluster resource.
-                start_optimized (bool, optional): Whether to start Keycloak in optimized mode. Defaults to False.
-                instances (int, optional): Number of Keycloak instances. Defaults to 1.
-                image (str, optional): Docker image for Keycloak. Defaults to None (uses operator default).
-                ingress_enabled (bool, optional): Whether to enable ingress. Defaults to False.
-                proxy_headers (str, optional): Proxy headers configuration (e.g., 'forwarded'). Defaults to None.
-                truststores (dict, optional): Dictionary mapping truststore names to configurations with secret names. Defaults to None.
-                    Example: {'my-truststore': {'secret': {'name': 'my-secret'}}}
-                http_enabled (bool, optional): Whether to enable HTTP traffic for Keycloak. Defaults to False.
-                http_port (int, optional): Port for HTTP traffic. Defaults to 8180.
-                https_port (int, optional): Port for HTTPS traffic. Defaults to 8543.
-                tls_secret (str, optional): Name of the TLS secret for HTTPS configuration. Defaults to None.
-                db_vendor (str, optional): Database vendor (e.g., 'postgres'). Defaults to 'postgres'.
-                db_host (str, optional): Database host. Defaults to None.
-                db_port (int, optional): Database port. Defaults to 5432.
-                db_name (str, optional): Database name. Defaults to None.
-                db_schema (str, optional): Database schema. Defaults to None.
-                db_username_secret_name (str, optional): Secret name for database username. Defaults to None.
-                db_username_secret_key (str, optional): Key in the secret for username. Defaults to 'username'.
-                db_password_secret_name (str, optional): Secret name for database password. Defaults to None.
-                db_password_secret_key (str, optional): Key in the secret for password. Defaults to 'password'.
-                db_pool_initial_size (int, optional): Initial size of the database connection pool. Defaults to 1.
-                db_pool_min_size (int, optional): Minimum size of the database connection pool. Defaults to 2.
-                db_pool_max_size (int, optional): Maximum size of the database connection pool. Defaults to 3.
+    Args:
+        namespace (str): The Kubernetes namespace for the Keycloak Cluster.
+        hostname (str): The hostname for the Keycloak instance.
+        cluster_name (str): The name of the Keycloak Cluster resource.
+        start_optimized (bool, optional): Whether to start Keycloak in optimized mode. Defaults to False.
+        instances (int, optional): Number of Keycloak instances. Defaults to 1.
+        image (str, optional): Docker image for Keycloak. Defaults to None (uses operator default).
+        db_vendor (str, optional): Database vendor (e.g., 'postgres'). Defaults to 'postgres'.
+        db_host (str, optional): Database host. Defaults to None.
+        db_port (int, optional): Database port. Defaults to 5432.
+        db_name (str, optional): Database name. Defaults to None.
+        db_user_name_secret_name (str, optional): Secret name for database username. Defaults to None.
+        db_user_name_secret_key (str, optional): Key in the secret for username. Defaults to 'username'.
+        db_password_secret_name (str, optional): Secret name for database password. Defaults to None.
+        db_password_secret_key (str, optional): Key in the secret for password. Defaults to 'password'.
+        ingress_enabled (bool, optional): Whether to enable ingress. Defaults to False.
+        proxy_headers (str, optional): Proxy headers configuration (e.g., 'forwarded'). Defaults to None.
+        tls_secret (str, optional): Name of the TLS secret for HTTPS. Defaults to None.
+        truststores (dict, optional): Dictionary mapping truststore names to configurations with secret names. Defaults to None.
+            Example: {'my-truststore': {'secret': {'name': 'my-secret'}}}
 
-            Returns:
-                dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
 
-            CLI Example:
-                salt '*' kinetic-k8s.keycloak_cluster_present keycloak keycloak.example.com keycloak-cluster instances=2 http_enabled=True tls_secret="keycloak-tls"
-            """
-            try:
-                # Load Kubernetes configuration (in-cluster or from kubeconfig)
-                config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
-                custom_api = client.CustomObjectsApi()
-                api_client = client.ApiClient()
+    CLI Example:
+        salt '*' kinetic-k8s.keycloak_cluster_present keycloak keycloak.example.com keycloak-cluster instances=2 truststores="{'my-truststore': {'secret': {'name': 'my-secret'}}}"
+    """
+    try:
+        # Load Kubernetes configuration (in-cluster or from kubeconfig)
+        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+        custom_api = client.CustomObjectsApi()
 
-                # Check if Keycloak CRD exists in the cluster
-                crd_group = 'k8s.keycloak.org'  # Adjusted based on previous error message group
-                crd_version = 'v1alpha1'
-                crd_plural = 'keycloaks'
-                try:
-                    # Attempt to list Keycloak resources to verify CRD availability
-                    custom_api.list_cluster_custom_object(crd_group, crd_version, crd_plural, limit=1)
-                except ApiException as e:
-                    if e.status == 404:
-                        return {
-                            'success': False,
-                            'updated': False,
-                            'message': f"Keycloak CRD not found in cluster. Ensure Keycloak Operator is installed. Error: {str(e)[:100]}...",
-                            'resource': {}
-                        }
-                    return {
-                        'success': False,
-                        'updated': False,
-                        'message': f"Failed to check Keycloak CRD availability: {str(e)[:100]}...",
-                        'resource': {}
-                    }
-
-                # Construct the spec for the Keycloak Cluster
-                spec = {
-                    'instances': instances,
-                    'startOptimized': start_optimized,
-                    'hostname': {
-                        'name': hostname  # Structured as an object per previous error requirement
-                    }
+        # Construct the spec for the Keycloak Cluster
+        spec = {
+            'instances': instances,
+            'startOptimized': start_optimized,
+            'hostname': {
+                'hostname': hostname  # Structured as an object per error message requirement
+            },
+            'http': {
+              'httpEnabled': True,
+              'tlsSecret': tls_secret
+            }
+        }
+        if image:
+            spec['image'] = image
+        if db_vendor and db_host and db_name:
+            spec['db'] = {
+                'vendor': db_vendor,
+                'host': db_host,
+                'port': db_port,
+                'database': db_name
+            }
+            if db_user_name_secret_name:
+                spec['db']['usernameSecret'] = {
+                    'name': db_user_name_secret_name,
+                    'key': db_user_name_secret_key
                 }
-                if image:
-                    spec['image'] = image
-                if ingress_enabled:
-                    spec['ingress'] = {
-                        'enabled': True
-                    }
-                if proxy_headers:
-                    spec['proxy'] = {
-                        'headers': proxy_headers
-                    }
-                if truststores:
-                    spec['truststores'] = truststores
-
-                # Add HTTP configuration as a dictionary
-                spec['http'] = {
-                    'httpEnabled': http_enabled,
-                    'httpPort': http_port,
-                    'httpsPort': https_port
+            if db_password_secret_name:
+                spec['db']['passwordSecret'] = {
+                    'name': db_password_secret_name,
+                    'key': db_password_secret_key
                 }
-                if tls_secret:
-                    spec['http']['tlsSecret'] = tls_secret
+        if proxy_headers:
+            spec['proxy'] = {
+                'headers': proxy_headers
+            }
+        if truststores:
+            spec['truststores'] = truststores
 
-                # Add database configuration if provided
-                if db_vendor and db_host and db_name:
-                    spec['db'] = {
-                        'vendor': db_vendor,
-                        'host': db_host,
-                        'port': db_port,
-                        'database': db_name
-                    }
-                    if db_schema:
-                        spec['db']['schema'] = db_schema
-                    if db_username_secret_name:
-                        spec['db']['usernameSecret'] = {
-                            'name': db_username_secret_name,
-                            'key': db_username_secret_key
-                        }
-                    if db_password_secret_name:
-                        spec['db']['passwordSecret'] = {
-                            'name': db_password_secret_name,
-                            'key': db_password_secret_key
-                        }
-                    spec['db']['poolInitialSize'] = db_pool_initial_size
-                    spec['db']['poolMinSize'] = db_pool_min_size
-                    spec['db']['poolMaxSize'] = db_pool_max_size
+        # Define the full Keycloak Cluster object
+        keycloak_body = {
+            'apiVersion': 'k8s.keycloak.org/v2alpha1',
+            'kind': 'Keycloak',
+            'metadata': {
+                'name': cluster_name,
+                'namespace': namespace
+            },
+            'spec': spec
+        }
 
-                # Define the full Keycloak Cluster object
-                keycloak_body = {
-                    'apiVersion': 'k8s.keycloak.org/v1alpha1',  # Adjusted based on previous error
-                    'kind': 'Keycloak',
-                    'metadata': {
-                        'name': cluster_name,
-                        'namespace': namespace
-                    },
-                    'spec': spec
+        # Check if Keycloak Cluster already exists
+        group, version = 'k8s.keycloak.org', 'v2alpha1'
+        plural = 'keycloaks'
+        try:
+            existing_keycloak = custom_api.get_namespaced_custom_object(group, version, namespace, plural, cluster_name)
+            # Compare spec fields to determine if update is needed
+            existing_spec = existing_keycloak.get('spec', {})
+            if (existing_spec.get('instances') != instances or
+                existing_spec.get('hostname') != hostname or
+                existing_spec.get('startOptimized') != start_optimized or
+                (image and existing_spec.get('image') != image) or
+                (db_host and existing_spec.get('database', {}).get('host') != db_host) or
+                (db_name and existing_spec.get('database', {}).get('database') != db_name) or
+                (ingress_enabled and existing_spec.get('ingress', {}).get('enabled') != True) or
+                (proxy_headers and existing_spec.get('proxy', {}).get('headers') != proxy_headers) or
+                (tls_secret and existing_spec.get('tls', {}).get('secret') != tls_secret) or
+                (truststores and existing_spec.get('truststores', {}) != truststores)):
+                # Update the Keycloak Cluster
+                updated_keycloak = custom_api.replace_namespaced_custom_object(group, version, namespace, plural, cluster_name, keycloak_body)
+                return {
+                    'success': True,
+                    'updated': True,
+                    'message': f"Keycloak Cluster {cluster_name} updated in namespace {namespace}.",
+                    'resource': updated_keycloak
                 }
-
-                # Check if Keycloak Cluster already exists
-                group, version = 'k8s.keycloak.org', 'v1alpha1'
-                plural = 'keycloaks'
-                try:
-                    existing_keycloak = custom_api.get_namespaced_custom_object(group, version, namespace, plural, cluster_name)
-                    # Compare spec fields to determine if update is needed
-                    existing_spec = existing_keycloak.get('spec', {})
-                    existing_http = existing_spec.get('http', {})
-                    existing_db = existing_spec.get('db', {})
-                    if (existing_spec.get('instances') != instances or
-                        existing_spec.get('hostname', {}).get('name') != hostname or
-                        existing_spec.get('startOptimized') != start_optimized or
-                        (image and existing_spec.get('image') != image) or
-                        (ingress_enabled and existing_spec.get('ingress', {}).get('enabled') != True) or
-                        (proxy_headers and existing_spec.get('proxy', {}).get('headers') != proxy_headers) or
-                        (truststores and existing_spec.get('truststores', {}) != truststores) or
-                        existing_http.get('httpEnabled', False) != http_enabled or
-                        existing_http.get('httpPort', 8180) != http_port or
-                        existing_http.get('httpsPort', 8543) != https_port or
-                        (tls_secret and existing_http.get('tlsSecret') != tls_secret) or
-                        (db_vendor and existing_db.get('vendor') != db_vendor) or
-                        (db_host and existing_db.get('host') != db_host) or
-                        (db_port and existing_db.get('port') != db_port) or
-                        (db_name and existing_db.get('database') != db_name) or
-                        (db_schema and existing_db.get('schema') != db_schema) or
-                        (db_username_secret_name and existing_db.get('usernameSecret', {}).get('name') != db_username_secret_name) or
-                        (db_password_secret_name and existing_db.get('passwordSecret', {}).get('name') != db_password_secret_name) or
-                        existing_db.get('poolInitialSize', 1) != db_pool_initial_size or
-                        existing_db.get('poolMinSize', 2) != db_pool_min_size or
-                        existing_db.get('poolMaxSize', 3) != db_pool_max_size):
-                        # Update the Keycloak Cluster
-                        updated_keycloak = custom_api.replace_namespaced_custom_object(group, version, namespace, plural, cluster_name, keycloak_body)
-                        return {
-                            'success': True,
-                            'updated': True,
-                            'message': f"Keycloak Cluster {cluster_name} updated in namespace {namespace}.",
-                            'resource': updated_keycloak
-                        }
-                    return {
-                        'success': True,
-                        'updated': False,
-                        'message': f"Keycloak Cluster {cluster_name} already exists in namespace {namespace} with matching spec.",
-                        'resource': existing_keycloak
-                    }
-                except ApiException as e:
-                    if e.status == 404:
-                        # Keycloak Cluster does not exist, create it
-                        try:
-                            created_keycloak = custom_api.create_namespaced_custom_object(group, version, namespace, plural, keycloak_body)
-                            return {
-                                'success': True,
-                                'updated': True,
-                                'message': f"Keycloak Cluster {cluster_name} created in namespace {namespace}.",
-                                'resource': created_keycloak
-                            }
-                        except ApiException as create_e:
-                            return {
-                                'success': False,
-                                'updated': False,
-                                'message': f"Failed to create Keycloak Cluster {cluster_name} in namespace {namespace}. Ensure Keycloak Operator is installed and spec is valid: {str(create_e)[:200]}...",
-                                'resource': {}
-                            }
-                    else:
-                        return {
-                            'success': False,
-                            'updated': False,
-                            'message': f"Failed to manage Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)[:200]}...",
-                            'resource': {}
-                        }
-            except Exception as e:
+            return {
+                'success': True,
+                'updated': False,
+                'message': f"Keycloak Cluster {cluster_name} already exists in namespace {namespace} with matching spec.",
+                'resource': existing_keycloak
+            }
+        except ApiException as e:
+            if e.status == 404:
+                # Keycloak Cluster does not exist, create it
+                created_keycloak = custom_api.create_namespaced_custom_object(group, version, namespace, plural, keycloak_body)
+                return {
+                    'success': True,
+                    'updated': True,
+                    'message': f"Keycloak Cluster {cluster_name} created in namespace {namespace}.",
+                    'resource': created_keycloak
+                }
+            else:
                 return {
                     'success': False,
                     'updated': False,
-                    'message': f"Error managing Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)[:100]}...",
+                    'message': f"Failed to manage Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)[:100]}...",
                     'resource': {}
                 }
+    except Exception as e:
+        return {
+            'success': False,
+            'updated': False,
+            'message': f"Error managing Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)}...",
+            'resource': {}
+        }
+
 
 def certificate_present(
     namespace,
