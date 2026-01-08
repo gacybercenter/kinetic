@@ -4962,7 +4962,7 @@ def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=
 
         # Define the full Keycloak Cluster object
         keycloak_body = {
-            'apiVersion': 'keycloak.org/v1alpha1',
+            'apiVersion': 'k8s.keycloak.org/v2alpha1',
             'kind': 'Keycloak',
             'metadata': {
                 'name': cluster_name,
