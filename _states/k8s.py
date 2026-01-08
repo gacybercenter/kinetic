@@ -2190,7 +2190,7 @@ def certmanager_certificate_present(
             "is_ca": is_ca,
         }
         ret["comment"] = (
-            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)[:100]}...\n"
+            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)}...\n"
             f"Input variables: {error_details}"
         )
         ret["changes"] = {}
