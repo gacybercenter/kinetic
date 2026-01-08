@@ -5023,7 +5023,7 @@ def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=
         return {
             'success': False,
             'updated': False,
-            'message': f"Error managing Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)[:100]}...",
+            'message': f"Error managing Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)}...",
             'resource': {}
         }
 
