@@ -4926,6 +4926,10 @@ def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=
             'startOptimized': start_optimized,
             'hostname': {
                 'hostname': hostname  # Structured as an object per error message requirement
+            },
+            'http': {
+              'httpEnabled': True,
+              'tlsSecret': tls_secret
             }
         }
         if image:
