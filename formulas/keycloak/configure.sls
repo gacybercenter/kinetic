@@ -58,7 +58,7 @@ create_keycloak_ingress:
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
     - namespace: {{ kcluster['ingress']['namespace'] }}
-    - hostname: {{ pillar['k-cluster']['cert']['commonName'] }}
+    - hostname: {{ pillar['k-cluster']['cert']['commonName']  }}
     - cluster_name: {{ kcluster['ingress']['namespace'] }}
     - start_optimized: False
     - instances: 2
