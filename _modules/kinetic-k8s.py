@@ -4923,11 +4923,10 @@ def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=
         # Construct the spec for the Keycloak Cluster
         spec = {
             'instances': instances,
-            'hostname':
-              'hostname': {
-                hostname
+            'startOptimized': start_optimized,
+            'hostname': {
+                'name': hostname  # Structured as an object per error message requirement
             }
-            'startOptimized': start_optimized
         }
         if image:
             spec['image'] = image
