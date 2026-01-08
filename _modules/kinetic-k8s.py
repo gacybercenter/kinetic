@@ -4923,39 +4923,35 @@ def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=
         # Construct the spec for the Keycloak Cluster
         spec = {
             'instances': instances,
-            'hostname': hostname,
+            'hostname':
+              'hostname': {
+                hostname
+            }
             'startOptimized': start_optimized
         }
         if image:
             spec['image'] = image
         if db_vendor and db_host and db_name:
-            spec['database'] = {
+            spec['db'] = {
                 'vendor': db_vendor,
                 'host': db_host,
                 'port': db_port,
                 'database': db_name
             }
             if db_user_name_secret_name:
-                spec['database']['usernameSecret'] = {
+                spec['db']['usernameSecret'] = {
                     'name': db_user_name_secret_name,
                     'key': db_user_name_secret_key
                 }
             if db_password_secret_name:
-                spec['database']['passwordSecret'] = {
+                spec['db']['passwordSecret'] = {
                     'name': db_password_secret_name,
                     'key': db_password_secret_key
                 }
-        if ingress_enabled:
-            spec['ingress'] = {
-                'enabled': True
             }
         if proxy_headers:
             spec['proxy'] = {
                 'headers': proxy_headers
-            }
-        if tls_secret:
-            spec['tls'] = {
-                'secret': tls_secret
             }
         if truststores:
             spec['truststores'] = truststores
