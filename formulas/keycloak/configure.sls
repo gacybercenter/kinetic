@@ -4,6 +4,7 @@ include:
 # Ensure the namespace for Keycloak exists
 {% set kcluster = pillar['kc-cluster'] %}
 {% set kdb = pillar['kc-db'] %}
+
 ensure_keycloak_namespace:
   k8s.namespace_present:
     - namespace: {{ kdb['namespace'] }}
