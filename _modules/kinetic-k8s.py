@@ -4972,7 +4972,7 @@ def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=
         }
 
         # Check if Keycloak Cluster already exists
-        group, version = 'keycloak.org', 'v2alpha1'
+        group, version = 'k8s.keycloak.org', 'v2alpha1'
         plural = 'keycloaks'
         try:
             existing_keycloak = custom_api.get_namespaced_custom_object(group, version, namespace, plural, cluster_name)
