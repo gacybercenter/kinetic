@@ -4883,7 +4883,8 @@ def secret_present(
             "updated": False,
             "message": f"Secret operation error: {str(e)[:50]}...",
         }
-        def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=False, instances=1, image=None, ingress_enabled=False, proxy_headers=None, truststores=None, http_enabled=False, http_port=8180, https_port=8543, tls_secret=None, db_vendor="postgres", db_host=None, db_port=5432, db_name=None, db_schema=None, db_username_secret_name=None, db_username_secret_key="username", db_password_secret_name=None, db_password_secret_key="password", db_pool_initial_size=1, db_pool_min_size=2, db_pool_max_size=3):
+
+def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=False, instances=1, image=None, ingress_enabled=False, proxy_headers=None, truststores=None, http_enabled=False, http_port=8180, https_port=8543, tls_secret=None, db_vendor="postgres", db_host=None, db_port=5432, db_name=None, db_schema=None, db_username_secret_name=None, db_username_secret_key="username", db_password_secret_name=None, db_password_secret_key="password", db_pool_initial_size=1, db_pool_min_size=2, db_pool_max_size=3):
             """
             Ensure a Keycloak Cluster exists in the specified Kubernetes namespace with the given configuration.
 
