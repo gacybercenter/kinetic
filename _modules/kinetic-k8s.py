@@ -5014,7 +5014,7 @@ def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=
                 return {
                     'success': False,
                     'updated': False,
-                    'message': f"Failed to manage Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)[:100]}...",
+                    'message': f"Failed to manage Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)}...",
                     'resource': {}
                 }
     except Exception as e:
