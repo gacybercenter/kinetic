@@ -4925,7 +4925,7 @@ def keycloak_cluster_present(namespace, hostname, cluster_name, start_optimized=
             'instances': instances,
             'startOptimized': start_optimized,
             'hostname': {
-                'name': hostname  # Structured as an object per error message requirement
+                'hostname': hostname  # Structured as an object per error message requirement
             }
         }
         if image:
