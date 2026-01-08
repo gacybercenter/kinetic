@@ -2191,7 +2191,6 @@ def certmanager_certificate_present(
         }
         ret["comment"] = (
             f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)}...\n"
-            f"Input variables: {error_details}"
         )
         ret["changes"] = {}
 
