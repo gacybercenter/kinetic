@@ -75,7 +75,7 @@ ensure_keycloak_cluster:
     - ingress_enabled: False
     - proxy_headers: forwarded
     - tls_secret: {{ kcert['name'] }}-tls
-    - truststores: {{ pillar.get('kc-cluster:truststores', {}) }}
+    - truststores: {{ pillar['kc-cluster']['truststores'] }}
     - require:
       - k8s: create_auth_pg_cluster
       - k8s: create_keycloak_cert
