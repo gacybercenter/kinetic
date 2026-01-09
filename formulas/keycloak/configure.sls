@@ -49,7 +49,7 @@ create_keycloak_ingress:
     - namespace: {{ kcluster['ingress']['namespace'] }}
     - hosts: {{ kcluster['ingress']['hosts'] }}
     - tls:
-      - secret_name: {{ kcert['name'] }}-tls
+      - secretName: {{ kcert['name'] }}-tls
         hosts: {{ kcert['dns_names'] }}
     - ingress_class_name: {{ kcluster['ingress']['class_name'] }}
     - annotations: {{ kcluster['ingress']['annotations'] }}
