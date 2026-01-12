@@ -29,6 +29,21 @@ ensure_metallb_pool_ldap:
 {% set ldap_admin_secret = pillar['ldap']['values']['global']['existingSecret'] %}
 {% set ldap_values = pillar['ldap']['values'] %}
 
+# Manage Certificate for TLS using certmanager_certificate_present from k8s.py, with pillar-driven values
+ldap_tls_cert:
+  k8s.certmanager_certificate_present:
+    - name: {{ pillar['ldap']['cert']['name'] }}
+    - certificate_name: {{ pillar['ldap']['cert']['name'] }}
+    - namespace: {{ pillar['ldap']['cert']['namespace'] }}
+    - secret_name: {{ pillar['ldap']['cert']['secret_name'] }}
+    - issuer_name: {{ pillar['ldap']['cert']['issuer_name'] }}
+    - issuer_kind: {{ pillar['ldap']['cert']['issuer_kind'] }}
+    - common_name: {{ pillar['ldap']['cert']['common_name'] }}
+    - dns_names: {{ pillar['ldap']['cert']['dns_names'] }}
+    - ip_addresses: {{ pillar['ldap']['cert']['ip_addresses'] }}
+    - duration: {{ pillar['ldap']['cert']['duration'] }}
+    - renew_before: {{ pillar['ldap']['cert']['renew_before'] }}
+
 # Create Kubernetes secret for LDAP admin credentials
 ensure_ldap_admin_secret:
   k8s.secret_present:
