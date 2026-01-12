@@ -65,4 +65,5 @@ install_openldap_ha:
     - wait_interval: 10
     - keep_values_file: False
     - require:
+      - k8s: ldap_tls_cert
       - k8s_helm: add_openldap_repo
