@@ -4624,7 +4624,7 @@ def certmanager_certificate_present(
         return {
             "success": False,
             "updated": False,
-            "message": f"Initialization error for Certificate {name} in namespace {namespace}: {str(e)[:50]}...",
+            "message": f"Initialization error for Certificate {name} in namespace {namespace}: {str(e)}...",
         }
 
 
