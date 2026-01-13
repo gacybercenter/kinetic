@@ -29,6 +29,7 @@ ensure_metallb_pool_ldap:
 {% set ldap_admin_secret = pillar['ldap']['values']['global']['existingSecret'] %}
 {% set ldap_values = pillar['ldap']['values'] %}
 {% set ldap_pull_secret = pillar['ldap']['pull_secret'] %}
+
 ensure_ldap_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar['ldap']['namespace'] }}
