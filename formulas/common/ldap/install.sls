@@ -28,10 +28,30 @@ ensure_metallb_pool_ldap:
 {% set ldap_version = pillar['ldap']['version'] %}
 {% set ldap_admin_secret = pillar['ldap']['values']['global']['existingSecret'] %}
 {% set ldap_values = pillar['ldap']['values'] %}
-
+{% set ldap_pull_secret = pillar['ldap']['pull_secret'] %}
 ensure_ldap_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar['ldap']['namespace'] }}
+
+# Create Kubernetes pull secret for LDAP Helm chart repository
+ensure_ldap_pull_secret:
+  k8s.secret_present:
+    - secret_name: {{ ldap_pull_secret.get('name', 'ldap-repo-secret') }}
+    - namespace: {{ ldap_namespace }}
+    - type: kubernetes.io/dockerconfigjson
+    - data:
+        .dockerconfigjson: |
+          {
+            "auths": {
+              "helm-openldap": {
+                "username": "{{ ldap_pull_secret.get('user', 'build-token') }}",
+                "password": "{{ ldap_pull_secret.get('key', '').strip() }}",
+                "auth": "{{ (ldap_pull_secret.get('user', 'build-token') + ':' + ldap_pull_secret.get('key', '').strip()) | b64encode }}"
+              }
+            }
+          }
+    - require:
+      - k8s: ensure_ldap_namespace
 
 # Manage Certificate for TLS using certmanager_certificate_present from k8s.py, with pillar-driven values
 ldap_tls_cert:
