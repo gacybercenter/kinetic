@@ -39,12 +39,12 @@ ensure_ldap_pull_secret:
   k8s.secret_present:
     - secret_name: {{ ldap_pull_secret.get('name', 'ldap-repo-secret') }}
     - namespace: {{ ldap_namespace }}
-    - type: kubernetes.io/dockerconfigjson
+    - secret_type: kubernetes.io/dockerconfigjson
     - data:
         .dockerconfigjson: |
           {
             "auths": {
-              "helm-openldap": {
+              "{{ ldap_pull_secret.get('repo', '') }}": {
                 "username": "{{ ldap_pull_secret.get('user', 'build-token') }}",
                 "password": "{{ ldap_pull_secret.get('key', '').strip() }}",
                 "auth": "{{ (ldap_pull_secret.get('user', 'build-token') + ':' + ldap_pull_secret.get('key', '').strip())}}"
