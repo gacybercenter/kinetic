@@ -47,7 +47,7 @@ ensure_ldap_pull_secret:
               "{{ ldap_pull_secret.get('repo', '') }}": {
                 "username": "{{ ldap_pull_secret.get('user', 'build-token') }}",
                 "password": "{{ ldap_pull_secret.get('key', '').strip() }}",
-                "auth": "{{ (ldap_pull_secret.get('user', 'build-token') + ':' + ldap_pull_secret.get('key', '').strip())}}"
+                "auth": "{{ (ldap_pull_secret.get('user', 'build-token') + ':' + ldap_pull_secret.get('key', '').strip()) | b64_encode }}"
               }
             }
           }
