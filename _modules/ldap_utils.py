@@ -34,7 +34,7 @@ def create_connect_spec(spec_name, connection_dict):
         connection_dict (dict): Dictionary with connection parameters:
             - url (str): LDAP server URL (e.g., 'ldap://localhost:389' or 'ldaps://localhost:636').
             - bind (dict, optional): Bind parameters with 'dn', 'password', and 'method' (default 'simple').
-            - tls (dict): TLS parameters with 'cacertfile' (str, required) and 'starttls' (bool, default True).
+            - tls (dict, optional): TLS parameters with 'cacertfile' (str) and 'starttls' (bool, default False).
 
     Returns:
         dict: A dictionary with 'success' (bool), 'created' (bool), 'error' (str or None), and 'message' (str).
@@ -48,17 +48,15 @@ def create_connect_spec(spec_name, connection_dict):
                 "message": "",
             }
 
+        # TLS is optional; only include if cacertfile is provided
         tls_config = connection_dict.get("tls", {})
-        if not tls_config or "cacertfile" not in tls_config:
-            return {
-                "success": False,
-                "created": False,
-                "error": "TLS configuration with 'cacertfile' is required",
-                "message": "",
-            }
-
-        # Ensure starttls defaults to True if not specified
-        tls_config.setdefault("starttls", True)
+        if "cacertfile" in tls_config:
+            # Ensure starttls defaults to False if not specified to avoid forcing TLS negotiation
+            tls_config.setdefault("starttls", False)
+            log.debug(f"TLS config for connection spec '{spec_name}': {tls_config}")
+        else:
+            tls_config = {}
+            log.debug(f"No TLS config provided for connection spec '{spec_name}'")
 
         # Ensure bind method defaults to 'simple' if not specified
         bind_config = connection_dict.get("bind", {})
@@ -74,7 +72,13 @@ def create_connect_spec(spec_name, connection_dict):
             }
 
         # Prepare the configuration dictionary as a single argument
-        config = {"url": connection_dict["url"], "bind": bind_config, "tls": tls_config}
+        config = {"url": connection_dict["url"], "bind": bind_config}
+        if tls_config:
+            config["tls"] = tls_config
+
+        log.debug(
+            f"Attempting LDAP connection for spec '{spec_name}' with config: {config}"
+        )
 
         # Pass the entire configuration as a single dictionary
         conn = __salt__["ldap3.connect"](config)
@@ -83,7 +87,7 @@ def create_connect_spec(spec_name, connection_dict):
             return {
                 "success": False,
                 "created": False,
-                "error": "Failed to establish LDAP connection",
+                "error": "Failed to establish LDAP connection (returned None)",
                 "message": "",
             }
 
@@ -97,10 +101,12 @@ def create_connect_spec(spec_name, connection_dict):
             "message": f"Connection spec '{spec_name}' created and cached",
         }
     except Exception as e:
+        error_msg = f"Failed to create connection spec '{spec_name}': {str(e)}"
+        log.error(error_msg)
         return {
             "success": False,
             "created": False,
-            "error": f"Failed to create connection spec '{spec_name}': {str(e)}",
+            "error": error_msg,
             "message": "",
         }
 
