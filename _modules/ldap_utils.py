@@ -108,6 +108,7 @@ def create_connect_spec(spec_name, connection_dict):
             "message": "",
         }
 
+
 def get_connect_spec(spec_name):
     """
     Retrieve a connection specification from the cache.
@@ -196,4 +197,3 @@ def create_root_dn(spec_name, root_dn, attributes):
             "error": f"Failed to create root DN: {str(e)}",
             "message": "",
         }
-@
