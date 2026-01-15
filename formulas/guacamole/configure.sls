@@ -62,7 +62,7 @@ guacamole_guacd:
 guacamole_guacamole:
   docker_container.running:
     - name: guacamole
-    - image: guacamole/guacamole:1.5.0
+    - image: guacamole/guacamole:1.6.0
     - restart_policy: always
     - binds:
       - /opt/guacamole/guacamole:/data
