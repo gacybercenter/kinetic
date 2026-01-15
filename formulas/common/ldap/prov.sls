@@ -18,8 +18,8 @@ ensure_ldap_connect_spec:
         bind:
           dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ pillar['ldap']['values']['global']['ldapDomain'] }}
           password: {{ pillar['ldap']['admin-user']['password'] }}
+          method: simple
         tls:
-          validate: True
           ca_certs_file: /tmp/ca.pem
           starttls: True
     - require:
