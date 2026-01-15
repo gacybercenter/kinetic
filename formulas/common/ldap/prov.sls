@@ -24,7 +24,6 @@ ensure_ldap_connect_spec:
           starttls: True
     - require:
       - file: ensure_ca_cert_file
-      - k8s_helm: install_openldap_ha
 
 # Ensure LDAP root DN is present
 {% set root_dn_key = pillar['ldap']['root_dn'].keys() | first %}
