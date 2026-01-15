@@ -81,6 +81,7 @@ guacamole_guacamole:
       - MYSQL_PASSWORD: {{ pillar['guacamole']['guacamole_mysql_password'] }}
       - GUACAMOLE_HOME: /data
       - LOG_LEVEL: info
+      - WEBAPP_CONTEXT: ROOT
     - links:
       - guacd: guacd
     - networks:
