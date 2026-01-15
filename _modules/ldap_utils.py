@@ -75,6 +75,7 @@ def create_connect_spec(spec_name, connection_dict):
         if tls_config and "cacertfile" in tls_config:
             try:
                 conn.set_option(ldap.OPT_X_TLS_CACERTFILE, tls_config["cacertfile"])
+                conn.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
                 log.debug(
                     f"Set TLS CACERTFILE to {tls_config['cacertfile']} for spec '{spec_name}'"
                 )
@@ -215,7 +216,9 @@ def create_root_dn(spec_name, root_dn, attributes):
         attr_list = [
             (k, v if isinstance(v, list) else [v]) for k, v in attributes.items()
         ]
-        attr_list = [(k, v if isinstance(v, list) else [v]) for k, v in attributes.items()]
+        attr_list = [
+            (k, v if isinstance(v, list) else [v]) for k, v in attributes.items()
+        ]
         conn.add_s(dn=root_dn, modlist=attr_list)
         return {
             "created": True,
