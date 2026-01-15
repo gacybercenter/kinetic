@@ -43,7 +43,7 @@ def connect_spec_present(name, spec_name, connection_dict):
         return ret
 
     tls_config = connection_dict.get("tls", {})
-    if not tls_config or "ca_certs_file" not in tls_config:
+    if not tls_config or "cacertfile" not in tls_config:
         ret["result"] = False
         ret["comment"] = "TLS configuration with 'ca_certs_file' is required"
         return ret
