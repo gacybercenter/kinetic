@@ -34,7 +34,7 @@ def create_connect_spec(spec_name, connection_dict):
         connection_dict (dict): Dictionary with connection parameters:
             - url (str): LDAP server URL (e.g., 'ldap://localhost:389' or 'ldaps://localhost:636').
             - bind (dict, optional): Bind parameters with 'dn', 'password', and 'method' (default 'simple').
-            - tls (dict): TLS parameters with 'ca_certs_file' (str, required) and 'starttls' (bool, default True).
+            - tls (dict): TLS parameters with 'cacertfile' (str, required) and 'starttls' (bool, default True).
 
     Returns:
         dict: A dictionary with 'success' (bool), 'created' (bool), 'error' (str or None), and 'message' (str).
@@ -49,22 +49,16 @@ def create_connect_spec(spec_name, connection_dict):
             }
 
         tls_config = connection_dict.get("tls", {})
-        if not tls_config or "ca_certs_file" not in tls_config:
+        if not tls_config or "cacertfile" not in tls_config:
             return {
                 "success": False,
                 "created": False,
-                "error": "TLS configuration with 'ca_certs_file' is required",
+                "error": "TLS configuration with 'cacertfile' is required",
                 "message": "",
             }
 
         # Ensure starttls defaults to True if not specified
         tls_config.setdefault("starttls", True)
-        # Remove or avoid unsupported keys like 'validate' that may map to unavailable constants
-        # Keep only essential TLS settings
-        tls_simplified = {
-            "starttls": tls_config.get("starttls", True),
-            "ca_certs_file": tls_config["ca_certs_file"],
-        }
 
         # Ensure bind method defaults to 'simple' if not specified
         bind_config = connection_dict.get("bind", {})
@@ -80,11 +74,7 @@ def create_connect_spec(spec_name, connection_dict):
             }
 
         # Prepare the configuration dictionary as a single argument
-        config = {
-            "url": connection_dict["url"],
-            "bind": bind_config,
-            "tls": tls_simplified,
-        }
+        config = {"url": connection_dict["url"], "bind": bind_config, "tls": tls_config}
 
         # Pass the entire configuration as a single dictionary
         conn = __salt__["ldap3.connect"](config)

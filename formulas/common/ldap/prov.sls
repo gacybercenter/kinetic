@@ -20,7 +20,7 @@ ensure_ldap_connect_spec:
           password: {{ pillar['ldap']['admin-user']['password'] }}
           method: simple
         tls:
-          ca_certs_file: /tmp/ca.pem
+          cacertfile: /tmp/ca.pem
           starttls: True
     - require:
       - file: ensure_ca_cert_file
