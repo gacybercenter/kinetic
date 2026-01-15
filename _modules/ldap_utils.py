@@ -58,14 +58,12 @@ def create_connect_spec(spec_name, connection_dict):
             }
 
         # Ensure starttls defaults to True if not specified
-        if "starttls" not in tls_config:
-            connection_dict["tls"]["starttls"] = True
+        tls_config.setdefault("starttls", True)
+        tls_config.setdefault("validate", True)
 
         # Ensure bind method defaults to 'simple' if not specified
         bind_config = connection_dict.get("bind", {})
-        if "method" not in bind_config:
-            bind_config["method"] = "simple"
-        connection_dict["bind"] = bind_config
+        bind_config.setdefault("method", "simple")
 
         # Check if connection spec already exists in cache
         if spec_name in _CONNECTION_CACHE:
@@ -76,11 +74,11 @@ def create_connect_spec(spec_name, connection_dict):
                 "message": f"Connection spec '{spec_name}' already exists in cache",
             }
 
-        # Establish a new connection
+        # Establish a new connection with explicit dictionary parameters
         conn = __salt__["ldap3.connect"](
             url=connection_dict["url"],
-            bind=connection_dict.get("bind", {}),
-            tls=connection_dict.get("tls", {}),
+            bind=bind_config,
+            tls=tls_config,
         )
 
         if not conn:
