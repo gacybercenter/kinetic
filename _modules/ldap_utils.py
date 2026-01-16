@@ -240,8 +240,16 @@ def update_root_dn(spec_name, root_dn, attributes):
 
         conn = conn_result["conn"]
         # Convert attributes dictionary to list of (attr, value) tuples for modification
+        # Ensure all values are lists of byte strings as required by python-ldap
         mod_attrs = [
-            (ldap.MOD_REPLACE, k, v if isinstance(v, list) else [v])
+            (
+                ldap.MOD_REPLACE,
+                k,
+                [
+                    v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
+                    for v in (v if isinstance(v, list) else [v])
+                ],
+            )
             for k, v in attributes.items()
         ]
         conn.modify_s(dn=root_dn, modlist=mod_attrs)
@@ -309,8 +317,16 @@ def create_root_dn(spec_name, root_dn, attributes):
 
         # Create new entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
+        # Ensure all values are lists of byte strings
         attr_list = [
-            (k, v if isinstance(v, list) else [v]) for k, v in attributes.items()
+            (
+                k,
+                [
+                    v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
+                    for v in (v if isinstance(v, list) else [v])
+                ],
+            )
+            for k, v in attributes.items()
         ]
         conn.add_s(dn=root_dn, modlist=attr_list)
         return {
