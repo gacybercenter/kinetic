@@ -7,9 +7,9 @@ ensure_ldap_modules:
   ldap.module_present:
     - name: ldap_module_setup
     - spec_name: ldap_keycloak_connection
-    - module_base_dn: {{ pillar['ldap'].get('module_base_dn', 'cn=module{0},cn=config') }}
-    - modules: {{ pillar['ldap'].get('modules', []) }}
-    - module_path: {{ pillar['ldap'].get('modulePath', '/opt/bitnami/openldap/lib/openldap') }}
+    - module_base_dn: "cn=module{0},cn=config"
+    - modules: {{ pillar['ldap']['modules'] }}
+    - module_path: {{ pillar['ldap']['modulePath'] }}
     - require:
       - ldap: ensure_ldap_connect_spec
 
