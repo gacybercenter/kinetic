@@ -1,6 +1,5 @@
 include:
   - /formulas/common/ldap/install
-  - formulas/common/ldap/prov
 
 # Ensure LDAP connection spec is created
 ensure_ldap_config_connect_spec:
