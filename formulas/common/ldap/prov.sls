@@ -48,3 +48,26 @@ ensure_ldap_ous:
     - require:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_root_dn
+
+# Ensure Users are created
+ensure_ldap_users:
+  ldap.user_present:
+    - name: ldap_user_setup
+    - spec_name: ldap_keycloak_connection
+    - base_dn: {{ "ou=users,dc=rsc,dc=gacyberrange,dc=org" }}
+    - users: {{ pillar['ldap'].get('users', []) }}
+    - require:
+      - ldap: ensure_ldap_connect_spec
+      - ldap: ensure_ldap_ous
+
+# Ensure Groups are created
+ensure_ldap_groups:
+  ldap.group_present:
+    - name: ldap_group_setup
+    - spec_name: ldap_keycloak_connection
+    - base_dn: {{ "ou=groups,dc=rsc,dc=gacyberrange,dc=org" }}
+    - groups: {{ pillar['ldap'].get('groups', []) }}
+    - require:
+      - ldap: ensure_ldap_connect_spec
+      - ldap: ensure_ldap_ous
+      - ldap: ensure_ldap_users
