@@ -482,25 +482,38 @@ def module_present(
     """
     ret = {"name": name, "result": True, "changes": {}, "comment": ""}
 
-    # Check if connection spec exists or create with admin credentials
-    if connection_dict is None:
-        connection_dict = __pillar__.get("ldap", {}).get("connection", {})
-        admin_user = __pillar__.get("ldap", {}).get("admin-user", {})
-        if admin_user and "name" in admin_user and "password" in admin_user:
-            connection_dict["admin_bind"] = {
-                "dn": f"cn={admin_user['name']},cn=config",
-                "password": admin_user["password"],
-                "method": "simple",
-            }
-
-    # Ensure connection spec is created with admin credentials
-    conn_result = __salt__["ldap_utils.create_connect_spec"](spec_name, connection_dict)
+    # Check if connection spec exists
+    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
     if not conn_result["success"]:
-        ret["result"] = False
-        ret["comment"] = (
-            f"Failed to create connection spec '{spec_name}': {conn_result['error']}"
+        # If connection spec doesn't exist, attempt to create it with admin credentials
+        if connection_dict is None:
+            connection_dict = __pillar__.get("ldap", {}).get("connection", {})
+            admin_user = __pillar__.get("ldap", {}).get("admin-user", {})
+            if admin_user and "name" in admin_user and "password" in admin_user:
+                connection_dict["admin_bind"] = {
+                    "dn": f"cn={admin_user['name']},cn=config",
+                    "password": admin_user["password"],
+                    "method": "simple",
+                }
+            # Ensure url is defined with a fallback if not present or empty
+            if "url" not in connection_dict or not connection_dict["url"]:
+                connection_dict["url"] = __pillar__.get("ldap", {}).get(
+                    "url", "ldap://localhost:389"
+                )
+                log.warning(
+                    f"URL not found or empty in connection dictionary for spec '{spec_name}', using fallback URL: {connection_dict['url']}"
+                )
+
+        # Create the connection spec if it doesn't exist
+        create_result = __salt__["ldap_utils.create_connect_spec"](
+            spec_name, connection_dict
         )
-        return ret
+        if not create_result["success"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to create connection spec '{spec_name}': {create_result['error']}"
+            )
+            return ret
 
     # Fetch modules and module_path from pillar if not provided
     if modules is None:
