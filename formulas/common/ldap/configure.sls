@@ -16,7 +16,7 @@ ensure_ldap_config_connect_spec:
           cacertfile: /tmp/ca.pem
           starttls: True
     - require:
-      - file: ensure_ca_cert_file
+      - file: ensure_config_ca_cert_file
 
 # Ensure Modules are loaded
 ensure_ldap_modules:

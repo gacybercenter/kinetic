@@ -69,6 +69,16 @@ ldap_tls_cert:
     - duration: {{ pillar['ldap']['cert']['duration'] }}
     - renew_before: {{ pillar['ldap']['cert']['renew_before'] }}
 
+# Ensure CA certificate file is present on the minion
+ensure_config_ca_cert_file:
+  file.managed:
+    - name: /tmp/ca.pem
+    - contents: {{ pillar['ldap']['cert']['ca'] | json }}
+    - mode: 644
+    - user: root
+    - group: root
+    - makedirs: True
+
 # Create Kubernetes secret for LDAP admin credentials
 ensure_ldap_admin_secret:
   k8s.secret_present:
