@@ -155,79 +155,174 @@ def get_connect_spec(spec_name):
     }
 
 
-def root_dn_exists(spec_name, root_dn):
+def root_dn_exists(spec_name, root_dn, desired_attributes=None):
     """
-    Check if a root DN exists in the LDAP directory using a connection spec.
+    Check if a root DN exists in the LDAP directory and optionally if its attributes match the desired state.
 
     Args:
         spec_name (str): The name of the connection specification.
         root_dn (str): The distinguished name to check.
+        desired_attributes (dict, optional): Desired attributes to compare against existing ones.
 
     Returns:
-        dict: A dictionary with 'exists' (bool) and 'error' (str or None).
+        dict: A dictionary with 'exists' (bool), 'attributes_match' (bool if desired_attributes provided), and 'error' (str or None).
     """
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {"exists": False, "error": conn_result["error"]}
+            return {
+                "exists": False,
+                "attributes_match": False,
+                "error": conn_result["error"],
+            }
 
         conn = conn_result["conn"]
         # Use SCOPE_BASE to search for the specific DN
+        attr_list = (
+            ["dn"] + list(desired_attributes.keys()) if desired_attributes else ["dn"]
+        )
         result = conn.search_s(
             base=root_dn,
             scope=ldap.SCOPE_BASE,
             filterstr="(objectClass=*)",
-            attrlist=["dn"],
+            attrlist=attr_list,
         )
         if result and len(result) > 0:
-            return {"exists": True, "error": None}
-        return {"exists": False, "error": None}
+            if not desired_attributes:
+                return {"exists": True, "attributes_match": True, "error": None}
+
+            # Compare current attributes with desired attributes
+            current_attrs = result[0][1] if result[0][1] else {}
+            matches = True
+            for attr, desired_val in desired_attributes.items():
+                current_val = current_attrs.get(attr, [])
+                # Handle single value vs list
+                desired_val_list = (
+                    desired_val if isinstance(desired_val, list) else [desired_val]
+                )
+                # Convert current values to strings for comparison if needed (python-ldap returns bytes)
+                current_val_str = [
+                    v.decode("utf-8") if isinstance(v, bytes) else v
+                    for v in current_val
+                ]
+                if set(current_val_str) != set(desired_val_list):
+                    matches = False
+                    log.debug(
+                        f"Attribute mismatch for {attr}: current={current_val_str}, desired={desired_val_list}"
+                    )
+                    break
+            return {"exists": True, "attributes_match": matches, "error": None}
+        return {"exists": False, "attributes_match": False, "error": None}
     except Exception as e:
-        return {"exists": False, "error": f"Failed to check root DN: {str(e)}"}
+        return {
+            "exists": False,
+            "attributes_match": False,
+            "error": f"Failed to check root DN: {str(e)}",
+        }
 
 
-def create_root_dn(spec_name, root_dn, attributes):
+def update_root_dn(spec_name, root_dn, attributes):
     """
-    Create a root DN in the LDAP directory if it doesn't exist using a connection spec.
+    Update attributes of an existing root DN in the LDAP directory.
 
     Args:
         spec_name (str): The name of the connection specification.
-        root_dn (str): The distinguished name to create.
-        attributes (dict): Attributes to set for the new DN.
+        root_dn (str): The distinguished name to update.
+        attributes (dict): Attributes to update on the DN.
 
     Returns:
-        dict: A dictionary with 'created' (bool), 'error' (str or None), and 'message' (str).
+        dict: A dictionary with 'updated' (bool), 'error' (str or None), and 'message' (str).
     """
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {"created": False, "error": conn_result["error"], "message": ""}
+            return {"updated": False, "error": conn_result["error"], "message": ""}
 
         conn = conn_result["conn"]
-        check = root_dn_exists(spec_name, root_dn)
-        if check["exists"]:
+        # Convert attributes dictionary to list of (attr, value) tuples for modification
+        mod_attrs = [
+            (ldap.MOD_REPLACE, k, v if isinstance(v, list) else [v])
+            for k, v in attributes.items()
+        ]
+        conn.modify_s(dn=root_dn, modlist=mod_attrs)
+        return {
+            "updated": True,
+            "error": None,
+            "message": f"Root DN {root_dn} attributes updated successfully",
+        }
+    except Exception as e:
+        return {
+            "updated": False,
+            "error": f"Failed to update root DN {root_dn}: {str(e)}",
+            "message": "",
+        }
+
+
+def create_root_dn(spec_name, root_dn, attributes):
+    """
+    Create a root DN in the LDAP directory if it doesn't exist, or update it if attributes differ.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        root_dn (str): The distinguished name to create or update.
+        attributes (dict): Attributes to set for the new DN or update on the existing DN.
+
+    Returns:
+        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+    """
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
             return {
                 "created": False,
-                "error": None,
-                "message": f"Root DN {root_dn} already exists",
+                "updated": False,
+                "error": conn_result["error"],
+                "message": "",
             }
 
+        conn = conn_result["conn"]
+        check = root_dn_exists(spec_name, root_dn, attributes)
+        if check["exists"]:
+            if check["attributes_match"]:
+                return {
+                    "created": False,
+                    "updated": False,
+                    "error": None,
+                    "message": f"Root DN {root_dn} already exists with matching attributes",
+                }
+            else:
+                # Update attributes since they differ
+                update_result = update_root_dn(spec_name, root_dn, attributes)
+                if update_result["updated"]:
+                    return {
+                        "created": False,
+                        "updated": True,
+                        "error": None,
+                        "message": update_result["message"],
+                    }
+                return {
+                    "created": False,
+                    "updated": False,
+                    "error": update_result["error"],
+                    "message": "",
+                }
+
+        # Create new entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
-        attr_list = [
-            (k, v if isinstance(v, list) else [v]) for k, v in attributes.items()
-        ]
         attr_list = [
             (k, v if isinstance(v, list) else [v]) for k, v in attributes.items()
         ]
         conn.add_s(dn=root_dn, modlist=attr_list)
         return {
             "created": True,
+            "updated": False,
             "error": None,
             "message": f"Root DN {root_dn} created successfully",
         }
     except Exception as e:
         return {
             "created": False,
-            "error": f"Failed to create root DN: {str(e)}",
+            "updated": False,
+            "error": f"Failed to create root DN {root_dn}: {str(e)}",
             "message": "",
         }
