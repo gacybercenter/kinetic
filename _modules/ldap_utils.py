@@ -38,6 +38,7 @@ def create_connect_spec(spec_name, connection_dict):
             - url (str): LDAP server URL (e.g., 'ldap://localhost:389' or 'ldaps://localhost:636').
             - bind (dict, optional): Bind parameters with 'dn', 'password', and 'method' (default 'simple').
             - tls (dict, optional): TLS parameters with 'cacertfile' (str) and 'starttls' (bool, default False).
+            - admin_bind (dict, optional): Admin bind parameters with 'dn' and 'password' for elevated operations.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'created' (bool), 'error' (str or None), and 'message' (str).
@@ -96,25 +97,53 @@ def create_connect_spec(spec_name, connection_dict):
                     }
 
         # Perform binding if credentials are provided
-        bind_config = connection_dict.get("bind", {})
-        if bind_config and "dn" in bind_config and "password" in bind_config:
+        # Check for admin_bind first (for elevated operations like cn=config)
+        admin_bind_config = connection_dict.get("admin_bind", {})
+        if (
+            admin_bind_config
+            and "dn" in admin_bind_config
+            and "password" in admin_bind_config
+        ):
             try:
                 method = (
                     ldap.AUTH_SIMPLE
-                    if bind_config.get("method", "simple") == "simple"
+                    if admin_bind_config.get("method", "simple") == "simple"
                     else ldap.AUTH_SIMPLE
                 )
-                conn.bind_s(bind_config["dn"], bind_config["password"], method)
+                conn.bind_s(
+                    admin_bind_config["dn"], admin_bind_config["password"], method
+                )
                 log.debug(
-                    f"Bound to LDAP server as {bind_config['dn']} for spec '{spec_name}'"
+                    f"Bound to LDAP server as admin {admin_bind_config['dn']} for spec '{spec_name}'"
                 )
             except Exception as e:
                 return {
                     "success": False,
                     "created": False,
-                    "error": f"Failed to bind to LDAP server for spec '{spec_name}': {str(e)}",
+                    "error": f"Failed to bind as admin to LDAP server for spec '{spec_name}': {str(e)}",
                     "message": "",
                 }
+        else:
+            # Fallback to regular bind if admin_bind is not provided
+            bind_config = connection_dict.get("bind", {})
+            if bind_config and "dn" in bind_config and "password" in bind_config:
+                try:
+                    method = (
+                        ldap.AUTH_SIMPLE
+                        if bind_config.get("method", "simple") == "simple"
+                        else ldap.AUTH_SIMPLE
+                    )
+                    conn.bind_s(bind_config["dn"], bind_config["password"], method)
+                    log.debug(
+                        f"Bound to LDAP server as {bind_config['dn']} for spec '{spec_name}'"
+                    )
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "created": False,
+                        "error": f"Failed to bind to LDAP server for spec '{spec_name}': {str(e)}",
+                        "message": "",
+                    }
 
         # Cache the connection object
         _CONNECTION_CACHE[spec_name] = conn
@@ -698,14 +727,16 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
         }
 
 
-def configure_auditlog_overlay(spec_name, database_dn, logfile):
+def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attributes):
     """
-    Configure the auditlog overlay for a specific database in the LDAP directory.
+    Configure an overlay for a specific database in the LDAP directory.
 
     Args:
         spec_name (str): The name of the connection specification.
         database_dn (str): The distinguished name of the database to apply the overlay to (e.g., 'olcDatabase={2}hdb,cn=config').
-        logfile (str): The path to the audit log file.
+        overlay_name (str): The name of the overlay (e.g., 'auditlog', 'memberof').
+        overlay_index (int or str): The index for the overlay (e.g., 0, to form 'olcOverlay={0}auditlog').
+        attributes (dict): Attributes to set for the overlay configuration.
 
     Returns:
         dict: A dictionary with 'configured' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
@@ -721,13 +752,8 @@ def configure_auditlog_overlay(spec_name, database_dn, logfile):
             }
 
         conn = conn_result["conn"]
-        # Construct the DN for the auditlog overlay, typically under the database DN
-        overlay_dn = f"olcOverlay={{0}}auditlog,{database_dn}"
-        attributes = {
-            "objectClass": ["olcOverlayConfig"],
-            "olcOverlay": "auditlog",
-            "olcAuditLogFile": logfile,  # Corrected capitalization to match common OpenLDAP schema
-        }
+        # Construct the DN for the overlay, typically under the database DN
+        overlay_dn = f"olcOverlay={{{overlay_index}}}{overlay_name},{database_dn}"
 
         # Check if overlay exists and attributes match
         check = root_dn_exists(spec_name, overlay_dn, attributes)
@@ -737,7 +763,7 @@ def configure_auditlog_overlay(spec_name, database_dn, logfile):
                     "configured": False,
                     "updated": False,
                     "error": None,
-                    "message": f"Auditlog overlay {overlay_dn} already exists with matching attributes",
+                    "message": f"Overlay {overlay_dn} already exists with matching attributes",
                 }
             else:
                 update_result = update_root_dn(spec_name, overlay_dn, attributes)
@@ -773,12 +799,12 @@ def configure_auditlog_overlay(spec_name, database_dn, logfile):
             "configured": True,
             "updated": False,
             "error": None,
-            "message": f"Auditlog overlay {overlay_dn} configured successfully",
+            "message": f"Overlay {overlay_dn} configured successfully",
         }
     except Exception as e:
         return {
             "configured": False,
             "updated": False,
-            "error": f"Failed to configure auditlog overlay for {database_dn}: {str(e)}",
+            "error": f"Failed to configure overlay {overlay_name} for {database_dn}: {str(e)}",
             "message": "",
         }

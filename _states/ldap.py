@@ -458,7 +458,14 @@ def group_present(name, spec_name, base_dn, groups=None):
     return ret
 
 
-def module_present(name, spec_name, module_base_dn, modules=None, module_path=None):
+def module_present(
+    name,
+    spec_name,
+    module_base_dn,
+    modules=None,
+    module_path=None,
+    connection_dict=None,
+):
     """
     Ensure that specified modules are loaded into OpenLDAP configuration.
 
@@ -468,18 +475,30 @@ def module_present(name, spec_name, module_base_dn, modules=None, module_path=No
         module_base_dn (str): The base distinguished name for module configuration (e.g., 'cn=module{0},cn=config').
         modules (list, optional): List of module names or dicts with additional info. If not provided, fetched from pillar['ldap']['modules'].
         module_path (str, optional): Path to the module directory if needed (e.g., '/opt/bitnami/openldap/lib/openldap').
+        connection_dict (dict, optional): Connection dictionary to use, if not provided, constructed from pillar with admin credentials.
 
     Returns:
         dict: A dictionary containing the state result.
     """
     ret = {"name": name, "result": True, "changes": {}, "comment": ""}
 
-    # Check if connection spec exists
-    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
+    # Check if connection spec exists or create with admin credentials
+    if connection_dict is None:
+        connection_dict = __pillar__.get("ldap", {}).get("connection", {})
+        admin_user = __pillar__.get("ldap", {}).get("admin-user", {})
+        if admin_user and "name" in admin_user and "password" in admin_user:
+            connection_dict["admin_bind"] = {
+                "dn": f"cn={admin_user['name']},cn=config",
+                "password": admin_user["password"],
+                "method": "simple",
+            }
+
+    # Ensure connection spec is created with admin credentials
+    conn_result = __salt__["ldap_utils.create_connect_spec"](spec_name, connection_dict)
     if not conn_result["success"]:
         ret["result"] = False
         ret["comment"] = (
-            f"Connection spec '{spec_name}' not found: {conn_result['error']}"
+            f"Failed to create connection spec '{spec_name}': {conn_result['error']}"
         )
         return ret
 
@@ -544,66 +563,129 @@ def module_present(name, spec_name, module_base_dn, modules=None, module_path=No
     return ret
 
 
-def auditlog_overlay_present(name, spec_name, database_dn, logfile=None):
+def overlay_present(name, spec_name, database_dn, overlays=None, connection_dict=None):
     """
-    Ensure that the auditlog overlay is configured for a specific database in the LDAP directory.
+    Ensure that specified overlays are configured for a specific database in the LDAP directory.
 
     Args:
         name (str): The name of the state (used for identification in Salt).
         spec_name (str): The name of the connection specification to use.
-        database_dn (str): The distinguished name of the database to apply the overlay to (e.g., 'olcDatabase={2}hdb,cn=config').
-        logfile (str, optional): Path to the audit log file. If not provided, fetched from pillar['ldap']['logfile'].
+        database_dn (str): The distinguished name of the database to apply overlays to (e.g., 'olcDatabase={2}hdb,cn=config').
+        overlays (list, optional): List of overlay configurations with 'name', 'index', and 'attributes'. If not provided, constructed from pillar['ldap']['modules'].
+        connection_dict (dict, optional): Connection dictionary to use, if not provided, constructed from pillar with admin credentials.
 
     Returns:
         dict: A dictionary containing the state result.
     """
     ret = {"name": name, "result": True, "changes": {}, "comment": ""}
 
-    # Check if connection spec exists
-    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
+    # Check if connection spec exists or create with admin credentials
+    if connection_dict is None:
+        connection_dict = __pillar__.get("ldap", {}).get("connection", {})
+        admin_user = __pillar__.get("ldap", {}).get("admin-user", {})
+        if admin_user and "name" in admin_user and "password" in admin_user:
+            connection_dict["admin_bind"] = {
+                "dn": f"cn={admin_user['name']},cn=config",
+                "password": admin_user["password"],
+                "method": "simple",
+            }
+
+    # Ensure connection spec is created with admin credentials
+    conn_result = __salt__["ldap_utils.create_connect_spec"](spec_name, connection_dict)
     if not conn_result["success"]:
         ret["result"] = False
         ret["comment"] = (
-            f"Connection spec '{spec_name}' not found: {conn_result['error']}"
+            f"Failed to create connection spec '{spec_name}': {conn_result['error']}"
         )
         return ret
 
-    # Fetch logfile from pillar if not provided
-    if logfile is None:
-        logfile = __pillar__.get("ldap", {}).get("logfile", "/audit.log")
+    # Fetch overlays from pillar['ldap']['modules'] if not provided
+    if overlays is None:
+        overlays = []
+        modules = __pillar__.get("ldap", {}).get("modules", [])
+        for module_entry in modules:
+            if isinstance(module_entry, dict):
+                module_name = list(module_entry.keys())[0]
+                module_data = module_entry[module_name]
+                if "overlay" in module_data:
+                    overlay_config = {
+                        "name": module_data["overlay"],
+                        "index": len(
+                            overlays
+                        ),  # Simple incremental index, can be adjusted
+                        "attributes": {
+                            "objectClass": [
+                                module_data.get("objectClass", "olcOverlayConfig")
+                            ],
+                            "olcOverlay": module_data["overlay"],
+                        },
+                    }
+                    # Add specific attributes for certain overlays, e.g., logfile for auditlog
+                    if module_data["overlay"] == "auditlog":
+                        logfile = __pillar__.get("ldap", {}).get(
+                            "logfile", "/audit.log"
+                        )
+                        overlay_config["attributes"]["olcAuditLogFile"] = logfile
+                    overlays.append(overlay_config)
 
-    if not logfile:
-        ret["result"] = False
-        ret["comment"] = "No logfile path defined in pillar or parameters."
+    if not overlays:
+        ret["comment"] = "No overlays defined in pillar or parameters."
         return ret
 
-    # If in test mode, report what would be done
-    if __opts__["test"]:
-        ret["result"] = None
-        ret["comment"] = (
-            f"Would configure auditlog overlay for {database_dn} with logfile {logfile}."
-        )
-        ret["changes"] = {
-            "auditlog": {"would_configure": database_dn, "logfile": logfile}
-        }
-        return ret
+    changes = []
+    for overlay in overlays:
+        if (
+            "name" not in overlay
+            or "index" not in overlay
+            or "attributes" not in overlay
+        ):
+            ret["result"] = False
+            ret["comment"] = (
+                f"Invalid overlay definition missing required fields: {overlay}"
+            )
+            return ret
 
-    # Configure the auditlog overlay
-    config_result = __salt__["ldap_utils.configure_auditlog_overlay"](
-        spec_name, database_dn, logfile
-    )
-    if config_result["configured"]:
-        ret["changes"] = {"auditlog": {"configured": database_dn, "logfile": logfile}}
-        ret["comment"] = config_result["message"]
-    elif config_result["updated"]:
-        ret["changes"] = {"auditlog": {"updated": database_dn, "logfile": logfile}}
-        ret["comment"] = config_result["message"]
-    elif config_result["error"]:
-        ret["result"] = False
-        ret["comment"] = (
-            f"Failed to configure auditlog overlay: {config_result['error']}"
+        overlay_name = overlay["name"]
+        overlay_index = overlay["index"]
+        attributes = overlay["attributes"]
+
+        # If in test mode, report what would be done
+        if __opts__["test"]:
+            ret["result"] = None
+            ret["comment"] = (
+                f"Would configure overlay {overlay_name} for {database_dn}."
+            )
+            ret["changes"][overlay_name] = {
+                "would_configure": database_dn,
+                "index": overlay_index,
+            }
+            return ret
+
+        # Configure the overlay
+        config_result = __salt__["ldap_utils.configure_overlay"](
+            spec_name, database_dn, overlay_name, overlay_index, attributes
         )
+        if config_result["configured"]:
+            changes.append(
+                {"overlay": overlay_name, "action": "configured", "dn": database_dn}
+            )
+            log.info(f"Configured overlay {overlay_name} for {database_dn}")
+        elif config_result["updated"]:
+            changes.append(
+                {"overlay": overlay_name, "action": "updated", "dn": database_dn}
+            )
+            log.info(f"Updated overlay {overlay_name} for {database_dn}")
+        elif config_result["error"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to configure overlay {overlay_name}: {config_result['error']}"
+            )
+            return ret
+
+    if changes:
+        ret["changes"] = {"overlays": changes}
+        ret["comment"] = f"Processed {len(changes)} overlay(s) successfully."
     else:
-        ret["comment"] = config_result["message"]
+        ret["comment"] = "All overlays already configured with matching attributes."
 
     return ret
