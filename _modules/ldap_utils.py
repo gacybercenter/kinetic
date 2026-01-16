@@ -423,3 +423,176 @@ def create_ou(spec_name, ou_dn, attributes):
             "error": f"Failed to create OU {ou_dn}: {str(e)}",
             "message": "",
         }
+
+
+def create_user(spec_name, user_dn, attributes, password=None):
+    """
+    Create a user in the LDAP directory if it doesn't exist, or update it if attributes differ.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        user_dn (str): The distinguished name of the user to create or update.
+        attributes (dict): Attributes to set for the new user or update on the existing user.
+        password (str, optional): Password to set for the user, if provided.
+
+    Returns:
+        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+    """
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            return {
+                "created": False,
+                "updated": False,
+                "error": conn_result["error"],
+                "message": "",
+            }
+
+        conn = conn_result["conn"]
+        check = root_dn_exists(spec_name, user_dn, attributes)
+        if check["exists"]:
+            if check["attributes_match"] and not password:
+                return {
+                    "created": False,
+                    "updated": False,
+                    "error": None,
+                    "message": f"User {user_dn} already exists with matching attributes",
+                }
+            else:
+                # Update attributes or password since they differ or password is provided
+                update_attrs = attributes.copy()
+                if password:
+                    update_attrs["userPassword"] = password
+                update_result = update_root_dn(spec_name, user_dn, update_attrs)
+                if update_result["updated"]:
+                    return {
+                        "created": False,
+                        "updated": True,
+                        "error": None,
+                        "message": update_result["message"],
+                    }
+                return {
+                    "created": False,
+                    "updated": False,
+                    "error": update_result["error"],
+                    "message": "",
+                }
+
+        # Create new entry since it doesn't exist
+        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
+        # Ensure all values are lists of byte strings
+        create_attrs = attributes.copy()
+        if password:
+            create_attrs["userPassword"] = password
+        attr_list = [
+            (
+                k,
+                [
+                    v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
+                    for v in (v if isinstance(v, list) else [v])
+                ],
+            )
+            for k, v in create_attrs.items()
+        ]
+        conn.add_s(dn=user_dn, modlist=attr_list)
+        return {
+            "created": True,
+            "updated": False,
+            "error": None,
+            "message": f"User {user_dn} created successfully",
+        }
+    except Exception as e:
+        return {
+            "created": False,
+            "updated": False,
+            "error": f"Failed to create user {user_dn}: {str(e)}",
+            "message": "",
+        }
+
+
+def create_group(spec_name, group_dn, attributes, members=None):
+    """
+    Create a group in the LDAP directory if it doesn't exist, or update it if attributes or members differ.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        group_dn (str): The distinguished name of the group to create or update.
+        attributes (dict): Attributes to set for the new group or update on the existing group.
+        members (list, optional): List of member DNs to set for the group, if provided.
+
+    Returns:
+        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+    """
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            return {
+                "created": False,
+                "updated": False,
+                "error": conn_result["error"],
+                "message": "",
+            }
+
+        conn = conn_result["conn"]
+        check_attrs = attributes.copy()
+        if members:
+            check_attrs["member"] = members
+        check = root_dn_exists(spec_name, group_dn, check_attrs)
+        if check["exists"]:
+            if check["attributes_match"]:
+                return {
+                    "created": False,
+                    "updated": False,
+                    "error": None,
+                    "message": f"Group {group_dn} already exists with matching attributes and members",
+                }
+            else:
+                # Update attributes or members since they differ
+                update_attrs = attributes.copy()
+                if members:
+                    update_attrs["member"] = members
+                update_result = update_root_dn(spec_name, group_dn, update_attrs)
+                if update_result["updated"]:
+                    return {
+                        "created": False,
+                        "updated": True,
+                        "error": None,
+                        "message": update_result["message"],
+                    }
+                return {
+                    "created": False,
+                    "updated": False,
+                    "error": update_result["error"],
+                    "message": "",
+                }
+
+        # Create new entry since it doesn't exist
+        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
+        # Ensure all values are lists of byte strings
+        create_attrs = attributes.copy()
+        if members:
+            create_attrs["member"] = members
+        attr_list = [
+            (
+                k,
+                [
+                    v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
+                    for v in (v if isinstance(v, list) else [v])
+                ],
+            )
+            for k, v in create_attrs.items()
+        ]
+        conn.add_s(dn=group_dn, modlist=attr_list)
+        return {
+            "created": True,
+            "updated": False,
+            "error": None,
+            "message": f"Group {group_dn} created successfully",
+        }
+    except Exception as e:
+        return {
+            "created": False,
+            "updated": False,
+            "error": f"Failed to create group {group_dn}: {str(e)}",
+            "message": "",
+        }
