@@ -10,7 +10,7 @@ ensure_ldap_config_connect_spec:
     - connection_dict:
         url: {{ "ldap://" ~ pillar['ldap']['cert']['common_name'] }}
         bind:
-          dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ "cn=config"] }}
+          dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ "cn=config" }}
           password: {{ pillar['ldap']['admin-user']['password'] }}
           method: simple
         tls:
