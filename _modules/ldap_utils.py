@@ -273,17 +273,35 @@ def update_root_dn(spec_name, root_dn, attributes):
         conn = conn_result["conn"]
         # Convert attributes dictionary to list of (attr, value) tuples for modification
         # Ensure all values are lists of byte strings as required by python-ldap
-        mod_attrs = [
-            (
-                ldap.MOD_REPLACE,
-                k,
-                [
-                    v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
-                    for v in (v if isinstance(v, list) else [v])
-                ],
-            )
-            for k, v in attributes.items()
-        ]
+        # Use MOD_ADD for olcModuleLoad to avoid deletion issues
+        mod_attrs = []
+        for k, v in attributes.items():
+            if k == "olcModuleLoad":
+                mod_attrs.append(
+                    (
+                        ldap.MOD_ADD,
+                        k,
+                        [
+                            v.encode("utf-8")
+                            if isinstance(v, str)
+                            else v.encode("utf-8")
+                            for v in (v if isinstance(v, list) else [v])
+                        ],
+                    )
+                )
+            else:
+                mod_attrs.append(
+                    (
+                        ldap.MOD_REPLACE,
+                        k,
+                        [
+                            v.encode("utf-8")
+                            if isinstance(v, str)
+                            else v.encode("utf-8")
+                            for v in (v if isinstance(v, list) else [v])
+                        ],
+                    )
+                )
         conn.modify_s(dn=root_dn, modlist=mod_attrs)
         return {
             "updated": True,
