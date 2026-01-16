@@ -767,8 +767,14 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
             "message": "",
         }
     finally:
-        if "conn" in locals():
-            conn.unbind_s()
+        if "conn" in locals() and conn is not None:
+            try:
+                log.debug(f"Attempting to unbind connection for module {module_name}")
+                conn.unbind_s()
+            except Exception as unbind_error:
+                log.warning(
+                    f"Failed to unbind LDAP connection for module {module_name}: {str(unbind_error)}"
+                )
 
 
 def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attributes):
