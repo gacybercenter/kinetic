@@ -596,3 +596,155 @@ def create_group(spec_name, group_dn, attributes, members=None):
             "error": f"Failed to create group {group_dn}: {str(e)}",
             "message": "",
         }
+
+
+def configure_auditlog_overlay(spec_name, database_dn, logfile):
+    """
+    Configure the auditlog overlay for a specific database in the LDAP directory.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        database_dn (str): The distinguished name of the database to apply the overlay to (e.g., 'olcDatabase={2}hdb,cn=config').
+        logfile (str): The path to the audit log file.
+
+    Returns:
+        dict: A dictionary with 'configured' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+    """
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            return {
+                "configured": False,
+                "updated": False,
+                "error": conn_result["error"],
+                "message": "",
+            }
+
+        conn = conn_result["conn"]
+        # Construct the DN for the auditlog overlay, typically under the database DN
+        overlay_dn = f"olcOverlay={{0}}auditlog,{database_dn}"
+        attributes = {
+            "objectClass": ["olcOverlayConfig", "olcAuditlogConfig"],
+            "olcOverlay": "auditlog",
+            "olcAuditlogFile": logfile,
+        }
+
+        # Check if overlay exists and attributes match
+        check = root_dn_exists(spec_name, overlay_dn, attributes)
+        if check["exists"]:
+            if check["attributes_match"]:
+                return {
+                    "configured": False,
+                    "updated": False,
+                    "error": None,
+                    "message": f"Auditlog overlay {overlay_dn} already exists with matching attributes",
+                }
+            else:
+                # Update attributes since they differ
+                update_result = update_root_dn(spec_name, overlay_dn, attributes)
+                if update_result["updated"]:
+                    return {
+                        "configured": False,
+                        "updated": True,
+                        "error": None,
+                        "message": update_result["message"],
+                    }
+                return {
+                    "configured": False,
+                    "updated": False,
+                    "error": update_result["error"],
+                    "message": "",
+                }
+
+        # Create new overlay entry since it doesn't exist
+        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
+        # Ensure all values are lists of byte strings
+        attr_list = [
+            (
+                k,
+                [
+                    v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
+                    for v in (v if isinstance(v, list) else [v])
+                ],
+            )
+            for k, v in attributes.items()
+        ]
+        conn.add_s(dn=overlay_dn, modlist=attr_list)
+        return {
+            "configured": True,
+            "updated": False,
+            "error": None,
+            "message": f"Auditlog overlay {overlay_dn} configured successfully",
+        }
+    except Exception as e:
+        return {
+            "configured": False,
+            "updated": False,
+            "error": f"Failed to configure auditlog overlay for {database_dn}: {str(e)}",
+            "message": "",
+        }
+
+
+def auditlog_overlay_present(name, spec_name, database_dn, logfile=None):
+    """
+    Ensure that the auditlog overlay is configured for a specific database in the LDAP directory.
+
+    Args:
+        name (str): The name of the state (used for identification in Salt).
+        spec_name (str): The name of the connection specification to use.
+        database_dn (str): The distinguished name of the database to apply the overlay to (e.g., 'olcDatabase={2}hdb,cn=config').
+        logfile (str, optional): Path to the audit log file. If not provided, fetched from pillar['ldap']['logfile'].
+
+    Returns:
+        dict: A dictionary containing the state result.
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    # Check if connection spec exists
+    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
+    if not conn_result["success"]:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Connection spec '{spec_name}' not found: {conn_result['error']}"
+        )
+        return ret
+
+    # Fetch logfile from pillar if not provided
+    if logfile is None:
+        logfile = __pillar__.get("ldap", {}).get("logfile", "/audit.log")
+
+    if not logfile:
+        ret["result"] = False
+        ret["comment"] = "No logfile path defined in pillar or parameters."
+        return ret
+
+    # If in test mode, report what would be done
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = (
+            f"Would configure auditlog overlay for {database_dn} with logfile {logfile}."
+        )
+        ret["changes"] = {
+            "auditlog": {"would_configure": database_dn, "logfile": logfile}
+        }
+        return ret
+
+    # Configure the auditlog overlay
+    config_result = __salt__["ldap_utils.configure_auditlog_overlay"](
+        spec_name, database_dn, logfile
+    )
+    if config_result["configured"]:
+        ret["changes"] = {"auditlog": {"configured": database_dn, "logfile": logfile}}
+        ret["comment"] = config_result["message"]
+    elif config_result["updated"]:
+        ret["changes"] = {"auditlog": {"updated": database_dn, "logfile": logfile}}
+        ret["comment"] = config_result["message"]
+    elif config_result["error"]:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to configure auditlog overlay: {config_result['error']}"
+        )
+    else:
+        ret["comment"] = config_result["message"]
+
+    return ret
