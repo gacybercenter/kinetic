@@ -736,7 +736,7 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
         # Attributes for the module entry
         attributes = {"objectClass": ["olcModuleList"]}
         full_path = "{}/{}".format(module_path, module_name)
-        attributees["olcModuleLoad"] = full_path
+        attributes["olcModuleLoad"] = full_path
 
         if module_path:
             attributes["olcModulePath"] = module_path
