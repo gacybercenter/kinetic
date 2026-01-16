@@ -40,4 +40,3 @@ ensure_ldap_overlay_auditlog:
     - logfile: {{ pillar['ldap']['logfile'] }}
     - require:
       - ldap: ensure_ldap_config_connect_spec
-      - ldap: ensure_ldap_module_auditlog.so
