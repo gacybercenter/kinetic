@@ -21,19 +21,20 @@ def __virtual__():
         return __virtualname__
     return (False, 'Helm is not installed on this system. Please install Helm to use this module.')
 
-def helm_repo_present(repo_name, repo_url):
+def helm_repo_present(repo_name, repo_url, update_cache=True):
     """
     Ensure that a Helm repository is added or updated with the specified URL.
 
     Args:
         repo_name (str): The name of the Helm repository.
         repo_url (str): The URL of the Helm repository.
+        update_cache (bool, optional): Whether to update the Helm repository cache after adding or updating. Defaults to True.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-helm.helm_repo_present my-repo https://charts.example.com
+        salt '*' kinetic-helm.helm_repo_present my-repo https://charts.example.com update_cache=False
     """
     try:
         repo_updated = False
@@ -71,16 +72,19 @@ def helm_repo_present(repo_name, repo_url):
             repo_updated = True
             message += f"; Helm repository {repo_name} added or updated"
 
-            # Update repo cache
-            repo_update_cmd = ["helm", "repo", "update"]
-            repo_update_result = __salt__['cmd.run'](repo_update_cmd, python_shell=False, ignore_retcode=True)
-            if repo_update_result and "error" in repo_update_result.lower():
-                return {
-                    'success': False,
-                    'updated': repo_updated,
-                    'message': f"Failed to update Helm repositories: {repo_update_result[:100]}...; {message}"
-                }
-            message += f"; Helm repositories updated"
+            # Step 3: Update repo cache if update_cache is True
+            if update_cache:
+                repo_update_cmd = ["helm", "repo", "update"]
+                repo_update_result = __salt__['cmd.run'](repo_update_cmd, python_shell=False, ignore_retcode=True)
+                if repo_update_result and "error" in repo_update_result.lower():
+                    return {
+                        'success': False,
+                        'updated': repo_updated,
+                        'message': f"Failed to update Helm repositories: {repo_update_result[:100]}...; {message}"
+                    }
+                message += f"; Helm repositories updated"
+            else:
+                message += f"; Helm repository cache update skipped as per request"
         else:
             message += f"; Helm repository {repo_name} already exists and up-to-date"
 

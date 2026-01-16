@@ -7,4 +7,4 @@ deploy_nginx_ingress_controller:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.common.k8s-nginx-controller
+      - formulas.common.k8s-ingress-controller
