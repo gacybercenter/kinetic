@@ -311,7 +311,7 @@ def update_root_dn(spec_name, root_dn, attributes):
             if k == "olcModuleLoad":
                 mod_attrs.append(
                     (
-                        ldap.MOD_REPLACE,
+                        ldap.MOD_ADD,
                         k,
                         [
                             val.encode("utf-8")
