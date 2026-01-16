@@ -30,15 +30,13 @@ ensure_ldap_module_{{ module['name'] }}:
     - module_path: {{ pillar['ldap']['modulePath'] }}
     - require:
       - ldap: ensure_ldap_config_connect_spec
-{% endfor %}
-
-# Ensure Auditlog Overlay is configured
-ensure_auditlog_overlay:
+ensure_ldap_overlay_{{ module['name'] }}:
   ldap.auditlog_overlay_present:
-    - name: ldap_auditlog_setup
-    - spec_name: ldap_keycloak_connection
-    - database_dn: {{ pillar['ldap'].get('database_dn', 'olcDatabase={2}hdb,cn=config') }}
-    - logfile: {{ pillar['ldap'].get('logfile', '/audit.log') }}
+    - name: ldap_{{ module['name'] }}
+    - spec_name: ldap_config_connection
+    - database_dn: "olcDatabase={2}hdb,cn=config"
+    - logfile: {{ pillar['ldap']['logfile'] }}
     - require:
-      - ldap: ensure_ldap_connect_spec
-      - ldap: ensure_ldap_root_dn
+      - ldap: ensure_ldap_config_connect_spec
+      - ldap: ensure_ldap_module_{{ module['name'] }}
+{% endfor %}
