@@ -28,7 +28,7 @@ ensure_ldap_modules:
     - modules: {{ pillar['ldap']['modules'] }}
     - module_path: {{ pillar['ldap']['modulePath'] }}
     - require:
-      - ldap: ensure_ldap_connect_spec
+      - ldap: ensure_ldap_config_connect_spec
 
 # # Ensure Auditlog Overlay is configured
 # ensure_auditlog_overlay:
