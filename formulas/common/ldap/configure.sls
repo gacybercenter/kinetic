@@ -30,12 +30,13 @@ ensure_ldap_module_{{ module['name'] }}:
     - module_path: {{ pillar['ldap']['modulePath'] }}
     - require:
       - ldap: ensure_ldap_config_connect_spec
-{% endfor %}
 
-ensure_ldap_overlay_auditlog:
+ensure_ldap_overlay_{{ module['name'] }}:
   ldap.overlay_present:
     - name: ldap_auditlog
     - spec_name: ldap_config_connection
     - database_dn: "olcDatabase={2}hdb,cn=config"
+    - overlays: {{ module['overlay'] }}
     - require:
       - ldap: ensure_ldap_config_connect_spec
+{% endfor %}
