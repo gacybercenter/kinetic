@@ -692,12 +692,12 @@ def create_group(spec_name, group_dn, attributes, members=None):
 
 def load_module(spec_name, module_dn, module_info, module_path=None):
     """
-    Load a module into OpenLDAP configuration if not already loaded, and configure overlay if specified.
+    Load a module into OpenLDAP configuration if not already loaded.
 
     Args:
         spec_name (str): The name of the connection specification.
         module_dn (str): The distinguished name for the module configuration (e.g., 'cn=module{0},cn=config').
-        module_info (dict or str): Module information; if str, just the module name; if dict, includes 'objectClass' and 'overlay'.
+        module_info (dict or str): Module information; if str, just the module name; if dict, includes 'name' and other attributes.
         module_path (str, optional): The path to the module directory if needed (e.g., '/opt/bitnami/openldap/lib/openldap').
 
     Returns:
@@ -714,43 +714,31 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
             }
 
         conn = conn_result["conn"]
-
-        module_name = module_info["name"]
+        # Handle both string and dictionary format for module_info
+        if isinstance(module_info, str):
+            module_name = module_info
+        else:
+            module_name = module_info["name"]
 
         # Attributes for the module entry
         attributes = {"objectClass": ["olcModuleList"]}
         full_path = "{}/{}".format(module_path, module_name)
         attributes["olcModuleLoad"] = full_path
-
         if module_path:
             attributes["olcModulePath"] = module_path
 
         # Check if module entry exists
         check = root_dn_exists(spec_name, module_dn, attributes)
         if check["exists"]:
-            if check["attributes_match"]:
-                log.debug(
-                    f"Module entry {module_dn} already exists with matching attributes."
-                )
-            else:
-                # Update attributes if they differ
-                update_result = update_root_dn(spec_name, module_dn, attributes)
-                if update_result["updated"]:
-                    log.info(
-                        f"Updated module entry {module_dn} with new configuration."
-                    )
-                    return {
-                        "loaded": False,
-                        "updated": True,
-                        "error": None,
-                        "message": f"Updated module entry {module_dn} with new configuration",
-                    }
-                return {
-                    "loaded": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
-                }
+            log.debug(
+                f"Module entry {module_dn} already exists. Treating as success since module replacement requires slapd restart."
+            )
+            return {
+                "loaded": False,
+                "updated": False,
+                "error": None,
+                "message": f"Module entry {module_dn} already exists. No changes made as replacement requires slapd restart.",
+            }
         else:
             # Create new module entry since it doesn't exist
             attr_list = [
@@ -771,13 +759,6 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
                 "error": None,
                 "message": f"Module {module_name} loaded successfully at {module_dn}",
             }
-
-        return {
-            "loaded": False,
-            "updated": False,
-            "error": None,
-            "message": f"Module entry {module_dn} already exists.",
-        }
     except Exception as e:
         return {
             "loaded": False,
@@ -785,6 +766,9 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
             "error": f"Failed to load module {module_name} at {module_dn}: {str(e)}",
             "message": "",
         }
+    finally:
+        if "conn" in locals():
+            conn.unbind_s()
 
 
 def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attributes):
