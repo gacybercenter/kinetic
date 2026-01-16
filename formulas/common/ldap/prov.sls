@@ -27,14 +27,13 @@ ensure_ldap_connect_spec:
 
 # Ensure LDAP root DN is present
 
-{% set org_name = root_dn_attrs.get('o', 'Example Organization') %}
 ensure_ldap_root_dn:
   ldap.root_dn_present:
     - name: ldap_root_dn_setup
     - spec_name: ldap_keycloak_connection
-    - root_dn: {{ root_dn }}
+    - root_dn: {{ pillar['root_dn']['dn'] }}
     - attributes:
         objectClass: ['dcObject', 'organization']
-        o: {{ org_name }}
+        o: {{ pillar['root_dn']['o'] }}
     - require:
       - ldap: ensure_ldap_connect_spec
