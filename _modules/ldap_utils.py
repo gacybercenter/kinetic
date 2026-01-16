@@ -213,6 +213,9 @@ def root_dn_exists(spec_name, root_dn, desired_attributes=None):
                     break
             return {"exists": True, "attributes_match": matches, "error": None}
         return {"exists": False, "attributes_match": False, "error": None}
+    except ldap.NO_SUCH_OBJECT:
+        # Specifically handle "No such object" error as a non-error condition
+        return {"exists": False, "attributes_match": False, "error": None}
     except Exception as e:
         return {
             "exists": False,
