@@ -19,15 +19,18 @@ ensure_ldap_config_connect_spec:
       - file: ensure_config_ca_cert_file
 
 # Ensure Modules are loaded
-ensure_ldap_modules:
+{% for module in pillar['ldap']['modules'] %}
+ensure_ldap_module_{{ module['name'] }}:
   ldap.module_present:
-    - name: ldap_module_setup
+    - name: ldap_module_setup_{{ module['name'] }}
     - spec_name: ldap_config_connection
     - module_base_dn: "cn=module{0},cn=config"
-    - modules: {{ pillar['ldap']['modules'] }}
+    - modules:
+        - {{ module }}
     - module_path: {{ pillar['ldap']['modulePath'] }}
     - require:
       - ldap: ensure_ldap_config_connect_spec
+{% endfor %}
 
 # # Ensure Auditlog Overlay is configured
 # ensure_auditlog_overlay:
