@@ -598,6 +598,106 @@ def create_group(spec_name, group_dn, attributes, members=None):
         }
 
 
+def load_module(spec_name, module_dn, module_info, module_path=None):
+    """
+    Load a module into OpenLDAP configuration if not already loaded, and configure overlay if specified.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        module_dn (str): The distinguished name for the module configuration (e.g., 'cn=module{0},cn=config').
+        module_info (dict or str): Module information; if str, just the module name; if dict, includes 'objectClass' and 'overlay'.
+        module_path (str, optional): The path to the module directory if needed (e.g., '/opt/bitnami/openldap/lib/openldap').
+
+    Returns:
+        dict: A dictionary with 'loaded' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+    """
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            return {
+                "loaded": False,
+                "updated": False,
+                "error": conn_result["error"],
+                "message": "",
+            }
+
+        conn = conn_result["conn"]
+        # Handle both string and dictionary format for module_info
+        if isinstance(module_info, str):
+            module_name = module_info
+            overlay_info = None
+        else:
+            module_name = list(module_info.keys())[0]
+            overlay_info = module_info[module_name].get("overlay")
+            module_object_class = module_info[module_name].get("objectClass")
+
+        # Attributes for the module entry
+        attributes = {"objectClass": ["olcModuleList"], "olcModuleLoad": module_name}
+        if module_path:
+            attributes["olcModulePath"] = module_path
+
+        # Check if module entry exists
+        check = root_dn_exists(spec_name, module_dn, attributes)
+        if check["exists"]:
+            if check["attributes_match"]:
+                log.debug(
+                    f"Module entry {module_dn} already exists with matching attributes."
+                )
+            else:
+                # Update attributes if they differ
+                update_result = update_root_dn(spec_name, module_dn, attributes)
+                if update_result["updated"]:
+                    log.info(
+                        f"Updated module entry {module_dn} with new configuration."
+                    )
+                    return {
+                        "loaded": False,
+                        "updated": True,
+                        "error": None,
+                        "message": f"Updated module entry {module_dn} with new configuration",
+                    }
+                return {
+                    "loaded": False,
+                    "updated": False,
+                    "error": update_result["error"],
+                    "message": "",
+                }
+        else:
+            # Create new module entry since it doesn't exist
+            attr_list = [
+                (
+                    k,
+                    [
+                        v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
+                        for v in (v if isinstance(v, list) else [v])
+                    ],
+                )
+                for k, v in attributes.items()
+            ]
+            conn.add_s(dn=module_dn, modlist=attr_list)
+            log.info(f"Module {module_name} loaded successfully at {module_dn}.")
+            return {
+                "loaded": True,
+                "updated": False,
+                "error": None,
+                "message": f"Module {module_name} loaded successfully at {module_dn}",
+            }
+
+        return {
+            "loaded": False,
+            "updated": False,
+            "error": None,
+            "message": f"Module entry {module_dn} already exists.",
+        }
+    except Exception as e:
+        return {
+            "loaded": False,
+            "updated": False,
+            "error": f"Failed to load module {module_name} at {module_dn}: {str(e)}",
+            "message": "",
+        }
+
+
 def configure_auditlog_overlay(spec_name, database_dn, logfile):
     """
     Configure the auditlog overlay for a specific database in the LDAP directory.

@@ -458,6 +458,92 @@ def group_present(name, spec_name, base_dn, groups=None):
     return ret
 
 
+def module_present(name, spec_name, module_base_dn, modules=None, module_path=None):
+    """
+    Ensure that specified modules are loaded into OpenLDAP configuration.
+
+    Args:
+        name (str): The name of the state (used for identification in Salt).
+        spec_name (str): The name of the connection specification to use.
+        module_base_dn (str): The base distinguished name for module configuration (e.g., 'cn=module{0},cn=config').
+        modules (list, optional): List of module names or dicts with additional info. If not provided, fetched from pillar['ldap']['modules'].
+        module_path (str, optional): Path to the module directory if needed (e.g., '/opt/bitnami/openldap/lib/openldap').
+
+    Returns:
+        dict: A dictionary containing the state result.
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    # Check if connection spec exists
+    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
+    if not conn_result["success"]:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Connection spec '{spec_name}' not found: {conn_result['error']}"
+        )
+        return ret
+
+    # Fetch modules and module_path from pillar if not provided
+    if modules is None:
+        modules = __pillar__.get("ldap", {}).get("modules", [])
+    if module_path is None:
+        module_path = __pillar__.get("ldap", {}).get(
+            "modulePath", "/opt/bitnami/openldap/lib/openldap"
+        )
+
+    if not modules:
+        ret["comment"] = "No modules defined in pillar or parameters."
+        return ret
+
+    changes = []
+    for module_entry in modules:
+        # Handle both string and dictionary format for module_entry
+        if isinstance(module_entry, str):
+            module_info = module_entry
+        else:
+            module_info = module_entry
+
+        # If in test mode, report what would be done
+        if __opts__["test"]:
+            ret["result"] = None
+            ret["comment"] = (
+                f"Would load module from {module_info} at {module_base_dn}."
+            )
+            ret["changes"][str(module_info)] = {"would_load": module_base_dn}
+            return ret
+
+        # Load the module
+        load_result = __salt__["ldap_utils.load_module"](
+            spec_name, module_base_dn, module_info, module_path
+        )
+        if load_result["loaded"]:
+            changes.append(
+                {"module": str(module_info), "action": "loaded", "dn": module_base_dn}
+            )
+            log.info(f"Loaded module from {module_info} at {module_base_dn}")
+        elif load_result["updated"]:
+            changes.append(
+                {"module": str(module_info), "action": "updated", "dn": module_base_dn}
+            )
+            log.info(
+                f"Updated module configuration for {module_info} at {module_base_dn}"
+            )
+        elif load_result["error"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to load module {module_info}: {load_result['error']}"
+            )
+            return ret
+
+    if changes:
+        ret["changes"] = {"modules": changes}
+        ret["comment"] = f"Processed {len(changes)} module(s) successfully."
+    else:
+        ret["comment"] = "All modules already loaded with matching configuration."
+
+    return ret
+
+
 def auditlog_overlay_present(name, spec_name, database_dn, logfile=None):
     """
     Ensure that the auditlog overlay is configured for a specific database in the LDAP directory.
