@@ -624,11 +624,9 @@ def configure_auditlog_overlay(spec_name, database_dn, logfile):
         # Construct the DN for the auditlog overlay, typically under the database DN
         overlay_dn = f"olcOverlay={{0}}auditlog,{database_dn}"
         attributes = {
-            "objectClass": [
-                "olcOverlayConfig"
-            ],  # Simplified to use only the base overlay config class
+            "objectClass": ["olcOverlayConfig"],
             "olcOverlay": "auditlog",
-            "olcAuditlogFile": logfile,
+            "olcAuditLogFile": logfile,  # Corrected capitalization to match common OpenLDAP schema
         }
 
         # Check if overlay exists and attributes match
