@@ -1,5 +1,6 @@
 include:
   - /formulas/common/ldap/install
+  - formulas/common/ldap/prov
 
 
 # Ensure Auditlog Overlay is configured
