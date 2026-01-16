@@ -774,7 +774,7 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
     #         except Exception as unbind_error:
     #             log.warning(
     #                 f"Failed to unbind LDAP connection for module {module_name}: {str(unbind_error)}"
-                )
+    #            )
 
 
 def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attributes):
