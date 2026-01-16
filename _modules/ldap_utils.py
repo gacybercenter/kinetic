@@ -714,14 +714,20 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
             }
 
         conn = conn_result["conn"]
+
         # Handle both string and dictionary format for module_info
         if isinstance(module_info, str):
             module_name = module_info
             overlay_info = None
         else:
-            module_name = list(module_info.keys())[0]
-            overlay_info = module_info[module_name].get("overlay")
-            module_object_class = module_info[module_name].get("objectClass")
+            if "name" in module_info:
+                module_name = module_info["name"]
+                overlay_info = module_info.get("overlay")
+                module_object_class = module_info.get("objectClass")
+            else:
+                module_name = list(module_info.keys())[0]
+                overlay_info = module_info[module_name].get("overlay")
+                module_object_class = module_info[module_name].get("objectClass")
 
         # Attributes for the module entry
         attributes = {"objectClass": ["olcModuleList"], "olcModuleLoad": module_name}
