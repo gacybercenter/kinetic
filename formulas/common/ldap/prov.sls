@@ -37,3 +37,14 @@ ensure_ldap_root_dn:
         o: {{ pillar['ldap']['root_dn']['o'] }}
     - require:
       - ldap: ensure_ldap_connect_spec
+
+# Ensure Organizational Units are created
+ensure_ldap_ous:
+  ldap.ou_present:
+    - name: ldap_ou_setup
+    - spec_name: ldap_keycloak_connection
+    - base_dn: {{ "dc=rsc,dc=gacyberrange,dc=org" }}
+    - ous: {{ pillar['ldap']['orgunits']}}
+    - require:
+      - ldap: ensure_ldap_connect_spec
+      - ldap: ensure_ldap_root_dn
