@@ -33,7 +33,7 @@ ensure_ldap_module_{{ module['name'] }}:
 {% endfor %}
 
 ensure_ldap_overlay_auditlog:
-  ldap.auditlog_overlay_present:
+  ldap.overlay_present:
     - name: ldap_auditlog
     - spec_name: ldap_config_connection
     - database_dn: "olcDatabase={2}hdb,cn=config"
