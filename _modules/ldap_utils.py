@@ -271,37 +271,82 @@ def update_root_dn(spec_name, root_dn, attributes):
             return {"updated": False, "error": conn_result["error"], "message": ""}
 
         conn = conn_result["conn"]
+        # Fetch current attributes to avoid unnecessary or forbidden updates
+        current_attrs_result = root_dn_exists(spec_name, root_dn, attributes)
+        if not current_attrs_result["exists"]:
+            return {
+                "updated": False,
+                "error": f"DN {root_dn} does not exist for update",
+                "message": "",
+            }
+
+        current_attrs = {}
+        if current_attrs_result["exists"]:
+            # Fetch all attributes for comparison
+            search_result = conn.search_s(
+                base=root_dn,
+                scope=ldap.SCOPE_BASE,
+                filterstr="(objectClass=*)",
+                attrlist=list(attributes.keys()),
+            )
+            if search_result and len(search_result) > 0:
+                current_attrs = search_result[0][1] if search_result[0][1] else {}
+                # Decode byte strings to compare with desired attributes
+                for k in current_attrs:
+                    current_attrs[k] = [
+                        v.decode("utf-8") if isinstance(v, bytes) else v
+                        for v in current_attrs[k]
+                    ]
+
         # Convert attributes dictionary to list of (attr, value) tuples for modification
         # Ensure all values are lists of byte strings as required by python-ldap
         # Use MOD_ADD for olcModuleLoad to avoid deletion issues
+        # Skip updates for olcModulePath if already set
         mod_attrs = []
         for k, v in attributes.items():
+            desired_val_list = v if isinstance(v, list) else [v]
+            current_val_list = current_attrs.get(k, [])
+            if set(desired_val_list) == set(current_val_list):
+                continue  # Skip if values are already the same
             if k == "olcModuleLoad":
                 mod_attrs.append(
                     (
                         ldap.MOD_ADD,
                         k,
                         [
-                            v.encode("utf-8")
-                            if isinstance(v, str)
-                            else v.encode("utf-8")
-                            for v in (v if isinstance(v, list) else [v])
+                            val.encode("utf-8")
+                            if isinstance(val, str)
+                            else val.encode("utf-8")
+                            for val in desired_val_list
                         ],
                     )
                 )
+            elif k == "olcModulePath" and current_val_list:
+                log.warning(
+                    f"Skipping update for {k} on {root_dn} as it cannot be deleted or replaced"
+                )
+                continue  # Skip update if olcModulePath is already set
             else:
                 mod_attrs.append(
                     (
                         ldap.MOD_REPLACE,
                         k,
                         [
-                            v.encode("utf-8")
-                            if isinstance(v, str)
-                            else v.encode("utf-8")
-                            for v in (v if isinstance(v, list) else [v])
+                            val.encode("utf-8")
+                            if isinstance(val, str)
+                            else val.encode("utf-8")
+                            for val in desired_val_list
                         ],
                     )
                 )
+
+        if not mod_attrs:
+            return {
+                "updated": False,
+                "error": None,
+                "message": f"No changes needed for {root_dn}",
+            }
+
         conn.modify_s(dn=root_dn, modlist=mod_attrs)
         return {
             "updated": True,
