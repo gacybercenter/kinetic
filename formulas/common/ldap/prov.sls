@@ -26,10 +26,7 @@ ensure_ldap_connect_spec:
       - file: ensure_ca_cert_file
 
 # Ensure LDAP root DN is present
-{% set root_dn_key = pillar['ldap']['root_dn'].keys() | first %}
-{% set root_dn_attrs = pillar['ldap']['root_dn'][root_dn_key] %}
-{% set root_dn_parts = root_dn_key.split('.') %}
-{% set root_dn = 'dc=' + root_dn_parts|join(',dc=') %}
+
 {% set org_name = root_dn_attrs.get('o', 'Example Organization') %}
 ensure_ldap_root_dn:
   ldap.root_dn_present:
