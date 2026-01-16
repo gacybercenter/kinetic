@@ -342,3 +342,81 @@ def create_root_dn(spec_name, root_dn, attributes):
             "error": f"Failed to create root DN {root_dn}: {str(e)}",
             "message": "",
         }
+
+
+def create_ou(spec_name, ou_dn, attributes):
+    """
+    Create an Organizational Unit (OU) in the LDAP directory if it doesn't exist, or update it if attributes differ.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        ou_dn (str): The distinguished name of the OU to create or update.
+        attributes (dict): Attributes to set for the new OU or update on the existing OU.
+
+    Returns:
+        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+    """
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            return {
+                "created": False,
+                "updated": False,
+                "error": conn_result["error"],
+                "message": "",
+            }
+
+        conn = conn_result["conn"]
+        check = root_dn_exists(spec_name, ou_dn, attributes)
+        if check["exists"]:
+            if check["attributes_match"]:
+                return {
+                    "created": False,
+                    "updated": False,
+                    "error": None,
+                    "message": f"OU {ou_dn} already exists with matching attributes",
+                }
+            else:
+                # Update attributes since they differ
+                update_result = update_root_dn(spec_name, ou_dn, attributes)
+                if update_result["updated"]:
+                    return {
+                        "created": False,
+                        "updated": True,
+                        "error": None,
+                        "message": update_result["message"],
+                    }
+                return {
+                    "created": False,
+                    "updated": False,
+                    "error": update_result["error"],
+                    "message": "",
+                }
+
+        # Create new entry since it doesn't exist
+        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
+        # Ensure all values are lists of byte strings
+        attr_list = [
+            (
+                k,
+                [
+                    v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
+                    for v in (v if isinstance(v, list) else [v])
+                ],
+            )
+            for k, v in attributes.items()
+        ]
+        conn.add_s(dn=ou_dn, modlist=attr_list)
+        return {
+            "created": True,
+            "updated": False,
+            "error": None,
+            "message": f"OU {ou_dn} created successfully",
+        }
+    except Exception as e:
+        return {
+            "created": False,
+            "updated": False,
+            "error": f"Failed to create OU {ou_dn}: {str(e)}",
+            "message": "",
+        }
