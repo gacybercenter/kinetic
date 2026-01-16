@@ -456,3 +456,68 @@ def group_present(name, spec_name, base_dn, groups=None):
         ret["comment"] = "All groups already exist with matching attributes."
 
     return ret
+
+
+def auditlog_overlay_present(name, spec_name, database_dn, logfile=None):
+    """
+    Ensure that the auditlog overlay is configured for a specific database in the LDAP directory.
+
+    Args:
+        name (str): The name of the state (used for identification in Salt).
+        spec_name (str): The name of the connection specification to use.
+        database_dn (str): The distinguished name of the database to apply the overlay to (e.g., 'olcDatabase={2}hdb,cn=config').
+        logfile (str, optional): Path to the audit log file. If not provided, fetched from pillar['ldap']['logfile'].
+
+    Returns:
+        dict: A dictionary containing the state result.
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    # Check if connection spec exists
+    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
+    if not conn_result["success"]:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Connection spec '{spec_name}' not found: {conn_result['error']}"
+        )
+        return ret
+
+    # Fetch logfile from pillar if not provided
+    if logfile is None:
+        logfile = __pillar__.get("ldap", {}).get("logfile", "/audit.log")
+
+    if not logfile:
+        ret["result"] = False
+        ret["comment"] = "No logfile path defined in pillar or parameters."
+        return ret
+
+    # If in test mode, report what would be done
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = (
+            f"Would configure auditlog overlay for {database_dn} with logfile {logfile}."
+        )
+        ret["changes"] = {
+            "auditlog": {"would_configure": database_dn, "logfile": logfile}
+        }
+        return ret
+
+    # Configure the auditlog overlay
+    config_result = __salt__["ldap_utils.configure_auditlog_overlay"](
+        spec_name, database_dn, logfile
+    )
+    if config_result["configured"]:
+        ret["changes"] = {"auditlog": {"configured": database_dn, "logfile": logfile}}
+        ret["comment"] = config_result["message"]
+    elif config_result["updated"]:
+        ret["changes"] = {"auditlog": {"updated": database_dn, "logfile": logfile}}
+        ret["comment"] = config_result["message"]
+    elif config_result["error"]:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to configure auditlog overlay: {config_result['error']}"
+        )
+    else:
+        ret["comment"] = config_result["message"]
+
+    return ret
