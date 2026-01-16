@@ -766,14 +766,14 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
             "error": f"Failed to load module {module_name} at {module_dn}: {str(e)}",
             "message": "",
         }
-    finally:
-        if "conn" in locals() and conn is not None:
-            try:
-                log.debug(f"Attempting to unbind connection for module {module_name}")
-                conn.unbind_s()
-            except Exception as unbind_error:
-                log.warning(
-                    f"Failed to unbind LDAP connection for module {module_name}: {str(unbind_error)}"
+    # finally:
+    #     if "conn" in locals() and conn is not None:
+    #         try:
+    #             log.debug(f"Attempting to unbind connection for module {module_name}")
+    #             conn.unbind_s()
+    #         except Exception as unbind_error:
+    #             log.warning(
+    #                 f"Failed to unbind LDAP connection for module {module_name}: {str(unbind_error)}"
                 )
 
 
