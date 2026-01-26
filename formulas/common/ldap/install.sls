@@ -98,7 +98,7 @@ install_openldap_ha:
     - version: {{ ldap_version }}
     - wait_timeout: 300
     - wait_interval: 10
-    - keep_values_file: False
+    - keep_values_file: True
     - require:
       - k8s: ldap_tls_cert
       - k8s_helm: add_openldap_repo
