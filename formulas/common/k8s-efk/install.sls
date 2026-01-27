@@ -38,26 +38,19 @@ opensearch_repo:
     - repo_url: https://opensearch-project.github.io/helm-charts/
     - update_cache: True
 
-render_opensearch_values:
-  file.managed:
-    - name: /tmp/opensearch-values.yaml
-    - source: salt://formulas/common/k8s-efk/files/opensearch-values.j2
-    - template: jinja
-
 opensearch_helm_install:
-  helm.release_present:
-    - name: opensearch
-    - chart: opensearch/opensearch
-    - version: {{ pillar.get('opensearch_version', '2.12.0') }}
+  k8s_helm.helm_release_present:
+    - release_name: opensearch
+    - chart_name: opensearch/opensearch
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - values: /tmp/opensearch-values.yaml
+    - version: {{ pillar.get('opensearch_version', '2.12.0') }}
+    - pillar_key: opensearch_helm
+    - wait_timeout: 300
     - require:
       - k8s: efk_namespace
-      - helm: opensearch_repo
-      - cmd: apply_opensearch_security_config
-      - cmd: restart_opensearch_pods
-      - cmd: apply_opensearch_tls_cert
-      - file: render_opensearch_values
+      - k8s_helm: opensearch_repo
+      - k8s: opensearch_security_config_secret
+      - k8s: opensearch_tls_certificate
 
 # Create ConfigMap for OpenSearch Dashboards configuration
 opensearch_dashboards_configmap:
