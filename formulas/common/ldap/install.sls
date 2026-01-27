@@ -88,6 +88,24 @@ ensure_ldap_admin_secret:
         LDAP_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] }}
         LDAP_CONFIG_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] }}
 
+#Create opensearch auth secret
+ensure_fluentbit_user_secret:
+  k8s.secret_present:
+    - secret_name: fluentbit-creds
+    - namespace: {{ ldap_namespace }}
+    - data:
+        OPENSEARCH_USERNAME: {{ pillar['opensearch_fluentbit_username'] }}
+        OPENSEARCH_PASSWORD: {{ pillar['opensearch_fluentbit_password'] }}
+
+# Create ConfigMap for FluentBit LDAP logging configuration
+ensure_ldap_fluentbit_configmap:
+  k8s.configmap_present:
+    - name: {{ pillar['ldap']['logger-cm']['name'] }}
+    - namespace: {{ ldap_namespace }}
+    - data: {{ pillar['ldap']['logger-cm']['data'] }}
+    - require:
+      - k8s: ensure_fluentbit_user_secret
+
 # Install or upgrade OpenLDAP HA stack using Helm via k8s_helm state
 install_openldap_ha:
   k8s_helm.helm_release_present:
@@ -101,4 +119,5 @@ install_openldap_ha:
     - keep_values_file: True
     - require:
       - k8s: ldap_tls_cert
+      - k8s: ensure_ldap_fluentbit_configmap
       - k8s_helm: add_openldap_repo
