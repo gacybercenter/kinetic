@@ -101,6 +101,7 @@ ensure_fluentbit_user_secret:
 ensure_ldap_fluentbit_configmap:
   k8s.configmap_present:
     - name: {{ pillar['ldap']['logger-cm']['name'] }}
+    - configmap_name: {{ pillar['ldap']['logger-cm']['name'] }}
     - namespace: {{ ldap_namespace }}
     - data: {{ pillar['ldap']['logger-cm']['data'] }}
     - require:
