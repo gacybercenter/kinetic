@@ -7,6 +7,7 @@ efk_namespace:
 opensearch_security_config_secret:
   k8s.secret_present:
     - name: {{ pillar['opensearch-security-config']['name'] }}
+    - secret_name: {{ pillar['opensearch-security-config']['name'] }}-tls
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - type: {{ pillar['opensearch-security-config']['type'] }}
     - data: {{ pillar['opensearch-security-config']['data'] | tojson }}
@@ -17,6 +18,7 @@ opensearch_tls_certificate:
   k8s.certmanager_certificate_present:
     - name: opensearch-tls
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - certificate_name: opensearch-tls-secret
     - secret_name: opensearch-tls-secret
     - issuer_name: cyberrange-ca-issuer
     - issuer_kind: ClusterIssuer
