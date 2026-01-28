@@ -79,11 +79,11 @@ opensearch_dashboards_helm_install:
   cmd.run:
     - name: |
         helm upgrade --install opensearch-dashboards opensearch/opensearch-dashboards \
-          --version {{ pillar.get('opensearch_dashboards_version', '2.12.0') }} \
+          --version {{ pillar.get('opensearch_dashboards_version', '3.4.0') }} \
           --namespace {{ pillar.get('efk_namespace', 'efk') }} \
           --set replicas={{ pillar.get('opensearch_dashboards_replicas', 1) }} \
           --set image.repository=docker.io/opensearchproject/opensearch-dashboards \
-          --set image.tag={{ pillar.get('opensearch_dashboards_tag', '3.2.0') }} \
+          --set image.tag={{ pillar.get('opensearch_dashboards_tag', '3.4.0') }} \
           --set image.pullPolicy=IfNotPresent \
           --set service.type={{ pillar.get('opensearch_dashboards_service_type', 'ClusterIP') }} \
           --set service.port={{ pillar.get('opensearch_dashboards_service_port', 5601) }} \
