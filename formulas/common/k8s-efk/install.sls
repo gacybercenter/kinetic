@@ -82,7 +82,7 @@ opensearch_dashboards_helm_install:
           --version {{ pillar.get('opensearch_dashboards_version', '2.12.0') }} \
           --namespace {{ pillar.get('efk_namespace', 'efk') }} \
           --set replicas={{ pillar.get('opensearch_dashboards_replicas', 1) }} \
-          --set image.repository=opensearchproject/opensearch-dashboards \
+          --set image.repository=docker.io/opensearchproject/opensearch-dashboards \
           --set image.tag={{ pillar.get('opensearch_dashboards_tag', '3.2.0') }} \
           --set image.pullPolicy=IfNotPresent \
           --set service.type={{ pillar.get('opensearch_dashboards_service_type', 'ClusterIP') }} \
