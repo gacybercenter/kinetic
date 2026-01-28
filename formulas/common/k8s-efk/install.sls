@@ -7,7 +7,7 @@ efk_namespace:
 opensearch_security_config_secret:
   k8s.secret_present:
     - name: {{ pillar['opensearch-security-config']['name'] }}
-    - secret_name: {{ pillar['opensearch-security-config']['name'] }}-tls
+    - secret_name: {{ pillar['opensearch-security-config']['name'] }}
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - data: {{ pillar['opensearch-security-config']['data'] | tojson }}
     - require:
