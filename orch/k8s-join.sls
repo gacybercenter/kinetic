@@ -1,15 +1,20 @@
-# Fetch pillar data for the 'bmo' minion to get VIP and node list
+# Fetch pillar data for the 'bmo' minion to get VIP and other configurations
 {% set bootstrap_node = salt['pillar.get']('bootstrap_node') %}
 {% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': bootstrap_node}) %}
 {% set res_k8s = pillardata['res-k8s'] %}
 {% set vip = res_k8s.get('vip', '') %}
-{% set k8s_nodes = res_k8s.get('k8s_nodes', ['master-rsc-0']) %}
 {% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
-# Step 9: Join additional nodes (excluding the node that was bootstrapped)
-{% for node in k8s_nodes if not node == bootstrap_node %}
-# Fetch pillar data for the current node to check if it should join as a control plane node
+# Allow node to be passed as an argument to the orchestration; fail if not provided
+{% set node = salt['pillar.get']('node_to_join', '') %}
+{% if not node %}
+  {% do salt.log.error("No node specified for joining. Please provide 'node_to_join' in pillar or as an argument.") %}
+  fail_no_node_specified:
+    test.fail_without_changes:
+      - name: "Error: No node specified for joining. Please provide 'node_to_join' in pillar or as an argument."
+{% else %}
+# Fetch pillar data for the specified node to check if it should join as a control plane node
 {% set node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': node}) %}
 # Check if the node is already part of the Kubernetes cluster
 {% set node_status_check = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubectl get nodes --field-selector metadata.name="+node+" -o name"]) %}
@@ -33,7 +38,7 @@ node_already_joined_{{ node }}:
 # Step 1: Ensure Kubernetes dependencies are installed on the node
 k8s_deps_{{ node }}:
   salt.state:
-    - tgt: '{{ node }}' 
+    - tgt: '{{ node }}'
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
 # Debug the retrieved join parameters (optional, for troubleshooting)
@@ -52,7 +57,7 @@ pull_kube_vip_image_{{ node }}:
     - kwarg:
         cmd: ctr image pull ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }}
         onlyif: test ! -f /etc/kubernetes/manifests/kube-vip.yaml  # Only run if manifest doesn't exist
-    - tgt: '{{ node }}' 
+    - tgt: '{{ node }}'
     - require:
       - salt: k8s_deps_{{ node }}
 
@@ -72,12 +77,11 @@ generate_kube_vip_manifest_{{ node }}:
             --arp \
             --leaderElection > /etc/kubernetes/manifests/kube-vip.yaml
         creates: /etc/kubernetes/manifests/kube-vip.yaml  # Only run if the manifest doesn't exist
-    - tgt: '{{ node }}' 
+    - tgt: '{{ node }}'
     - require:
       - salt: pull_kube_vip_image_{{ node }}
 
 # Step 5: Join the node to the cluster
-
 join_{{ node }}_ctl_to_cluster:
   salt.function:
     - name: cmd.run
@@ -102,4 +106,4 @@ join_{{ node }}_worker_to_cluster:
       - salt: k8s_deps_{{ node }}
 {% endif %}
 {% endif %}
-{% endfor %}
+{% endif %}
