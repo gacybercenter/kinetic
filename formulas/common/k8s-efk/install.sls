@@ -115,5 +115,5 @@ opensearch_dashboards_helm_install:
 
     - require:
       - k8s: efk_namespace
-      - helm: opensearch_repo
-      - helm: opensearch_helm_install
+      - k8s_helm: opensearch_repo
+      - k8s_helm: opensearch_helm_install
