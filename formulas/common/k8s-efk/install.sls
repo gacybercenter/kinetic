@@ -46,6 +46,7 @@ opensearch_helm_install:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - version: {{ pillar.get('opensearch_version', '2.12.0') }}
     - pillar_key: opensearch_helm
+    - keep_values_file: True
     - wait_timeout: 300
     - require:
       - k8s: efk_namespace
