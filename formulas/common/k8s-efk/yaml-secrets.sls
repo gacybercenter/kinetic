@@ -128,7 +128,7 @@ opensearch_roles_secret:
   k8s.secret_present:
     - name: rolesSecret
     - secret_name: rolesSecret
-    - namespace: {{ pillar['efk_namespace']
+    - namespace: {{ pillar['efk_namespace'] }}
     - data:
         roles.yml: |
             # This defines the access control roles
