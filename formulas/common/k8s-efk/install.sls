@@ -6,14 +6,14 @@ efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar['efk_namespace'] }}
 
-opensearch_security_config_secret:
-  k8s.secret_present:
-    - name: {{ pillar['opensearch-security-config']['name'] }}
-    - secret_name: {{ pillar['opensearch-security-config']['name'] }}
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - data: {{ pillar['opensearch-security-config']['data'] | tojson }}
-    - require:
-      - k8s: efk_namespace
+# opensearch_security_config_secret:
+#   k8s.secret_present:
+#     - name: {{ pillar['opensearch-security-config']['name'] }}
+#     - secret_name: {{ pillar['opensearch-security-config']['name'] }}
+#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+#     - data: {{ pillar['opensearch-security-config']['data'] | tojson }}
+#     - require:
+#       - k8s: efk_namespace
 
 opensearch_tls_certificate:
   k8s.certmanager_certificate_present:
