@@ -44,7 +44,6 @@ opensearch_helm_install:
     - require:
       - k8s: efk_namespace
       - k8s_helm: opensearch_repo
-      - k8s: opensearch_security_config_secret
       - k8s: opensearch_tls_certificate
 
 # Create ConfigMap for OpenSearch Dashboards configuration
