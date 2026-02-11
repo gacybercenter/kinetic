@@ -39,24 +39,24 @@ opensearch_action_groups_secret:
         action_groups.yml: |
             # This defines reusable action groups for permissions
             gcr_action_group:
-            reserved: false
-            hidden: false
-            allowed_actions:
-            - "indices:data/write/index*"
-            - "indices:data/write/update*"
-            - "indices:admin/mapping/put"
-            - "indices:data/write/bulk*"
-            - "read"
-            - "write"
-            static: false
+                reserved: false
+                hidden: false
+                allowed_actions:
+                - "indices:data/write/index*"
+                - "indices:data/write/update*"
+                - "indices:admin/mapping/put"
+                - "indices:data/write/bulk*"
+                - "read"
+                - "write"
+                static: false
             admin_action_group:  # Optional: Add for future admin-related roles if needed
-            reserved: false
-            hidden: false
-            allowed_actions:
-            - "indices:admin/*"
-            - "indices:data/*"
-            - "cluster:admin/*"
-            static: false
+                reserved: false
+                hidden: false
+                allowed_actions:
+                - "indices:admin/*"
+                - "indices:data/*"
+                - "cluster:admin/*"
+                static: false
             _meta:
             type: "actiongroups"
             config_version: 2
@@ -93,8 +93,8 @@ opensearch_tenants_secret:
     - data:
         tenants.yml: |
             _meta:
-            type: "tenants"
-            config_version: 2
+                type: "tenants"
+                config_version: 2
 opensearch_roles_mapping_secret:
   k8s.secret_present:
     - name: roleMappingSecret
@@ -104,26 +104,26 @@ opensearch_roles_mapping_secret:
         roles_mapping.yml: |
             # This maps roles to users and groups
             _meta:
-            type: "rolesmapping"
-            config_version: 2
+                type: "rolesmapping"
+                config_version: 2
             all_access:
-            reserved: true
-            users:
-            - "admin"
+                reserved: true
+                users:
+                - "admin"
             admin:
-            reserved: true
-            users:
-            - "admin"
-            backend_roles:
-            - "all_access"
+                reserved: true
+                users:
+                - "admin"
+                backend_roles:
+                - "all_access"
             log_writer:
-            reserved: false
-            users:
-            - "fluentbit"
+                reserved: false
+                users:
+                - "fluentbit"
             dashboard_reader:
-            reserved: false
-            users:
-            - "dashboard_user"
+                reserved: false
+                users:
+                - "dashboard_user"
 opensearch_roles_secret:
   k8s.secret_present:
     - name: rolesSecret
@@ -133,8 +133,8 @@ opensearch_roles_secret:
         roles.yml: |
             # This defines the access control roles
             _meta:
-            type: "roles"
-            config_version: 2
+                type: "roles"
+                config_version: 2
             admin:
             reserved: true
             cluster_permissions:
@@ -149,35 +149,35 @@ opensearch_roles_secret:
                 - "indices:data/write/bulk*"  # Explicitly include bulk write
                 - "indices:admin/create"  # Explicitly include create action
                 - "indices:admin/mapping/put"  # Explicitly include mapping updates
-            tenant_permissions:
-            - tenant_patterns:
-            - "*"  # Apply to all tenants
-            allowed_actions:
-            - "*"  # Grant all tenant-level actions
+                tenant_permissions:
+                - tenant_patterns:
+                - "*"  # Apply to all tenants
+                  allowed_actions:
+                  - "*"  # Grant all tenant-level actions
             log_writer:
-            reserved: false
-            cluster_permissions:
-            - "cluster_monitor"
-            - "cluster_composite_ops"
-            index_permissions:
-            - index_patterns:
-                - "*"
-                allowed_actions:
-                - "write"
-                - "create_index"
-                - "manage"
-                - "indices:data/write/index"
-                - "indices:data/write/bulk"
+                reserved: false
+                cluster_permissions:
+                - "cluster_monitor"
+                - "cluster_composite_ops"
+                index_permissions:
+                - index_patterns:
+                    - "*"
+                  allowed_actions:
+                  - "write"
+                  - "create_index"
+                  - "manage"
+                  - "indices:data/write/index"
+                  - "indices:data/write/bulk"
             dashboard_reader:
-            reserved: false
-            cluster_permissions:
-            - "cluster_monitor"
-            index_permissions:
-            - index_patterns:
-                - "*"
-            allowed_actions:
-            - "read"
-            - "view_index_metadata"
-            tenant_permissions:
-            - tenant_patterns:
-                - "global_tenant"
+                reserved: false
+                cluster_permissions:
+                - "cluster_monitor"
+                index_permissions:
+                - index_patterns:
+                    - "*"
+                  allowed_actions:
+                  - "read"
+                  - "view_index_metadata"
+                tenant_permissions:
+                - tenant_patterns:
+                  - "global_tenant"
