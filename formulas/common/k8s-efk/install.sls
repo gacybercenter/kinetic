@@ -64,9 +64,9 @@ opensearch_dashboards_configmap:
           # OpenSearch connection configuration
           opensearch.hosts: ["https://{{ pillar.get('opensearch_service_host') }}:9200"]
           opensearch.username: "admin"
-          opensearch.password: "{{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}"
+          opensearch.password: "{{ pillar.get('opensearch_admin_password') }}"
           opensearch.ssl.verificationMode: {{ pillar.get('opensearch_ssl_verification_mode', 'none') }}
-          opensearch.ssl.certificateAuthorities: "/usr/share/opensearch-dashboards/config/certs/ca.crt"
+          opensearch.ssl.certificateAuthorities: ["/usr/share/opensearch-dashboards/config/certs/ca.crt"]
           logging.verbose: true
     - labels:
         app: opensearch-dashboards
