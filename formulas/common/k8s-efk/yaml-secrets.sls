@@ -1,7 +1,7 @@
 opensearch_internal_users:
   k8s.secret_present:
     - name: internalUsersSecret
-    - secret_name: internal_users_secret
+    - secret_name: internal-users-secret
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - data:
         internal_users.yml: |
@@ -33,7 +33,7 @@ opensearch_internal_users:
 opensearch_action_groups_secret:
   k8s.secret_present:
     - name: actionGroupsSecret
-    - secret_name: action_groups_secret
+    - secret_name: action-groups-secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         action_groups.yml: |
@@ -63,7 +63,7 @@ opensearch_action_groups_secret:
 opensearch_config_secret:
   k8s.secret_present:
     - name: configSecret
-    - secret_name: config_secret
+    - secret_name: config-secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         config.yml: |
@@ -88,7 +88,7 @@ opensearch_config_secret:
 opensearch_tenants_secret:
   k8s.secret_present:
     - name: tenantsSecret
-    - secret_name: tenants_secret
+    - secret_name: tenants-secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         tenants.yml: |
@@ -98,7 +98,7 @@ opensearch_tenants_secret:
 opensearch_roles_mapping_secret:
   k8s.secret_present:
     - name: roleMappingSecret
-    - secret_name: role_mapping_secret
+    - secret_name: role-mapping-secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         roles_mapping.yml: |
@@ -127,7 +127,7 @@ opensearch_roles_mapping_secret:
 opensearch_roles_secret:
   k8s.secret_present:
     - name: rolesSecret
-    - secret_name: roles_secret
+    - secret_name: roles-secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         roles.yml: |
