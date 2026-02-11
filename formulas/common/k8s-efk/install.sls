@@ -1,4 +1,6 @@
 # Add a step to uninstall OpenSearch Dashboards Helm release if it exists to handle selector conflict.
+include:
+  - /formulas/common/k8s-efk/yaml-secrets
 
 efk_namespace:
   k8s.namespace_present:
@@ -44,7 +46,7 @@ opensearch_helm_install:
     - release_name: opensearch
     - chart_name: opensearch/opensearch
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - version: {{ pillar.get('opensearch_version', '2.12.0') }}
+    - version: {{ pillar.get('opensearch_version') }}
     - pillar_key: opensearch_helm
     - keep_values_file: True
     - wait_timeout: 300
