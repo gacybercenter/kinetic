@@ -1,39 +1,39 @@
 opensearch_internal_users:
   k8s.secret_present:
     - name: internalUsersSecret
-    - secret_name: internalUsersSecret
+    - secret_name: internal_users_secret
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - data:
         internal_users.yml: |
             # This is the internal user database
             # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
             _meta:
-            type: "internalusers"
-            config_version: 2
+                type: "internalusers"
+                config_version: 2
             admin:
-            hash: {{ pillar['opensearch_admin_hash'] }}"
-            reserved: true
-            backend_roles:
-                - "admin"
-                - "all_access"
-            description: "Admin user"
+                hash: {{ pillar['opensearch_admin_hash'] }}"
+                reserved: true
+                backend_roles:
+                    - "admin"
+                    - "all_access"
+                description: "Admin user"
             fluentbit:
-            hash: "{{ pillar['opensearch_fluentbit_hash'] }}"
-            reserved: false
-            backend_roles:
-                - "log_writer"
-            description: "Fluent Bit log writer"
+                hash: "{{ pillar['opensearch_fluentbit_hash'] }}"
+                reserved: false
+                backend_roles:
+                    - "log_writer"
+                description: "Fluent Bit log writer"
             dashboard_user:
-            hash: "{{ pillar['opensearch_dashboard_user_hash'] }}"
-            reserved: false
-            backend_roles:
-                - "dashboard_reader"
-            description: "OpenSearch Dashboards read-only user"
+                hash: "{{ pillar['opensearch_dashboard_user_hash'] }}"
+                reserved: false
+                backend_roles:
+                    - "dashboard_reader"
+                description: "OpenSearch Dashboards read-only user"
 
 opensearch_action_groups_secret:
   k8s.secret_present:
     - name: actionGroupsSecret
-    - secret_name: actionGroupsSecret
+    - secret_name: action_groups_secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         action_groups.yml: |
@@ -63,7 +63,7 @@ opensearch_action_groups_secret:
 opensearch_config_secret:
   k8s.secret_present:
     - name: configSecret
-    - secret_name: configSecret
+    - secret_name: config_secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         config.yml: |
@@ -88,7 +88,7 @@ opensearch_config_secret:
 opensearch_tenants_secret:
   k8s.secret_present:
     - name: tenantsSecret
-    - secret_name: tenantsSecret
+    - secret_name: tenants_secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         tenants.yml: |
@@ -98,7 +98,7 @@ opensearch_tenants_secret:
 opensearch_roles_mapping_secret:
   k8s.secret_present:
     - name: roleMappingSecret
-    - secret_name: roleMappingSecret
+    - secret_name: role_mapping_secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         roles_mapping.yml: |
@@ -127,7 +127,7 @@ opensearch_roles_mapping_secret:
 opensearch_roles_secret:
   k8s.secret_present:
     - name: rolesSecret
-    - secret_name: rolesSecret
+    - secret_name: roles_secret
     - namespace: {{ pillar['efk_namespace'] }}
     - data:
         roles.yml: |
