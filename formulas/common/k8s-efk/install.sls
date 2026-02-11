@@ -62,7 +62,7 @@ opensearch_dashboards_configmap:
     - data:
         opensearch_dashboards.yml: |
           # OpenSearch connection configuration
-          opensearch.hosts: ["https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"]
+          opensearch.hosts: ["https://{{ pillar.get('opensearch_service_host') }}:9200"]
           opensearch.username: "admin"
           opensearch.password: "{{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}"
           opensearch.ssl.verificationMode: {{ pillar.get('opensearch_ssl_verification_mode', 'none') }}
