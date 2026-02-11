@@ -11,7 +11,7 @@ opensearch_internal_users:
             type: "internalusers"
             config_version: 2
             admin:
-            hash: {{ pillar['opensearch_admin_hash' }}"
+            hash: {{ pillar['opensearch_admin_hash'] }}"
             reserved: true
             backend_roles:
                 - "admin"
