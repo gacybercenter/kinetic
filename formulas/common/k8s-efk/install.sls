@@ -77,43 +77,14 @@ opensearch_dashboards_configmap:
 
 # Install OpenSearch Dashboards in the same namespace as OpenSearch using --set options
 opensearch_dashboards_helm_install:
-  cmd.run:
-    - name: |
-        helm upgrade --install opensearch-dashboards opensearch/opensearch-dashboards \
-          --version {{ pillar.get('opensearch_dashboards_version', '3.4.0') }} \
-          --namespace {{ pillar.get('efk_namespace', 'efk') }} \
-          --set replicas={{ pillar.get('opensearch_dashboards_replicas', 1) }} \
-          --set image.repository=docker.io/opensearchproject/opensearch-dashboards \
-          --set image.tag={{ pillar.get('opensearch_dashboards_tag', '3.4.0') }} \
-          --set image.pullPolicy=IfNotPresent \
-          --set service.type={{ pillar.get('opensearch_dashboards_service_type', 'ClusterIP') }} \
-          --set service.port={{ pillar.get('opensearch_dashboards_service_port', 5601) }} \
-          --set resources.limits.cpu={{ pillar.get('opensearch_dashboards_cpu_limit', '500m') }} \
-          --set resources.limits.memory={{ pillar.get('opensearch_dashboards_memory_limit', '512Mi') }} \
-          --set resources.requests.cpu={{ pillar.get('opensearch_dashboards_cpu_request', '200m') }} \
-          --set resources.requests.memory={{ pillar.get('opensearch_dashboards_memory_request', '256Mi') }} \
-          --set ingress.enabled={{ pillar.get('opensearch_dashboards_ingress_enabled', 'true') }} \
-          --set ingress.ingressClassName={{ pillar.get('opensearch_dashboards_ingress_class', 'nginx') }} \
-          --set ingress.hosts[0].host={{ pillar.get('opensearch_dashboards_ingress_host', 'dashboard.logger.services.gacyberrange.org') }} \
-          --set ingress.hosts[0].paths[0].path=/ \
-          --set ingress.hosts[0].paths[0].pathType=Prefix \
-          --set ingress.hosts[0].paths[0].backend.service.name={{ pillar.get('opensearch_dashboards_service_name', 'opensearch-dashboards') }} \
-          --set ingress.hosts[0].paths[0].backend.service.port.number={{ pillar.get('opensearch_dashboards_service_port', 5601) }} \
-          --set extraVolumes[0].name=opensearch-dashboards-config \
-          --set extraVolumes[0].configMap.name=opensearch-dashboards-config \
-          --set extraVolumeMounts[0].name=opensearch-dashboards-config \
-          --set extraVolumeMounts[0].mountPath=/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml \
-          --set extraVolumeMounts[0].subPath=opensearch_dashboards.yml \
-          --set extraVolumeMounts[0].readOnly=true \
-          --set extraVolumes[1].name=opensearch-tls-secret \
-          --set extraVolumes[1].secret.secretName=opensearch-tls-secret \
-          --set extraVolumeMounts[1].name=opensearch-tls-secret \
-          --set extraVolumeMounts[1].mountPath=/usr/share/opensearch-dashboards/config/certs \
-          --set extraVolumeMounts[1].readOnly=true \
-          --set extraEnvs[0].name=OPENSEARCH_DASHBOARDS_DEFAULT_TENANT \
-          --set extraEnvs[0].value={{ pillar.get('opensearch_dashboards_default_tenant', 'global_tenant') }} \
-          --wait --timeout 300s || echo "Installation failed, check logs for details"
-
+  k8s_helm.helm_release_present:
+    - release_name: opensearch-dashboards
+    - chart_name: opensearch/opensearch-dashboards
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - version: {{ pillar.get('opensearch_dashboards_version', '3.5.0') }}
+    - pillar_key: opensearch_dashboards_helm_values
+    - wait_timeout: 300
+    - keep_values_file: True
     - require:
       - k8s: efk_namespace
       - k8s_helm: opensearch_repo
