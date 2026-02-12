@@ -18,8 +18,7 @@ add_metallb_repo:
     - repo_url: https://metallb.github.io/metallb
     - require:
       - test: helm_installed
-{% set internal_ip = pillar['res-k8s']['lbs']['internal']['ip'] %}
-{% set external_ip = pillar['res-k8s']['lbs']['external']['ip'] %}
+{% set internal_ip =  "10.201.21.84" %}
 
 # Add the Traefik Ingress Controller Helm repository
 add_traefik_ingress_repo:
@@ -63,7 +62,7 @@ install_traefik_internal_ingress_controller:
           type: {{ pillar.get('traefik_internal_service_type', 'LoadBalancer') }}
           spec:
             loadBalancerIP: {{ internal_ip }}
-        replicas: 1
+        replicas: {{ pillar.get('traefik_internal_replica_count', 2) }}
         ingressClass:
           name: traefik-internal
           isDefaultClass: false
@@ -76,29 +75,3 @@ install_traefik_internal_ingress_controller:
       - cmd: update_helm_repos
       - k8s_helm: install_metallb
 
-# Install or upgrade Traefik Ingress Controller for external traffic
-install_traefik_external_ingress_controller:
-  k8s_helm.helm_release_present:
-    - release_name: traefik-external
-    - chart_name: traefik/traefik
-    - namespace: {{ pillar.get('traefik_external_namespace', 'external-ingress') }}
-    - values_dict:
-        logs:
-          general:
-            level: DEBUG
-        service:
-          type: {{ pillar.get('traefik_external_service_type', 'LoadBalancer') }}
-          spec:
-            loadBalancerIP: {{ external_ip }}
-        replicas: 1
-        ingressClass:
-          name: traefik-external
-          isDefaultClass: false
-        additionalArguments:
-          - "--providers.kubernetesIngressNGINX"
-          - "--serversTransport.insecureSkipVerify=true"
-    - wait_timeout: 300
-    - wait_interval: 10
-    - require:
-      - cmd: update_helm_repos
-      - k8s_helm: install_metallb
