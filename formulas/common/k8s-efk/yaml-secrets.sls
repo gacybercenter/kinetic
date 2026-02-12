@@ -178,6 +178,8 @@ opensearch_roles_secret:
                     allowed_actions:
                     - "read"
                     - "view_index_metadata"
-                    tenant_permissions:
-                    - tenant_patterns:
+                tenant_permissions:
+                - tenant_patterns:
                     - "global_tenant"
+                    allowed_actions:
+                    - "kibana_all_read"
