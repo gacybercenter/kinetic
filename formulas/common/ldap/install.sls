@@ -103,7 +103,7 @@ ensure_ldap_fluentbit_configmap:
     - name: {{ pillar['ldap']['logger-cm']['name'] }}
     - configmap_name: {{ pillar['ldap']['logger-cm']['name'] }}
     - namespace: {{ ldap_namespace }}
-    - data: {{ pillar['ldap']['logger-cm']['data'] }}
+    - data: {{ pillar['ldap']['logger-cm']['data'] |to_yaml }}
     - require:
       - k8s: ensure_fluentbit_user_secret
 
