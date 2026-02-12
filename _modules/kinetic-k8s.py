@@ -3597,6 +3597,10 @@ def configmap_present(namespace, name, data, labels=None, annotations=None):
                 }
 
         # Create or update ConfigMap
+        processed_data = {
+            k: v.replace("\\n", "\n") if isinstance(v, str) else v
+            for k, v in data.items()
+        }
         configmap_body = client.V1ConfigMap(
             metadata=client.V1ObjectMeta(
                 name=name,
@@ -3604,7 +3608,7 @@ def configmap_present(namespace, name, data, labels=None, annotations=None):
                 labels=labels or {},
                 annotations=annotations or {},
             ),
-            data=data,
+            data=processed_data,
         )
 
         if not exists:
