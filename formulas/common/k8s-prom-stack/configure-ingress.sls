@@ -5,7 +5,7 @@ include:
 {% set host = pillar['kps-ingress-host'] %}
 
 configure-issuer:
-  certmanager_issuer_present:
+  kinetic_k8s.certmanager_issuer_present:
     - namespace: monitoring
     - issuer_name: selfsigned
     - spec:
