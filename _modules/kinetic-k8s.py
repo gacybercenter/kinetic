@@ -4480,7 +4480,7 @@ def ingress_present(
             except ApiException as e:
                 ret["result"] = False
                 ret["comment"] = (
-                    f"Failed to create Ingress {name} in namespace {namespace}: {str(e)[:50]}..."
+                    f"Failed to create Ingress {name} in namespace {namespace}: {str(e)}..."
                 )
     except Exception as e:
         ret["result"] = False
