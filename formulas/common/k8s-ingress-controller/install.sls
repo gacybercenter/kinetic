@@ -72,6 +72,7 @@ install_traefik_internal_ingress_controller:
           - "--serversTransport.insecureSkipVerify=true"
     - wait_timeout: 300
     - wait_interval: 10
+    - keep_values_file: True
     - require:
       - cmd: update_helm_repos
       - k8s_helm: install_metallb
@@ -99,6 +100,7 @@ install_traefik_external_ingress_controller:
           - "--serversTransport.insecureSkipVerify=true"
     - wait_timeout: 300
     - wait_interval: 10
+    - keep_values_file: True
     - require:
       - cmd: update_helm_repos
       - k8s_helm: install_metallb
