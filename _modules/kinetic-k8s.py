@@ -3597,10 +3597,6 @@ def configmap_present(namespace, name, data, labels=None, annotations=None):
                 }
 
         # Create or update ConfigMap
-        processed_data = {
-            k: v.replace("\\n", "\n") if isinstance(v, str) else v
-            for k, v in data.items()
-        }
         configmap_body = client.V1ConfigMap(
             metadata=client.V1ObjectMeta(
                 name=name,
@@ -3608,7 +3604,7 @@ def configmap_present(namespace, name, data, labels=None, annotations=None):
                 labels=labels or {},
                 annotations=annotations or {},
             ),
-            data=processed_data,
+            data=data,
         )
 
         if not exists:
@@ -4827,7 +4823,7 @@ def secret_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Error checking Secret {secret_name}: {str(e)}...",
+                    "message": f"Error checking Secret {secret_name}: {str(e)[:50]}...",
                 }
 
         # Encode data to base64 for Secret creation/update
@@ -4863,7 +4859,7 @@ def secret_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to create Secret {secret_name}: {str(e)}...",
+                    "message": f"Failed to create Secret {secret_name}: {str(e)[:50]}...",
                 }
         elif not matches:
             try:
@@ -4876,7 +4872,7 @@ def secret_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to update Secret {secret_name}: {str(e)}...",
+                    "message": f"Failed to update Secret {secret_name}: {str(e)[:50]}...",
                 }
 
         return {"success": True, "updated": updated, "message": message}
@@ -4885,7 +4881,7 @@ def secret_present(
         return {
             "success": False,
             "updated": False,
-            "message": f"Secret operation error: {str(e)}...",
+            "message": f"Secret operation error: {str(e)[:50]}...",
         }
 
 
