@@ -158,24 +158,24 @@ opensearch_roles_secret:
                 - "cluster_monitor"
                 - "cluster_composite_ops"
                 index_permissions:
-                  - index_patterns:
+                - index_patterns:
                     - "*"
-                allowed_actions:
-                - "write"
-                - "create_index"
-                - "manage"
-                - "indices:data/write/index"
-                - "indices:data/write/bulk"
+                    allowed_actions:
+                    - "write"
+                    - "create_index"
+                    - "manage"
+                    - "indices:data/write/index"
+                    - "indices:data/write/bulk"
             dashboard_reader:
                 reserved: false
                 cluster_permissions:
                 - "cluster_monitor"
                 index_permissions:
-                  - index_patterns:
+                - index_patterns:
                     - "*"
-                allowed_actions:
-                - "read"
-                - "view_index_metadata"
-                tenant_permissions:
-                - tenant_patterns:
-                - "global_tenant"
+                    allowed_actions:
+                    - "read"
+                    - "view_index_metadata"
+                    tenant_permissions:
+                    - tenant_patterns:
+                    - "global_tenant"
