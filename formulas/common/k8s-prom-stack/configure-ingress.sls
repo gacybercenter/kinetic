@@ -7,7 +7,7 @@ configure-issuer:
   k8s.certmanager_issuer_present:
     - namespace: cluster-wide
     - issuer_name: cluster-issuer
-    - issuer_kind: cluster-issuer
+    - issuer_kind: ClusterIssuer
 
 configure-ingress:
   k8s.ingress_present:
