@@ -72,6 +72,8 @@ opensearch_config_secret:
               config_version: 2
             config:
               dynamic:
+                http:
+                  anonymous_auth_enabled: false
                 authc:
                   basic_internal_auth_domain:
                     description: "Authenticate via HTTP Basic against internal users database"
