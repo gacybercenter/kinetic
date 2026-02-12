@@ -1,5 +1,4 @@
 include:
-- /formulas/common/k8s-prom-stack/ingress
 - /formulas/common/k8s-certmanager/install
 
 {% set host = pillar['kps-ingress-host'] %}
@@ -12,14 +11,15 @@ configure-issuer:
       selfSigned: {}
 
 configure-ingress:
-  k8s_helm.helm_repo_present:
+  kinetic_k8s.ingress_present:
     - name: monitoring-ui
     - namespace: monitoring
-    - hosts: host
+    - hosts: {{ host }}
     - tls:
       - secretName: prom-ssc-tls
         hosts: 
           - metrics-dev.internal.gacyberrange.org
+    - ingress_class_name: traefik-internal
     - require:
       - configure-issuer
 
