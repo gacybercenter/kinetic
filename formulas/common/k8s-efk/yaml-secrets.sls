@@ -68,23 +68,21 @@ opensearch_config_secret:
     - data:
         config.yml: |
             _meta:
-            type: "config"
-            config_version: 2
+              type: "config"
+              config_version: 2
             config:
-            dynamic:
-                http:
-                anonymous_auth_enabled: false
+              dynamic:
                 authc:
-                basic_internal_auth_domain:
+                  basic_internal_auth_domain:
                     description: "Authenticate via HTTP Basic against internal users database"
                     http_enabled: true
                     transport_enabled: true
                     order: 0
                     http_authenticator:
-                    type: basic
-                    challenge: true
+                      type: basic
+                      challenge: true
                     authentication_backend:
-                    type: internal
+                      type: internal
 opensearch_tenants_secret:
   k8s.secret_present:
     - name: tenantsSecret
