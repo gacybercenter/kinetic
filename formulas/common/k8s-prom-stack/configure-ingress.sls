@@ -13,8 +13,8 @@ configure-ingress:
   kinetic_k8s.ingress_present:
     - name: monitoring-ui
     - namespace: monitoring
-    - hosts: {{ ingress[hosts] }}
-    - tls: {{ ingress[tls] }}
+    - hosts: {{ ingress['hosts'] }}
+    - tls: {{ ingress['tls'] }}
     - ingress_class_name: traefik-internal
     - require:
       - configure-issuer
