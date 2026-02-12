@@ -4,13 +4,13 @@ include:
 {% set ingress = pillar['kps-ingress'] %}
 
 configure-issuer:
-  kinetic-k8s.certmanager_issuer_present:
+  k8s.certmanager_issuer_present:
     - namespace: cluster-wide
     - issuer_name: cluster-issuer
     - issuer_kind: cluster-issuer
 
 configure-ingress:
-  kinetic-k8sk8s.ingress_present:
+  k8s.ingress_present:
     - name: monitoring-ui
     - namespace: monitoring
     - hosts: {{ ingress['hosts'] }}
