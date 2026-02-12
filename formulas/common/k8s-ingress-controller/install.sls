@@ -63,7 +63,7 @@ install_traefik_internal_ingress_controller:
           type: {{ pillar.get('traefik_internal_service_type', 'LoadBalancer') }}
           spec:
             loadBalancerIP: {{ internal_ip }}
-        replicas: {{ pillar.get('traefik_internal_replica_count', 2) }}
+        replicas: 1
         ingressClass:
           name: traefik-internal
           isDefaultClass: false
@@ -90,7 +90,7 @@ install_traefik_external_ingress_controller:
           type: {{ pillar.get('traefik_external_service_type', 'LoadBalancer') }}
           spec:
             loadBalancerIP: {{ external_ip }}
-        replicas: {{ pillar.get('traefik_external_replica_count', 2) }}
+        replicas: 1
         ingressClass:
           name: traefik-external
           isDefaultClass: false
