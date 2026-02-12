@@ -95,7 +95,7 @@ install_traefik_external_ingress_controller:
         additionalArguments:
           - "--providers.kubernetesIngressNGINX"
           - "--serversTransport.insecureSkipVerify=true"
-    - keep_values_file: true
+    - keep_values_file: True
     - wait_timeout: 300
     - wait_interval: 10
     - require:
