@@ -18,7 +18,7 @@ add_metallb_repo:
     - repo_url: https://metallb.github.io/metallb
     - require:
       - test: helm_installed
-{% set internal_ip =  10.201.21.84 %}
+{% set internal_ip =  "10.201.21.84" %}
 
 # Add the Traefik Ingress Controller Helm repository
 add_traefik_ingress_repo:
