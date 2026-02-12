@@ -138,22 +138,22 @@ opensearch_roles_secret:
             admin:
                 reserved: true
                 cluster_permissions:
-                - "*"  # Grant all cluster-level permissions
+                - "*"
                 index_permissions:
                 - index_patterns:
-                    - "*"  # Apply to all indices
+                    - "*"
                     allowed_actions:
-                    - "*"  # Grant all index-level actions
+                    - "*"
                     - "indices:data/write/index*"
-                    - "indices:data/write/update*"  # Explicitly include index creation
-                    - "indices:data/write/bulk*"  # Explicitly include bulk write
-                    - "indices:admin/create"  # Explicitly include create action
-                    - "indices:admin/mapping/put"  # Explicitly include mapping updates
+                    - "indices:data/write/update*"
+                    - "indices:data/write/bulk*"
+                    - "indices:admin/create"
+                    - "indices:admin/mapping/put"
                     tenant_permissions:
                     - tenant_patterns:
-                    - "*"  # Apply to all tenants
+                    - "*"
                     allowed_actions:
-                    - "*"  # Grant all tenant-level actions
+                    - "*"
             log_writer:
                 reserved: false
                 cluster_permissions:
