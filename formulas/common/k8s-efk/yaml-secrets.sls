@@ -158,7 +158,7 @@ opensearch_roles_secret:
                 - "cluster_monitor"
                 - "cluster_composite_ops"
                 index_permissions:
-                - index_patterns:
+                  - index_patterns:
                     - "*"
                 allowed_actions:
                 - "write"
@@ -171,7 +171,7 @@ opensearch_roles_secret:
                 cluster_permissions:
                 - "cluster_monitor"
                 index_permissions:
-                - index_patterns:
+                  - index_patterns:
                     - "*"
                 allowed_actions:
                 - "read"
