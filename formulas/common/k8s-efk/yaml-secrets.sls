@@ -11,20 +11,20 @@ opensearch_internal_users:
                 type: "internalusers"
                 config_version: 2
             admin:
-                hash: {{ pillar['opensearch_admin_hash'] }}"
+                hash: {{ pillar['opensearch_admin_hash'] }}
                 reserved: true
                 backend_roles:
                     - "admin"
                     - "all_access"
                 description: "Admin user"
             fluentbit:
-                hash: "{{ pillar['opensearch_fluentbit_hash'] }}"
+                hash: {{ pillar['opensearch_fluentbit_hash'] }}
                 reserved: false
                 backend_roles:
                     - "log_writer"
                 description: "Fluent Bit log writer"
             dashboard_user:
-                hash: "{{ pillar['opensearch_dashboard_user_hash'] }}"
+                hash: {{ pillar['opensearch_dashboard_user_hash'] }}
                 reserved: false
                 backend_roles:
                     - "dashboard_reader"
