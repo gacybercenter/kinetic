@@ -58,8 +58,8 @@ opensearch_action_groups_secret:
                 - "cluster:admin/*"
                 static: false
             _meta:
-            type: "actiongroups"
-            config_version: 2
+                type: "actiongroups"
+                config_version: 2
 opensearch_config_secret:
   k8s.secret_present:
     - name: configSecret
@@ -133,49 +133,49 @@ opensearch_roles_secret:
             _meta:
                 type: "roles"
                 config_version: 2
-            admin:
-            reserved: true
-            cluster_permissions:
-            - "*"  # Grant all cluster-level permissions
-            index_permissions:
-            - index_patterns:
-                - "*"  # Apply to all indices
-                allowed_actions:
-                - "*"  # Grant all index-level actions
-                - "indices:data/write/index*"
-                - "indices:data/write/update*"  # Explicitly include index creation
-                - "indices:data/write/bulk*"  # Explicitly include bulk write
-                - "indices:admin/create"  # Explicitly include create action
-                - "indices:admin/mapping/put"  # Explicitly include mapping updates
-                tenant_permissions:
-                - tenant_patterns:
-                - "*"  # Apply to all tenants
-                  allowed_actions:
-                  - "*"  # Grant all tenant-level actions
-            log_writer:
-                reserved: false
-                cluster_permissions:
-                - "cluster_monitor"
-                - "cluster_composite_ops"
-                index_permissions:
-                - index_patterns:
-                    - "*"
-                  allowed_actions:
-                  - "write"
-                  - "create_index"
-                  - "manage"
-                  - "indices:data/write/index"
-                  - "indices:data/write/bulk"
-            dashboard_reader:
-                reserved: false
-                cluster_permissions:
-                - "cluster_monitor"
-                index_permissions:
-                - index_patterns:
-                    - "*"
-                  allowed_actions:
-                  - "read"
-                  - "view_index_metadata"
-                tenant_permissions:
-                - tenant_patterns:
-                  - "global_tenant"
+                admin:
+                    reserved: true
+                    cluster_permissions:
+                    - "*"  # Grant all cluster-level permissions
+                    index_permissions:
+                    - index_patterns:
+                        - "*"  # Apply to all indices
+                        allowed_actions:
+                        - "*"  # Grant all index-level actions
+                        - "indices:data/write/index*"
+                        - "indices:data/write/update*"  # Explicitly include index creation
+                        - "indices:data/write/bulk*"  # Explicitly include bulk write
+                        - "indices:admin/create"  # Explicitly include create action
+                        - "indices:admin/mapping/put"  # Explicitly include mapping updates
+                        tenant_permissions:
+                        - tenant_patterns:
+                        - "*"  # Apply to all tenants
+                        allowed_actions:
+                        - "*"  # Grant all tenant-level actions
+                log_writer:
+                    reserved: false
+                    cluster_permissions:
+                    - "cluster_monitor"
+                    - "cluster_composite_ops"
+                    index_permissions:
+                    - index_patterns:
+                        - "*"
+                    allowed_actions:
+                    - "write"
+                    - "create_index"
+                    - "manage"
+                    - "indices:data/write/index"
+                    - "indices:data/write/bulk"
+                dashboard_reader:
+                    reserved: false
+                    cluster_permissions:
+                    - "cluster_monitor"
+                    index_permissions:
+                    - index_patterns:
+                        - "*"
+                    allowed_actions:
+                    - "read"
+                    - "view_index_metadata"
+                    tenant_permissions:
+                    - tenant_patterns:
+                    - "global_tenant"
