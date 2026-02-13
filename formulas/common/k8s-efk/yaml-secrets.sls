@@ -193,6 +193,43 @@ check_opensearch_health:
     - admin_password: {{ pillar.get('opensearch_admin_password') }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
 
+# Create or update the log_writer role with necessary permissions for index creation and writing
+update_log_writer_role:
+  opensearch.role_present:
+    - name: update_log_writer_role
+    - role_name: log_writer
+    - index_name: "*"  # Apply to all indices, including audit logs
+    - cluster_permissions:
+        - "cluster_monitor"
+        - "cluster_composite_ops"
+    - index_permissions:
+        - index_patterns:
+            - "*"
+          allowed_actions:
+            - "write"
+            - "create_index"
+            - "manage"
+            - "indices:data/write/index"
+            - "indices:data/write/bulk"
+            - "indices:admin/create"  # Explicit permission for index creation
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('opensearch_admin_password') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+    - require:
+      - opensearch: check_opensearch_health
+
+# Map the fluentbit user to the log_writer role for write access
+map_fluentbit_user_to_log_writer:
+  opensearch.user_role_mapping_present:
+    - name: map_fluentbit_user_to_log_writer_role
+    - role_name: log_writer
+    - user_name: fluentbit
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('opensearch_admin_password') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+    - require:
+      - opensearch: update_log_writer_role
+
 # Create or ensure a role with permissions for the audit log indices
 create_fluentbit_audit_role:
   opensearch.role_present:
