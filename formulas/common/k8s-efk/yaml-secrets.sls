@@ -196,21 +196,6 @@ check_opensearch_health:
     - admin_password: {{ pillar.get('fluentd_password') }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
 
-# Create or ensure the index for KVM logs exists
-# Use hostname from grains if opensearch_index_name is empty
-{% set index_name = pillar.get('opensearch_index_name', grains.get('host')) %}
-create_kvm_logs_index:
-  opensearch.index_present:
-    - name: create_{{ index_name }}_index
-    - index_name: {{ index_name }}
-    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
-    - admin_password: {{ pillar.get('fluentd_password') }}
-    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
-    - shards: {{ pillar.get('opensearch_shards', 1) }}
-    - replicas: {{ pillar.get('opensearch_replicas', 1) }}
-    - require:
-      - opensearch: check_opensearch_health
-
 # Create or ensure a role with permissions for the KVM logs index
 create_fluentbit_role:
   opensearch.role_present:

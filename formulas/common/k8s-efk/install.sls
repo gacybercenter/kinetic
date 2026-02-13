@@ -1,4 +1,3 @@
-# Add a step to uninstall OpenSearch Dashboards Helm release if it exists to handle selector conflict.
 include:
   - /formulas/common/k8s-efk/yaml-secrets
 
@@ -45,6 +44,30 @@ opensearch_helm_install:
       - k8s: efk_namespace
       - k8s_helm: opensearch_repo
       - k8s: opensearch_tls_certificate
+
+# Create a separate Ingress for OpenSearch API using ingress_present
+opensearch_api_ingress:
+  k8s.ingress_present:
+    - name: opensearch-api-ingress
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - ingress_name: opensearch-api-ingress
+    - class_name: traefik-internal
+    - hosts:
+        - host: api.logger.services.gacyberrange.org
+          paths:
+            - path: "/"
+              path_type: Prefix
+              service_name: opensearch-cluster-master
+              service_port: 9200
+    - annotations:
+        traefik.ingress.kubernetes.io/router.tls: "true"
+        traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+    - tls:
+        - secret_name: opensearch-tls-secret
+          hosts:
+            - api.logger.services.gacyberrange.org
+    - require:
+      - k8s_helm: opensearch_helm_install
 
 # Create ConfigMap for OpenSearch Dashboards configuration
 opensearch_dashboards_configmap:
