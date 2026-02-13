@@ -65,7 +65,7 @@ opensearch_api_ingress:
     - tls:
         - hosts:
             - api.logger.services.gacyberrange.org
-          secret_name: opensearch-tls-secret
+          secretName: opensearch-tls-secret
     - require:
       - k8s_helm: opensearch_helm_install
 
