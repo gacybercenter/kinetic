@@ -63,9 +63,9 @@ opensearch_api_ingress:
         traefik.ingress.kubernetes.io/router.tls: "true"
         traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
     - tls:
-        - secret_name: opensearch-tls-secret
         - hosts:
             - api.logger.services.gacyberrange.org
+          secret_name: opensearch-tls-secret
     - require:
       - k8s_helm: opensearch_helm_install
 
