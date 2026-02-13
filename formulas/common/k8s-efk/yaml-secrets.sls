@@ -198,7 +198,7 @@ update_log_writer_role:
   opensearch.role_present:
     - name: update_log_writer_role
     - role_name: log_writer
-    - index_name: openldap-audit-logs-  # Matches openldap-audit-logs-* pattern in kinetic-os.create_role
+    - index_name: *  # Matches openldap-audit-logs-* pattern in kinetic-os.create_role
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
     - admin_password: {{ pillar.get('opensearch_admin_password') }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
