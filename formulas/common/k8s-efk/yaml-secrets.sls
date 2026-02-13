@@ -199,7 +199,7 @@ check_opensearch_health:
 # Create or ensure a role with permissions for the KVM logs index
 create_fluentbit_role:
   opensearch.role_present:
-    - name: create_fluentbit_{{ index_name }}_role
+    - name: create_fluentbit_role
     - role_name: {{ index_name }}
     - index_name: {{ index_name }}
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
