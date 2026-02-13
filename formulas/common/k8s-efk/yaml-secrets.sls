@@ -187,7 +187,7 @@ opensearch_roles_secret:
 # State formula to configure OpenSearch for logging with Fluent Bit
 # Ensures cluster health, creates an index for KVM logs, sets up a role with permissions,
 # and maps the Fluent Bit user to the role.
-
+{% set index_name = "fluent-bit" %}
 # Check OpenSearch cluster health before proceeding
 check_opensearch_health:
   opensearch.cluster_health:
