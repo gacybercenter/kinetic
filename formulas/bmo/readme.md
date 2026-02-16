@@ -88,3 +88,15 @@ This state automates the installation and configuration of BMO and Ironic, ensur
 This state is intended to be applied via SaltStack as part of a larger orchestration workflow for setting up bare metal provisioning infrastructure. It can be executed with:
 ```shell
 salt 'target_minion' state.apply bmo.install
+
+## Remove/Reinstall
+
+### Reinstall
+To reinstall a node, follow these steps:
+1. Delete the BareMetalHost (BMH) associated with the node. This will remove the node from the cluster. Use the following command, replacing `<node name>` with the name of your node:
+   ```shell
+   kubectl -n baremetal-operator-system delete bmh baremetal-operator~<node name>
+2. Wait for the node to restart and boot into the clean process. Once the cleaning process is finished, the node will power down.
+3. To install again, run the following command to re-apply the configuration:
+  ```shell
+  salt 'bmo' state.apply formulas.bmo.configure

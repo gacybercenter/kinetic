@@ -98,12 +98,13 @@ ensure_fluentbit_user_secret:
         OPENSEARCH_PASSWORD: {{ pillar['opensearch_fluentbit_password'] }}
 
 # Create ConfigMap for FluentBit LDAP logging configuration
+{% set cm_yaml = pillar['ldap']['logger-cm']['data'] |yaml %}
 ensure_ldap_fluentbit_configmap:
   k8s.configmap_present:
     - name: {{ pillar['ldap']['logger-cm']['name'] }}
     - configmap_name: {{ pillar['ldap']['logger-cm']['name'] }}
     - namespace: {{ ldap_namespace }}
-    - data: {{ pillar['ldap']['logger-cm']['data'] }}
+    - data: {{ cm_yaml }}
     - require:
       - k8s: ensure_fluentbit_user_secret
 

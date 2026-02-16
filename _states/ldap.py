@@ -308,7 +308,15 @@ def user_present(name, spec_name, base_dn, users=None):
         ):
             log.debug(f"User {user_dn} already exists with matching attributes.")
             continue
-
+        elif (
+            check_result["exists"]
+            and check_result["attributes_match"]
+            and "pass" in user
+        ):
+            log.warning(
+                f"User {user_dn} exists with matching attributes, skipping password update as per policy."
+            )
+            continue
         if check_result["error"]:
             ret["result"] = False
             ret["comment"] = f"Error checking user {user_dn}: {check_result['error']}"
@@ -339,7 +347,7 @@ def user_present(name, spec_name, base_dn, users=None):
         else:
             ret["result"] = False
             ret["comment"] = (
-                f"Failed to {'update' if check_result['exists'] else 'create'} user {user_dn}: {create_result['error']}"
+                f"Failed to {'update' if check_result['exists'] else 'create'} user {user_dn}: {create_result.get('error', 'Unknown error')}"
             )
             return ret
 

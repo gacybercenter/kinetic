@@ -7,4 +7,4 @@ deploy_osh_rabbitmq:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.osh-rabbitmq
+      - formulas.osh-rabbitmq.configure

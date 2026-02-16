@@ -63,7 +63,6 @@ install_traefik_internal_ingress_controller:
           type: {{ pillar.get('traefik_internal_service_type', 'LoadBalancer') }}
           spec:
             loadBalancerIP: {{ internal_ip }}
-        replicas: {{ pillar.get('traefik_internal_replica_count', 2) }}
         ingressClass:
           name: traefik-internal
           isDefaultClass: false
@@ -72,6 +71,7 @@ install_traefik_internal_ingress_controller:
           - "--serversTransport.insecureSkipVerify=true"
     - wait_timeout: 300
     - wait_interval: 10
+    - keep_values_file: True
     - require:
       - cmd: update_helm_repos
       - k8s_helm: install_metallb
@@ -90,13 +90,13 @@ install_traefik_external_ingress_controller:
           type: {{ pillar.get('traefik_external_service_type', 'LoadBalancer') }}
           spec:
             loadBalancerIP: {{ external_ip }}
-        replicas: {{ pillar.get('traefik_external_replica_count', 2) }}
         ingressClass:
           name: traefik-external
           isDefaultClass: false
         additionalArguments:
           - "--providers.kubernetesIngressNGINX"
           - "--serversTransport.insecureSkipVerify=true"
+    - keep_values_file: True
     - wait_timeout: 300
     - wait_interval: 10
     - require:
