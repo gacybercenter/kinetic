@@ -80,10 +80,10 @@ pyroute2_patch:
 ### You should only do this with versions of systemd
 ### 241 or greater
 
-/etc/resolv.conf:
-  file.symlink:
-    - target: /run/systemd/resolve/resolv.conf
-    - force: True
+# /etc/resolv.conf:
+#   file.symlink:
+#     - target: /run/systemd/resolve/resolv.conf
+#     - force: True
 
 {% for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
   {% set subnet_cidr = pillar['networking']['subnets'][network] %}

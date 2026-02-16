@@ -13,4 +13,5 @@
     HTTP_User         fluentbit
     HTTP_Passwd       {{ pillar['fluentd_password' ]}}
     TLS               On
+    tls.verify        off
     Suppress_Type_Name On

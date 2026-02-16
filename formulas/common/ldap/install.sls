@@ -69,6 +69,16 @@ ldap_tls_cert:
     - duration: {{ pillar['ldap']['cert']['duration'] }}
     - renew_before: {{ pillar['ldap']['cert']['renew_before'] }}
 
+# Ensure CA certificate file is present on the minion
+ensure_config_ca_cert_file:
+  file.managed:
+    - name: /tmp/ca.pem
+    - contents: {{ pillar['ldap']['cert']['ca'] | json }}
+    - mode: 644
+    - user: root
+    - group: root
+    - makedirs: True
+
 # Create Kubernetes secret for LDAP admin credentials
 ensure_ldap_admin_secret:
   k8s.secret_present:
@@ -77,6 +87,26 @@ ensure_ldap_admin_secret:
     - data:
         LDAP_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] }}
         LDAP_CONFIG_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] }}
+
+#Create opensearch auth secret
+ensure_fluentbit_user_secret:
+  k8s.secret_present:
+    - secret_name: fluentbit-creds
+    - namespace: {{ ldap_namespace }}
+    - data:
+        OPENSEARCH_USERNAME: {{ pillar['opensearch_fluentbit_username'] }}
+        OPENSEARCH_PASSWORD: {{ pillar['opensearch_fluentbit_password'] }}
+
+# Create ConfigMap for FluentBit LDAP logging configuration
+{% set cm_yaml = pillar['ldap']['logger-cm']['data'] |yaml %}
+ensure_ldap_fluentbit_configmap:
+  k8s.configmap_present:
+    - name: {{ pillar['ldap']['logger-cm']['name'] }}
+    - configmap_name: {{ pillar['ldap']['logger-cm']['name'] }}
+    - namespace: {{ ldap_namespace }}
+    - data: {{ cm_yaml }}
+    - require:
+      - k8s: ensure_fluentbit_user_secret
 
 # Install or upgrade OpenLDAP HA stack using Helm via k8s_helm state
 install_openldap_ha:
@@ -88,7 +118,8 @@ install_openldap_ha:
     - version: {{ ldap_version }}
     - wait_timeout: 300
     - wait_interval: 10
-    - keep_values_file: False
+    - keep_values_file: True
     - require:
       - k8s: ldap_tls_cert
+      - k8s: ensure_ldap_fluentbit_configmap
       - k8s_helm: add_openldap_repo
