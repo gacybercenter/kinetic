@@ -7,4 +7,4 @@ deploy_osh_keystone:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.osh-keystone
+      - formulas.keystone
