@@ -202,15 +202,23 @@ def helm_release_present(
         if not release_exists or not release_matches:
             values_file = None
             if values_dict:
-                # Debug the content of values_dict to see None values
-                message += f"; Debug values_dict: {json.dumps(values_dict, default=str)[:500]}..."
+                # Function to recursively remove None values from dictionary
+                def remove_none(d):
+                    if isinstance(d, dict):
+                        return {
+                            k: remove_none(v) for k, v in d.items() if v is not None
+                        }
+                    elif isinstance(d, list):
+                        return [remove_none(i) for i in d]
+                    return d
+
+                cleaned_values_dict = remove_none(values_dict)
+                message += f"; Debug cleaned values_dict keys: {list(cleaned_values_dict.keys())[:10]}..."
                 # Write values to a temporary file since Helm CLI requires a file for custom values
                 with tempfile.NamedTemporaryFile(
                     mode="w", delete=False, suffix=".json"
                 ) as f:
-                    json.dump(
-                        values_dict, f, default=lambda x: None if x is None else x
-                    )
+                    json.dump(cleaned_values_dict, f)
                     f.flush()
 
             # Build the Helm command as a list to avoid shell=True, always using 'upgrade --install'
