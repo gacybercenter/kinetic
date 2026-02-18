@@ -202,18 +202,17 @@ def helm_release_present(
         if not release_exists or not release_matches:
             values_file = None
             if values_dict:
-                # Function to recursively remove None values from dictionary
-                def remove_none(d):
-                    if isinstance(d, dict):
-                        return {
-                            k: remove_none(v) for k, v in d.items() if v is not None
-                        }
-                    elif isinstance(d, list):
-                        return [remove_none(i) for i in d]
-                    return d
+                # Write values to a temporary file as YAML since Helm CLI can handle YAML files
+                import yaml  # Requires PyYAML, ensure it's available in the Salt environment
 
-                cleaned_values_dict = remove_none(values_dict)
-                message += f"; Debug cleaned values_dict keys: {list(cleaned_values_dict.keys())[:10]}..."
+                with tempfile.NamedTemporaryFile(
+                    mode="w", delete=False, suffix=".yaml"
+                ) as f:
+                    yaml.safe_dump(values_dict, f, default_flow_style=False)
+                    f.flush()
+                    values_file = f.name
+                    values_file_path = values_file
+                    message += f"; Using temporary values file {values_file}"
                 # Write values to a temporary file since Helm CLI requires a file for custom values
                 with tempfile.NamedTemporaryFile(
                     mode="w", delete=False, suffix=".json"
