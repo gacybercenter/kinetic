@@ -213,12 +213,6 @@ def helm_release_present(
                     values_file = f.name
                     values_file_path = values_file
                     message += f"; Using temporary values file {values_file}"
-                # Write values to a temporary file since Helm CLI requires a file for custom values
-                with tempfile.NamedTemporaryFile(
-                    mode="w", delete=False, suffix=".json"
-                ) as f:
-                    json.dump(cleaned_values_dict, f)
-                    f.flush()
 
             # Build the Helm command as a list to avoid shell=True, always using 'upgrade --install'
             helm_cmd = [
