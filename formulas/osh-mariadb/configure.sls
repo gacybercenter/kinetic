@@ -10,3 +10,4 @@ install_mariadb:
     - wait_timeout: 300
     - wait_interval: 10
     - pillar_key: osh_values:mariadb
+    - keep_values_file: True

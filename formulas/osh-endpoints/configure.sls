@@ -1,12 +1,12 @@
 include:
   - /formulas/osh-endpoints/install
-  - /formulas/common/k8s-nginx-controller/install
+  - /formulas/common/k8s-ingress-controller/install
 
 # Ensure NGINX Ingress Controller and MetalLB are installed before proceeding
 nginx_controller_installed:
   test.nop:
     - require:
-      - sls: /formulas/common/k8s-nginx-controller/install
+      - sls: /formulas/common/k8s-ingress-controller/install
 
 # Create namespace for OpenStack public endpoint (if not already created by NGINX controller)
 openstack_namespace:
