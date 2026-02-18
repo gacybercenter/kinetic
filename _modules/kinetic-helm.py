@@ -202,15 +202,16 @@ def helm_release_present(
         if not release_exists or not release_matches:
             values_file = None
             if values_dict:
+                # Debug the content of values_dict to see None values
+                message += f"; Debug values_dict: {json.dumps(values_dict, default=str)[:500]}..."
                 # Write values to a temporary file since Helm CLI requires a file for custom values
                 with tempfile.NamedTemporaryFile(
                     mode="w", delete=False, suffix=".json"
                 ) as f:
-                    json.dump(values_dict, f)
+                    json.dump(
+                        values_dict, f, default=lambda x: None if x is None else x
+                    )
                     f.flush()
-                    values_file = f.name
-                    values_file_path = values_file
-                    message += f"; Using temporary values file {values_file}"
 
             # Build the Helm command as a list to avoid shell=True, always using 'upgrade --install'
             helm_cmd = [
