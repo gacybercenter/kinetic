@@ -21,4 +21,4 @@ install_keystone:
     - keep_values_file: true
     - pillar_key: osh_values:keystone
     - require:
-      - k8s_secret: keystone-admin
+      - k8s: keystone-admin
