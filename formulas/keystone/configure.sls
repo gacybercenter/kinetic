@@ -5,11 +5,15 @@ include:
 keystone-admin:
   k8s.secret_present:
     - name: keystone-admin
-    - secret_name: keystone-admin
     - namespace: openstack
     - data:
         username: {{ salt['pillar.get']('osh_users:keystone:user') }}
         password: {{ salt['pillar.get']('osh_users:keystone:password') }}
+    - labels:
+        app.kubernetes.io/managed-by: Helm
+    - annotations:
+        meta.helm.sh/release-name: keystone
+        meta.helm.sh/release-namespace: openstack
 
 install_keystone:
   k8s_helm.helm_release_present:
