@@ -3,7 +3,7 @@ include:
   - /formulas/osh-helm-repos/configure
 
 keystone-admin:
-  k8s_secret.secret_present:
+  k8s.secret_present:
     - name: keystone-admin
     - namespace: openstack
     - data:
