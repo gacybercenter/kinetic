@@ -2,6 +2,14 @@ include:
   - /formulas/keystone/install
   - /formulas/osh-helm-repos/configure
 
+keystone-admin:
+  k8s_secret.secret_present:
+    - name: keystone-admin
+    - namespace: openstack
+    - data:
+        username: {{ salt['pillar.get']('osh_users:keystone:user') }}
+        password: {{ salt['pillar.get']('osh_users:keystone:password') }}
+
 install_keystone:
   k8s_helm.helm_release_present:
     - release_name: keystone
@@ -11,3 +19,5 @@ install_keystone:
     - wait_interval: 10
     - keep_values_file: true
     - pillar_key: osh_values:keystone
+    - require:
+      - k8s_secret: keystone-admin
