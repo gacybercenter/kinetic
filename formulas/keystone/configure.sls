@@ -5,6 +5,7 @@ include:
 keystone-admin:
   k8s.secret_present:
     - name: keystone-admin
+    - secret_name: keystone-admin
     - namespace: openstack
     - data:
         username: {{ salt['pillar.get']('osh_users:keystone:user') }}
