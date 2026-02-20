@@ -4,4 +4,4 @@
 k8s_olm_install:
   salt.state:
     - tgt: '{{ k8s }}'
-    - sls: formulas.common.k8s-olm.install
+    - sls: formulas.k8s-olm
