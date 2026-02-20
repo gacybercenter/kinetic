@@ -1,12 +1,12 @@
 include:
-  - formulas/olm/install
+  - /formulas/olm/install
 
-olm_chart_install:
-  helm.release_present:
-    - name: olm
-    - chart: oci://ghcr.io/cloudtooling/helm-charts/olm
-    - version: 0.40.0
+install_olm:
+  k8s_helm.helm_release_present:
+    - release_name: my-olm
+    - chart_name: oci://ghcr.io/cloudtooling/helm-charts/olm
     - namespace: {{ pillar['olm_values']['namespace'] }}
-    - values: {{ pillar['olm_values'] | yaml }}
-    - require:
-      - sls: formulas/olm/install
+    - wait_timeout: 300
+    - wait_interval: 10
+    - pillar_key: olm_values
+    - version: 0.40.0
