@@ -18,5 +18,7 @@ install_keystone:
       - endpoints.oslo_db.auth.keystone.password={{ pillar['osh_values']['keystone_admin'] }}
       - endpoints.oslo_messaging.auth.admin.username=rabbitmq
       - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh_values']['rabbitmq_admin'] }}
+      - endpoints.oslo_messaging.auth.keystone.username=keystone
+      - endpoints.oslo_messaging.auth.keystone.password={{ pillar['osh_values']['keystone-rq-user'] }}
       - identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
       - identity.auth.test.password={{ pillar ['osh_users']['test'] }}
