@@ -80,42 +80,30 @@ def helm_release_present(
     wait_timeout=300,
     wait_interval=10,
     keep_values_file=False,
+    set_values=None,
+    values_files=None,
 ):
-    def helm_release_present(
-        name,
-        release_name,
-        chart_name,
-        namespace,
-        values_dict=None,
-        pillar_key=None,
-        version=None,
-        wait_timeout=300,
-        wait_interval=10,
-        keep_values_file=False,
-        set_values=None,
-        values_files=None,
-    ):
-        """
-        Ensure that a Helm release is installed or upgraded in Kubernetes with the specified values.
-        Values can be provided directly as a dictionary, fetched from a pillar key, or set via --set and --values options.
+    """
+    Ensure that a Helm release is installed or upgraded in Kubernetes with the specified values.
+    Values can be provided directly as a dictionary, fetched from a pillar key, or set via --set and --values options.
 
-        name
-            The name of the state (arbitrary, for SaltStack identification).
+    name
+        The name of the state (arbitrary, for SaltStack identification).
 
-        release_name
-            The name of the Helm release to install or upgrade.
+    release_name
+        The name of the Helm release to install or upgrade.
 
-        chart_name
-            The name of the chart to install (format: repo_name/chart_name).
+    chart_name
+        The name of the chart to install (format: repo_name/chart_name).
 
-        namespace
-            The Kubernetes namespace to install the release into.
-        # ... existing docstring ...
-        set_values
-            Optional. List of values to set using --set option. Defaults to None.
-        values_files
-            Optional. List of paths to additional values files using --values option. Defaults to None.
-        """
+    namespace
+        The Kubernetes namespace to install the release into.
+    # ... existing docstring ...
+    set_values
+        Optional. List of values to set using --set option. Defaults to None.
+    values_files
+        Optional. List of paths to additional values files using --values option. Defaults to None.
+    """
 
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
@@ -152,5 +140,4 @@ def helm_release_present(
             f"Failed to ensure Helm release {release_name}: {str(e)[:100]}..."
         )
         ret["changes"] = {}
-
     return ret
