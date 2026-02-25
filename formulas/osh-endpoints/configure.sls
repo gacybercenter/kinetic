@@ -5,8 +5,6 @@ include:
 openstack_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar.get('nginx_ingress_namespace', 'openstack') }}
-    - require:
-      - test: nginx_controller_installed
 
 # Apply labels to nodes based on osh_labels pillar data
 {% set osh_labels = pillar.get('osh_labels', {}) %}
