@@ -17,8 +17,6 @@ apply_label_{{ label_key }}_to_{{ node }}:
     - node_name: {{ node }}
     - labels:
         {{ label_key }}: enabled
-    - require:
-      - test: nginx_controller_installed
 {% endfor %}
 {% endfor %}
 {% else %}
