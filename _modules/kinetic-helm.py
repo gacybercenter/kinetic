@@ -130,10 +130,12 @@ def helm_release_present(
     wait_timeout=300,
     wait_interval=10,
     keep_values_file=False,
+    set_values=None,
+    values_files=None,
 ):
     """
     Ensure that a Helm release is installed or upgraded with the specified values.
-    Values can be provided directly as a dictionary or fetched from a pillar key.
+    Values can be provided directly as a dictionary, fetched from a pillar key, or set via --set and --values options.
 
     Args:
         release_name (str): The name of the Helm release to install or upgrade.
@@ -145,13 +147,10 @@ def helm_release_present(
         wait_timeout (int, optional): Maximum time in seconds to wait for Helm release to be ready. Defaults to 300.
         wait_interval (int, optional): Interval in seconds between checks for release readiness. Defaults to 10.
         keep_values_file (bool, optional): If True, retain the temporary values file for debugging. Defaults to False.
-
-    Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'values_file_path' (str, optional), and 'message' (str).
-
-    CLI Example:
-        salt '*' kinetic-helm.helm_release_present my-release my-repo/my-chart my-namespace pillar_key='helm:values' keep_values_file=True
+        set_values (list, optional): List of values to set using --set option. Defaults to None.
+        values_files (list, optional): List of paths to additional values files using --values option. Defaults to None.
     """
+
     try:
         release_updated = False
         release_exists = False
@@ -231,6 +230,12 @@ def helm_release_present(
                 helm_cmd.extend(["--version", version])
             if values_file:
                 helm_cmd.extend(["--values", values_file])
+            if set_values:
+                for set_val in set_values:
+                    helm_cmd.extend(["--set", set_val])
+            if values_files:
+                for val_file in values_files:
+                    helm_cmd.extend(["--values", val_file])
 
             helm_result = __salt__["cmd.run"](
                 helm_cmd, python_shell=False, ignore_retcode=True
