@@ -147,10 +147,15 @@ def helm_release_present(
         wait_timeout (int, optional): Maximum time in seconds to wait for Helm release to be ready. Defaults to 300.
         wait_interval (int, optional): Interval in seconds between checks for release readiness. Defaults to 10.
         keep_values_file (bool, optional): If True, retain the temporary values file for debugging. Defaults to False.
-        set_values (list, optional): List of values to set using --set option. Defaults to None.
+        set_values (list, optional): List of key-value pairs to set using --set option (e.g., ["key1=value1", "key2=value2"]). Defaults to None.
         values_files (list, optional): List of paths to additional values files using --values option. Defaults to None.
-    """
 
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'values_file_path' (str, optional), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic-helm.helm_release_present my-release my-repo/my-chart my-namespace pillar_key='helm:values' set_values='["image.tag=latest"]' values_files='["/path/to/values.yaml"]'
+    """
     try:
         release_updated = False
         release_exists = False
@@ -184,9 +189,9 @@ def helm_release_present(
                             and release.get("chart") != f"{chart_name}-{version}"
                         ):
                             release_matches = False
-                        elif values_dict:
+                        elif values_dict or set_values or values_files:
                             release_matches = (
-                                False  # Assume mismatch if values are provided
+                                False  # Assume mismatch if any values are provided
                             )
                         else:
                             release_matches = True

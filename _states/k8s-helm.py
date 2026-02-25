@@ -98,13 +98,50 @@ def helm_release_present(
 
     namespace
         The Kubernetes namespace to install the release into.
-    # ... existing docstring ...
+
+    values_dict
+        Optional. Dictionary of values to pass to the Helm chart. Defaults to None.
+
+    pillar_key
+        Optional. Pillar key to fetch values dictionary from. Defaults to None.
+
+    version
+        Optional. Specific version of the chart to install. Defaults to None (latest).
+
+    wait_timeout
+        Optional. Maximum time in seconds to wait for Helm release to be ready. Defaults to 300.
+
+    wait_interval
+        Optional. Interval in seconds between checks for release readiness. Defaults to 10.
+
+    keep_values_file
+        Optional. If True, retain the temporary values file for debugging. Defaults to False.
+
     set_values
-        Optional. List of values to set using --set option. Defaults to None.
+        Optional. List of key-value pairs to set using --set option (e.g., ["key1=value1", "key2=value2"]). Defaults to None.
+
     values_files
         Optional. List of paths to additional values files using --values option. Defaults to None.
-    """
 
+    Example:
+    .. code-block:: yaml
+
+        ensure_helm_release:
+          k8s_helm.helm_release_present:
+            - release_name: my-nginx
+            - chart_name: bitnami/nginx
+            - namespace: default
+            - pillar_key: helm:nginx:values
+            - version: 9.3.6
+            - wait_timeout: 300
+            - wait_interval: 10
+            - keep_values_file: True
+            - set_values:
+              - image.tag=latest
+              - service.type=LoadBalancer
+            - values_files:
+              - /path/to/custom-values.yaml
+    """
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
@@ -140,4 +177,5 @@ def helm_release_present(
             f"Failed to ensure Helm release {release_name}: {str(e)[:100]}..."
         )
         ret["changes"] = {}
+
     return ret
