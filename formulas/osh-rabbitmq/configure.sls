@@ -11,6 +11,6 @@ install_rabbitmq:
     - wait_interval: 10
     - keep_values_file: false
     - pillar_key: osh_values:rabbitmq
-#    - set_values:
-#      - endpoints.oslo_messaging.auth.user.username=rabbitmq
-#      - endpoints.oslo_messaging.auth.user.password={{ pillar['osh_values']['rabbitmq_admin'] }}
+    - set_values:
+      - endpoints.oslo_messaging.auth.user.username=rabbitmq
+      - endpoints.oslo_messaging.auth.user.password={{ pillar['osh_values']['rabbitmq_admin'] }}
