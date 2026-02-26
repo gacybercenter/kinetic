@@ -10,9 +10,8 @@ keystone_certificate:
     - secret_name: keystone-tls
     - issuer_name: letsencrypt-prod
     - issuer_kind: ClusterIssuer
-    - common_name: keystone.rsc.gacyberrange.org
-    - dns_names:
-      - keystone.rsc.gacyberrange.org
+    - common_name: {{ pillar['keystone_cert']['common_name'] }}
+    - dns_names: {{ pillar['keystone_cert']['dns_names'] }}
 
 keystone_ingress:
   k8s.ingress_present:
