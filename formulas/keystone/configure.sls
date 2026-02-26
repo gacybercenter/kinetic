@@ -2,7 +2,7 @@ include:
   - /formulas/keystone/install
   - /formulas/osh-helm-repos/configure
 
-keystone_certificate:
+keystone_external_certificate:
   k8s.certmanager_certificate_present:
     - name: keystone-tls
     - certificate_name: keystone-tls
@@ -12,6 +12,17 @@ keystone_certificate:
     - issuer_kind: ClusterIssuer
     - common_name: {{ pillar['osh_values']['keystone_cert']['common_name'] }}
     - dns_names: {{ pillar['osh_values']['keystone_cert']['dns_names'] }}
+
+keystone_internal_certificate:
+  k8s.certmanager_certificate_present:
+    - name: keystone-tls-api
+    - certificate_name: keystone-tls-api
+    - namespace: openstack
+    - secret_name: keystone-tls-api
+    - issuer_name: cyberrange-ca-issuer
+    - issuer_kind: ClusterIssuer
+    - common_name: {{ pillar['osh_values']['keystone_internal_api']['common_name'] }}
+    - dns_names: {{ pillar['osh_values']['keystone_internal_api']['dns_names'] }}
 
 keystone_ingress:
   k8s.ingress_present:
