@@ -2,6 +2,17 @@ include:
   - /formulas/keystone/install
   - /formulas/osh-helm-repos/configure
 
+keystone_certificate:
+  k8s.certmanager_certificate_present:
+    - name: keystone-tls
+    - namespace: openstack
+    - secret_name: keystone-tls
+    - issuer_name: letsencrypt-prod
+    - issuer_kind: ClusterIssuer
+    - common_name: keystone.rsc.gacyberrange.org
+    - dns_names:
+      - keystone.rsc.gacyberrange.org
+
 install_keystone:
   k8s_helm.helm_release_present:
     - release_name: keystone
@@ -22,3 +33,5 @@ install_keystone:
       - endpoints.oslo_messaging.auth.keystone.password={{ pillar['osh_values']['keystone-rq-user'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh_users']['test'] }}
+    - require:
+      - k8s: keystone_certificate
