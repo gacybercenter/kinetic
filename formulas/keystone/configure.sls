@@ -5,7 +5,6 @@ include:
 keystone_certificate:
   k8s.certmanager_certificate_present:
     - name: keystone-tls
-    - certificate_name: keystone-tls
     - namespace: openstack
     - secret_name: keystone-tls
     - issuer_name: letsencrypt-prod
@@ -13,6 +12,28 @@ keystone_certificate:
     - common_name: keystone.rsc.gacyberrange.org
     - dns_names:
       - keystone.rsc.gacyberrange.org
+
+keystone_ingress:
+  k8s.ingress_present:
+    - name: keystone-ingress
+    - namespace: openstack
+    - hosts:
+        - host: keystone.rsc.gacyberrange.org
+          paths:
+            - path: /
+              path_type: Prefix
+              backend:
+                service_name: keystone-api
+                service_port: 5000
+    - tls:
+        - secret_name: keystone-tls
+          hosts:
+            - keystone.rsc.gacyberrange.org
+    - annotations:
+        traefik.ingress.kubernetes.io/router.tls: "true"
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    - require:
+      - k8s: keystone_certificate
 
 install_keystone:
   k8s_helm.helm_release_present:
@@ -34,5 +55,8 @@ install_keystone:
       - endpoints.oslo_messaging.auth.keystone.password={{ pillar['osh_values']['keystone-rq-user'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh_users']['test'] }}
+      # Disable Helm chart ingress as we're managing it separately
+      - network.api.ingress.public=false
     - require:
       - k8s: keystone_certificate
+      - k8s: keystone_ingress
