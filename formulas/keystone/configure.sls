@@ -19,7 +19,7 @@ keystone_ingress:
     - name: keystone-ingress
     - namespace: openstack
     - hosts: {{ pillar['osh_values']['keystone_ingress']['hosts'] }}
-    - tls: {{ pillar['osh_values']['keystone_ingress']['tls'S] }}
+    - tls: {{ pillar['osh_values']['keystone_ingress']['tls'] }}
     - require:
       - k8s: keystone_certificate
 
