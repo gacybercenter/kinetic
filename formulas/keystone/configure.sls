@@ -31,7 +31,7 @@ keystone_ingress:
     - hosts: {{ pillar['osh_values']['keystone_ingress']['hosts'] }}
     - tls: {{ pillar['osh_values']['keystone_ingress']['tls'] }}
     - require:
-      - k8s: keystone_certificate
+      - k8s: keystone_external_certificate
 
 install_keystone:
   k8s_helm.helm_release_present:
@@ -56,5 +56,5 @@ install_keystone:
       # Disable Helm chart ingress as we're managing it separately
       - network.api.ingress.public=false
     - require:
-      - k8s: keystone_certificate
+      - k8s: keystone_external_certificate
       - k8s: keystone_ingress
