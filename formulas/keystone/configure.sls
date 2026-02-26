@@ -18,21 +18,8 @@ keystone_ingress:
   k8s.ingress_present:
     - name: keystone-ingress
     - namespace: openstack
-    - hosts:
-        - host: keystone.rsc.gacyberrange.org
-          paths:
-            - path: /
-              path_type: Prefix
-              backend:
-                service_name: keystone-api
-                service_port: 5000
-    - tls:
-        - secret_name: keystone-tls
-          hosts:
-            - keystone.rsc.gacyberrange.org
-    - annotations:
-        traefik.ingress.kubernetes.io/router.tls: "true"
-        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    - hosts: {{ pillar['osh_values']['keystone_ingress']['hosts'] }}
+    - tls: {{ pillar['osh_values']['keystone_ingress']['tls'S] }}
     - require:
       - k8s: keystone_certificate
 
