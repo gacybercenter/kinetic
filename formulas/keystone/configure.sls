@@ -5,6 +5,7 @@ include:
 keystone_certificate:
   k8s.certmanager_certificate_present:
     - name: keystone-tls
+    - certificate_name: keystone-tls
     - namespace: openstack
     - secret_name: keystone-tls
     - issuer_name: letsencrypt-prod
