@@ -53,8 +53,6 @@ install_keystone:
       - endpoints.oslo_messaging.auth.keystone.password={{ pillar['osh_values']['keystone-rq-user'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh_users']['test'] }}
-      # Disable Helm chart ingress as we're managing it separately
-      - network.api.ingress.public=false
     - require:
       - k8s: keystone_external_certificate
       - k8s: keystone_ingress
