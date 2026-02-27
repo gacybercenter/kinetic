@@ -8,7 +8,7 @@ install_fluentd:
     - namespace: openstack
     - wait_timeout: 300
     - wait_interval: 10
-    - keep_values_file: true
+    - keep_values_file: True
     - pillar_key: osh_values:fluentd
     - set_values:
       - endpoints.elasticsearch.auth.admin.password={{ pillar['opensearch_fluentbit_password'] }}
