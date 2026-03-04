@@ -3,6 +3,7 @@ include:
 opensearch_env_secret:
   k8s.secret_present:
     - name: opensearch-env
+    - secret_name: opensearch-env
     - namespace: openstack
     - type: Opaque
     - data:
