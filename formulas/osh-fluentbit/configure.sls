@@ -5,7 +5,7 @@ opensearch_env_secret:
     - name: opensearch-env
     - secret_name: opensearch-env
     - namespace: openstack
-    - type: Opaque
+    - secret_type: Opaque
     - data:
         {{ pillar['osh_values']['fluentd_env'] }}
 
