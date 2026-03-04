@@ -6,7 +6,7 @@ install_fluentbit:
     - release_name: fluentbit
     - chart_name: openstack-helm/fluentbit
     - namespace: openstack
-    - wait_timeout: 300
+    - wait_timeout: 600
     - wait_interval: 10
     - keep_values_file: True
     - pillar_key: osh_values:fluentbit
