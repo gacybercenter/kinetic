@@ -1,13 +1,11 @@
 include:
   - /formulas/osh-fluentbit/install
-opensearch_env_secret:
-  k8s.secret_present:
-    - name: opensearch-env
-    - secret_name: opensearch-env
+log_buffer_pvc:
+  k8s.pvc_present:
+    - name: log-buffer
     - namespace: openstack
-    - secret_type: Opaque
-    - data:
-        {{ pillar['osh_values']['fluentd_env'] }}
+    - storage_class: ceph-block
+    - size: 1Gi
 
 install_fluentbit:
   k8s_helm.helm_release_present:
@@ -19,4 +17,4 @@ install_fluentbit:
     - keep_values_file: True
     - pillar_key: osh_values:fluentbit
     - require:
-      - k8s: opensearch_env_secret
+      - k8s: log_buffer_pvc
