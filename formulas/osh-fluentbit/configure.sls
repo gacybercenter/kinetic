@@ -19,6 +19,6 @@ install_fluentbit:
     - keep_values_file: True
     - pillar_key: osh_values:fluentbit
     - set_values:
-      pods.env.fluentd.secrets={{ pillar['osh_values']['fluentd_env'] }}
+      pods.env.fluentd.secrets="{{ pillar['osh_values']['fluentd_env'] }}"
     - require:
       - k8s: opensearch_env_secret
