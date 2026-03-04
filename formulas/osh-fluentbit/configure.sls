@@ -6,7 +6,7 @@ opensearch_env_secret:
     - namespace: openstack
     - type: Opaque
     - data:
-        {{ pillar['osh_values']['fluentd_env']
+        {{ pillar['osh_values']['fluentd_env'] }}
 
 install_fluentbit:
   k8s_helm.helm_release_present:
