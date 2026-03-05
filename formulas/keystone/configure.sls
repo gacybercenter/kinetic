@@ -53,6 +53,7 @@ install_keystone:
       - endpoints.oslo_messaging.auth.keystone.password={{ pillar['osh_values']['keystone-rq-user'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh_users']['test'] }}
+      - endpoints.ldap.auth.client.tls.ca={{ pillar['ldap']['cert']['ca'] }}
       - conf.ks_domains.ldap.password={{ pillar['ldap']['admin-user'] }}
     - require:
       - k8s: keystone_external_certificate
