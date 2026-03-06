@@ -4248,7 +4248,7 @@ def certmanager_issuer_present(namespace, issuer_name, issuer_kind="Issuer", spe
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to create {issuer_kind} {issuer_name}: {str(e)[:50]}...",
+                    "message": f"Failed to create {issuer_kind} {issuer_name}: {str(e)}...",
                 }
         elif not matches:
             try:
