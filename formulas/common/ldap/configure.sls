@@ -9,7 +9,7 @@ ensure_ldap_client_certificate:
     - namespace: {{ pillar['ldap']['namespace'] }}
     - secret_name: ldap-client-tls
     - issuer_name: cyberrange-ca-issuer
-    - issuer_kind: Issuer
+    - issuer_kind: ClusterIssuer
     - common_name: ldap-test-client
     - duration: 8760h
     - renew_before: 720h
