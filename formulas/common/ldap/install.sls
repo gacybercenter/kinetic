@@ -69,6 +69,17 @@ ldap_tls_cert:
     - duration: {{ pillar['ldap']['cert']['duration'] }}
     - renew_before: {{ pillar['ldap']['cert']['renew_before'] }}
 
+ldap-ca-issuer:
+  k8s.certmanager_issuer_present:
+    - name: keycloak-ca-issuer
+    - issuer_name: ldap-client-certs
+    - issuer_kind: issuer
+    - namespace: keycloak
+    - ca:
+        secretName: tls-cert
+    - require:
+      - k8s: ldap_tls_cert
+
 # Ensure CA certificate file is present on the minion
 ensure_config_ca_cert_file:
   file.managed:
