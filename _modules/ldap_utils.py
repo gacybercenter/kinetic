@@ -37,7 +37,8 @@ def create_connect_spec(spec_name, connection_dict):
         connection_dict (dict): Dictionary with connection parameters:
             - url (str): LDAP server URL (e.g., 'ldap://localhost:389' or 'ldaps://localhost:636').
             - bind (dict, optional): Bind parameters with 'dn', 'password', and 'method' (default 'simple').
-            - tls (dict, optional): TLS parameters with 'cacertfile' (str) and 'starttls' (bool, default False).
+            - tls (dict, optional): TLS parameters with 'cacertfile' (str), 'certfile' (str), 'keyfile' (str),
+              'starttls' (bool, default False), and 'cert_manager_secret' (str, optional name of k8s secret with certs).
             - admin_bind (dict, optional): Admin bind parameters with 'dn' and 'password' for elevated operations.
 
     Returns:
@@ -71,9 +72,18 @@ def create_connect_spec(spec_name, connection_dict):
                 "message": "",
             }
 
-        # Configure TLS if provided
+        # Require TLS configuration
         tls_config = connection_dict.get("tls", {})
-        if tls_config and "cacertfile" in tls_config:
+        if not tls_config:
+            return {
+                "success": False,
+                "created": False,
+                "error": "TLS configuration is required",
+                "message": "",
+            }
+
+        # Configure TLS options
+        if "cacertfile" in tls_config:
             try:
                 conn.set_option(ldap.OPT_X_TLS_CACERTFILE, tls_config["cacertfile"])
                 conn.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
@@ -83,18 +93,97 @@ def create_connect_spec(spec_name, connection_dict):
             except AttributeError as e:
                 log.warning(f"Could not set TLS CACERTFILE option: {str(e)}")
 
-            # Optionally enable STARTTLS if specified
-            if tls_config.get("starttls", False):
-                try:
-                    conn.start_tls_s()
-                    log.debug(f"Started TLS for spec '{spec_name}'")
-                except Exception as e:
-                    return {
-                        "success": False,
-                        "created": False,
-                        "error": f"Failed to start TLS for spec '{spec_name}': {str(e)}",
-                        "message": "",
-                    }
+        # Configure client certificate if provided
+        temp_files = None
+        if "certfile" in tls_config and "keyfile" in tls_config:
+            try:
+                conn.set_option(ldap.OPT_X_TLS_CERTFILE, tls_config["certfile"])
+                conn.set_option(ldap.OPT_X_TLS_KEYFILE, tls_config["keyfile"])
+                conn.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
+                log.debug(f"Set TLS client certificate and key for spec '{spec_name}'")
+            except AttributeError as e:
+                log.warning(f"Could not set TLS client certificate options: {str(e)}")
+        elif "cert_manager_secret" in tls_config:
+            # Attempt to load certificate data from Kubernetes secret created by cert-manager
+            try:
+                import kubernetes.client
+                from kubernetes import config
+
+                config.load_incluster_config()
+                v1 = kubernetes.client.CoreV1Api()
+                secret_name = tls_config["cert_manager_secret"]
+                namespace = tls_config.get("namespace", "default")
+                secret = v1.read_namespaced_secret(secret_name, namespace)
+                if "tls.crt" in secret.data and "tls.key" in secret.data:
+                    # Write temporary files with cert and key data
+                    import os
+                    import tempfile
+
+                    cert_fd, cert_path = tempfile.mkstemp(suffix=".crt")
+                    key_fd, key_path = tempfile.mkstemp(suffix=".key")
+                    temp_files = (cert_path, key_path)
+                    try:
+                        os.write(cert_fd, base64.b64decode(secret.data["tls.crt"]))
+                        os.write(key_fd, base64.b64decode(secret.data["tls.key"]))
+                        conn.set_option(ldap.OPT_X_TLS_CERTFILE, cert_path)
+                        conn.set_option(ldap.OPT_X_TLS_KEYFILE, key_path)
+                        conn.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
+                        log.debug(
+                            f"Set TLS client certificate from cert-manager secret '{secret_name}' for spec '{spec_name}'"
+                        )
+                    finally:
+                        os.close(cert_fd)
+                        os.close(key_fd)
+                        # Clean up temporary files immediately after setting options
+                        try:
+                            if os.path.exists(cert_path):
+                                os.remove(cert_path)
+                            if os.path.exists(key_path):
+                                os.remove(key_path)
+                            log.debug(
+                                f"Cleaned up temporary TLS files for spec '{spec_name}'"
+                            )
+                            temp_files = None
+                        except Exception as cleanup_e:
+                            log.warning(
+                                f"Failed to clean up temporary TLS files: {str(cleanup_e)}"
+                            )
+                else:
+                    log.warning(
+                        f"Cert-manager secret '{secret_name}' does not contain expected tls.crt and tls.key"
+                    )
+            except Exception as e:
+                log.warning(
+                    f"Could not load client certificate from cert-manager secret: {str(e)}"
+                )
+
+        # Enable STARTTLS if specified or if using ldap:// protocol with TLS required
+        starttls = tls_config.get("starttls", False)
+        if starttls or (connection_dict["url"].startswith("ldap://") and tls_config):
+            try:
+                conn.start_tls_s()
+                log.debug(f"Started TLS for spec '{spec_name}'")
+            except Exception as e:
+                # Clean up any remaining temporary files in case of error
+                if temp_files:
+                    try:
+                        if os.path.exists(temp_files[0]):
+                            os.remove(temp_files[0])
+                        if os.path.exists(temp_files[1]):
+                            os.remove(temp_files[1])
+                        log.debug(
+                            f"Cleaned up temporary TLS files on error for spec '{spec_name}'"
+                        )
+                    except Exception as cleanup_e:
+                        log.warning(
+                            f"Failed to clean up temporary TLS files on error: {str(cleanup_e)}"
+                        )
+                return {
+                    "success": False,
+                    "created": False,
+                    "error": f"Failed to start TLS for spec '{spec_name}': {str(e)}",
+                    "message": "",
+                }
 
         # Perform binding if credentials are provided
         # Check for admin_bind first (for elevated operations like cn=config)
@@ -117,6 +206,20 @@ def create_connect_spec(spec_name, connection_dict):
                     f"Bound to LDAP server as admin {admin_bind_config['dn']} for spec '{spec_name}'"
                 )
             except Exception as e:
+                # Clean up any remaining temporary files in case of error
+                if temp_files:
+                    try:
+                        if os.path.exists(temp_files[0]):
+                            os.remove(temp_files[0])
+                        if os.path.exists(temp_files[1]):
+                            os.remove(temp_files[1])
+                        log.debug(
+                            f"Cleaned up temporary TLS files on error for spec '{spec_name}'"
+                        )
+                    except Exception as cleanup_e:
+                        log.warning(
+                            f"Failed to clean up temporary TLS files on error: {str(cleanup_e)}"
+                        )
                 return {
                     "success": False,
                     "created": False,
@@ -138,6 +241,20 @@ def create_connect_spec(spec_name, connection_dict):
                         f"Bound to LDAP server as {bind_config['dn']} for spec '{spec_name}'"
                     )
                 except Exception as e:
+                    # Clean up any remaining temporary files in case of error
+                    if temp_files:
+                        try:
+                            if os.path.exists(temp_files[0]):
+                                os.remove(temp_files[0])
+                            if os.path.exists(temp_files[1]):
+                                os.remove(temp_files[1])
+                            log.debug(
+                                f"Cleaned up temporary TLS files on error for spec '{spec_name}'"
+                            )
+                        except Exception as cleanup_e:
+                            log.warning(
+                                f"Failed to clean up temporary TLS files on error: {str(cleanup_e)}"
+                            )
                     return {
                         "success": False,
                         "created": False,
@@ -155,6 +272,20 @@ def create_connect_spec(spec_name, connection_dict):
             "message": f"Connection spec '{spec_name}' created and cached",
         }
     except Exception as e:
+        # Ensure temporary files are cleaned up in case of any exception
+        if "temp_files" in locals() and temp_files:
+            try:
+                if os.path.exists(temp_files[0]):
+                    os.remove(temp_files[0])
+                if os.path.exists(temp_files[1]):
+                    os.remove(temp_files[1])
+                log.debug(
+                    f"Cleaned up temporary TLS files on exception for spec '{spec_name}'"
+                )
+            except Exception as cleanup_e:
+                log.warning(
+                    f"Failed to clean up temporary TLS files on exception: {str(cleanup_e)}"
+                )
         error_msg = f"Failed to create connection spec '{spec_name}': {str(e)}"
         log.error(error_msg)
         return {

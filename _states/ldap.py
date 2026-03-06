@@ -29,7 +29,10 @@ def connect_spec_present(name, spec_name, connection_dict):
         connection_dict (dict): Dictionary with connection parameters (required):
             - url (str): LDAP server URL (e.g., 'ldap://localhost:389' or 'ldaps://localhost:636').
             - bind (dict, optional): Bind parameters with 'dn', 'password', and 'method' (default 'simple').
-            - tls (dict): TLS parameters with 'validate' (bool), 'ca_certs_file' (str, required), and 'starttls' (bool, default True).
+            - tls (dict): TLS parameters with 'cacertfile' (str, required), 'certfile' (str, optional),
+              'keyfile' (str, optional), 'cert_manager_secret' (str, optional name of k8s secret with certs),
+              'namespace' (str, optional for cert_manager_secret), and 'starttls' (bool, default True).
+            - admin_bind (dict, optional): Admin bind parameters with 'dn' and 'password' for elevated operations.
 
     Returns:
         dict: A dictionary containing the state result.
@@ -43,20 +46,38 @@ def connect_spec_present(name, spec_name, connection_dict):
         return ret
 
     tls_config = connection_dict.get("tls", {})
-    if not tls_config or "cacertfile" not in tls_config:
+    if not tls_config:
         ret["result"] = False
-        ret["comment"] = "TLS configuration with 'ca_certs_file' is required"
+        ret["comment"] = "TLS configuration is required"
         return ret
 
-    # Ensure starttls defaults to True if not specified
-    if "starttls" not in tls_config:
+    # Ensure starttls defaults to True if not specified and protocol is ldap://
+    if "starttls" not in tls_config and connection_dict["url"].startswith("ldap://"):
         connection_dict["tls"]["starttls"] = True
 
     # Ensure bind method defaults to 'simple' if not specified
     bind_config = connection_dict.get("bind", {})
-    if "method" not in bind_config:
+    if bind_config and "method" not in bind_config:
         bind_config["method"] = "simple"
-    connection_dict["bind"] = bind_config
+        connection_dict["bind"] = bind_config
+
+    admin_bind_config = connection_dict.get("admin_bind", {})
+    if admin_bind_config and "method" not in admin_bind_config:
+        admin_bind_config["method"] = "simple"
+        connection_dict["admin_bind"] = admin_bind_config
+
+    # Validate client certificate configuration if provided
+    if "cert_manager_secret" in tls_config:
+        if "namespace" not in tls_config:
+            tls_config["namespace"] = "default"
+            connection_dict["tls"] = tls_config
+    elif "certfile" in tls_config or "keyfile" in tls_config:
+        if not ("certfile" in tls_config and "keyfile" in tls_config):
+            ret["result"] = False
+            ret["comment"] = (
+                "Both 'certfile' and 'keyfile' must be provided for client certificate configuration"
+            )
+            return ret
 
     # Check if connection spec already exists
     conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
