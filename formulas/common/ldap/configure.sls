@@ -1,6 +1,18 @@
 include:
   - /formulas/common/ldap/install
 
+# Ensure LDAP client certificate is created
+ensure_ldap_client_certificate:
+  k8s.certmanager_certificate_present:
+    - name: ldap-client-cert
+    - certificate_name: ldap-test-client-cert
+    - namespace: {{ pillar['ldap']['namespace'] }}
+    - secret_name: ldap-client-tls
+    - common_name: ldap-test-client
+    - duration: 8760h
+    - renew_before: 720h
+
+
 # Ensure LDAP connection spec is created
 ensure_ldap_config_connect_spec:
   ldap.connect_spec_present:
