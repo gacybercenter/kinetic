@@ -8,6 +8,7 @@ ensure_ldap_client_certificate:
     - certificate_name: ldap-test-client-cert
     - namespace: {{ pillar['ldap']['namespace'] }}
     - secret_name: ldap-client-tls
+    - issuer_name: ldap-client-certs
     - issuer_kind: Issuer
     - common_name: ldap-test-client
     - duration: 8760h
