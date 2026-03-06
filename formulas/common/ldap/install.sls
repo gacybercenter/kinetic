@@ -114,7 +114,7 @@ install_openldap_ha:
     - release_name: openldap-ha
     - chart_name: helm-openldap/openldap-stack-ha
     - namespace: {{ ldap_namespace }}
-    - pillar_dict: {{ pillar['ldap']['value'] }}
+    - pillar_dict: {{ pillar['ldap']['values'] }}
     - version: {{ ldap_version }}
     - wait_timeout: 300
     - wait_interval: 10
