@@ -75,8 +75,9 @@ ldap-ca-issuer:
     - issuer_name: ldap-client-certs
     - issuer_kind: issuer
     - namespace: keycloak
-    - ca:
-        secretName: tls-cert
+    - spec:
+        ca:
+          secretName: tls-cert
     - require:
       - k8s: ldap_tls_cert
 
