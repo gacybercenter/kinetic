@@ -73,7 +73,7 @@ ldap-ca-issuer:
   k8s.certmanager_issuer_present:
     - name: keycloak-ca-issuer
     - issuer_name: ldap-client-certs
-    - issuer_kind: issuer
+    - issuer_kind: Issuer
     - namespace: keycloak
     - spec:
         ca:
