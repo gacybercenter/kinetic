@@ -190,15 +190,15 @@ def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
         return ret
 
 
-def ou_present(name, spec_name, base_dn, ous=None):
+def ou_present(name, spec_name, base_dn=None, ous=None):
     """
-    Ensure that Organizational Units (OUs) exist in the LDAP directory based on pillar data.
+    Ensure that Organizational Units (OUs) exist in the LDAP directory based on pillar data or provided parameters.
 
     Args:
-        name (str): The name of the state (used for identification in Salt).
+        name (str): The name of the state (used for identification in Salt). If ous is None, this is treated as the OU DN.
         spec_name (str): The name of the connection specification to use.
-        base_dn (str): The base distinguished name under which OUs will be created (e.g., 'dc=rsc,dc=gacyberrange,dc=org').
-        ous (list, optional): List of OU definitions with 'name' and 'dc'. If not provided, fetched from pillar['ldap']['orgunits'].
+        base_dn (str, optional): The base distinguished name under which OUs will be created (e.g., 'dc=rsc,dc=gacyberrange,dc=org').
+        ous (list, optional): List of OU definitions with 'name' and 'dc'. If not provided and name is a DN, treats as single OU.
 
     Returns:
         dict: A dictionary containing the state result.
@@ -214,23 +214,39 @@ def ou_present(name, spec_name, base_dn, ous=None):
         )
         return ret
 
-    # Fetch OUs from pillar if not provided
+    # If ous is not provided, treat as single OU using the name as ou_dn
     if ous is None:
+        ou_dn = name  # Assume name is the full OU DN
+        # Extract ou name from DN for attributes (e.g., ou=users from ou=users,dc=...)
+        ou_name_match = re.match(r"ou=([^,]+)", ou_dn)
+        if not ou_name_match:
+            ret["result"] = False
+            ret["comment"] = f"Invalid OU DN format: {ou_dn}"
+            return ret
+        ou_name = ou_name_match.group(1)
+        ous = [
+            {"name": ou_name, "dc": ""}
+        ]  # dc not used in single mode; attributes based on name
+
+    # Fetch OUs from pillar if ous is empty list or None (but we already handled None)
+    if not ous:
         ous = __pillar__.get("ldap", {}).get("orgunits", [])
 
     if not ous:
         ret["comment"] = "No organizational units defined in pillar or parameters."
         return ret
 
+    all_success = True
     changes = []
+    comments = []
     for ou in ous:
-        if "name" not in ou or "dc" not in ou:
-            ret["result"] = False
-            ret["comment"] = f"Invalid OU definition missing 'name' or 'dc': {ou}"
-            return ret
+        if "name" not in ou:
+            all_success = False
+            comments.append(f"Invalid OU definition missing 'name': {ou}")
+            continue
 
         # Construct OU DN, e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org'
-        ou_dn = f"ou={ou['name']},{base_dn}"
+        ou_dn = f"ou={ou['name']},{base_dn or ''}"
         attributes = {"objectClass": ["organizationalUnit"], "ou": ou["name"]}
 
         # Check if OU exists and attributes match
@@ -238,9 +254,9 @@ def ou_present(name, spec_name, base_dn, ous=None):
             spec_name, ou_dn, attributes
         )
         if not check_result["result"]:
-            ret["result"] = False
-            ret["comment"] = f"Error checking OU {ou_dn}: {check_result['comment']}"
-            return ret
+            all_success = False
+            comments.append(f"Error checking OU {ou_dn}: {check_result['comment']}")
+            continue
 
         # Using standardized format: infer existence and match from comment
         exists = "exists" in check_result["comment"].lower()
@@ -253,34 +269,35 @@ def ou_present(name, spec_name, base_dn, ous=None):
         # If in test mode, report what would be done
         if __opts__["test"]:
             ret["result"] = None
-            ret["comment"] = f"Would {'update' if exists else 'create'} OU {ou_dn}."
+            comments.append(f"Would {'update' if exists else 'create'} OU {ou_dn}.")
             ret["changes"][ou_dn] = {"would_action": "update" if exists else "create"}
-            return ret
+            continue  # Continue to next OU in test mode
 
         # Create or update the OU
         create_result = __salt__["ldap_utils.create_ou"](spec_name, ou_dn, attributes)
         if not create_result["result"]:
-            ret["result"] = False
-            ret["comment"] = (
+            all_success = False
+            comments.append(
                 f"Failed to {'update' if exists else 'create'} OU {ou_dn}: {create_result['comment']}"
             )
-            return ret
+            continue
 
         action = (
             "updated" if "updated" in create_result["comment"].lower() else "created"
         )
-        changes.append({"ou": ou_dn, "action": action})
+        changes.append(
+            {"ou": ou_dn, "action": action, "details": create_result["changes"]}
+        )
         log.info(f"{action.capitalize()} OU {ou_dn}")
-        ret["changes"] = create_result[
-            "changes"
-        ]  # Include detailed changes from create_ou
 
     if changes:
         ret["changes"] = {"ous": changes}
-        ret["comment"] = f"Processed {len(changes)} OU(s) successfully."
+    if comments:
+        ret["comment"] = " | ".join(comments)
     else:
         ret["comment"] = "All OUs already exist with matching attributes."
 
+    ret["result"] = all_success
     return ret
 
 
