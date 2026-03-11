@@ -55,7 +55,7 @@ ensure_user_{{ user.uid }}:
     - cn: {{ user.uid }}
     - attributes:
         sn: {{ user.sn }}
-        displayName: {{ user.name }}
+        cn: {{ user.name }}
         # Add other attributes as needed
     - password: {{ user.pass }}
     - require:
