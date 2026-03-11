@@ -1,19 +1,6 @@
 include:
   - /formulas/common/ldap/install
 
-# Ensure LDAP client certificate is created
-ensure_ldap_client_certificate:
-  k8s.certmanager_certificate_present:
-    - name: ldap-client-cert
-    - certificate_name: ldap-test-client-cert
-    - namespace: {{ pillar['ldap']['namespace'] }}
-    - secret_name: ldap-client-tls
-    - issuer_name: cyberrange-ca-issuer
-    - issuer_kind: ClusterIssuer
-    - common_name: ldap-test-client
-    - duration: 8760h
-    - renew_before: 720h
-
 # Ensure LDAP connection spec is created
 ensure_ldap_config_connect_spec:
   ldap.connect_spec_present:
@@ -32,3 +19,22 @@ ensure_ldap_config_connect_spec:
           starttls: True
     - require:
       - file: ensure_config_ca_cert_file
+
+# Ensure the Root DN is created or updated
+ensure_root_dn:
+  ldap.root_dn_present:
+    - name: {{ pillar['ldap']['root_dn']['dn'] }}
+    - connect_spec_name: ldap_config_connection
+    - organization: {{ pillar['ldap']['root_dn']['o'] }}
+    - require:
+      - ldap: ensure_ldap_config_connect_spec
+
+# Ensure Organizational Units are created or updated
+{% for ou in pillar['ldap']['orgunits'] %}
+ensure_ou_{{ ou.name }}:
+  ldap.ou_present:
+    - name: {{ "ou=" ~ ou.name ~ "," ~ pillar['ldap']['root_dn']['dn'] }}
+    - connect_spec_name: ldap_config_connection
+    - require:
+      - ldap: ensure_root_dn
+{% endfor %}
