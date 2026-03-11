@@ -364,7 +364,8 @@ def user_present(name, spec_name, base_dn, cn, attributes=None, password=None):
     # Default attributes if not provided
     if not attributes:
         attributes = {
-            "objectClass": ["inetOrgPerson", "person"],
+            "objectClass": "inetOrgPerson",
+            "objectClass": "person",
             "sn": cn,  # Default surname to cn; adjust as needed
         }
 
