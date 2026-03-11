@@ -505,7 +505,7 @@ def create_root_dn(spec_name, root_dn, attributes=None):
     ret = {"result": False, "comment": "", "changes": {}}
 
     # Check if root DN already exists
-    exists_result = root_dn_exists(spec_name, root_dn)
+    exists_result = root_dn_exists(spec_name, root_dn, attributes)
     # Handle different possible return types from root_dn_exists
     exists = False
     if isinstance(exists_result, dict) and "result" in exists_result:
