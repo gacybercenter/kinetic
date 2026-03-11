@@ -647,7 +647,7 @@ def create_user(spec_name, user_dn, attributes, password=None):
             return ret
 
         conn = conn_result["conn"]
-        check = root_dn_exists(spec_name, user_dn, attributes)
+        check = dn_exists(spec_name, user_dn, attributes)
         if check["exists"]:
             if check["attributes_match"] and not password:
                 ret["result"] = True
