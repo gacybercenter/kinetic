@@ -502,33 +502,6 @@ def create_root_dn(spec_name, root_dn, attributes=None):
     :param attributes: Dictionary of attributes for the root DN
     :return: Dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict)
     """
-    ret = {"result": False, "comment": "", "changes": {}}
-
-    # Check if root DN already exists
-    exists_result = root_dn_exists(spec_name, root_dn, attributes)
-    # Handle different possible return types from root_dn_exists
-    exists = False
-    if isinstance(exists_result, dict) and "result" in exists_result:
-        exists = exists_result["result"]
-    elif isinstance(exists_result, bool):
-        exists = exists_result
-
-    if exists:
-        # Root DN exists, check if attributes match
-        update_result = update_root_dn(spec_name, root_dn, attributes or {})
-        if not update_result["changes"]:
-            # No changes needed, attributes match
-            ret["result"] = True
-            ret["comment"] = (
-                f"Root DN {root_dn} already exists with matching attributes."
-            )
-            return ret
-        else:
-            # Attributes don't match, update was performed
-            ret["result"] = update_result["result"]
-            ret["comment"] = update_result["comment"]
-            ret["changes"] = update_result["changes"]
-            return ret
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
