@@ -264,9 +264,12 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
             comments.append(f"Error checking OU {ou_dn}: {check_result['comment']}")
             continue
         else:
-            # If result is True, infer existence and match from comment
-            exists = "exists" in check_result["comment"].lower()
-            attributes_match = "matching attributes" in check_result["comment"].lower()
+            # If result is True, infer existence and match from comment if explicit keys are missing
+            exists = exists or "exists" in check_result["comment"].lower()
+            attributes_match = (
+                attributes_match
+                or "matching attributes" in check_result["comment"].lower()
+            )
 
         if exists and attributes_match:
             log.debug(f"OU {ou_dn} already exists with matching attributes.")
@@ -281,25 +284,42 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
 
         # Create or update the OU
         create_result = __salt__["ldap_utils.create_ou"](spec_name, ou_dn, attributes)
-        if not create_result["result"]:
-            if "exists" in create_result["comment"].lower():
-                # Treat "exists" as success if create fails because it already exists
-                changes.append({"ou": ou_dn, "action": "exists"})
-                log.info(f"OU {ou_dn} already exists")
+        if isinstance(create_result, dict):
+            if create_result.get("result", False):
+                action = (
+                    "updated"
+                    if "updated" in create_result.get("comment", "").lower()
+                    else "created"
+                )
+                changes.append(
+                    {
+                        "ou": ou_dn,
+                        "action": action,
+                        "details": create_result.get("changes", {}),
+                    }
+                )
+                log.info(f"{action.capitalize()} OU {ou_dn}")
+                continue
             else:
+                comment = create_result.get("comment", "")
+                if (
+                    "exists" in comment.lower()
+                    or "updated" in comment.lower()
+                    or "matching attributes" in comment.lower()
+                ):
+                    changes.append({"ou": ou_dn, "action": "exists/updated"})
+                    log.info(f"OU {ou_dn} already exists or updated")
+                    continue
                 all_success = False
                 comments.append(
-                    f"Failed to {'update' if exists else 'create'} OU {ou_dn}: {create_result['comment']}"
+                    f"Failed to {'update' if exists else 'create'} OU {ou_dn}: {comment}"
                 )
-            continue
-
-        action = (
-            "updated" if "updated" in create_result["comment"].lower() else "created"
-        )
-        changes.append(
-            {"ou": ou_dn, "action": action, "details": create_result["changes"]}
-        )
-        log.info(f"{action.capitalize()} OU {ou_dn}")
+        else:
+            all_success = False
+            comments.append(
+                f"Unexpected response from create_ou for {ou_dn}: {str(create_result)}"
+            )
+        continue
 
     if changes:
         ret["changes"] = {"ous": changes}
