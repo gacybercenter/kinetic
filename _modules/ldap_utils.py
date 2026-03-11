@@ -507,10 +507,10 @@ def create_root_dn(spec_name, root_dn, attributes):
     ret = {"result": False, "comment": "", "changes": {}}
 
     # Check if root DN already exists
-    exists_result = root_dn_exists(connect_spec, root_dn)
+    exists_result = root_dn_exists(spec_name, root_dn)
     if exists_result["result"]:
         # Root DN exists, check if attributes match
-        update_result = update_root_dn(connect_spec, root_dn, attributes or {})
+        update_result = update_root_dn(spec_name, root_dn, attributes or {})
         if not update_result["changes"]:
             # No changes needed, attributes match
             ret["result"] = True
