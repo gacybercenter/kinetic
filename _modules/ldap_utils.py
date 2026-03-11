@@ -987,13 +987,12 @@ def dn_exists(spec_name, dn, desired_attributes=None):
             ["dn"] + list(desired_attributes.keys()) if desired_attributes else ["dn"]
         )
         # Split the DN to get the first element (RDN, e.g., 'ou=users' from 'ou=users,dc=example,dc=com')
-        dn_parts = dn.split(",", 1)  # Split only on the first comma
-        first_element = dn_parts[0]  # e.g., 'ou=users'
+        dn_parts = dn.split(",", 1)
 
         result = conn.search_s(
             base=dn,
             scope=ldap.SCOPE_SUBTREE,
-            filterstr=f"({first_element})",  # Use first element in filterstr
+            filterstr="(dn_parts[0])",  # Use first element in filterstr
             attrlist=attr_list,
         )
         if result and len(result) > 0:
