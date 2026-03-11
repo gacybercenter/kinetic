@@ -141,15 +141,25 @@ def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
                 "result", False
             ):
                 ret["result"] = True
-                ret["comment"] = (
-                    f"Root DN {root_dn} exists, attributes updated or already correct."
-                )
+                ret["comment"] = f"Root DN {root_dn} exists, attributes updated."
+                ret["changes"] = update_result.get("changes", {})
+            elif (
+                update_result.get("changes")
+                and len(update_result.get("changes", {})) > 0
+            ):
+                ret["result"] = True
+                ret["comment"] = f"Root DN {root_dn} exists, attributes updated."
                 ret["changes"] = update_result.get("changes", {})
             else:
                 ret["result"] = True
                 ret["comment"] = (
-                    f"Root DN {root_dn} already exists with desired attributes."
+                    f"Root DN {root_dn} already exists with matching attributes."
                 )
+        else:
+            ret["result"] = True
+            ret["comment"] = (
+                f"Root DN {root_dn} already exists with matching attributes."
+            )
         return ret
     else:
         # Root DN does not exist or check failed, attempt creation
@@ -164,7 +174,7 @@ def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
             ):
                 ret["result"] = True
                 ret["comment"] = create_result.get(
-                    "message", f"Root DN {root_dn} processed successfully."
+                    "message", f"Root DN {root_dn} created successfully."
                 )
                 ret["changes"] = create_result.get("changes", {})
             elif "desc" in create_result and create_result["desc"] == "Already exists":
@@ -173,6 +183,7 @@ def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
                     f"Root DN {root_dn} already exists (detected during creation attempt)."
                 )
             else:
+                ret["result"] = False
                 ret["comment"] = (
                     f"Failed to create root DN {root_dn}: {create_result.get('message', str(create_result))}"
                 )
