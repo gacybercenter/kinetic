@@ -343,7 +343,7 @@ def root_dn_exists(spec_name, root_dn, desired_attributes=None):
         )
         result = conn.search_s(
             base=root_dn,
-            scope="sub",
+            scope=ldap.SCOPE_SUBTREE,
             filterstr="(objectClass=*)",
             attrlist=attr_list,
         )
