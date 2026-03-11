@@ -332,17 +332,15 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
     return ret
 
 
-def user_present(
-    name, spec_name, base_dn=None, cn=None, attributes=None, password=None
-):
+def user_present(name, spec_name, base_dn, cn, attributes=None, password=None):
     """
-    Ensure that a single user exists in the LDAP directory based on parameters or pillar data.
+    Ensure that a single user exists in the LDAP directory.
 
     Args:
-        name (str): The name of the state (used for identification in Salt). If cn is None, this is treated as the user CN.
+        name (str): The name of the state (used for identification in Salt).
         spec_name (str): The name of the connection specification to use.
-        base_dn (str, optional): The base distinguished name under which the user will be created (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
-        cn (str, optional): The common name (CN) of the user. If not provided, derived from name or pillar.
+        base_dn (str): The base distinguished name under which the user will be created (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
+        cn (str): The common name (CN) of the user.
         attributes (dict, optional): Attributes to set for the user (e.g., {'objectClass': ['inetOrgPerson'], 'sn': 'LastName'}).
         password (str, optional): Password to set for the user.
 
@@ -360,22 +358,8 @@ def user_present(
         )
         return ret
 
-    # If cn is not provided, treat name as cn and fetch from pillar if needed
-    if cn is None:
-        cn = name  # Assume name is the CN
-        # Optionally fetch full user data from pillar using cn as key (adjust pillar structure as needed)
-        user_pillar = __pillar__.get("ldap", {}).get("users", {}).get(cn, {})
-        if user_pillar:
-            attributes = user_pillar.get("attributes", attributes or {})
-            password = user_pillar.get("password", password)
-
-    if not cn:
-        ret["result"] = False
-        ret["comment"] = "No user CN provided or found in pillar."
-        return ret
-
     # Construct user DN, e.g., 'cn=username,ou=users,dc=rsc,dc=gacyberrange,dc=org'
-    user_dn = f"cn={cn},{base_dn or ''}"
+    user_dn = f"cn={cn},{base_dn}"
 
     # Default attributes if not provided
     if not attributes:

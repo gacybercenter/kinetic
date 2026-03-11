@@ -44,3 +44,20 @@ ensure_ou_{{ ou.name }}:
     - require:
       - ldap: ensure_root_dn
 {% endfor %}
+
+# Ensure users are created
+{% for user in pillar['ldap']['users'] %}
+ensure_user_{{ user.uid }}:
+  ldap.user_present:
+    - name: ensure_user_{{ user.uid }}
+    - spec_name: ldap_config_connection
+    - base_dn: ou=users,{{ pillar['ldap']['root_dn']['dn'] }}  # Assuming users are under ou=users
+    - cn: {{ user.uid }}
+    - attributes:
+        sn: {{ user.sn }}
+        displayName: {{ user.name }}
+        # Add other attributes as needed
+    - password: {{ user.pass }}
+    - require:
+      - ldap: ensure_ou_users  # Depend on the users OU being created
+{% endfor %}
