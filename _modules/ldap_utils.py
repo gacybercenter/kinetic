@@ -972,9 +972,15 @@ def dn_exists(spec_name, dn, desired_attributes=None):
         desired_attributes (dict, optional): Desired attributes to compare against existing ones.
 
     Returns:
-        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
+        dict: A dictionary with 'result' (bool), 'comment' (str), 'exists' (bool), 'attributes_match' (bool), and 'changes' (dict).
     """
-    ret = {"result": False, "comment": "", "changes": {}}
+    ret = {
+        "result": False,
+        "comment": "",
+        "exists": False,
+        "attributes_match": False,
+        "changes": {},
+    }
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
@@ -982,23 +988,22 @@ def dn_exists(spec_name, dn, desired_attributes=None):
             return ret
 
         conn = conn_result["conn"]
-
+        # Use SCOPE_BASE to check exactly the specified DN
         attr_list = (
             ["dn"] + list(desired_attributes.keys()) if desired_attributes else ["dn"]
         )
-        # Split the DN to get the first element (RDN, e.g., 'ou=users' from 'ou=users,dc=example,dc=com')
-        dn_parts = dn.split(",", 1)
-
         result = conn.search_s(
-            base=f"{dn_parts[1]}",
-            scope=ldap.SCOPE_SUBTREE,
-            filterstr=f"({dn_parts[0]})",  # Use first element in filterstr
+            base=dn,
+            scope=ldap.SCOPE_BASE,
+            filterstr="(objectClass=*)",
             attrlist=attr_list,
         )
         if result and len(result) > 0:
+            ret["exists"] = True
             if not desired_attributes:
                 ret["result"] = True
-                ret["comment"] = f"DN dn_parts[0], dn_parts[1] exists."
+                ret["comment"] = f"DN {dn} exists."
+                ret["attributes_match"] = True
                 return ret
 
             # Compare current attributes with desired attributes
@@ -1022,6 +1027,7 @@ def dn_exists(spec_name, dn, desired_attributes=None):
                     )
                     break
             ret["result"] = True
+            ret["attributes_match"] = matches
             ret["comment"] = f"DN {dn} exists. Attributes match: {matches}."
             # No changes in exists check, as it's read-only
             return ret
