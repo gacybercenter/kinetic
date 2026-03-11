@@ -121,16 +121,15 @@ def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
     """
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
-    # Check if root DN exists
+    # Check if root DN exists, handling potential errors
     exists_check = __salt__["ldap_utils.root_dn_exists"](spec_name, root_dn)
-    # Handle different return types or errors from root_dn_exists
     exists = False
-    error_desc = ""
-    if isinstance(exists_check, dict):
-        if "result" in exists_check and exists_check["result"]:
-            exists = True
-        elif "desc" in exists_check:
-            error_desc = exists_check["desc"]
+    if (
+        isinstance(exists_check, dict)
+        and "result" in exists_check
+        and exists_check["result"]
+    ):
+        exists = True
 
     if exists:
         # Root DN exists, check if attributes need updating
@@ -148,7 +147,7 @@ def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
             )
         return ret
     else:
-        # Root DN does not exist or error occurred, attempt creation
+        # Root DN does not exist or check failed, attempt creation
         create_result = __salt__["ldap_utils.create_root_dn"](
             spec_name, root_dn, attributes or {}
         )
@@ -156,9 +155,18 @@ def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
             ret["result"] = True
             ret["comment"] = f"Created root DN {root_dn}."
             ret["changes"] = create_result.get("changes", {})
+        elif (
+            isinstance(create_result, dict)
+            and "desc" in create_result
+            and create_result["desc"] == "Already exists"
+        ):
+            ret["result"] = True
+            ret["comment"] = (
+                f"Root DN {root_dn} already exists (detected during creation attempt)."
+            )
         else:
             ret["comment"] = (
-                f"Failed to create root DN {root_dn}: {create_result.get('comment', error_desc)}"
+                f"Failed to create root DN {root_dn}: {create_result.get('comment', str(create_result))}"
             )
         return ret
 
