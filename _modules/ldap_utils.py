@@ -982,13 +982,12 @@ def dn_exists(spec_name, dn, desired_attributes=None):
             return ret
 
         conn = conn_result["conn"]
-        # Use SCOPE_BASE to check exactly the specified DN
-        dn=
+
         attr_list = (
             ["dn"] + list(desired_attributes.keys()) if desired_attributes else ["dn"]
         )
         # Split the DN to get the first element (RDN, e.g., 'ou=users' from 'ou=users,dc=example,dc=com')
-        dn_parts = dn.split(',', 1)  # Split only on the first comma
+        dn_parts = dn.split(",", 1)  # Split only on the first comma
         first_element = dn_parts[0]  # e.g., 'ou=users'
 
         result = conn.search_s(
