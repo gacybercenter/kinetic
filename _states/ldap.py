@@ -237,40 +237,47 @@ def ou_present(name, spec_name, base_dn, ous=None):
         check_result = __salt__["ldap_utils.root_dn_exists"](
             spec_name, ou_dn, attributes
         )
-        if check_result["exists"] and check_result["attributes_match"]:
+        if not check_result["result"]:
+            ret["result"] = False
+            ret["comment"] = f"Error checking OU {ou_dn}: {check_result['comment']}"
+            return ret
+
+        # Assuming standardized format: if result True, check if exists (add 'exists' to root_dn_exists if not present)
+        # For now, infer 'exists' from comment or add logic
+        # If root_dn_exists returns 'exists' key, use it; else infer from comment
+        exists = check_result.get(
+            "exists", "does not exist" not in check_result["comment"]
+        )
+        attributes_match = check_result.get(
+            "attributes_match", "matching attributes" in check_result["comment"]
+        )
+
+        if exists and attributes_match:
             log.debug(f"OU {ou_dn} already exists with matching attributes.")
             continue
-
-        if check_result["error"]:
-            ret["result"] = False
-            ret["comment"] = f"Error checking OU {ou_dn}: {check_result['error']}"
-            return ret
 
         # If in test mode, report what would be done
         if __opts__["test"]:
             ret["result"] = None
-            ret["comment"] = (
-                f"Would {'update' if check_result['exists'] else 'create'} OU {ou_dn}."
-            )
-            ret["changes"][ou_dn] = {
-                "would_action": "update" if check_result["exists"] else "create"
-            }
+            ret["comment"] = f"Would {'update' if exists else 'create'} OU {ou_dn}."
+            ret["changes"][ou_dn] = {"would_action": "update" if exists else "create"}
             return ret
 
         # Create or update the OU
         create_result = __salt__["ldap_utils.create_ou"](spec_name, ou_dn, attributes)
-        if create_result["created"]:
-            changes.append({"ou": ou_dn, "action": "created"})
-            log.info(f"Created OU {ou_dn}")
-        elif create_result["updated"]:
-            changes.append({"ou": ou_dn, "action": "updated"})
-            log.info(f"Updated OU {ou_dn}")
-        else:
+        if not create_result["result"]:
             ret["result"] = False
             ret["comment"] = (
-                f"Failed to {'update' if check_result['exists'] else 'create'} OU {ou_dn}: {create_result['error']}"
+                f"Failed to {'update' if exists else 'create'} OU {ou_dn}: {create_result['comment']}"
             )
             return ret
+
+        action = "updated" if create_result.get("updated", False) else "created"
+        changes.append({"ou": ou_dn, "action": action})
+        log.info(f"{action.capitalize()} OU {ou_dn}")
+        ret["changes"] = create_result[
+            "changes"
+        ]  # Include detailed changes from create_ou
 
     if changes:
         ret["changes"] = {"ous": changes}
