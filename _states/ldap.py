@@ -250,11 +250,7 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
         ou_dn = f"ou={ou['name']},{base_dn or ''}"
         attributes = {"objectClass": ["organizationalUnit"], "ou": ou["name"]}
 
-        # Check if OU exists and attributes match
-        check_result = __salt__["ldap_utils.root_dn_exists"](
-            spec_name, ou_dn, attributes
-        )
-
+        check_result = __salt__["ldap_utils.dn_exists"](spec_name, ou_dn, attributes)
         # Handle the case where result is False due to "No such object" - this means it doesn't exist, not an error
         if not check_result["result"] and "No such object" in check_result["comment"]:
             exists = False
