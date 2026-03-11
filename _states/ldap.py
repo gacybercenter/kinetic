@@ -4,6 +4,7 @@ Custom SaltStack state for ensuring LDAP connection specs and root DN presence
 """
 
 import logging
+import re
 
 log = logging.getLogger(__name__)
 
