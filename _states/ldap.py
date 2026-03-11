@@ -242,15 +242,9 @@ def ou_present(name, spec_name, base_dn, ous=None):
             ret["comment"] = f"Error checking OU {ou_dn}: {check_result['comment']}"
             return ret
 
-        # Assuming standardized format: if result True, check if exists (add 'exists' to root_dn_exists if not present)
-        # For now, infer 'exists' from comment or add logic
-        # If root_dn_exists returns 'exists' key, use it; else infer from comment
-        exists = check_result.get(
-            "exists", "does not exist" not in check_result["comment"]
-        )
-        attributes_match = check_result.get(
-            "attributes_match", "matching attributes" in check_result["comment"]
-        )
+        # Using standardized format: infer existence and match from comment
+        exists = "exists" in check_result["comment"].lower()
+        attributes_match = "matching attributes" in check_result["comment"].lower()
 
         if exists and attributes_match:
             log.debug(f"OU {ou_dn} already exists with matching attributes.")
@@ -272,7 +266,9 @@ def ou_present(name, spec_name, base_dn, ous=None):
             )
             return ret
 
-        action = "updated" if create_result.get("updated", False) else "created"
+        action = (
+            "updated" if "updated" in create_result["comment"].lower() else "created"
+        )
         changes.append({"ou": ou_dn, "action": action})
         log.info(f"{action.capitalize()} OU {ou_dn}")
         ret["changes"] = create_result[
@@ -286,31 +282,6 @@ def ou_present(name, spec_name, base_dn, ous=None):
         ret["comment"] = "All OUs already exist with matching attributes."
 
     return ret
-
-
-def user_present(name, spec_name, base_dn, users=None):
-    """
-    Ensure that users exist in the LDAP directory based on pillar data.
-
-    Args:
-        name (str): The name of the state (used for identification in Salt).
-        spec_name (str): The name of the connection specification to use.
-        base_dn (str): The base distinguished name under which users will be created (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
-        users (list, optional): List of user definitions with 'name', 'sn', 'uid', and 'pass'. If not provided, fetched from pillar['ldap']['users'].
-
-    Returns:
-        dict: A dictionary containing the state result.
-    """
-    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
-
-    # Check if connection spec exists
-    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
-    if not conn_result["success"]:
-        ret["result"] = False
-        ret["comment"] = (
-            f"Connection spec '{spec_name}' not found: {conn_result['error']}"
-        )
-        return ret
 
     # Fetch users from pillar if not provided
     if users is None:
