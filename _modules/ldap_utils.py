@@ -998,7 +998,7 @@ def dn_exists(spec_name, dn, desired_attributes=None):
         if result and len(result) > 0:
             if not desired_attributes:
                 ret["result"] = True
-                ret["comment"] = f"DN {dn} exists."
+                ret["comment"] = f"DN dn_parts[0], dn_parts[1] exists."
                 return ret
 
             # Compare current attributes with desired attributes
