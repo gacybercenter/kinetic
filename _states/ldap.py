@@ -332,15 +332,19 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
     return ret
 
 
-def user_present(name, spec_name, base_dn, users=None):
+def user_present(
+    name, spec_name, base_dn=None, cn=None, attributes=None, password=None
+):
     """
-    Ensure that Users exist in the LDAP directory based on pillar data or provided parameters.
+    Ensure that a single user exists in the LDAP directory based on parameters or pillar data.
 
     Args:
-        name (str): The name of the state (used for identification in Salt). If users is None, this is treated as the user DN.
+        name (str): The name of the state (used for identification in Salt). If cn is None, this is treated as the user CN.
         spec_name (str): The name of the connection specification to use.
-        base_dn (str): The base distinguished name under which users will be created (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
-        users (list, optional): List of user definitions with 'name', 'attributes', 'password'. If not provided, fetched from pillar.
+        base_dn (str, optional): The base distinguished name under which the user will be created (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
+        cn (str, optional): The common name (CN) of the user. If not provided, derived from name or pillar.
+        attributes (dict, optional): Attributes to set for the user (e.g., {'objectClass': ['inetOrgPerson'], 'sn': 'LastName'}).
+        password (str, optional): Password to set for the user.
 
     Returns:
         dict: A dictionary containing the state result.
@@ -356,104 +360,81 @@ def user_present(name, spec_name, base_dn, users=None):
         )
         return ret
 
-    # If users is not provided, treat as single user using the name as user_dn
-    if users is None:
-        user_dn = name  # Assume name is the full user DN
-        # Extract user name from DN for attributes (e.g., cn=user from cn=user,ou=users,dc=...)
-        user_name_match = re.match(r"cn=([^,]+)", user_dn)
-        if not user_name_match:
-            ret["result"] = False
-            ret["comment"] = f"Invalid user DN format: {user_dn}"
-            return ret
-        user_name = user_name_match.group(1)
-        users = [
-            {"name": user_name, "attributes": {}, "password": None}
-        ]  # Default attributes; adjust as needed
+    # If cn is not provided, treat name as cn and fetch from pillar if needed
+    if cn is None:
+        cn = name  # Assume name is the CN
+        # Optionally fetch full user data from pillar using cn as key (adjust pillar structure as needed)
+        user_pillar = __pillar__.get("ldap", {}).get("users", {}).get(cn, {})
+        if user_pillar:
+            attributes = user_pillar.get("attributes", attributes or {})
+            password = user_pillar.get("password", password)
 
-    # Fetch users from pillar if users is empty list
-    if not users:
-        users = __pillar__.get("ldap", {}).get(
-            "users", []
-        )  # Assume pillar has 'ldap.users' key
-
-    if not users:
-        ret["comment"] = "No users defined in pillar or parameters."
+    if not cn:
+        ret["result"] = False
+        ret["comment"] = "No user CN provided or found in pillar."
         return ret
 
-    all_success = True
-    changes = []
-    comments = []
-    for user in users:
-        if "name" not in user:
-            all_success = False
-            comments.append(f"Invalid user definition missing 'name': {user}")
-            continue
+    # Construct user DN, e.g., 'cn=username,ou=users,dc=rsc,dc=gacyberrange,dc=org'
+    user_dn = f"cn={cn},{base_dn or ''}"
 
-        # Construct user DN, e.g., 'cn=username,ou=users,dc=rsc,dc=gacyberrange,dc=org'
-        user_dn = f"cn={user['name']},{base_dn}"
-        attributes = user.get(
-            "attributes",
-            {
-                "objectClass": ["inetOrgPerson", "person"],
-                "cn": user["name"],
-                "sn": user["name"],
-            },
-        )  # Default attributes
-        password = user.get("password", None)
+    # Default attributes if not provided
+    if not attributes:
+        attributes = {
+            "objectClass": ["inetOrgPerson", "person"],
+            "cn": cn,
+            "sn": cn,  # Default surname to cn; adjust as needed
+        }
 
-        # Check if user exists and attributes match
-        check_result = __salt__["ldap_utils.root_dn_exists"](
-            spec_name, user_dn, attributes
-        )
-        if not check_result["result"]:
-            all_success = False
-            comments.append(f"Error checking user {user_dn}: {check_result['comment']}")
-            continue
-
-        # Infer existence and match from comment
-        exists = "exists" in check_result["comment"].lower()
-        attributes_match = "matching attributes" in check_result["comment"].lower()
-
-        if (
-            exists and attributes_match and not password
-        ):  # If password is provided, update anyway
-            log.debug(f"User {user_dn} already exists with matching attributes.")
-            continue
-
-        # If in test mode, report what would be done
-        if __opts__["test"]:
-            ret["result"] = None
-            comments.append(f"Would {'update' if exists else 'create'} user {user_dn}.")
-            ret["changes"][user_dn] = {"would_action": "update" if exists else "create"}
-            continue
-
-        # Create or update the user
-        create_result = __salt__["ldap_utils.create_user"](
-            spec_name, user_dn, attributes, password
-        )
-        if not create_result["result"]:
-            all_success = False
-            comments.append(
-                f"Failed to {'update' if exists else 'create'} user {user_dn}: {create_result['comment']}"
-            )
-            continue
-
-        action = (
-            "updated" if "updated" in create_result["comment"].lower() else "created"
-        )
-        changes.append(
-            {"user": user_dn, "action": action, "details": create_result["changes"]}
-        )
-        log.info(f"{action.capitalize()} user {user_dn}")
-
-    if changes:
-        ret["changes"] = {"users": changes}
-    if comments:
-        ret["comment"] = " | ".join(comments)
+    # Check if user exists and attributes match
+    check_result = __salt__["ldap_utils.dn_exists"](spec_name, user_dn, attributes)
+    if not check_result["result"]:
+        if "No such object" in check_result["comment"]:
+            exists = False
+            attributes_match = False
+        else:
+            ret["result"] = False
+            ret["comment"] = f"Error checking user {user_dn}: {check_result['comment']}"
+            return ret
     else:
-        ret["comment"] = "All users already exist with matching attributes."
+        exists = check_result.get("exists", False)
+        attributes_match = check_result.get("attributes_match", False)
 
-    ret["result"] = all_success
+    # If exists, matches, and no password to set, we're done
+    if exists and attributes_match and not password:
+        ret["comment"] = f"User {user_dn} already exists with matching attributes."
+        return ret
+
+    # If in test mode, report what would be done
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Would {'update' if exists else 'create'} user {user_dn}."
+        ret["changes"][user_dn] = {"would_action": "update" if exists else "create"}
+        return ret
+
+    # Create or update the user
+    create_result = __salt__["ldap_utils.create_user"](
+        spec_name, user_dn, attributes, password
+    )
+    if not create_result["result"]:
+        if "exists" in create_result["comment"].lower():
+            # Treat existing as success
+            ret["comment"] = f"User {user_dn} already exists."
+            return ret
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to {'update' if exists else 'create'} user {user_dn}: {create_result['comment']}"
+        )
+        return ret
+
+    action = "updated" if "updated" in create_result["comment"].lower() else "created"
+    ret["changes"] = {
+        "user": user_dn,
+        "action": action,
+        "details": create_result["changes"],
+    }
+    ret["comment"] = create_result["comment"]
+    log.info(f"{action.capitalize()} user {user_dn}")
+
     return ret
 
 
