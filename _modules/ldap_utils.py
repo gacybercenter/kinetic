@@ -325,16 +325,14 @@ def root_dn_exists(spec_name, root_dn, desired_attributes=None):
         desired_attributes (dict, optional): Desired attributes to compare against existing ones.
 
     Returns:
-        dict: A dictionary with 'exists' (bool), 'attributes_match' (bool if desired_attributes provided), and 'error' (str or None).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "exists": False,
-                "attributes_match": False,
-                "error": conn_result["error"],
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
         # Use SCOPE_BASE to search for the specific DN
@@ -349,7 +347,9 @@ def root_dn_exists(spec_name, root_dn, desired_attributes=None):
         )
         if result and len(result) > 0:
             if not desired_attributes:
-                return {"exists": True, "attributes_match": True, "error": None}
+                ret["result"] = True
+                ret["comment"] = f"Root DN {root_dn} exists."
+                return ret
 
             # Compare current attributes with desired attributes
             current_attrs = result[0][1] if result[0][1] else {}
@@ -371,14 +371,19 @@ def root_dn_exists(spec_name, root_dn, desired_attributes=None):
                         f"Attribute mismatch for {attr}: current={current_val_str}, desired={desired_val_list}"
                     )
                     break
-            return {"exists": True, "attributes_match": matches, "error": None}
-        return {"exists": False, "attributes_match": False, "error": None}
+            ret["result"] = True
+            ret["comment"] = f"Root DN {root_dn} exists. Attributes match: {matches}."
+            # No changes in exists check, as it's read-only
+            return ret
+        ret["result"] = (
+            True  # Non-existence is a valid result for exists check; use result: True for consistency
+        )
+        ret["comment"] = f"Root DN {root_dn} does not exist."
+        return ret
     except Exception as e:
-        return {
-            "exists": False,
-            "attributes_match": False,
-            "error": f"Failed to check root DN: {str(e)}",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to check root DN {root_dn}: {str(e)}"
+        return ret
 
 
 def update_root_dn(spec_name, root_dn, attributes):
@@ -391,51 +396,56 @@ def update_root_dn(spec_name, root_dn, attributes):
         attributes (dict): Attributes to update on the DN.
 
     Returns:
-        dict: A dictionary with 'updated' (bool), 'error' (str or None), and 'message' (str).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {"updated": False, "error": conn_result["error"], "message": ""}
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
         # Fetch current attributes to avoid unnecessary or forbidden updates
         current_attrs_result = root_dn_exists(spec_name, root_dn, attributes)
-        if not current_attrs_result["exists"]:
-            return {
-                "updated": False,
-                "error": f"DN {root_dn} does not exist for update",
-                "message": "",
-            }
+        if not current_attrs_result["result"] or not current_attrs_result.get(
+            "exists", False
+        ):  # Check standardized result
+            ret["comment"] = f"DN {root_dn} does not exist for update"
+            return ret
 
         current_attrs = {}
-        if current_attrs_result["exists"]:
-            # Fetch all attributes for comparison
-            search_result = conn.search_s(
-                base=root_dn,
-                scope=ldap.SCOPE_BASE,
-                filterstr="(objectClass=*)",
-                attrlist=list(attributes.keys()),
-            )
-            if search_result and len(search_result) > 0:
-                current_attrs = search_result[0][1] if search_result[0][1] else {}
-                # Decode byte strings to compare with desired attributes
-                for k in current_attrs:
-                    current_attrs[k] = [
-                        v.decode("utf-8") if isinstance(v, bytes) else v
-                        for v in current_attrs[k]
-                    ]
+        # Fetch all attributes for comparison
+        search_result = conn.search_s(
+            base=root_dn,
+            scope=ldap.SCOPE_BASE,
+            filterstr="(objectClass=*)",
+            attrlist=list(attributes.keys()),
+        )
+        if search_result and len(search_result) > 0:
+            current_attrs = search_result[0][1] if search_result[0][1] else {}
+            # Decode byte strings to compare with desired attributes
+            for k in current_attrs:
+                current_attrs[k] = [
+                    v.decode("utf-8") if isinstance(v, bytes) else v
+                    for v in current_attrs[k]
+                ]
 
         # Convert attributes dictionary to list of (attr, value) tuples for modification
         # Ensure all values are lists of byte strings as required by python-ldap
         # Use MOD_ADD for olcModuleLoad to avoid deletion issues
         # Skip updates for olcModulePath if already set
         mod_attrs = []
+        changes = {}  # Track changes for standardized return
         for k, v in attributes.items():
             desired_val_list = v if isinstance(v, list) else [v]
             current_val_list = current_attrs.get(k, [])
             if set(desired_val_list) == set(current_val_list):
                 continue  # Skip if values are already the same
+            changes[k] = {
+                "old": current_val_list,
+                "new": desired_val_list,
+            }  # Record change
             if k == "olcModuleLoad":
                 mod_attrs.append(
                     (
@@ -469,24 +479,19 @@ def update_root_dn(spec_name, root_dn, attributes):
                 )
 
         if not mod_attrs:
-            return {
-                "updated": False,
-                "error": None,
-                "message": f"No changes needed for {root_dn}",
-            }
+            ret["result"] = True
+            ret["comment"] = f"No changes needed for {root_dn}"
+            return ret
 
         conn.modify_s(dn=root_dn, modlist=mod_attrs)
-        return {
-            "updated": True,
-            "error": None,
-            "message": f"Root DN {root_dn} attributes updated successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"Root DN {root_dn} attributes updated successfully"
+        ret["changes"] = changes
+        return ret
     except Exception as e:
-        return {
-            "updated": False,
-            "error": f"Failed to update root DN {root_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to update root DN {root_dn}: {str(e)}"
+        return ret
 
 
 def create_root_dn(spec_name, root_dn, attributes=None):
@@ -499,42 +504,37 @@ def create_root_dn(spec_name, root_dn, attributes=None):
     :param attributes: Dictionary of attributes for the root DN
     :return: Dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict)
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "created": False,
-                "updated": False,
-                "error": conn_result["error"],
-                "message": "",
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
         check = root_dn_exists(spec_name, root_dn, attributes)
-        if check["exists"]:
-            if check["attributes_match"]:
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": None,
-                    "message": f"Root DN {root_dn} already exists with matching attributes",
-                }
+        if check["result"] and check.get("exists", False):
+            if check.get("attributes_match", False):
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Root DN {root_dn} already exists with matching attributes"
+                )
+                return ret
             else:
                 # Update attributes since they differ
                 update_result = update_root_dn(spec_name, root_dn, attributes)
-                if update_result["updated"]:
-                    return {
-                        "created": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
-                }
+                if update_result["result"]:
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"Root DN {root_dn} exists. {update_result['comment']}"
+                    )
+                    ret["changes"] = update_result["changes"]
+                    return ret
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to update root DN {root_dn}: {update_result['comment']}"
+                )
+                return ret
 
         # Create new entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
@@ -550,19 +550,14 @@ def create_root_dn(spec_name, root_dn, attributes=None):
             for k, v in attributes.items()
         ]
         conn.add_s(dn=root_dn, modlist=attr_list)
-        return {
-            "created": True,
-            "updated": False,
-            "error": None,
-            "message": f"Root DN {root_dn} created successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"Root DN {root_dn} created successfully"
+        ret["changes"] = {"created": root_dn, "attributes": attributes or {}}
+        return ret
     except Exception as e:
-        return {
-            "created": False,
-            "updated": False,
-            "error": f"Failed to create root DN {root_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to create root DN {root_dn}: {str(e)}"
+        return ret
 
 
 def create_ou(spec_name, ou_dn, attributes):
