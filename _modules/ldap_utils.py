@@ -990,7 +990,7 @@ def dn_exists(spec_name, dn, desired_attributes=None):
         dn_parts = dn.split(",", 1)
 
         result = conn.search_s(
-            base=dn,
+            base=f"{dn_parts[1]}",
             scope=ldap.SCOPE_SUBTREE,
             filterstr=f"({dn_parts[0]})",  # Use first element in filterstr
             attrlist=attr_list,
