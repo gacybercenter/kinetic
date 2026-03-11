@@ -492,23 +492,28 @@ def update_root_dn(spec_name, root_dn, attributes):
         }
 
 
-def create_root_dn(spec_name, root_dn, attributes):
+def create_root_dn(spec_name, root_dn, attributes=None):
     """
-    Create a root DN in the LDAP directory if it doesn't exist, or update it if attributes differ.
+    Create a root DN in the LDAP directory if it doesn't exist or if attributes don't match.
+    Returns a dictionary with the result of the operation.
 
-    Args:
-        spec_name (str): The name of the connection specification.
-        root_dn (str): The distinguished name to create or update.
-        attributes (dict): Attributes to set for the new DN or update on the existing DN.
-
-    Returns:
-        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+    :param spec_name: Name of the connection specification for LDAP
+    :param root_dn: The root DN to create
+    :param attributes: Dictionary of attributes for the root DN
+    :return: Dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict)
     """
     ret = {"result": False, "comment": "", "changes": {}}
 
     # Check if root DN already exists
     exists_result = root_dn_exists(spec_name, root_dn)
-    if exists_result["result"]:
+    # Handle different possible return types from root_dn_exists
+    exists = False
+    if isinstance(exists_result, dict) and "result" in exists_result:
+        exists = exists_result["result"]
+    elif isinstance(exists_result, bool):
+        exists = exists_result
+
+    if exists:
         # Root DN exists, check if attributes match
         update_result = update_root_dn(spec_name, root_dn, attributes or {})
         if not update_result["changes"]:
