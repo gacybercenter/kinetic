@@ -136,38 +136,46 @@ def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
         update_result = __salt__["ldap_utils.update_root_dn"](
             spec_name, root_dn, attributes or {}
         )
-        if update_result.get("changes"):
-            ret["result"] = update_result.get("result", False)
-            ret["comment"] = f"Updated attributes for root DN {root_dn}."
-            ret["changes"] = update_result["changes"]
-        else:
-            ret["result"] = True
-            ret["comment"] = (
-                f"Root DN {root_dn} already exists with desired attributes."
-            )
+        if isinstance(update_result, dict):
+            if update_result.get("updated", False) or update_result.get(
+                "result", False
+            ):
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Root DN {root_dn} exists, attributes updated or already correct."
+                )
+                ret["changes"] = update_result.get("changes", {})
+            else:
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Root DN {root_dn} already exists with desired attributes."
+                )
         return ret
     else:
         # Root DN does not exist or check failed, attempt creation
         create_result = __salt__["ldap_utils.create_root_dn"](
             spec_name, root_dn, attributes or {}
         )
-        if create_result.get("result", False):
-            ret["result"] = True
-            ret["comment"] = f"Created root DN {root_dn}."
-            ret["changes"] = create_result.get("changes", {})
-        elif (
-            isinstance(create_result, dict)
-            and "desc" in create_result
-            and create_result["desc"] == "Already exists"
-        ):
-            ret["result"] = True
-            ret["comment"] = (
-                f"Root DN {root_dn} already exists (detected during creation attempt)."
-            )
-        else:
-            ret["comment"] = (
-                f"Failed to create root DN {root_dn}: {create_result.get('comment', str(create_result))}"
-            )
+        if isinstance(create_result, dict):
+            if (
+                create_result.get("created", False)
+                or create_result.get("updated", False)
+                or create_result.get("result", False)
+            ):
+                ret["result"] = True
+                ret["comment"] = create_result.get(
+                    "message", f"Root DN {root_dn} processed successfully."
+                )
+                ret["changes"] = create_result.get("changes", {})
+            elif "desc" in create_result and create_result["desc"] == "Already exists":
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Root DN {root_dn} already exists (detected during creation attempt)."
+                )
+            else:
+                ret["comment"] = (
+                    f"Failed to create root DN {root_dn}: {create_result.get('message', str(create_result))}"
+                )
         return ret
 
 
