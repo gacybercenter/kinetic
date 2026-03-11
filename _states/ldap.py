@@ -226,10 +226,10 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
             return ret
         ou_name = ou_name_match.group(1)
         ous = [
-            {"name": ou_name, "dc": ""}
-        ]  # dc not used in single mode; attributes based on name
+            {"name": ou_name}
+        ]  # Create single-item list; 'dc' not required in single mode
 
-    # Fetch OUs from pillar if ous is empty list or None (but we already handled None)
+    # Fetch OUs from pillar if ous is empty list
     if not ous:
         ous = __pillar__.get("ldap", {}).get("orgunits", [])
 
@@ -254,14 +254,19 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
         check_result = __salt__["ldap_utils.root_dn_exists"](
             spec_name, ou_dn, attributes
         )
-        if not check_result["result"]:
+
+        # Handle the case where result is False due to "No such object" - this means it doesn't exist, not an error
+        if not check_result["result"] and "No such object" in check_result["comment"]:
+            exists = False
+            attributes_match = False
+        elif not check_result["result"]:
             all_success = False
             comments.append(f"Error checking OU {ou_dn}: {check_result['comment']}")
             continue
-
-        # Using standardized format: infer existence and match from comment
-        exists = "exists" in check_result["comment"].lower()
-        attributes_match = "matching attributes" in check_result["comment"].lower()
+        else:
+            # If result is True, infer existence and match from comment
+            exists = "exists" in check_result["comment"].lower()
+            attributes_match = "matching attributes" in check_result["comment"].lower()
 
         if exists and attributes_match:
             log.debug(f"OU {ou_dn} already exists with matching attributes.")
@@ -277,10 +282,15 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
         # Create or update the OU
         create_result = __salt__["ldap_utils.create_ou"](spec_name, ou_dn, attributes)
         if not create_result["result"]:
-            all_success = False
-            comments.append(
-                f"Failed to {'update' if exists else 'create'} OU {ou_dn}: {create_result['comment']}"
-            )
+            if "exists" in create_result["comment"].lower():
+                # Treat "exists" as success if create fails because it already exists
+                changes.append({"ou": ou_dn, "action": "exists"})
+                log.info(f"OU {ou_dn} already exists")
+            else:
+                all_success = False
+                comments.append(
+                    f"Failed to {'update' if exists else 'create'} OU {ou_dn}: {create_result['comment']}"
+                )
             continue
 
         action = (
