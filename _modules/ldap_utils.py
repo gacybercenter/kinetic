@@ -562,7 +562,7 @@ def create_root_dn(spec_name, root_dn, attributes=None):
 
 def create_ou(spec_name, ou_dn, attributes):
     """
-    Create an Organizational Unit (OU) in the LDAP directory if it doesn't exist, or update it if attributes differ.
+    Create an OU in the LDAP directory if it doesn't exist, or update it if attributes differ.
 
     Args:
         spec_name (str): The name of the connection specification.
@@ -570,44 +570,37 @@ def create_ou(spec_name, ou_dn, attributes):
         attributes (dict): Attributes to set for the new OU or update on the existing OU.
 
     Returns:
-        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "created": False,
-                "updated": False,
-                "error": conn_result["error"],
-                "message": "",
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
         check = root_dn_exists(spec_name, ou_dn, attributes)
         if check["exists"]:
             if check["attributes_match"]:
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": None,
-                    "message": f"OU {ou_dn} already exists with matching attributes",
-                }
+                ret["result"] = True
+                ret["comment"] = f"OU {ou_dn} already exists with matching attributes"
+                return ret
             else:
                 # Update attributes since they differ
                 update_result = update_root_dn(spec_name, ou_dn, attributes)
                 if update_result["updated"]:
-                    return {
-                        "created": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
-                }
+                    ret["result"] = True
+                    ret["comment"] = f"OU {ou_dn} exists. {update_result['message']}"
+                    ret["changes"] = update_result.get(
+                        "changes", {}
+                    )  # Pull changes if available from update_root_dn
+                    return ret
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to update OU {ou_dn}: {update_result['error']}"
+                )
+                return ret
 
         # Create new entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
@@ -623,19 +616,14 @@ def create_ou(spec_name, ou_dn, attributes):
             for k, v in attributes.items()
         ]
         conn.add_s(dn=ou_dn, modlist=attr_list)
-        return {
-            "created": True,
-            "updated": False,
-            "error": None,
-            "message": f"OU {ou_dn} created successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"OU {ou_dn} created successfully"
+        ret["changes"] = {"created": ou_dn, "attributes": attributes}
+        return ret
     except Exception as e:
-        return {
-            "created": False,
-            "updated": False,
-            "error": f"Failed to create OU {ou_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to create OU {ou_dn}: {str(e)}"
+        return ret
 
 
 def create_user(spec_name, user_dn, attributes, password=None):
@@ -649,54 +637,56 @@ def create_user(spec_name, user_dn, attributes, password=None):
         password (str, optional): Password to set for the user, if provided.
 
     Returns:
-        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "created": False,
-                "updated": False,
-                "error": conn_result["error"],
-                "message": "",
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
         check = root_dn_exists(spec_name, user_dn, attributes)
         if check["exists"]:
             if check["attributes_match"] and not password:
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": None,
-                    "message": f"User {user_dn} already exists with matching attributes",
-                }
+                ret["result"] = True
+                ret["comment"] = (
+                    f"User {user_dn} already exists with matching attributes"
+                )
+                return ret
             else:
                 # Update attributes or password since they differ or password is provided
                 update_attrs = attributes.copy()
+                changes = {}  # Track changes
                 if password:
                     update_attrs["userPassword"] = password
+                    changes["userPassword"] = {
+                        "old": "(hidden)",
+                        "new": "(set)",
+                    }  # Don't log actual password
                 update_result = update_root_dn(spec_name, user_dn, update_attrs)
                 if update_result["updated"]:
-                    return {
-                        "created": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
-                }
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"User {user_dn} exists. {update_result['message']}"
+                    )
+                    ret["changes"] = {**update_result.get("changes", {}), **changes}
+                    return ret
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to update user {user_dn}: {update_result['error']}"
+                )
+                return ret
 
         # Create new entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
         # Ensure all values are lists of byte strings
         create_attrs = attributes.copy()
+        changes = {"created": user_dn, "attributes": attributes}
         if password:
             create_attrs["userPassword"] = password
+            changes["userPassword"] = "(set)"
         attr_list = [
             (
                 k,
@@ -708,19 +698,14 @@ def create_user(spec_name, user_dn, attributes, password=None):
             for k, v in create_attrs.items()
         ]
         conn.add_s(dn=user_dn, modlist=attr_list)
-        return {
-            "created": True,
-            "updated": False,
-            "error": None,
-            "message": f"User {user_dn} created successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"User {user_dn} created successfully"
+        ret["changes"] = changes
+        return ret
     except Exception as e:
-        return {
-            "created": False,
-            "updated": False,
-            "error": f"Failed to create user {user_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to create user {user_dn}: {str(e)}"
+        return ret
 
 
 def create_group(spec_name, group_dn, attributes, members=None):
@@ -734,17 +719,14 @@ def create_group(spec_name, group_dn, attributes, members=None):
         members (list, optional): List of member DNs to set for the group, if provided.
 
     Returns:
-        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "created": False,
-                "updated": False,
-                "error": conn_result["error"],
-                "message": "",
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
         check_attrs = attributes.copy()
@@ -753,38 +735,42 @@ def create_group(spec_name, group_dn, attributes, members=None):
         check = root_dn_exists(spec_name, group_dn, check_attrs)
         if check["exists"]:
             if check["attributes_match"]:
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": None,
-                    "message": f"Group {group_dn} already exists with matching attributes and members",
-                }
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Group {group_dn} already exists with matching attributes and members"
+                )
+                return ret
             else:
                 # Update attributes or members since they differ
                 update_attrs = attributes.copy()
+                changes = {}  # Track changes
                 if members:
                     update_attrs["member"] = members
+                    changes["members"] = {
+                        "added": members
+                    }  # Simplistic tracking; refine if needed
                 update_result = update_root_dn(spec_name, group_dn, update_attrs)
                 if update_result["updated"]:
-                    return {
-                        "created": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
-                }
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"Group {group_dn} exists. {update_result['message']}"
+                    )
+                    ret["changes"] = {**update_result.get("changes", {}), **changes}
+                    return ret
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to update group {group_dn}: {update_result['error']}"
+                )
+                return ret
 
         # Create new entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
         # Ensure all values are lists of byte strings
         create_attrs = attributes.copy()
+        changes = {"created": group_dn, "attributes": attributes}
         if members:
             create_attrs["member"] = members
+            changes["members"] = members
         attr_list = [
             (
                 k,
@@ -796,19 +782,14 @@ def create_group(spec_name, group_dn, attributes, members=None):
             for k, v in create_attrs.items()
         ]
         conn.add_s(dn=group_dn, modlist=attr_list)
-        return {
-            "created": True,
-            "updated": False,
-            "error": None,
-            "message": f"Group {group_dn} created successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"Group {group_dn} created successfully"
+        ret["changes"] = changes
+        return ret
     except Exception as e:
-        return {
-            "created": False,
-            "updated": False,
-            "error": f"Failed to create group {group_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to create group {group_dn}: {str(e)}"
+        return ret
 
 
 def load_module(spec_name, module_dn, module_info, module_path=None):
