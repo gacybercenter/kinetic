@@ -25,7 +25,7 @@ ensure_root_dn:
   ldap.root_dn_present:
     - name: {{ pillar['ldap']['root_dn']['dn'] }}
     - root_dn: {{ pillar['ldap']['root_dn']['dn'] }}
-    - connect_spec_name: ldap_config_connection
+    - spec_name: ldap_config_connection
     - organization: {{ pillar['ldap']['root_dn']['o'] }}
     - require:
       - ldap: ensure_ldap_config_connect_spec
