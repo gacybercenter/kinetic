@@ -560,7 +560,7 @@ def create_root_dn(spec_name, root_dn, attributes=None):
         return ret
 
 
-def create_ou(ou_dn, spec_name, attributes):
+def create_ou(spec_name, ou_dn, attributes):
     """
     Create an OU in the LDAP directory if it doesn't exist, or update it if attributes differ.
 
