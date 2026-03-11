@@ -109,72 +109,58 @@ def connect_spec_present(name, spec_name, connection_dict):
     return ret
 
 
-def root_dn_present(name, spec_name, root_dn, attributes=None):
+def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
     """
-    Ensure that a root DN exists in the LDAP directory with the specified attributes.
+    Ensure that the specified root DN exists in the LDAP directory.
 
-    Args:
-        name (str): The name of the state (used for identification in Salt).
-        spec_name (str): The name of the connection specification to use.
-        root_dn (str): The distinguished name to ensure exists.
-        attributes (dict, optional): Attributes to set or update on the DN. Defaults to None.
-
-    Returns:
-        dict: A dictionary containing the state result.
+    :param name: The name of the state (for SaltStack identification)
+    :param root_dn: The root DN to ensure exists
+    :param spec_name: Name of the connection specification for LDAP
+    :param attributes: Dictionary of attributes for the root DN
+    :return: Dictionary with 'result' (bool), 'comment' (str), 'changes' (dict), and 'name' (str)
     """
-    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
-    # Check if connection spec exists
-    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
-    if not conn_result["success"]:
-        ret["result"] = False
-        ret["comment"] = (
-            f"Connection spec '{spec_name}' not found: {conn_result['error']}"
+    # Check if root DN exists
+    exists_check = __salt__["ldap_utils.root_dn_exists"](spec_name, root_dn)
+    # Handle different return types or errors from root_dn_exists
+    exists = False
+    error_desc = ""
+    if isinstance(exists_check, dict):
+        if "result" in exists_check and exists_check["result"]:
+            exists = True
+        elif "desc" in exists_check:
+            error_desc = exists_check["desc"]
+
+    if exists:
+        # Root DN exists, check if attributes need updating
+        update_result = __salt__["ldap_utils.update_root_dn"](
+            spec_name, root_dn, attributes or {}
         )
+        if update_result.get("changes"):
+            ret["result"] = update_result.get("result", False)
+            ret["comment"] = f"Updated attributes for root DN {root_dn}."
+            ret["changes"] = update_result["changes"]
+        else:
+            ret["result"] = True
+            ret["comment"] = (
+                f"Root DN {root_dn} already exists with desired attributes."
+            )
         return ret
-
-    # Check if root DN exists and attributes match
-    check_result = __salt__["ldap_utils.root_dn_exists"](
-        spec_name, root_dn, attributes or {}
-    )
-    if check_result["exists"] and check_result["attributes_match"]:
-        ret["comment"] = f"Root DN {root_dn} already exists with matching attributes."
-        return ret
-
-    if check_result["error"]:
-        ret["result"] = False
-        ret["comment"] = check_result["error"]
-        return ret
-
-    # If in test mode, report what would be done
-    if __opts__["test"]:
-        ret["result"] = None
-        ret["comment"] = (
-            f"Would {'update' if check_result['exists'] else 'create'} root DN {root_dn}."
-        )
-        ret["changes"] = {
-            "root_dn": {
-                "would_action": "update" if check_result["exists"] else "create",
-                "dn": root_dn,
-            }
-        }
-        return ret
-
-    # Create or update the root DN
-    create_result = __salt__["ldap_utils.create_root_dn"](
-        spec_name, root_dn, attributes or {}
-    )
-    if create_result["created"]:
-        ret["changes"] = {"root_dn": {"created": root_dn}}
-        ret["comment"] = create_result["message"]
-    elif create_result["updated"]:
-        ret["changes"] = {"root_dn": {"updated": root_dn}}
-        ret["comment"] = create_result["message"]
     else:
-        ret["result"] = False
-        ret["comment"] = create_result["error"] or create_result["message"]
-
-    return ret
+        # Root DN does not exist or error occurred, attempt creation
+        create_result = __salt__["ldap_utils.create_root_dn"](
+            spec_name, root_dn, attributes or {}
+        )
+        if create_result.get("result", False):
+            ret["result"] = True
+            ret["comment"] = f"Created root DN {root_dn}."
+            ret["changes"] = create_result.get("changes", {})
+        else:
+            ret["comment"] = (
+                f"Failed to create root DN {root_dn}: {create_result.get('comment', error_desc)}"
+            )
+        return ret
 
 
 def ou_present(name, spec_name, base_dn, ous=None):
