@@ -24,9 +24,9 @@ ensure_ldap_config_connect_spec:
 ensure_root_dn:
   ldap.root_dn_present:
     - name: {{ pillar['ldap']['root_dn']['dn'] }}
-    - root_dn: {{ pillar['ldap']['root_dn']['dn'] }}
     - spec_name: ldap_config_connection
-    - organization: {{ pillar['ldap']['root_dn']['o'] }}
+    - attributes:
+        o: {{ pillar['ldap']['root_dn']['o'] }}
     - require:
       - ldap: ensure_ldap_config_connect_spec
 
@@ -35,7 +35,7 @@ ensure_root_dn:
 ensure_ou_{{ ou.name }}:
   ldap.ou_present:
     - name: {{ "ou=" ~ ou.name ~ "," ~ pillar['ldap']['root_dn']['dn'] }}
-    - connect_spec_name: ldap_config_connection
+    - spec_name: ldap_config_connection
     - require:
       - ldap: ensure_root_dn
 {% endfor %}
