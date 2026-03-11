@@ -39,6 +39,7 @@ ensure_root_dn:
 ensure_ou_{{ ou.name }}:
   ldap.ou_present:
     - name: {{ "ou=" ~ ou.name ~ "," ~ pillar['ldap']['root_dn']['dn'] }}
+    - base_dn: {{ "ou=" ~ ou.name ~ "," ~ pillar['ldap']['root_dn']['dn'] }}
     - spec_name: ldap_config_connection
     - require:
       - ldap: ensure_root_dn
