@@ -55,8 +55,6 @@ ensure_user_{{ user.uid }}:
     - cn: {{ user.uid }}
     - attributes:
         sn: {{ user.sn }}
-        cn: {{ user.name }}
-        # Add other attributes as needed
     - password: {{ user.pass }}
     - require:
       - ldap: ensure_ou_users  # Depend on the users OU being created
