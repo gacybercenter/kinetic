@@ -960,3 +960,78 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
             "error": f"Failed to configure overlay {overlay_name} for {database_dn}: {str(e)}",
             "message": "",
         }
+
+
+def dn_exists(spec_name, dn, desired_attributes=None):
+    """
+    Check if a DN exists in the LDAP directory and optionally if its attributes match the desired state.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        dn (str): The distinguished name to check.
+        desired_attributes (dict, optional): Desired attributes to compare against existing ones.
+
+    Returns:
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        # Use SCOPE_BASE to check exactly the specified DN
+        attr_list = (
+            ["dn"] + list(desired_attributes.keys()) if desired_attributes else ["dn"]
+        )
+        result = conn.search_s(
+            base=dn,
+            scope=ldap.SCOPE_BASE,
+            filterstr="(objectClass=*)",
+            attrlist=attr_list,
+        )
+        if result and len(result) > 0:
+            if not desired_attributes:
+                ret["result"] = True
+                ret["comment"] = f"DN {dn} exists."
+                return ret
+
+            # Compare current attributes with desired attributes
+            current_attrs = result[0][1] if result[0][1] else {}
+            matches = True
+            for attr, desired_val in desired_attributes.items():
+                current_val = current_attrs.get(attr, [])
+                # Handle single value vs list
+                desired_val_list = (
+                    desired_val if isinstance(desired_val, list) else [desired_val]
+                )
+                # Convert current values to strings for comparison if needed (python-ldap returns bytes)
+                current_val_str = [
+                    v.decode("utf-8") if isinstance(v, bytes) else v
+                    for v in current_val
+                ]
+                if set(current_val_str) != set(desired_val_list):
+                    matches = False
+                    log.debug(
+                        f"Attribute mismatch for {attr}: current={current_val_str}, desired={desired_val_list}"
+                    )
+                    break
+            ret["result"] = True
+            ret["comment"] = f"DN {dn} exists. Attributes match: {matches}."
+            # No changes in exists check, as it's read-only
+            return ret
+        ret["result"] = (
+            True  # Non-existence is a valid result for exists check; use result: True for consistency
+        )
+        ret["comment"] = f"DN {dn} does not exist."
+        return ret
+    except ldap.NO_SUCH_OBJECT:
+        ret["result"] = True
+        ret["comment"] = f"DN {dn} does not exist (NO_SUCH_OBJECT)."
+        return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to check DN {dn}: {str(e)}"
+        return ret
