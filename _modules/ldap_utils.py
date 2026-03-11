@@ -988,7 +988,7 @@ def dn_exists(spec_name, dn, desired_attributes=None):
         )
         result = conn.search_s(
             base=dn,
-            scope=ldap.SCOPE_BASE,
+            scope=ldap.SCOPE_SUBTREE,
             filterstr="(objectClass=*)",
             attrlist=attr_list,
         )
