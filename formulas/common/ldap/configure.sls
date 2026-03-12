@@ -76,5 +76,4 @@ ensure_group_{{ group.name }}:
       {% endfor %}
     - require:
       - ldap: ensure_ou_groups  # Depend on the groups OU being created
-      - ldap: ensure_user_{{ group.members | join('_') }}  # Depend on relevant users; adjust as needed
 {% endfor %}
