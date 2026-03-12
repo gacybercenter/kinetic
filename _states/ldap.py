@@ -402,30 +402,37 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
     create_result = __salt__["ldap_utils.create_user"](
         spec_name, user_dn, uid, cn, sn, description, password
     )
+    success_keywords = ["created", "updated", "exists"]
     if isinstance(create_result, dict):
         comment_lower = create_result.get("comment", "").lower()
-        if (
-            create_result.get("result", False)
-            or "exists" in comment_lower
-            or "updated" in comment_lower
+        if create_result.get("result", False) or any(
+            kw in comment_lower for kw in success_keywords
         ):
-            action = (
-                "updated"
-                if "updated" in comment_lower
-                else "created"
-                if "created" in comment_lower
-                else "exists"
+            action = next(
+                (kw for kw in success_keywords if kw in comment_lower), "processed"
             )
             ret["result"] = True
             ret["comment"] = create_result.get(
                 "comment", f"User {user_dn} {action} successfully."
             )
             ret["changes"] = create_result.get("changes", {})
-            log.info(f"{action.capitalize()} user {user_dn}")
+            log.info(f"User {user_dn} {action}.")
             return ret
+    elif isinstance(create_result, str) and any(
+        kw in create_result.lower() for kw in success_keywords
+    ):
+        action = next(
+            (kw for kw in success_keywords if kw in create_result.lower()), "processed"
+        )
+        ret["result"] = True
+        ret["comment"] = f"User {user_dn} {action} successfully."
+        ret["changes"] = {}  # No detailed changes available if string returned
+        log.info(f"User {user_dn} {action}.")
+        return ret
+
     ret["result"] = False
     ret["comment"] = (
-        f"Failed to {'update' if exists else 'create'} user {user_dn}: {create_result.get('comment', str(create_result))}"
+        f"Failed to {'update' if exists else 'create'} user {user_dn}: {create_result.get('comment', str(create_result)) if isinstance(create_result, dict) else str(create_result)}"
     )
     return ret
 
