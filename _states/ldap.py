@@ -334,17 +334,17 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
 
 def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=None):
     """
-    Ensure that a single user exists in the LDAP directory.
+    Ensure that a single user exists in the LDAP directory, creating or updating as needed.
 
     Args:
         name (str): The name of the state (used for identification in Salt).
         spec_name (str): The name of the connection specification to use.
-        base_dn (str): The base distinguished name under which the user will be created (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
+        base_dn (str): The base distinguished name under which the user will be created/updated (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
         uid (str): The user ID to set.
         cn (str): The common name (CN) of the user.
         sn (str): The surname (sn) to set.
         description (str): The description to set.
-        password (str, optional): Password to set for the user.
+        password (str, optional): Password to set for the user (only on creation).
 
     Returns:
         dict: A dictionary containing the state result.
@@ -363,7 +363,7 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
     # Construct user DN, e.g., 'cn=cn,base_dn'
     user_dn = f"cn={cn},{base_dn}"
 
-    # Prepare attributes for existence check (mirroring fixed attributes in create_user)
+    # Prepare attributes for existence check (mirroring fixed attributes in create_user/update_user)
     attributes = {
         "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
         "uid": uid,
@@ -386,8 +386,8 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
         exists = check_result.get("exists", False)
         attributes_match = check_result.get("attributes_match", False)
 
-    # If exists, matches, and no password to set, we're done
-    if exists and attributes_match and not password:
+    # If exists and matches, and no password to set (since password only on create), we're done
+    if exists and attributes_match:
         ret["comment"] = f"User {user_dn} already exists with matching attributes."
         return ret
 
@@ -398,56 +398,39 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
         ret["changes"][user_dn] = {"would_action": "update" if exists else "create"}
         return ret
 
-    # Create or update the user
-    create_result = __salt__["ldap_utils.create_user"](
-        spec_name, user_dn, uid, cn, sn, description, password
-    )
-    if isinstance(create_result, dict):
-        if create_result.get("result", False):
-            action = (
-                "updated"
-                if "updated" in create_result.get("comment", "").lower()
-                else "created"
-            )
+    # Create or update based on existence
+    if not exists:
+        # Call create_user
+        create_result = __salt__["ldap_utils.create_user"](
+            spec_name, user_dn, uid, cn, sn, description, password
+        )
+        if create_result["result"]:
             ret["result"] = True
-            ret["comment"] = create_result.get(
-                "comment", f"User {user_dn} {action} successfully."
-            )
-            ret["changes"] = create_result.get("changes", {})
-            log.info(f"User {user_dn} {action}.")
+            ret["comment"] = create_result["comment"]
+            ret["changes"] = create_result["changes"]
+            log.info(f"Created user {user_dn}")
             return ret
         else:
             ret["result"] = False
             ret["comment"] = (
-                f"Failed to {'update' if exists else 'create'} user {user_dn}: {create_result.get('comment', str(create_result))}"
+                f"Failed to create user {user_dn}: {create_result['comment']}"
             )
             return ret
     else:
-        # Handle non-dict (e.g., string) return from execution module
-        comment_str = str(create_result).lower()
-        if (
-            "updated" in comment_str
-            or "exists" in comment_str
-            or "created" in comment_str
-        ):
-            action = (
-                "updated"
-                if "updated" in comment_str
-                else "created"
-                if "created" in comment_str
-                else "exists"
-            )
+        # Call update_user (no password update, as per previous instructions)
+        update_result = __salt__["ldap_utils.update_user"](
+            spec_name, user_dn, uid, cn, sn, description
+        )
+        if update_result["result"]:
             ret["result"] = True
-            ret["comment"] = (
-                f"User {user_dn} {action} successfully (non-standard return handled)."
-            )
-            ret["changes"] = {}
-            log.info(f"User {user_dn} {action} (handled string return).")
+            ret["comment"] = update_result["comment"]
+            ret["changes"] = update_result["changes"]
+            log.info(f"Updated user {user_dn}")
             return ret
         else:
             ret["result"] = False
             ret["comment"] = (
-                f"Failed to {'update' if exists else 'create'} user {user_dn}: {str(create_result)}"
+                f"Failed to update user {user_dn}: {update_result['comment']}"
             )
             return ret
 
