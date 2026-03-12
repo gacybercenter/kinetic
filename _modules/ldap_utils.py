@@ -632,9 +632,9 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
 
     Args:
         spec_name (str): The name of the connection specification.
-        user_dn (str): The distinguished name of the user to create or update (e.g., 'cn=uid,base_dn').
+        user_dn (str): The distinguished name of the user to create or update.
         uid (str): The user ID to set.
-        cn (str): The common name to set.
+        cn (str): The common name (CN) of the user.
         sn (str): The surname (sn) to set.
         description (str): The description to set.
         password (str, optional): Password to set for the user, if provided.
@@ -677,18 +677,19 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
                         "new": "(set)",
                     }  # Don't log actual password
                 update_result = update_root_dn(spec_name, user_dn, update_attrs)
-                if update_result["updated"]:
+                if update_result.get("updated", False) or update_result.get(
+                    "result", False
+                ):
                     ret["result"] = True
-                    ret["comment"] = (
-                        f"User {user_dn} exists. {update_result['message']}"
-                    )
+                    ret["comment"] = f"User {user_dn} updated successfully."
                     ret["changes"] = {**update_result.get("changes", {}), **changes}
                     return ret
-                ret["result"] = False
-                ret["comment"] = (
-                    f"Failed to update user {user_dn}: {update_result['error']}"
-                )
-                return ret
+                else:
+                    ret["result"] = False
+                    ret["comment"] = (
+                        f"Failed to update user {user_dn}: {update_result.get('error', update_result.get('comment', str(update_result)))}"
+                    )
+                    return ret
 
         # Create new entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
