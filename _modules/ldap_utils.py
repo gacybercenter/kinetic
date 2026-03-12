@@ -766,11 +766,11 @@ def update_user(spec_name, user_dn, uid, cn, sn, description):
 
 def create_group(spec_name, group_dn, cn, description=None, members=None):
     """
-    Create a group in the LDAP directory if it doesn't exist, or update it if attributes or members differ.
+    Create a group in the LDAP directory if it doesn't exist.
 
     Args:
         spec_name (str): The name of the connection specification.
-        group_dn (str): The distinguished name of the group to create or update (e.g., 'cn=admins,ou=groups,base_dn').
+        group_dn (str): The distinguished name of the group to create (e.g., 'cn=admins,ou=groups,base_dn').
         cn (str): The common name (CN) of the group.
         description (str, optional): The description to set for the group.
         members (list, optional): List of member DNs to set for the group.
@@ -795,35 +795,13 @@ def create_group(spec_name, group_dn, cn, description=None, members=None):
 
         check = dn_exists(spec_name, group_dn, attributes)
         if check["exists"]:
-            if (
-                check["attributes_match"] and not members
-            ):  # If members provided, update anyway
-                ret["result"] = True
-                ret["comment"] = (
-                    f"Group {group_dn} already exists with matching attributes and members"
-                )
-                return ret
-            else:
-                # Update attributes or members since they differ
-                update_attrs = attributes.copy()
-                changes = {}  # Track changes
-                update_result = update_root_dn(spec_name, group_dn, update_attrs)
-                if update_result["updated"]:
-                    ret["result"] = True
-                    ret["comment"] = (
-                        f"Group {group_dn} exists. {update_result['message']}"
-                    )
-                    ret["changes"] = {**update_result.get("changes", {}), **changes}
-                    return ret
-                ret["result"] = False
-                ret["comment"] = (
-                    f"Failed to update group {group_dn}: {update_result['error']}"
-                )
-                return ret
+            ret["result"] = False
+            ret["comment"] = (
+                f"Group {group_dn} already exists. Use update_group to modify."
+            )
+            return ret
 
-        # Create new entry since it doesn't exist
-        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
-        # Ensure all values are lists of byte strings
+        # Create new entry
         create_attrs = attributes.copy()
         changes = {"created": group_dn, "cn": cn}
         if description:
@@ -848,6 +826,71 @@ def create_group(spec_name, group_dn, cn, description=None, members=None):
     except Exception as e:
         ret["result"] = False
         ret["comment"] = f"Failed to create group {group_dn}: {str(e)}"
+        return ret
+
+
+def update_group(spec_name, group_dn, cn, description=None, members=None):
+    """
+    Update attributes or members of an existing group in the LDAP directory.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        group_dn (str): The distinguished name of the group to update (e.g., 'cn=admins,ou=groups,base_dn').
+        cn (str): The common name (CN) of the group.
+        description (str, optional): The description to set for the group.
+        members (list, optional): List of member DNs to set for the group.
+
+    Returns:
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        # Construct fixed attributes with required objectClasses and fields
+        attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+        if description:
+            attributes["description"] = description
+        if members:
+            attributes["member"] = members  # Assume members are full DNs
+
+        check = dn_exists(spec_name, group_dn, attributes)
+        if not check["exists"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Group {group_dn} does not exist. Use create_group to create."
+            )
+            return ret
+
+        if check["attributes_match"] and not members:
+            ret["result"] = True
+            ret["comment"] = (
+                f"Group {group_dn} already has matching attributes and members."
+            )
+            return ret
+
+        # Update attributes or members
+        update_attrs = attributes.copy()
+        changes = {}  # Track changes
+        update_result = update_root_dn(spec_name, group_dn, update_attrs)
+        if update_result["updated"]:
+            ret["result"] = True
+            ret["comment"] = f"Group {group_dn} updated successfully."
+            ret["changes"] = update_result.get("changes", {})
+            return ret
+        else:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to update group {group_dn}: {update_result.get('comment', str(update_result))}"
+            )
+            return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to update group {group_dn}: {str(e)}"
         return ret
 
 
