@@ -332,9 +332,7 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
     return ret
 
 
-def user_present(
-    name, spec_name, base_dn, uid, cn, sn, description=None, password=None
-):
+def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=None):
     """
     Ensure that a single user exists in the LDAP directory.
 

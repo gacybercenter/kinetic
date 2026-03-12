@@ -626,7 +626,7 @@ def create_ou(spec_name, ou_dn, attributes):
         return ret
 
 
-def create_user(spec_name, user_dn, uid, cn, sn, description=None, password=None):
+def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
     """
     Create a user in the LDAP directory if it doesn't exist, or update it if attributes differ.
 
