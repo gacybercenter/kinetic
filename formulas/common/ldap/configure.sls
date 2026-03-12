@@ -53,8 +53,7 @@ ensure_user_{{ user.uid }}:
     - spec_name: ldap_config_connection
     - base_dn: ou=users,{{ pillar['ldap']['root_dn']['dn'] }}  # Assuming users are under ou=users
     - cn: {{ user.uid }}
-    - attributes:
-        sn: {{ user.sn }}
+    - sn: {{ user.sn }}
     - password: {{ user.pass }}
     - require:
       - ldap: ensure_ou_users  # Depend on the users OU being created
