@@ -402,26 +402,31 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
     create_result = __salt__["ldap_utils.create_user"](
         spec_name, user_dn, uid, cn, sn, description, password
     )
-    if not create_result["result"]:
-        if "exists" in create_result["comment"].lower():
-            # Treat existing as success
-            ret["comment"] = f"User {user_dn} already exists."
+    if isinstance(create_result, dict):
+        comment_lower = create_result.get("comment", "").lower()
+        if (
+            create_result.get("result", False)
+            or "exists" in comment_lower
+            or "updated" in comment_lower
+        ):
+            action = (
+                "updated"
+                if "updated" in comment_lower
+                else "created"
+                if "created" in comment_lower
+                else "exists"
+            )
+            ret["result"] = True
+            ret["comment"] = create_result.get(
+                "comment", f"User {user_dn} {action} successfully."
+            )
+            ret["changes"] = create_result.get("changes", {})
+            log.info(f"{action.capitalize()} user {user_dn}")
             return ret
-        ret["result"] = False
-        ret["comment"] = (
-            f"Failed to {'update' if exists else 'create'} user {user_dn}: {create_result['comment']}"
-        )
-        return ret
-
-    action = "updated" if "updated" in create_result["comment"].lower() else "created"
-    ret["changes"] = {
-        "user": user_dn,
-        "action": action,
-        "details": create_result["changes"],
-    }
-    ret["comment"] = create_result["comment"]
-    log.info(f"{action.capitalize()} user {user_dn}")
-
+    ret["result"] = False
+    ret["comment"] = (
+        f"Failed to {'update' if exists else 'create'} user {user_dn}: {create_result.get('comment', str(create_result))}"
+    )
     return ret
 
 
