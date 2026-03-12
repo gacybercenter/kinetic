@@ -332,7 +332,7 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
     return ret
 
 
-def user_present(name, spec_name, base_dn, cn, attributes=None, password=None):
+def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=None):
     """
     Ensure that a single user exists in the LDAP directory.
 
@@ -340,8 +340,10 @@ def user_present(name, spec_name, base_dn, cn, attributes=None, password=None):
         name (str): The name of the state (used for identification in Salt).
         spec_name (str): The name of the connection specification to use.
         base_dn (str): The base distinguished name under which the user will be created (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
+        uid (str): The user ID to set.
         cn (str): The common name (CN) of the user.
-        attributes (dict, optional): Attributes to set for the user (e.g., {'objectClass': ['inetOrgPerson'], 'sn': 'LastName'}).
+        sn (str): The surname (sn) to set.
+        description (str): The description to set.
         password (str, optional): Password to set for the user.
 
     Returns:
@@ -358,16 +360,17 @@ def user_present(name, spec_name, base_dn, cn, attributes=None, password=None):
         )
         return ret
 
-    # Construct user DN, e.g., 'cn=username,ou=users,dc=rsc,dc=gacyberrange,dc=org'
+    # Construct user DN, e.g., 'cn=cn,base_dn'
     user_dn = f"cn={cn},{base_dn}"
 
-    # Default attributes if not provided
-    if not attributes:
-        attributes = {
-            "objectClass": "inetOrgPerson",
-            "objectClass": "person",
-            "sn": cn,  # Default surname to cn; adjust as needed
-        }
+    # Prepare attributes for existence check (mirroring fixed attributes in create_user)
+    attributes = {
+        "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+        "uid": uid,
+        "cn": cn,
+        "sn": sn,
+        "description": description,
+    }
 
     # Check if user exists and attributes match
     check_result = __salt__["ldap_utils.dn_exists"](spec_name, user_dn, attributes)
@@ -397,7 +400,7 @@ def user_present(name, spec_name, base_dn, cn, attributes=None, password=None):
 
     # Create or update the user
     create_result = __salt__["ldap_utils.create_user"](
-        spec_name, user_dn, attributes, password
+        spec_name, user_dn, uid, cn, sn, description, password
     )
     if not create_result["result"]:
         if "exists" in create_result["comment"].lower():

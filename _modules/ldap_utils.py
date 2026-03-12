@@ -626,14 +626,17 @@ def create_ou(spec_name, ou_dn, attributes):
         return ret
 
 
-def create_user(spec_name, user_dn, attributes, password=None):
+def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
     """
     Create a user in the LDAP directory if it doesn't exist, or update it if attributes differ.
 
     Args:
         spec_name (str): The name of the connection specification.
-        user_dn (str): The distinguished name of the user to create or update.
-        attributes (dict): Attributes to set for the new user or update on the existing user.
+        user_dn (str): The distinguished name of the user to create or update (e.g., 'cn=uid,base_dn').
+        uid (str): The user ID to set.
+        cn (str): The common name to set.
+        sn (str): The surname (sn) to set.
+        description (str): The description to set.
         password (str, optional): Password to set for the user, if provided.
 
     Returns:
@@ -647,6 +650,14 @@ def create_user(spec_name, user_dn, attributes, password=None):
             return ret
 
         conn = conn_result["conn"]
+        # Construct fixed attributes with required objectClasses and fields
+        attributes = {
+            "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+            "uid": uid,
+            "cn": cn,
+            "sn": sn,
+            "description": description,
+        }
         check = dn_exists(spec_name, user_dn, attributes)
         if check["exists"]:
             if check["attributes_match"] and not password:
@@ -683,7 +694,13 @@ def create_user(spec_name, user_dn, attributes, password=None):
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
         # Ensure all values are lists of byte strings
         create_attrs = attributes.copy()
-        changes = {"created": user_dn, "attributes": attributes}
+        changes = {
+            "created": user_dn,
+            "uid": uid,
+            "cn": cn,
+            "sn": sn,
+            "description": description,
+        }
         if password:
             create_attrs["userPassword"] = password
             changes["userPassword"] = "(set)"
