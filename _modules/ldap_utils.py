@@ -770,7 +770,7 @@ def create_group(spec_name, group_dn, cn, description=None, members=None):
                 update_attrs = attributes.copy()
                 changes = {}  # Track changes
                 update_result = update_root_dn(spec_name, group_dn, update_attrs)
-                if update_result["'updated'"]:
+                if update_result["updated"]:
                     ret["result"] = True
                     ret["comment"] = (
                         f"Group {group_dn} exists. {update_result['message']}"
