@@ -425,15 +425,17 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
     return ret
 
 
-def group_present(name, spec_name, base_dn, groups=None):
+def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     """
-    Ensure that groups exist in the LDAP directory based on pillar data.
+    Ensure that a single group exists in the LDAP directory.
 
     Args:
         name (str): The name of the state (used for identification in Salt).
         spec_name (str): The name of the connection specification to use.
-        base_dn (str): The base distinguished name under which groups will be created (e.g., 'ou=groups,dc=rsc,dc=gacyberrange,dc=org').
-        groups (list, optional): List of group definitions with 'name' and 'members'. If not provided, fetched from pillar['ldap']['groups'].
+        base_dn (str): The base distinguished name under which the group will be created (e.g., 'ou=groups,dc=rsc,dc=gacyberrange,dc=org').
+        cn (str): The common name (CN) of the group.
+        description (str, optional): The description to set for the group.
+        members (list, optional): List of member DNs to set for the group.
 
     Returns:
         dict: A dictionary containing the state result.
@@ -449,84 +451,64 @@ def group_present(name, spec_name, base_dn, groups=None):
         )
         return ret
 
-    # Fetch groups from pillar if not provided
-    if groups is None:
-        groups = __pillar__.get("ldap", {}).get("groups", [])
+    # Construct group DN, e.g., 'cn=groupname,ou=groups,dc=rsc,dc=gacyberrange,dc=org'
+    group_dn = f"cn={cn},{base_dn}"
 
-    if not groups:
-        ret["comment"] = "No groups defined in pillar or parameters."
-        return ret
-
-    changes = []
-    for group in groups:
-        if "name" not in group:
-            ret["result"] = False
-            ret["comment"] = f"Invalid group definition missing 'name': {group}"
-            return ret
-
-        # Construct group DN, e.g., 'cn=admins,ou=groups,dc=rsc,dc=gacyberrange,dc=org'
-        group_dn = f"cn={group['name']},{base_dn}"
-        attributes = {"objectClass": ["groupOfNames"], "cn": group["name"]}
-        # Construct member DNs if members are provided
-        members = []
-        if "members" in group and group["members"]:
-            # Assume members are uids under ou=users, adjust base DN accordingly
-            members = [
-                f"uid={member},ou=users,{base_dn.split('ou=groups,')[1]}"
-                for member in group["members"]
-            ]
-
-        # Check if group exists and attributes/members match
-        check_attrs = attributes.copy()
-        if members:
-            check_attrs["member"] = members
-        check_result = __salt__["ldap_utils.root_dn_exists"](
-            spec_name, group_dn, check_attrs
-        )
-        if check_result["exists"] and check_result["attributes_match"]:
-            log.debug(
-                f"Group {group_dn} already exists with matching attributes and members."
-            )
-            continue
-
-        if check_result["error"]:
-            ret["result"] = False
-            ret["comment"] = f"Error checking group {group_dn}: {check_result['error']}"
-            return ret
-
-        # If in test mode, report what would be done
-        if __opts__["test"]:
-            ret["result"] = None
-            ret["comment"] = (
-                f"Would {'update' if check_result['exists'] else 'create'} group {group_dn}."
-            )
-            ret["changes"][group_dn] = {
-                "would_action": "update" if check_result["exists"] else "create"
-            }
-            return ret
-
-        # Create or update the group
-        create_result = __salt__["ldap_utils.create_group"](
-            spec_name, group_dn, attributes, members if members else None
-        )
-        if create_result["created"]:
-            changes.append({"group": group_dn, "action": "created"})
-            log.info(f"Created group {group_dn}")
-        elif create_result["updated"]:
-            changes.append({"group": group_dn, "action": "updated"})
-            log.info(f"Updated group {group_dn}")
+    # Check if group exists and attributes/members match
+    check_result = __salt__["ldap_utils.dn_exists"](
+        spec_name, group_dn, {"cn": cn, "description": description, "member": members}
+    )
+    if not check_result["result"]:
+        if "No such object" in check_result["comment"]:
+            exists = False
+            attributes_match = False
         else:
             ret["result"] = False
             ret["comment"] = (
-                f"Failed to {'update' if check_result['exists'] else 'create'} group {group_dn}: {create_result['error']}"
+                f"Error checking group {group_dn}: {check_result['comment']}"
             )
             return ret
-
-    if changes:
-        ret["changes"] = {"groups": changes}
-        ret["comment"] = f"Processed {len(changes)} group(s) successfully."
     else:
-        ret["comment"] = "All groups already exist with matching attributes."
+        exists = check_result.get("exists", False)
+        attributes_match = check_result.get("attributes_match", False)
+
+    # If exists and matches, we're done
+    if exists and attributes_match:
+        ret["comment"] = (
+            f"Group {group_dn} already exists with matching attributes and members."
+        )
+        return ret
+
+    # If in test mode, report what would be done
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Would {'update' if exists else 'create'} group {group_dn}."
+        ret["changes"][group_dn] = {"would_action": "update" if exists else "create"}
+        return ret
+
+    # Create or update the group
+    create_result = __salt__["ldap_utils.create_group"](
+        spec_name, group_dn, cn, description, members
+    )
+    if not create_result["result"]:
+        if "exists" in create_result["comment"].lower():
+            # Treat existing as success
+            ret["comment"] = f"Group {group_dn} already exists."
+            return ret
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to {'update' if exists else 'create'} group {group_dn}: {create_result['comment']}"
+        )
+        return ret
+
+    action = "updated" if "updated" in create_result["comment"].lower() else "created"
+    ret["changes"] = {
+        "group": group_dn,
+        "action": action,
+        "details": create_result["changes"],
+    }
+    ret["comment"] = create_result["comment"]
+    log.info(f"{action.capitalize()} group {group_dn}")
 
     return ret
 
