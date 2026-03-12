@@ -185,6 +185,8 @@ ensure_group_{{ group.name }}:
 {% endfor %}
 ```
 
+
+
 ## Step-by-Step Provisioning Guide
 
 1. **Setup Pillar Files**:
@@ -192,8 +194,9 @@ ensure_group_{{ group.name }}:
    - Apply pillars to the minion: `salt '*' pillar.refresh`.
 
 2. **Deploy OpenLDAP-HA Infrastructure**:
-   - Use the pillar values in `ldap.sls` to deploy via Helm or Kubernetes (e.g., `helm install openldap-ha openldap-chart --values ldap.sls`).
-   - This sets up replicas, persistence, logging (FluentBit to OpenSearch), replication, and ingress.
+   - Use the orchestration script `k8s-authldap.sls` to deploy on the targeted minion (defined in pillar 'k8s'):
+     - Run: `salt-run state.orchestrate orch.k8s-authldap`.
+   - This applies the ldap formula, setting up replicas, persistence, logging (FluentBit to OpenSearch), replication, and ingress.
 
 3. **Sync Modules and States**:
    - Place `ldap_utils.py` in `/srv/salt/_modules/` and `ldap.py` in `/srv/salt/_states/`.
@@ -214,25 +217,26 @@ ensure_group_{{ group.name }}:
 
 ## Security Notes: Using StartTLS
 
-StartTLS is required for communication with the OpenLDAP server to protect against eavesdropping and man-in-the-middle attacks. It upgrades a plain LDAP connection to an encrypted one using TLS.
+StartTLS is required for secure communication with the OpenLDAP server to protect against eavesdropping and man-in-the-middle attacks. It upgrades a plain LDAP connection to an encrypted one using TLS.
 
-- **Requirement**: Always use StartTLS when connecting to the server. The connection spec in `configure.sls` enables it with `starttls: True`.
-- **ldapsearch Examples**:
+- **Requirement**: Always use StartTLS when connecting to the server. The connection spec in `configure.sls` enables it with `starttls: True`. Communicating without StartTLS (e.g., plain LDAP) will result in errors like "confidentiality required" or "TLS confidentiality required".
+- **mTLS Support**: Mutual TLS (client certificate authentication) is technically possible but currently not supported in this Salt state or module. It requires additional configuration in the connection spec and server settings.
+- **ldapsearch Examples** (include `-ZZ` for StartTLS):
   - Basic query with StartTLS: `ldapsearch -x -H ldap://<server> -b "dc=rsc,dc=gacyberrange,dc=org" "(objectClass=*)" -ZZ`
     - `-ZZ`: Enforces StartTLS and fails if it can't be established.
   - With bind credentials: `ldapsearch -x -H ldap://<server> -D "cn=admin,dc=rsc,dc=gacyberrange,dc=org" -W -b "dc=rsc,dc=gacyberrange,dc=org" "(objectClass=*)" -ZZ`
-  - If using LDAPS (port 636), StartTLS isn't needed, but verify the URL in the spec (e.g., `ldaps://<server>`).
 
 For troubleshooting, if StartTLS fails, check TLS settings in pillar (e.g., `tls_cacert`, certificate validity).
 
 ## Troubleshooting
 
 - **Common Errors**:
-  - "TLS confidentiality required": TLS is required, if using ldap-utils (ldapsearch etc) add -Z or -ZZ. 
+  - "TLS confidentiality required": TLS/StartTLS is required. Add `-ZZ` to ldapsearch commands or ensure `starttls: True` in the connection spec.
+  - "confidentiality required": Attempted plain LDAP connection; use StartTLS or LDAPS.
   - "No such object": DN doesn't exist—check existence logic in `dn_exists`.
   - "Already exists": Handled as success in states.
   - Permission issues: Verify bind DN credentials.
 - **Logs**: Check Salt minion logs for debug info (set `log_level: debug` in minion config).
 - **Test Mode**: Run with `--test=true` to simulate without changes.
 
-```
+This setup provides a robust, idempotent way to manage OpenLDAP-HA provisioning. For extensions (e.g., password updates), modify the update functions accordingly.
