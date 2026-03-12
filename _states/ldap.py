@@ -496,8 +496,8 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
             )
             return ret
     else:
-        exists = check_result.get("exists", False)
-        attributes_match = check_result.get("attributes_match", False)
+        exists = check_result["exists"]
+        attributes_match = check_result["attributes_match"]
 
     # If exists and matches, we're done
     if exists and attributes_match:
