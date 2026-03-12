@@ -628,16 +628,16 @@ def create_ou(spec_name, ou_dn, attributes):
 
 def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
     """
-    Create a user in the LDAP directory if it doesn't exist, or update it if attributes differ.
+    Create a user in the LDAP directory if it doesn't exist.
 
     Args:
         spec_name (str): The name of the connection specification.
-        user_dn (str): The distinguished name of the user to create or update.
+        user_dn (str): The distinguished name of the user to create.
         uid (str): The user ID to set.
-        cn (str): The common name (CN) of the user.
+        cn (str): The common name (CN) to set.
         sn (str): The surname (sn) to set.
         description (str): The description to set.
-        password (str, optional): Password to set for the user, if provided.
+        password (str, optional): Password to set for the user, if provided (only used on creation).
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -660,40 +660,13 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
         }
         check = dn_exists(spec_name, user_dn, attributes)
         if check["exists"]:
-            if check["attributes_match"] and not password:
-                ret["result"] = True
-                ret["comment"] = (
-                    f"User {user_dn} already exists with matching attributes"
-                )
-                return ret
-            else:
-                # Update attributes or password since they differ or password is provided
-                update_attrs = attributes.copy()
-                changes = {}  # Track changes
-                if password:
-                    update_attrs["userPassword"] = password
-                    changes["userPassword"] = {
-                        "old": "(hidden)",
-                        "new": "(set)",
-                    }  # Don't log actual password
-                update_result = update_root_dn(spec_name, user_dn, update_attrs)
-                if update_result.get("updated", False) or update_result.get(
-                    "result", False
-                ):
-                    ret["result"] = True
-                    ret["comment"] = f"User {user_dn} updated successfully."
-                    ret["changes"] = {**update_result.get("changes", {}), **changes}
-                    return ret
-                else:
-                    ret["result"] = False
-                    ret["comment"] = (
-                        f"Failed to update user {user_dn}: {update_result.get('error', update_result.get('comment', str(update_result)))}"
-                    )
-                    return ret
+            ret["result"] = False
+            ret["comment"] = (
+                f"User {user_dn} already exists. Use update_user to modify."
+            )
+            return ret
 
-        # Create new entry since it doesn't exist
-        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
-        # Ensure all values are lists of byte strings
+        # Create new entry
         create_attrs = attributes.copy()
         changes = {
             "created": user_dn,
@@ -723,6 +696,71 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
     except Exception as e:
         ret["result"] = False
         ret["comment"] = f"Failed to create user {user_dn}: {str(e)}"
+        return ret
+
+
+def update_user(spec_name, user_dn, uid, cn, sn, description):
+    """
+    Update attributes of an existing user in the LDAP directory (does not update password).
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        user_dn (str): The distinguished name of the user to update.
+        uid (str): The user ID to set.
+        cn (str): The common name (CN) to set.
+        sn (str): The surname (sn) to set.
+        description (str): The description to set.
+
+    Returns:
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        # Construct fixed attributes with required objectClasses and fields
+        attributes = {
+            "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+            "uid": uid,
+            "cn": cn,
+            "sn": sn,
+            "description": description,
+        }
+        check = dn_exists(spec_name, user_dn, attributes)
+        if not check["exists"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"User {user_dn} does not exist for update. Use create_user to create."
+            )
+            return ret
+
+        if check["attributes_match"]:
+            ret["result"] = True
+            ret["comment"] = f"User {user_dn} already has matching attributes."
+            return ret
+
+        # Update attributes (no password update)
+        update_attrs = attributes.copy()
+        changes = {}  # Track changes
+        update_result = update_root_dn(spec_name, user_dn, update_attrs)
+        if update_result.get("updated", False) or update_result.get("result", False):
+            ret["result"] = True
+            ret["comment"] = f"User {user_dn} updated successfully."
+            ret["changes"] = {**update_result.get("changes", {}), **changes}
+            return ret
+        else:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to update user {user_dn}: {update_result.get('comment', str(update_result))}"
+            )
+            return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to update user {user_dn}: {str(e)}"
         return ret
 
 
