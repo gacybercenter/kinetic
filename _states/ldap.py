@@ -4,6 +4,7 @@ Custom SaltStack state for ensuring LDAP connection specs and root DN presence
 """
 
 import logging
+import re
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +30,10 @@ def connect_spec_present(name, spec_name, connection_dict):
         connection_dict (dict): Dictionary with connection parameters (required):
             - url (str): LDAP server URL (e.g., 'ldap://localhost:389' or 'ldaps://localhost:636').
             - bind (dict, optional): Bind parameters with 'dn', 'password', and 'method' (default 'simple').
-            - tls (dict): TLS parameters with 'validate' (bool), 'ca_certs_file' (str, required), and 'starttls' (bool, default True).
+            - tls (dict): TLS parameters with 'cacertfile' (str, required), 'certfile' (str, optional),
+              'keyfile' (str, optional), 'cert_manager_secret' (str, optional name of k8s secret with certs),
+              'namespace' (str, optional for cert_manager_secret), and 'starttls' (bool, default True).
+            - admin_bind (dict, optional): Admin bind parameters with 'dn' and 'password' for elevated operations.
 
     Returns:
         dict: A dictionary containing the state result.
@@ -43,20 +47,38 @@ def connect_spec_present(name, spec_name, connection_dict):
         return ret
 
     tls_config = connection_dict.get("tls", {})
-    if not tls_config or "cacertfile" not in tls_config:
+    if not tls_config:
         ret["result"] = False
-        ret["comment"] = "TLS configuration with 'ca_certs_file' is required"
+        ret["comment"] = "TLS configuration is required"
         return ret
 
-    # Ensure starttls defaults to True if not specified
-    if "starttls" not in tls_config:
+    # Ensure starttls defaults to True if not specified and protocol is ldap://
+    if "starttls" not in tls_config and connection_dict["url"].startswith("ldap://"):
         connection_dict["tls"]["starttls"] = True
 
     # Ensure bind method defaults to 'simple' if not specified
     bind_config = connection_dict.get("bind", {})
-    if "method" not in bind_config:
+    if bind_config and "method" not in bind_config:
         bind_config["method"] = "simple"
-    connection_dict["bind"] = bind_config
+        connection_dict["bind"] = bind_config
+
+    admin_bind_config = connection_dict.get("admin_bind", {})
+    if admin_bind_config and "method" not in admin_bind_config:
+        admin_bind_config["method"] = "simple"
+        connection_dict["admin_bind"] = admin_bind_config
+
+    # Validate client certificate configuration if provided
+    if "cert_manager_secret" in tls_config:
+        if "namespace" not in tls_config:
+            tls_config["namespace"] = "default"
+            connection_dict["tls"] = tls_config
+    elif "certfile" in tls_config or "keyfile" in tls_config:
+        if not ("certfile" in tls_config and "keyfile" in tls_config):
+            ret["result"] = False
+            ret["comment"] = (
+                "Both 'certfile' and 'keyfile' must be provided for client certificate configuration"
+            )
+            return ret
 
     # Check if connection spec already exists
     conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
@@ -88,83 +110,96 @@ def connect_spec_present(name, spec_name, connection_dict):
     return ret
 
 
-def root_dn_present(name, spec_name, root_dn, attributes=None):
+def root_dn_present(name, root_dn, spec_name, attributes=None, **kwargs):
     """
-    Ensure that a root DN exists in the LDAP directory with the specified attributes.
+    Ensure that the specified root DN exists in the LDAP directory.
 
-    Args:
-        name (str): The name of the state (used for identification in Salt).
-        spec_name (str): The name of the connection specification to use.
-        root_dn (str): The distinguished name to ensure exists.
-        attributes (dict, optional): Attributes to set or update on the DN. Defaults to None.
-
-    Returns:
-        dict: A dictionary containing the state result.
+    :param name: The name of the state (for SaltStack identification)
+    :param root_dn: The root DN to ensure exists
+    :param spec_name: Name of the connection specification for LDAP
+    :param attributes: Dictionary of attributes for the root DN
+    :return: Dictionary with 'result' (bool), 'comment' (str), 'changes' (dict), and 'name' (str)
     """
-    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
-    # Check if connection spec exists
-    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
-    if not conn_result["success"]:
-        ret["result"] = False
-        ret["comment"] = (
-            f"Connection spec '{spec_name}' not found: {conn_result['error']}"
+    # Check if root DN exists, handling potential errors
+    exists_check = __salt__["ldap_utils.root_dn_exists"](spec_name, root_dn)
+    exists = False
+    if (
+        isinstance(exists_check, dict)
+        and "result" in exists_check
+        and exists_check["result"]
+    ):
+        exists = True
+
+    if exists:
+        # Root DN exists, check if attributes need updating
+        update_result = __salt__["ldap_utils.update_root_dn"](
+            spec_name, root_dn, attributes or {}
         )
+        if isinstance(update_result, dict):
+            if update_result.get("updated", False) or update_result.get(
+                "result", False
+            ):
+                ret["result"] = True
+                ret["comment"] = f"Root DN {root_dn} exists, attributes updated."
+                ret["changes"] = update_result.get("changes", {})
+            elif (
+                update_result.get("changes")
+                and len(update_result.get("changes", {})) > 0
+            ):
+                ret["result"] = True
+                ret["comment"] = f"Root DN {root_dn} exists, attributes updated."
+                ret["changes"] = update_result.get("changes", {})
+            else:
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Root DN {root_dn} already exists with matching attributes."
+                )
+        else:
+            ret["result"] = True
+            ret["comment"] = (
+                f"Root DN {root_dn} already exists with matching attributes."
+            )
         return ret
-
-    # Check if root DN exists and attributes match
-    check_result = __salt__["ldap_utils.root_dn_exists"](
-        spec_name, root_dn, attributes or {}
-    )
-    if check_result["exists"] and check_result["attributes_match"]:
-        ret["comment"] = f"Root DN {root_dn} already exists with matching attributes."
-        return ret
-
-    if check_result["error"]:
-        ret["result"] = False
-        ret["comment"] = check_result["error"]
-        return ret
-
-    # If in test mode, report what would be done
-    if __opts__["test"]:
-        ret["result"] = None
-        ret["comment"] = (
-            f"Would {'update' if check_result['exists'] else 'create'} root DN {root_dn}."
-        )
-        ret["changes"] = {
-            "root_dn": {
-                "would_action": "update" if check_result["exists"] else "create",
-                "dn": root_dn,
-            }
-        }
-        return ret
-
-    # Create or update the root DN
-    create_result = __salt__["ldap_utils.create_root_dn"](
-        spec_name, root_dn, attributes or {}
-    )
-    if create_result["created"]:
-        ret["changes"] = {"root_dn": {"created": root_dn}}
-        ret["comment"] = create_result["message"]
-    elif create_result["updated"]:
-        ret["changes"] = {"root_dn": {"updated": root_dn}}
-        ret["comment"] = create_result["message"]
     else:
-        ret["result"] = False
-        ret["comment"] = create_result["error"] or create_result["message"]
+        # Root DN does not exist or check failed, attempt creation
+        create_result = __salt__["ldap_utils.create_root_dn"](
+            spec_name, root_dn, attributes or {}
+        )
+        if isinstance(create_result, dict):
+            if (
+                create_result.get("created", False)
+                or create_result.get("updated", False)
+                or create_result.get("result", False)
+            ):
+                ret["result"] = True
+                ret["comment"] = create_result.get(
+                    "message", f"Root DN {root_dn} created successfully."
+                )
+                ret["changes"] = create_result.get("changes", {})
+            elif "desc" in create_result and create_result["desc"] == "Already exists":
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Root DN {root_dn} already exists (detected during creation attempt)."
+                )
+            else:
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to create root DN {root_dn}: {create_result.get('message', str(create_result))}"
+                )
+        return ret
 
-    return ret
 
-
-def ou_present(name, spec_name, base_dn, ous=None):
+def ou_present(name, spec_name, base_dn=None, ous=None):
     """
-    Ensure that Organizational Units (OUs) exist in the LDAP directory based on pillar data.
+    Ensure that Organizational Units (OUs) exist in the LDAP directory based on pillar data or provided parameters.
 
     Args:
-        name (str): The name of the state (used for identification in Salt).
+        name (str): The name of the state (used for identification in Salt). If ous is None, this is treated as the OU DN.
         spec_name (str): The name of the connection specification to use.
-        base_dn (str): The base distinguished name under which OUs will be created (e.g., 'dc=rsc,dc=gacyberrange,dc=org').
-        ous (list, optional): List of OU definitions with 'name' and 'dc'. If not provided, fetched from pillar['ldap']['orgunits'].
+        base_dn (str, optional): The base distinguished name under which OUs will be created (e.g., 'dc=rsc,dc=gacyberrange,dc=org').
+        ous (list, optional): List of OU definitions with 'name' and 'dc'. If not provided and name is a DN, treats as single OU.
 
     Returns:
         dict: A dictionary containing the state result.
@@ -180,82 +215,136 @@ def ou_present(name, spec_name, base_dn, ous=None):
         )
         return ret
 
-    # Fetch OUs from pillar if not provided
+    # If ous is not provided, treat as single OU using the name as ou_dn
     if ous is None:
+        ou_dn = name  # Assume name is the full OU DN
+        # Extract ou name from DN for attributes (e.g., ou=users from ou=users,dc=...)
+        ou_name_match = re.match(r"ou=([^,]+)", ou_dn)
+        if not ou_name_match:
+            ret["result"] = False
+            ret["comment"] = f"Invalid OU DN format: {ou_dn}"
+            return ret
+        ou_name = ou_name_match.group(1)
+        ous = [
+            {"name": ou_name}
+        ]  # Create single-item list; 'dc' not required in single mode
+
+    # Fetch OUs from pillar if ous is empty list
+    if not ous:
         ous = __pillar__.get("ldap", {}).get("orgunits", [])
 
     if not ous:
         ret["comment"] = "No organizational units defined in pillar or parameters."
         return ret
 
+    all_success = True
     changes = []
+    comments = []
     for ou in ous:
-        if "name" not in ou or "dc" not in ou:
-            ret["result"] = False
-            ret["comment"] = f"Invalid OU definition missing 'name' or 'dc': {ou}"
-            return ret
+        if "name" not in ou:
+            all_success = False
+            comments.append(f"Invalid OU definition missing 'name': {ou}")
+            continue
 
         # Construct OU DN, e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org'
-        ou_dn = f"ou={ou['name']},{base_dn}"
+        ou_dn = f"ou={ou['name']},{base_dn or ''}"
         attributes = {"objectClass": ["organizationalUnit"], "ou": ou["name"]}
 
-        # Check if OU exists and attributes match
-        check_result = __salt__["ldap_utils.root_dn_exists"](
-            spec_name, ou_dn, attributes
-        )
-        if check_result["exists"] and check_result["attributes_match"]:
+        check_result = __salt__["ldap_utils.dn_exists"](spec_name, ou_dn, attributes)
+
+        # Use explicit keys from check_result
+        exists = check_result.get("exists", False)
+        attributes_match = check_result.get("attributes_match", False)
+        # Handle the case where result is False due to "No such object" - this means it doesn't exist, not an error
+        if not check_result["result"] and "No such object" in check_result["comment"]:
+            exists = False
+            attributes_match = False
+        elif not check_result["result"]:
+            all_success = False
+            comments.append(f"Error checking OU {ou_dn}: {check_result['comment']}")
+            continue
+        else:
+            # If result is True, infer existence and match from comment if explicit keys are missing
+            exists = exists or "exists" in check_result["comment"].lower()
+            attributes_match = (
+                attributes_match
+                or "matching attributes" in check_result["comment"].lower()
+            )
+
+        if exists and attributes_match:
             log.debug(f"OU {ou_dn} already exists with matching attributes.")
             continue
 
-        if check_result["error"]:
-            ret["result"] = False
-            ret["comment"] = f"Error checking OU {ou_dn}: {check_result['error']}"
-            return ret
-
         # If in test mode, report what would be done
         if __opts__["test"]:
             ret["result"] = None
-            ret["comment"] = (
-                f"Would {'update' if check_result['exists'] else 'create'} OU {ou_dn}."
-            )
-            ret["changes"][ou_dn] = {
-                "would_action": "update" if check_result["exists"] else "create"
-            }
-            return ret
+            comments.append(f"Would {'update' if exists else 'create'} OU {ou_dn}.")
+            ret["changes"][ou_dn] = {"would_action": "update" if exists else "create"}
+            continue  # Continue to next OU in test mode
 
         # Create or update the OU
         create_result = __salt__["ldap_utils.create_ou"](spec_name, ou_dn, attributes)
-        if create_result["created"]:
-            changes.append({"ou": ou_dn, "action": "created"})
-            log.info(f"Created OU {ou_dn}")
-        elif create_result["updated"]:
-            changes.append({"ou": ou_dn, "action": "updated"})
-            log.info(f"Updated OU {ou_dn}")
+        if isinstance(create_result, dict):
+            if create_result.get("result", False):
+                action = (
+                    "updated"
+                    if "updated" in create_result.get("comment", "").lower()
+                    else "created"
+                )
+                changes.append(
+                    {
+                        "ou": ou_dn,
+                        "action": action,
+                        "details": create_result.get("changes", {}),
+                    }
+                )
+                log.info(f"{action.capitalize()} OU {ou_dn}")
+                continue
+            else:
+                comment = create_result.get("comment", "")
+                if (
+                    "exists" in comment.lower()
+                    or "updated" in comment.lower()
+                    or "matching attributes" in comment.lower()
+                ):
+                    changes.append({"ou": ou_dn, "action": "exists/updated"})
+                    log.info(f"OU {ou_dn} already exists or updated")
+                    continue
+                all_success = False
+                comments.append(
+                    f"Failed to {'update' if exists else 'create'} OU {ou_dn}: {comment}"
+                )
         else:
-            ret["result"] = False
-            ret["comment"] = (
-                f"Failed to {'update' if check_result['exists'] else 'create'} OU {ou_dn}: {create_result['error']}"
+            all_success = False
+            comments.append(
+                f"Unexpected response from create_ou for {ou_dn}: {str(create_result)}"
             )
-            return ret
+        continue
 
     if changes:
         ret["changes"] = {"ous": changes}
-        ret["comment"] = f"Processed {len(changes)} OU(s) successfully."
+    if comments:
+        ret["comment"] = " | ".join(comments)
     else:
         ret["comment"] = "All OUs already exist with matching attributes."
 
+    ret["result"] = all_success
     return ret
 
 
-def user_present(name, spec_name, base_dn, users=None):
+def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=None):
     """
-    Ensure that users exist in the LDAP directory based on pillar data.
+    Ensure that a single user exists in the LDAP directory, creating or updating as needed.
 
     Args:
         name (str): The name of the state (used for identification in Salt).
         spec_name (str): The name of the connection specification to use.
-        base_dn (str): The base distinguished name under which users will be created (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
-        users (list, optional): List of user definitions with 'name', 'sn', 'uid', and 'pass'. If not provided, fetched from pillar['ldap']['users'].
+        base_dn (str): The base distinguished name under which the user will be created/updated (e.g., 'ou=users,dc=rsc,dc=gacyberrange,dc=org').
+        uid (str): The user ID to set.
+        cn (str): The common name (CN) of the user.
+        sn (str): The surname (sn) to set.
+        description (str): The description to set.
+        password (str, optional): Password to set for the user (only on creation).
 
     Returns:
         dict: A dictionary containing the state result.
@@ -271,104 +360,92 @@ def user_present(name, spec_name, base_dn, users=None):
         )
         return ret
 
-    # Fetch users from pillar if not provided
-    if users is None:
-        users = __pillar__.get("ldap", {}).get("users", [])
+    # Construct user DN, e.g., 'cn=cn,base_dn'
+    user_dn = f"cn={cn},{base_dn}"
 
-    if not users:
-        ret["comment"] = "No users defined in pillar or parameters."
+    # Prepare attributes for existence check (mirroring fixed attributes in create_user/update_user)
+    attributes = {
+        "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+        "uid": uid,
+        "cn": cn,
+        "sn": sn,
+        "description": description,
+    }
+
+    # Check if user exists and attributes match
+    check_result = __salt__["ldap_utils.dn_exists"](spec_name, user_dn, attributes)
+    if not check_result["result"]:
+        if "No such object" in check_result["comment"]:
+            exists = False
+            attributes_match = False
+        else:
+            ret["result"] = False
+            ret["comment"] = f"Error checking user {user_dn}: {check_result['comment']}"
+            return ret
+    else:
+        exists = check_result.get("exists", False)
+        attributes_match = check_result.get("attributes_match", False)
+
+    # If exists and matches, and no password to set (since password only on create), we're done
+    if exists and attributes_match:
+        ret["comment"] = f"User {user_dn} already exists with matching attributes."
         return ret
 
-    changes = []
-    for user in users:
-        if "name" not in user or "sn" not in user or "uid" not in user:
-            ret["result"] = False
-            ret["comment"] = (
-                f"Invalid user definition missing 'name', 'sn', or 'uid': {user}"
-            )
-            return ret
+    # If in test mode, report what would be done
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Would {'update' if exists else 'create'} user {user_dn}."
+        ret["changes"][user_dn] = {"would_action": "update" if exists else "create"}
+        return ret
 
-        # Construct user DN, e.g., 'uid=mdanielson,ou=users,dc=rsc,dc=gacyberrange,dc=org'
-        user_dn = f"uid={user['uid']},{base_dn}"
-        attributes = {
-            "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
-            "cn": user["name"],
-            "sn": user["sn"],
-            "uid": user["uid"],
-        }
-
-        # Check if user exists and attributes match
-        check_result = __salt__["ldap_utils.root_dn_exists"](
-            spec_name, user_dn, attributes
-        )
-        if (
-            check_result["exists"]
-            and check_result["attributes_match"]
-            and "pass" not in user
-        ):
-            log.debug(f"User {user_dn} already exists with matching attributes.")
-            continue
-        elif (
-            check_result["exists"]
-            and check_result["attributes_match"]
-            and "pass" in user
-        ):
-            log.warning(
-                f"User {user_dn} exists with matching attributes, skipping password update as per policy."
-            )
-            continue
-        if check_result["error"]:
-            ret["result"] = False
-            ret["comment"] = f"Error checking user {user_dn}: {check_result['error']}"
-            return ret
-
-        # If in test mode, report what would be done
-        if __opts__["test"]:
-            ret["result"] = None
-            ret["comment"] = (
-                f"Would {'update' if check_result['exists'] else 'create'} user {user_dn}."
-            )
-            ret["changes"][user_dn] = {
-                "would_action": "update" if check_result["exists"] else "create"
-            }
-            return ret
-
-        # Create or update the user
-        password = user.get("pass", "")
+    # Create or update based on existence
+    if not exists:
+        # Call create_user
         create_result = __salt__["ldap_utils.create_user"](
-            spec_name, user_dn, attributes, password
+            spec_name, user_dn, uid, cn, sn, description, password
         )
-        if create_result["created"]:
-            changes.append({"user": user_dn, "action": "created"})
+        if create_result["result"]:
+            ret["result"] = True
+            ret["comment"] = create_result["comment"]
+            ret["changes"] = create_result["changes"]
             log.info(f"Created user {user_dn}")
-        elif create_result["updated"]:
-            changes.append({"user": user_dn, "action": "updated"})
-            log.info(f"Updated user {user_dn}")
+            return ret
         else:
             ret["result"] = False
             ret["comment"] = (
-                f"Failed to {'update' if check_result['exists'] else 'create'} user {user_dn}: {create_result.get('error', 'Unknown error')}"
+                f"Failed to create user {user_dn}: {create_result['comment']}"
+            )
+            return ret
+    else:
+        # Call update_user (no password update, as per previous instructions)
+        update_result = __salt__["ldap_utils.update_user"](
+            spec_name, user_dn, uid, cn, sn, description
+        )
+        if update_result["result"]:
+            ret["result"] = True
+            ret["comment"] = update_result["comment"]
+            ret["changes"] = update_result["changes"]
+            log.info(f"Updated user {user_dn}")
+            return ret
+        else:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to update user {user_dn}: {update_result['comment']}"
             )
             return ret
 
-    if changes:
-        ret["changes"] = {"users": changes}
-        ret["comment"] = f"Processed {len(changes)} user(s) successfully."
-    else:
-        ret["comment"] = "All users already exist with matching attributes."
 
-    return ret
-
-
-def group_present(name, spec_name, base_dn, groups=None):
+def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     """
-    Ensure that groups exist in the LDAP directory based on pillar data.
+    Ensure that a single group exists in the LDAP directory, creating or updating as needed.
 
     Args:
         name (str): The name of the state (used for identification in Salt).
         spec_name (str): The name of the connection specification to use.
-        base_dn (str): The base distinguished name under which groups will be created (e.g., 'ou=groups,dc=rsc,dc=gacyberrange,dc=org').
-        groups (list, optional): List of group definitions with 'name' and 'members'. If not provided, fetched from pillar['ldap']['groups'].
+        base_dn (str): The base distinguished name under which the group will be created/updated (e.g., 'ou=groups,dc=rsc,dc=gacyberrange,dc=org').
+        cn (str): The common name (CN) of the group.
+        description (str, optional): The description to set for the group.
+        members (list, optional): List of member DNs to set for the group.
 
     Returns:
         dict: A dictionary containing the state result.
@@ -384,86 +461,81 @@ def group_present(name, spec_name, base_dn, groups=None):
         )
         return ret
 
-    # Fetch groups from pillar if not provided
-    if groups is None:
-        groups = __pillar__.get("ldap", {}).get("groups", [])
+    # Construct group DN, e.g., 'cn=cn,base_dn'
+    group_dn = f"cn={cn},{base_dn}"
 
-    if not groups:
-        ret["comment"] = "No groups defined in pillar or parameters."
-        return ret
+    # Prepare attributes for existence check (mirroring fixed attributes in create_group/update_group)
+    attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+    if description:
+        attributes["description"] = description
+    if members:
+        attributes["member"] = members
 
-    changes = []
-    for group in groups:
-        if "name" not in group:
-            ret["result"] = False
-            ret["comment"] = f"Invalid group definition missing 'name': {group}"
-            return ret
-
-        # Construct group DN, e.g., 'cn=admins,ou=groups,dc=rsc,dc=gacyberrange,dc=org'
-        group_dn = f"cn={group['name']},{base_dn}"
-        attributes = {"objectClass": ["groupOfNames"], "cn": group["name"]}
-        # Construct member DNs if members are provided
-        members = []
-        if "members" in group and group["members"]:
-            # Assume members are uids under ou=users, adjust base DN accordingly
-            members = [
-                f"uid={member},ou=users,{base_dn.split('ou=groups,')[1]}"
-                for member in group["members"]
-            ]
-
-        # Check if group exists and attributes/members match
-        check_attrs = attributes.copy()
-        if members:
-            check_attrs["member"] = members
-        check_result = __salt__["ldap_utils.root_dn_exists"](
-            spec_name, group_dn, check_attrs
-        )
-        if check_result["exists"] and check_result["attributes_match"]:
-            log.debug(
-                f"Group {group_dn} already exists with matching attributes and members."
-            )
-            continue
-
-        if check_result["error"]:
-            ret["result"] = False
-            ret["comment"] = f"Error checking group {group_dn}: {check_result['error']}"
-            return ret
-
-        # If in test mode, report what would be done
-        if __opts__["test"]:
-            ret["result"] = None
-            ret["comment"] = (
-                f"Would {'update' if check_result['exists'] else 'create'} group {group_dn}."
-            )
-            ret["changes"][group_dn] = {
-                "would_action": "update" if check_result["exists"] else "create"
-            }
-            return ret
-
-        # Create or update the group
-        create_result = __salt__["ldap_utils.create_group"](
-            spec_name, group_dn, attributes, members if members else None
-        )
-        if create_result["created"]:
-            changes.append({"group": group_dn, "action": "created"})
-            log.info(f"Created group {group_dn}")
-        elif create_result["updated"]:
-            changes.append({"group": group_dn, "action": "updated"})
-            log.info(f"Updated group {group_dn}")
+    # Check if group exists and attributes match
+    check_result = __salt__["ldap_utils.dn_exists"](spec_name, group_dn, attributes)
+    if not check_result["result"]:
+        if "No such object" in check_result["comment"]:
+            exists = False
+            attributes_match = False
         else:
             ret["result"] = False
             ret["comment"] = (
-                f"Failed to {'update' if check_result['exists'] else 'create'} group {group_dn}: {create_result['error']}"
+                f"Error checking group {group_dn}: {check_result['comment']}"
             )
             return ret
-
-    if changes:
-        ret["changes"] = {"groups": changes}
-        ret["comment"] = f"Processed {len(changes)} group(s) successfully."
     else:
-        ret["comment"] = "All groups already exist with matching attributes."
+        exists = check_result.get("exists", False)
+        attributes_match = check_result.get("attributes_match", False)
 
-    return ret
+    # If exists and matches, we're done
+    if exists and attributes_match:
+        ret["comment"] = (
+            f"Group {group_dn} already exists with matching attributes and members."
+        )
+        return ret
+
+    # If in test mode, report what would be done
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Would {'update' if exists else 'create'} group {group_dn}."
+        ret["changes"][group_dn] = {"would_action": "update" if exists else "create"}
+        return ret
+
+    # Create or update based on existence
+    if not exists:
+        # Call create_group
+        create_result = __salt__["ldap_utils.create_group"](
+            spec_name, group_dn, cn, description, members
+        )
+        if create_result["result"]:
+            ret["result"] = True
+            ret["comment"] = create_result["comment"]
+            ret["changes"] = create_result["changes"]
+            log.info(f"Created group {group_dn}")
+            return ret
+        else:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to create group {group_dn}: {create_result['comment']}"
+            )
+            return ret
+    else:
+        # Call update_group
+        update_result = __salt__["ldap_utils.update_group"](
+            spec_name, group_dn, cn, description, members
+        )
+        if update_result["result"]:
+            ret["result"] = True
+            ret["comment"] = update_result["comment"]
+            ret["changes"] = update_result["changes"]
+            log.info(f"Updated group {group_dn}")
+            return ret
+        else:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to update group {group_dn}: {update_result['comment']}"
+            )
+            return ret
 
 
 def module_present(

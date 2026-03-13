@@ -37,7 +37,8 @@ def create_connect_spec(spec_name, connection_dict):
         connection_dict (dict): Dictionary with connection parameters:
             - url (str): LDAP server URL (e.g., 'ldap://localhost:389' or 'ldaps://localhost:636').
             - bind (dict, optional): Bind parameters with 'dn', 'password', and 'method' (default 'simple').
-            - tls (dict, optional): TLS parameters with 'cacertfile' (str) and 'starttls' (bool, default False).
+            - tls (dict, optional): TLS parameters with 'cacertfile' (str), 'certfile' (str), 'keyfile' (str),
+              'starttls' (bool, default False), and 'cert_manager_secret' (str, optional name of k8s secret with certs).
             - admin_bind (dict, optional): Admin bind parameters with 'dn' and 'password' for elevated operations.
 
     Returns:
@@ -71,9 +72,18 @@ def create_connect_spec(spec_name, connection_dict):
                 "message": "",
             }
 
-        # Configure TLS if provided
+        # Require TLS configuration
         tls_config = connection_dict.get("tls", {})
-        if tls_config and "cacertfile" in tls_config:
+        if not tls_config:
+            return {
+                "success": False,
+                "created": False,
+                "error": "TLS configuration is required",
+                "message": "",
+            }
+
+        # Configure TLS options
+        if "cacertfile" in tls_config:
             try:
                 conn.set_option(ldap.OPT_X_TLS_CACERTFILE, tls_config["cacertfile"])
                 conn.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
@@ -83,18 +93,97 @@ def create_connect_spec(spec_name, connection_dict):
             except AttributeError as e:
                 log.warning(f"Could not set TLS CACERTFILE option: {str(e)}")
 
-            # Optionally enable STARTTLS if specified
-            if tls_config.get("starttls", False):
-                try:
-                    conn.start_tls_s()
-                    log.debug(f"Started TLS for spec '{spec_name}'")
-                except Exception as e:
-                    return {
-                        "success": False,
-                        "created": False,
-                        "error": f"Failed to start TLS for spec '{spec_name}': {str(e)}",
-                        "message": "",
-                    }
+        # Configure client certificate if provided
+        temp_files = None
+        if "certfile" in tls_config and "keyfile" in tls_config:
+            try:
+                conn.set_option(ldap.OPT_X_TLS_CERTFILE, tls_config["certfile"])
+                conn.set_option(ldap.OPT_X_TLS_KEYFILE, tls_config["keyfile"])
+                conn.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
+                log.debug(f"Set TLS client certificate and key for spec '{spec_name}'")
+            except AttributeError as e:
+                log.warning(f"Could not set TLS client certificate options: {str(e)}")
+        elif "cert_manager_secret" in tls_config:
+            # Attempt to load certificate data from Kubernetes secret created by cert-manager
+            try:
+                import kubernetes.client
+                from kubernetes import config
+
+                config.load_incluster_config()
+                v1 = kubernetes.client.CoreV1Api()
+                secret_name = tls_config["cert_manager_secret"]
+                namespace = tls_config.get("namespace", "default")
+                secret = v1.read_namespaced_secret(secret_name, namespace)
+                if "tls.crt" in secret.data and "tls.key" in secret.data:
+                    # Write temporary files with cert and key data
+                    import os
+                    import tempfile
+
+                    cert_fd, cert_path = tempfile.mkstemp(suffix=".crt")
+                    key_fd, key_path = tempfile.mkstemp(suffix=".key")
+                    temp_files = (cert_path, key_path)
+                    try:
+                        os.write(cert_fd, base64.b64decode(secret.data["tls.crt"]))
+                        os.write(key_fd, base64.b64decode(secret.data["tls.key"]))
+                        conn.set_option(ldap.OPT_X_TLS_CERTFILE, cert_path)
+                        conn.set_option(ldap.OPT_X_TLS_KEYFILE, key_path)
+                        conn.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
+                        log.debug(
+                            f"Set TLS client certificate from cert-manager secret '{secret_name}' for spec '{spec_name}'"
+                        )
+                    finally:
+                        os.close(cert_fd)
+                        os.close(key_fd)
+                        # Clean up temporary files immediately after setting options
+                        try:
+                            if os.path.exists(cert_path):
+                                os.remove(cert_path)
+                            if os.path.exists(key_path):
+                                os.remove(key_path)
+                            log.debug(
+                                f"Cleaned up temporary TLS files for spec '{spec_name}'"
+                            )
+                            temp_files = None
+                        except Exception as cleanup_e:
+                            log.warning(
+                                f"Failed to clean up temporary TLS files: {str(cleanup_e)}"
+                            )
+                else:
+                    log.warning(
+                        f"Cert-manager secret '{secret_name}' does not contain expected tls.crt and tls.key"
+                    )
+            except Exception as e:
+                log.warning(
+                    f"Could not load client certificate from cert-manager secret: {str(e)}"
+                )
+
+        # Enable STARTTLS if specified or if using ldap:// protocol with TLS required
+        starttls = tls_config.get("starttls", False)
+        if starttls or (connection_dict["url"].startswith("ldap://") and tls_config):
+            try:
+                conn.start_tls_s()
+                log.debug(f"Started TLS for spec '{spec_name}'")
+            except Exception as e:
+                # Clean up any remaining temporary files in case of error
+                if temp_files:
+                    try:
+                        if os.path.exists(temp_files[0]):
+                            os.remove(temp_files[0])
+                        if os.path.exists(temp_files[1]):
+                            os.remove(temp_files[1])
+                        log.debug(
+                            f"Cleaned up temporary TLS files on error for spec '{spec_name}'"
+                        )
+                    except Exception as cleanup_e:
+                        log.warning(
+                            f"Failed to clean up temporary TLS files on error: {str(cleanup_e)}"
+                        )
+                return {
+                    "success": False,
+                    "created": False,
+                    "error": f"Failed to start TLS for spec '{spec_name}': {str(e)}",
+                    "message": "",
+                }
 
         # Perform binding if credentials are provided
         # Check for admin_bind first (for elevated operations like cn=config)
@@ -117,6 +206,20 @@ def create_connect_spec(spec_name, connection_dict):
                     f"Bound to LDAP server as admin {admin_bind_config['dn']} for spec '{spec_name}'"
                 )
             except Exception as e:
+                # Clean up any remaining temporary files in case of error
+                if temp_files:
+                    try:
+                        if os.path.exists(temp_files[0]):
+                            os.remove(temp_files[0])
+                        if os.path.exists(temp_files[1]):
+                            os.remove(temp_files[1])
+                        log.debug(
+                            f"Cleaned up temporary TLS files on error for spec '{spec_name}'"
+                        )
+                    except Exception as cleanup_e:
+                        log.warning(
+                            f"Failed to clean up temporary TLS files on error: {str(cleanup_e)}"
+                        )
                 return {
                     "success": False,
                     "created": False,
@@ -138,6 +241,20 @@ def create_connect_spec(spec_name, connection_dict):
                         f"Bound to LDAP server as {bind_config['dn']} for spec '{spec_name}'"
                     )
                 except Exception as e:
+                    # Clean up any remaining temporary files in case of error
+                    if temp_files:
+                        try:
+                            if os.path.exists(temp_files[0]):
+                                os.remove(temp_files[0])
+                            if os.path.exists(temp_files[1]):
+                                os.remove(temp_files[1])
+                            log.debug(
+                                f"Cleaned up temporary TLS files on error for spec '{spec_name}'"
+                            )
+                        except Exception as cleanup_e:
+                            log.warning(
+                                f"Failed to clean up temporary TLS files on error: {str(cleanup_e)}"
+                            )
                     return {
                         "success": False,
                         "created": False,
@@ -155,6 +272,20 @@ def create_connect_spec(spec_name, connection_dict):
             "message": f"Connection spec '{spec_name}' created and cached",
         }
     except Exception as e:
+        # Ensure temporary files are cleaned up in case of any exception
+        if "temp_files" in locals() and temp_files:
+            try:
+                if os.path.exists(temp_files[0]):
+                    os.remove(temp_files[0])
+                if os.path.exists(temp_files[1]):
+                    os.remove(temp_files[1])
+                log.debug(
+                    f"Cleaned up temporary TLS files on exception for spec '{spec_name}'"
+                )
+            except Exception as cleanup_e:
+                log.warning(
+                    f"Failed to clean up temporary TLS files on exception: {str(cleanup_e)}"
+                )
         error_msg = f"Failed to create connection spec '{spec_name}': {str(e)}"
         log.error(error_msg)
         return {
@@ -194,16 +325,14 @@ def root_dn_exists(spec_name, root_dn, desired_attributes=None):
         desired_attributes (dict, optional): Desired attributes to compare against existing ones.
 
     Returns:
-        dict: A dictionary with 'exists' (bool), 'attributes_match' (bool if desired_attributes provided), and 'error' (str or None).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "exists": False,
-                "attributes_match": False,
-                "error": conn_result["error"],
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
         # Use SCOPE_BASE to search for the specific DN
@@ -212,13 +341,15 @@ def root_dn_exists(spec_name, root_dn, desired_attributes=None):
         )
         result = conn.search_s(
             base=root_dn,
-            scope=ldap.SCOPE_BASE,
+            scope=ldap.SCOPE_SUBTREE,
             filterstr="(objectClass=*)",
             attrlist=attr_list,
         )
         if result and len(result) > 0:
             if not desired_attributes:
-                return {"exists": True, "attributes_match": True, "error": None}
+                ret["result"] = True
+                ret["comment"] = f"Root DN {root_dn} exists."
+                return ret
 
             # Compare current attributes with desired attributes
             current_attrs = result[0][1] if result[0][1] else {}
@@ -240,17 +371,19 @@ def root_dn_exists(spec_name, root_dn, desired_attributes=None):
                         f"Attribute mismatch for {attr}: current={current_val_str}, desired={desired_val_list}"
                     )
                     break
-            return {"exists": True, "attributes_match": matches, "error": None}
-        return {"exists": False, "attributes_match": False, "error": None}
-    except ldap.NO_SUCH_OBJECT:
-        # Specifically handle "No such object" error as a non-error condition
-        return {"exists": False, "attributes_match": False, "error": None}
+            ret["result"] = True
+            ret["comment"] = f"Root DN {root_dn} exists. Attributes match: {matches}."
+            # No changes in exists check, as it's read-only
+            return ret
+        ret["result"] = (
+            True  # Non-existence is a valid result for exists check; use result: True for consistency
+        )
+        ret["comment"] = f"Root DN {root_dn} does not exist."
+        return ret
     except Exception as e:
-        return {
-            "exists": False,
-            "attributes_match": False,
-            "error": f"Failed to check root DN: {str(e)}",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to check root DN {root_dn}: {str(e)}"
+        return ret
 
 
 def update_root_dn(spec_name, root_dn, attributes):
@@ -263,51 +396,56 @@ def update_root_dn(spec_name, root_dn, attributes):
         attributes (dict): Attributes to update on the DN.
 
     Returns:
-        dict: A dictionary with 'updated' (bool), 'error' (str or None), and 'message' (str).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {"updated": False, "error": conn_result["error"], "message": ""}
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
         # Fetch current attributes to avoid unnecessary or forbidden updates
         current_attrs_result = root_dn_exists(spec_name, root_dn, attributes)
-        if not current_attrs_result["exists"]:
-            return {
-                "updated": False,
-                "error": f"DN {root_dn} does not exist for update",
-                "message": "",
-            }
+        if not current_attrs_result["result"] or not current_attrs_result.get(
+            "exists", False
+        ):  # Check standardized result
+            ret["comment"] = f"DN {root_dn} does not exist for update"
+            return ret
 
         current_attrs = {}
-        if current_attrs_result["exists"]:
-            # Fetch all attributes for comparison
-            search_result = conn.search_s(
-                base=root_dn,
-                scope=ldap.SCOPE_BASE,
-                filterstr="(objectClass=*)",
-                attrlist=list(attributes.keys()),
-            )
-            if search_result and len(search_result) > 0:
-                current_attrs = search_result[0][1] if search_result[0][1] else {}
-                # Decode byte strings to compare with desired attributes
-                for k in current_attrs:
-                    current_attrs[k] = [
-                        v.decode("utf-8") if isinstance(v, bytes) else v
-                        for v in current_attrs[k]
-                    ]
+        # Fetch all attributes for comparison
+        search_result = conn.search_s(
+            base=root_dn,
+            scope=ldap.SCOPE_BASE,
+            filterstr="(objectClass=*)",
+            attrlist=list(attributes.keys()),
+        )
+        if search_result and len(search_result) > 0:
+            current_attrs = search_result[0][1] if search_result[0][1] else {}
+            # Decode byte strings to compare with desired attributes
+            for k in current_attrs:
+                current_attrs[k] = [
+                    v.decode("utf-8") if isinstance(v, bytes) else v
+                    for v in current_attrs[k]
+                ]
 
         # Convert attributes dictionary to list of (attr, value) tuples for modification
         # Ensure all values are lists of byte strings as required by python-ldap
         # Use MOD_ADD for olcModuleLoad to avoid deletion issues
         # Skip updates for olcModulePath if already set
         mod_attrs = []
+        changes = {}  # Track changes for standardized return
         for k, v in attributes.items():
             desired_val_list = v if isinstance(v, list) else [v]
             current_val_list = current_attrs.get(k, [])
             if set(desired_val_list) == set(current_val_list):
                 continue  # Skip if values are already the same
+            changes[k] = {
+                "old": current_val_list,
+                "new": desired_val_list,
+            }  # Record change
             if k == "olcModuleLoad":
                 mod_attrs.append(
                     (
@@ -341,74 +479,62 @@ def update_root_dn(spec_name, root_dn, attributes):
                 )
 
         if not mod_attrs:
-            return {
-                "updated": False,
-                "error": None,
-                "message": f"No changes needed for {root_dn}",
-            }
+            ret["result"] = True
+            ret["comment"] = f"No changes needed for {root_dn}"
+            return ret
 
         conn.modify_s(dn=root_dn, modlist=mod_attrs)
-        return {
-            "updated": True,
-            "error": None,
-            "message": f"Root DN {root_dn} attributes updated successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"Root DN {root_dn} attributes updated successfully"
+        ret["changes"] = changes
+        return ret
     except Exception as e:
-        return {
-            "updated": False,
-            "error": f"Failed to update root DN {root_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to update root DN {root_dn}: {str(e)}"
+        return ret
 
 
-def create_root_dn(spec_name, root_dn, attributes):
+def create_root_dn(spec_name, root_dn, attributes=None):
     """
-    Create a root DN in the LDAP directory if it doesn't exist, or update it if attributes differ.
+    Create a root DN in the LDAP directory if it doesn't exist or if attributes don't match.
+    Returns a dictionary with the result of the operation.
 
-    Args:
-        spec_name (str): The name of the connection specification.
-        root_dn (str): The distinguished name to create or update.
-        attributes (dict): Attributes to set for the new DN or update on the existing DN.
-
-    Returns:
-        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+    :param spec_name: Name of the connection specification for LDAP
+    :param root_dn: The root DN to create
+    :param attributes: Dictionary of attributes for the root DN
+    :return: Dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict)
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "created": False,
-                "updated": False,
-                "error": conn_result["error"],
-                "message": "",
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
         check = root_dn_exists(spec_name, root_dn, attributes)
-        if check["exists"]:
-            if check["attributes_match"]:
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": None,
-                    "message": f"Root DN {root_dn} already exists with matching attributes",
-                }
+        if check["result"] and check.get("exists", False):
+            if check.get("attributes_match", False):
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Root DN {root_dn} already exists with matching attributes"
+                )
+                return ret
             else:
                 # Update attributes since they differ
                 update_result = update_root_dn(spec_name, root_dn, attributes)
-                if update_result["updated"]:
-                    return {
-                        "created": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
-                }
+                if update_result["result"]:
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"Root DN {root_dn} exists. {update_result['comment']}"
+                    )
+                    ret["changes"] = update_result["changes"]
+                    return ret
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to update root DN {root_dn}: {update_result['comment']}"
+                )
+                return ret
 
         # Create new entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
@@ -424,24 +550,19 @@ def create_root_dn(spec_name, root_dn, attributes):
             for k, v in attributes.items()
         ]
         conn.add_s(dn=root_dn, modlist=attr_list)
-        return {
-            "created": True,
-            "updated": False,
-            "error": None,
-            "message": f"Root DN {root_dn} created successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"Root DN {root_dn} created successfully"
+        ret["changes"] = {"created": root_dn, "attributes": attributes or {}}
+        return ret
     except Exception as e:
-        return {
-            "created": False,
-            "updated": False,
-            "error": f"Failed to create root DN {root_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to create root DN {root_dn}: {str(e)}"
+        return ret
 
 
 def create_ou(spec_name, ou_dn, attributes):
     """
-    Create an Organizational Unit (OU) in the LDAP directory if it doesn't exist, or update it if attributes differ.
+    Create an OU in the LDAP directory if it doesn't exist, or update it if attributes differ.
 
     Args:
         spec_name (str): The name of the connection specification.
@@ -449,44 +570,37 @@ def create_ou(spec_name, ou_dn, attributes):
         attributes (dict): Attributes to set for the new OU or update on the existing OU.
 
     Returns:
-        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "created": False,
-                "updated": False,
-                "error": conn_result["error"],
-                "message": "",
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
-        check = root_dn_exists(spec_name, ou_dn, attributes)
+        check = dn_exists(spec_name, ou_dn, attributes)
         if check["exists"]:
             if check["attributes_match"]:
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": None,
-                    "message": f"OU {ou_dn} already exists with matching attributes",
-                }
+                ret["result"] = True
+                ret["comment"] = f"OU {ou_dn} already exists with matching attributes"
+                return ret
             else:
                 # Update attributes since they differ
                 update_result = update_root_dn(spec_name, ou_dn, attributes)
                 if update_result["updated"]:
-                    return {
-                        "created": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
-                }
+                    ret["result"] = True
+                    ret["comment"] = f"OU {ou_dn} exists. {update_result['message']}"
+                    ret["changes"] = update_result.get(
+                        "changes", {}
+                    )  # Pull changes if available from update_root_dn
+                    return ret
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to update OU {ou_dn}: {update_result['error']}"
+                )
+                return ret
 
         # Create new entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
@@ -502,80 +616,68 @@ def create_ou(spec_name, ou_dn, attributes):
             for k, v in attributes.items()
         ]
         conn.add_s(dn=ou_dn, modlist=attr_list)
-        return {
-            "created": True,
-            "updated": False,
-            "error": None,
-            "message": f"OU {ou_dn} created successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"OU {ou_dn} created successfully"
+        ret["changes"] = {"created": ou_dn, "attributes": attributes}
+        return ret
     except Exception as e:
-        return {
-            "created": False,
-            "updated": False,
-            "error": f"Failed to create OU {ou_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to create OU {ou_dn}: {str(e)}"
+        return ret
 
 
-def create_user(spec_name, user_dn, attributes, password=None):
+def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
     """
-    Create a user in the LDAP directory if it doesn't exist, or update it if attributes differ.
+    Create a user in the LDAP directory if it doesn't exist.
 
     Args:
         spec_name (str): The name of the connection specification.
-        user_dn (str): The distinguished name of the user to create or update.
-        attributes (dict): Attributes to set for the new user or update on the existing user.
-        password (str, optional): Password to set for the user, if provided.
+        user_dn (str): The distinguished name of the user to create.
+        uid (str): The user ID to set.
+        cn (str): The common name (CN) to set.
+        sn (str): The surname (sn) to set.
+        description (str): The description to set.
+        password (str, optional): Password to set for the user, if provided (only used on creation).
 
     Returns:
-        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "created": False,
-                "updated": False,
-                "error": conn_result["error"],
-                "message": "",
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
-        check = root_dn_exists(spec_name, user_dn, attributes)
+        # Construct fixed attributes with required objectClasses and fields
+        attributes = {
+            "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+            "uid": uid,
+            "cn": cn,
+            "sn": sn,
+            "description": description,
+        }
+        check = dn_exists(spec_name, user_dn, attributes)
         if check["exists"]:
-            if check["attributes_match"] and not password:
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": None,
-                    "message": f"User {user_dn} already exists with matching attributes",
-                }
-            else:
-                # Update attributes or password since they differ or password is provided
-                update_attrs = attributes.copy()
-                if password:
-                    update_attrs["userPassword"] = password
-                update_result = update_root_dn(spec_name, user_dn, update_attrs)
-                if update_result["updated"]:
-                    return {
-                        "created": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
-                }
+            ret["result"] = False
+            ret["comment"] = (
+                f"User {user_dn} already exists. Use update_user to modify."
+            )
+            return ret
 
-        # Create new entry since it doesn't exist
-        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
-        # Ensure all values are lists of byte strings
+        # Create new entry
         create_attrs = attributes.copy()
+        changes = {
+            "created": user_dn,
+            "uid": uid,
+            "cn": cn,
+            "sn": sn,
+            "description": description,
+        }
         if password:
             create_attrs["userPassword"] = password
+            changes["userPassword"] = "(set)"
         attr_list = [
             (
                 k,
@@ -587,83 +689,125 @@ def create_user(spec_name, user_dn, attributes, password=None):
             for k, v in create_attrs.items()
         ]
         conn.add_s(dn=user_dn, modlist=attr_list)
-        return {
-            "created": True,
-            "updated": False,
-            "error": None,
-            "message": f"User {user_dn} created successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"User {user_dn} created successfully"
+        ret["changes"] = changes
+        return ret
     except Exception as e:
-        return {
-            "created": False,
-            "updated": False,
-            "error": f"Failed to create user {user_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to create user {user_dn}: {str(e)}"
+        return ret
 
 
-def create_group(spec_name, group_dn, attributes, members=None):
+def update_user(spec_name, user_dn, uid, cn, sn, description):
     """
-    Create a group in the LDAP directory if it doesn't exist, or update it if attributes or members differ.
+    Update attributes of an existing user in the LDAP directory (does not update password).
 
     Args:
         spec_name (str): The name of the connection specification.
-        group_dn (str): The distinguished name of the group to create or update.
-        attributes (dict): Attributes to set for the new group or update on the existing group.
-        members (list, optional): List of member DNs to set for the group, if provided.
+        user_dn (str): The distinguished name of the user to update.
+        uid (str): The user ID to set.
+        cn (str): The common name (CN) to set.
+        sn (str): The surname (sn) to set.
+        description (str): The description to set.
 
     Returns:
-        dict: A dictionary with 'created' (bool), 'updated' (bool), 'error' (str or None), and 'message' (str).
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
     """
+    ret = {"result": False, "comment": "", "changes": {}}
     try:
         conn_result = get_connect_spec(spec_name)
         if not conn_result["success"]:
-            return {
-                "created": False,
-                "updated": False,
-                "error": conn_result["error"],
-                "message": "",
-            }
+            ret["comment"] = conn_result["error"]
+            return ret
 
         conn = conn_result["conn"]
-        check_attrs = attributes.copy()
-        if members:
-            check_attrs["member"] = members
-        check = root_dn_exists(spec_name, group_dn, check_attrs)
-        if check["exists"]:
-            if check["attributes_match"]:
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": None,
-                    "message": f"Group {group_dn} already exists with matching attributes and members",
-                }
-            else:
-                # Update attributes or members since they differ
-                update_attrs = attributes.copy()
-                if members:
-                    update_attrs["member"] = members
-                update_result = update_root_dn(spec_name, group_dn, update_attrs)
-                if update_result["updated"]:
-                    return {
-                        "created": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
-                return {
-                    "created": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
-                }
+        # Construct fixed attributes with required objectClasses and fields
+        attributes = {
+            "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+            "uid": uid,
+            "cn": cn,
+            "sn": sn,
+            "description": description,
+        }
+        check = dn_exists(spec_name, user_dn, attributes)
+        if not check["exists"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"User {user_dn} does not exist for update. Use create_user to create."
+            )
+            return ret
 
-        # Create new entry since it doesn't exist
-        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
-        # Ensure all values are lists of byte strings
-        create_attrs = attributes.copy()
+        if check["attributes_match"]:
+            ret["result"] = True
+            ret["comment"] = f"User {user_dn} already has matching attributes."
+            return ret
+
+        # Update attributes (no password update)
+        update_attrs = attributes.copy()
+        changes = {}  # Track changes
+        update_result = update_root_dn(spec_name, user_dn, update_attrs)
+        if update_result.get("updated", False) or update_result.get("result", False):
+            ret["result"] = True
+            ret["comment"] = f"User {user_dn} updated successfully."
+            ret["changes"] = {**update_result.get("changes", {}), **changes}
+            return ret
+        else:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to update user {user_dn}: {update_result.get('comment', str(update_result))}"
+            )
+            return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to update user {user_dn}: {str(e)}"
+        return ret
+
+
+def create_group(spec_name, group_dn, cn, description=None, members=None):
+    """
+    Create a group in the LDAP directory if it doesn't exist.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        group_dn (str): The distinguished name of the group to create (e.g., 'cn=admins,ou=groups,base_dn').
+        cn (str): The common name (CN) of the group.
+        description (str, optional): The description to set for the group.
+        members (list, optional): List of member DNs to set for the group.
+
+    Returns:
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        # Construct fixed attributes with required objectClasses and fields
+        attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+        if description:
+            attributes["description"] = description
         if members:
-            create_attrs["member"] = members
+            attributes["member"] = members  # Assume members are full DNs
+
+        check = dn_exists(spec_name, group_dn, attributes)
+        if check["exists"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Group {group_dn} already exists. Use update_group to modify."
+            )
+            return ret
+
+        # Create new entry
+        create_attrs = attributes.copy()
+        changes = {"created": group_dn, "cn": cn}
+        if description:
+            changes["description"] = description
+        if members:
+            changes["members"] = members
         attr_list = [
             (
                 k,
@@ -675,19 +819,79 @@ def create_group(spec_name, group_dn, attributes, members=None):
             for k, v in create_attrs.items()
         ]
         conn.add_s(dn=group_dn, modlist=attr_list)
-        return {
-            "created": True,
-            "updated": False,
-            "error": None,
-            "message": f"Group {group_dn} created successfully",
-        }
+        ret["result"] = True
+        ret["comment"] = f"Group {group_dn} created successfully"
+        ret["changes"] = changes
+        return ret
     except Exception as e:
-        return {
-            "created": False,
-            "updated": False,
-            "error": f"Failed to create group {group_dn}: {str(e)}",
-            "message": "",
-        }
+        ret["result"] = False
+        ret["comment"] = f"Failed to create group {group_dn}: {str(e)}"
+        return ret
+
+
+def update_group(spec_name, group_dn, cn, description=None, members=None):
+    """
+    Update attributes or members of an existing group in the LDAP directory.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        group_dn (str): The distinguished name of the group to update (e.g., 'cn=admins,ou=groups,base_dn').
+        cn (str): The common name (CN) of the group.
+        description (str, optional): The description to set for the group.
+        members (list, optional): List of member DNs to set for the group.
+
+    Returns:
+        dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        # Construct fixed attributes with required objectClasses and fields
+        attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+        if description:
+            attributes["description"] = description
+        if members:
+            attributes["member"] = members  # Assume members are full DNs
+
+        check = dn_exists(spec_name, group_dn, attributes)
+        if not check["exists"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Group {group_dn} does not exist. Use create_group to create."
+            )
+            return ret
+
+        if check["attributes_match"] and not members:
+            ret["result"] = True
+            ret["comment"] = (
+                f"Group {group_dn} already has matching attributes and members."
+            )
+            return ret
+
+        # Update attributes or members
+        update_attrs = attributes.copy()
+        changes = {}  # Track changes
+        update_result = update_root_dn(spec_name, group_dn, update_attrs)
+        if update_result["updated"]:
+            ret["result"] = True
+            ret["comment"] = f"Group {group_dn} updated successfully."
+            ret["changes"] = update_result.get("changes", {})
+            return ret
+        else:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to update group {group_dn}: {update_result.get('comment', str(update_result))}"
+            )
+            return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to update group {group_dn}: {str(e)}"
+        return ret
 
 
 def load_module(spec_name, module_dn, module_info, module_path=None):
@@ -858,3 +1062,87 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
             "error": f"Failed to configure overlay {overlay_name} for {database_dn}: {str(e)}",
             "message": "",
         }
+
+
+def dn_exists(spec_name, dn, desired_attributes=None):
+    """
+    Check if a DN exists in the LDAP directory and optionally if its attributes match the desired state.
+
+    Args:
+        spec_name (str): The name of the connection specification.
+        dn (str): The distinguished name to check.
+        desired_attributes (dict, optional): Desired attributes to compare against existing ones.
+
+    Returns:
+        dict: A dictionary with 'result' (bool), 'comment' (str), 'exists' (bool), 'attributes_match' (bool), and 'changes' (dict).
+    """
+    ret = {
+        "result": False,
+        "comment": "",
+        "exists": False,
+        "attributes_match": False,
+        "changes": {},
+    }
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        # Use SCOPE_BASE to check exactly the specified DN
+        attr_list = (
+            ["dn"] + list(desired_attributes.keys()) if desired_attributes else ["dn"]
+        )
+        result = conn.search_s(
+            base=dn,
+            scope=ldap.SCOPE_SUBTREE,
+            filterstr="(objectClass=*)",
+            attrlist=attr_list,
+        )
+        if result and len(result) > 0:
+            ret["exists"] = True
+            if not desired_attributes:
+                ret["result"] = True
+                ret["comment"] = f"DN {dn} exists."
+                ret["attributes_match"] = True
+                return ret
+
+            # Compare current attributes with desired attributes
+            current_attrs = result[0][1] if result[0][1] else {}
+            matches = True
+            for attr, desired_val in desired_attributes.items():
+                current_val = current_attrs.get(attr, [])
+                # Handle single value vs list
+                desired_val_list = (
+                    desired_val if isinstance(desired_val, list) else [desired_val]
+                )
+                # Convert current values to strings for comparison if needed (python-ldap returns bytes)
+                current_val_str = [
+                    v.decode("utf-8") if isinstance(v, bytes) else v
+                    for v in current_val
+                ]
+                if set(current_val_str) != set(desired_val_list):
+                    matches = False
+                    log.debug(
+                        f"Attribute mismatch for {attr}: current={current_val_str}, desired={desired_val_list}"
+                    )
+                    break
+            ret["result"] = True
+            ret["attributes_match"] = matches
+            ret["comment"] = f"DN {dn} exists. Attributes match: {matches}."
+            # No changes in exists check, as it's read-only
+            return ret
+        ret["result"] = (
+            True  # Non-existence is a valid result for exists check; use result: True for consistency
+        )
+        ret["comment"] = f"DN {dn} does not exist."
+        return ret
+    except ldap.NO_SUCH_OBJECT:
+        ret["result"] = True
+        ret["comment"] = f"DN {dn} does not exist (NO_SUCH_OBJECT)."
+        return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to check DN {dn}: {str(e)}"
+        return ret
