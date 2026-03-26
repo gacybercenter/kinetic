@@ -86,9 +86,9 @@ install_heat:
       - endpoints.oslo_messaging.auth.heat.password={{ pillar['osh_values']['heat_rq_user'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
       - endpoints.identity.auth.heat.password={{ pillar['osh_values']['heat_admin'] }}
-      - endpoints.identity.auth.heat_trustee.password={{ pillar['osh_values']['heat_trust_password'] }}
-      - endpoints.identity.auth.heat_stack_user.password={{ pillar['osh_values']['heat_stack_user']['password'] }}
-      - endpoints.identity.auth.test.password={{ pillar['osh_values']['heat_test']['password'] }}
+      - endpoints.identity.auth.heat_trustee.password={{ pillar['osh_values']['heat_trust'] }}
+      - endpoints.identity.auth.heat_stack_user.password={{ pillar['osh_values']['heat_domain'] }}
+      - endpoints.identity.auth.test.password={{ pillar['osh_values']['heat_test'] }}
     - require:
       - k8s: heat_external_certificate
       - k8s: cloudformation_external_certificate
