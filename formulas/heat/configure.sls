@@ -84,7 +84,7 @@ install_heat:
       - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh_values']['rabbitmq_admin'] }}
       - endpoints.oslo_messaging.auth.heat.username=heat
       - endpoints.oslo_messaging.auth.heat.password={{ pillar['osh_values']['heat_rq_user'] }}
-      - endpoints.identity.auth.admin.password={{ pillar['osh_values']['admin'] }}
+      - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
       - endpoints.identity.auth.heat.password={{ pillar['osh_values']['heat_admin'] }}
       - endpoints.identity.auth.heat_trustee.password={{ pillar['osh_values']['heat_trust_password'] }}
       - endpoints.identity.auth.heat_stack_user.password={{ pillar['osh_values']['heat_stack_user']['password'] }}
