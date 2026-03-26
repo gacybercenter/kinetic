@@ -65,3 +65,32 @@ cloudformation_ingress:
     - tls: {{ pillar['osh_values']['cloudformation_ingress']['tls'] }}
     - require:
       - k8s: cloudformation_external_certificate
+
+install_heat:
+  k8s_helm.helm_release_present:
+    - release_name: heat
+    - chart_name: openstack-helm/heat
+    - namespace: openstack
+    - wait_timeout: 300
+    - wait_interval: 10
+    - keep_values_file: false
+    - pillar_key: osh_values:heat
+    - set_values:
+      - endpoints.oslo_db.auth.admin.username=root
+      - endpoints.oslo_db.auth.admin.password={{ pillar['osh_values']['mariadb_admin'] }}
+      - endpoints.oslo_db.auth.heat.username=heat
+      - endpoints.oslo_db.auth.heat.password={{ pillar['osh_values']['heat_admin'] }}
+      - endpoints.oslo_messaging.auth.admin.username=rabbitmq
+      - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh_values']['rabbitmq_admin'] }}
+      - endpoints.oslo_messaging.auth.heat.username=heat
+      - endpoints.oslo_messaging.auth.heat.password={{ pillar['osh_values']['heat-rq-user'] }}
+      - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
+      - endpoints.identity.auth.heat.password={{ pillar['osh_users']['heat_admin'] }}
+      - endpoints.identity.auth.heat_trustee.password={{ pillar['osh_users']['heat_trust_password'] }}
+      - endpoints.identity.auth.heat_stack_user.password={{ pillar['osh_users']['heat_stack_user']['password'] }}
+      - endpoints.identity.auth.test.password={{ pillar['osh_users']['heat_test']['password'] }}
+    - require:
+      - k8s: heat_external_certificate
+      - k8s: cloudformation_external_certificate
+      - k8s: heat_ingress
+      - k8s: cloudformation_ingress
