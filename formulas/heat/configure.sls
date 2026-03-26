@@ -45,3 +45,23 @@ cfn_internal_certificate:
     - issuer_kind: ClusterIssuer
     - common_name: {{ pillar['osh_values']['heat_cfn']['common_name'] }}
     - dns_names: {{ pillar['osh_values']['heat_cfn']['dns_names'] }}
+
+heat_ingress:
+  k8s.ingress_present:
+    - name: heat-ingress
+    - namespace: openstack
+    - ingress_class_name: {{ pillar['osh_values']['heat_ingress']['class_name'] }}
+    - hosts: {{ pillar['osh_values']['heat_ingress']['hosts'] }}
+    - tls: {{ pillar['osh_values']['heat_ingress']['tls'] }}
+    - require:
+      - k8s: heat_external_certificate
+
+cloudformation_ingress:
+  k8s.ingress_present:
+    - name: cloudformation-ingress
+    - namespace: openstack
+    - ingress_class_name: {{ pillar['osh_values']['cloudformation_ingress']['class_name'] }}
+    - hosts: {{ pillar['osh_values']['cloudformation_ingress']['hosts'] }}
+    - tls: {{ pillar['osh_values']['cloudformation_ingress']['tls'] }}
+    - require:
+      - k8s: cloudformation_external_certificate
