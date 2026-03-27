@@ -94,3 +94,9 @@ install_heat:
       - k8s: cloudformation_external_certificate
       - k8s: heat_ingress
       - k8s: cloudformation_ingress
+
+cleanup_completed_pods:
+  k8s.delete_completed_pods:
+    - namespace: openstack
+    - require:
+      - k8s: install_heat
