@@ -95,8 +95,8 @@ install_heat:
       - k8s: heat_ingress
       - k8s: cloudformation_ingress
 
-cleanup_completed_pods:
-  k8s.delete_completed_pods:
+cleanup_completed_jobs:
+  k8s.job_cleanup:
     - namespace: openstack
     - require:
       - k8s_helm: install_heat

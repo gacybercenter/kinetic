@@ -5395,9 +5395,9 @@ def pvc_present(
         }
 
 
-def delete_completed_pods(namespace=None):
+def job_cleanup(namespace=None):
     """
-    Delete pods in the specified Kubernetes namespace (or all namespaces if none provided)
+    Clean up completed jobs (such as pods) in the specified Kubernetes namespace (or all namespaces if none provided)
     that have a status.phase of Succeeded.
 
     Args:
@@ -5443,12 +5443,12 @@ def delete_completed_pods(namespace=None):
 
         return {
             "success": True,
-            "deleted_pods": deleted_pods,
-            "message": f"Deleted {len(deleted_pods)} completed pods.",
+            "deleted_items": deleted_pods,
+            "message": f"Cleaned up {len(deleted_pods)} completed pods.",
         }
     except Exception as e:
         return {
             "success": False,
-            "deleted_pods": [],
-            "message": f"Error deleting completed pods: {str(e)[:100]}...",
+            "deleted_items": [],
+            "message": f"Error cleaning up completed jobs: {str(e)[:100]}...",
         }

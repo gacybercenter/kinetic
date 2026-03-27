@@ -2625,6 +2625,44 @@ def pvc_present(
             name=pvc_name,
             namespace=namespace,
             storage_class=storage_class,
+
+
+def job_cleanup(name, namespace=None):
+    """
+    Clean up completed jobs (such as pods) in the specified Kubernetes namespace (or all namespaces if none provided)
+    that have a status.phase of Succeeded.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        Optional. The Kubernetes namespace to target. If not provided, targets all namespaces.
+
+    Example:
+    .. code-block:: yaml
+
+        cleanup_completed_jobs:
+          k8s.job_cleanup:
+            - namespace: openstack
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        result = __salt__["kinetic-k8s.job_cleanup"](namespace=namespace)
+
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["deleted_items"]:
+            ret["changes"] = {"deleted_items": result["deleted_items"]}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to cleanup completed jobs: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
             storage_size=storage_size,
             access_modes=access_modes,
             selector=selector,
@@ -2648,6 +2686,43 @@ def pvc_present(
         ret["comment"] = (
             f"Failed to ensure PVC {pvc_name} in namespace {namespace}: {str(e)[:100]}..."
         )
+        ret["changes"] = {}
+
+    return ret
+
+def job_cleanup(name, namespace=None):
+    """
+    Clean up completed jobs (such as pods) in the specified Kubernetes namespace (or all namespaces if none provided)
+    that have a status.phase of Succeeded.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        Optional. The Kubernetes namespace to target. If not provided, targets all namespaces.
+
+    Example:
+    .. code-block:: yaml
+
+        cleanup_completed_jobs:
+          k8s.job_cleanup:
+            - namespace: openstack
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        result = __salt__["kinetic-k8s.delete_completed_pods"](namespace=namespace)
+
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["deleted_pods"]:
+            ret["changes"] = {"deleted_items": result["deleted_pods"]}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to cleanup completed jobs: {str(e)[:100]}..."
         ret["changes"] = {}
 
     return ret
