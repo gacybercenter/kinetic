@@ -2651,3 +2651,41 @@ def pvc_present(
         ret["changes"] = {}
 
     return ret
+
+
+def delete_completed_pods(name, namespace=None):
+    """
+    Delete pods in the specified Kubernetes namespace (or all namespaces if none provided)
+    that have a status.phase of Succeeded.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        Optional. The Kubernetes namespace to target. If not provided, targets all namespaces.
+
+    Example:
+    .. code-block:: yaml
+
+        cleanup_completed_pods:
+          k8s.delete_completed_pods:
+            - namespace: openstack
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        result = __salt__["kinetic-k8s.delete_completed_pods"](namespace=namespace)
+
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["deleted_pods"]:
+            ret["changes"] = {"deleted_pods": result["deleted_pods"]}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to delete completed pods: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
