@@ -5393,3 +5393,63 @@ def pvc_present(
             "message": f"Error managing PVC {name} in namespace {namespace}: {str(e)[:100]}...",
             "resource": {},
         }
+
+    def delete_completed_pods(namespace=None):
+        """
+        Delete pods in the specified Kubernetes namespace (or all namespaces if none provided)
+        that have a status.phase of Succeeded.
+
+        Args:
+            namespace (str, optional): The Kubernetes namespace to target. If None, targets all namespaces.
+
+        Returns:
+            dict: A dictionary with 'success' (bool), 'deleted_pods' (list), and 'message' (str).
+        """
+        try:
+            # Load Kubernetes configuration (in-cluster or from kubeconfig)
+            config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+            v1_api = client.CoreV1Api()
+
+            # Field selector for pods with status.phase==Succeeded
+            field_selector = "status.phase==Succeeded"
+
+            if namespace:
+                # Get pods in the specified namespace
+                pod_list = v1_api.list_namespaced_pod(
+                    namespace=namespace, field_selector=field_selector
+                )
+            else:
+                # Get pods in all namespaces
+                pod_list = v1_api.list_pod_for_all_namespaces(
+                    field_selector=field_selector
+                )
+
+            deleted_pods = []
+            for pod in pod_list.items:
+                pod_name = pod.metadata.name
+                pod_namespace = pod.metadata.namespace
+                try:
+                    v1_api.delete_namespaced_pod(
+                        name=pod_name,
+                        namespace=pod_namespace,
+                        body=client.V1DeleteOptions(),
+                    )
+                    deleted_pods.append(f"{pod_name} in {pod_namespace}")
+                except ApiException as e:
+                    return {
+                        "success": False,
+                        "deleted_pods": deleted_pods,
+                        "message": f"Failed to delete pod {pod_name} in {pod_namespace}: {str(e)[:100]}...",
+                    }
+
+            return {
+                "success": True,
+                "deleted_pods": deleted_pods,
+                "message": f"Deleted {len(deleted_pods)} completed pods.",
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "deleted_pods": [],
+                "message": f"Error deleting completed pods: {str(e)[:100]}...",
+            }
