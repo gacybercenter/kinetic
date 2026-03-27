@@ -99,4 +99,4 @@ cleanup_completed_pods:
   k8s.delete_completed_pods:
     - namespace: openstack
     - require:
-      - k8s: install_heat
+      - k8s_helm: install_heat
