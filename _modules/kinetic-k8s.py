@@ -5404,7 +5404,7 @@ def job_cleanup(namespace=None):
         namespace (str, optional): The Kubernetes namespace to target. If None, targets all namespaces.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'deleted_pods' (list), and 'message' (str).
+        dict: A dictionary with 'success' (bool), 'deleted_items' (list), and 'message' (str).
     """
     try:
         # Load Kubernetes configuration (in-cluster or from kubeconfig)
@@ -5437,7 +5437,7 @@ def job_cleanup(namespace=None):
             except ApiException as e:
                 return {
                     "success": False,
-                    "deleted_pods": deleted_pods,
+                    "deleted_items": deleted_pods,
                     "message": f"Failed to delete pod {pod_name} in {pod_namespace}: {str(e)[:100]}...",
                 }
 
