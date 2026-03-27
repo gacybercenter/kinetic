@@ -2323,7 +2323,28 @@ def secret_present(
 
     return ret
 
-def keycloak_cluster_present(name, namespace, hostname, cluster_name, start_optimized=False, instances=1, image=None, db_vendor="postgres", db_host=None, db_port=5432, db_name=None, db_user_name_secret_name=None, db_user_name_secret_key="username", db_password_secret_name=None, db_password_secret_key="password", ingress_enabled=False, proxy_headers=None, tls_secret=None, truststores=None):
+
+def keycloak_cluster_present(
+    name,
+    namespace,
+    hostname,
+    cluster_name,
+    start_optimized=False,
+    instances=1,
+    image=None,
+    db_vendor="postgres",
+    db_host=None,
+    db_port=5432,
+    db_name=None,
+    db_user_name_secret_name=None,
+    db_user_name_secret_key="username",
+    db_password_secret_name=None,
+    db_password_secret_key="password",
+    ingress_enabled=False,
+    proxy_headers=None,
+    tls_secret=None,
+    truststores=None,
+):
     """
     Ensure a Keycloak Cluster exists in the specified Kubernetes namespace.
 
@@ -2411,10 +2432,10 @@ def keycloak_cluster_present(name, namespace, hostname, cluster_name, start_opti
                   secret:
                     name: my-secret
     """
-    ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__['kinetic-k8s.keycloak_cluster_present'](
+        result = __salt__["kinetic-k8s.keycloak_cluster_present"](
             namespace=namespace,
             hostname=hostname,
             cluster_name=cluster_name,
@@ -2432,22 +2453,27 @@ def keycloak_cluster_present(name, namespace, hostname, cluster_name, start_opti
             ingress_enabled=ingress_enabled,
             proxy_headers=proxy_headers,
             tls_secret=tls_secret,
-            truststores=truststores
+            truststores=truststores,
         )
 
-        ret['result'] = result['success']
-        ret['comment'] = result['message']
-        if result['updated']:
-            ret['changes'] = {'keycloak_cluster_updated': True}
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"keycloak_cluster_updated": True}
         else:
-            ret['changes'] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
 
     except Exception as e:
-        ret['result'] = False
-        ret['comment'] = f"Failed to ensure Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)[:100]}..."
-        ret['changes'] = {}
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure Keycloak Cluster {cluster_name} in namespace {namespace}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
 
     return ret
+
 
 def certificate_present(
     name,
@@ -2619,9 +2645,43 @@ def pvc_present(
             f"Failed to ensure PVC {pvc_name} in namespace {namespace}: {str(e)[:100]}..."
         )
         ret["changes"] = {}
-        ret["comment"] = (
-            f"Failed to ensure PVC {pvc_name} in namespace {namespace}: {str(e)[:100]}..."
-        )
+
+    return ret
+
+
+def job_cleanup(name, namespace=None):
+    """
+    Clean up completed jobs (such as pods) in the specified Kubernetes namespace (or all namespaces if none provided)
+    that have a status.phase of Succeeded.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        Optional. The Kubernetes namespace to target. If not provided, targets all namespaces.
+
+    Example:
+    .. code-block:: yaml
+
+        cleanup_completed_jobs:
+            k8s.job_cleanup:
+            - namespace: openstack
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        result = __salt__["kinetic-k8s.job_cleanup"](namespace=namespace)
+
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["deleted_items"]:
+            ret["changes"] = {"deleted_items": result["deleted_items"]}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to cleanup completed jobs: {str(e)[:100]}..."
         ret["changes"] = {}
 
     return ret
