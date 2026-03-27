@@ -1,0 +1,2 @@
+include:
+  - /formulas/glance/configure
