@@ -1,69 +1,55 @@
-## Copyright 2019 Augusta University
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-
 include:
-  - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/configure
-  - /formulas/common/ceph/configure
+  - /formulas/swift/install
+  - /formulas/osh-helm-repos/configure
 
-{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+swift_external_certificate:
+  k8s.certmanager_certificate_present:
+    - name: swift-tls-public
+    - certificate_name: swift-tls-public
+    - namespace: openstack
+    - secret_name: swift-tls-public
+    - issuer_name: letsencrypt-prod
+    - issuer_kind: ClusterIssuer
+    - common_name: {{ pillar['osh_values']['swift_cert']['common_name'] }}
+    - dns_names: {{ pillar['osh_values']['swift_cert']['dns_names'] }}
 
-{% if grains['spawning'] == 0 %}
+swift_internal_certificate:
+  k8s.certmanager_certificate_present:
+    - name: swift_internal_proxy
+    - certificate_name: swift_internal_proxy
+    - namespace: openstack
+    - secret_name: swift_internal_proxy
+    - issuer_name: cyberrange-ca-issuer
+    - issuer_kind: ClusterIssuer
+    - common_name: {{ pillar['osh_values']['swift_internal_proxy']['common_name'] }}
+    - dns_names: {{ pillar['osh_values']['swift_internal_proxy']['dns_names'] }}
 
-{{ spawn.spawnzero_complete() }}
+swift_ingress:
+  k8s.ingress_present:
+    - name: swift-ingress
+    - namespace: openstack
+    - ingress_class_name: {{ pillar['osh_values']['swift_ingress']['class_name'] }}
+    - hosts: {{ pillar['osh_values']['swift_ingress']['hosts'] }}
+    - tls: {{ pillar['osh_values']['swift_ingress']['tls'] }}
+    - require:
+      - k8s: swift_external_certificate
 
-{% else %}
-
-{{ spawn.check_spawnzero_status(grains['type']) }}
-
-{% endif %}
-
-/etc/sudoers.d/ceph:
-  file.managed:
-    - contents:
-      - ceph ALL = (root) NOPASSWD:ALL
-      - Defaults:ceph !requiretty
-    - mode: "0644"
-
-/var/lib/ceph/radosgw/ceph-{{ grains['id'] }}:
-  file.directory:
-    - user: ceph
-    - group: ceph
-
-get_adminkey:
-  file.managed:
-    - name: /etc/ceph/ceph.client.admin.keyring
-    - contents_pillar: ceph:ceph-client-admin-keyring
-    - mode: "0600"
-    - user: root
-    - group: root
-    - prereq:
-      - cmd: make_{{ grains['id'] }}_swiftkey
-
-make_{{ grains['id'] }}_swiftkey:
-  cmd.run:
-    - name: ceph auth get-or-create client.{{ grains['id'] }} osd 'allow rwx' mon 'allow rwx' -o /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
-    - creates:
-      - /etc/ceph/ceph.client.{{ grains['id'] }}.keyring
-
-wipe_adminkey:
-  file.absent:
-    - name: /etc/ceph/ceph.client.admin.keyring
-
-radosgw_service:
-  service.running:
-    - name: ceph-radosgw@{{ grains['id'] }}.service
-    - enable: true
-    - watch:
-      - file: /etc/ceph/ceph.conf
+install_swift:
+  k8s_helm.helm_release_present:
+    - release_name: swift
+    - chart_name: openstack-helm/swift
+    - namespace: openstack
+    - wait_timeout: 300
+    - wait_interval: 10
+    - keep_values_file: true
+    - pillar_key: osh_values:swift
+    - set_values:
+      - endpoints.oslo_db.auth.admin.username=root
+      - endpoints.oslo_db.auth.admin.password={{ pillar['osh_values']['mariadb_admin'] }}
+      - endpoints.oslo_db.auth.heat.username=swift
+      - endpoints.oslo_db.auth.heat.password={{ pillar['osh_values']['swift_admin'] }}
+      - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
+      - endpoints.identity.auth.swift.password={{ pillar['osh_values']['swift_admin'] }}
+    - require:
+      - k8s: glance_external_certificate
+      - k8s: glance_ingress
