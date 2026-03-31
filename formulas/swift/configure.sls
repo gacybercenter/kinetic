@@ -15,10 +15,10 @@ swift_external_certificate:
 
 swift_internal_certificate:
   k8s.certmanager_certificate_present:
-    - name: swift_internal_proxy
-    - certificate_name: swift_internal_proxy
+    - name: swift-internal-proxy
+    - certificate_name: swift-internal-proxy
     - namespace: openstack
-    - secret_name: swift_internal_proxy
+    - secret_name: swift-internal-proxy
     - issuer_name: cyberrange-ca-issuer
     - issuer_kind: ClusterIssuer
     - common_name: {{ pillar['osh_values']['swift_internal_proxy']['common_name'] }}
