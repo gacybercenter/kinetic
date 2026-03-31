@@ -46,10 +46,10 @@ install_swift:
     - set_values:
       - endpoints.oslo_db.auth.admin.username=root
       - endpoints.oslo_db.auth.admin.password={{ pillar['osh_values']['mariadb_admin'] }}
-      - endpoints.oslo_db.auth.heat.username=swift
-      - endpoints.oslo_db.auth.heat.password={{ pillar['osh_values']['swift_admin'] }}
+      - endpoints.oslo_db.auth.swift.username=swift
+      - endpoints.oslo_db.auth.swift.password={{ pillar['osh_values']['swift_admin'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
       - endpoints.identity.auth.swift.password={{ pillar['osh_values']['swift_admin'] }}
     - require:
-      - k8s: glance_external_certificate
-      - k8s: glance_ingress
+      - k8s: swift_external_certificate
+      - k8s: swift_ingress
