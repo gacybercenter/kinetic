@@ -6,7 +6,7 @@ swift_external_certificate:
   k8s.certmanager_certificate_present:
     - name: swift-tls-public
     - certificate_name: swift-tls-public
-    - namespace: openstack
+    - namespace: rook-ceph
     - secret_name: swift-tls-public
     - issuer_name: letsencrypt-prod
     - issuer_kind: ClusterIssuer
@@ -17,7 +17,7 @@ swift_internal_certificate:
   k8s.certmanager_certificate_present:
     - name: swift-internal-proxy
     - certificate_name: swift-internal-proxy
-    - namespace: openstack
+    - namespace: rook-ceph
     - secret_name: swift-internal-proxy
     - issuer_name: cyberrange-ca-issuer
     - issuer_kind: ClusterIssuer
