@@ -5526,7 +5526,7 @@ def ceph_object_store_present(
                 },
                 "dataPool": {
                     "failureDomain": "host",
-                    "erasureCoded": {"dataChunks": 2, "codingChunks": 1},
+                    "replicated": {"size": replicas},
                 },
                 "preservePoolsOnDelete": preserve_pools_on_delete,
                 "gateway": {
