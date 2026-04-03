@@ -24,15 +24,6 @@ swift_internal_certificate:
     - common_name: {{ pillar['osh_values']['swift_internal_proxy']['common_name'] }}
     - dns_names: {{ pillar['osh_values']['swift_internal_proxy']['dns_names'] }}
 
-swift_ingress:
-  k8s.ingress_present:
-    - name: swift-ingress
-    - namespace: openstack
-    - ingress_class_name: {{ pillar['osh_values']['swift_ingress']['class_name'] }}
-    - hosts: {{ pillar['osh_values']['swift_ingress']['hosts'] }}
-    - tls: {{ pillar['osh_values']['swift_ingress']['tls'] }}
-    - require:
-      - k8s: swift_external_certificate
 
 deploy_ceph_object_store:
   k8s.ceph_object_store_present:
