@@ -36,7 +36,7 @@ swift_ingress:
 
 deploy_ceph_object_store:
   k8s.ceph_object_store_present:
-    - name: my-object-store
+    - name: rsc-object-store
     - namespace: rook-ceph
     - replicas: 3
     - port: 80
