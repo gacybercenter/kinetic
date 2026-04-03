@@ -5587,24 +5587,42 @@ def ceph_object_store_present(
                     "resource": existing_store,
                 }
             else:
-                # Update the existing CephObjectStore
-                updated_store = custom_api.replace_namespaced_custom_object(
+                # Delete the existing CephObjectStore before recreating due to update limitations
+                try:
+                    custom_api.delete_namespaced_custom_object(
+                        group="ceph.rook.io",
+                        version="v1",
+                        namespace=namespace,
+                        plural="cephobjectstores",
+                        name=name,
+                    )
+                    return {
+                        "success": True,
+                        "updated": True,
+                        "message": f"CephObjectStore {name} deleted in namespace {namespace}, will recreate with new spec.",
+                        "resource": {},
+                    }
+                except ApiException as delete_err:
+                    return {
+                        "success": False,
+                        "updated": False,
+                        "message": f"Failed to delete existing CephObjectStore {name} in namespace {namespace}: {str(delete_err)[:100]}...",
+                        "resource": {},
+                    }
+        except ApiException as e:
+            if e.status == 404:
+                # CephObjectStore does not exist, create it
+                created_store = custom_api.create_namespaced_custom_object(
                     group="ceph.rook.io",
                     version="v1",
                     namespace=namespace,
                     plural="cephobjectstores",
-                    name=name,
                     body=object_store_body,
                 )
-                return {
-                    "success": True,
-                    "updated": True,
-                    "message": f"CephObjectStore {name} updated in namespace {namespace}.",
-                    "resource": updated_store,
-                }
-        except ApiException as e:
-            if e.status == 404:
-                # CephObjectStore does not exist, create it
+                # Wait briefly to ensure deletion has propagated if this is a recreation
+                import time
+
+                time.sleep(2)
                 created_store = custom_api.create_namespaced_custom_object(
                     group="ceph.rook.io",
                     version="v1",
