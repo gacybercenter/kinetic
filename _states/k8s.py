@@ -2684,10 +2684,10 @@ def job_cleanup(name, namespace=None):
         ret["comment"] = f"Failed to cleanup completed jobs: {str(e)[:100]}..."
         ret["changes"] = {}
 
-            return ret
+    return ret
 
 
-    def ceph_object_store_present(
+def ceph_object_store_present(
         name,
         namespace,
         replicas=1,
