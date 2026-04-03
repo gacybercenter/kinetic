@@ -5622,13 +5622,13 @@ def ceph_object_store_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to manage CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}...",
+                    "message": f"Failed to manage CephObjectStore {name} in namespace {namespace}: {str(e)}...",
                     "resource": {},
                 }
     except Exception as e:
         return {
             "success": False,
             "updated": False,
-            "message": f"Error managing CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}...",
+            "message": f"Error managing CephObjectStore {name} in namespace {namespace}: {str(e)}...",
             "resource": {},
         }
