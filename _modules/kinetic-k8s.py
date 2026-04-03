@@ -5452,3 +5452,183 @@ def job_cleanup(namespace=None):
             "deleted_items": [],
             "message": f"Error cleaning up completed jobs: {str(e)[:100]}...",
         }
+
+
+def ceph_object_store_present(
+    name,
+    namespace,
+    replicas=1,
+    port=80,
+    ssl_enabled=False,
+    annotations=None,
+    gateway_instances=1,
+    gateway_resources=None,
+    enable_swift_api=True,
+    swift_port=8080,
+    swift_account_in_url=True,
+    swift_url_prefix="swift",
+    enable_s3_api=True,
+    preserve_pools_on_delete=True,
+    auth_keystone=False,
+    keystone_url="",
+    keystone_accepted_roles=None,
+    keystone_implicit_tenants="swift",
+    keystone_revocation_interval=1200,
+    keystone_service_user_secret_name="",
+    keystone_token_cache_size=1000,
+):
+    """
+    Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
+
+    Args:
+        name (str): The name of the Ceph Object Store resource.
+        namespace (str): The Kubernetes namespace for the Ceph Object Store (typically the Rook namespace).
+        replicas (int, optional): Number of RGW replicas for high availability. Defaults to 1.
+        port (int, optional): Port for the RGW service (S3 API). Defaults to 80.
+        ssl_enabled (bool, optional): Enable SSL for RGW service. Defaults to False.
+        annotations (dict, optional): Additional annotations for the Ceph Object Store resource. Defaults to None.
+        gateway_instances (int, optional): Number of gateway instances. Defaults to 1.
+        gateway_resources (dict, optional): Resource limits and requests for gateway pods. Defaults to None.
+        enable_swift_api (bool, optional): Enable Swift API compatibility for the object store. Defaults to True.
+        swift_port (int, optional): Port for Swift API if enabled. Defaults to 8080.
+        swift_account_in_url (bool, optional): Include account in Swift URL structure. Defaults to True.
+        swift_url_prefix (str, optional): URL prefix for Swift API. Defaults to "swift".
+        enable_s3_api (bool, optional): Enable S3 API compatibility (default in RGW). Defaults to True.
+        preserve_pools_on_delete (bool, optional): Preserve metadata and data pools when deleting the object store. Defaults to True.
+        auth_keystone (bool, optional): Enable Keystone authentication integration. Defaults to False.
+        keystone_url (str, optional): URL for Keystone authentication service. Defaults to "".
+        keystone_accepted_roles (list, optional): List of roles accepted by Keystone for access. Defaults to None.
+        keystone_implicit_tenants (str, optional): Implicit tenant handling for Keystone (e.g., "swift"). Defaults to "swift".
+        keystone_revocation_interval (int, optional): Token revocation check interval in seconds. Defaults to 1200.
+        keystone_service_user_secret_name (str, optional): Name of the secret containing Keystone service user credentials. Defaults to "".
+        keystone_token_cache_size (int, optional): Size of token cache for Keystone authentication. Defaults to 1000.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
+    """
+    try:
+        # Load Kubernetes configuration (in-cluster or from kubeconfig)
+        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+        custom_api = client.CustomObjectsApi()
+
+        # Define the CephObjectStore resource for Rook
+        object_store_body = {
+            "apiVersion": "ceph.rook.io/v1",
+            "kind": "CephObjectStore",
+            "metadata": {
+                "name": name,
+                "namespace": namespace,
+            },
+            "spec": {
+                "metadataPool": {
+                    "failureDomain": "host",
+                    "replicated": {"size": replicas},
+                },
+                "dataPool": {
+                    "failureDomain": "host",
+                    "erasureCoded": {"dataChunks": 2, "codingChunks": 1},
+                },
+                "preservePoolsOnDelete": preserve_pools_on_delete,
+                "gateway": {
+                    "port": port,
+                    "instances": gateway_instances,
+                    "ssl": ssl_enabled,
+                    "type": "s3",  # Primary API type for S3 compatibility
+                },
+                "protocols": {
+                    "s3": {"enabled": enable_s3_api},
+                    "swift": {
+                        "enabled": enable_swift_api,
+                        "accountInUrl": swift_account_in_url,
+                        "urlPrefix": swift_url_prefix,
+                    },
+                },
+            },
+        }
+
+        # Add annotations if provided
+        if annotations:
+            object_store_body["metadata"]["annotations"] = annotations
+
+        # Add gateway resources if provided
+        if gateway_resources:
+            object_store_body["spec"]["gateway"]["resources"] = gateway_resources
+
+        # Configure Keystone authentication if enabled
+        if auth_keystone:
+            object_store_body["spec"]["auth"] = {
+                "keystone": {
+                    "url": keystone_url,
+                    "acceptedRoles": keystone_accepted_roles
+                    if keystone_accepted_roles
+                    else ["admin", "member", "service"],
+                    "implicitTenants": keystone_implicit_tenants,
+                    "revocationInterval": keystone_revocation_interval,
+                    "serviceUserSecretName": keystone_service_user_secret_name,
+                    "tokenCacheSize": keystone_token_cache_size,
+                }
+            }
+
+        # Check if CephObjectStore already exists
+        try:
+            existing_store = custom_api.get_namespaced_custom_object(
+                group="ceph.rook.io",
+                version="v1",
+                namespace=namespace,
+                plural="cephobjectstores",
+                name=name,
+            )
+            # Compare existing spec with desired spec (simplified check)
+            if existing_store.get("spec") == object_store_body.get("spec"):
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"CephObjectStore {name} already exists in namespace {namespace} with matching spec.",
+                    "resource": existing_store,
+                }
+            else:
+                # Update the existing CephObjectStore
+                updated_store = custom_api.replace_namespaced_custom_object(
+                    group="ceph.rook.io",
+                    version="v1",
+                    namespace=namespace,
+                    plural="cephobjectstores",
+                    name=name,
+                    body=object_store_body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"CephObjectStore {name} updated in namespace {namespace}.",
+                    "resource": updated_store,
+                }
+        except ApiException as e:
+            if e.status == 404:
+                # CephObjectStore does not exist, create it
+                created_store = custom_api.create_namespaced_custom_object(
+                    group="ceph.rook.io",
+                    version="v1",
+                    namespace=namespace,
+                    plural="cephobjectstores",
+                    body=object_store_body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"CephObjectStore {name} created in namespace {namespace}.",
+                    "resource": created_store,
+                }
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to manage CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}...",
+                    "resource": {},
+                }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Error managing CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}...",
+            "resource": {},
+        }

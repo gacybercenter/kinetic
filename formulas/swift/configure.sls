@@ -34,22 +34,34 @@ swift_ingress:
     - require:
       - k8s: swift_external_certificate
 
-install_swift:
-  k8s_helm.helm_release_present:
-    - release_name: swift
-    - chart_name: openstack-helm/swift
-    - namespace: openstack
-    - wait_timeout: 300
-    - wait_interval: 10
-    - keep_values_file: true
-    - pillar_key: osh_values:swift
-    - set_values:
-      - endpoints.oslo_db.auth.admin.username=root
-      - endpoints.oslo_db.auth.admin.password={{ pillar['osh_values']['mariadb_admin'] }}
-      - endpoints.oslo_db.auth.swift.username=swift
-      - endpoints.oslo_db.auth.swift.password={{ pillar['osh_values']['swift_admin'] }}
-      - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
-      - endpoints.identity.auth.swift.password={{ pillar['osh_values']['swift_admin'] }}
-    - require:
-      - k8s: swift_external_certificate
-      - k8s: swift_ingress
+deploy_ceph_object_store:
+  k8s.ceph_object_store_present:
+    - name: my-object-store
+    - namespace: rook-ceph
+    - replicas: 3
+    - port: 80
+    - ssl_enabled: false
+    - gateway_instances: 2
+    - enable_swift_api: true
+    - swift_port: 8080
+    - swift_account_in_url: true
+    - swift_url_prefix: "swift"
+    - enable_s3_api: true
+    - preserve_pools_on_delete: true
+    - auth_keystone: true
+    - keystone_url: "http://keystone-api.openstack.svc.cluster.local:5000/v3"
+    - keystone_accepted_roles:
+        - admin
+        - member
+        - service
+    - keystone_implicit_tenants: "swift"
+    - keystone_revocation_interval: 1200
+    - keystone_service_user_secret_name: "keystone-admin"
+    - keystone_token_cache_size: 1000
+    - gateway_resources:
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+        requests:
+          cpu: "200m"
+          memory: "256Mi"
