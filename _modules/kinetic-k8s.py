@@ -13,7 +13,7 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
 # Ensure Salt can find this module
-__virtualname__ = "kinetic-k8s"
+__virtualname__ = "kinetic_k8s"
 
 
 @decorators.memoize

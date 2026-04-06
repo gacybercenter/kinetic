@@ -2919,7 +2919,7 @@ def kubernetes_deployment_present(
     host_ipc=False,
     share_process_namespace=False,
     security_context=None,
-    readiness_gates Remote Code Execution=None,
+    readiness_gates=None,
     runtime_class_name=None,
     enable_service_links=True,
     preemption_policy="PreemptLowerPriority",
