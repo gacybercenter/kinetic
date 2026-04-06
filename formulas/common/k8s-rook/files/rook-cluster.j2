@@ -33,9 +33,9 @@ cephClusterSpec:
   network:
     provider: host
     addressRanges:
-      public: 
+      public:
         - {{ pillar['networking']['subnets']['sfe'] }}
-      cluster: 
+      cluster:
         - {{ pillar['networking']['subnets']['sbe'] }}
   placement:
     all:
@@ -122,53 +122,3 @@ cephClusterSpec:
       {% else %}
       []
       {% endif %}
-cephFileSystems:
-  - name: ceph-filesystem
-    storageClass:
-      enabled: true
-      isDefault: false
-      name: ceph-filesystem
-      parameters:
-      clusterID: rook-ceph
-      fsName: cephfs
-      pool: data0
-      csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
-      csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
-      csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
-      csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
-      csi.storage.k8s.io/controller-publish-secret-name: rook-csi-cephfs-provisioner
-      csi.storage.k8s.io/controller-publish-secret-namespace: rook-ceph
-      csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
-      csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
-      reclaimPolicy: Delete
-    spec:
-      metadataPool:
-        replicated:
-          size: 3
-      dataPools:
-        - name: data0
-          replicated:
-            size: 3
-      metadataServer:
-        activeCount: 1
-        activeStandby: true
-        resources:
-          limits:
-            memory: "4Gi"
-          requests:
-            cpu: "1000m"
-            memory: "4Gi"
-        priorityClassName: system-cluster-critical
-        placement:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                  - key: {{ all_node_affinity_key }}
-                    operator: {{ all_node_affinity_operator }}
-                    values:
-                    - {{ all_node_affinity_value }}
-          tolerations:
-          - effect: NoSchedule
-            key: node-role.kubernetes.io/rook-node
-            operator: Exists

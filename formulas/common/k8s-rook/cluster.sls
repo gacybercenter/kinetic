@@ -55,7 +55,7 @@ render_rook_values_file:
         devices: {{ devices | default([]) }}
         enableCephFS: false
         enableRBD: true
-        enableRGW: true
+        enableRGW: false
         dashboard_enabled: true
         dashboard_urlPrefix: "/"
         monitoring_enabled: true
@@ -77,7 +77,7 @@ helm_install_rook_ceph_cluster:
     - version: {{ rook_version }}
     - flags:
       - debug
-    - kvflags: 
+    - kvflags:
         values: /tmp/rook-cluster-values.yaml
     - require:
       - helm: add_rook_helm_repo

@@ -46,14 +46,14 @@ install_heat:
     - set_values:
       - endpoints.oslo_db.auth.admin.username=root
       - endpoints.oslo_db.auth.admin.password={{ pillar['osh_values']['mariadb_admin'] }}
-      - endpoints.oslo_db.auth.heat.username=glance
-      - endpoints.oslo_db.auth.heat.password={{ pillar['osh_values']['glance_admin'] }}
+      - endpoints.oslo_db.auth.glance.username=glance
+      - endpoints.oslo_db.auth.glance.password={{ pillar['osh_values']['glance_admin'] }}
       - endpoints.oslo_messaging.auth.admin.username=rabbitmq
       - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh_values']['rabbitmq_admin'] }}
-      - endpoints.oslo_messaging.auth.heat.username=heat
-      - endpoints.oslo_messaging.auth.heat.password={{ pillar['osh_values']['glance_rq_user'] }}
+      - endpoints.oslo_messaging.auth.glance.username=glance
+      - endpoints.oslo_messaging.auth.glance.password={{ pillar['osh_values']['glance_rq_user'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
-      - endpoints.identity.auth.heat.password={{ pillar['osh_values']['glance_admin'] }}
+      - endpoints.identity.auth.glance.password={{ pillar['osh_values']['glance_admin'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh_values']['glance_test'] }}
     - require:
       - k8s: glance_external_certificate
