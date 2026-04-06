@@ -5477,6 +5477,8 @@ def ceph_object_store_present(
     keystone_service_user_secret_name="",
     keystone_token_cache_size=1000,
     rgw_keystone_api_version="3",
+    rgw_keystone_implicit_tenants="true",
+    rgw_s3_auth_use_keystone="true",
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -5504,6 +5506,8 @@ def ceph_object_store_present(
         keystone_service_user_secret_name (str, optional): Name of the secret containing Keystone service user credentials. Defaults to "".
         keystone_token_cache_size (int, optional): Size of token cache for Keystone authentication. Defaults to 1000.
         rgw_keystone_api_version (str, optional): Keystone API version for RGW authentication. Defaults to "3".
+        rgw_keystone_implicit_tenants (str, optional): Enable implicit tenants for Keystone-Swift integration. Defaults to "true".
+        rgw_s3_auth_use_keystone (str, optional): Use Keystone for S3 authentication. Defaults to "true".
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
@@ -5556,21 +5560,26 @@ def ceph_object_store_present(
         if gateway_resources:
             object_store_body["spec"]["gateway"]["resources"] = gateway_resources
 
-        # Configure Keystone authentication if enabled
+        # Configure Keystone authentication if enabled, under gateway rgwConfig
         if auth_keystone:
-            object_store_body["spec"]["auth"] = {
-                "keystone": {
-                    "url": keystone_url,
-                    "acceptedRoles": keystone_accepted_roles
+            object_store_body["spec"]["gateway"]["rgwConfig"] = {
+                "rgw_keystone_api_version": rgw_keystone_api_version,
+                "rgw_keystone_implicit_tenants": rgw_keystone_implicit_tenants,
+                "rgw_s3_auth_use_keystone": rgw_s3_auth_use_keystone,
+                "rgw_keystone_url": keystone_url,
+                "rgw_keystone_accepted_roles": ",".join(
+                    keystone_accepted_roles
                     if keystone_accepted_roles
-                    else ["admin", "member", "service"],
-                    "implicitTenants": keystone_implicit_tenants,
-                    "revocationInterval": keystone_revocation_interval,
-                    "serviceUserSecretName": keystone_service_user_secret_name,
-                    "tokenCacheSize": keystone_token_cache_size,
-                    "apiVersion": rgw_keystone_api_version,
-                }
+                    else ["admin", "member", "service"]
+                ),
+                "rgw_keystone_revocation_interval": str(keystone_revocation_interval),
+                "rgw_keystone_token_cache_size": str(keystone_token_cache_size),
             }
+            # Add service user secret reference if provided
+            if keystone_service_user_secret_name:
+                object_store_body["spec"]["gateway"]["serviceUserSecretName"] = (
+                    keystone_service_user_secret_name
+                )
 
         # Check if CephObjectStore already exists
         try:

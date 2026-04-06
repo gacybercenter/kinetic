@@ -2710,6 +2710,8 @@ def ceph_object_store_present(
     keystone_service_user_secret_name="",
     keystone_token_cache_size=1000,
     rgw_keystone_api_version="3",
+    rgw_keystone_implicit_tenants="true",
+    rgw_s3_auth_use_keystone="true",
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -2777,6 +2779,15 @@ def ceph_object_store_present(
     rgw_keystone_api_version
         Optional. Keystone API version for RGW authentication. Defaults to "3".
 
+    rgw_keystone_implicit_tenants
+        Optional. Enable implicit tenants for Keystone-Swift integration. Defaults to "true".
+
+    rgw_s3_auth_use_keystone
+        Optional. Use Keystone for S3 authentication. Defaults to "true".
+
+    rgw_keystone_api_version
+        Optional. Keystone API version for RGW authentication. Defaults to "3".
+
     keystone_token_cache_size
         Optional. Size of token cache for Keystone authentication. Defaults to 1000.
 
@@ -2807,6 +2818,9 @@ def ceph_object_store_present(
             - keystone_revocation_interval: 1200
             - keystone_service_user_secret_name: "usersecret"
             - keystone_token_cache_size: 1000
+            - rgw_keystone_api_version: "3"
+            - rgw_keystone_implicit_tenants: "true"
+            - rgw_s3_auth_use_keystone: "true"
             - rgw_keystone_api_version: "3"
             - gateway_resources:
                 limits:
@@ -2842,6 +2856,8 @@ def ceph_object_store_present(
             keystone_service_user_secret_name=keystone_service_user_secret_name,
             keystone_token_cache_size=keystone_token_cache_size,
             rgw_keystone_api_version=rgw_keystone_api_version,
+            rgw_keystone_implicit_tenants=rgw_keystone_implicit_tenants,
+            rgw_s3_auth_use_keystone=rgw_s3_auth_use_keystone,
         )
 
         ret["result"] = result["success"]
