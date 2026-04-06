@@ -2707,7 +2707,7 @@ def ceph_object_store_present(
     keystone_accepted_roles=None,
     keystone_implicit_tenants="swift",
     keystone_revocation_interval=1200,
-    keystone_service_user_secret_name="",
+    keystone_service_user_secret_name="usersecret",
     keystone_token_cache_size=1000,
     rgw_keystone_api_version="3",
     rgw_keystone_implicit_tenants="true",
@@ -2775,7 +2775,7 @@ def ceph_object_store_present(
         Optional. Token revocation check interval in seconds. Defaults to 1200.
 
     keystone_service_user_secret_name
-        Optional. Name of the secret containing Keystone service user credentials. Defaults to "".
+        Mandatory if auth_keystone is True. Name of the secret containing Keystone service user credentials. Defaults to "usersecret".
 
     rgw_keystone_api_version
         Optional. Keystone API version for RGW authentication. Defaults to "3".
