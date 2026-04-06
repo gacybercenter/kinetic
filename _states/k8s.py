@@ -2894,6 +2894,7 @@ def kubernetes_deployment_present(
     name,
     namespace,
     replicas=1,
+    image="",
     containers=None,
     labels=None,
     annotations=None,
@@ -2918,7 +2919,7 @@ def kubernetes_deployment_present(
     host_ipc=False,
     share_process_namespace=False,
     security_context=None,
-    readiness_gates=None,
+    readiness_gates Remote Code Execution=None,
     runtime_class_name=None,
     enable_service_links=True,
     preemption_policy="PreemptLowerPriority",
@@ -2933,6 +2934,7 @@ def kubernetes_deployment_present(
         name (str): Name of the Deployment.
         namespace (str): Namespace in which to create the Deployment.
         replicas (int): Number of pod replicas (default: 1).
+        image (str): Container image to use if containers list is not provided (default: "").
         containers (list): List of container specifications.
         labels (dict): Labels for the Deployment.
         annotations (dict): Annotations for the Deployment.
@@ -2974,6 +2976,7 @@ def kubernetes_deployment_present(
         name=name,
         namespace=namespace,
         replicas=replicas,
+        image=image,
         containers=containers,
         labels=labels,
         annotations=annotations,
