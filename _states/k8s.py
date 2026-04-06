@@ -2898,34 +2898,14 @@ def kubernetes_deployment_present(
     containers=None,
     labels=None,
     annotations=None,
-    service_account_name="",
+    resources=None,
     node_selector=None,
     tolerations=None,
     affinity=None,
-    resources=None,
-    image_pull_secrets=None,
+    service_account_name="",
     init_containers=None,
     volumes=None,
-    strategy=None,
-    pod_annotations=None,
-    pod_labels=None,
     restart_policy="Always",
-    termination_grace_period_seconds=None,
-    active_deadline_seconds=None,
-    dns_policy="ClusterFirst",
-    host_aliases=None,
-    host_network=False,
-    host_pid=False,
-    host_ipc=False,
-    share_process_namespace=False,
-    security_context=None,
-    readiness_gates=None,
-    runtime_class_name=None,
-    enable_service_links=True,
-    preemption_policy="PreemptLowerPriority",
-    priority_class_name=None,
-    priority=0,
-    scheduler_name="default-scheduler",
 ):
     """
     Ensure a Kubernetes Deployment is present with the specified configuration.
@@ -2938,34 +2918,14 @@ def kubernetes_deployment_present(
         containers (list): List of container specifications.
         labels (dict): Labels for the Deployment.
         annotations (dict): Annotations for the Deployment.
-        service_account_name (str): Service account to use for pods (default: "").
+        resources (dict): Resource requirements for containers.
         node_selector (dict): Node selector for pod scheduling.
         tolerations (list): Tolerations for pod scheduling.
         affinity (dict): Affinity rules for pod scheduling (default: None).
-        resources (dict): Resource requirements for containers.
-        image_pull_secrets (list): List of secrets for pulling images.
+        service_account_name (str): Service account to use for pods (default: "").
         init_containers (list): List of init container specifications.
         volumes (list): List of volume specifications.
-        strategy (dict): Update strategy for the Deployment.
-        pod_annotations (dict): Annotations for pods.
-        pod_labels (dict): Labels for pods.
         restart_policy (str): Restart policy for pods (default: 'Always').
-        termination_grace_period_seconds (int): Grace period for pod termination.
-        active_deadline_seconds (int): Deadline for pod to be active.
-        dns_policy (str): DNS policy for pods (default: 'ClusterFirst').
-        host_aliases (list): Host aliases for pods.
-        host_network (bool): Use host networking for pods (default: False).
-        host_pid (bool): Use host PID namespace for pods (default: False).
-        host_ipc (bool): Use host IPC namespace for pods (default: False).
-        share_process_namespace (bool): Share process namespace among containers (default: False).
-        security_context (dict): Security context for pods.
-        readiness_gates (list): Readiness gates for pods.
-        runtime_class_name (str): Runtime class name for pods.
-        enable_service_links (bool): Enable service links for pods (default: True).
-        preemption_policy (str): Preemption policy for pods (default: 'PreemptLowerPriority').
-        priority_class_name (str): Priority class name for pods.
-        priority (int): Priority for pods (default: 0).
-        scheduler_name (str): Scheduler name for pods (default: 'default-scheduler').
 
     Returns:
         dict: Result of the operation.
@@ -2980,34 +2940,14 @@ def kubernetes_deployment_present(
         containers=containers,
         labels=labels,
         annotations=annotations,
-        service_account_name=service_account_name,
+        resources=resources,
         node_selector=node_selector,
         tolerations=tolerations,
         affinity=affinity,
-        resources=resources,
-        image_pull_secrets=image_pull_secrets,
+        service_account_name=service_account_name,
         init_containers=init_containers,
         volumes=volumes,
-        strategy=strategy,
-        pod_annotations=pod_annotations,
-        pod_labels=pod_labels,
         restart_policy=restart_policy,
-        termination_grace_period_seconds=termination_grace_period_seconds,
-        active_deadline_seconds=active_deadline_seconds,
-        dns_policy=dns_policy,
-        host_aliases=host_aliases,
-        host_network=host_network,
-        host_pid=host_pid,
-        host_ipc=host_ipc,
-        share_process_namespace=share_process_namespace,
-        security_context=security_context,
-        readiness_gates=readiness_gates,
-        runtime_class_name=runtime_class_name,
-        enable_service_links=enable_service_links,
-        preemption_policy=preemption_policy,
-        priority_class_name=priority_class_name,
-        priority=priority,
-        scheduler_name=scheduler_name,
     )
 
     if result.get("changes"):
