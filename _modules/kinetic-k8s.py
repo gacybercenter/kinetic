@@ -5668,6 +5668,153 @@ def ceph_object_store_present(
         return {
             "success": False,
             "updated": False,
-            "message": f"Error managing CephObjectStore {name} in namespace {namespace}: {str(e)}...",
+            "message": f"Error managing CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}...",
+            "resource": {},
+        }
+
+
+def kubernetes_deployment_present(
+    name,
+    namespace,
+    replicas=1,
+    image="",
+    containers=None,
+    labels=None,
+    annotations=None,
+    resources=None,
+    node_selector=None,
+    tolerations=None,
+    affinity=None,
+    service_account_name="",
+    init_containers=None,
+    volumes=None,
+    restart_policy="Always",
+):
+    """
+    Ensure a Kubernetes Deployment exists in the specified namespace.
+
+    Args:
+        name (str): The name of the Deployment.
+        namespace (str): The Kubernetes namespace for the Deployment.
+        replicas (int, optional): Number of replicas for the Deployment. Defaults to 1.
+        image (str, optional): Container image to use if containers list is not provided. Defaults to "".
+        containers (list, optional): List of container specifications. If not provided, a single container with the provided image is created. Defaults to None.
+        labels (dict, optional): Labels to apply to the Deployment and Pod selector. Defaults to None.
+        annotations (dict, optional): Annotations to apply to the Deployment. Defaults to None.
+        resources (dict, optional): Resource limits and requests for containers. Defaults to None.
+        node_selector (dict, optional): Node selector for scheduling the Pods. Defaults to None.
+        tolerations (list, optional): Tolerations for scheduling the Pods on tainted nodes. Defaults to None.
+        affinity (dict, optional): Affinity rules for scheduling the Pods. Defaults to None.
+        service_account_name (str, optional): Service account name to assign to the Pods. Defaults to "".
+        init_containers (list, optional): List of init container specifications. Defaults to None.
+        volumes (list, optional): List of volume specifications for the Pods. Defaults to None.
+        restart_policy (str, optional): Restart policy for the Pods. Defaults to "Always".
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
+    """
+    try:
+        # Load Kubernetes configuration (in-cluster or from kubeconfig)
+        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+        apps_api = client.AppsV1Api()
+
+        # Define container spec if containers list is not provided and image is specified
+        if not containers and image:
+            container = {
+                "name": name,
+                "image": image,
+            }
+            if resources:
+                container["resources"] = resources
+            containers = [container]
+
+        # Define the Deployment spec
+        deployment_body = {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "name": name,
+                "namespace": namespace,
+            },
+            "spec": {
+                "replicas": replicas,
+                "selector": {"matchLabels": labels if labels else {"app": name}},
+                "template": {
+                    "metadata": {"labels": labels if labels else {"app": name}},
+                    "spec": {
+                        "containers": containers if containers else [],
+                        "restartPolicy": restart_policy,
+                    },
+                },
+            },
+        }
+
+        # Add annotations if provided
+        if annotations:
+            deployment_body["metadata"]["annotations"] = annotations
+
+        # Add optional pod spec fields
+        pod_spec = deployment_body["spec"]["template"]["spec"]
+        if node_selector:
+            pod_spec["nodeSelector"] = node_selector
+        if tolerations:
+            pod_spec["tolerations"] = tolerations
+        if affinity:
+            pod_spec["affinity"] = affinity
+        if service_account_name:
+            pod_spec["serviceAccountName"] = service_account_name
+        if init_containers:
+            pod_spec["initContainers"] = init_containers
+        if volumes:
+            pod_spec["volumes"] = volumes
+
+        # Check if Deployment already exists
+        try:
+            existing_deployment = apps_api.read_namespaced_deployment(
+                name=name, namespace=namespace
+            )
+            # Compare existing spec with desired spec (simplified check)
+            if existing_deployment.spec.to_dict() == deployment_body["spec"]:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"Deployment {name} already exists in namespace {namespace} with matching spec.",
+                    "resource": existing_deployment.to_dict(),
+                }
+            else:
+                # Update the existing Deployment
+                updated_deployment = apps_api.replace_namespaced_deployment(
+                    name=name, namespace=namespace, body=deployment_body
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Deployment {name} updated in namespace {namespace}.",
+                    "resource": updated_deployment.to_dict(),
+                }
+        except ApiException as e:
+            if e.status == 404:
+                # Deployment does not exist, create it
+                created_deployment = apps_api.create_namespaced_deployment(
+                    namespace=namespace, body=deployment_body
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Deployment {name} created in namespace {namespace}.",
+                    "resource": created_deployment.to_dict(),
+                }
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to manage Deployment {name} in namespace {namespace}: {str(e)[:100]}...",
+                    "resource": {},
+                }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Error managing Deployment {name} in namespace {namespace}: {str(e)[:100]}...",
             "resource": {},
         }
