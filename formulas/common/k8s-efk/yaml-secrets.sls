@@ -1,0 +1,242 @@
+opensearch_internal_users:
+  k8s.secret_present:
+    - name: internalUsersSecret
+    - secret_name: internal-users-secret
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - data:
+        internal_users.yml: |
+            # This is the internal user database
+            # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
+            _meta:
+                type: "internalusers"
+                config_version: 2
+            admin:
+                hash: {{ pillar['opensearch_admin_hash'] }}
+                reserved: true
+                backend_roles:
+                    - "admin"
+                    - "all_access"
+                description: "Admin user"
+            fluentbit:
+                hash: {{ pillar['opensearch_fluentbit_hash'] }}
+                reserved: false
+                backend_roles:
+                    - "log_writer"
+                description: "Fluent Bit log writer"
+            dashboard_user:
+                hash: {{ pillar['opensearch_dashboard_user_hash'] }}
+                reserved: false
+                backend_roles:
+                    - "dashboard_reader"
+                description: "OpenSearch Dashboards read-only user"
+
+opensearch_action_groups_secret:
+  k8s.secret_present:
+    - name: actionGroupsSecret
+    - secret_name: action-groups-secret
+    - namespace: {{ pillar['efk_namespace'] }}
+    - data:
+        action_groups.yml: |
+            # This defines reusable action groups for permissions
+            gcr_action_group:
+                reserved: false
+                hidden: false
+                allowed_actions:
+                - "indices:data/write/index*"
+                - "indices:data/write/update*"
+                - "indices:admin/mapping/put"
+                - "indices:data/write/bulk*"
+                - "read"
+                - "write"
+                static: false
+            admin_action_group:  # Optional: Add for future admin-related roles if needed
+                reserved: false
+                hidden: false
+                allowed_actions:
+                - "indices:admin/*"
+                - "indices:data/*"
+                - "cluster:admin/*"
+                static: false
+            _meta:
+                type: "actiongroups"
+                config_version: 2
+opensearch_config_secret:
+  k8s.secret_present:
+    - name: configSecret
+    - secret_name: config-secret
+    - namespace: {{ pillar['efk_namespace'] }}
+    - data:
+        config.yml: |
+            _meta:
+              type: "config"
+              config_version: 2
+            config:
+              dynamic:
+                http:
+                  anonymous_auth_enabled: false
+                authc:
+                  basic_internal_auth_domain:
+                    description: "Authenticate via HTTP Basic against internal users database"
+                    http_enabled: true
+                    transport_enabled: true
+                    order: 0
+                    http_authenticator:
+                      type: basic
+                      challenge: true
+                    authentication_backend:
+                      type: internal
+opensearch_tenants_secret:
+  k8s.secret_present:
+    - name: tenantsSecret
+    - secret_name: tenants-secret
+    - namespace: {{ pillar['efk_namespace'] }}
+    - data:
+        tenants.yml: |
+            _meta:
+                type: "tenants"
+                config_version: 2
+opensearch_roles_mapping_secret:
+  k8s.secret_present:
+    - name: roleMappingSecret
+    - secret_name: role-mapping-secret
+    - namespace: {{ pillar['efk_namespace'] }}
+    - data:
+        roles_mapping.yml: |
+            # This maps roles to users and groups
+            _meta:
+                type: "rolesmapping"
+                config_version: 2
+            all_access:
+                reserved: true
+                users:
+                - "admin"
+            admin:
+                reserved: true
+                users:
+                - "admin"
+                backend_roles:
+                - "all_access"
+            log_writer:
+                reserved: false
+                users:
+                - "fluentbit"
+            dashboard_reader:
+                reserved: false
+                users:
+                - "dashboard_user"
+opensearch_roles_secret:
+  k8s.secret_present:
+    - name: rolesSecret
+    - secret_name: roles-secret
+    - namespace: {{ pillar['efk_namespace'] }}
+    - data:
+        roles.yml: |
+            # This defines the access control roles
+            _meta:
+                type: "roles"
+                config_version: 2
+            admin:
+                reserved: true
+                cluster_permissions:
+                - "*"
+                index_permissions:
+                - index_patterns:
+                    - "*"
+                    allowed_actions:
+                    - "*"
+                    - "indices:data/write/index*"
+                    - "indices:data/write/update*"
+                    - "indices:data/write/bulk*"
+                    - "indices:admin/create"
+                    - "indices:admin/mapping/put"
+                    tenant_permissions:
+                    - tenant_patterns:
+                    - "*"
+                    allowed_actions:
+                    - "*"
+            log_writer:
+                reserved: false
+                cluster_permissions:
+                - "cluster_monitor"
+                - "cluster_composite_ops"
+                index_permissions:
+                - index_patterns:
+                    - "*"
+                    allowed_actions:
+                    - "write"
+                    - "create_index"
+                    - "manage"
+                    - "indices:data/write/index"
+                    - "indices:data/write/bulk"
+            dashboard_reader:
+                reserved: false
+                cluster_permissions:
+                - "cluster_monitor"
+                index_permissions:
+                - index_patterns:
+                    - "*"
+                    allowed_actions:
+                    - "read"
+                    - "view_index_metadata"
+                tenant_permissions:
+                - tenant_patterns:
+                    - "global_tenant"
+                    allowed_actions:
+                    - "kibana_all_read"
+
+# State formula to configure OpenSearch for logging with Fluent Bit
+# Ensures cluster health and sets up roles for Fluent Bit user access
+check_opensearch_health:
+  opensearch.cluster_health:
+    - name: check_opensearch_health
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('opensearch_admin_password') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+
+# Create or update the log_writer role with necessary permissions for index creation and writing
+update_log_writer_role:
+  opensearch.role_present:
+    - name: update_log_writer_role
+    - role_name: log_writer
+    - index_name: openldap-audit-logs-  # Matches openldap-audit-logs-* pattern in kinetic-os.create_role
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('opensearch_admin_password') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+    - require:
+      - opensearch: check_opensearch_health
+
+# Map the fluentbit user to the log_writer role for write access
+map_fluentbit_user_to_log_writer:
+  opensearch.user_role_mapping_present:
+    - name: map_fluentbit_user_to_log_writer_role
+    - role_name: log_writer
+    - user_name: fluentbit
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('opensearch_admin_password') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+    - require:
+      - opensearch: update_log_writer_role
+
+# Create or ensure a role with permissions for the audit log indices
+create_fluentbit_audit_role:
+  opensearch.role_present:
+    - name: create_fluentbit_audit_logs_role
+    - role_name: audit-logs
+    - index_name: openldap-audit-logs-*
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('opensearch_admin_password') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+    - require:
+      - opensearch: check_opensearch_health
+
+# Map the Fluent Bit user to the audit logs role for write access
+map_fluentbit_user_to_audit_role:
+  opensearch.user_role_mapping_present:
+    - name: map_fluentbit_user_to_audit_logs_role
+    - role_name: audit-logs
+    - user_name: {{ pillar.get('opensearch_user_name', 'fluentbit') }}
+    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
+    - admin_password: {{ pillar.get('opensearch_admin_password') }}
+    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
+    - require:
+      - opensearch: create_fluentbit_audit_role

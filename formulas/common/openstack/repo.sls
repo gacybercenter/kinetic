@@ -18,7 +18,11 @@
 {% if (grains['type'] not in ['cache','salt','pxe'] and salt['mine.get']('role:cache', 'network.ip_addrs', tgt_type='grain')|length != 0) %}
   {% for repo in pillar['cache']['nexusproxy']['repositories'] %}
     {% if pillar['cache']['nexusproxy']['repositories'][repo]['url'] == "http://ubuntu-cloud.archive.canonical.com/ubuntu/" %}
+      {% if grains['type'] == 'arm' %}
+    - name: deb [signed-by=/etc/apt/keyrings/Release.gpg arch=arm64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+      {% else %}
     - name: deb [signed-by=/etc/apt/keyrings/Release.gpg arch=amd64] http://cache.{{ pillar['haproxy']['sub_zone_name'] }}:{{ pillar['cache']['nexusproxy']['port'] }}/repository/{{ repo }} {{ pillar['ubuntu']['name'] }}-updates/{{ pillar['openstack']['version'] }} main
+      {% endif %}
     {% endif %}
   {% endfor %}
 {% else %}

@@ -1,0 +1,25 @@
+{
+  "links": [
+    {
+      "id": "{{ interface }}",
+      "type": "phy",
+      "ethernet_mac_address": "{{ mac }}"
+    }
+  ],
+  "networks": [
+    {
+      "id": "{{ interface }}",
+      "link": "{{ interface }}",
+      "type": "ipv4",
+      "ip_address": "{{ ip }}",
+      "netmask": "{{ prefix }}",
+      "gateway": "{{ gateway }}"
+    }
+  ],
+  "services": [
+    {
+      "type": "dns",
+      "address": "{{ nameserver }}"
+    }
+  ]
+}

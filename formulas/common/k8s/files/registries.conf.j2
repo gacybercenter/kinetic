@@ -1,0 +1,10 @@
+            unqualified-search-registries = {{ pillar['res-k8s']['registry']['cache'] }}
+            {% for cache in pillar['res-k8s']['registry']['cache'] %}
+            [[registry]]
+            prefix = "{{ cache }}"
+            location = "{{ cache }}"
+            insecure = true
+            [[registry.mirror]]
+            location = "{{ pillar['res-k8s']['registry']['local'] }}:3143"
+            insecure = true
+            {% endfor %}

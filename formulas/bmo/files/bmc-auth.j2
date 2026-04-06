@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ pillar['name'] }}-bmc-auth
+  namespace: {{ pillar['bmo_namespace'] }}
+type: Opaque
+stringData:
+  username: ADMIN
+  password: {{ pillar['ipmi_password'] }}

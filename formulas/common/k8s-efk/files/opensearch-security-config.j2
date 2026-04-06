@@ -1,0 +1,158 @@
+# Consolidate all individual secrets into a single secret with file names as keys under stringData.
+# Define admin role with complete access to all cluster, index, and tenant actions.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ pillar.get('opensearch_security_secrets', {}).get('combined', 'opensearch-security-config') }}
+  namespace: {{ pillar.get('efk_namespace', 'efk') }}
+type: Opaque
+stringData:
+  internal_users.yml: |
+    # This is the internal user database
+    # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
+    _meta:
+      type: "internalusers"
+      config_version: 2
+    admin:
+      hash: "{{ pillar.get('opensearch_admin_hash', '$2y$12$YOUR_HASH_HERE') }}"
+      reserved: true
+      backend_roles:
+        - "admin"
+        - "all_access"
+      description: "Admin user"
+    fluentbit:
+      hash: "{{ pillar.get('opensearch_fluentbit_hash', '$2y$12$ANOTHER_HASH_HERE') }}"
+      reserved: false
+      backend_roles:
+        - "log_writer"
+      description: "Fluent Bit log writer"
+    dashboard_user:
+      hash: "{{ pillar.get('opensearch_dashboard_user_hash', '$2y$12$YET_ANOTHER_HASH_HERE') }}"
+      reserved: false
+      backend_roles:
+        - "dashboard_reader"
+      description: "OpenSearch Dashboards read-only user"
+  roles.yml: |
+    # This defines the access control roles
+    _meta:
+      type: "roles"
+      config_version: 2
+    admin:
+      reserved: true
+      cluster_permissions:
+        - "*"  # Grant all cluster-level permissions
+      index_permissions:
+        - index_patterns:
+            - "*"  # Apply to all indices
+          allowed_actions:
+            - "*"  # Grant all index-level actions
+            - "indices:data/write/index*"
+            - "indices:data/write/update*"  # Explicitly include index creation
+            - "indices:data/write/bulk*"  # Explicitly include bulk write
+            - "indices:admin/create"  # Explicitly include create action
+            - "indices:admin/mapping/put"  # Explicitly include mapping updates
+      tenant_permissions:
+        - tenant_patterns:
+            - "*"  # Apply to all tenants
+          allowed_actions:
+            - "*"  # Grant all tenant-level actions
+    log_writer:
+      reserved: false
+      cluster_permissions:
+        - "cluster_monitor"
+        - "cluster_composite_ops"
+      index_permissions:
+        - index_patterns:
+            - "*"
+          allowed_actions:
+            - "write"
+            - "create_index"
+            - "manage"
+            - "indices:data/write/index"
+            - "indices:data/write/bulk"
+    dashboard_reader:
+      reserved: false
+      cluster_permissions:
+        - "cluster_monitor"
+      index_permissions:
+        - index_patterns:
+            - "{{ pillar.get('opensearch_index_name', 'kvm-logs') }}*"
+          allowed_actions:
+            - "read"
+            - "view_index_metadata"
+      tenant_permissions:
+        - tenant_patterns:
+            - "global_tenant"
+          allowed_actions:
+            - "kibana_all_read"
+  roles_mapping.yml: |
+    # This maps roles to users and groups
+    _meta:
+      type: "rolesmapping"
+      config_version: 2
+    all_access:
+      reserved: true
+      users:
+        - "admin"
+    admin:
+      reserved: true
+      users:
+        - "admin"
+      backend_roles:
+        - "all_access"
+    log_writer:
+      reserved: false
+      users:
+        - "fluentbit"
+    dashboard_reader:
+      reserved: false
+      users:
+        - "dashboard_user"
+  action_groups.yml: |
+    # This defines reusable action groups for permissions
+    gcr_action_group:
+      reserved: false
+      hidden: false
+      allowed_actions:
+        - "indices:data/write/index*"
+        - "indices:data/write/update*"
+        - "indices:admin/mapping/put"
+        - "indices:data/write/bulk*"
+        - "read"
+        - "write"
+      static: false
+    admin_action_group:  # Optional: Add for future admin-related roles if needed
+      reserved: false
+      hidden: false
+      allowed_actions:
+        - "indices:admin/*"
+        - "indices:data/*"
+        - "cluster:admin/*"
+      static: false
+    _meta:
+      type: "actiongroups"
+      config_version: 2
+  config.yml: |
+    _meta:
+      type: "config"
+      config_version: 2
+    config:
+      dynamic:
+        http:
+          anonymous_auth_enabled: false
+        authc:
+          basic_internal_auth_domain:
+            description: "Authenticate via HTTP Basic against internal users database"
+            http_enabled: true
+            transport_enabled: true
+            order: 0
+            http_authenticator:
+              type: basic
+              challenge: true
+            authentication_backend:
+              type: intern
+  tenants.yml: |
+    _meta:
+      type: "tenants"
+      config_version: 2

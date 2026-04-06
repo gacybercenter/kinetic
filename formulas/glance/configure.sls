@@ -1,85 +1,60 @@
-## Copyright 2018 Augusta University
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-
 include:
-  - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/configure
-  - /formulas/common/ceph/configure
+  - /formulas/glance/install
+  - /formulas/osh-helm-repos/configure
 
-{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
-{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
+glance_external_certificate:
+  k8s.certmanager_certificate_present:
+    - name: glance-tls-public
+    - certificate_name: glance-tls-public
+    - namespace: openstack
+    - secret_name: glance-tls-public
+    - issuer_name: letsencrypt-prod
+    - issuer_kind: ClusterIssuer
+    - common_name: {{ pillar['osh_values']['glance_cert']['common_name'] }}
+    - dns_names: {{ pillar['osh_values']['glance_cert']['dns_names'] }}
 
-{% if grains['spawning'] == 0 %}
+glance_internal_certificate:
+  k8s.certmanager_certificate_present:
+    - name: glance-tls-api
+    - certificate_name: glance-tls-api
+    - namespace: openstack
+    - secret_name: glance-tls-api
+    - issuer_name: cyberrange-ca-issuer
+    - issuer_kind: ClusterIssuer
+    - common_name: {{ pillar['osh_values']['glance_internal_api']['common_name'] }}
+    - dns_names: {{ pillar['osh_values']['glance_internal_api']['dns_names'] }}
 
-glance-manage db_sync:
-  cmd.run:
-    - runas: glance
+glance_ingress:
+  k8s.ingress_present:
+    - name: glance-ingress
+    - namespace: openstack
+    - ingress_class_name: {{ pillar['osh_values']['glance_ingress']['class_name'] }}
+    - hosts: {{ pillar['osh_values']['glance_ingress']['hosts'] }}
+    - tls: {{ pillar['osh_values']['glance_ingress']['tls'] }}
     - require:
-      - file: /etc/glance/glance-api.conf
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
+      - k8s: glance_external_certificate
 
-{% if pillar['cephconf']['autoscale'] == 'off' %}
-set_images_pool_pgs:
-  event.send:
-    - name: set/images/pool_pgs
-    - data:
-        pgs: {{ pillar['cephconf']['images_pgs'] }}
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
-{% endif %}
-
-{{ spawn.spawnzero_complete() }}
-
-{% else %}
-
-{{ spawn.check_spawnzero_status(grains['type']) }}
-
-{% endif %}
-
-/etc/ceph/ceph.client.images.keyring:
-  file.managed:
-    - contents_pillar: ceph:ceph-client-images-keyring
-    - mode: "0640"
-    - user: root
-    - group: glance
-
-/etc/sudoers.d/ceph:
-  file.managed:
-    - contents:
-      - ceph ALL = (root) NOPASSWD:ALL
-      - Defaults:ceph !requiretty
-    - mode: "0644"
-
-/etc/glance/glance-api.conf:
-  file.managed:
-    - source: salt://formulas/glance/files/glance-api.conf
-    - template: jinja
-    - defaults:
-        sql_connection_string: {{ constructor.mysql_url_constructor(user='glance', database='glance') }}
-        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-        memcached_servers: {{ constructor.memcached_url_constructor() }}
-        password: {{ pillar['glance']['glance_service_password'] }}
-
-glance_api_service:
-  service.running:
-    - name: glance-api
-    - enable: true
-    - watch:
-      - file: /etc/glance/glance-api.conf
+install_heat:
+  k8s_helm.helm_release_present:
+    - release_name: glance
+    - chart_name: openstack-helm/glance
+    - namespace: openstack
+    - wait_timeout: 300
+    - wait_interval: 10
+    - keep_values_file: true
+    - pillar_key: osh_values:glance
+    - set_values:
+      - endpoints.oslo_db.auth.admin.username=root
+      - endpoints.oslo_db.auth.admin.password={{ pillar['osh_values']['mariadb_admin'] }}
+      - endpoints.oslo_db.auth.glance.username=glance
+      - endpoints.oslo_db.auth.glance.password={{ pillar['osh_values']['glance_admin'] }}
+      - endpoints.oslo_messaging.auth.admin.username=rabbitmq
+      - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh_values']['rabbitmq_admin'] }}
+      - endpoints.oslo_messaging.auth.glance.username=glance
+      - endpoints.oslo_messaging.auth.glance.password={{ pillar['osh_values']['glance_rq_user'] }}
+      - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
+      - endpoints.identity.auth.glance.password={{ pillar['osh_values']['glance_admin'] }}
+      - endpoints.identity.auth.test.password={{ pillar['osh_values']['glance_test'] }}
+    - require:
+      - k8s: glance_external_certificate
+      - k8s: glance_ingress

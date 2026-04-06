@@ -1,0 +1,70 @@
+# Default values for OpenSearch Dashboards Helm chart
+# Based on https://github.com/opensearch-project/helm-charts/blob/main/charts/opensearch-dashboards/values.yaml
+
+replicas: {{ pillar.get('opensearch_dashboards_replicas', 1) }}
+
+image:
+  repository: "opensearchproject/opensearch-dashboards"
+  # override image tag, which is .Chart.AppVersion by default
+  tag: "3.2.0"
+  pullPolicy: "IfNotPresent"
+
+extraVolumes:
+  - name: opensearch-tls-secret
+    secret:
+      secretName: opensearch-tls-secret
+extraVolumeMounts:
+  - name: opensearch-tls-secret
+    mountPath: /usr/share/opensearch-dashboards/config/certs
+    readOnly: true
+extraEnvs:
+  - name: OPENSEARCH_DASHBOARDS_DEFAULT_TENANT
+    value: {{ pillar.get('opensearch_dashboards_default_tenant', 'global_tenant') }}
+  - name: OPENSEARCH_HOSTS
+    value: https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}
+config:
+  opensearch_dashboards.yml: |
+    # OpenSearch connection configuration
+    opensearch.hosts: [ "https://{{ pillar.get('opensearch_service_host', 'opensearch-cluster-master') }}.{{ pillar.get('efk_namespace', 'efk') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}" ]
+
+    opensearch.username: "admin"
+    opensearch.password: "{{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}"
+
+    opensearch.ssl.verificationMode: {{ pillar.get('opensearch_ssl_verification_mode', 'none') }}
+    opensearch.ssl.certificateAuthorities: [ "/usr/share/opensearch-dashboards/config/certs/ca.crt" ]
+
+    logging.verbose: true
+
+# Service configuration
+service:
+  type: {{ pillar.get('opensearch_dashboards_service_type', 'ClusterIP') }}
+  port: {{ pillar.get('opensearch_dashboards_service_port', 5601) }}
+
+# Resources configuration
+resources:
+  limits:
+    cpu: {{ pillar.get('opensearch_dashboards_cpu_limit', '500m') }}
+    memory: {{ pillar.get('opensearch_dashboards_memory_limit', '512Mi') }}
+  requests:
+    cpu: {{ pillar.get('opensearch_dashboards_cpu_request', '200m') }}
+    memory: {{ pillar.get('opensearch_dashboards_memory_request', '256Mi') }}
+
+# Ingress configuration for OpenSearch Dashboards
+ingress:
+  enabled: {{ pillar.get('opensearch_dashboards_ingress_enabled', true) }}
+  ingressClassName: {{ pillar.get('opensearch_dashboards_ingress_class', 'nginx') }}
+  hosts:
+    - host: {{ pillar.get('opensearch_dashboards_ingress_host', 'dashboard.logger.services.gacyberrange.org') }}
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ pillar.get('opensearch_dashboards_service_name', 'opensearch-dashboards') }}
+              port:
+                number: {{ pillar.get('opensearch_dashboards_service_port', 5601) }}
+  # TLS configuration for Ingress (optional, requires Cert-Manager or manual secret setup)
+  tls: {{ pillar.get('opensearch_dashboards_ingress_tls', []) }}
+
+# Avoid overriding labels or selectors that could conflict with immutable fields
+labels: {}

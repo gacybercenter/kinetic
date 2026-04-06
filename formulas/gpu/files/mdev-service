@@ -1,0 +1,26 @@
+[Unit]
+After = nvidia-vgpu-mgr.service
+After = nvidia-vgpud.service
+Description = Enable Nvidia GPU virtual functions
+
+[Service]
+Type = oneshot
+User = root
+Group = root
+ExecStart = /usr/lib/nvidia/sriov-manage -e %i
+# Give a reasonable amount of time for the server to start up/shut down
+TimeoutSec = 120
+# This creates a specific slice which all services will operate from
+#  The accounting options give us the ability to see resource usage
+#  through the `systemd-cgtop` command.
+Slice = system.slice
+# Set Accounting
+CPUAccounting = True
+BlockIOAccounting = True
+MemoryAccounting = True
+TasksAccounting = True
+RemainAfterExit = True
+ExecStartPre = /usr/bin/sleep 30
+
+[Install]
+WantedBy = multi-user.target

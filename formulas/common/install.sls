@@ -19,7 +19,7 @@
 
 include:
   - /formulas/common/salt/repo
-  - /formulas/common/fluentd/repo
+  - /formulas/k8s-logger/install
 
 systemd-resolved_service:
   service.dead:
@@ -80,21 +80,11 @@ pyOpenSSL_dir_remove:
   file.absent:
     - name: /usr/lib/python3/dist-packages/pyOpenSSL-21.0.0.egg-info
 
-pyghmi_pip:
-  pip.installed:
-    - bin_env: '/usr/bin/pip3'
-    - reload_modules: True
-    - names:
-      - pyopenssl
-      - pyghmi
-    - require:
-      - OpenSSL_dir_remove
-      - pyOpenSSL_dir_remove
-
   pkg.installed:
     - pkgs:
       - ipmitool
       - vim
+      - python3-pyghmi
 
 pyghmi_salt_pip:
   pip.installed:
@@ -103,8 +93,6 @@ pyghmi_salt_pip:
     - pkgs:
       - pyopenssl
       - pyghmi
-    - require:
-      - pyghmi_pip
 
 rdma-core:
   pkg.installed:

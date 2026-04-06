@@ -15,20 +15,6 @@
 include:
   - /formulas/compute/install
 
-# gpu-keyring:
-#   pkg.installed:
-#     - sources:
-#       - cuda-keyring: https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo
-
-# nvidia_pkgs:
-#   pkg.installed:
-#     - pkgs:
-#       - nvidia-driver:latest-dkms
-#       - cuda
-#     - refresh: True
-#     - require:
-#       - pkg: gpu-keyring
-
 {% if pillar['gpu']['backend'] == "cyborg" %}
 cyborg_packages:
   pkg.installed:
@@ -43,8 +29,6 @@ cyborg_packages:
       - xorg-dev
       - libvulkan1
     - refresh: True
-    - require:
-      - pkg: gpu-keyring
 
 gpu_pips:
   pip.installed:
@@ -58,7 +42,7 @@ gpu_pips:
       - python-openstackclient
       - pymysql
 
-salt-pip_installs:
+gpu-pip_installs:
   pip.installed:
     - bin_env: '/usr/bin/salt-pip'
     - reload_modules: true
@@ -96,40 +80,4 @@ cyborg:
     - mode: "0755"
     - makedirs: True
 
-git_config:
-  cmd.run:
-    - name: git config --system --add safe.directory "/var/lib/cyborg"
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
-
-cyborg_latest:
-  git.latest:
-    - name: https://opendev.org/openstack/cyborg.git
-    - branch: master
-    - target: /var/lib/cyborg
-    - force_clone: True
-    - force_reset: True
-    - require:
-      - cmd: git_config
-
-cyborg_requirements:
-  cmd.run:
-    - name: pip3 install -r /var/lib/cyborg/requirements.txt
-    - unless:
-      - systemctl is-active cyborg-agent
-    - require:
-      - git: cyborg_latest
-
-install_cyborg:
-  cmd.run:
-    - name: python3 setup.py install
-    - cwd : /var/lib/cyborg/
-    - unless:
-      - systemctl is-active cyborg-agent
-    - require:
-      - cmd: cyborg_requirements
-
 {% endif %}
-

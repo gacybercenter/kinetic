@@ -1,0 +1,124 @@
+# -- Namespace of the main rook operator
+operatorNamespace: {{ op_rook_namespace }}
+
+# -- The metadata.name of the CephCluster CR
+clusterName: {{ cephClusterName }}
+
+# Installs a debugging toolbox deployment
+toolbox:
+  enabled: true
+  resources:
+    limits:
+      memory: "1Gi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+# Monitoring settings for Prometheus integration
+monitoring:
+  enabled: {{ monitoring_enabled }}
+
+# -- Cluster configuration
+cephClusterSpec:
+  cephVersion:
+    image: {{ ceph_image }}
+    allowUnsupported: false
+
+  dataDirHostPath: /var/lib/rook
+
+  dashboard:
+    enabled: {{ dashboard_enabled }}
+    urlPrefix: {{ dashboard_urlPrefix }}
+    ssl: true
+  network:
+    provider: host
+    addressRanges:
+      public:
+        - {{ pillar['networking']['subnets']['sfe'] }}
+      cluster:
+        - {{ pillar['networking']['subnets']['sbe'] }}
+  placement:
+    all:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+            - key: {{ all_node_affinity_key }}
+              operator: {{ all_node_affinity_operator }}
+              values:
+              - {{ all_node_affinity_value }}
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/rook-node
+        operator: Exists
+    mgr:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ all_node_affinity_key }}
+                operator: {{ all_node_affinity_operator }}
+                values:
+                - {{ all_node_affinity_value }}
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/rook-node
+        operator: Exists
+    osd:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ osd_node_affinity_key }}
+                operator: {{ osd_node_affinity_operator }}
+                values:
+                - {{ osd_node_affinity_value }}
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/rook-osd-node
+        operator: Exists
+    prepareosd:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ osd_node_affinity_key }}
+                operator: {{ osd_node_affinity_operator }}
+                values:
+                - {{ osd_node_affinity_value }}
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/rook-osd-node
+        operator: Exists
+  resources:
+    mgr:
+      limits:
+        memory: {{ mgr_limits_memory }}
+      requests:
+        cpu: {{ mgr_requests_cpu }}
+        memory: {{ mgr_requests_memory }}
+    mon:
+      limits:
+        memory: {{ mon_limits_memory }}
+      requests:
+        cpu: {{ mon_requests_cpu }}
+        memory: {{ mon_requests_memory }}
+    osd:
+      limits:
+        memory: {{ osd_limits_memory }}
+      requests:
+        cpu: {{ osd_requests_cpu }}
+        memory: {{ osd_requests_memory }}
+
+  storage:
+    useAllNodes: {{ useAllNodes }}
+    useAllDevices: {{ useAllDevices }}
+    devices:
+      {% if devices %}
+      {% for device in devices %}
+      - name: {{ device }}
+      {% endfor %}
+      {% else %}
+      []
+      {% endif %}
