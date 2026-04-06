@@ -2898,10 +2898,10 @@ def kubernetes_deployment_present(
     containers=None,
     labels=None,
     annotations=None,
-    service_account=None,
+    service_account_name="",
     node_selector=None,
     tolerations=None,
-    affinities=None,
+    affinity=None,
     resources=None,
     image_pull_secrets=None,
     init_containers=None,
@@ -2938,10 +2938,10 @@ def kubernetes_deployment_present(
         containers (list): List of container specifications.
         labels (dict): Labels for the Deployment.
         annotations (dict): Annotations for the Deployment.
-        service_account (str): Service account to use for pods.
+        service_account_name (str): Service account to use for pods (default: "").
         node_selector (dict): Node selector for pod scheduling.
         tolerations (list): Tolerations for pod scheduling.
-        affinities (dict): Affinity rules for pod scheduling.
+        affinity (dict): Affinity rules for pod scheduling (default: None).
         resources (dict): Resource requirements for containers.
         image_pull_secrets (list): List of secrets for pulling images.
         init_containers (list): List of init container specifications.
@@ -2980,10 +2980,10 @@ def kubernetes_deployment_present(
         containers=containers,
         labels=labels,
         annotations=annotations,
-        service_account=service_account,
+        service_account_name=service_account_name,
         node_selector=node_selector,
         tolerations=tolerations,
-        affinities=affinities,
+        affinity=affinity,
         resources=resources,
         image_pull_secrets=image_pull_secrets,
         init_containers=init_containers,
