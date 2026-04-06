@@ -7,11 +7,7 @@ hello-world-deployment:
     - name: hello-world
     - namespace: default
     - replicas: 1
-    - containers:
-      - name: hello-world
-        image: docker.io/library/nginx:alpine
-        ports:
-          - containerPort: 80
+    - image: docker.io/library/nginx:alpine
     - labels:
         app: hello-world
     - annotations:

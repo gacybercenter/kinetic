@@ -24,7 +24,7 @@ def __virtual__():
     try:
         from kubernetes import client
 
-        return __virtualname__
+        return "kinetic_k8s"
     except ImportError:
         return (
             False,
