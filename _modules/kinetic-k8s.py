@@ -5479,6 +5479,7 @@ def ceph_object_store_present(
     rgw_keystone_api_version="3",
     rgw_keystone_implicit_tenants="true",
     rgw_s3_auth_use_keystone="true",
+    debug_rgw="0",
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -5508,6 +5509,7 @@ def ceph_object_store_present(
         rgw_keystone_api_version (str, optional): Keystone API version for RGW authentication. Defaults to "3".
         rgw_keystone_implicit_tenants (str, optional): Enable implicit tenants for Keystone-Swift integration. Defaults to "true".
         rgw_s3_auth_use_keystone (str, optional): Use Keystone for S3 authentication. Defaults to "true".
+        debug_rgw (str, optional): Debug level for RGW (e.g., "15" for detailed logging). Defaults to "0" (no debugging).
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
@@ -5574,6 +5576,7 @@ def ceph_object_store_present(
                 ),
                 "rgw_keystone_revocation_interval": str(keystone_revocation_interval),
                 "rgw_keystone_token_cache_size": str(keystone_token_cache_size),
+                "debug_rgw": debug_rgw if debug_rgw != "0" else "0",
             }
             # Add service user secret reference if provided
             if keystone_service_user_secret_name:
