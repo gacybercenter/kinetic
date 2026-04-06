@@ -2709,6 +2709,7 @@ def ceph_object_store_present(
     keystone_revocation_interval=1200,
     keystone_service_user_secret_name="",
     keystone_token_cache_size=1000,
+    rgw_keystone_api_version="3",
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -2773,6 +2774,9 @@ def ceph_object_store_present(
     keystone_service_user_secret_name
         Optional. Name of the secret containing Keystone service user credentials. Defaults to "".
 
+    rgw_keystone_api_version
+        Optional. Keystone API version for RGW authentication. Defaults to "3".
+
     keystone_token_cache_size
         Optional. Size of token cache for Keystone authentication. Defaults to 1000.
 
@@ -2803,6 +2807,7 @@ def ceph_object_store_present(
             - keystone_revocation_interval: 1200
             - keystone_service_user_secret_name: "usersecret"
             - keystone_token_cache_size: 1000
+            - rgw_keystone_api_version: "3"
             - gateway_resources:
                 limits:
                   cpu: "500m"
@@ -2836,6 +2841,7 @@ def ceph_object_store_present(
             keystone_revocation_interval=keystone_revocation_interval,
             keystone_service_user_secret_name=keystone_service_user_secret_name,
             keystone_token_cache_size=keystone_token_cache_size,
+            rgw_keystone_api_version=rgw_keystone_api_version,
         )
 
         ret["result"] = result["success"]

@@ -49,7 +49,7 @@ deploy_ceph_object_store:
     - enable_s3_api: true
     - preserve_pools_on_delete: true
     - auth_keystone: true
-    - keystone_url: "http://keystone-api.openstack.svc.cluster.local:5000/v3"
+    - keystone_url: "http://keystone-api.openstack.svc.cluster.local:5000"
     - keystone_accepted_roles:
         - admin
         - member
