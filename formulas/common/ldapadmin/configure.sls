@@ -2,7 +2,7 @@ include:
   - /formulas/common/ldapadmin/install
 
 # Provision OpenStack projects based on LDAP groups from pillar data
-{% if 'ldap' in pillar and 'groups' in pillar['ldap'] %}
+
   {% for group, data in pillar['ldap']['groups'].items() %}
     {% if 'openstack_project' in data %}
       {% set project_name = data['openstack_project']['name'] %}
@@ -25,4 +25,3 @@ openstack_role_assignment_{{ group }}_{{ role }}:
     {% endif %}
     {% endif %}
   {% endfor %}
-{% endif %}
