@@ -7,6 +7,14 @@ It interfaces with the OpenStack module to perform operations such as creating,
 updating, and deleting projects, roles, and associating them with LDAP groups
 within an OpenStack cloud environment.
 
+Dependencies:
+    This module requires the OpenStack SDK for Python to interact with OpenStack services.
+    To install the necessary dependencies, use the following command:
+        pip install openstacksdk
+    Ensure that the SDK is installed on the system where this Salt module is executed.
+    Additionally, OpenStack authentication credentials must be set either via environment
+    variables (OS_AUTH_URL, OS_USERNAME, OS_PASSWORD, etc.) or passed as arguments.
+
 Usage:
     This state can be used to ensure the desired state of OpenStack Keystone resources.
     It supports management of projects, roles, and group-role assignments.
