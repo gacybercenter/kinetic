@@ -46,7 +46,7 @@ def __virtual__():
     """
     Only load if the openstack module is available in __salt__
     """
-    if "kinetic-openstack.project_present" in __salt__:
+    if "kinetic-openstack.get_projects" in __salt__:
         return __virtualname__
     return False
 
