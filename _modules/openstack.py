@@ -13,28 +13,20 @@ import os
 
 from salt.exceptions import CommandExecutionError
 
-try:
-    from openstack import connection, exceptions
-
-    HAS_OPENSTACK = True
-except ImportError:
-    HAS_OPENSTACK = False
-
 __virtualname__ = "openstack"
 
 log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    """
-    Only load the module if OpenStack SDK is installed
-    """
-    if HAS_OPENSTACK:
-        return __virtualname__
-    return (
-        False,
-        "The openstack module could not be loaded: OpenStack SDK is not installed or import failed. Ensure 'openstacksdk' is installed with 'pip install openstacksdk'.",
-    )
+    try:
+        from openstack import connection, exceptions
+
+    except ImportError:
+        return (
+            False,
+            "openstacksdk is not installed",
+        )
 
 
 def _get_connection(auth_args=None):
