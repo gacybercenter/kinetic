@@ -3,7 +3,7 @@ include:
 
 
 {% set ldap_spec = pillar.get('ldap', {}).get('spec_name', 'default') %}
-{% set base_dn = pillar.get('ldap', {}).get('base_dn') %}
+{% set base_dn = pillar['ldap']['values']['global']['ldapDomain'] %}
 {% set ou_groups = pillar.get('ldap', {}).get('ou_groups', 'ou=groups') %}
 {% set ou_users = pillar.get('ldap', {}).get('ou_users', 'ou=users') %}
 
@@ -23,7 +23,7 @@ ensure_ldap_connect_spec:
     - connection_dict:
         url: {{ "ldap://" ~ pillar['ldap']['cert']['common_name'] }}
         bind:
-          dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ base_dn }}
+          dn: "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ base_dn }}
           password: {{ pillar['ldap']['admin-user']['password'] }}
           method: simple
         tls:
