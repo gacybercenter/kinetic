@@ -72,7 +72,7 @@ ldap_project_group_{{ group }}:
     - require:
       - ldap: ensure_ldap_connect_spec
 
-+{% if group != 'admins' %}
+{% if group != 'admins' %}
 ldap_admin_group_{{ group }}:
   ldap.group_present:
     - name: ldap_admin_group_{{ group }}
@@ -91,6 +91,6 @@ ldap_admin_group_{{ group }}:
     - require:
       - ldap: ldap_project_group_{{ group }}
       - ldap: ensure_ldap_connect_spec
-+{% endif %}
+{% endif %}
 
 {% endfor %}
