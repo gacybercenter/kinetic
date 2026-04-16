@@ -191,6 +191,46 @@ def create_project(name, description=None, domain_id="default", cloud=None):
         conn.close()
 
 
+def update_project(name_or_id, cloud=None, **updates):
+    """
+    Update attributes of an existing project in OpenStack
+
+    Args:
+        name_or_id (str): Name or ID of the project to update
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+        **updates: Dictionary of attributes to update (e.g., description, is_enabled)
+
+    Returns:
+        dict: Updated project information, or None if no cloud configuration is provided
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic-openstack.update_project myproject description="Updated description" is_enabled=True
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        project = conn.identity.find_project(name_or_id)
+        if not project:
+            raise CommandExecutionError(f"Project {name_or_id} not found")
+
+        updated_project = conn.identity.update_project(project, **updates)
+        return {
+            "id": updated_project.id,
+            "name": updated_project.name,
+            "description": updated_project.description,
+            "domain_id": updated_project.domain_id,
+            "is_enabled": updated_project.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to update project: {str(e)}")
+    finally:
+        conn.close()
+
+
 def delete_project(name_or_id, cloud=None):
     """
     Delete a project in OpenStack
