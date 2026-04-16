@@ -118,7 +118,6 @@ def project_present(name, description=None, enabled=True, **kwargs):
         result = __salt__["kinetic-openstack.create_project"](
             name=name,
             description=description,
-            enabled=enabled,
             cloud=cloud_name,
             **filtered_kwargs,
         )
