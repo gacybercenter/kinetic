@@ -399,4 +399,52 @@ def revoke_role_from_group(
 
         return True
     except exceptions.SDKException as e:
-        raise CommandExecutionError(f"Failed to revoke
+        raise CommandExecutionError(f"Failed to revoke role: {str(e)}")
+    finally:
+        conn.close()
+
+
+def check_role_assignment(
+    role_name, project_name_or_id, group_name=None, user_name=None, cloud=None
+):
+    """
+    Check if role assignment exists.
+
+    Returns:
+        bool
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return False
+    try:
+        role = conn.identity.find_role(role_name)
+        if not role:
+            return False
+        project = conn.identity.find_project(project_name_or_id)
+        if not project:
+            return False
+        if group_name:
+            group = conn.identity.find_group(group_name)
+            if not group:
+                return False
+            it = conn.identity.role_assignments(
+                role=role.id, group=group.id, project=project.id
+            )
+        elif user_name:
+            user = conn.identity.find_user(user_name)
+            if not user:
+                return False
+            it = conn.identity.role_assignments(
+                role=role.id, user=user.id, project=project.id
+            )
+        else:
+            return False
+        try:
+            next(it)
+            return True
+        except StopIteration:
+            return False
+    except exceptions.SDKException:
+        return False
+    finally:
+        conn.close()
