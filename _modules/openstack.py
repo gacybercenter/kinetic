@@ -14,20 +14,26 @@ import os
 from salt.exceptions import CommandExecutionError
 
 __virtualname__ = "openstack"
-from openstack import connection, exceptions
 
 log = logging.getLogger(__name__)
+
+HAS_OPENSTACK = False
+try:
+    from openstack import connection, exceptions
+
+    HAS_OPENSTACK = True
+except ImportError:
+    pass
 
 
 @decorators.memoize
 def __virtual__():
-    try:
-        from openstack import connection, exceptions
-    except ImportError:
-        return (
-            False,
-            "openstacksdk is not installed",
-        )
+    if HAS_OPENSTACK:
+        return __virtualname__
+    return (
+        False,
+        "The openstack module could not be loaded: OpenStack SDK is not installed. Install with 'pip install openstacksdk'.",
+    )
 
 
 def _get_connection(auth_args=None):
