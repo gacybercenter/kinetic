@@ -55,9 +55,10 @@ openstack_role_assignment_{{ group }}_{{ role }}:
   {% endif %}
 
 ldap_project_group_{{ group }}:
-  ldap_utils.update_group:
+  ldap.group_present:
+    - name: ldap_project_group_{{ group }}
     - spec_name: {{ ldap_spec }}
-    - group_dn: "cn={{ group }},{{ ou_groups }},{{ base_dn }}"
+    - base_dn: "{{ ou_groups }},{{ base_dn }}"
     - cn: {{ group }}
     - description: "LDAP group for {{ group }} OpenStack project members"
     - members:
@@ -65,19 +66,18 @@ ldap_project_group_{{ group }}:
         - "cn={{ member }},{{ ou_users }},{{ base_dn }}"
         {% endfor %}
     - require:
-      - sls: /formulas/common/ldapadmin/install
       - ldap: ensure_ldap_connect_spec
 
 ldap_admin_group_{{ group }}:
-  ldap_utils.update_group:
+  ldap.group_present:
+    - name: ldap_admin_group_{{ group }}
     - spec_name: {{ ldap_spec }}
-    - group_dn: "cn=admin-{{ group }},{{ ou_groups }},{{ base_dn }}"
+    - base_dn: "{{ ou_groups }},{{ base_dn }}"
     - cn: admin-{{ group }}
     - description: "LDAP admins for {{ group }} OpenStack project"
     - members: []
     - require:
-      - ldap_utils: ldap_project_group_{{ group }}
-      - sls: /formulas/common/ldapadmin/install
+      - ldap: ldap_project_group_{{ group }}
       - ldap: ensure_ldap_connect_spec
 
 {% endfor %}
