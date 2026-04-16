@@ -37,14 +37,14 @@ import logging
 
 log = logging.getLogger(__name__)
 
-__virtualname__ = "openstack"
+__virtualname__ = "kinetic-openstack"
 
 
 def __virtual__():
     """
     Only load if the openstack module is available in __salt__
     """
-    if "openstack" in __salt__:
+    if "kinetic-openstack" in __salt__:
         return __virtualname__
     return False
 
@@ -66,7 +66,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
 
     # Check if project already exists
     cloud_name = kwargs.get("auth_args", os.environ.get("OS_CLOUD", "openstack"))
-    project = __salt__["openstack.get_projects"](auth_args=cloud_name)
+    project = __salt__["kinetic-openstack.get_projects"](auth_args=cloud_name)
     project = next((p for p in project if p["name"] == name), None)
     if project:
         ret["comment"] = f"Project {name} already exists."
@@ -83,7 +83,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
                 ret["comment"] = f"Project {name} would be updated with {updates}."
                 return ret
             try:
-                result = __salt__["openstack.update_project"](
+                result = __salt__["kinetic-openstack.update_project"](
                     name, auth_args=cloud_name, **updates
                 )
                 if result:
@@ -104,7 +104,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
         return ret
 
     try:
-        result = __salt__["openstack.create_project"](
+        result = __salt__["kinetic-openstack.create_project"](
             name=name,
             description=description,
             enabled=enabled,
@@ -138,7 +138,7 @@ def project_absent(name):
 
     # Check if project exists
     cloud_name = kwargs.get("auth_args", os.environ.get("OS_CLOUD", "openstack"))
-    project = __salt__["openstack.get_projects"](auth_args=cloud_name)
+    project = __salt__["kinetic-openstack.get_projects"](auth_args=cloud_name)
     project = next((p for p in project if p["name"] == name), None)
     if not project:
         ret["comment"] = f"Project {name} does not exist."
@@ -150,7 +150,9 @@ def project_absent(name):
         return ret
 
     try:
-        result = __salt__["openstack.delete_project"](name, auth_args=cloud_name)
+        result = __salt__["kinetic-openstack.delete_project"](
+            name, auth_args=cloud_name
+        )
         if result:
             ret["changes"] = {"deleted": name}
             ret["comment"] = f"Project {name} deleted successfully."
@@ -192,7 +194,7 @@ def role_assignment_present(role_name, project_name, group_name=None, user_name=
 
     # Check if role assignment already exists
     cloud_name = kwargs.get("auth_args", os.environ.get("OS_CLOUD", "openstack"))
-    assignment_exists = __salt__["openstack.check_role_assignment"](
+    assignment_exists = __salt__["kinetic-openstack.check_role_assignment"](
         role_name=role_name,
         project_name=project_name,
         group_name=group_name,
@@ -213,7 +215,7 @@ def role_assignment_present(role_name, project_name, group_name=None, user_name=
         return ret
 
     try:
-        result = __salt__["openstack.assign_role_to_group"](
+        result = __salt__["kinetic-openstack.assign_role_to_group"](
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,
@@ -266,7 +268,7 @@ def role_assignment_absent(role_name, project_name, group_name=None, user_name=N
 
     # Check if role assignment exists
     cloud_name = kwargs.get("auth_args", os.environ.get("OS_CLOUD", "openstack"))
-    assignment_exists = __salt__["openstack.check_role_assignment"](
+    assignment_exists = __salt__["kinetic-openstack.check_role_assignment"](
         role_name=role_name,
         project_name=project_name,
         group_name=group_name,
@@ -287,7 +289,7 @@ def role_assignment_absent(role_name, project_name, group_name=None, user_name=N
         return ret
 
     try:
-        result = __salt__["openstack.revoke_role_from_group"](
+        result = __salt__["kinetic-openstack.revoke_role_from_group"](
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,

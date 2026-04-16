@@ -13,7 +13,7 @@ import os
 
 from salt.exceptions import CommandExecutionError
 
-__virtualname__ = "openstack"
+__virtualname__ = "kinetic-openstack"
 
 log = logging.getLogger(__name__)
 
