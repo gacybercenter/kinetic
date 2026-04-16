@@ -54,6 +54,7 @@ openstack_role_assignment_{{ group }}_{{ role }}:
     {% endfor %}
   {% endif %}
 
+{% if group != 'admins' %}
 ldap_project_group_{{ group }}:
   ldap.group_present:
     - name: ldap_project_group_{{ group }}
@@ -71,6 +72,7 @@ ldap_project_group_{{ group }}:
         {% endif %}
     - require:
       - ldap: ensure_ldap_connect_spec
+{% endif %}
 
 {% if group != 'admins' %}
 ldap_admin_group_{{ group }}:
