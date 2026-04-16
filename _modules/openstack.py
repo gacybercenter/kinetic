@@ -14,14 +14,15 @@ import os
 from salt.exceptions import CommandExecutionError
 
 __virtualname__ = "openstack"
+from openstack import connection, exceptions
 
 log = logging.getLogger(__name__)
 
 
+@decorators.memoize
 def __virtual__():
     try:
         from openstack import connection, exceptions
-
     except ImportError:
         return (
             False,
