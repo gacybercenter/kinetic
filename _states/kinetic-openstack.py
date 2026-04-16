@@ -67,7 +67,14 @@ def project_present(name, description=None, enabled=True, **kwargs):
     ret = {"name": name, "result": True, "changes": {}, "comment": ""}
 
     # Check if project already exists
-    cloud_name = kwargs.get("auth_args", os.environ.get("OS_CLOUD", "openstack"))
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state, set 'openstack:cloud_name' in pillar, or set OS_CLOUD environment variable.",
+        }
     project = __salt__["kinetic-openstack.get_projects"](auth_args=cloud_name)
     project = next((p for p in project if p["name"] == name), None)
     if project:
@@ -86,7 +93,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
                 return ret
             try:
                 result = __salt__["kinetic-openstack.update_project"](
-                    name, auth_args=cloud_name, **updates
+                    name, cloud=cloud_name, **updates
                 )
                 if result:
                     ret["changes"] = {"updated": updates}
@@ -110,7 +117,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
             name=name,
             description=description,
             enabled=enabled,
-            auth_args=cloud_name,
+            cloud=cloud_name,
             **kwargs,
         )
         if result:
@@ -139,8 +146,16 @@ def project_absent(name):
     ret = {"name": name, "result": True, "changes": {}, "comment": ""}
 
     # Check if project exists
-    cloud_name = kwargs.get("auth_args", os.environ.get("OS_CLOUD", "openstack"))
-    project = __salt__["kinetic-openstack.get_projects"](auth_args=cloud_name)
+    # Check if project already exists
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+    project = __salt__["kinetic-openstack.get_projects"](cloud=cloud_name)
     project = next((p for p in project if p["name"] == name), None)
     if not project:
         ret["comment"] = f"Project {name} does not exist."
@@ -152,9 +167,7 @@ def project_absent(name):
         return ret
 
     try:
-        result = __salt__["kinetic-openstack.delete_project"](
-            name, auth_args=cloud_name
-        )
+        result = __salt__["kinetic-openstack.delete_project"](name, cloud=cloud_name)
         if result:
             ret["changes"] = {"deleted": name}
             ret["comment"] = f"Project {name} deleted successfully."
@@ -195,13 +208,20 @@ def role_assignment_present(role_name, project_name, group_name=None, user_name=
     entity_name = group_name or user_name
 
     # Check if role assignment already exists
-    cloud_name = kwargs.get("auth_args", os.environ.get("OS_CLOUD", "openstack"))
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": role_name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
     assignment_exists = __salt__["kinetic-openstack.check_role_assignment"](
         role_name=role_name,
         project_name=project_name,
         group_name=group_name,
         user_name=user_name,
-        auth_args=cloud_name,
+        cloud=cloud_name,
     )
     if assignment_exists:
         ret["comment"] = (
@@ -221,7 +241,7 @@ def role_assignment_present(role_name, project_name, group_name=None, user_name=
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,
-            auth_args=cloud_name,
+            cloud=cloud_name,
         )
         if result:
             ret["changes"] = {
@@ -269,13 +289,20 @@ def role_assignment_absent(role_name, project_name, group_name=None, user_name=N
     entity_name = group_name or user_name
 
     # Check if role assignment exists
-    cloud_name = kwargs.get("auth_args", os.environ.get("OS_CLOUD", "openstack"))
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": role_name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
     assignment_exists = __salt__["kinetic-openstack.check_role_assignment"](
         role_name=role_name,
         project_name=project_name,
         group_name=group_name,
         user_name=user_name,
-        auth_args=cloud_name,
+        cloud=cloud_name,
     )
     if not assignment_exists:
         ret["comment"] = (
@@ -295,7 +322,7 @@ def role_assignment_absent(role_name, project_name, group_name=None, user_name=N
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,
-            auth_args=cloud_name,
+            cloud=cloud_name,
         )
         if result:
             ret["changes"] = {

@@ -10,7 +10,7 @@ openstack_project_{{ group }}:
     - name: {{ project_name }}
     - description: {{ project_description }}
     - enabled: True
-    - auth_args: {{ pillar.get('openstack', {}).get('cloud_name', 'openstack') }}
+    - cloud: rsc
   {% if 'roles' in data %}
     {% for role in data.get('roles', []) %}
 openstack_role_assignment_{{ group }}_{{ role }}:
@@ -18,10 +18,9 @@ openstack_role_assignment_{{ group }}_{{ role }}:
     - role_name: {{ role }}
     - project_name: {{ project_name }}
     - group_name: {{ group }}
-    - auth_args: {{ pillar.get('openstack', {}).get('cloud_name', 'openstack') }}
+    - cloud: rsc
     - require:
       - kinetic-openstack: openstack_project_{{ group }}
-      - pip: install_openstacksdk
     {% endfor %}
   {% endif %}
 {% endfor %}
