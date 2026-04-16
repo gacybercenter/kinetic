@@ -61,9 +61,9 @@ ldap_project_group_{{ group }}:
     - cn: {{ group }}
     - description: "LDAP group for {{ group }} OpenStack project members"
     - members:
-    {% for member in data.get('members', []) %}
-    - "cn={{ member }},{{ ou_users }},{{ base_dn }}"
-    {% endfor %}
+        {% for member in data.get('members', []) %}
+        - "cn={{ member }},{{ ou_users }},{{ base_dn }}"
+        {% endfor %}
     - require:
       - sls: /formulas/common/ldapadmin/install
       - ldap: ensure_ldap_connect_spec
