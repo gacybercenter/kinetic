@@ -87,29 +87,31 @@ def project_present(name, description=None, enabled=True, **kwargs):
             updates["is_enabled"] = enabled
 
         if updates:
+            # Check if updates are actually different from current project state
+            actual_changes = {}
+            for key, value in updates.items():
+                if project.get(key) != value:
+                    actual_changes[key] = value
+
+            if not actual_changes:
+                ret["comment"] = f"Project {name} already has the desired attributes."
+                return ret
+
             if __opts__["test"]:
                 ret["result"] = None
-                ret["comment"] = f"Project {name} would be updated with {updates}."
+                ret["comment"] = (
+                    f"Project {name} would be updated with {actual_changes}."
+                )
                 return ret
             try:
                 result = __salt__["kinetic-openstack.update_project"](
                     name, cloud=cloud_name, **updates
                 )
                 if result:
-                    # Check if any actual changes were made by comparing with original project
-                    actual_changes = {}
-                    for key, value in updates.items():
-                        if project.get(key) != value:
-                            actual_changes[key] = value
-                    if actual_changes:
-                        ret["changes"] = {"updated": actual_changes}
-                        ret["comment"] = (
-                            f"Project {name} updated successfully with {actual_changes}."
-                        )
-                    else:
-                        ret["comment"] = (
-                            f"Project {name} update attempted, but no changes were needed."
-                        )
+                    ret["changes"] = {"updated": actual_changes}
+                    ret["comment"] = (
+                        f"Project {name} updated successfully with {actual_changes}."
+                    )
                 else:
                     ret["result"] = False
                     ret["comment"] = f"Failed to update project {name}."
