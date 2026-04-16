@@ -28,7 +28,7 @@ except ImportError:
 @decorators.memoize
 def __virtual__():
     if HAS_OPENSTACK:
-        return __virtualname__
+        return "kinetic-openstack"
     return (
         False,
         "The openstack module could not be loaded: OpenStack SDK is not installed. Install with 'pip install openstacksdk'.",
