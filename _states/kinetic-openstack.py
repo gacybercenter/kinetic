@@ -80,11 +80,6 @@ def project_present(name, description=None, enabled=True, **kwargs):
     if project:
         ret["comment"] = f"Project {name} already exists."
         # Check if description or enabled status needs update
-        updates = {}
-        if description is not None and project.get("description") != description:
-            updates["description"] = description
-        if project.get("is_enabled") != enabled:
-            updates["is_enabled"] = enabled
 
         if updates:
             # Check if updates are actually different from current project state
@@ -159,7 +154,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
     return ret
 
 
-def project_absent(name):
+def project_absent(name, **kwargs):
     """
     Ensure that an OpenStack project is absent.
 

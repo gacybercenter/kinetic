@@ -85,7 +85,13 @@ def get_projects(cloud=None):
         return []
     try:
         projects = [
-            {"id": project.id, "name": project.name}
+            {
+                "id": project.id,
+                "name": project.name,
+                "description": getattr(project, "description", None),
+                "is_enabled": project.is_enabled,
+                "domain_id": getattr(project, "domain_id", None),
+            }
             for project in conn.identity.projects()
         ]
         return projects
@@ -393,6 +399,4 @@ def revoke_role_from_group(
 
         return True
     except exceptions.SDKException as e:
-        raise CommandExecutionError(f"Failed to revoke role: {str(e)}")
-    finally:
-        conn.close()
+        raise CommandExecutionError(f"Failed to revoke
