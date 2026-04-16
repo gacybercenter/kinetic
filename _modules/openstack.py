@@ -39,11 +39,10 @@ def __virtual__():
 
 def _get_connection(auth_args=None):
     """
-    Create an OpenStack connection using provided auth arguments,
-    cloud configuration, or environment variables.
+    Create an OpenStack connection using provided cloud name or environment variables.
 
     Args:
-        auth_args (dict): Dictionary of authentication arguments or cloud configuration
+        auth_args (str): Name of the cloud configuration from clouds.yaml
 
     Returns:
         Connection object to OpenStack
@@ -57,14 +56,14 @@ def _get_connection(auth_args=None):
             "user_domain_name": os.environ.get("OS_USER_DOMAIN_NAME", "default"),
             "project_domain_name": os.environ.get("OS_PROJECT_DOMAIN_NAME", "default"),
         }
-    elif "cloud" in auth_args:
+    elif auth_args is not None:
         # Use cloud configuration from clouds.yaml
         try:
-            conn = connection.from_config(cloud=auth_args["cloud"])
+            conn = connection.from_config(cloud=auth_args)
             return conn
         except exceptions.SDKException as e:
             raise CommandExecutionError(
-                f"Failed to connect to OpenStack with cloud config {auth_args['cloud']}: {str(e)}"
+                f"Failed to connect to OpenStack with cloud config {auth_args}: {str(e)}"
             )
 
     try:
@@ -79,7 +78,7 @@ def get_projects(auth_args=None):
     List all projects in OpenStack
 
     Args:
-        auth_args (dict): Optional dictionary of authentication arguments or cloud config
+        auth_args (str): Optional name of the cloud configuration from clouds.yaml
 
     Returns:
         list: List of project details
@@ -108,7 +107,7 @@ def get_roles(auth_args=None):
     List all roles in OpenStack
 
     Args:
-        auth_args (dict): Optional dictionary of authentication arguments or cloud config
+        auth_args (str): Optional name of the cloud configuration from clouds.yaml
 
     Returns:
         list: List of role details
@@ -134,7 +133,7 @@ def get_groups(auth_args=None):
     List all groups in OpenStack
 
     Args:
-        auth_args (dict): Optional dictionary of authentication arguments or cloud config
+        auth_args (str): Optional name of the cloud configuration from clouds.yaml
 
     Returns:
         list: List of group details
@@ -165,7 +164,7 @@ def create_project(name, description=None, domain_id="default", auth_args=None):
         name (str): Name of the project
         description (str): Description of the project (optional)
         domain_id (str): Domain ID for the project (default is 'default')
-        auth_args (dict): Optional dictionary of authentication arguments or cloud config
+        auth_args (str): Optional name of the cloud configuration from clouds.yaml
 
     Returns:
         dict: Information about the created project
@@ -199,7 +198,7 @@ def delete_project(name_or_id, auth_args=None):
 
     Args:
         name_or_id (str): Name or ID of the project to delete
-        auth_args (dict): Optional dictionary of authentication arguments or cloud config
+        auth_args (str): Optional name of the cloud configuration from clouds.yaml
 
     Returns:
         bool: True if deletion was successful
@@ -239,7 +238,7 @@ def assign_role_to_group(
         group_name_or_id (str): Name or ID of the group
         project_name_or_id (str): Name or ID of the project (optional)
         domain_name_or_id (str): Name or ID of the domain (optional)
-        auth_args (dict): Optional dictionary of authentication arguments or cloud config
+        auth_args (str): Optional name of the cloud configuration from clouds.yaml
 
     Returns:
         bool: True if assignment was successful
@@ -297,7 +296,7 @@ def revoke_role_from_group(
         group_name_or_id (str): Name or ID of the group
         project_name_or_id (str): Name or ID of the project (optional)
         domain_name_or_id (str): Name or ID of the domain (optional)
-        auth_args (dict): Optional dictionary of authentication arguments or cloud config
+        auth_args (str): Optional name of the cloud configuration from clouds.yaml
 
     Returns:
         bool: True if revocation was successful
