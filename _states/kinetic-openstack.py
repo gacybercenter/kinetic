@@ -15,7 +15,7 @@ Dependencies:
     Additionally, OpenStack authentication credentials must be set either via environment
     variables (OS_AUTH_URL, OS_USERNAME, OS_PASSWORD, etc.) or passed as arguments.
 
-Usage:
+Usage:@
     This state can be used to ensure the desired state of OpenStack Keystone resources.
     It supports management of projects, roles, and group-role assignments.
 
