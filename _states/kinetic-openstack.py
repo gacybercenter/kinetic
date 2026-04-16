@@ -81,6 +81,12 @@ def project_present(name, description=None, enabled=True, **kwargs):
         ret["comment"] = f"Project {name} already exists."
         # Check if description or enabled status needs update
 
+        updates = {}
+        if description is not None and project.get("description") != description:
+            updates["description"] = description
+        if project.get("is_enabled") != enabled:
+            updates["is_enabled"] = enabled
+
         if updates:
             # Check if updates are actually different from current project state
             actual_changes = {}
