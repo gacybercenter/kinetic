@@ -79,7 +79,14 @@ ldap_admin_group_{{ group }}:
     - base_dn: "{{ ou_groups }},{{ base_dn }}"
     - cn: admin-{{ group }}
     - description: "LDAP admins for {{ group }} OpenStack project"
-    - members: []
+    - members:
+        {% if data.get('admin_members', [])|length > 0 %}
+        {% for member in data.get('admin_members', []) %}
+        - "cn={{ member }},{{ ou_users }},{{ base_dn }}"
+        {% endfor %}
+        {% else %}
+        - "cn=admin,{{ ou_users }},{{ base_dn }}"
+        {% endif %}
     - require:
       - ldap: ldap_project_group_{{ group }}
       - ldap: ensure_ldap_connect_spec
