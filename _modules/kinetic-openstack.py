@@ -25,7 +25,6 @@ except ImportError:
     HAS_OPENSTACK = False
 
 
-@decorators.memoize
 def __virtual__():
     try:
         import openstack
