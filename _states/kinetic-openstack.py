@@ -113,12 +113,14 @@ def project_present(name, description=None, enabled=True, **kwargs):
         return ret
 
     try:
+        # Ensure cloud is not duplicated from kwargs
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
         result = __salt__["kinetic-openstack.create_project"](
             name=name,
             description=description,
             enabled=enabled,
             cloud=cloud_name,
-            **kwargs,
+            **filtered_kwargs,
         )
         if result:
             ret["changes"] = {"created": name}
@@ -167,7 +169,11 @@ def project_absent(name):
         return ret
 
     try:
-        result = __salt__["kinetic-openstack.delete_project"](name, cloud=cloud_name)
+        # Ensure cloud is not duplicated from kwargs
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
+        result = __salt__["kinetic-openstack.delete_project"](
+            name, cloud=cloud_name, **filtered_kwargs
+        )
         if result:
             ret["changes"] = {"deleted": name}
             ret["comment"] = f"Project {name} deleted successfully."
@@ -207,14 +213,16 @@ def role_assignment_present(role_name, project_name, group_name=None, user_name=
     entity_type = "group" if group_name else "user"
     entity_name = group_name or user_name
 
-    # Check if role assignment already exists
+    # Check if role assignment exists
     cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        cloud_name = pillar.get("openstack", {}).get("cloud_name", None)
     if cloud_name is None:
         return {
             "name": role_name,
             "result": False,
             "changes": {},
-            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state or set 'openstack:cloud_name' in pillar.",
         }
     assignment_exists = __salt__["kinetic-openstack.check_role_assignment"](
         role_name=role_name,
@@ -237,11 +245,14 @@ def role_assignment_present(role_name, project_name, group_name=None, user_name=
         return ret
 
     try:
+        # Ensure cloud is not duplicated from kwargs
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
         result = __salt__["kinetic-openstack.assign_role_to_group"](
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,
             cloud=cloud_name,
+            **filtered_kwargs,
         )
         if result:
             ret["changes"] = {
@@ -318,11 +329,14 @@ def role_assignment_absent(role_name, project_name, group_name=None, user_name=N
         return ret
 
     try:
+        # Ensure cloud is not duplicated from kwargs
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
         result = __salt__["kinetic-openstack.revoke_role_from_group"](
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,
             cloud=cloud_name,
+            **filtered_kwargs,
         )
         if result:
             ret["changes"] = {
