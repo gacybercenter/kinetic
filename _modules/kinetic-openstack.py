@@ -27,12 +27,12 @@ except ImportError:
 
 @decorators.memoize
 def __virtual__():
-    if HAS_OPENSTACK:
+    try:
+        import openstack
+
         return __virtualname__
-    return (
-        False,
-        "The kinetic-openstack module could not be loaded: OpenStack SDK (openstacksdk) is not installed or not accessible in the Python environment used by Salt. Ensure it is installed with 'pip install openstacksdk' in the correct environment. Check Python version with 'salt <minion> test.python_version'.",
-    )
+    except ImportError:
+        return (False, "openstack module not installed.")
 
 
 def _get_connection(auth_args=None):
