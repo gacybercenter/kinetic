@@ -201,7 +201,7 @@ def update_project(name_or_id, cloud=None, **updates):
         **updates: Dictionary of attributes to update (e.g., description, is_enabled)
 
     Returns:
-        dict: Updated project information, or None if no cloud configuration is provided
+        dict: Updated project information including changes made, or None if no cloud configuration is provided
 
     CLI Example:
 
@@ -217,13 +217,27 @@ def update_project(name_or_id, cloud=None, **updates):
         if not project:
             raise CommandExecutionError(f"Project {name_or_id} not found")
 
+        # Store original values for comparison
+        original_values = {
+            "description": project.description,
+            "is_enabled": project.is_enabled,
+        }
+
         updated_project = conn.identity.update_project(project, **updates)
+
+        # Check what actually changed
+        changes = {}
+        for key, new_value in updates.items():
+            if key in original_values and original_values[key] != new_value:
+                changes[key] = {"old": original_values[key], "new": new_value}
+
         return {
             "id": updated_project.id,
             "name": updated_project.name,
             "description": updated_project.description,
             "domain_id": updated_project.domain_id,
             "is_enabled": updated_project.is_enabled,
+            "changes": changes,
         }
     except exceptions.SDKException as e:
         raise CommandExecutionError(f"Failed to update project: {str(e)}")
