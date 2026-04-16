@@ -75,7 +75,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
             "changes": {},
             "comment": "No cloud configuration name provided. Specify 'cloud' in state, set 'openstack:cloud_name' in pillar, or set OS_CLOUD environment variable.",
         }
-    project = __salt__["kinetic-openstack.get_projects"](auth_args=cloud_name)
+    project = __salt__["kinetic-openstack.get_projects"](cloud=cloud_name)
     project = next((p for p in project if p["name"] == name), None)
     if project:
         ret["comment"] = f"Project {name} already exists."
