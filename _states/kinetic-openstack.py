@@ -90,7 +90,8 @@ def project_present(name, description=None, enabled=True, **kwargs):
             # Check if updates are actually different from current project state
             actual_changes = {}
             for key, value in updates.items():
-                if project.get(key) != value:
+                current_value = project.get(key)
+                if current_value != value:
                     actual_changes[key] = value
 
             if not actual_changes:
@@ -108,10 +109,20 @@ def project_present(name, description=None, enabled=True, **kwargs):
                     name, cloud=cloud_name, **updates
                 )
                 if result:
-                    ret["changes"] = {"updated": actual_changes}
-                    ret["comment"] = (
-                        f"Project {name} updated successfully with {actual_changes}."
-                    )
+                    # Verify if changes were actually applied by checking result
+                    applied_changes = {}
+                    for key, value in actual_changes.items():
+                        if result.get(key) == value:
+                            applied_changes[key] = value
+                    if applied_changes:
+                        ret["changes"] = {"updated": applied_changes}
+                        ret["comment"] = (
+                            f"Project {name} updated successfully with {applied_changes}."
+                        )
+                    else:
+                        ret["comment"] = (
+                            f"Project {name} update attempted, but no changes were applied."
+                        )
                 else:
                     ret["result"] = False
                     ret["comment"] = f"Failed to update project {name}."
