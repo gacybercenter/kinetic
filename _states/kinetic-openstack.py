@@ -35,6 +35,8 @@ Example:
 
 import logging
 
+from openstack import connection, exceptions
+
 log = logging.getLogger(__name__)
 
 __virtualname__ = "kinetic-openstack"
