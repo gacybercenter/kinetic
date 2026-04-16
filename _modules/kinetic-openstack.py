@@ -44,16 +44,7 @@ def _get_connection(auth_args=None):
     Returns:
         Connection object to OpenStack
     """
-    if auth_args is None:
-        auth_args = {
-            "auth_url": os.environ.get("OS_AUTH_URL"),
-            "project_name": os.environ.get("OS_PROJECT_NAME"),
-            "username": os.environ.get("OS_USERNAME"),
-            "password": os.environ.get("OS_PASSWORD"),
-            "user_domain_name": os.environ.get("OS_USER_DOMAIN_NAME", "default"),
-            "project_domain_name": os.environ.get("OS_PROJECT_DOMAIN_NAME", "default"),
-        }
-    elif auth_args is not None:
+    if auth_args is not None:
         # Use cloud configuration from clouds.yaml
         try:
             conn = connection.from_config(cloud=auth_args)
