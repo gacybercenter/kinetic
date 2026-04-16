@@ -17,7 +17,6 @@ __virtualname__ = "openstack"
 
 log = logging.getLogger(__name__)
 
-HAS_OPENSTACK = False
 try:
     from openstack import connection, exceptions
 
