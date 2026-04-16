@@ -33,7 +33,7 @@ def __virtual__():
         return __virtualname__
     return (
         False,
-        "The openstack module could not be loaded: OpenStack SDK is not installed.",
+        "The openstack module could not be loaded: OpenStack SDK is not installed or import failed. Ensure 'openstacksdk' is installed with 'pip install openstacksdk'.",
     )
 
 
