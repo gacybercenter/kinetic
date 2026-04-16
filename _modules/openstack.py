@@ -22,7 +22,7 @@ try:
 
     HAS_OPENSTACK = True
 except ImportError:
-    pass
+    HAS_OPENSTACK = False
 
 
 @decorators.memoize
