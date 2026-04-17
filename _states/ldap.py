@@ -365,11 +365,20 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
 
     # Prepare attributes for existence check (mirroring fixed attributes in create_user/update_user)
     attributes = {
-        "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+        "objectClass": [
+            "person",
+            "organizationalPerson",
+            "inetOrgPerson",
+            "posixAccount",
+        ],
         "uid": uid,
         "cn": cn,
         "sn": sn,
         "description": description,
+        "uidNumber": "0",  # Default value, can be overridden if needed
+        "gidNumber": "0",  # Default value, can be overridden if needed
+        "homeDirectory": f"/home/{uid}",
+        "loginShell": "/bin/bash",
     }
 
     # Check if user exists and attributes match
@@ -402,7 +411,17 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
     if not exists:
         # Call create_user
         create_result = __salt__["ldap_utils.create_user"](
-            spec_name, user_dn, uid, cn, sn, description, password
+            spec_name,
+            user_dn,
+            uid,
+            cn,
+            sn,
+            description,
+            password,
+            uid_number=None,
+            gid_number=None,
+            home_directory=None,
+            login_shell=None,
         )
         if create_result["result"]:
             ret["result"] = True
@@ -419,7 +438,16 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
     else:
         # Call update_user (no password update, as per previous instructions)
         update_result = __salt__["ldap_utils.update_user"](
-            spec_name, user_dn, uid, cn, sn, description
+            spec_name,
+            user_dn,
+            uid,
+            cn,
+            sn,
+            description,
+            uid_number=None,
+            gid_number=None,
+            home_directory=None,
+            login_shell=None,
         )
         if update_result["result"]:
             ret["result"] = True
@@ -465,11 +493,11 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     group_dn = f"cn={cn},{base_dn}"
 
     # Prepare attributes for existence check (mirroring fixed attributes in create_group/update_group)
-    attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+    attributes = {"objectClass": ["posixGroup"], "cn": cn}
     if description:
         attributes["description"] = description
     if members:
-        attributes["member"] = members
+        attributes["memberUid"] = members  # Use memberUid for posixGroup
 
     # Check if group exists and attributes match
     check_result = __salt__["ldap_utils.dn_exists"](spec_name, group_dn, attributes)
@@ -505,7 +533,7 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     if not exists:
         # Call create_group
         create_result = __salt__["ldap_utils.create_group"](
-            spec_name, group_dn, cn, description, members
+            spec_name, group_dn, cn, description, members, gid_number=None
         )
         if create_result["result"]:
             ret["result"] = True
@@ -522,7 +550,7 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     else:
         # Call update_group
         update_result = __salt__["ldap_utils.update_group"](
-            spec_name, group_dn, cn, description, members
+            spec_name, group_dn, cn, description, members, gid_number=None
         )
         if update_result["result"]:
             ret["result"] = True
