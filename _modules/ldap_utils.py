@@ -982,22 +982,23 @@ def update_group(
                         return ret
             else:
                 if check["attributes_match"] and not members:
-                    ret["result"] = True
-                    ret["comment"] = (
-                        f"Group {group_dn} already has matching attributes and members."
+                    if "attributes_match" in check:
+                        if check["attributes_match"] and not members:
+                            __salt__["log.debug"](
+                                f"Group {group_dn} appears to match attributes, but forcing update to ensure posixGroup and attributes are applied."
+                            )
+                        else:
+                            __salt__["log.debug"](
+                                f"Group {group_dn} exists but attributes do not match. Expected: {attributes}, Got: {check.get('current_attributes', 'unknown')}."
+                            )
+                            if "current_attributes" in check:
+                                __salt__["log.debug"](
+                                    f"Attribute mismatch for {group_dn}. Expected objectClass: {attributes['objectClass']}, Got: {check.get('current_attributes', {}).get('objectClass', 'unknown')}"
+                                )
+                    # Force update regardless of attributes_match to ensure posixGroup and attributes are applied
+                    __salt__["log.debug"](
+                        f"Forcing update for group {group_dn} to apply posixGroup configuration."
                     )
-                    return ret
-        elif "attributes_match" in check and not check["attributes_match"]:
-            ret["result"] = False
-            ret["comment"] = (
-                f"Group {group_dn} exists but attributes do not match. Expected: {attributes}, Got: {check.get('current_attributes', 'unknown')}."
-            )
-            # Log mismatch for debugging
-            if "current_attributes" in check:
-                __salt__["log.debug"](
-                    f"Attribute mismatch for {group_dn}. Expected objectClass: {attributes['objectClass']}, Got: {check.get('current_attributes', {}).get('objectClass', 'unknown')}"
-                )
-            return ret
 
         # Update attributes or members
         update_attrs = attributes.copy()
