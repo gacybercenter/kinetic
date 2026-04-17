@@ -943,11 +943,22 @@ def update_group(
             )
             return ret
 
-        if check["attributes_match"] and not members:
+        if "attributes_match" in check and check["attributes_match"] and not members:
             ret["result"] = True
             ret["comment"] = (
                 f"Group {group_dn} already has matching attributes and members."
             )
+            return ret
+        elif "attributes_match" in check and not check["attributes_match"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Group {group_dn} exists but attributes do not match. Expected: {attributes}, Got: {check.get('current_attributes', 'unknown')}."
+            )
+            # Log mismatch for debugging
+            if "current_attributes" in check:
+                __salt__["log.debug"](
+                    f"Attribute mismatch for {group_dn}. Expected objectClass: {attributes['objectClass']}, Got: {check.get('current_attributes', {}).get('objectClass', 'unknown')}"
+                )
             return ret
 
         # Update attributes or members
