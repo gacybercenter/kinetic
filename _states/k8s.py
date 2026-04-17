@@ -2147,30 +2147,37 @@ def certmanager_certificate_present(
     try:
         # Log input parameters for debugging
         __salt__["log.debug"](
-            f"Calling certmanager_certificate_present with parameters: "
-            f"name={certificate_name}, namespace={namespace}, secret_name={secret_name}, "
-            f"issuer_name={issuer_name}, issuer_kind={issuer_kind}, common_name={common_name}, "
-            f"dns_names={dns_names}, ip_addresses={ip_addresses}, duration={duration}, "
-            f"renew_before={renew_before}, is_ca={is_ca}"
-        )
+            __salt__["log.debug"](
+                f"Calling certmanager_certificate_present with parameters: "
+                f"name={certificate_name}, namespace={namespace}, secret_name={secret_name}, "
+                f"issuer_name={issuer_name}, issuer_kind={issuer_kind}, common_name={common_name}, "
+                f"dns_names={dns_names}, ip_addresses={ip_addresses}, duration={duration}, "
+                f"renew_before={renew_before}, is_ca={is_ca}"
+            )
 
-        result = __salt__["kinetic-k8s.certmanager_certificate_present"](
-            name=certificate_name,
-            namespace=namespace,
-            secret_name=secret_name,
-            issuer_name=issuer_name,
-            issuer_kind=issuer_kind,
-            common_name=common_name,
-            dns_names=dns_names,
-            ip_addresses=ip_addresses,
-            duration=duration,
-            renew_before=renew_before,
-            is_ca=is_ca,
-        )
+        if "kinetic-k8s.certmanager_certificate_present" in __salt__:
+            result = __salt__["kinetic-k8s.certmanager_certificate_present"](
+                name=certificate_name,
+                namespace=namespace,
+                secret_name=secret_name,
+                issuer_name=issuer_name,
+                issuer_kind=issuer_kind,
+                common_name=common_name,
+                dns_names=dns_names,
+                ip_addresses=ip_addresses,
+                duration=duration,
+                renew_before=renew_before,
+                is_ca=is_ca,
+            )
+        else:
+            ret["result"] = False
+            ret["comment"] = "Module kinetic-k8s.certmanager_certificate_present is not available. Please ensure the module is synced to the minion."
+            ret["changes"] = {}
+            return ret
 
         # Log the result for debugging
         __salt__["log.debug"](
-            f"Result from kinetic-k8s.certmanager_certificate_present: {result}"
+            __salt__["log.debug"](f"Result from kinetic-k8s.certmanager_certificate_present: {result}")
         )
 
         # Check if result is None or not a dictionary
