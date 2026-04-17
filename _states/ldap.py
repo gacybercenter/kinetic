@@ -480,6 +480,14 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     """
     ret = {"name": name, "result": True, "changes": {}, "comment": ""}
 
+    # Check if ldap_utils module is available
+    if "ldap_utils.get_connect_spec" not in __salt__:
+        ret["result"] = False
+        ret["comment"] = (
+            "ldap_utils module not found. Please ensure the module is synced to the minion."
+        )
+        return ret
+
     # Check if connection spec exists
     conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
     if not conn_result["success"]:
@@ -500,6 +508,12 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
         attributes["memberUid"] = members  # Use memberUid for posixGroup
 
     # Check if group exists and attributes match
+    if "ldap_utils.dn_exists" not in __salt__:
+        ret["result"] = False
+        ret["comment"] = (
+            "ldap_utils.dn_exists function not found. Please ensure the module is synced to the minion."
+        )
+        return ret
     check_result = __salt__["ldap_utils.dn_exists"](spec_name, group_dn, attributes)
     if not check_result["result"]:
         if "No such object" in check_result["comment"]:
@@ -532,6 +546,12 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     # Create or update based on existence
     if not exists:
         # Call create_group
+        if "ldap_utils.create_group" not in __salt__:
+            ret["result"] = False
+            ret["comment"] = (
+                "ldap_utils.create_group function not found. Please ensure the module is synced to the minion."
+            )
+            return ret
         create_result = __salt__["ldap_utils.create_group"](
             spec_name, group_dn, cn, description, members, gid_number=None
         )
@@ -549,6 +569,12 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
             return ret
     else:
         # Call update_group
+        if "ldap_utils.update_group" not in __salt__:
+            ret["result"] = False
+            ret["comment"] = (
+                "ldap_utils.update_group function not found. Please ensure the module is synced to the minion."
+            )
+            return ret
         update_result = __salt__["ldap_utils.update_group"](
             spec_name, group_dn, cn, description, members, gid_number=None
         )
