@@ -407,15 +407,20 @@ def update_root_dn(spec_name, root_dn, attributes):
 
         conn = conn_result["conn"]
         # Fetch current attributes to avoid unnecessary or forbidden updates
+        __salt__["log.debug"](f"Checking existence of {root_dn} before update.")
         current_attrs_result = root_dn_exists(spec_name, root_dn, attributes)
         if not current_attrs_result["result"] or not current_attrs_result.get(
             "exists", False
         ):  # Check standardized result
             ret["comment"] = f"DN {root_dn} does not exist for update"
+            __salt__["log.error"](
+                f"DN {root_dn} does not exist for update during root_dn_exists check."
+            )
             return ret
 
         current_attrs = {}
         # Fetch all attributes for comparison
+        __salt__["log.debug"](f"Searching for current attributes of {root_dn}.")
         search_result = conn.search_s(
             base=root_dn,
             scope=ldap.SCOPE_BASE,
@@ -430,6 +435,15 @@ def update_root_dn(spec_name, root_dn, attributes):
                     v.decode("utf-8") if isinstance(v, bytes) else v
                     for v in current_attrs[k]
                 ]
+            __salt__["log.debug"](f"Current attributes for {root_dn}: {current_attrs}")
+        else:
+            __salt__["log.error"](
+                f"Search for {root_dn} returned no results despite existence check."
+            )
+            ret["comment"] = (
+                f"DN {root_dn} could not be found during search despite existence check."
+            )
+            return ret
 
         # Convert attributes dictionary to list of (attr, value) tuples for modification
         # Ensure all values are lists of byte strings as required by python-ldap
@@ -460,7 +474,7 @@ def update_root_dn(spec_name, root_dn, attributes):
                     )
                 )
             elif k == "olcModulePath" and current_val_list:
-                log.warning(
+                __salt__["log.warning"](
                     f"Skipping update for {k} on {root_dn} as it cannot be deleted or replaced"
                 )
                 continue  # Skip update if olcModulePath is already set
@@ -483,14 +497,19 @@ def update_root_dn(spec_name, root_dn, attributes):
             ret["comment"] = f"No changes needed for {root_dn}"
             return ret
 
+        __salt__["log.debug"](
+            f"Attempting to modify {root_dn} with changes: {mod_attrs}"
+        )
         conn.modify_s(dn=root_dn, modlist=mod_attrs)
         ret["result"] = True
         ret["comment"] = f"Root DN {root_dn} attributes updated successfully"
         ret["changes"] = changes
+        __salt__["log.debug"](f"Successfully updated {root_dn} with changes: {changes}")
         return ret
     except Exception as e:
         ret["result"] = False
         ret["comment"] = f"Failed to update root DN {root_dn}: {str(e)}"
+        __salt__["log.error"](f"Exception during update of {root_dn}: {str(e)}")
         return ret
 
 
