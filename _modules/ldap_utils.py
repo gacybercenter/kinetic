@@ -942,9 +942,25 @@ def update_group(
                 f"Group {group_dn} does not exist. Use create_group to create."
             )
             __salt__["log.error"](
-                f"Group {group_dn} does not exist for update during dn_exists check."
+                f"Group {group_dn} does not exist for update during dn_exists check. Attempting creation."
             )
-            return ret
+            # Fallback to create_group if group does not exist
+            create_result = create_group(
+                spec_name, group_dn, cn, description, members, gid_number
+            )
+            if create_result["result"]:
+                ret["result"] = True
+                ret["comment"] = (
+                    f"Group {group_dn} created successfully after existence check failed."
+                )
+                ret["changes"] = create_result.get("changes", {})
+                return ret
+            else:
+                ret["result"] = False
+                ret["comment"] = (
+                    f"Failed to create group {group_dn} after existence check failed: {create_result.get('comment', str(create_result))}"
+                )
+                return ret
 
         if "attributes_match" in check and check["attributes_match"] and not members:
             # Check if objectClass includes posixGroup, force update if not
