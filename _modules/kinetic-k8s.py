@@ -4528,21 +4528,25 @@ def certmanager_certificate_present(
     """
     try:
         # Load Kubernetes configuration (in-cluster or from kubeconfig)
-        log.debug(
+        __salt__["log.debug"](
             "Attempting to load Kubernetes configuration for certmanager_certificate_present"
         )
         try:
             config.load_incluster_config()
-            log.debug("Successfully loaded in-cluster Kubernetes configuration")
+            __salt__["log.debug"](
+                "Successfully loaded in-cluster Kubernetes configuration"
+            )
         except config.ConfigException as e:
-            log.debug(
+            __salt__["log.debug"](
                 f"Failed to load in-cluster config, falling back to kubeconfig: {str(e)}"
             )
             config.load_kube_config()
-            log.debug("Successfully loaded kubeconfig")
+            __salt__["log.debug"]("Successfully loaded kubeconfig")
 
         custom_api = client.CustomObjectsApi()
-        log.debug("Initialized CustomObjectsApi client for cert-manager operations")
+        __salt__["log.debug"](
+            "Initialized CustomObjectsApi client for cert-manager operations"
+        )
 
         # Construct the spec for the Certificate
         spec = {
@@ -4572,16 +4576,22 @@ def certmanager_certificate_present(
         # Check if Certificate already exists
         group, version = "cert-manager.io", "v1"
         plural = "certificates"
-        log.debug(f"Checking if Certificate {name} exists in namespace {namespace}")
+        __salt__["log.debug"](
+            f"Checking if Certificate {name} exists in namespace {namespace}"
+        )
         try:
             existing_cert = custom_api.get_namespaced_custom_object(
                 group, version, namespace, plural, name
             )
-            log.debug(f"Found existing Certificate {name} in namespace {namespace}")
+            __salt__["log.debug"](
+                f"Found existing Certificate {name} in namespace {namespace}"
+            )
             # Compare spec fields to determine if update is needed
             existing_spec = existing_cert.get("spec", {})
             if existing_spec != spec:
-                log.debug(f"Spec for Certificate {name} differs, updating resource")
+                __salt__["log.debug"](
+                    f"Spec for Certificate {name} differs, updating resource"
+                )
                 # Handle resourceVersion for cert-manager update
                 cert_body, rv_message = handle_certmanager_resource_version(
                     body=cert_body,
@@ -4593,10 +4603,15 @@ def certmanager_certificate_present(
                     plural=plural,
                     name=name,
                 )
-                log.debug(f"Handled resource version for update: {rv_message}")
+                __salt__["log.debug"](
+                    f"Handled resource version for update: {rv_message}"
+                )
                 # Update the Certificate
                 updated_cert = custom_api.replace_namespaced_custom_object(
                     group, version, namespace, plural, name, cert_body
+                )
+                __salt__["log.debug"](
+                    f"Successfully updated Certificate {name} in namespace {namespace}"
                 )
                 return {
                     "success": True,
@@ -4604,7 +4619,7 @@ def certmanager_certificate_present(
                     "message": f"Certificate {name} updated in namespace {namespace}. {rv_message}",
                     "resource": updated_cert,
                 }
-            log.debug(f"Certificate {name} spec matches, no update needed")
+            __salt__["log.debug"](f"Certificate {name} spec matches, no update needed")
             return {
                 "success": True,
                 "updated": False,
@@ -4613,12 +4628,15 @@ def certmanager_certificate_present(
             }
         except ApiException as e:
             if e.status == 404:
-                log.debug(
+                __salt__["log.debug"](
                     f"Certificate {name} not found in namespace {namespace}, creating it"
                 )
                 # Certificate does not exist, create it
                 created_cert = custom_api.create_namespaced_custom_object(
                     group, version, namespace, plural, cert_body
+                )
+                __salt__["log.debug"](
+                    f"Successfully created Certificate {name} in namespace {namespace}"
                 )
                 return {
                     "success": True,
@@ -4626,7 +4644,7 @@ def certmanager_certificate_present(
                     "message": f"Certificate {name} created in namespace {namespace}.",
                     "resource": created_cert,
                 }
-            log.error(
+            __salt__["log.error"](
                 f"ApiException while managing Certificate {name} in namespace {namespace}: {str(e)}"
             )
             return {
@@ -4635,9 +4653,8 @@ def certmanager_certificate_present(
                 "message": f"ApiException: Failed to manage Certificate {name} in namespace {namespace}: {str(e)}",
             }
         except Exception as e:
-            log.error(
-                f"Unexpected error while managing Certificate {name} in namespace {namespace}: {str(e)}",
-                exc_info=True,
+            __salt__["log.error"](
+                f"Unexpected error while managing Certificate {name} in namespace {namespace}: {str(e)}"
             )
             return {
                 "success": False,
@@ -4645,9 +4662,8 @@ def certmanager_certificate_present(
                 "message": f"Unexpected error managing Certificate {name} in namespace {namespace}: {str(e)}",
             }
     except Exception as e:
-        log.error(
-            f"Initialization error for Certificate {name} in namespace {namespace}: {str(e)}",
-            exc_info=True,
+        __salt__["log.error"](
+            f"Initialization error for Certificate {name} in namespace {namespace}: {str(e)}"
         )
         return {
             "success": False,

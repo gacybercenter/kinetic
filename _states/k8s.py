@@ -2208,9 +2208,7 @@ def certmanager_certificate_present(
             f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: Full Exception: {str(e)}"
         )
         ret["changes"] = {}
-        __salt__["log.error"](
-            f"Exception in certmanager_certificate_present: {str(e)}", exc_info=True
-        )
+        __salt__["log.error"](f"Exception in certmanager_certificate_present: {str(e)}")
 
     return ret
 
