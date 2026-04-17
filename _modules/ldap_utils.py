@@ -1003,17 +1003,23 @@ def update_group(
         # Update attributes or members
         update_attrs = attributes.copy()
         changes = {}  # Track changes
+        __salt__["log.debug"](
+            f"Attempting to update group {group_dn} with attributes: {update_attrs}"
+        )
         update_result = update_root_dn(spec_name, group_dn, update_attrs)
-        if update_result["updated"]:
+        if update_result.get("updated", False):
             ret["result"] = True
             ret["comment"] = f"Group {group_dn} updated successfully."
             ret["changes"] = update_result.get("changes", {})
+            __salt__["log.debug"](
+                f"Successfully updated group {group_dn}: {ret['changes']}"
+            )
             return ret
         else:
             ret["result"] = False
-            ret["comment"] = (
-                f"Failed to update group {group_dn}: {update_result.get('comment', str(update_result))}"
-            )
+            error_msg = update_result.get("comment", str(update_result))
+            ret["comment"] = f"Failed to update group {group_dn}: {error_msg}"
+            __salt__["log.error"](f"Failed to update group {group_dn}: {error_msg}")
             return ret
     except Exception as e:
         ret["result"] = False
