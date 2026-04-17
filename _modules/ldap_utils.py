@@ -626,7 +626,19 @@ def create_ou(spec_name, ou_dn, attributes):
         return ret
 
 
-def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
+def create_user(
+    spec_name,
+    user_dn,
+    uid,
+    cn,
+    sn,
+    description,
+    password=None,
+    uid_number=None,
+    gid_number=None,
+    home_directory=None,
+    login_shell=None,
+):
     """
     Create a user in the LDAP directory if it doesn't exist.
 
@@ -638,6 +650,10 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
         sn (str): The surname (sn) to set.
         description (str): The description to set.
         password (str, optional): Password to set for the user, if provided (only used on creation).
+        uid_number (int or str, optional): The user ID number for posixAccount. Defaults to '0' if not provided.
+        gid_number (int or str, optional): The group ID number for posixAccount. Defaults to '0' if not provided.
+        home_directory (str, optional): The home directory path for posixAccount. Defaults to '/home/<uid>' if not provided.
+        login_shell (str, optional): The login shell for posixAccount. Defaults to '/bin/bash' if not provided.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -652,11 +668,22 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
         attributes = {
-            "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+            "objectClass": [
+                "person",
+                "organizationalPerson",
+                "inetOrgPerson",
+                "posixAccount",
+            ],
             "uid": uid,
             "cn": cn,
             "sn": sn,
             "description": description,
+            "uidNumber": str(uid_number) if uid_number is not None else "0",
+            "gidNumber": str(gid_number) if gid_number is not None else "0",
+            "homeDirectory": home_directory
+            if home_directory is not None
+            else f"/home/{uid}",
+            "loginShell": login_shell if login_shell is not None else "/bin/bash",
         }
         check = dn_exists(spec_name, user_dn, attributes)
         if check["exists"]:
@@ -674,6 +701,12 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
             "cn": cn,
             "sn": sn,
             "description": description,
+            "uidNumber": str(uid_number) if uid_number is not None else "0",
+            "gidNumber": str(gid_number) if gid_number is not None else "0",
+            "homeDirectory": home_directory
+            if home_directory is not None
+            else f"/home/{uid}",
+            "loginShell": login_shell if login_shell is not None else "/bin/bash",
         }
         if password:
             create_attrs["userPassword"] = password
@@ -699,7 +732,18 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
         return ret
 
 
-def update_user(spec_name, user_dn, uid, cn, sn, description):
+def update_user(
+    spec_name,
+    user_dn,
+    uid,
+    cn,
+    sn,
+    description,
+    uid_number=None,
+    gid_number=None,
+    home_directory=None,
+    login_shell=None,
+):
     """
     Update attributes of an existing user in the LDAP directory (does not update password).
 
@@ -710,6 +754,10 @@ def update_user(spec_name, user_dn, uid, cn, sn, description):
         cn (str): The common name (CN) to set.
         sn (str): The surname (sn) to set.
         description (str): The description to set.
+        uid_number (int or str, optional): The user ID number for posixAccount. Defaults to '0' if not provided.
+        gid_number (int or str, optional): The group ID number for posixAccount. Defaults to '0' if not provided.
+        home_directory (str, optional): The home directory path for posixAccount. Defaults to '/home/<uid>' if not provided.
+        login_shell (str, optional): The login shell for posixAccount. Defaults to '/bin/bash' if not provided.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -724,11 +772,22 @@ def update_user(spec_name, user_dn, uid, cn, sn, description):
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
         attributes = {
-            "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+            "objectClass": [
+                "person",
+                "organizationalPerson",
+                "inetOrgPerson",
+                "posixAccount",
+            ],
             "uid": uid,
             "cn": cn,
             "sn": sn,
             "description": description,
+            "uidNumber": str(uid_number) if uid_number is not None else "0",
+            "gidNumber": str(gid_number) if gid_number is not None else "0",
+            "homeDirectory": home_directory
+            if home_directory is not None
+            else f"/home/{uid}",
+            "loginShell": login_shell if login_shell is not None else "/bin/bash",
         }
         check = dn_exists(spec_name, user_dn, attributes)
         if not check["exists"]:
@@ -764,7 +823,9 @@ def update_user(spec_name, user_dn, uid, cn, sn, description):
         return ret
 
 
-def create_group(spec_name, group_dn, cn, description=None, members=None):
+def create_group(
+    spec_name, group_dn, cn, description=None, members=None, gid_number=None
+):
     """
     Create a group in the LDAP directory if it doesn't exist.
 
@@ -773,7 +834,8 @@ def create_group(spec_name, group_dn, cn, description=None, members=None):
         group_dn (str): The distinguished name of the group to create (e.g., 'cn=admins,ou=groups,base_dn').
         cn (str): The common name (CN) of the group.
         description (str, optional): The description to set for the group.
-        members (list, optional): List of member DNs to set for the group.
+        members (list, optional): List of member user IDs or usernames to set for the group (used as memberUid for posixGroup).
+        gid_number (int or str, optional): The group ID number for posixGroup. Defaults to '0' if not provided.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -787,11 +849,17 @@ def create_group(spec_name, group_dn, cn, description=None, members=None):
 
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
-        attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+        attributes = {
+            "objectClass": ["posixGroup"],
+            "cn": cn,
+            "gidNumber": str(gid_number) if gid_number is not None else "0",
+        }
         if description:
             attributes["description"] = description
         if members:
-            attributes["member"] = members  # Assume members are full DNs
+            attributes["memberUid"] = (
+                members  # Assume members are user IDs or usernames for posixGroup
+            )
 
         check = dn_exists(spec_name, group_dn, attributes)
         if check["exists"]:
@@ -829,7 +897,9 @@ def create_group(spec_name, group_dn, cn, description=None, members=None):
         return ret
 
 
-def update_group(spec_name, group_dn, cn, description=None, members=None):
+def update_group(
+    spec_name, group_dn, cn, description=None, members=None, gid_number=None
+):
     """
     Update attributes or members of an existing group in the LDAP directory.
 
@@ -838,7 +908,8 @@ def update_group(spec_name, group_dn, cn, description=None, members=None):
         group_dn (str): The distinguished name of the group to update (e.g., 'cn=admins,ou=groups,base_dn').
         cn (str): The common name (CN) of the group.
         description (str, optional): The description to set for the group.
-        members (list, optional): List of member DNs to set for the group.
+        members (list, optional): List of member user IDs or usernames to set for the group (used as memberUid for posixGroup).
+        gid_number (int or str, optional): The group ID number for posixGroup. Defaults to '0' if not provided.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -852,11 +923,17 @@ def update_group(spec_name, group_dn, cn, description=None, members=None):
 
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
-        attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+        attributes = {
+            "objectClass": ["posixGroup"],
+            "cn": cn,
+            "gidNumber": str(gid_number) if gid_number is not None else "0",
+        }
         if description:
             attributes["description"] = description
         if members:
-            attributes["member"] = members  # Assume members are full DNs
+            attributes["memberUid"] = (
+                members  # Assume members are user IDs or usernames for posixGroup
+            )
 
         check = dn_exists(spec_name, group_dn, attributes)
         if not check["exists"]:
