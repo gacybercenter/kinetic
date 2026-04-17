@@ -2146,7 +2146,7 @@ def certmanager_certificate_present(
 
     try:
         # Log input parameters for debugging
-        log.debug(
+        __salt__["log.debug"](
             f"Calling certmanager_certificate_present with parameters: "
             f"name={certificate_name}, namespace={namespace}, secret_name={secret_name}, "
             f"issuer_name={issuer_name}, issuer_kind={issuer_kind}, common_name={common_name}, "
@@ -2169,7 +2169,9 @@ def certmanager_certificate_present(
         )
 
         # Log the result for debugging
-        log.debug(f"Result from kinetic-k8s.certmanager_certificate_present: {result}")
+        __salt__["log.debug"](
+            f"Result from kinetic-k8s.certmanager_certificate_present: {result}"
+        )
 
         # Check if result is None or not a dictionary
         if result is None or not isinstance(result, dict):
@@ -2192,7 +2194,7 @@ def certmanager_certificate_present(
             f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: Full Exception: {str(e)}"
         )
         ret["changes"] = {}
-        log.error(
+        __salt__["log.error"](
             f"Exception in certmanager_certificate_present: {str(e)}", exc_info=True
         )
 
