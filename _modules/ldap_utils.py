@@ -944,11 +944,49 @@ def update_group(
             return ret
 
         if "attributes_match" in check and check["attributes_match"] and not members:
-            ret["result"] = True
-            ret["comment"] = (
-                f"Group {group_dn} already has matching attributes and members."
-            )
-            return ret
+            # Check if objectClass includes posixGroup, force update if not
+            if (
+                "current_attributes" in check
+                and "objectClass" in check["current_attributes"]
+            ):
+                current_obj_classes = check["current_attributes"]["objectClass"]
+                if isinstance(current_obj_classes, str):
+                    current_obj_classes = [current_obj_classes]
+                if "posixGroup" not in current_obj_classes:
+                    __salt__["log.debug"](
+                        f"Group {group_dn} does not have posixGroup in objectClass, forcing update. Current: {current_obj_classes}"
+                    )
+                    # Force update since objectClass needs to change
+                    update_attrs = attributes.copy()
+                    changes = {"objectClass": "updated to include posixGroup"}
+                    update_result = update_root_dn(spec_name, group_dn, update_attrs)
+                    if update_result["updated"]:
+                        ret["result"] = True
+                        ret["comment"] = (
+                            f"Group {group_dn} updated to posixGroup objectClass."
+                        )
+                        ret["changes"] = update_result.get("changes", {})
+                        return ret
+                    else:
+                        ret["result"] = False
+                        ret["comment"] = (
+                            f"Failed to update group {group_dn} to posixGroup: {update_result.get('comment', str(update_result))}"
+                        )
+                        return ret
+                else:
+                    if check["attributes_match"] and not members:
+                        ret["result"] = True
+                        ret["comment"] = (
+                            f"Group {group_dn} already has matching attributes and members."
+                        )
+                        return ret
+            else:
+                if check["attributes_match"] and not members:
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"Group {group_dn} already has matching attributes and members."
+                    )
+                    return ret
         elif "attributes_match" in check and not check["attributes_match"]:
             ret["result"] = False
             ret["comment"] = (
