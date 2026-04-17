@@ -381,8 +381,14 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
         "loginShell": "/bin/bash",
     }
 
-    # Check if user exists and attributes match
-    check_result = __salt__["ldap_utils.dn_exists"](spec_name, user_dn, attributes)
+    # Check if group exists and attributes match
+    if "ldap_utils.dn_exists" not in __salt__:
+        ret["result"] = False
+        ret["comment"] = (
+            "ldap_utils.dn_exists function not found. Please ensure the module is synced to the minion with 'saltutil.sync_modules'."
+        )
+        return ret
+    check_result = __salt__["ldap_utils.dn_exists"](spec_name, group_dn, attributes)
     if not check_result["result"]:
         if "No such object" in check_result["comment"]:
             exists = False
@@ -479,6 +485,14 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
         dict: A dictionary containing the state result.
     """
     ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    # Check if ldap_utils module is available
+    if "ldap_utils.get_connect_spec" not in __salt__:
+        ret["result"] = False
+        ret["comment"] = (
+            "ldap_utils module not found. Please ensure the module is synced to the minion with 'saltutil.sync_modules'."
+        )
+        return ret
 
     # Check if ldap_utils module is available
     if "ldap_utils.get_connect_spec" not in __salt__:
