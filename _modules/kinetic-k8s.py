@@ -4598,9 +4598,6 @@ def certmanager_certificate_present(
                 updated_cert = custom_api.replace_namespaced_custom_object(
                     group, version, namespace, plural, name, cert_body
                 )
-                log.debug(
-                    f"Successfully updated Certificate {name} in namespace {namespace}"
-                )
                 return {
                     "success": True,
                     "updated": True,
@@ -4622,9 +4619,6 @@ def certmanager_certificate_present(
                 # Certificate does not exist, create it
                 created_cert = custom_api.create_namespaced_custom_object(
                     group, version, namespace, plural, cert_body
-                )
-                log.debug(
-                    f"Successfully created Certificate {name} in namespace {namespace}"
                 )
                 return {
                     "success": True,

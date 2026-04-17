@@ -2154,8 +2154,14 @@ def certmanager_certificate_present(
             f"renew_before={renew_before}, is_ca={is_ca}"
         )
 
-        if "kinetic-k8s.certmanager_certificate_present" in __salt__:
-            result = __salt__["kinetic-k8s.certmanager_certificate_present"](
+        # Debug available modules for troubleshooting
+        available_modules = [mod for mod in __salt__.keys() if "kinetic" in mod]
+        __salt__["log.debug"](
+            f"Available modules with 'kinetic' in name: {available_modules}"
+        )
+
+        if "kinetic_k8s.certmanager_certificate_present" in __salt__:
+            result = __salt__["kinetic_k8s.certmanager_certificate_present"](
                 name=certificate_name,
                 namespace=namespace,
                 secret_name=secret_name,
@@ -2171,14 +2177,14 @@ def certmanager_certificate_present(
         else:
             ret["result"] = False
             ret["comment"] = (
-                "Module kinetic-k8s.certmanager_certificate_present is not available. Please ensure the module is synced to the minion."
+                "Module kinetic_k8s.certmanager_certificate_present is not available. Please ensure the module is synced to the minion."
             )
             ret["changes"] = {}
             return ret
 
         # Log the result for debugging
         __salt__["log.debug"](
-            f"Result from kinetic-k8s.certmanager_certificate_present: {result}"
+            f"Result from kinetic_k8s.certmanager_certificate_present: {result}"
         )
 
         # Check if result is None or not a dictionary
