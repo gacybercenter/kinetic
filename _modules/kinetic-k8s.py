@@ -16,7 +16,6 @@ from kubernetes.client.rest import ApiException
 __virtualname__ = "kinetic_k8s"
 
 
-@decorators.memoize
 def __virtual__():
     """
     Check if the kubernetes python library is available.
