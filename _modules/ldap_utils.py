@@ -416,6 +416,8 @@ def update_root_dn(spec_name, root_dn, attributes):
             __salt__["log.error"](
                 f"DN {root_dn} does not exist for update during root_dn_exists check."
             )
+            # Fallback to indicate failure but log for debugging
+            ret["result"] = False
             return ret
 
         current_attrs = {}
@@ -443,6 +445,7 @@ def update_root_dn(spec_name, root_dn, attributes):
             ret["comment"] = (
                 f"DN {root_dn} could not be found during search despite existence check."
             )
+            ret["result"] = False
             return ret
 
         # Convert attributes dictionary to list of (attr, value) tuples for modification
