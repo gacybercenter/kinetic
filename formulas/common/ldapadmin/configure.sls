@@ -35,6 +35,9 @@ ensure_ldap_connect_spec:
 {% for group, data in pillar.get('ldap', {}).get('groups', {}).items() %}
   {% set project_name = group %}
   {% set project_description = "Project for " ~ group %}
+  {% do salt.log.debug("Using base_dn: " ~ base_dn) %}
+  {% do salt.log.debug("Using ou_groups: " ~ ou_groups) %}
+  {% do salt.log.debug("Constructed group DN: cn=" ~ group ~ "," ~ ou_groups ~ "," ~ base_dn) %}
 openstack_project_{{ group }}:
   kinetic-openstack.project_present:
     - name: {{ project_name }}
