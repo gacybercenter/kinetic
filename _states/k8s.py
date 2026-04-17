@@ -1870,7 +1870,7 @@ def metallb_pool_present(
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
         if result["updated"]:
-            ret["changes"] = {"pool_updated": True}
+            ret["changes"] = {"ingress_updated": True}
         else:
             ret[
                 "changes"
@@ -2000,9 +2000,10 @@ def certmanager_issuer_present(
     except Exception as e:
         ret["result"] = False
         ret["comment"] = (
-            f"Failed to ensure {issuer_kind} {issuer_name}: {str(e)[:100]}..."
+            f"Failed to ensure Ingress {name} in namespace {namespace}: Full Exception: {str(e)}"
         )
         ret["changes"] = {}
+        __salt__["log.error"](f"Exception in ingress_present: {str(e)}")
 
     return ret
 
