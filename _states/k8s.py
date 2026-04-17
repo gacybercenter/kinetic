@@ -2037,7 +2037,7 @@ def ingress_present(
 
     try:
         # Delegate to the execution module for managing the Ingress
-        result = __salt__["kinetic-k8s.ingress_present"](
+        result = __salt__["kinetic_k8s.ingress_present"](
             name=name,
             namespace=namespace,
             hosts=hosts,
