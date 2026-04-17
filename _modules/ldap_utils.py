@@ -941,6 +941,9 @@ def update_group(
             ret["comment"] = (
                 f"Group {group_dn} does not exist. Use create_group to create."
             )
+            __salt__["log.error"](
+                f"Group {group_dn} does not exist for update during dn_exists check."
+            )
             return ret
 
         if "attributes_match" in check and check["attributes_match"] and not members:
