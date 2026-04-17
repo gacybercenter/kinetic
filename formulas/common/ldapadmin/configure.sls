@@ -65,10 +65,10 @@ ldap_project_group_{{ group }}:
     - members:
         {% if data.get('members', [])|length > 0 %}
         {% for member in data.get('members', []) %}
-        - "cn={{ member }},{{ ou_users }},{{ base_dn }}"
+        - "{{ member }}"
         {% endfor %}
         {% else %}
-        - "cn=admin,{{ ou_users }},{{ base_dn }}"
+        - "admin"
         {% endif %}
     - require:
       - ldap: ensure_ldap_connect_spec
@@ -85,10 +85,10 @@ ldap_admin_group_{{ group }}:
     - members:
         {% if data.get('admin_members', [])|length > 0 %}
         {% for member in data.get('admin_members', []) %}
-        - "cn={{ member }},{{ ou_users }},{{ base_dn }}"
+        - "{{ member }}"
         {% endfor %}
         {% else %}
-        - "cn=admin,{{ ou_users }},{{ base_dn }}"
+        - "admin"
         {% endif %}
     - require:
       - ldap: ldap_project_group_{{ group }}

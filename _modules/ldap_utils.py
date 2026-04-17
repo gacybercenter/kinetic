@@ -961,7 +961,7 @@ def update_group(
                 f"Group {group_dn} does not exist. Use create_group to create."
             )
             __salt__["log.error"](
-                f"Group {group_dn} does not exist for update during dn_exists check. Attempting creation."
+                f"Group {group_dn} does not exist for update during initial dn_exists check."
             )
             # Fallback to create_group if group does not exist
             create_result = create_group(
