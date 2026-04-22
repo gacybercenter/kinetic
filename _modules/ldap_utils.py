@@ -1038,7 +1038,7 @@ def update_group(
         else:
             ret["result"] = False
             error_msg = update_result.get("comment", str(update_result))
-            ret["comment"] = f"Failed1 to update group {group_dn}: {error_msg}"
+            ret["comment"] = f"Failed2 to update group {group_dn}: {error_msg}"
             __salt__["log.error"](f"Failed to update group {group_dn}: {error_msg}")
             return ret
     except Exception as e:
