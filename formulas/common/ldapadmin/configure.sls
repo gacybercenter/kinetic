@@ -4,8 +4,6 @@ include:
 
 {% set ldap_spec = pillar.get('ldap', {}).get('spec_name', 'default') %}
 {% set base_dn = pillar['ldap']['values']['global']['ldapDomain'] %}
-{% set ou_groups = pillar.get('ldap', {}).get('ou_groups', 'ou=groups') %}
-{% set ou_users = pillar.get('ldap', {}).get('ou_users', 'ou=users') %}
 
 ensure_ca_cert_file:
   file.managed:
@@ -60,7 +58,7 @@ ldap_project_group_{{ group }}:
   ldap.group_present:
     - name: ldap_project_group_{{ group }}
     - spec_name: {{ ldap_spec }}
-    - base_dn: "{{ ou_groups }},{{ base_dn }}"
+    - base_dn: "ou=groups,{{ base_dn }}"
     - cn: {{ group }}
     - description: "LDAP group for {{ group }} OpenStack project members"
     - members:
@@ -80,7 +78,7 @@ ldap_admin_group_{{ group }}:
   ldap.group_present:
     - name: ldap_admin_group_{{ group }}
     - spec_name: {{ ldap_spec }}
-    - base_dn: "{{ ou_groups }},{{ base_dn }}"
+    - base_dn: "ou=groups,{{ base_dn }}"
     - cn: admin-{{ group }}
     - description: "LDAP admins for {{ group }} OpenStack project"
     - members:
