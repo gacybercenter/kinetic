@@ -967,79 +967,58 @@ def update_group(
                 f"Group {group_dn} does not exist for update during initial dn_exists check."
             )
             # Fallback to create_group if group does not exist
-            create_result = create_group(
-                spec_name, group_dn, cn, description, members, gid_number
-            )
-            if create_result["result"]:
-                ret["result"] = True
-                ret["comment"] = (
-                    f"Group {group_dn} created successfully after existence check failed."
-                )
-                ret["changes"] = create_result.get("changes", {})
-                return ret
-            else:
-                ret["result"] = False
-                ret["comment"] = (
-                    f"Failed to create group {group_dn} after existence check failed: {create_result.get('comment', str(create_result))}"
-                )
-                return ret
-
         if "attributes_match" in check and check["attributes_match"] and not members:
             # Check if objectClass includes posixGroup, force update if not
-            if (
-                "current_attributes" in check
-                and "objectClass" in check["current_attributes"]
-            ):
-                current_obj_classes = check["current_attributes"]["objectClass"]
-                if isinstance(current_obj_classes, str):
-                    current_obj_classes = [current_obj_classes]
-                if "posixGroup" not in current_obj_classes:
-                    __salt__["log.debug"](
-                        f"Group {group_dn} does not have posixGroup in objectClass, forcing update. Current: {current_obj_classes}"
+            current_obj_classes = check["current_attributes"]["objectClass"]
+            if isinstance(current_obj_classes, str):
+                current_obj_classes = [current_obj_classes]
+            if "posixGroup" not in current_obj_classes:
+                __salt__["log.debug"](
+                    f"Group {group_dn} does not have posixGroup in objectClass, forcing update. Current: {current_obj_classes}"
+                )
+                # Force update since objectClass needs to change
+                update_attrs = attributes.copy()
+                changes = {"objectClass": "updated to include posixGroup"}
+                update_result = update_root_dn(spec_name, group_dn, update_attrs)
+                if update_result["updated"]:
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"Group {group_dn} updated to posixGroup objectClass."
                     )
-                    # Force update since objectClass needs to change
-                    update_attrs = attributes.copy()
-                    changes = {"objectClass": "updated to include posixGroup"}
-                    update_result = update_root_dn(spec_name, group_dn, update_attrs)
-                    if update_result["updated"]:
-                        ret["result"] = True
-                        ret["comment"] = (
-                            f"Group {group_dn} updated to posixGroup objectClass."
-                        )
-                        ret["changes"] = update_result.get("changes", {})
-                        return ret
-                    else:
-                        ret["result"] = False
-                        ret["comment"] = (
-                            f"Failed to update group {group_dn} to posixGroup: {update_result.get('comment', str(update_result))}"
-                        )
-                        return ret
+                    ret["changes"] = update_result.get("changes", {})
+                    return ret
                 else:
-                    if check["attributes_match"] and not members:
-                        ret["result"] = True
-                        ret["comment"] = (
-                            f"Group {group_dn} already has matching attributes and members."
-                        )
-                        return ret
+                    ret["result"] = False
+                    ret["comment"] = (
+                        f"Failed to update group {group_dn} to posixGroup: {update_result.get('comment', str(update_result))}"
+                    )
+                    return ret
             else:
                 if check["attributes_match"] and not members:
-                    if "attributes_match" in check:
-                        if check["attributes_match"] and not members:
-                            __salt__["log.debug"](
-                                f"Group {group_dn} appears to match attributes, but forcing update to ensure posixGroup and attributes are applied."
-                            )
-                        else:
-                            __salt__["log.debug"](
-                                f"Group {group_dn} exists but attributes do not match. Expected: {attributes}, Got: {check.get('current_attributes', 'unknown')}."
-                            )
-                            if "current_attributes" in check:
-                                __salt__["log.debug"](
-                                    f"Attribute mismatch for {group_dn}. Expected objectClass: {attributes['objectClass']}, Got: {check.get('current_attributes', {}).get('objectClass', 'unknown')}"
-                                )
-                    # Force update regardless of attributes_match to ensure posixGroup and attributes are applied
-                    __salt__["log.debug"](
-                        f"Forcing update for group {group_dn} to apply posixGroup configuration."
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"Group {group_dn} already has matching attributes and members."
                     )
+                    return ret
+        else:
+            if check["attributes_match"] and not members:
+                if "attributes_match" in check:
+                    if check["attributes_match"] and not members:
+                        __salt__["log.debug"](
+                            f"Group {group_dn} appears to match attributes, but forcing update to ensure posixGroup and attributes are applied."
+                        )
+                    else:
+                        __salt__["log.debug"](
+                            f"Group {group_dn} exists but attributes do not match. Expected: {attributes}, Got: {check.get('current_attributes', 'unknown')}."
+                        )
+                        if "current_attributes" in check:
+                            __salt__["log.debug"](
+                                f"Attribute mismatch for {group_dn}. Expected objectClass: {attributes['objectClass']}, Got: {check.get('current_attributes', {}).get('objectClass', 'unknown')}"
+                            )
+                # Force update regardless of attributes_match to ensure posixGroup and attributes are applied
+                __salt__["log.debug"](
+                    f"Forcing update for group {group_dn} to apply posixGroup configuration."
+                )
 
         # Update attributes or members
         update_attrs = attributes.copy()
