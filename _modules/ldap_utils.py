@@ -409,9 +409,7 @@ def update_root_dn(spec_name, root_dn, attributes):
         # Fetch current attributes to avoid unnecessary or forbidden updates
         __salt__["log.debug"](f"Checking existence of {root_dn} before update.")
         current_attrs_result = root_dn_exists(spec_name, root_dn, attributes)
-        if not current_attrs_result["result"] or not current_attrs_result.get(
-            "exists", False
-        ):  # Check standardized result
+        if not current_attrs_result["result"]:  # Check standardized result
             ret["comment"] = f"DN {root_dn} does not exist for update"
             __salt__["log.error"](
                 f"DN {root_dn} does not exist for update during root_dn_exists check."
