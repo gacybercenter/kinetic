@@ -589,6 +589,7 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
                 "ldap_utils.update_group function not found. Please ensure the module is synced to the minion."
             )
             return ret
+        # Call update_group
         update_result = __salt__["ldap_utils.update_group"](
             spec_name, group_dn, cn, description, members, gid_number=None
         )
@@ -603,6 +604,28 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
             ret["comment"] = (
                 f"Failed to update group {group_dn}: {update_result['comment']}"
             )
+            # Fallback to create_group if update fails with 'does not exist' error
+            if "does not exist" in str(update_result.get("comment", "")).lower():
+                log.info(
+                    f"Update failed due to non-existence, falling back to create for {group_dn}"
+                )
+                create_result = __salt__["ldap_utils.create_group"](
+                    spec_name, group_dn, cn, description, members, gid_number=None
+                )
+                if create_result["result"]:
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"Fallback: Group {group_dn} created successfully after update failed."
+                    )
+                    ret["changes"] = create_result["changes"]
+                    log.info(f"Created group {group_dn} on fallback")
+                    return ret
+                else:
+                    ret["result"] = False
+                    ret["comment"] = (
+                        f"Failed to update or create group {group_dn}: Update error: {update_result['comment']}, Create error: {create_result['comment']}"
+                    )
+                    return ret
             return ret
 
 

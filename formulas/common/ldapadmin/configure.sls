@@ -38,6 +38,22 @@ ensure_ldap_connect_spec:
   {% do salt.log.debug("Using base_dn: " ~ base_dn) %}
   {% do salt.log.debug("Using ou_groups: " ~ ou_groups) %}
   {% do salt.log.debug("Constructed group DN: cn=" ~ group ~ "," ~ ou_groups ~ "," ~ base_dn) %}
+  {% do salt.log.debug("Using LDAP URL: ldap://" ~ pillar['ldap']['cert']['common_name']) %}
+  {% do salt.log.debug("Using bind DN: cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ base_dn) %}
+
+# Debug the DN and pillar values directly in state output for visibility
+debug_base_dn_{{ group }}:
+  cmd.run:
+    - name: echo "Debug: base_dn for group {{ group }} is {{ base_dn }}"
+
+debug_ou_groups_{{ group }}:
+  cmd.run:
+    - name: echo "Debug: ou_groups for group {{ group }} is {{ ou_groups }}"
+
+debug_full_dn_{{ group }}:
+  cmd.run:
+    - name: echo "Debug: Full DN for group {{ group }} is cn={{ group }},{{ ou_groups }},{{ base_dn }}"
+
 openstack_project_{{ group }}:
   kinetic-openstack.project_present:
     - name: {{ project_name }}
