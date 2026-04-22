@@ -595,7 +595,7 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
         else:
             ret["result"] = False
             ret["comment"] = (
-                f"Failed to update group {group_dn}: {update_result['comment']}"
+                f"Failed1 to update group {group_dn}: {update_result['comment']}"
             )
         return ret
 
