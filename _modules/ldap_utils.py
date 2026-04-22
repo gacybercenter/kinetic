@@ -1064,7 +1064,7 @@ def update_group(
             return ret
     except Exception as e:
         ret["result"] = False
-        ret["comment"] = f"Failed to update group {group_dn}: {str(e)}"
+        ret["comment"] = f"Failed1 to update group {group_dn}: {str(e)}"
         return ret
 
 
