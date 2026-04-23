@@ -23,6 +23,51 @@ def __virtual__():
     return (False, "The kubeadm execution module is not available.")
 
 
+def _state_ret(name):
+    """Return a standard SaltStack state return dict."""
+    return {"name": name, "result": False, "comment": "", "changes": {}}
+
+
+def _fetch_bmh_pillar(pillar_key, bmh_name, pillar_data=None):
+    """
+    Fetch and extract BMH pillar data for a specific host.
+
+    If pillar_data is provided, return it unchanged with a debug message.
+    Otherwise fetch from pillar using pillar_key and extract the host-specific
+    entry by bmh_name, searching both 'bmh' sub-dict and top-level keys.
+
+    Returns:
+        tuple: (pillar_data dict, debug_msg str)
+
+    Raises:
+        SaltInvocationError: if pillar_key is None and pillar_data is None.
+    """
+    if pillar_data is not None:
+        return pillar_data, "Pillar data provided directly; "
+
+    if pillar_key is None:
+        raise SaltInvocationError("Either pillar_data or pillar_key must be provided.")
+
+    full_pillar_data = __salt__["pillar.get"](pillar_key, {})
+    debug_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
+
+    if not isinstance(full_pillar_data, dict):
+        return {}, debug_msg + f"value preview={repr(full_pillar_data)[:50]}...; "
+
+    debug_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
+    if "bmh" in full_pillar_data and isinstance(full_pillar_data["bmh"], dict):
+        debug_msg += f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
+        return full_pillar_data["bmh"].get(bmh_name, {}), debug_msg
+    elif full_pillar_data.get(bmh_name) and isinstance(
+        full_pillar_data.get(bmh_name), dict
+    ):
+        return full_pillar_data[
+            bmh_name
+        ], debug_msg + f"direct host data for {bmh_name} found; "
+    else:
+        return {}, debug_msg + f"no data for {bmh_name} found; "
+
+
 def mac_by_interface_name(name, namespace, resource_name, interface_name):
     """
     Retrieve the MAC address of a specific network interface from a HardwareData Custom Resource in Kubernetes.
@@ -153,37 +198,9 @@ def bmh_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        # If pillar_data is not provided, fetch it using pillar_key and bmh_name
-        if pillar_data is None:
-            if pillar_key is None:
-                raise SaltInvocationError(
-                    "Either pillar_data or pillar_key must be provided."
-                )
-            # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
-            debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
-            if isinstance(full_pillar_data, dict):
-                debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if "bmh" in full_pillar_data and isinstance(
-                    full_pillar_data["bmh"], dict
-                ):
-                    debug_pillar_msg += (
-                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    )
-                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(
-                    full_pillar_data.get(bmh_name), dict
-                ):
-                    pillar_data = full_pillar_data.get(bmh_name, {})
-                    debug_pillar_msg += f"direct host data for {bmh_name} found; "
-                else:
-                    pillar_data = {}
-                    debug_pillar_msg += f"no data for {bmh_name} found; "
-            else:
-                pillar_data = {}
-                debug_pillar_msg += f"value preview={repr(full_pillar_data)[:50]}...; "
-        else:
-            debug_pillar_msg = "Pillar data provided directly; "
+        pillar_data, debug_pillar_msg = _fetch_bmh_pillar(
+            pillar_key, bmh_name, pillar_data
+        )
 
         # Call the execution module function
         result = __salt__["kubernetes_k8s.bmh_present"](
@@ -263,37 +280,9 @@ def networkdata_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        # If pillar_data is not provided, fetch it using pillar_key and bmh_name
-        if pillar_data is None:
-            if pillar_key is None:
-                raise SaltInvocationError(
-                    "Either pillar_data or pillar_key must be provided."
-                )
-            # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
-            debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
-            if isinstance(full_pillar_data, dict):
-                debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if "bmh" in full_pillar_data and isinstance(
-                    full_pillar_data["bmh"], dict
-                ):
-                    debug_pillar_msg += (
-                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    )
-                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(
-                    full_pillar_data.get(bmh_name), dict
-                ):
-                    pillar_data = full_pillar_data.get(bmh_name, {})
-                    debug_pillar_msg += f"direct host data for {bmh_name} found; "
-                else:
-                    pillar_data = {}
-                    debug_pillar_msg += f"no data for {bmh_name} found; "
-            else:
-                pillar_data = {}
-                debug_pillar_msg += f"value preview={repr(full_pillar_data)[:50]}...; "
-        else:
-            debug_pillar_msg = "Pillar data provided directly; "
+        pillar_data, debug_pillar_msg = _fetch_bmh_pillar(
+            pillar_key, bmh_name, pillar_data
+        )
 
         # Call the execution module function
         result = __salt__["kubernetes_k8s.networkdata_present"](
@@ -364,37 +353,9 @@ def userdata_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        # If pillar_data is not provided, fetch it using pillar_key and bmh_name
-        if pillar_data is None:
-            if pillar_key is None:
-                raise SaltInvocationError(
-                    "Either pillar_data or pillar_key must be provided."
-                )
-            # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
-            debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
-            if isinstance(full_pillar_data, dict):
-                debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if "bmh" in full_pillar_data and isinstance(
-                    full_pillar_data["bmh"], dict
-                ):
-                    debug_pillar_msg += (
-                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    )
-                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(
-                    full_pillar_data.get(bmh_name), dict
-                ):
-                    pillar_data = full_pillar_data.get(bmh_name, {})
-                    debug_pillar_msg += f"direct host data for {bmh_name} found; "
-                else:
-                    pillar_data = {}
-                    debug_pillar_msg += f"no data for {bmh_name} found; "
-            else:
-                pillar_data = {}
-                debug_pillar_msg += f"value preview={repr(full_pillar_data)[:50]}...; "
-        else:
-            debug_pillar_msg = "Pillar data provided directly; "
+        pillar_data, debug_pillar_msg = _fetch_bmh_pillar(
+            pillar_key, bmh_name, pillar_data
+        )
 
         # Call the execution module function
         result = __salt__["kubernetes_k8s.userdata_present"](
@@ -470,37 +431,9 @@ def host_bmc_auth_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        # If pillar_data is not provided, fetch it using pillar_key and bmh_name
-        if pillar_data is None:
-            if pillar_key is None:
-                raise SaltInvocationError(
-                    "Either pillar_data or pillar_key must be provided."
-                )
-            # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
-            debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
-            if isinstance(full_pillar_data, dict):
-                debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if "bmh" in full_pillar_data and isinstance(
-                    full_pillar_data["bmh"], dict
-                ):
-                    debug_pillar_msg += (
-                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    )
-                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(
-                    full_pillar_data.get(bmh_name), dict
-                ):
-                    pillar_data = full_pillar_data.get(bmh_name, {})
-                    debug_pillar_msg += f"direct host data for {bmh_name} found; "
-                else:
-                    pillar_data = {}
-                    debug_pillar_msg += f"no data for {bmh_name} found; "
-            else:
-                pillar_data = {}
-                debug_pillar_msg += f"value preview={repr(full_pillar_data)[:50]}...; "
-        else:
-            debug_pillar_msg = "Pillar data provided directly; "
+        pillar_data, debug_pillar_msg = _fetch_bmh_pillar(
+            pillar_key, bmh_name, pillar_data
+        )
 
         # Call the execution module function
         result = __salt__["kubernetes_k8s.host_bmc_auth_present"](
