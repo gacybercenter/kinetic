@@ -32,44 +32,6 @@ def __virtual__():
         )
 
 
-def _load_k8s_config():
-    """Load Kubernetes configuration, preferring in-cluster config then kubeconfig."""
-    try:
-        config.load_incluster_config()
-    except config.ConfigException:
-        config.load_kube_config()
-
-
-def _render_salt_template(template_path, context, renderer="jinja|yaml"):
-    """
-    Load a Salt URI template, strip any shebang line, render it, and return the result.
-    Raises Exception if the template is empty or rendering fails.
-    """
-    content = __salt__["cp.get_file_str"](template_path)
-    if not content:
-        raise Exception(f"Empty template at {template_path}")
-    if content.startswith("#!"):
-        lines = content.splitlines()
-        content = "\n".join(lines[1:]) if len(lines) > 1 else ""
-    rendered = __salt__["slsutil.renderer"](
-        string=content, default_renderer=renderer, context=context
-    )
-    if not rendered:
-        raise Exception(f"Failed to render template {template_path}")
-    return rendered
-
-
-def _decode_k8s_secret(secret):
-    """
-    Return a plain string-keyed dict from a Kubernetes secret object.
-    Prefers string_data; falls back to base64-decoding the data field.
-    """
-    data = secret.string_data if secret.string_data else {}
-    if not data and secret.data:
-        data = {k: base64.b64decode(v).decode("utf-8") for k, v in secret.data.items()}
-    return data
-
-
 def handle_certmanager_resource_version(
     body,
     existing_resource=None,
