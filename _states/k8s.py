@@ -18,7 +18,7 @@ def __virtual__():
     """
     Check if the kubernetes_k8s execution module is available.
     """
-    if "kubeadm.init" in __salt__:
+    if "kinetic_k8s.secret_present" in __salt__:
         return __virtualname__
     return (False, "The kubeadm execution module is not available.")
 
