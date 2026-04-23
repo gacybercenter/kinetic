@@ -3994,7 +3994,7 @@ def metallb_pool_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to create IPAddressPool {pool_name}: {str(e)[:50]}...",
+                    "message": f"Failed to create IPAddressPool {pool_name}: {str(e)}",
                 }
         elif not matches:
             try:
@@ -4017,7 +4017,7 @@ def metallb_pool_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to update IPAddressPool {pool_name}: {str(e)[:50]}...",
+                    "message": f"Failed to update IPAddressPool {pool_name}: {str(e)}",
                 }
         return {"success": True, "updated": updated, "message": message}
 
