@@ -289,6 +289,8 @@ def assign_role_to_group(
     group_name_or_id,
     project_name_or_id=None,
     domain_name_or_id=None,
+    group_domain=None,
+    project_domain=None,
     cloud=None,
 ):
     """
@@ -299,6 +301,8 @@ def assign_role_to_group(
         group_name_or_id (str): Name or ID of the group
         project_name_or_id (str): Name or ID of the project (optional)
         domain_name_or_id (str): Name or ID of the domain (optional)
+        group_domain (str): Domain of the group (optional)
+        project_domain (str): Domain of the project (optional)
         cloud (str): Optional name of the cloud configuration from clouds.yaml
 
     Returns:
@@ -318,14 +322,26 @@ def assign_role_to_group(
         if not role:
             raise CommandExecutionError(f"Role {role_name_or_id} not found")
 
-        group = conn.identity.find_group(group_name_or_id)
+        if group_domain:
+            group = conn.identity.find_group(group_name_or_id, domain_id=group_domain)
+        else:
+            group = conn.identity.find_group(group_name_or_id)
         if not group:
-            raise CommandExecutionError(f"Group {group_name_or_id} not found")
+            raise CommandExecutionError(
+                f"Group {group_name_or_id} not found in domain {group_domain if group_domain else 'default'}"
+            )
 
         if project_name_or_id:
-            project = conn.identity.find_project(project_name_or_id)
+            if project_domain:
+                project = conn.identity.find_project(
+                    project_name_or_id, domain_id=project_domain
+                )
+            else:
+                project = conn.identity.find_project(project_name_or_id)
             if not project:
-                raise CommandExecutionError(f"Project {project_name_or_id} not found")
+                raise CommandExecutionError(
+                    f"Project {project_name_or_id} not found in domain {project_domain if project_domain else 'default'}"
+                )
             conn.identity.grant_role(role.id, group=group.id, project=project.id)
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)
@@ -349,6 +365,8 @@ def revoke_role_from_group(
     group_name_or_id,
     project_name_or_id=None,
     domain_name_or_id=None,
+    group_domain=None,
+    project_domain=None,
     cloud=None,
 ):
     """
@@ -359,6 +377,8 @@ def revoke_role_from_group(
         group_name_or_id (str): Name or ID of the group
         project_name_or_id (str): Name or ID of the project (optional)
         domain_name_or_id (str): Name or ID of the domain (optional)
+        group_domain (str): Domain of the group (optional)
+        project_domain (str): Domain of the project (optional)
         cloud (str): Optional name of the cloud configuration from clouds.yaml
 
     Returns:
@@ -378,14 +398,26 @@ def revoke_role_from_group(
         if not role:
             raise CommandExecutionError(f"Role {role_name_or_id} not found")
 
-        group = conn.identity.find_group(group_name_or_id)
+        if group_domain:
+            group = conn.identity.find_group(group_name_or_id, domain_id=group_domain)
+        else:
+            group = conn.identity.find_group(group_name_or_id)
         if not group:
-            raise CommandExecutionError(f"Group {group_name_or_id} not found")
+            raise CommandExecutionError(
+                f"Group {group_name_or_id} not found in domain {group_domain if group_domain else 'default'}"
+            )
 
         if project_name_or_id:
-            project = conn.identity.find_project(project_name_or_id)
+            if project_domain:
+                project = conn.identity.find_project(
+                    project_name_or_id, domain_id=project_domain
+                )
+            else:
+                project = conn.identity.find_project(project_name_or_id)
             if not project:
-                raise CommandExecutionError(f"Project {project_name_or_id} not found")
+                raise CommandExecutionError(
+                    f"Project {project_name_or_id} not found in domain {project_domain if project_domain else 'default'}"
+                )
             conn.identity.revoke_role(role.id, group=group.id, project=project.id)
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)

@@ -212,7 +212,15 @@ def project_absent(name, **kwargs):
     return ret
 
 
-def role_assignment_present(role_name, project_name, group_name=None, user_name=None):
+def role_assignment_present(
+    role_name,
+    project_name,
+    group_name=None,
+    user_name=None,
+    group_domain=None,
+    project_domain=None,
+    **kwargs,
+):
     """
     Ensure that a role is assigned to a group or user in a specific project.
 
@@ -221,6 +229,8 @@ def role_assignment_present(role_name, project_name, group_name=None, user_name=
         project_name (str): Name of the project to assign the role in.
         group_name (str, optional): Name of the group to assign the role to.
         user_name (str, optional): Name of the user to assign the role to.
+        group_domain (str, optional): Domain of the group.
+        project_domain (str, optional): Domain of the project.
         Note: Either group_name or user_name must be provided, but not both.
 
     Returns:
@@ -276,6 +286,8 @@ def role_assignment_present(role_name, project_name, group_name=None, user_name=
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,
+            group_domain=group_domain,
+            project_domain=project_domain,
             cloud=cloud_name,
             **filtered_kwargs,
         )
@@ -298,7 +310,15 @@ def role_assignment_present(role_name, project_name, group_name=None, user_name=
     return ret
 
 
-def role_assignment_absent(role_name, project_name, group_name=None, user_name=None):
+def role_assignment_absent(
+    role_name,
+    project_name,
+    group_name=None,
+    user_name=None,
+    group_domain=None,
+    project_domain=None,
+    **kwargs,
+):
     """
     Ensure that a role assignment is absent for a group or user in a specific project.
 
@@ -307,6 +327,8 @@ def role_assignment_absent(role_name, project_name, group_name=None, user_name=N
         project_name (str): Name of the project to unassign the role from.
         group_name (str, optional): Name of the group to unassign the role from.
         user_name (str, optional): Name of the user to unassign the role from.
+        group_domain (str, optional): Domain of the group.
+        project_domain (str, optional): Domain of the project.
         Note: Either group_name or user_name must be provided, but not both.
 
     Returns:
@@ -360,6 +382,8 @@ def role_assignment_absent(role_name, project_name, group_name=None, user_name=N
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,
+            group_domain=group_domain,
+            project_domain=project_domain,
             cloud=cloud_name,
             **filtered_kwargs,
         )

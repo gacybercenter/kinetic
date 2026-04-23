@@ -47,6 +47,8 @@ openstack_role_assignment_{{ group }}_{{ role }}:
     - role_name: {{ role }}
     - project_name: {{ project_name }}
     - group_name: {{ group }}
+    - group_domain: ldap
+    - project_domain: Default
     - cloud: rsc
     - require:
       - kinetic-openstack: openstack_project_{{ group }}
