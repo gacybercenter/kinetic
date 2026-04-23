@@ -40,20 +40,6 @@ openstack_project_{{ group }}:
     - description: {{ project_description }}
     - enabled: True
     - cloud: rsc
-  {% if 'roles' in data %}
-    {% for role in data.get('roles', []) %}
-openstack_role_assignment_{{ group }}_{{ role }}:
-  kinetic-openstack.role_assignment_present:
-    - role_name: {{ role }}
-    - project_name: {{ project_name }}
-    - group_name: {{ group }}
-    - group_domain: ldap
-    - project_domain: Default
-    - cloud: rsc
-    - require:
-      - kinetic-openstack: openstack_project_{{ group }}
-    {% endfor %}
-  {% endif %}
 
 {% if group != 'admins' %}
 ldap_project_group_{{ group }}:
@@ -73,6 +59,20 @@ ldap_project_group_{{ group }}:
         {% endif %}
     - require:
       - ldap: ensure_ldap_connect_spec
+
+openstack_role_assignment_{{ group }}_{{ role }}:
+  kinetic-openstack.role_assignment_present:
+    - role_name: member
+    - project_name: {{ project_name }}
+    - group_name: {{ group }}
+    - group_domain: ldap
+    - project_domain: Default
+    - cloud: rsc
+    - require:
+      - kinetic-openstack: openstack_project_{{ group }}
+    {% endfor %}
+  {% endif %}
+
 {% endif %}
 
 {% if group != 'admins' %}
@@ -94,6 +94,21 @@ ldap_admin_group_{{ group }}:
     - require:
       - ldap: ldap_project_group_{{ group }}
       - ldap: ensure_ldap_connect_spec
+
+openstack_role_assignment_{{ group }}_admin:
+  kinetic-openstack.role_assignment_present:
+    - role_name: admin
+    - project_name: {{ project_name }}
+    - group_name: {{ group }}
+    - group_domain: ldap
+    - project_domain: Default
+    - cloud: rsc
+    - require:
+      - kinetic-openstack: openstack_project_{{ group }}
+    {% endfor %}
+
+
+  {% endif %}
 {% endif %}
 
 {% endfor %}
