@@ -9,6 +9,13 @@ for retrieving MAC addresses from HardwareData resources in a Metal3.io environm
 import base64
 
 import salt.utils.decorators as decorators
+from kinetic_k8s_utils import (
+    K8S_API_GROUPS,
+    KubernetesBase,
+    generate_base64_encoded,
+    poll_condition,
+    sanitize_k8s_name,
+)
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
@@ -122,7 +129,7 @@ def get_mac_by_interface_name(namespace, resource_name, interface_name):
         dict: A dictionary with 'success' (bool), 'mac' (str if found), and 'message' (str for status or error).
 
     CLI Example:
-        salt '*' kinetic-k8s.get_mac_by_interface_name baremetal-operator-system compute-133-26 enp97s0f0
+        salt '*' kubernetes_k8s.get_mac_by_interface_name baremetal-operator-system compute-133-26 enp97s0f0
     """
     try:
         try:
@@ -180,7 +187,7 @@ def get_all_interfaces(namespace, resource_name):
         dict: A dictionary with 'success' (bool), 'interfaces' (dict of interface name to MAC), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.get_all_interfaces baremetal-operator-system compute-133-26
+        salt '*' kubernetes_k8s.get_all_interfaces baremetal-operator-system compute-133-26
     """
     try:
         try:
@@ -249,7 +256,7 @@ def bmh_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'recreated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.bmh_present baremetal-operator-system compute-133-26 pillar_data
+        salt '*' kubernetes_k8s.bmh_present baremetal-operator-system compute-133-26 pillar_data
     """
     try:
         updated = False
@@ -504,7 +511,7 @@ def networkdata_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.networkdata_present baremetal-operator-system compute-133-26 defaults pillar_data
+        salt '*' kubernetes_k8s.networkdata_present baremetal-operator-system compute-133-26 defaults pillar_data
     """
     try:
         updated = False
@@ -676,7 +683,7 @@ def userdata_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.userdata_present baremetal-operator-system compute-133-26 pillar_data
+        salt '*' kubernetes_k8s.userdata_present baremetal-operator-system compute-133-26 pillar_data
     """
     try:
         updated = False
@@ -848,7 +855,7 @@ def host_bmc_auth_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.host_bmc_auth_present baremetal-operator-system compute-133-26 ipmi pillar_data
+        salt '*' kubernetes_k8s.host_bmc_auth_present baremetal-operator-system compute-133-26 ipmi pillar_data
     """
     try:
         updated = False
@@ -1015,7 +1022,7 @@ def uuids_secret_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'waited' (bool), 'salt_responded' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.uuids_secret_present baremetal-operator-system salt-master-uuids pillar_data
+        salt '*' kubernetes_k8s.uuids_secret_present baremetal-operator-system salt-master-uuids pillar_data
     """
     try:
         updated = False
@@ -2976,7 +2983,7 @@ def image_server_present(
         dict: A dictionary with 'success' (bool), 'deployment_updated' (bool), 'service_updated' (bool), 'pvc_updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.image_server_present baremetal-operator-system service_type=LoadBalancer external_ip=192.168.1.100
+        salt '*' kubernetes_k8s.image_server_present baremetal-operator-system service_type=LoadBalancer external_ip=192.168.1.100
     """
     try:
         deployment_updated = False
@@ -3297,7 +3304,7 @@ def bmh_state(namespace, bmh_name, desired_state):
         dict: A dictionary with 'success' (bool), 'in_state' (bool), 'current_state' (str), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.bmh_state baremetal-operator-system compute-133-26 provisioned
+        salt '*' kubernetes_k8s.bmh_state baremetal-operator-system compute-133-26 provisioned
     """
     try:
         try:
@@ -3362,7 +3369,7 @@ def namespace_present(namespace):
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.namespace_present my-namespace
+        salt '*' kubernetes_k8s.namespace_present my-namespace
     """
     try:
         try:
@@ -3429,7 +3436,7 @@ def ceph_cluster_present(namespace, cluster_name, spec):
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.ceph_cluster_present rook-ceph rook-ceph spec_dict
+        salt '*' kubernetes_k8s.ceph_cluster_present rook-ceph rook-ceph spec_dict
     """
     try:
         try:
@@ -3549,7 +3556,7 @@ def configmap_present(namespace, name, data, labels=None, annotations=None):
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.configmap_present efk opensearch-dashboards-config "{'opensearch_dashboards.yml': 'content'}"
+        salt '*' kubernetes_k8s.configmap_present efk opensearch-dashboards-config "{'opensearch_dashboards.yml': 'content'}"
     """
     try:
         try:
@@ -3679,7 +3686,7 @@ def service_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.service_present openstack openstack-public service_type=LoadBalancer selector="{'app.kubernetes.io/name': 'ingress-nginx'}" ports="[{ 'name': 'http', 'port': 80, 'targetPort': 80, 'protocol': 'TCP' }]" annotations="{'metallb.universe.tf/address-pool': 'default'}"
+        salt '*' kubernetes_k8s.service_present openstack openstack-public service_type=LoadBalancer selector="{'app.kubernetes.io/name': 'ingress-nginx'}" ports="[{ 'name': 'http', 'port': 80, 'targetPort': 80, 'protocol': 'TCP' }]" annotations="{'metallb.universe.tf/address-pool': 'default'}"
     """
     try:
         try:
@@ -3854,7 +3861,7 @@ def node_label_present(namespace, node_name, labels):
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'changes' (dict).
 
     CLI Example:
-        salt '*' kinetic-k8s.node_label_present unused-namespace k8s-node-1 "{'key1': 'value1', 'key2': 'value2'}"
+        salt '*' kubernetes_k8s.node_label_present unused-namespace k8s-node-1 "{'key1': 'value1', 'key2': 'value2'}"
     """
     try:
         try:
@@ -3926,7 +3933,7 @@ def metallb_pool_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.metallb_pool_present unused-namespace default ["10.150.1.43-10.150.1.50"]
+        salt '*' kubernetes_k8s.metallb_pool_present unused-namespace default ["10.150.1.43-10.150.1.50"]
     """
     try:
         try:
@@ -4046,7 +4053,7 @@ def metallb_l2_advertisement_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.metallb_l2_advertisement_present unused-namespace default-l2 ["default"]
+        salt '*' kubernetes_k8s.metallb_l2_advertisement_present unused-namespace default-l2 ["default"]
     """
     try:
         try:
@@ -4164,7 +4171,7 @@ def certmanager_issuer_present(namespace, issuer_name, issuer_kind="Issuer", spe
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.certmanager_issuer_present cert-manager my-issuer spec_dict
+        salt '*' kubernetes_k8s.certmanager_issuer_present cert-manager my-issuer spec_dict
     """
     try:
         try:
@@ -4524,7 +4531,7 @@ def certmanager_certificate_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
 
     CLI Example:
-        salt '*' kinetic-k8s.certmanager_certificate_present ldap-tls-cert ldap tls-cert selfsigned-issuer ClusterIssuer ldap.example.com dns_names="['ldap.example.com']" duration="2160h" is_ca=True
+        salt '*' kubernetes_k8s.certmanager_certificate_present ldap-tls-cert ldap tls-cert selfsigned-issuer ClusterIssuer ldap.example.com dns_names="['ldap.example.com']" duration="2160h" is_ca=True
     """
     try:
         # Load Kubernetes configuration (in-cluster or from kubeconfig)
@@ -4686,7 +4693,7 @@ def cnpg_cluster_present(namespace, cluster_name, spec):
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.cnpg_cluster_present cnpg-system my-cluster spec_dict
+        salt '*' kubernetes_k8s.cnpg_cluster_present cnpg-system my-cluster spec_dict
     """
     try:
         try:
@@ -4810,7 +4817,7 @@ def secret_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.secret_present my-namespace my-secret "{'key1': 'value1', 'key2': 'value2'}"
+        salt '*' kubernetes_k8s.secret_present my-namespace my-secret "{'key1': 'value1', 'key2': 'value2'}"
     """
     try:
         try:
@@ -4978,7 +4985,7 @@ def keycloak_cluster_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
 
     CLI Example:
-        salt '*' kinetic-k8s.keycloak_cluster_present keycloak keycloak.example.com keycloak-cluster instances=2 truststores="{'my-truststore': {'secret': {'name': 'my-secret'}}}"
+        salt '*' kubernetes_k8s.keycloak_cluster_present keycloak keycloak.example.com keycloak-cluster instances=2 truststores="{'my-truststore': {'secret': {'name': 'my-secret'}}}"
     """
     try:
         # Load Kubernetes configuration (in-cluster or from kubeconfig)
@@ -5172,7 +5179,7 @@ def certificate_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_exists' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.certificate_present my-namespace my-cert example.com admin@example.com dns_name=www.example.com issuer_ref="{'name': 'letsencrypt-prod', 'kind': 'ClusterIssuer'}"
+        salt '*' kubernetes_k8s.certificate_present my-namespace my-cert example.com admin@example.com dns_name=www.example.com issuer_ref="{'name': 'letsencrypt-prod', 'kind': 'ClusterIssuer'}"
     """
     try:
         try:
@@ -5356,7 +5363,7 @@ def pvc_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
 
     CLI Example:
-        salt '*' kinetic-k8s.pvc_present my-pvc my-namespace local-storage 5Gi access_modes="['ReadWriteOnce']"
+        salt '*' kubernetes_k8s.pvc_present my-pvc my-namespace local-storage 5Gi access_modes="['ReadWriteOnce']"
     """
     try:
         # Load Kubernetes configuration (in-cluster or from kubeconfig)
