@@ -473,16 +473,35 @@ def assign_role_to_group(
                 f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
             )
             log.debug(
-                f"Assigning role to group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+                f"Assigning role to group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}"
             )
-            response = conn.session.put(url)
-            log.debug(
-                f"Role assignment response status: {response.status_code}, body: {response.text}"
-            )
-            if response.status_code not in [201, 204]:
+            # Try multiple endpoint formats to find the correct one
+            endpoints_to_try = [
+                url,
+                f"{endpoint.rstrip('/')}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}",
+            ]
+
+            success = False
+            last_error = None
+            for attempt_url in endpoints_to_try:
+                try:
+                    log.debug(f"Attempting role assignment with URL: {attempt_url}")
+                    response = conn.session.put(attempt_url)
+                    log.debug(
+                        f"Role assignment response status: {response.status_code}, body: {response.text[:200] if response.text else 'empty'}"
+                    )
+                    if response.status_code in [201, 204]:
+                        success = True
+                        break
+                    else:
+                        last_error = f"HTTP {response.status_code}: {response.text[:200] if response.text else 'no response body'}"
+                except Exception as e:
+                    last_error = str(e)
+
+            if not success:
                 raise CommandExecutionError(
-                    f"Failed to assign role {role.name} to group {group.name} on project {project.name}: HTTP {response.status_code}. "
-                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}, Response: {response.text}"
+                    f"Failed to assign role {role.name} to group {group.name} on project {project.name}. "
+                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}. Error: {last_error}"
                 )
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)
@@ -494,16 +513,35 @@ def assign_role_to_group(
             )
             url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
             log.debug(
-                f"Assigning role to group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+                f"Assigning role to group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}"
             )
-            response = conn.session.put(url)
-            log.debug(
-                f"Role assignment response status: {response.status_code}, body: {response.text}"
-            )
-            if response.status_code not in [201, 204]:
+            # Try multiple endpoint formats to find the correct one
+            endpoints_to_try = [
+                url,
+                f"{endpoint.rstrip('/')}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}",
+            ]
+
+            success = False
+            last_error = None
+            for attempt_url in endpoints_to_try:
+                try:
+                    log.debug(f"Attempting role assignment with URL: {attempt_url}")
+                    response = conn.session.put(attempt_url)
+                    log.debug(
+                        f"Role assignment response status: {response.status_code}, body: {response.text[:200] if response.text else 'empty'}"
+                    )
+                    if response.status_code in [201, 204]:
+                        success = True
+                        break
+                    else:
+                        last_error = f"HTTP {response.status_code}: {response.text[:200] if response.text else 'no response body'}"
+                except Exception as e:
+                    last_error = str(e)
+
+            if not success:
                 raise CommandExecutionError(
-                    f"Failed to assign role {role.name} to group {group.name} on domain {domain.name}: HTTP {response.status_code}. "
-                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}, Response: {response.text}"
+                    f"Failed to assign role {role.name} to group {group.name} on domain {domain.name}. "
+                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}. Error: {last_error}"
                 )
         else:
             raise CommandExecutionError(
@@ -589,16 +627,35 @@ def revoke_role_from_group(
                 f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
             )
             log.debug(
-                f"Revoking role from group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+                f"Revoking role from group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}"
             )
-            response = conn.session.delete(url)
-            log.debug(
-                f"Role revocation response status: {response.status_code}, body: {response.text}"
-            )
-            if response.status_code not in [204, 404]:
+            # Try multiple endpoint formats to find the correct one
+            endpoints_to_try = [
+                url,
+                f"{endpoint.rstrip('/')}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}",
+            ]
+
+            success = False
+            last_error = None
+            for attempt_url in endpoints_to_try:
+                try:
+                    log.debug(f"Attempting role revocation with URL: {attempt_url}")
+                    response = conn.session.delete(attempt_url)
+                    log.debug(
+                        f"Role revocation response status: {response.status_code}, body: {response.text[:200] if response.text else 'empty'}"
+                    )
+                    if response.status_code in [204, 404]:
+                        success = True
+                        break
+                    else:
+                        last_error = f"HTTP {response.status_code}: {response.text[:200] if response.text else 'no response body'}"
+                except Exception as e:
+                    last_error = str(e)
+
+            if not success:
                 raise CommandExecutionError(
-                    f"Failed to revoke role {role.name} from group {group.name} on project {project.name}: HTTP {response.status_code}. "
-                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}, Response: {response.text}"
+                    f"Failed to revoke role {role.name} from group {group.name} on project {project.name}. "
+                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}. Error: {last_error}"
                 )
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)
@@ -610,16 +667,35 @@ def revoke_role_from_group(
             )
             url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
             log.debug(
-                f"Revoking role from group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+                f"Revoking role from group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}"
             )
-            response = conn.session.delete(url)
-            log.debug(
-                f"Role revocation response status: {response.status_code}, body: {response.text}"
-            )
-            if response.status_code not in [204, 404]:
+            # Try multiple endpoint formats to find the correct one
+            endpoints_to_try = [
+                url,
+                f"{endpoint.rstrip('/')}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}",
+            ]
+
+            success = False
+            last_error = None
+            for attempt_url in endpoints_to_try:
+                try:
+                    log.debug(f"Attempting role revocation with URL: {attempt_url}")
+                    response = conn.session.delete(attempt_url)
+                    log.debug(
+                        f"Role revocation response status: {response.status_code}, body: {response.text[:200] if response.text else 'empty'}"
+                    )
+                    if response.status_code in [204, 404]:
+                        success = True
+                        break
+                    else:
+                        last_error = f"HTTP {response.status_code}: {response.text[:200] if response.text else 'no response body'}"
+                except Exception as e:
+                    last_error = str(e)
+
+            if not success:
                 raise CommandExecutionError(
-                    f"Failed to revoke role {role.name} from group {role.name} on domain {domain.name}: HTTP {response.status_code}. "
-                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}, Response: {response.text}"
+                    f"Failed to revoke role {role.name} from group {group.name} on domain {domain.name}. "
+                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}. Error: {last_error}"
                 )
         else:
             raise CommandExecutionError(
@@ -629,6 +705,133 @@ def revoke_role_from_group(
         return True
     except exceptions.SDKException as e:
         raise CommandExecutionError(f"Failed to revoke role: {str(e)}")
+    finally:
+        conn.close()
+
+
+def test_role_assignment_api(
+    role_name,
+    group_name,
+    project_name=None,
+    domain_name=None,
+    group_domain=None,
+    project_domain=None,
+    cloud=None,
+):
+    """
+    Test the role assignment API endpoint to determine which URL format works.
+
+    This function attempts to make a test PUT request to various API endpoint
+    formats to diagnose which one is correct for your Keystone installation.
+
+    Args:
+        role_name (str): Name of the role
+        group_name (str): Name of the group
+        project_name (str, optional): Name of the project
+        domain_name (str, optional): Name of the domain
+        group_domain (str, optional): Domain of the group
+        project_domain (str, optional): Domain of the project
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict: Test results showing which endpoints work/fail
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.test_role_assignment_api role_name=member group_name=interns project_name=interns project_domain=Default group_domain=ldap cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return {
+            "error": "Failed to connect to OpenStack",
+            "results": None,
+        }
+
+    try:
+        # First get all the IDs
+        diagnostic = _diagnose_role_assignment(
+            conn,
+            role_name=role_name,
+            group_name=group_name,
+            project_name=project_name,
+            domain_name=domain_name,
+            group_domain=group_domain,
+            project_domain=project_domain,
+        )
+
+        if diagnostic["errors"]:
+            return {
+                "success": False,
+                "errors": diagnostic["errors"],
+                "results": None,
+            }
+
+        role = diagnostic["role"]
+        group = diagnostic["group"]
+        project = diagnostic["project"]
+
+        if not (role and group and project):
+            return {
+                "success": False,
+                "error": "Missing required resources",
+                "diagnostic": diagnostic,
+                "results": None,
+            }
+
+        # Get the endpoint
+        endpoint = conn.session.get_endpoint(
+            service_type="identity", interface="public"
+        )
+
+        # Test various URL formats
+        test_urls = [
+            f"{endpoint}/v3/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}",
+            f"{endpoint.rstrip('/')}/v3/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}",
+            f"{endpoint}/v3/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}/",
+            f"{endpoint.rstrip('/')}/v3/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}/",
+        ]
+
+        results = {
+            "endpoint": endpoint,
+            "role_id": role["id"],
+            "group_id": group["id"],
+            "project_id": project["id"],
+            "tests": [],
+        }
+
+        for url in test_urls:
+            test_result = {
+                "url": url,
+                "method": "PUT",
+                "status": None,
+                "response": None,
+            }
+            try:
+                # Make a test PUT request (note: we're actually making it, not just testing)
+                response = conn.session.put(url)
+                test_result["status"] = response.status_code
+                test_result["response"] = (
+                    response.text[:500] if response.text else "empty"
+                )
+                test_result["success"] = response.status_code in [201, 204]
+            except Exception as e:
+                test_result["error"] = str(e)
+                test_result["success"] = False
+
+            results["tests"].append(test_result)
+
+        return {
+            "success": any(t.get("success", False) for t in results["tests"]),
+            "results": results,
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "results": None,
+        }
     finally:
         conn.close()
 
