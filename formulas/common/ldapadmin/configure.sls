@@ -70,7 +70,6 @@ openstack_role_assignment_{{ group }}_{{ role }}:
     - cloud: rsc
     - require:
       - kinetic-openstack: openstack_project_{{ group }}
-    {% endfor %}
   {% endif %}
 
 {% endif %}
