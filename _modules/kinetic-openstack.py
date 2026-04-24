@@ -476,10 +476,13 @@ def assign_role_to_group(
                 f"Assigning role to group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
             )
             response = conn.session.put(url)
+            log.debug(
+                f"Role assignment response status: {response.status_code}, body: {response.text}"
+            )
             if response.status_code not in [201, 204]:
                 raise CommandExecutionError(
                     f"Failed to assign role {role.name} to group {group.name} on project {project.name}: HTTP {response.status_code}. "
-                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}, Response: {response.text}"
                 )
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)
@@ -494,10 +497,13 @@ def assign_role_to_group(
                 f"Assigning role to group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
             )
             response = conn.session.put(url)
+            log.debug(
+                f"Role assignment response status: {response.status_code}, body: {response.text}"
+            )
             if response.status_code not in [201, 204]:
                 raise CommandExecutionError(
                     f"Failed to assign role {role.name} to group {group.name} on domain {domain.name}: HTTP {response.status_code}. "
-                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}, Response: {response.text}"
                 )
         else:
             raise CommandExecutionError(
@@ -586,10 +592,13 @@ def revoke_role_from_group(
                 f"Revoking role from group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
             )
             response = conn.session.delete(url)
+            log.debug(
+                f"Role revocation response status: {response.status_code}, body: {response.text}"
+            )
             if response.status_code not in [204, 404]:
                 raise CommandExecutionError(
                     f"Failed to revoke role {role.name} from group {group.name} on project {project.name}: HTTP {response.status_code}. "
-                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}, Response: {response.text}"
                 )
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)
@@ -604,10 +613,13 @@ def revoke_role_from_group(
                 f"Revoking role from group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
             )
             response = conn.session.delete(url)
+            log.debug(
+                f"Role revocation response status: {response.status_code}, body: {response.text}"
+            )
             if response.status_code not in [204, 404]:
                 raise CommandExecutionError(
-                    f"Failed to revoke role {role.name} from group {group.name} on domain {domain.name}: HTTP {response.status_code}. "
-                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+                    f"Failed to revoke role {role.name} from group {role.name} on domain {domain.name}: HTTP {response.status_code}. "
+                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}, Response: {response.text}"
                 )
         else:
             raise CommandExecutionError(
