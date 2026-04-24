@@ -34,6 +34,26 @@ def __virtual__():
         return (False, "openstack module not installed.")
 
 
+def _get_domain_id(conn, domain_name_or_id):
+    """
+    Helper function to resolve a domain name to its ID.
+
+    Args:
+        conn: OpenStack connection object
+        domain_name_or_id (str): Domain name or ID
+
+    Returns:
+        str: Domain ID, or None if not found
+    """
+    try:
+        domain = conn.identity.find_domain(domain_name_or_id)
+        if domain:
+            return domain.id
+        return None
+    except exceptions.SDKException:
+        return None
+
+
 def _get_connection(cloud=None):
     """
     Create an OpenStack connection using a cloud configuration name from os-cloud-config.
@@ -323,7 +343,10 @@ def assign_role_to_group(
             raise CommandExecutionError(f"Role {role_name_or_id} not found")
 
         if group_domain:
-            group = conn.identity.find_group(group_name_or_id, domain_id=group_domain)
+            domain_id = _get_domain_id(conn, group_domain)
+            if not domain_id:
+                raise CommandExecutionError(f"Domain {group_domain} not found")
+            group = conn.identity.find_group(group_name_or_id, domain_id=domain_id)
         else:
             group = conn.identity.find_group(group_name_or_id)
         if not group:
@@ -333,8 +356,11 @@ def assign_role_to_group(
 
         if project_name_or_id:
             if project_domain:
+                domain_id = _get_domain_id(conn, project_domain)
+                if not domain_id:
+                    raise CommandExecutionError(f"Domain {project_domain} not found")
                 project = conn.identity.find_project(
-                    project_name_or_id, domain_id=project_domain
+                    project_name_or_id, domain_id=domain_id
                 )
             else:
                 project = conn.identity.find_project(project_name_or_id)
@@ -399,7 +425,10 @@ def revoke_role_from_group(
             raise CommandExecutionError(f"Role {role_name_or_id} not found")
 
         if group_domain:
-            group = conn.identity.find_group(group_name_or_id, domain_id=group_domain)
+            domain_id = _get_domain_id(conn, group_domain)
+            if not domain_id:
+                raise CommandExecutionError(f"Domain {group_domain} not found")
+            group = conn.identity.find_group(group_name_or_id, domain_id=domain_id)
         else:
             group = conn.identity.find_group(group_name_or_id)
         if not group:
@@ -409,8 +438,11 @@ def revoke_role_from_group(
 
         if project_name_or_id:
             if project_domain:
+                domain_id = _get_domain_id(conn, project_domain)
+                if not domain_id:
+                    raise CommandExecutionError(f"Domain {project_domain} not found")
                 project = conn.identity.find_project(
-                    project_name_or_id, domain_id=project_domain
+                    project_name_or_id, domain_id=domain_id
                 )
             else:
                 project = conn.identity.find_project(project_name_or_id)
