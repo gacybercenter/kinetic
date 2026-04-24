@@ -18,7 +18,6 @@ def __virtual__():
     """
     Check if the kinetic_k8s execution module is available.
     """
-<<<<<<< HEAD
     if "kinetic_k8s.secret_present" in __salt__:
         return __virtualname__
     return (False, "The kinetic_k8s execution module is not available.")
@@ -1431,9 +1430,7 @@ def bmh_state(name, namespace, bmh_name, desired_state):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic_k8s.bmh_state"](
-            namespace, bmh_name, desired_state
-        )
+        result = __salt__["kinetic_k8s.bmh_state"](namespace, bmh_name, desired_state)
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
         if result["success"]:
