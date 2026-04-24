@@ -469,9 +469,7 @@ def assign_role_to_group(
             endpoint = conn.session.get_endpoint(
                 service_type="identity", interface="public"
             )
-            url = (
-                f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
-            )
+            url = f"{endpoint}/projects/{project.id}/groups/{group.id}/roles/{role.id}"
             log.debug(
                 f"Assigning role to group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}"
             )
@@ -511,7 +509,7 @@ def assign_role_to_group(
             endpoint = conn.session.get_endpoint(
                 service_type="identity", interface="public"
             )
-            url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
+            url = f"{endpoint}/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
             log.debug(
                 f"Assigning role to group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}"
             )
@@ -623,9 +621,7 @@ def revoke_role_from_group(
             endpoint = conn.session.get_endpoint(
                 service_type="identity", interface="public"
             )
-            url = (
-                f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
-            )
+            url = f"{endpoint}/projects/{project.id}/groups/{group.id}/roles/{role.id}"
             log.debug(
                 f"Revoking role from group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}"
             )
@@ -665,7 +661,7 @@ def revoke_role_from_group(
             endpoint = conn.session.get_endpoint(
                 service_type="identity", interface="public"
             )
-            url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
+            url = f"{endpoint}/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
             log.debug(
                 f"Revoking role from group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}"
             )
@@ -787,10 +783,10 @@ def test_role_assignment_api(
 
         # Test various URL formats
         test_urls = [
-            f"{endpoint}/v3/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}",
-            f"{endpoint.rstrip('/')}/v3/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}",
-            f"{endpoint}/v3/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}/",
-            f"{endpoint.rstrip('/')}/v3/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}/",
+            f"{endpoint}/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}",
+            f"{endpoint.rstrip('/')}/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}",
+            f"{endpoint}/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}/",
+            f"{endpoint.rstrip('/')}/projects/{project['id']}/groups/{group['id']}/roles/{role['id']}/",
         ]
 
         results = {
