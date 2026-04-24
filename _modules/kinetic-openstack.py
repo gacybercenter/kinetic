@@ -368,12 +368,28 @@ def assign_role_to_group(
                 raise CommandExecutionError(
                     f"Project {project_name_or_id} not found in domain {project_domain if project_domain else 'default'}"
                 )
-            conn.identity.assign_role_to_group_on_project(project, group, role)
+            # Use Keystone REST API directly for role assignment
+            endpoint = conn.identity.get_endpoint()
+            url = (
+                f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
+            )
+            response = conn.session.put(url)
+            if response.status_code not in [201, 204]:
+                raise CommandExecutionError(
+                    f"Failed to assign role {role.name} to group {group.name} on project {project.name}: HTTP {response.status_code}"
+                )
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)
             if not domain:
                 raise CommandExecutionError(f"Domain {domain_name_or_id} not found")
-            conn.identity.assign_role_to_group_on_domain(domain, group, role)
+            # Use Keystone REST API directly for role assignment
+            endpoint = conn.identity.get_endpoint()
+            url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
+            response = conn.session.put(url)
+            if response.status_code not in [201, 204]:
+                raise CommandExecutionError(
+                    f"Failed to assign role {role.name} to group {group.name} on domain {domain.name}: HTTP {response.status_code}"
+                )
         else:
             raise CommandExecutionError(
                 "Either project or domain must be specified for role assignment"
@@ -450,12 +466,28 @@ def revoke_role_from_group(
                 raise CommandExecutionError(
                     f"Project {project_name_or_id} not found in domain {project_domain if project_domain else 'default'}"
                 )
-            conn.identity.revoke_role_from_group_on_project(project, group, role)
+            # Use Keystone REST API directly for role revocation
+            endpoint = conn.identity.get_endpoint()
+            url = (
+                f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
+            )
+            response = conn.session.delete(url)
+            if response.status_code not in [204, 404]:
+                raise CommandExecutionError(
+                    f"Failed to revoke role {role.name} from group {group.name} on project {project.name}: HTTP {response.status_code}"
+                )
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)
             if not domain:
                 raise CommandExecutionError(f"Domain {domain_name_or_id} not found")
-            conn.identity.revoke_role_from_group_on_domain(domain, group, role)
+            # Use Keystone REST API directly for role revocation
+            endpoint = conn.identity.get_endpoint()
+            url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
+            response = conn.session.delete(url)
+            if response.status_code not in [204, 404]:
+                raise CommandExecutionError(
+                    f"Failed to revoke role {role.name} from group {group.name} on domain {domain.name}: HTTP {response.status_code}"
+                )
         else:
             raise CommandExecutionError(
                 "Either project or domain must be specified for role revocation"
