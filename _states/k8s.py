@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-SaltStack state module for managing Kubernetes resources using the kubernetes_k8s execution module.
+SaltStack state module for managing Kubernetes resources using the kinetic_k8s execution module.
 
 This module provides states for managing Bare Metal Hosts (BMH), Secrets for network data, userdata,
 BMC authentication, and UUIDs, as well as querying hardware data from Kubernetes Custom Resources.
@@ -16,7 +16,7 @@ __virtualname__ = "k8s"
 
 def __virtual__():
     """
-    Check if the kubernetes_k8s execution module is available.
+    Check if the kinetic_k8s execution module is available.
     """
     if "kinetic_k8s.secret_present" in __salt__:
         return __virtualname__
@@ -97,7 +97,7 @@ def mac_by_interface_name(name, namespace, resource_name, interface_name):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.get_mac_by_interface_name"](
+        result = __salt__["kinetic_k8s.get_mac_by_interface_name"](
             namespace, resource_name, interface_name
         )
         ret["result"] = result["success"]
@@ -139,7 +139,7 @@ def all_interfaces(name, namespace, resource_name):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.get_all_interfaces"](namespace, resource_name)
+        result = __salt__["kinetic_k8s.get_all_interfaces"](namespace, resource_name)
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
         if result["success"]:
@@ -203,7 +203,7 @@ def bmh_present(
         )
 
         # Call the execution module function
-        result = __salt__["kubernetes_k8s.bmh_present"](
+        result = __salt__["kinetic_k8s.bmh_present"](
             namespace, bmh_name, pillar_data, bmh_template_path
         )
 
@@ -285,7 +285,7 @@ def networkdata_present(
         )
 
         # Call the execution module function
-        result = __salt__["kubernetes_k8s.networkdata_present"](
+        result = __salt__["kinetic_k8s.networkdata_present"](
             namespace, bmh_name, defaults, pillar_data, network_template_path
         )
 
@@ -358,7 +358,7 @@ def userdata_present(
         )
 
         # Call the execution module function
-        result = __salt__["kubernetes_k8s.userdata_present"](
+        result = __salt__["kinetic_k8s.userdata_present"](
             namespace, bmh_name, pillar_data, userdata_template_path
         )
 
@@ -436,7 +436,7 @@ def host_bmc_auth_present(
         )
 
         # Call the execution module function
-        result = __salt__["kubernetes_k8s.host_bmc_auth_present"](
+        result = __salt__["kinetic_k8s.host_bmc_auth_present"](
             namespace, bmh_name, ipmi, pillar_data, bmc_auth_template_path
         )
 
@@ -554,7 +554,7 @@ def uuids_present(
                 pillar_data = {pillar_key: pillar_data}
 
         # Call the execution module function
-        result = __salt__["kubernetes_k8s.uuids_secret_present"](
+        result = __salt__["kinetic_k8s.uuids_secret_present"](
             namespace,
             secret_name,
             pillar_data,
@@ -681,7 +681,7 @@ def mariadb_instance_present(
 
     try:
         # Call the execution module function
-        result = __salt__["kubernetes_k8s.mariadb_instance_present"](
+        result = __salt__["kinetic_k8s.mariadb_instance_present"](
             namespace=namespace,
             instance_name=instance_name,
             root_password=root_password,
@@ -781,7 +781,7 @@ def local_storage_pv_pvc_present(
 
     try:
         # Call the execution module function
-        result = __salt__["kubernetes_k8s.local_storage_pv_pvc_present"](
+        result = __salt__["kinetic_k8s.local_storage_pv_pvc_present"](
             namespace, pv_name, pvc_name, storage_size, node_name, path, storage_class
         )
 
@@ -883,7 +883,7 @@ def ironic_db_user_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.ironic_db_user_setup"](
+        result = __salt__["kinetic_k8s.ironic_db_user_setup"](
             namespace=namespace,
             mariadb_name=mariadb_name,
             mariadb_namespace=mariadb_namespace,
@@ -978,7 +978,7 @@ def mariadb_database_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.mariadb_database_present"](
+        result = __salt__["kinetic_k8s.mariadb_database_present"](
             namespace=namespace,
             database_name=database_name,
             mariadb_name=mariadb_name,
@@ -1040,7 +1040,7 @@ def tls_secret_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.generate_tls_secret"](
+        result = __salt__["kinetic_k8s.generate_tls_secret"](
             namespace=namespace,
             secret_name=secret_name,
             common_name=common_name,
@@ -1094,7 +1094,7 @@ def ironic_operator_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.check_ironic_operator"](
+        result = __salt__["kinetic_k8s.check_ironic_operator"](
             namespace, deployment_name, timeout
         )
         ret["result"] = result["success"]
@@ -1266,7 +1266,7 @@ def ironic_instance_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.ironic_instance_present"](
+        result = __salt__["kinetic_k8s.ironic_instance_present"](
             namespace=namespace,
             instance_name=instance_name,
             database_secret_name=database_secret_name,
@@ -1333,7 +1333,7 @@ def image_server_present(
 ):
     """
     State to ensure that an image server for Ironic is present in Kubernetes.
-    This state uses the kubernetes_k8s.image_server_present execution module to manage the image server resources.
+    This state uses the kinetic_k8s.image_server_present execution module to manage the image server resources.
 
     Args:
         name (str): The name of the state (used for Salt state ID).
@@ -1364,7 +1364,7 @@ def image_server_present(
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 
     try:
-        result = __salt__["kubernetes_k8s.image_server_present"](
+        result = __salt__["kinetic_k8s.image_server_present"](
             namespace=namespace,
             deployment_name=deployment_name,
             service_name=service_name,
@@ -1430,7 +1430,7 @@ def bmh_state(name, namespace, bmh_name, desired_state):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.bmh_state"](
+        result = __salt__["kinetic_k8s.bmh_state"](
             namespace, bmh_name, desired_state
         )
         ret["result"] = result["success"]
@@ -1470,7 +1470,7 @@ def namespace_present(name, namespace):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.namespace_present"](namespace)
+        result = __salt__["kinetic_k8s.namespace_present"](namespace)
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
         if result["updated"]:
@@ -1521,7 +1521,7 @@ def ceph_cluster_present(name, namespace, cluster_name, spec):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.ceph_cluster_present"](
+        result = __salt__["kinetic_k8s.ceph_cluster_present"](
             namespace, cluster_name, spec
         )
         ret["result"] = result["success"]
@@ -1588,7 +1588,7 @@ def configmap_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.configmap_present"](
+        result = __salt__["kinetic_k8s.configmap_present"](
             namespace=namespace,
             name=configmap_name,
             data=data,
@@ -1679,7 +1679,7 @@ def service_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.service_present"](
+        result = __salt__["kinetic_k8s.service_present"](
             namespace=namespace,
             service_name=service_name,
             service_type=service_type,
@@ -1741,7 +1741,7 @@ def node_label_present(name, namespace, node_name, labels):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.node_label_present"](
+        result = __salt__["kinetic_k8s.node_label_present"](
             namespace, node_name, labels
         )
         ret["result"] = result["success"]
@@ -1799,7 +1799,7 @@ def metallb_pool_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.metallb_pool_present"](
+        result = __salt__["kinetic_k8s.metallb_pool_present"](
             namespace, pool_name, addresses, metallb_namespace
         )
         ret["result"] = result["success"]
@@ -1856,7 +1856,7 @@ def metallb_l2_advertisement_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.metallb_l2_advertisement_present"](
+        result = __salt__["kinetic_k8s.metallb_l2_advertisement_present"](
             namespace, advertisement_name, pool_names, metallb_namespace
         )
         ret["result"] = result["success"]
@@ -1921,7 +1921,7 @@ def certmanager_issuer_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.certmanager_issuer_present"](
+        result = __salt__["kinetic_k8s.certmanager_issuer_present"](
             namespace, issuer_name, issuer_kind, spec
         )
         ret["result"] = result["success"]
@@ -2126,7 +2126,7 @@ def certmanager_certificate_present(
         # Check if result is None or not a dictionary
         if result is None or not isinstance(result, dict):
             raise ValueError(
-                f"Unexpected return type from kubernetes_k8s.certmanager_certificate_present: {type(result)}"
+                f"Unexpected return type from kinetic_k8s.certmanager_certificate_present: {type(result)}"
             )
 
         ret["result"] = result.get("success", False)
@@ -2190,7 +2190,7 @@ def cnpg_cluster_present(name, namespace, cluster_name, spec):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.cnpg_cluster_present"](
+        result = __salt__["kinetic_k8s.cnpg_cluster_present"](
             namespace, cluster_name, spec
         )
         ret["result"] = result["success"]
@@ -2262,7 +2262,7 @@ def secret_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.secret_present"](
+        result = __salt__["kinetic_k8s.secret_present"](
             namespace=namespace,
             secret_name=secret_name,
             data=data,
@@ -2399,7 +2399,7 @@ def keycloak_cluster_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.keycloak_cluster_present"](
+        result = __salt__["kinetic_k8s.keycloak_cluster_present"](
             namespace=namespace,
             hostname=hostname,
             cluster_name=cluster_name,
@@ -2501,7 +2501,7 @@ def certificate_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.certificate_present"](
+        result = __salt__["kinetic_k8s.certificate_present"](
             namespace=namespace,
             certificate_name=certificate_name,
             common_name=common_name,
@@ -2585,7 +2585,7 @@ def pvc_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.pvc_present"](
+        result = __salt__["kinetic_k8s.pvc_present"](
             name=pvc_name,
             namespace=namespace,
             storage_class=storage_class,
@@ -2634,7 +2634,7 @@ def job_cleanup(name, namespace=None):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.job_cleanup"](namespace=namespace)
+        result = __salt__["kinetic_k8s.job_cleanup"](namespace=namespace)
 
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
@@ -2807,7 +2807,7 @@ def ceph_object_store_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kubernetes_k8s.ceph_object_store_present"](
+        result = __salt__["kinetic_k8s.ceph_object_store_present"](
             name=name,
             namespace=namespace,
             replicas=replicas,
