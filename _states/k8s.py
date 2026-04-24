@@ -1973,7 +1973,7 @@ def ingress_present(
 
     try:
         # Delegate to the execution module for managing the Ingress
-        result = __salt__["kinetic-k8s.ingress_present"](
+        result = __salt__["kinetic_k8s.ingress_present"](
             name=name,
             namespace=namespace,
             hosts=hosts,
@@ -2097,8 +2097,8 @@ def certmanager_certificate_present(
             f"Available modules with 'kinetic' in name: {available_modules}"
         )
 
-        if "kinetic-k8s.certmanager_certificate_present" in __salt__:
-            result = __salt__["kinetic-k8s.certmanager_certificate_present"](
+        if "kinetic_k8s.certmanager_certificate_present" in __salt__:
+            result = __salt__["kinetic_k8s.certmanager_certificate_present"](
                 name=certificate_name,
                 namespace=namespace,
                 secret_name=secret_name,
@@ -2114,14 +2114,14 @@ def certmanager_certificate_present(
         else:
             ret["result"] = False
             ret["comment"] = (
-                "Module kinetic-k8s.certmanager_certificate_present is not available. Please ensure the module is synced to the minion."
+                "Module kinetic_k8s.certmanager_certificate_present is not available. Please ensure the module is synced to the minion."
             )
             ret["changes"] = {}
             return ret
 
         # Log the result for debugging
         __salt__["log.debug"](
-            f"Result from kinetic-k8s.certmanager_certificate_present: {result}"
+            f"Result from kinetic_k8s.certmanager_certificate_present: {result}"
         )
 
         # Check if result is None or not a dictionary
@@ -2897,7 +2897,7 @@ def kubernetes_deployment_present(
     """
     ret = {"name": name, "result": True, "changes": {}, "comment": ""}
 
-    result = __salt__["kinetic-k8s.kubernetes_deployment_present"](
+    result = __salt__["kinetic_k8s.kubernetes_deployment_present"](
         name=name,
         namespace=namespace,
         replicas=replicas,
