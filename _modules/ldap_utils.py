@@ -854,8 +854,8 @@ def create_group(
         group_dn (str): The distinguished name of the group to create (e.g., 'cn=admins,ou=groups,base_dn').
         cn (str): The common name (CN) of the group.
         description (str, optional): The description to set for the group.
-        members (list, optional): List of member DN strings to set for the group (used as member for groupofuniquenames).
-        gid_number (int or str, optional): Deprecated - not used with groupofuniquenames objectClass.
+        members (list, optional): List of member DN strings to set for the group (used as member for groupofnames).
+        gid_number (int or str, optional): Deprecated - not used with groupofnames objectClass.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -870,7 +870,7 @@ def create_group(
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
         attributes = {
-            "objectClass": ["groupofuniquenames"],
+            "objectClass": ["groupofnames"],
             "cn": cn,
         }
         if description:
@@ -890,7 +890,7 @@ def create_group(
             if validated_members:
                 attributes["member"] = validated_members
         else:
-            # groupofuniquenames requires at least one member - use group itself as default
+            # groupofnames requires at least one member - use group itself as default
             attributes["member"] = [group_dn]
 
         check = dn_exists(spec_name, group_dn, attributes)
@@ -940,8 +940,8 @@ def update_group(
         group_dn (str): The distinguished name of the group to update (e.g., 'cn=admins,ou=groups,base_dn').
         cn (str): The common name (CN) of the group.
         description (str, optional): The description to set for the group.
-        members (list, optional): List of member DN strings to set for the group (used as member for groupofuniquenames).
-        gid_number (int or str, optional): Deprecated - not used with groupofuniquenames objectClass.
+        members (list, optional): List of member DN strings to set for the group (used as member for groupofnames).
+        gid_number (int or str, optional): Deprecated - not used with groupofnames objectClass.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -956,7 +956,7 @@ def update_group(
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
         attributes = {
-            "objectClass": ["groupofuniquenames"],
+            "objectClass": ["groupofnames"],
             "cn": cn,
         }
         if description:
@@ -976,7 +976,7 @@ def update_group(
             if validated_members:
                 attributes["member"] = validated_members
         else:
-            # groupofuniquenames requires at least one member - use group itself as default
+            # groupofnames requires at least one member - use group itself as default
             attributes["member"] = [group_dn]
 
         check = dn_exists(spec_name, group_dn, attributes)
@@ -994,25 +994,25 @@ def update_group(
             current_obj_classes = check["current_attributes"]["objectClass"]
             if isinstance(current_obj_classes, str):
                 current_obj_classes = [current_obj_classes]
-            if "groupofuniquenames" not in current_obj_classes:
+            if "groupofnames" not in current_obj_classes:
                 __salt__["log.debug"](
-                    f"Group {group_dn} does not have groupofuniquenames in objectClass, forcing update. Current: {current_obj_classes}"
+                    f"Group {group_dn} does not have groupofnames in objectClass, forcing update. Current: {current_obj_classes}"
                 )
                 # Force update since objectClass needs to change
                 update_attrs = attributes.copy()
-                changes = {"objectClass": "updated to include groupofuniquenames"}
+                changes = {"objectClass": "updated to include groupofnames"}
                 update_result = update_root_dn(spec_name, group_dn, update_attrs)
                 if update_result["updated"]:
                     ret["result"] = True
                     ret["comment"] = (
-                        f"Group {group_dn} updated to groupofuniquenames objectClass."
+                        f"Group {group_dn} updated to groupofnames objectClass."
                     )
                     ret["changes"] = update_result.get("changes", {})
                     return ret
                 else:
                     ret["result"] = False
                     ret["comment"] = (
-                        f"Failed to update group {group_dn} to groupofuniquenames: {update_result.get('comment', str(update_result))}"
+                        f"Failed to update group {group_dn} to groupofnames: {update_result.get('comment', str(update_result))}"
                     )
                     return ret
             else:
@@ -1037,9 +1037,9 @@ def update_group(
                             __salt__["log.debug"](
                                 f"Attribute mismatch for {group_dn}. Expected objectClass: {attributes['objectClass']}, Got: {check.get('current_attributes', {}).get('objectClass', 'unknown')}"
                             )
-                # Force update regardless of attributes_match to ensure groupofuniquenames and attributes are applied
+                # Force update regardless of attributes_match to ensure groupofnames and attributes are applied
                 __salt__["log.debug"](
-                    f"Forcing update for group {group_dn} to apply groupofuniquenames configuration."
+                    f"Forcing update for group {group_dn} to apply groupofnames configuration."
                 )
 
         # Update attributes or members

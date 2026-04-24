@@ -4,6 +4,7 @@ include:
 
 {% set ldap_spec = pillar.get('ldap', {}).get('spec_name', 'default') %}
 {% set base_dn = pillar['ldap']['values']['global']['ldapDomain'] %}
+{% set users_ou = pillar.get('ldap', {}).get('users_ou', 'ou=users') %}
 
 ensure_ca_cert_file:
   file.managed:
@@ -52,10 +53,10 @@ ldap_project_group_{{ group }}:
     - members:
         {% if data.get('members', [])|length > 0 %}
         {% for member in data.get('members', []) %}
-        - "{{ member }}"
+        - "cn={{ member }},{{ users_ou }},{{ base_dn }}"
         {% endfor %}
         {% else %}
-        - "admin"
+        - "cn=admin,{{ users_ou }},{{ base_dn }}"
         {% endif %}
     - require:
       - ldap: ensure_ldap_connect_spec
@@ -84,10 +85,10 @@ ldap_admin_group_{{ group }}:
     - members:
         {% if data.get('admin_members', [])|length > 0 %}
         {% for member in data.get('admin_members', []) %}
-        - "{{ member }}"
+        - "cn={{ member }},{{ users_ou }},{{ base_dn }}"
         {% endfor %}
         {% else %}
-        - "admin"
+        - "cn=admin,{{ users_ou }},{{ base_dn }}"
         {% endif %}
     - require:
       - ldap: ldap_project_group_{{ group }}
