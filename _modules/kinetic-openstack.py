@@ -13,7 +13,7 @@ import os
 
 from salt.exceptions import CommandExecutionError
 
-__virtualname__ = "kinetic-openstack"
+__virtualname__ = "kinetic_openstack"
 
 log = logging.getLogger(__name__)
 
@@ -213,7 +213,7 @@ def update_project(name_or_id, cloud=None, **updates):
 
     .. code-block:: bash
 
-        salt '*' kinetic-openstack.update_project myproject description="Updated description" is_enabled=True
+        salt '*' kinetic_openstack.update_project myproject description="Updated description" is_enabled=True
     """
     conn = _get_connection(cloud)
     if conn is None:

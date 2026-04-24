@@ -39,14 +39,14 @@ from openstack import connection, exceptions
 
 log = logging.getLogger(__name__)
 
-__virtualname__ = "kinetic-openstack"
+__virtualname__ = "kinetic_openstack"
 
 
 def __virtual__():
     """
     Only load if the openstack module is available in __salt__
     """
-    if "kinetic-openstack.get_projects" in __salt__:
+    if "kinetic_openstack.get_projects" in __salt__:
         return __virtualname__
     return False
 
@@ -75,7 +75,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
             "changes": {},
             "comment": "No cloud configuration name provided. Specify 'cloud' in state, set 'openstack:cloud_name' in pillar, or set OS_CLOUD environment variable.",
         }
-    project = __salt__["kinetic-openstack.get_projects"](cloud=cloud_name)
+    project = __salt__["kinetic_openstack.get_projects"](cloud=cloud_name)
     project = next((p for p in project if p["name"] == name), None)
     if project:
         ret["comment"] = f"Project {name} already exists."
@@ -106,7 +106,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
                 )
                 return ret
             try:
-                result = __salt__["kinetic-openstack.update_project"](
+                result = __salt__["kinetic_openstack.update_project"](
                     name, cloud=cloud_name, **updates
                 )
                 if result:
@@ -141,7 +141,7 @@ def project_present(name, description=None, enabled=True, **kwargs):
     try:
         # Ensure cloud is not duplicated from kwargs
         filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
-        result = __salt__["kinetic-openstack.create_project"](
+        result = __salt__["kinetic_openstack.create_project"](
             name=name,
             description=description,
             cloud=cloud_name,
@@ -182,7 +182,7 @@ def project_absent(name, **kwargs):
             "changes": {},
             "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
         }
-    project = __salt__["kinetic-openstack.get_projects"](cloud=cloud_name)
+    project = __salt__["kinetic_openstack.get_projects"](cloud=cloud_name)
     project = next((p for p in project if p["name"] == name), None)
     if not project:
         ret["comment"] = f"Project {name} does not exist."
@@ -196,7 +196,7 @@ def project_absent(name, **kwargs):
     try:
         # Ensure cloud is not duplicated from kwargs
         filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
-        result = __salt__["kinetic-openstack.delete_project"](
+        result = __salt__["kinetic_openstack.delete_project"](
             name, cloud=cloud_name, **filtered_kwargs
         )
         if result:
@@ -259,7 +259,7 @@ def role_assignment_present(
             "changes": {},
             "comment": "No cloud configuration name provided. Specify 'cloud' in state or set 'openstack:cloud_name' in pillar.",
         }
-    assignment_exists = __salt__["kinetic-openstack.check_role_assignment"](
+    assignment_exists = __salt__["kinetic_openstack.check_role_assignment"](
         role_name=role_name,
         project_name=project_name,
         group_name=group_name,
@@ -282,7 +282,7 @@ def role_assignment_present(
     try:
         # Ensure cloud is not duplicated from kwargs
         filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
-        result = __salt__["kinetic-openstack.assign_role_to_group"](
+        result = __salt__["kinetic_openstack.assign_role_to_group"](
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,
@@ -355,7 +355,7 @@ def role_assignment_absent(
             "changes": {},
             "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
         }
-    assignment_exists = __salt__["kinetic-openstack.check_role_assignment"](
+    assignment_exists = __salt__["kinetic_openstack.check_role_assignment"](
         role_name=role_name,
         project_name=project_name,
         group_name=group_name,
@@ -378,7 +378,7 @@ def role_assignment_absent(
     try:
         # Ensure cloud is not duplicated from kwargs
         filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
-        result = __salt__["kinetic-openstack.revoke_role_from_group"](
+        result = __salt__["kinetic_openstack.revoke_role_from_group"](
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
             project_name_or_id=project_name,
