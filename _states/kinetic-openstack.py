@@ -213,6 +213,7 @@ def project_absent(name, **kwargs):
 
 
 def role_assignment_present(
+    name,
     role_name,
     project_name,
     group_name=None,
@@ -280,8 +281,10 @@ def role_assignment_present(
         return ret
 
     try:
-        # Ensure cloud is not duplicated from kwargs
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
+        # Ensure cloud and name are not duplicated from kwargs
+        filtered_kwargs = {
+            k: v for k, v in kwargs.items() if k not in ["cloud", "name"]
+        }
         result = __salt__["kinetic_openstack.assign_role_to_group"](
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
@@ -311,6 +314,7 @@ def role_assignment_present(
 
 
 def role_assignment_absent(
+    name,
     role_name,
     project_name,
     group_name=None,
@@ -376,8 +380,10 @@ def role_assignment_absent(
         return ret
 
     try:
-        # Ensure cloud is not duplicated from kwargs
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "cloud"}
+        # Ensure cloud and name are not duplicated from kwargs
+        filtered_kwargs = {
+            k: v for k, v in kwargs.items() if k not in ["cloud", "name"]
+        }
         result = __salt__["kinetic_openstack.revoke_role_from_group"](
             role_name_or_id=role_name,
             group_name_or_id=group_name if group_name else user_name,
