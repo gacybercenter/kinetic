@@ -261,7 +261,7 @@ def role_assignment_present(
         }
     assignment_exists = __salt__["kinetic_openstack.check_role_assignment"](
         role_name=role_name,
-        project_name=project_name,
+        project_name_or_id=project_name,
         group_name=group_name,
         user_name=user_name,
         cloud=cloud_name,
@@ -357,7 +357,7 @@ def role_assignment_absent(
         }
     assignment_exists = __salt__["kinetic_openstack.check_role_assignment"](
         role_name=role_name,
-        project_name=project_name,
+        project_name_or_id=project_name,
         group_name=group_name,
         user_name=user_name,
         cloud=cloud_name,
