@@ -1002,7 +1002,7 @@ def update_group(
                 update_attrs = attributes.copy()
                 changes = {"objectClass": "updated to include groupofnames"}
                 update_result = update_root_dn(spec_name, group_dn, update_attrs)
-                if update_result["updated"]:
+                if update_result.get("result", False):
                     ret["result"] = True
                     ret["comment"] = (
                         f"Group {group_dn} updated to groupofnames objectClass."
@@ -1049,7 +1049,7 @@ def update_group(
             f"Attempting to update group {group_dn} with attributes: {update_attrs}"
         )
         update_result = update_root_dn(spec_name, group_dn, update_attrs)
-        if update_result.get("updated", False):
+        if update_result.get("result", False):
             ret["result"] = True
             ret["comment"] = f"Group {group_dn} updated successfully."
             ret["changes"] = update_result.get("changes", {})
