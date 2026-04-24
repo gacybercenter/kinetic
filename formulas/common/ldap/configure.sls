@@ -45,35 +45,4 @@ ensure_ou_{{ ou.name }}:
       - ldap: ensure_root_dn
 {% endfor %}
 
-# Ensure users are created
-{% for user in pillar['ldap']['users'] %}
-ensure_user_{{ user.uid }}:
-  ldap.user_present:
-    - name: ensure_user_{{ user.uid }}
-    - spec_name: ldap_config_connection
-    - base_dn: ou=users,{{ pillar['ldap']['root_dn']['dn'] }}  # Assuming users are under ou=users
-    - cn: {{ user.uid }}
-    - uid: {{ user.uid }}
-    - sn: {{ user.sn }}
-    - description: {{ user.name }}
-    - password: {{ user.pass }}
-    - require:
-      - ldap: ensure_ou_users  # Depend on the users OU being created
-{% endfor %}
-
-# Ensure groups are created
-{% for group in pillar['ldap']['groups'] %}
-ensure_group_{{ group.name }}:
-  ldap.group_present:
-    - name: ensure_group_{{ group.name }}
-    - spec_name: ldap_config_connection
-    - base_dn: ou=groups,{{ pillar['ldap']['root_dn']['dn'] }}  # Assuming groups are under ou=groups
-    - cn: {{ group.name }}
-    - description: {{ group.get('description', '') }}  # Optional description, default to empty
-    - members:
-      {% for member in group.members %}
-      - cn={{ member }},ou=users,{{ pillar['ldap']['root_dn']['dn'] }}  # Construct full member DNs assuming ou=users
-      {% endfor %}
-    - require:
-      - ldap: ensure_ou_groups  # Depend on the groups OU being created
-{% endfor %}
+## create admin groups/users here
