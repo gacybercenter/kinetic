@@ -369,7 +369,9 @@ def assign_role_to_group(
                     f"Project {project_name_or_id} not found in domain {project_domain if project_domain else 'default'}"
                 )
             # Use Keystone REST API directly for role assignment
-            endpoint = conn.identity.get_endpoint()
+            endpoint = conn.session.get_endpoint(
+                service_type="identity", interface="public"
+            )
             url = (
                 f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
             )
@@ -383,7 +385,9 @@ def assign_role_to_group(
             if not domain:
                 raise CommandExecutionError(f"Domain {domain_name_or_id} not found")
             # Use Keystone REST API directly for role assignment
-            endpoint = conn.identity.get_endpoint()
+            endpoint = conn.session.get_endpoint(
+                service_type="identity", interface="public"
+            )
             url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
             response = conn.session.put(url)
             if response.status_code not in [201, 204]:
@@ -467,7 +471,9 @@ def revoke_role_from_group(
                     f"Project {project_name_or_id} not found in domain {project_domain if project_domain else 'default'}"
                 )
             # Use Keystone REST API directly for role revocation
-            endpoint = conn.identity.get_endpoint()
+            endpoint = conn.session.get_endpoint(
+                service_type="identity", interface="public"
+            )
             url = (
                 f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
             )
@@ -481,7 +487,9 @@ def revoke_role_from_group(
             if not domain:
                 raise CommandExecutionError(f"Domain {domain_name_or_id} not found")
             # Use Keystone REST API directly for role revocation
-            endpoint = conn.identity.get_endpoint()
+            endpoint = conn.session.get_endpoint(
+                service_type="identity", interface="public"
+            )
             url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
             response = conn.session.delete(url)
             if response.status_code not in [204, 404]:
