@@ -32,6 +32,44 @@ def __virtual__():
         )
 
 
+def _load_k8s_config():
+    """Load Kubernetes configuration, preferring in-cluster config then kubeconfig."""
+    try:
+        config.load_incluster_config()
+    except config.ConfigException:
+        config.load_kube_config()
+
+
+def _render_salt_template(template_path, context, renderer="jinja|yaml"):
+    """
+    Load a Salt URI template, strip any shebang line, render it, and return the result.
+    Raises Exception if the template is empty or rendering fails.
+    """
+    content = __salt__["cp.get_file_str"](template_path)
+    if not content:
+        raise Exception(f"Empty template at {template_path}")
+    if content.startswith("#!"):
+        lines = content.splitlines()
+        content = "\n".join(lines[1:]) if len(lines) > 1 else ""
+    rendered = __salt__["slsutil.renderer"](
+        string=content, default_renderer=renderer, context=context
+    )
+    if not rendered:
+        raise Exception(f"Failed to render template {template_path}")
+    return rendered
+
+
+def _decode_k8s_secret(secret):
+    """
+    Return a plain string-keyed dict from a Kubernetes secret object.
+    Prefers string_data; falls back to base64-decoding the data field.
+    """
+    data = secret.string_data if secret.string_data else {}
+    if not data and secret.data:
+        data = {k: base64.b64decode(v).decode("utf-8") for k, v in secret.data.items()}
+    return data
+
+
 def handle_certmanager_resource_version(
     body,
     existing_resource=None,
@@ -122,13 +160,10 @@ def get_mac_by_interface_name(namespace, resource_name, interface_name):
         dict: A dictionary with 'success' (bool), 'mac' (str if found), and 'message' (str for status or error).
 
     CLI Example:
-        salt '*' kinetic-k8s.get_mac_by_interface_name baremetal-operator-system compute-133-26 enp97s0f0
+        salt '*' kubernetes_k8s.get_mac_by_interface_name baremetal-operator-system compute-133-26 enp97s0f0
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "metal3.io"
@@ -180,13 +215,10 @@ def get_all_interfaces(namespace, resource_name):
         dict: A dictionary with 'success' (bool), 'interfaces' (dict of interface name to MAC), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.get_all_interfaces baremetal-operator-system compute-133-26
+        salt '*' kubernetes_k8s.get_all_interfaces baremetal-operator-system compute-133-26
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "metal3.io"
@@ -249,7 +281,7 @@ def bmh_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'recreated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.bmh_present baremetal-operator-system compute-133-26 pillar_data
+        salt '*' kubernetes_k8s.bmh_present baremetal-operator-system compute-133-26 pillar_data
     """
     try:
         updated = False
@@ -259,10 +291,7 @@ def bmh_present(
         in_error_state = False
         differences = {}
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "metal3.io"
@@ -320,20 +349,7 @@ def bmh_present(
                 "userdata": userdata_name if "network" in pillar_data else "",
             }
 
-            bmh_content = __salt__["cp.get_file_str"](bmh_template_path)
-            if not bmh_content:
-                raise Exception(f"Empty BMH template at {bmh_template_path}")
-            if bmh_content.startswith("#!"):
-                bmh_content = (
-                    "\n".join(bmh_content.splitlines()[1:])
-                    if len(bmh_content.splitlines()) > 1
-                    else ""
-                )
-            rendered_bmh = __salt__["slsutil.renderer"](
-                string=bmh_content, default_renderer="jinja|yaml", context=bmh_context
-            )
-            if not rendered_bmh:
-                raise Exception("Failed to render BMH template")
+            rendered_bmh = _render_salt_template(bmh_template_path, bmh_context)
 
             import yaml
 
@@ -504,7 +520,7 @@ def networkdata_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.networkdata_present baremetal-operator-system compute-133-26 defaults pillar_data
+        salt '*' kubernetes_k8s.networkdata_present baremetal-operator-system compute-133-26 defaults pillar_data
     """
     try:
         updated = False
@@ -514,10 +530,7 @@ def networkdata_present(
         desired_network = {}
         differences = {}
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         network_data_name = f"{bmh_name}-network-data"
@@ -528,16 +541,7 @@ def networkdata_present(
                     name=network_data_name, namespace=namespace
                 )
                 exists = True
-                current_network = (
-                    network_secret.string_data if network_secret.string_data else {}
-                )
-                if not current_network and network_secret.data:
-                    import base64
-
-                    current_network = {
-                        k: base64.b64decode(v).decode("utf-8")
-                        for k, v in network_secret.data.items()
-                    }
+                current_network = _decode_k8s_secret(network_secret)
             except ApiException:
                 exists = False
                 current_network = {}
@@ -560,24 +564,9 @@ def networkdata_present(
                     "gateway": defaults["gateway"],
                     "nameserver": defaults["nameserver"],
                 }
-                network_content = __salt__["cp.get_file_str"](network_template_path)
-                if not network_content:
-                    raise Exception(
-                        f"Empty network template at {network_template_path}"
-                    )
-                if network_content.startswith("#!"):
-                    network_content = (
-                        "\n".join(network_content.splitlines()[1:])
-                        if len(network_content.splitlines()) > 1
-                        else ""
-                    )
-                rendered_network = __salt__["slsutil.renderer"](
-                    string=network_content,
-                    default_renderer="jinja",
-                    context=network_context,
+                rendered_network = _render_salt_template(
+                    network_template_path, network_context, renderer="jinja"
                 )
-                if not rendered_network:
-                    raise Exception("Failed to render network template")
 
                 import json
 
@@ -676,7 +665,7 @@ def userdata_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.userdata_present baremetal-operator-system compute-133-26 pillar_data
+        salt '*' kubernetes_k8s.userdata_present baremetal-operator-system compute-133-26 pillar_data
     """
     try:
         updated = False
@@ -686,10 +675,7 @@ def userdata_present(
         desired_userdata = {}
         differences = {}
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         userdata_name = f"{bmh_name}-user-data"
@@ -700,16 +686,7 @@ def userdata_present(
                     name=userdata_name, namespace=namespace
                 )
                 exists = True
-                current_userdata = (
-                    userdata_secret.string_data if userdata_secret.string_data else {}
-                )
-                if not current_userdata and userdata_secret.data:
-                    import base64
-
-                    current_userdata = {
-                        k: base64.b64decode(v).decode("utf-8")
-                        for k, v in userdata_secret.data.items()
-                    }
+                current_userdata = _decode_k8s_secret(userdata_secret)
             except ApiException:
                 exists = False
                 current_userdata = {}
@@ -731,24 +708,9 @@ def userdata_present(
                     },
                     "pass": pillar_data.get("root_password_crypted", ""),
                 }
-                userdata_content = __salt__["cp.get_file_str"](userdata_template_path)
-                if not userdata_content:
-                    raise Exception(
-                        f"Empty userdata template at {userdata_template_path}"
-                    )
-                if userdata_content.startswith("#!"):
-                    userdata_content = (
-                        "\n".join(userdata_content.splitlines()[1:])
-                        if len(userdata_content.splitlines()) > 1
-                        else ""
-                    )
-                rendered_userdata = __salt__["slsutil.renderer"](
-                    string=userdata_content,
-                    default_renderer="jinja",
-                    context=userdata_context,
+                rendered_userdata = _render_salt_template(
+                    userdata_template_path, userdata_context, renderer="jinja"
                 )
-                if not rendered_userdata:
-                    raise Exception("Failed to render userdata template")
 
                 desired_userdata = {"userData": rendered_userdata}
 
@@ -848,7 +810,7 @@ def host_bmc_auth_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.host_bmc_auth_present baremetal-operator-system compute-133-26 ipmi pillar_data
+        salt '*' kubernetes_k8s.host_bmc_auth_present baremetal-operator-system compute-133-26 ipmi pillar_data
     """
     try:
         updated = False
@@ -859,10 +821,7 @@ def host_bmc_auth_present(
         differences = {}
         secret_name = f"{bmh_name}-bmc-auth"
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
 
@@ -871,14 +830,7 @@ def host_bmc_auth_present(
                 name=secret_name, namespace=namespace
             )
             exists = True
-            current_secret = secret.string_data if secret.string_data else {}
-            if not current_secret and secret.data:
-                import base64
-
-                current_secret = {
-                    k: base64.b64decode(v).decode("utf-8")
-                    for k, v in secret.data.items()
-                }
+            current_secret = _decode_k8s_secret(secret)
         except ApiException:
             exists = False
             current_secret = {}
@@ -897,22 +849,9 @@ def host_bmc_auth_present(
                     ),
                 }
             }
-            bmc_auth_content = __salt__["cp.get_file_str"](bmc_auth_template_path)
-            if not bmc_auth_content:
-                raise Exception(f"Empty BMC auth template at {bmc_auth_template_path}")
-            if bmc_auth_content.startswith("#!"):
-                bmc_auth_content = (
-                    "\n".join(bmc_auth_content.splitlines()[1:])
-                    if len(bmc_auth_content.splitlines()) > 1
-                    else ""
-                )
-            rendered_bmc_auth = __salt__["slsutil.renderer"](
-                string=bmc_auth_content,
-                default_renderer="jinja|yaml",
-                context=bmc_auth_context,
+            rendered_bmc_auth = _render_salt_template(
+                bmc_auth_template_path, bmc_auth_context
             )
-            if not rendered_bmc_auth:
-                raise Exception("Failed to render BMC auth template")
 
             import yaml
 
@@ -1015,7 +954,7 @@ def uuids_secret_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'restarted' (bool), 'waited' (bool), 'salt_responded' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.uuids_secret_present baremetal-operator-system salt-master-uuids pillar_data
+        salt '*' kubernetes_k8s.uuids_secret_present baremetal-operator-system salt-master-uuids pillar_data
     """
     try:
         updated = False
@@ -1079,10 +1018,7 @@ def uuids_secret_present(
                 "message": f"No UUIDs extracted for Secret {secret_name}; no action taken. {debug_msg}",
             }
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         apps_v1_api = client.AppsV1Api()
@@ -1092,14 +1028,7 @@ def uuids_secret_present(
                 name=secret_name, namespace=namespace
             )
             exists = True
-            current_secret = secret.string_data if secret.string_data else {}
-            if not current_secret and secret.data:
-                import base64
-
-                current_secret = {
-                    k: base64.b64decode(v).decode("utf-8")
-                    for k, v in secret.data.items()
-                }
+            current_secret = _decode_k8s_secret(secret)
         except ApiException:
             exists = False
             current_secret = {}
@@ -1298,10 +1227,7 @@ def mariadb_instance_present(
 
         message = f"Configuring MariaDB with storage class: {storage_class}"
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         custom_api = client.CustomObjectsApi()
@@ -1607,10 +1533,7 @@ def local_storage_pv_pvc_present(
         else:
             message += f"; Directory {path} already exists on node"
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
 
@@ -1727,10 +1650,7 @@ def ironic_db_user_setup(
 
         message = f"Setting up Ironic DB user {user_name} for database {database_name} in namespace {namespace}"
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         custom_api = client.CustomObjectsApi()
@@ -2190,10 +2110,7 @@ def mariadb_database_present(
         exists = False
         matches = False
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "k8s.mariadb.com"
@@ -2326,10 +2243,7 @@ def generate_tls_secret(
         updated = False
         exists = False
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
 
@@ -2467,10 +2381,7 @@ def check_ironic_operator(
     try:
         import time
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         apps_v1_api = client.AppsV1Api()
 
@@ -2610,10 +2521,7 @@ def ironic_instance_present(
             f"Configuring Ironic instance {instance_name} in namespace {namespace}"
         )
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         core_v1_api = client.CoreV1Api()
@@ -2976,7 +2884,7 @@ def image_server_present(
         dict: A dictionary with 'success' (bool), 'deployment_updated' (bool), 'service_updated' (bool), 'pvc_updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.image_server_present baremetal-operator-system service_type=LoadBalancer external_ip=192.168.1.100
+        salt '*' kubernetes_k8s.image_server_present baremetal-operator-system service_type=LoadBalancer external_ip=192.168.1.100
     """
     try:
         deployment_updated = False
@@ -2990,10 +2898,7 @@ def image_server_present(
         pvc_matches = False
         message = f"Configuring Ironic image server in namespace {namespace}"
 
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         apps_v1_api = client.AppsV1Api()
@@ -3297,13 +3202,10 @@ def bmh_state(namespace, bmh_name, desired_state):
         dict: A dictionary with 'success' (bool), 'in_state' (bool), 'current_state' (str), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.bmh_state baremetal-operator-system compute-133-26 provisioned
+        salt '*' kubernetes_k8s.bmh_state baremetal-operator-system compute-133-26 provisioned
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "metal3.io"
@@ -3362,13 +3264,10 @@ def namespace_present(namespace):
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.namespace_present my-namespace
+        salt '*' kubernetes_k8s.namespace_present my-namespace
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         exists = False
@@ -3429,13 +3328,10 @@ def ceph_cluster_present(namespace, cluster_name, spec):
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.ceph_cluster_present rook-ceph rook-ceph spec_dict
+        salt '*' kubernetes_k8s.ceph_cluster_present rook-ceph rook-ceph spec_dict
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "ceph.rook.io"
@@ -3549,13 +3445,10 @@ def configmap_present(namespace, name, data, labels=None, annotations=None):
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.configmap_present efk opensearch-dashboards-config "{'opensearch_dashboards.yml': 'content'}"
+        salt '*' kubernetes_k8s.configmap_present efk opensearch-dashboards-config "{'opensearch_dashboards.yml': 'content'}"
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         exists = False
@@ -3679,7 +3572,7 @@ def service_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.service_present openstack openstack-public service_type=LoadBalancer selector="{'app.kubernetes.io/name': 'ingress-nginx'}" ports="[{ 'name': 'http', 'port': 80, 'targetPort': 80, 'protocol': 'TCP' }]" annotations="{'metallb.universe.tf/address-pool': 'default'}"
+        salt '*' kubernetes_k8s.service_present openstack openstack-public service_type=LoadBalancer selector="{'app.kubernetes.io/name': 'ingress-nginx'}" ports="[{ 'name': 'http', 'port': 80, 'targetPort': 80, 'protocol': 'TCP' }]" annotations="{'metallb.universe.tf/address-pool': 'default'}"
     """
     try:
         try:
@@ -3854,13 +3747,10 @@ def node_label_present(namespace, node_name, labels):
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'changes' (dict).
 
     CLI Example:
-        salt '*' kinetic-k8s.node_label_present unused-namespace k8s-node-1 "{'key1': 'value1', 'key2': 'value2'}"
+        salt '*' kubernetes_k8s.node_label_present unused-namespace k8s-node-1 "{'key1': 'value1', 'key2': 'value2'}"
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         updated = False
@@ -3926,13 +3816,10 @@ def metallb_pool_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.metallb_pool_present unused-namespace default ["10.150.1.43-10.150.1.50"]
+        salt '*' kubernetes_k8s.metallb_pool_present unused-namespace default ["10.150.1.43-10.150.1.50"]
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "metallb.io"
@@ -3994,7 +3881,7 @@ def metallb_pool_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to create IPAddressPool {pool_name}: {str(e)[:50]}...",
+                    "message": f"Failed to create IPAddressPool {pool_name}: {str(e)}",
                 }
         elif not matches:
             try:
@@ -4017,7 +3904,7 @@ def metallb_pool_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to update IPAddressPool {pool_name}: {str(e)[:50]}...",
+                    "message": f"Failed to update IPAddressPool {pool_name}: {str(e)}",
                 }
         return {"success": True, "updated": updated, "message": message}
 
@@ -4046,13 +3933,10 @@ def metallb_l2_advertisement_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.metallb_l2_advertisement_present unused-namespace default-l2 ["default"]
+        salt '*' kubernetes_k8s.metallb_l2_advertisement_present unused-namespace default-l2 ["default"]
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "metallb.io"
@@ -4164,13 +4048,10 @@ def certmanager_issuer_present(namespace, issuer_name, issuer_kind="Issuer", spe
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.certmanager_issuer_present cert-manager my-issuer spec_dict
+        salt '*' kubernetes_k8s.certmanager_issuer_present cert-manager my-issuer spec_dict
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "cert-manager.io"
@@ -4320,10 +4201,7 @@ def ingress_present(
 
     try:
         # Load Kubernetes configuration
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         # Initialize Kubernetes API clients
         custom_api = client.CustomObjectsApi()
@@ -4524,7 +4402,7 @@ def certmanager_certificate_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
 
     CLI Example:
-        salt '*' kinetic-k8s.certmanager_certificate_present ldap-tls-cert ldap tls-cert selfsigned-issuer ClusterIssuer ldap.example.com dns_names="['ldap.example.com']" duration="2160h" is_ca=True
+        salt '*' kubernetes_k8s.certmanager_certificate_present ldap-tls-cert ldap tls-cert selfsigned-issuer ClusterIssuer ldap.example.com dns_names="['ldap.example.com']" duration="2160h" is_ca=True
     """
     try:
         # Load Kubernetes configuration (in-cluster or from kubeconfig)
@@ -4686,13 +4564,10 @@ def cnpg_cluster_present(namespace, cluster_name, spec):
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.cnpg_cluster_present cnpg-system my-cluster spec_dict
+        salt '*' kubernetes_k8s.cnpg_cluster_present cnpg-system my-cluster spec_dict
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         group = "postgresql.cnpg.io"
@@ -4810,13 +4685,10 @@ def secret_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.secret_present my-namespace my-secret "{'key1': 'value1', 'key2': 'value2'}"
+        salt '*' kubernetes_k8s.secret_present my-namespace my-secret "{'key1': 'value1', 'key2': 'value2'}"
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         core_v1_api = client.CoreV1Api()
         exists = False
@@ -4978,11 +4850,10 @@ def keycloak_cluster_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
 
     CLI Example:
-        salt '*' kinetic-k8s.keycloak_cluster_present keycloak keycloak.example.com keycloak-cluster instances=2 truststores="{'my-truststore': {'secret': {'name': 'my-secret'}}}"
+        salt '*' kubernetes_k8s.keycloak_cluster_present keycloak keycloak.example.com keycloak-cluster instances=2 truststores="{'my-truststore': {'secret': {'name': 'my-secret'}}}"
     """
     try:
-        # Load Kubernetes configuration (in-cluster or from kubeconfig)
-        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+        _load_k8s_config()
         custom_api = client.CustomObjectsApi()
 
         # Construct the spec for the Keycloak Cluster
@@ -5172,13 +5043,10 @@ def certificate_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_exists' (bool), and 'message' (str).
 
     CLI Example:
-        salt '*' kinetic-k8s.certificate_present my-namespace my-cert example.com admin@example.com dns_name=www.example.com issuer_ref="{'name': 'letsencrypt-prod', 'kind': 'ClusterIssuer'}"
+        salt '*' kubernetes_k8s.certificate_present my-namespace my-cert example.com admin@example.com dns_name=www.example.com issuer_ref="{'name': 'letsencrypt-prod', 'kind': 'ClusterIssuer'}"
     """
     try:
-        try:
-            config.load_incluster_config()
-        except config.ConfigException:
-            config.load_kube_config()
+        _load_k8s_config()
 
         custom_api = client.CustomObjectsApi()
         core_v1_api = client.CoreV1Api()
@@ -5356,11 +5224,10 @@ def pvc_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
 
     CLI Example:
-        salt '*' kinetic-k8s.pvc_present my-pvc my-namespace local-storage 5Gi access_modes="['ReadWriteOnce']"
+        salt '*' kubernetes_k8s.pvc_present my-pvc my-namespace local-storage 5Gi access_modes="['ReadWriteOnce']"
     """
     try:
-        # Load Kubernetes configuration (in-cluster or from kubeconfig)
-        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+        _load_k8s_config()
         v1_api = client.CoreV1Api()
 
         # Default access modes if not provided
@@ -5451,8 +5318,7 @@ def job_cleanup(namespace=None):
         dict: A dictionary with 'success' (bool), 'deleted_items' (list), and 'message' (str).
     """
     try:
-        # Load Kubernetes configuration (in-cluster or from kubeconfig)
-        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+        _load_k8s_config()
         v1_api = client.CoreV1Api()
 
         # Field selector for pods with status.phase==Succeeded
@@ -5559,8 +5425,7 @@ def ceph_object_store_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
     """
     try:
-        # Load Kubernetes configuration (in-cluster or from kubeconfig)
-        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+        _load_k8s_config()
         custom_api = client.CustomObjectsApi()
 
         # Define the CephObjectStore resource for Rook
@@ -5758,8 +5623,7 @@ def kubernetes_deployment_present(
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
     """
     try:
-        # Load Kubernetes configuration (in-cluster or from kubeconfig)
-        config.load_kube_config()  # Adjust if running in-cluster: config.load_incluster_config()
+        _load_k8s_config()
         apps_api = client.AppsV1Api()
 
         # Define container spec if containers list is not provided and image is specified

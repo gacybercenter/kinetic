@@ -17,7 +17,7 @@ add_openldap_repo:
 # Configure MetalLB pool and advertisement for internal IP
 ensure_metallb_pool_ldap:
   k8s.metallb_pool_present:
-    - namespace: unused-namespace
+    - namespace: metallb-system
     - pool_name: ldap-lb-pool
     - addresses:
         - {{ ldap_lb_1 }}-{{ ldap_lb_2 }}
@@ -32,6 +32,7 @@ ensure_metallb_pool_ldap:
 
 ensure_ldap_namespace:
   k8s.namespace_present:
+    - name: ensure_ldap_namespace
     - namespace: {{ pillar['ldap']['namespace'] }}
 
 # Create Kubernetes pull secret for LDAP Helm chart repository
