@@ -854,8 +854,8 @@ def create_group(
         group_dn (str): The distinguished name of the group to create (e.g., 'cn=admins,ou=groups,base_dn').
         cn (str): The common name (CN) of the group.
         description (str, optional): The description to set for the group.
-        members (list, optional): List of member user IDs or usernames to set for the group (used as memberUid for posixGroup).
-        gid_number (int or str, optional): The group ID number for posixGroup. Defaults to '0' if not provided.
+        members (list, optional): List of member DN strings to set for the group (used as member for groupofnames).
+        gid_number (int or str, optional): Deprecated - not used with groupofnames objectClass.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -870,15 +870,14 @@ def create_group(
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
         attributes = {
-            "objectClass": ["posixGroup"],
+            "objectClass": ["groupofnames"],
             "cn": cn,
-            "gidNumber": str(gid_number) if gid_number is not None else "0",
         }
         if description:
             attributes["description"] = description
         if members:
-            attributes["memberUid"] = (
-                members  # Assume members are user IDs or usernames for posixGroup
+            attributes["member"] = (
+                members  # members should be DN strings for groupofnames
             )
 
         check = dn_exists(spec_name, group_dn, attributes)
@@ -928,8 +927,8 @@ def update_group(
         group_dn (str): The distinguished name of the group to update (e.g., 'cn=admins,ou=groups,base_dn').
         cn (str): The common name (CN) of the group.
         description (str, optional): The description to set for the group.
-        members (list, optional): List of member user IDs or usernames to set for the group (used as memberUid for posixGroup).
-        gid_number (int or str, optional): The group ID number for posixGroup. Defaults to '0' if not provided.
+        members (list, optional): List of member DN strings to set for the group (used as member for groupofnames).
+        gid_number (int or str, optional): Deprecated - not used with groupofnames objectClass.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -944,15 +943,14 @@ def update_group(
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
         attributes = {
-            "objectClass": ["posixGroup"],
+            "objectClass": ["groupofnames"],
             "cn": cn,
-            "gidNumber": str(gid_number) if gid_number is not None else "0",
         }
         if description:
             attributes["description"] = description
         if members:
-            attributes["memberUid"] = (
-                members  # Assume members are user IDs or usernames for posixGroup
+            attributes["member"] = (
+                members  # members should be DN strings for groupofnames
             )
 
         check = dn_exists(spec_name, group_dn, attributes)
@@ -970,25 +968,25 @@ def update_group(
             current_obj_classes = check["current_attributes"]["objectClass"]
             if isinstance(current_obj_classes, str):
                 current_obj_classes = [current_obj_classes]
-            if "posixGroup" not in current_obj_classes:
+            if "groupofnames" not in current_obj_classes:
                 __salt__["log.debug"](
-                    f"Group {group_dn} does not have posixGroup in objectClass, forcing update. Current: {current_obj_classes}"
+                    f"Group {group_dn} does not have groupofnames in objectClass, forcing update. Current: {current_obj_classes}"
                 )
                 # Force update since objectClass needs to change
                 update_attrs = attributes.copy()
-                changes = {"objectClass": "updated to include posixGroup"}
+                changes = {"objectClass": "updated to include groupofnames"}
                 update_result = update_root_dn(spec_name, group_dn, update_attrs)
                 if update_result["updated"]:
                     ret["result"] = True
                     ret["comment"] = (
-                        f"Group {group_dn} updated to posixGroup objectClass."
+                        f"Group {group_dn} updated to groupofnames objectClass."
                     )
                     ret["changes"] = update_result.get("changes", {})
                     return ret
                 else:
                     ret["result"] = False
                     ret["comment"] = (
-                        f"Failed to update group {group_dn} to posixGroup: {update_result.get('comment', str(update_result))}"
+                        f"Failed to update group {group_dn} to groupofnames: {update_result.get('comment', str(update_result))}"
                     )
                     return ret
             else:
@@ -1015,7 +1013,7 @@ def update_group(
                             )
                 # Force update regardless of attributes_match to ensure posixGroup and attributes are applied
                 __salt__["log.debug"](
-                    f"Forcing update for group {group_dn} to apply posixGroup configuration."
+                    f"Forcing update for group {group_dn} to apply groupofnames configuration."
                 )
 
         # Update attributes or members
