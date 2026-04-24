@@ -54,6 +54,103 @@ def _get_domain_id(conn, domain_name_or_id):
         return None
 
 
+def _diagnose_role_assignment(
+    conn,
+    role_name,
+    group_name,
+    project_name=None,
+    domain_name=None,
+    group_domain=None,
+    project_domain=None,
+):
+    """
+    Diagnostic function to verify all resources exist before attempting role assignment.
+
+    Returns a dict with diagnostic information.
+    """
+    diagnostic = {
+        "role": None,
+        "group": None,
+        "project": None,
+        "domain": None,
+        "errors": [],
+    }
+
+    try:
+        # Check role
+        role = conn.identity.find_role(role_name)
+        if role:
+            diagnostic["role"] = {"name": role.name, "id": role.id}
+        else:
+            diagnostic["errors"].append(f"Role '{role_name}' not found")
+
+        # Check group
+        if group_domain:
+            domain_id = _get_domain_id(conn, group_domain)
+            if not domain_id:
+                diagnostic["errors"].append(f"Group domain '{group_domain}' not found")
+            else:
+                group = conn.identity.find_group(group_name, domain_id=domain_id)
+                if group:
+                    diagnostic["group"] = {
+                        "name": group.name,
+                        "id": group.id,
+                        "domain": group_domain,
+                    }
+                else:
+                    diagnostic["errors"].append(
+                        f"Group '{group_name}' not found in domain '{group_domain}'"
+                    )
+        else:
+            group = conn.identity.find_group(group_name)
+            if group:
+                diagnostic["group"] = {"name": group.name, "id": group.id}
+            else:
+                diagnostic["errors"].append(f"Group '{group_name}' not found")
+
+        # Check project if specified
+        if project_name:
+            if project_domain:
+                domain_id = _get_domain_id(conn, project_domain)
+                if not domain_id:
+                    diagnostic["errors"].append(
+                        f"Project domain '{project_domain}' not found"
+                    )
+                else:
+                    project = conn.identity.find_project(
+                        project_name, domain_id=domain_id
+                    )
+                    if project:
+                        diagnostic["project"] = {
+                            "name": project.name,
+                            "id": project.id,
+                            "domain": project_domain,
+                        }
+                    else:
+                        diagnostic["errors"].append(
+                            f"Project '{project_name}' not found in domain '{project_domain}'"
+                        )
+            else:
+                project = conn.identity.find_project(project_name)
+                if project:
+                    diagnostic["project"] = {"name": project.name, "id": project.id}
+                else:
+                    diagnostic["errors"].append(f"Project '{project_name}' not found")
+
+        # Check domain if specified
+        if domain_name:
+            domain = conn.identity.find_domain(domain_name)
+            if domain:
+                diagnostic["domain"] = {"name": domain.name, "id": domain.id}
+            else:
+                diagnostic["errors"].append(f"Domain '{domain_name}' not found")
+
+        return diagnostic
+    except Exception as e:
+        diagnostic["errors"].append(f"Error during diagnosis: {str(e)}")
+        return diagnostic
+
+
 def _get_connection(cloud=None):
     """
     Create an OpenStack connection using a cloud configuration name from os-cloud-config.
@@ -375,10 +472,14 @@ def assign_role_to_group(
             url = (
                 f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
             )
+            log.debug(
+                f"Assigning role to group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+            )
             response = conn.session.put(url)
             if response.status_code not in [201, 204]:
                 raise CommandExecutionError(
-                    f"Failed to assign role {role.name} to group {group.name} on project {project.name}: HTTP {response.status_code}"
+                    f"Failed to assign role {role.name} to group {group.name} on project {project.name}: HTTP {response.status_code}. "
+                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
                 )
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)
@@ -389,10 +490,14 @@ def assign_role_to_group(
                 service_type="identity", interface="public"
             )
             url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
+            log.debug(
+                f"Assigning role to group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+            )
             response = conn.session.put(url)
             if response.status_code not in [201, 204]:
                 raise CommandExecutionError(
-                    f"Failed to assign role {role.name} to group {group.name} on domain {domain.name}: HTTP {response.status_code}"
+                    f"Failed to assign role {role.name} to group {group.name} on domain {domain.name}: HTTP {response.status_code}. "
+                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
                 )
         else:
             raise CommandExecutionError(
@@ -477,10 +582,14 @@ def revoke_role_from_group(
             url = (
                 f"{endpoint}/v3/projects/{project.id}/groups/{group.id}/roles/{role.id}"
             )
+            log.debug(
+                f"Revoking role from group on project - Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+            )
             response = conn.session.delete(url)
             if response.status_code not in [204, 404]:
                 raise CommandExecutionError(
-                    f"Failed to revoke role {role.name} from group {group.name} on project {project.name}: HTTP {response.status_code}"
+                    f"Failed to revoke role {role.name} from group {group.name} on project {project.name}: HTTP {response.status_code}. "
+                    f"Project ID: {project.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
                 )
         elif domain_name_or_id:
             domain = conn.identity.find_domain(domain_name_or_id)
@@ -491,10 +600,14 @@ def revoke_role_from_group(
                 service_type="identity", interface="public"
             )
             url = f"{endpoint}/v3/domains/{domain.id}/groups/{group.id}/roles/{role.id}"
+            log.debug(
+                f"Revoking role from group on domain - Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
+            )
             response = conn.session.delete(url)
             if response.status_code not in [204, 404]:
                 raise CommandExecutionError(
-                    f"Failed to revoke role {role.name} from group {group.name} on domain {domain.name}: HTTP {response.status_code}"
+                    f"Failed to revoke role {role.name} from group {group.name} on domain {domain.name}: HTTP {response.status_code}. "
+                    f"Domain ID: {domain.id}, Group ID: {group.id}, Role ID: {role.id}, URL: {url}"
                 )
         else:
             raise CommandExecutionError(
@@ -550,5 +663,66 @@ def check_role_assignment(
             return False
     except exceptions.SDKException:
         return False
+    finally:
+        conn.close()
+
+
+def diagnose_role_assignment(
+    role_name,
+    group_name,
+    project_name=None,
+    domain_name=None,
+    group_domain=None,
+    project_domain=None,
+    cloud=None,
+):
+    """
+    Diagnose role assignment prerequisites - check if all required resources exist.
+
+    This function helps troubleshoot why role assignments might be failing by verifying
+    that all the resources (role, group, project, domain) exist and are accessible.
+
+    Args:
+        role_name (str): Name of the role
+        group_name (str): Name of the group
+        project_name (str, optional): Name of the project
+        domain_name (str, optional): Name of the domain
+        group_domain (str, optional): Domain of the group
+        project_domain (str, optional): Domain of the project
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict: Diagnostic information with keys: role, group, project, domain, errors
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.diagnose_role_assignment role_name=member group_name=interns project_name=example project_domain=Default group_domain=ldap
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return {
+            "error": "Failed to connect to OpenStack",
+            "diagnostic": None,
+        }
+
+    try:
+        diagnostic = _diagnose_role_assignment(
+            conn,
+            role_name=role_name,
+            group_name=group_name,
+            project_name=project_name,
+            domain_name=domain_name,
+            group_domain=group_domain,
+            project_domain=project_domain,
+        )
+        return {"success": len(diagnostic["errors"]) == 0, "diagnostic": diagnostic}
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "diagnostic": None,
+        }
     finally:
         conn.close()
