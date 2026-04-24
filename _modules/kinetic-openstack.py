@@ -368,12 +368,12 @@ def assign_role_to_group(
                 raise CommandExecutionError(
                     f"Project {project_name_or_id} not found in domain {project_domain if project_domain else 'default'}"
                 )
-            conn.identity.grant_role(role.id, group=group.id, project=project.id)
-        elif domain_name_or_id:
-            domain = conn.identity.find_domain(domain_name_or_id)
-            if not domain:
-                raise CommandExecutionError(f"Domain {domain_name_or_id} not found")
-            conn.identity.grant_role(role.id, group=group.id, domain=domain.id)
+            conn.identity.assign_role_to_group_on_project(project, group, role)
+         elif domain_name_or_id:
+             domain = conn.identity.find_domain(domain_name_or_id)
+             if not domain:
+                 raise CommandExecutionError(f"Domain {domain_name_or_id} not found")
+             conn.identity.assign_role_to_group_on_domain(domain, group, role)
         else:
             raise CommandExecutionError(
                 "Either project or domain must be specified for role assignment"
@@ -450,12 +450,12 @@ def revoke_role_from_group(
                 raise CommandExecutionError(
                     f"Project {project_name_or_id} not found in domain {project_domain if project_domain else 'default'}"
                 )
-            conn.identity.revoke_role(role.id, group=group.id, project=project.id)
-        elif domain_name_or_id:
-            domain = conn.identity.find_domain(domain_name_or_id)
-            if not domain:
-                raise CommandExecutionError(f"Domain {domain_name_or_id} not found")
-            conn.identity.revoke_role(role.id, group=group.id, domain=domain.id)
+            conn.identity.revoke_role_from_group_on_project(project, group, role)
+         elif domain_name_or_id:
+             domain = conn.identity.find_domain(domain_name_or_id)
+             if not domain:
+                 raise CommandExecutionError(f"Domain {domain_name_or_id} not found")
+             conn.identity.revoke_role_from_group_on_domain(domain, group, role)
         else:
             raise CommandExecutionError(
                 "Either project or domain must be specified for role revocation"
