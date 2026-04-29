@@ -53,7 +53,11 @@ ldap_project_group_{{ group }}:
     - members:
         {% if data.get('members', [])|length > 0 %}
         {% for member in data.get('members', []) %}
+        {% if '=' in member %}
+        - "{{ member }}"
+        {% else %}
         - "cn={{ member }},{{ users_ou }},{{ base_dn }}"
+        {% endif %}
         {% endfor %}
         {% else %}
         - "cn=admin,{{ users_ou }},{{ base_dn }}"
@@ -85,7 +89,11 @@ ldap_admin_group_{{ group }}:
     - members:
         {% if data.get('admin_members', [])|length > 0 %}
         {% for member in data.get('admin_members', []) %}
+        {% if '=' in member %}
+        - "{{ member }}"
+        {% else %}
         - "cn={{ member }},{{ users_ou }},{{ base_dn }}"
+        {% endif %}
         {% endfor %}
         {% else %}
         - "cn=admin,{{ users_ou }},{{ base_dn }}"
