@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 
 __virtualname__ = "ldap_utils"
 
+
 # In-memory cache for connection objects during a single Salt run
 _CONNECTION_CACHE = {}
 
