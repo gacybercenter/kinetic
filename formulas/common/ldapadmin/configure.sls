@@ -1,5 +1,6 @@
 include:
   - /formulas/common/ldapadmin/install
+  - /formulas/common/ldapadmin/create_users
 
 
 {% set ldap_spec = pillar.get('ldap', {}).get('spec_name', 'default') %}
