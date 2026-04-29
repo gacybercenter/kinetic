@@ -870,7 +870,7 @@ def create_group(
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
         attributes = {
-            "objectClass": ["groupofnames"],
+            "objectClass": ["groupOfNames"],
             "cn": cn,
         }
         if description:
