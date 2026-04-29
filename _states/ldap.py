@@ -388,7 +388,7 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
             "ldap_utils.dn_exists function not found. Please ensure the module is synced to the minion with 'saltutil.sync_modules'."
         )
         return ret
-    check_result = __salt__["ldap_utils.dn_exists"](spec_name, group_dn, attributes)
+    check_result = __salt__["ldap_utils.dn_exists"](spec_name, user_dn, attributes)
     if not check_result["result"]:
         if "No such object" in check_result["comment"]:
             exists = False
