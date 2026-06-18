@@ -1,5 +1,4 @@
 nftables:
-  pkg.installed
   pkg.installed:
     - name: nftables
 
@@ -51,7 +50,7 @@ nft_init:
       - nft list table inet filter |grep inet
 
 openstack_api_cmd:
-  cmd.run: 
+  cmd.run:
     - name: nft add rule inet filter input ct state { new } ip saddr {{ pillar['networking']['subnets']['public'] }} tcp dport { 53,{{ pillar['cache']['lancache']['http_port'] }},443,9292,7480,5000,8774,8778,8776,9696,8004,8000,9001,9517,{{ pillar['cache']['nexusproxy']['port'] }} } accept
     - unless:
       - nft list table inet filter | grep -q '{{ pillar['networking']['subnets']['public'] }} tcp dport'
