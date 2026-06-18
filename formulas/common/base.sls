@@ -17,7 +17,6 @@
 
 include:
   - /formulas/common/auditd/configure
-  - /formulas/k8s-logger/install
 
 initial_module_sync:
   saltutil.sync_all:
