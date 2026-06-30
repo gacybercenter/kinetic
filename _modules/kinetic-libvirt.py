@@ -20,7 +20,7 @@ except ImportError:
     HAS_LIBVIRT = False
 
 # Ensure Salt can find this module
-__virtualname__ = "kinetic-libvirt"
+__virtualname__ = "kinetic_libvirt"
 
 
 @decorators.memoize
@@ -36,22 +36,26 @@ def __virtual__():
     )
 
 
-def connect_to_libvirt(connection_uri="qemu:///system"):
+def connect_to_libvirt(connection_uri="qemu:///system", read_only=True):
     """
     Connect to a libvirt instance using the provided connection URI.
 
     Args:
         connection_uri (str): The libvirt connection URI (e.g., 'qemu+ssh://user@host/system')
+        read_only (bool): Whether to open connection in read-only mode (default True)
 
     Returns:
         dict: A dictionary with 'success' (bool), 'connection' (libvirt.virConnect or None), and 'message' (str)
     """
     try:
-        conn = libvirt.openReadOnly(connection_uri)
+        if read_only:
+            conn = libvirt.openReadOnly(connection_uri)
+        else:
+            conn = libvirt.open(connection_uri)
         return {
             "success": True,
             "connection": conn,
-            "message": f"Successfully connected to libvirt at {connection_uri}",
+            "message": f"Successfully connected to libvirt at {connection_uri} (read_only={read_only})",
         }
     except libvirt.libvirtError as e:
         return {
@@ -242,4 +246,284 @@ def list_vms(connection_uri="qemu:///system"):
             "success": False,
             "vms": [],
             "message": f"Error retrieving virtual machines: {str(e)}",
+        }
+
+
+def pool_info(name, connection_uri="qemu:///system"):
+    """
+    Get information about a libvirt storage pool.
+
+    Returns:
+        dict: {'success': bool, 'exists': bool, 'active': bool, 'info': dict, 'message': str}
+    """
+    conn_result = connect_to_libvirt(connection_uri)
+    if not conn_result["success"]:
+        return {
+            "success": False,
+            "exists": False,
+            "active": False,
+            "info": {},
+            "message": conn_result["message"],
+        }
+
+    conn = conn_result["connection"]
+    try:
+        try:
+            pool = conn.storagePoolLookupByName(name)
+            info = pool.info()
+            active = pool.isActive() == 1
+            conn.close()
+            return {
+                "success": True,
+                "exists": True,
+                "active": active,
+                "info": info,
+                "message": f"Pool {name} {'is' if active else 'is not'} active",
+            }
+        except libvirt.libvirtError:
+            conn.close()
+            return {
+                "success": True,
+                "exists": False,
+                "active": False,
+                "info": {},
+                "message": f"Pool {name} does not exist",
+            }
+    except Exception as e:
+        if "conn" in locals():
+            conn.close()
+        return {
+            "success": False,
+            "exists": False,
+            "active": False,
+            "info": {},
+            "message": f"Error getting pool info: {str(e)}",
+        }
+
+
+def pool_define(name, ptype="dir", target="/kvm/vms", connection_uri="qemu:///system"):
+    """
+    Define a libvirt storage pool if it doesn't exist.
+
+    Returns dict with success, changes, etc.
+    """
+    conn_result = connect_to_libvirt(connection_uri, read_only=False)
+    if not conn_result["success"]:
+        return {"success": False, "message": conn_result["message"]}
+
+    conn = conn_result["connection"]
+    try:
+        # Check if pool already exists
+        info = pool_info(name, connection_uri)
+        if info.get("exists", False):
+            conn.close()
+            return {
+                "success": True,
+                "changed": False,
+                "message": f"Pool {name} already exists",
+            }
+
+        # Define XML for directory pool
+        xml = f"""<pool type='{ptype}'>
+  <name>{name}</name>
+  <target>
+    <path>{target}</path>
+  </target>
+</pool>"""
+
+        pool = conn.storagePoolDefineXML(xml, 0)
+        conn.close()
+        return {
+            "success": True,
+            "changed": True,
+            "message": f"Successfully defined storage pool {name}",
+        }
+    except libvirt.libvirtError as e:
+        if "conn" in locals() and conn:
+            conn.close()
+        return {
+            "success": False,
+            "message": f"Failed to define pool {name}: {str(e)}",
+        }
+
+
+def pool_start(name, connection_uri="qemu:///system"):
+    """
+    Start (activate) a libvirt storage pool if it is not active.
+    """
+    conn_result = connect_to_libvirt(connection_uri, read_only=False)
+    if not conn_result["success"]:
+        return {"success": False, "message": conn_result["message"]}
+
+    conn = conn_result["connection"]
+    try:
+        pool = conn.storagePoolLookupByName(name)
+        if pool.isActive() == 1:
+            conn.close()
+            return {
+                "success": True,
+                "changed": False,
+                "message": f"Pool {name} is already active",
+            }
+
+        pool.create(0)
+        conn.close()
+        return {
+            "success": True,
+            "changed": True,
+            "message": f"Successfully started storage pool {name}",
+        }
+    except libvirt.libvirtError as e:
+        if "conn" in locals() and conn:
+            conn.close()
+        return {
+            "success": False,
+            "message": f"Failed to start pool {name}: {str(e)}",
+        }
+
+
+def volume_info(name, pool="vms", connection_uri="qemu:///system"):
+    """
+    Get information about a storage volume.
+
+    Returns:
+        dict: success, exists, info, message
+    """
+    conn_result = connect_to_libvirt(connection_uri)
+    if not conn_result["success"]:
+        return {
+            "success": False,
+            "exists": False,
+            "info": {},
+            "message": conn_result["message"],
+        }
+
+    conn = conn_result["connection"]
+    try:
+        try:
+            pool_obj = conn.storagePoolLookupByName(pool)
+            vol = pool_obj.storageVolLookupByName(name)
+            info = vol.info()
+            conn.close()
+            return {
+                "success": True,
+                "exists": True,
+                "info": info,
+                "message": f"Volume {name} exists",
+            }
+        except libvirt.libvirtError:
+            conn.close()
+            return {
+                "success": True,
+                "exists": False,
+                "info": {},
+                "message": f"Volume {name} does not exist in pool {pool}",
+            }
+    except Exception as e:
+        if "conn" in locals():
+            conn.close()
+        return {
+            "success": False,
+            "exists": False,
+            "info": {},
+            "message": str(e),
+        }
+
+
+def volume_create(
+    name, pool="vms", capacity="20G", format="qcow2", connection_uri="qemu:///system"
+):
+    """
+    Create a storage volume if it doesn't exist.
+    """
+    conn_result = connect_to_libvirt(connection_uri, read_only=False)
+    if not conn_result["success"]:
+        return {"success": False, "message": conn_result["message"]}
+
+    conn = conn_result["connection"]
+    try:
+        # Check if volume already exists
+        vol_info = volume_info(name, pool, connection_uri)
+        if vol_info.get("exists", False):
+            conn.close()
+            return {
+                "success": True,
+                "changed": False,
+                "message": f"Volume {name} already exists",
+            }
+
+        pool_obj = conn.storagePoolLookupByName(pool)
+
+        # Convert capacity string to bytes (simple parser)
+        if isinstance(capacity, str):
+            if capacity.endswith("G"):
+                size_bytes = int(capacity[:-1]) * 1024**3
+            elif capacity.endswith("M"):
+                size_bytes = int(capacity[:-1]) * 1024**2
+            else:
+                size_bytes = int(capacity)
+        else:
+            size_bytes = int(capacity)
+
+        xml = f"""<volume>
+  <name>{name}</name>
+  <capacity unit='bytes'>{size_bytes}</capacity>
+  <target>
+    <format type='{format}'/>
+  </target>
+</volume>"""
+
+        vol = pool_obj.createXML(xml, 0)
+        conn.close()
+        return {
+            "success": True,
+            "changed": True,
+            "message": f"Successfully created volume {name} ({format}, {capacity})",
+            "volume": name,
+        }
+    except libvirt.libvirtError as e:
+        if "conn" in locals() and conn:
+            conn.close()
+        return {
+            "success": False,
+            "message": f"Failed to create volume {name}: {str(e)}",
+        }
+
+
+def define_xml(name, xml, connection_uri="qemu:///system"):
+    """
+    Define a domain (VM) from XML string. Checks if it already exists first.
+    """
+    conn_result = connect_to_libvirt(connection_uri, read_only=False)
+    if not conn_result["success"]:
+        return {"success": False, "message": conn_result["message"]}
+
+    conn = conn_result["connection"]
+    try:
+        # Check if domain already exists
+        try:
+            conn.lookupByName(name)
+            conn.close()
+            return {
+                "success": True,
+                "changed": False,
+                "message": f"Domain {name} already defined",
+            }
+        except libvirt.libvirtError:
+            pass  # Domain doesn't exist - continue to define
+
+        domain = conn.defineXML(xml)
+        conn.close()
+        return {
+            "success": True,
+            "changed": True,
+            "message": f"Successfully defined domain {name}",
+            "defined": True,
+        }
+    except libvirt.libvirtError as e:
+        if "conn" in locals() and conn:
+            conn.close()
+        return {
+            "success": False,
+            "message": f"Failed to define domain {name}: {str(e)}",
         }

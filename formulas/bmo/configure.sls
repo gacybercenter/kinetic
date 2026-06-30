@@ -112,7 +112,7 @@ check_qemu_address_for_{{ name }}:
 
 # Ensure the storage pool is defined and running
 vms_{{ name }}_pool:
-  virt.pool_running:
+  libvirt.pool_running:
     - name: vms
     - ptype: dir
     - target: /kvm/vms
@@ -122,22 +122,19 @@ vms_{{ name }}_pool:
 
 # Create the disk volume if it doesn't exist
 {{ name }}_disk.qcow2:
-  module.run:
-    - name: virt.volume_define
+  libvirt.volume_define:
     - m_name: {{ name }}_disk0.qcow2
     - pool: vms
     - format: qcow2
     - size: {{ pillar['bmh'][name]['disk'] }}
     - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
-      - virt: vms_{{ name }}_pool
+      - libvirt: vms_{{ name }}_pool
       - libvirt: check_qemu_address_for_{{ name }}
-    - unless: virsh --connect {{ pillar['bmh'][name]['connection'] }} vol-info --pool vms {{ name }}_disk0.qcow2
 
 # Define the VM using the inline XML string
 define_{{name }}_vm:
-  module.run:
-    - name: virt.define_xml_str
+  libvirt.define_xml_str:
     - xml: |
         <domain type='kvm'>
           <name>{{ name }}</name>
@@ -177,7 +174,7 @@ define_{{name }}_vm:
         </domain>
     - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
-      - module: {{ name }}_disk.qcow2
+      - libvirt: {{ name }}_disk.qcow2
       - libvirt: check_qemu_address_for_{{ name }}
 
 ensure_{{ name }}_vbmc_connection:
@@ -185,7 +182,7 @@ ensure_{{ name }}_vbmc_connection:
     - name: /opt/virtualbmc/bin/vbmc add --libvirt-uri {{ pillar['bmh'][name]['connection'] }} --username ADMIN --password {{ pillar['ipmi-password'] }} --address 127.0.0.1 --port {{ pillar['bmh'][name]['connection-port'] }} {{ name }} && /opt/virtualbmc/bin/vbmc start {{ name }}
     - unless: /opt/virtualbmc/bin/vbmc show {{ name }}
     - require:
-      - module: define_{{ name }}_vm
+      - libvirt: define_{{ name }}_vm
       - libvirt: check_qemu_address_for_{{ name }}
 {% endif %}
 
