@@ -1,7 +1,6 @@
 include:
   - /formulas/bmo/install
 
-
 bmo_ironic_env:
   file.managed:
     - name: {{ pillar['script_dir'] }}/config/default/ironic.env
@@ -96,14 +95,14 @@ ensure_{{ name }}_networkdata_present:
         gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
         nameserver: {{ pillar['dhcp-options']['dns'] }}
     - pillar_key: bmh
-    - require: 
+    - require:
       - k8s: ensure_{{ name }}_bmc_auth_present
 
 ensure_{{ name }}_userdata_present:
   k8s.userdata_present:
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
-    - pillar_key: bmh    
+    - pillar_key: bmh
     - require:
       - k8s: ensure_{{ name }}_networkdata_present
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
