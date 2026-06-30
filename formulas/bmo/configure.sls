@@ -108,7 +108,7 @@ ensure_{{ name }}_userdata_present:
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
 check_qemu_address_for_{{ name }}:
   libvirt.check_qemu_address:
-    - connection_uri: '{{ pillar['bmh'][name]['connection'] }}'
+    - connection_uri: {{ pillar['bmh'][name]['connection'] }}
 
 # Ensure the storage pool is defined and running
 vms_{{ name }}_pool:
@@ -175,7 +175,7 @@ define_{{name }}_vm:
             <graphics type='spice' autoport='yes'/>
           </devices>
         </domain>
-    - connection: '{{ pillar['bmh'][name]['connection'] }}'
+    - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
       - module: {{ name }}_disk.qcow2
       - libvirt: check_qemu_address_for_{{ name }}
