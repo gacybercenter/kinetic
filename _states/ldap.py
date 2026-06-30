@@ -365,14 +365,29 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
 
     # Prepare attributes for existence check (mirroring fixed attributes in create_user/update_user)
     attributes = {
-        "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+        "objectClass": [
+            "person",
+            "organizationalPerson",
+            "inetOrgPerson",
+            "posixAccount",
+        ],
         "uid": uid,
         "cn": cn,
         "sn": sn,
         "description": description,
+        "uidNumber": "0",  # Default value, can be overridden if needed
+        "gidNumber": "0",  # Default value, can be overridden if needed
+        "homeDirectory": f"/home/{uid}",
+        "loginShell": "/bin/bash",
     }
 
-    # Check if user exists and attributes match
+    # Check if group exists and attributes match
+    if "ldap_utils.dn_exists" not in __salt__:
+        ret["result"] = False
+        ret["comment"] = (
+            "ldap_utils.dn_exists function not found. Please ensure the module is synced to the minion with 'saltutil.sync_modules'."
+        )
+        return ret
     check_result = __salt__["ldap_utils.dn_exists"](spec_name, user_dn, attributes)
     if not check_result["result"]:
         if "No such object" in check_result["comment"]:
@@ -402,7 +417,17 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
     if not exists:
         # Call create_user
         create_result = __salt__["ldap_utils.create_user"](
-            spec_name, user_dn, uid, cn, sn, description, password
+            spec_name,
+            user_dn,
+            uid,
+            cn,
+            sn,
+            description,
+            password,
+            uid_number=None,
+            gid_number=None,
+            home_directory=None,
+            login_shell=None,
         )
         if create_result["result"]:
             ret["result"] = True
@@ -419,7 +444,16 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
     else:
         # Call update_user (no password update, as per previous instructions)
         update_result = __salt__["ldap_utils.update_user"](
-            spec_name, user_dn, uid, cn, sn, description
+            spec_name,
+            user_dn,
+            uid,
+            cn,
+            sn,
+            description,
+            uid_number=None,
+            gid_number=None,
+            home_directory=None,
+            login_shell=None,
         )
         if update_result["result"]:
             ret["result"] = True
@@ -452,6 +486,22 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     """
     ret = {"name": name, "result": True, "changes": {}, "comment": ""}
 
+    # Check if ldap_utils module is available
+    if "ldap_utils.get_connect_spec" not in __salt__:
+        ret["result"] = False
+        ret["comment"] = (
+            "ldap_utils module not found. Please ensure the module is synced to the minion with 'saltutil.sync_modules'."
+        )
+        return ret
+
+    # Check if ldap_utils module is available
+    if "ldap_utils.get_connect_spec" not in __salt__:
+        ret["result"] = False
+        ret["comment"] = (
+            "ldap_utils module not found. Please ensure the module is synced to the minion."
+        )
+        return ret
+
     # Check if connection spec exists
     conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
     if not conn_result["success"]:
@@ -465,13 +515,19 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     group_dn = f"cn={cn},{base_dn}"
 
     # Prepare attributes for existence check (mirroring fixed attributes in create_group/update_group)
-    attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+    attributes = {"objectClass": ["posixGroup"], "cn": cn}
     if description:
         attributes["description"] = description
     if members:
-        attributes["member"] = members
+        attributes["memberUid"] = members  # Use memberUid for posixGroup
 
     # Check if group exists and attributes match
+    if "ldap_utils.dn_exists" not in __salt__:
+        ret["result"] = False
+        ret["comment"] = (
+            "ldap_utils.dn_exists function not found. Please ensure the module is synced to the minion."
+        )
+        return ret
     check_result = __salt__["ldap_utils.dn_exists"](spec_name, group_dn, attributes)
     if not check_result["result"]:
         if "No such object" in check_result["comment"]:
@@ -494,18 +550,17 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
         )
         return ret
 
-    # If in test mode, report what would be done
-    if __opts__["test"]:
-        ret["result"] = None
-        ret["comment"] = f"Would {'update' if exists else 'create'} group {group_dn}."
-        ret["changes"][group_dn] = {"would_action": "update" if exists else "create"}
-        return ret
-
     # Create or update based on existence
     if not exists:
         # Call create_group
+        if "ldap_utils.create_group" not in __salt__:
+            ret["result"] = False
+            ret["comment"] = (
+                "ldap_utils.create_group function not found. Please ensure the module is synced to the minion."
+            )
+            return ret
         create_result = __salt__["ldap_utils.create_group"](
-            spec_name, group_dn, cn, description, members
+            spec_name, group_dn, cn, description, members, gid_number=None
         )
         if create_result["result"]:
             ret["result"] = True
@@ -521,8 +576,15 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
             return ret
     else:
         # Call update_group
+        if "ldap_utils.update_group" not in __salt__:
+            ret["result"] = False
+            ret["comment"] = (
+                "ldap_utils.update_group function not found. Please ensure the module is synced to the minion."
+            )
+            return ret
+        # Call update_group
         update_result = __salt__["ldap_utils.update_group"](
-            spec_name, group_dn, cn, description, members
+            spec_name, group_dn, cn, description, members, gid_number=None
         )
         if update_result["result"]:
             ret["result"] = True
@@ -533,9 +595,9 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
         else:
             ret["result"] = False
             ret["comment"] = (
-                f"Failed to update group {group_dn}: {update_result['comment']}"
+                f"Failed1 to update group {group_dn}: {update_result['comment']}"
             )
-            return ret
+        return ret
 
 
 def module_present(

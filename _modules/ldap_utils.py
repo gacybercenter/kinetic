@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 
 __virtualname__ = "ldap_utils"
 
+
 # In-memory cache for connection objects during a single Salt run
 _CONNECTION_CACHE = {}
 
@@ -407,15 +408,20 @@ def update_root_dn(spec_name, root_dn, attributes):
 
         conn = conn_result["conn"]
         # Fetch current attributes to avoid unnecessary or forbidden updates
+        __salt__["log.debug"](f"Checking existence of {root_dn} before update.")
         current_attrs_result = root_dn_exists(spec_name, root_dn, attributes)
-        if not current_attrs_result["result"] or not current_attrs_result.get(
-            "exists", False
-        ):  # Check standardized result
+        if not current_attrs_result["result"]:  # Check standardized result
             ret["comment"] = f"DN {root_dn} does not exist for update"
+            __salt__["log.error"](
+                f"DN {root_dn} does not exist for update during root_dn_exists check."
+            )
+            # Fallback to indicate failure but log for debugging
+            ret["result"] = False
             return ret
 
         current_attrs = {}
         # Fetch all attributes for comparison
+        __salt__["log.debug"](f"Searching for current attributes of {root_dn}.")
         search_result = conn.search_s(
             base=root_dn,
             scope=ldap.SCOPE_BASE,
@@ -430,6 +436,16 @@ def update_root_dn(spec_name, root_dn, attributes):
                     v.decode("utf-8") if isinstance(v, bytes) else v
                     for v in current_attrs[k]
                 ]
+            __salt__["log.debug"](f"Current attributes for {root_dn}: {current_attrs}")
+        else:
+            __salt__["log.error"](
+                f"Search for {root_dn} returned no results despite existence check."
+            )
+            ret["comment"] = (
+                f"DN {root_dn} could not be found during search despite existence check."
+            )
+            ret["result"] = False
+            return ret
 
         # Convert attributes dictionary to list of (attr, value) tuples for modification
         # Ensure all values are lists of byte strings as required by python-ldap
@@ -460,7 +476,7 @@ def update_root_dn(spec_name, root_dn, attributes):
                     )
                 )
             elif k == "olcModulePath" and current_val_list:
-                log.warning(
+                __salt__["log.warning"](
                     f"Skipping update for {k} on {root_dn} as it cannot be deleted or replaced"
                 )
                 continue  # Skip update if olcModulePath is already set
@@ -483,14 +499,19 @@ def update_root_dn(spec_name, root_dn, attributes):
             ret["comment"] = f"No changes needed for {root_dn}"
             return ret
 
+        __salt__["log.debug"](
+            f"Attempting to modify {root_dn} with changes: {mod_attrs}"
+        )
         conn.modify_s(dn=root_dn, modlist=mod_attrs)
         ret["result"] = True
         ret["comment"] = f"Root DN {root_dn} attributes updated successfully"
         ret["changes"] = changes
+        __salt__["log.debug"](f"Successfully updated {root_dn} with changes: {changes}")
         return ret
     except Exception as e:
         ret["result"] = False
         ret["comment"] = f"Failed to update root DN {root_dn}: {str(e)}"
+        __salt__["log.error"](f"Exception during update of {root_dn}: {str(e)}")
         return ret
 
 
@@ -626,7 +647,19 @@ def create_ou(spec_name, ou_dn, attributes):
         return ret
 
 
-def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
+def create_user(
+    spec_name,
+    user_dn,
+    uid,
+    cn,
+    sn,
+    description,
+    password=None,
+    uid_number=None,
+    gid_number=None,
+    home_directory=None,
+    login_shell=None,
+):
     """
     Create a user in the LDAP directory if it doesn't exist.
 
@@ -638,6 +671,10 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
         sn (str): The surname (sn) to set.
         description (str): The description to set.
         password (str, optional): Password to set for the user, if provided (only used on creation).
+        uid_number (int or str, optional): The user ID number for posixAccount. Defaults to '0' if not provided.
+        gid_number (int or str, optional): The group ID number for posixAccount. Defaults to '0' if not provided.
+        home_directory (str, optional): The home directory path for posixAccount. Defaults to '/home/<uid>' if not provided.
+        login_shell (str, optional): The login shell for posixAccount. Defaults to '/bin/bash' if not provided.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -652,11 +689,22 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
         attributes = {
-            "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+            "objectClass": [
+                "person",
+                "organizationalPerson",
+                "inetOrgPerson",
+                "posixAccount",
+            ],
             "uid": uid,
             "cn": cn,
             "sn": sn,
             "description": description,
+            "uidNumber": str(uid_number) if uid_number is not None else "0",
+            "gidNumber": str(gid_number) if gid_number is not None else "0",
+            "homeDirectory": home_directory
+            if home_directory is not None
+            else f"/home/{uid}",
+            "loginShell": login_shell if login_shell is not None else "/bin/bash",
         }
         check = dn_exists(spec_name, user_dn, attributes)
         if check["exists"]:
@@ -674,6 +722,12 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
             "cn": cn,
             "sn": sn,
             "description": description,
+            "uidNumber": str(uid_number) if uid_number is not None else "0",
+            "gidNumber": str(gid_number) if gid_number is not None else "0",
+            "homeDirectory": home_directory
+            if home_directory is not None
+            else f"/home/{uid}",
+            "loginShell": login_shell if login_shell is not None else "/bin/bash",
         }
         if password:
             create_attrs["userPassword"] = password
@@ -699,7 +753,18 @@ def create_user(spec_name, user_dn, uid, cn, sn, description, password=None):
         return ret
 
 
-def update_user(spec_name, user_dn, uid, cn, sn, description):
+def update_user(
+    spec_name,
+    user_dn,
+    uid,
+    cn,
+    sn,
+    description,
+    uid_number=None,
+    gid_number=None,
+    home_directory=None,
+    login_shell=None,
+):
     """
     Update attributes of an existing user in the LDAP directory (does not update password).
 
@@ -710,6 +775,10 @@ def update_user(spec_name, user_dn, uid, cn, sn, description):
         cn (str): The common name (CN) to set.
         sn (str): The surname (sn) to set.
         description (str): The description to set.
+        uid_number (int or str, optional): The user ID number for posixAccount. Defaults to '0' if not provided.
+        gid_number (int or str, optional): The group ID number for posixAccount. Defaults to '0' if not provided.
+        home_directory (str, optional): The home directory path for posixAccount. Defaults to '/home/<uid>' if not provided.
+        login_shell (str, optional): The login shell for posixAccount. Defaults to '/bin/bash' if not provided.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -724,11 +793,22 @@ def update_user(spec_name, user_dn, uid, cn, sn, description):
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
         attributes = {
-            "objectClass": ["person", "organizationalPerson", "inetOrgPerson"],
+            "objectClass": [
+                "person",
+                "organizationalPerson",
+                "inetOrgPerson",
+                "posixAccount",
+            ],
             "uid": uid,
             "cn": cn,
             "sn": sn,
             "description": description,
+            "uidNumber": str(uid_number) if uid_number is not None else "0",
+            "gidNumber": str(gid_number) if gid_number is not None else "0",
+            "homeDirectory": home_directory
+            if home_directory is not None
+            else f"/home/{uid}",
+            "loginShell": login_shell if login_shell is not None else "/bin/bash",
         }
         check = dn_exists(spec_name, user_dn, attributes)
         if not check["exists"]:
@@ -764,7 +844,9 @@ def update_user(spec_name, user_dn, uid, cn, sn, description):
         return ret
 
 
-def create_group(spec_name, group_dn, cn, description=None, members=None):
+def create_group(
+    spec_name, group_dn, cn, description=None, members=None, gid_number=None
+):
     """
     Create a group in the LDAP directory if it doesn't exist.
 
@@ -773,7 +855,8 @@ def create_group(spec_name, group_dn, cn, description=None, members=None):
         group_dn (str): The distinguished name of the group to create (e.g., 'cn=admins,ou=groups,base_dn').
         cn (str): The common name (CN) of the group.
         description (str, optional): The description to set for the group.
-        members (list, optional): List of member DNs to set for the group.
+        members (list, optional): List of member DN strings to set for the group (used as member for groupofnames).
+        gid_number (int or str, optional): Deprecated - not used with groupofnames objectClass.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -787,11 +870,29 @@ def create_group(spec_name, group_dn, cn, description=None, members=None):
 
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
-        attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+        attributes = {
+            "objectClass": ["groupOfNames"],
+            "cn": cn,
+        }
         if description:
             attributes["description"] = description
         if members:
-            attributes["member"] = members  # Assume members are full DNs
+            # Validate that members are proper DN strings
+            validated_members = []
+            for member in members:
+                if isinstance(member, str) and "=" in member:
+                    validated_members.append(member)
+                elif isinstance(member, str):
+                    ret["result"] = False
+                    ret["comment"] = (
+                        f"Invalid member DN format: '{member}'. Members must be full DN strings (e.g., 'cn=user1,ou=users,dc=example,dc=com')"
+                    )
+                    return ret
+            if validated_members:
+                attributes["member"] = validated_members
+        else:
+            # groupofnames requires at least one member - use group itself as default
+            attributes["member"] = [group_dn]
 
         check = dn_exists(spec_name, group_dn, attributes)
         if check["exists"]:
@@ -829,7 +930,9 @@ def create_group(spec_name, group_dn, cn, description=None, members=None):
         return ret
 
 
-def update_group(spec_name, group_dn, cn, description=None, members=None):
+def update_group(
+    spec_name, group_dn, cn, description=None, members=None, gid_number=None
+):
     """
     Update attributes or members of an existing group in the LDAP directory.
 
@@ -838,7 +941,8 @@ def update_group(spec_name, group_dn, cn, description=None, members=None):
         group_dn (str): The distinguished name of the group to update (e.g., 'cn=admins,ou=groups,base_dn').
         cn (str): The common name (CN) of the group.
         description (str, optional): The description to set for the group.
-        members (list, optional): List of member DNs to set for the group.
+        members (list, optional): List of member DN strings to set for the group (used as member for groupofnames).
+        gid_number (int or str, optional): Deprecated - not used with groupofnames objectClass.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -852,11 +956,29 @@ def update_group(spec_name, group_dn, cn, description=None, members=None):
 
         conn = conn_result["conn"]
         # Construct fixed attributes with required objectClasses and fields
-        attributes = {"objectClass": ["groupOfNames"], "cn": cn}
+        attributes = {
+            "objectClass": ["groupOfNames"],
+            "cn": cn,
+        }
         if description:
             attributes["description"] = description
         if members:
-            attributes["member"] = members  # Assume members are full DNs
+            # Validate that members are proper DN strings
+            validated_members = []
+            for member in members:
+                if isinstance(member, str) and "=" in member:
+                    validated_members.append(member)
+                elif isinstance(member, str):
+                    ret["result"] = False
+                    ret["comment"] = (
+                        f"Invalid member DN format: '{member}'. Members must be full DN strings (e.g., 'cn=user1,ou=users,dc=example,dc=com')"
+                    )
+                    return ret
+            if validated_members:
+                attributes["member"] = validated_members
+        else:
+            # groupofnames requires at least one member - use group itself as default
+            attributes["member"] = [group_dn]
 
         check = dn_exists(spec_name, group_dn, attributes)
         if not check["exists"]:
@@ -864,29 +986,83 @@ def update_group(spec_name, group_dn, cn, description=None, members=None):
             ret["comment"] = (
                 f"Group {group_dn} does not exist. Use create_group to create."
             )
-            return ret
-
-        if check["attributes_match"] and not members:
-            ret["result"] = True
-            ret["comment"] = (
-                f"Group {group_dn} already has matching attributes and members."
+            __salt__["log.error"](
+                f"Group {group_dn} does not exist for update during initial dn_exists check."
             )
-            return ret
+            # Fallback to create_group if group does not exist
+        if "attributes_match" in check and check["attributes_match"] and not members:
+            # Check if objectClass includes posixGroup, force update if not
+            current_obj_classes = check["current_attributes"]["objectClass"]
+            if isinstance(current_obj_classes, str):
+                current_obj_classes = [current_obj_classes]
+            if "groupofnames" not in current_obj_classes:
+                __salt__["log.debug"](
+                    f"Group {group_dn} does not have groupofnames in objectClass, forcing update. Current: {current_obj_classes}"
+                )
+                # Force update since objectClass needs to change
+                update_attrs = attributes.copy()
+                changes = {"objectClass": "updated to include groupofnames"}
+                update_result = update_root_dn(spec_name, group_dn, update_attrs)
+                if update_result.get("result", False):
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"Group {group_dn} updated to groupofnames objectClass."
+                    )
+                    ret["changes"] = update_result.get("changes", {})
+                    return ret
+                else:
+                    ret["result"] = False
+                    ret["comment"] = (
+                        f"Failed to update group {group_dn} to groupofnames: {update_result.get('comment', str(update_result))}"
+                    )
+                    return ret
+            else:
+                if check["attributes_match"] and not members:
+                    ret["result"] = True
+                    ret["comment"] = (
+                        f"Group {group_dn} already has matching attributes and members."
+                    )
+                    return ret
+        else:
+            if check["attributes_match"] and not members:
+                if "attributes_match" in check:
+                    if check["attributes_match"] and not members:
+                        __salt__["log.debug"](
+                            f"Group {group_dn} appears to match attributes, but forcing update to ensure posixGroup and attributes are applied."
+                        )
+                    else:
+                        __salt__["log.debug"](
+                            f"Group {group_dn} exists but attributes do not match. Expected: {attributes}, Got: {check.get('current_attributes', 'unknown')}."
+                        )
+                        if "current_attributes" in check:
+                            __salt__["log.debug"](
+                                f"Attribute mismatch for {group_dn}. Expected objectClass: {attributes['objectClass']}, Got: {check.get('current_attributes', {}).get('objectClass', 'unknown')}"
+                            )
+                # Force update regardless of attributes_match to ensure groupofnames and attributes are applied
+                __salt__["log.debug"](
+                    f"Forcing update for group {group_dn} to apply groupofnames configuration."
+                )
 
         # Update attributes or members
         update_attrs = attributes.copy()
         changes = {}  # Track changes
+        __salt__["log.debug"](
+            f"Attempting to update group {group_dn} with attributes: {update_attrs}"
+        )
         update_result = update_root_dn(spec_name, group_dn, update_attrs)
-        if update_result["updated"]:
+        if update_result.get("result", False):
             ret["result"] = True
             ret["comment"] = f"Group {group_dn} updated successfully."
             ret["changes"] = update_result.get("changes", {})
+            __salt__["log.debug"](
+                f"Successfully updated group {group_dn}: {ret['changes']}"
+            )
             return ret
         else:
             ret["result"] = False
-            ret["comment"] = (
-                f"Failed to update group {group_dn}: {update_result.get('comment', str(update_result))}"
-            )
+            error_msg = update_result.get("comment", str(update_result))
+            ret["comment"] = f"Failed to update group {group_dn}: {error_msg}"
+            __salt__["log.error"](f"Failed to update group {group_dn}: {error_msg}")
             return ret
     except Exception as e:
         ret["result"] = False

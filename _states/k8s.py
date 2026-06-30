@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-SaltStack state module for managing Kubernetes resources using the kinetic-k8s execution module.
+SaltStack state module for managing Kubernetes resources using the kinetic_k8s execution module.
 
 This module provides states for managing Bare Metal Hosts (BMH), Secrets for network data, userdata,
 BMC authentication, and UUIDs, as well as querying hardware data from Kubernetes Custom Resources.
@@ -16,11 +16,56 @@ __virtualname__ = "k8s"
 
 def __virtual__():
     """
-    Check if the kinetic-k8s execution module is available.
+    Check if the kinetic_k8s execution module is available.
     """
-    if "kubeadm.init" in __salt__:
+    if "kinetic_k8s.secret_present" in __salt__:
         return __virtualname__
-    return (False, "The kubeadm execution module is not available.")
+    return (False, "The kinetic_k8s execution module is not available.")
+
+
+def _state_ret(name):
+    """Return a standard SaltStack state return dict."""
+    return {"name": name, "result": False, "comment": "", "changes": {}}
+
+
+def _fetch_bmh_pillar(pillar_key, bmh_name, pillar_data=None):
+    """
+    Fetch and extract BMH pillar data for a specific host.
+
+    If pillar_data is provided, return it unchanged with a debug message.
+    Otherwise fetch from pillar using pillar_key and extract the host-specific
+    entry by bmh_name, searching both 'bmh' sub-dict and top-level keys.
+
+    Returns:
+        tuple: (pillar_data dict, debug_msg str)
+
+    Raises:
+        SaltInvocationError: if pillar_key is None and pillar_data is None.
+    """
+    if pillar_data is not None:
+        return pillar_data, "Pillar data provided directly; "
+
+    if pillar_key is None:
+        raise SaltInvocationError("Either pillar_data or pillar_key must be provided.")
+
+    full_pillar_data = __salt__["pillar.get"](pillar_key, {})
+    debug_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
+
+    if not isinstance(full_pillar_data, dict):
+        return {}, debug_msg + f"value preview={repr(full_pillar_data)[:50]}...; "
+
+    debug_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
+    if "bmh" in full_pillar_data and isinstance(full_pillar_data["bmh"], dict):
+        debug_msg += f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
+        return full_pillar_data["bmh"].get(bmh_name, {}), debug_msg
+    elif full_pillar_data.get(bmh_name) and isinstance(
+        full_pillar_data.get(bmh_name), dict
+    ):
+        return full_pillar_data[
+            bmh_name
+        ], debug_msg + f"direct host data for {bmh_name} found; "
+    else:
+        return {}, debug_msg + f"no data for {bmh_name} found; "
 
 
 def mac_by_interface_name(name, namespace, resource_name, interface_name):
@@ -52,7 +97,7 @@ def mac_by_interface_name(name, namespace, resource_name, interface_name):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.get_mac_by_interface_name"](
+        result = __salt__["kinetic_k8s.get_mac_by_interface_name"](
             namespace, resource_name, interface_name
         )
         ret["result"] = result["success"]
@@ -94,7 +139,7 @@ def all_interfaces(name, namespace, resource_name):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.get_all_interfaces"](namespace, resource_name)
+        result = __salt__["kinetic_k8s.get_all_interfaces"](namespace, resource_name)
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
         if result["success"]:
@@ -153,40 +198,12 @@ def bmh_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        # If pillar_data is not provided, fetch it using pillar_key and bmh_name
-        if pillar_data is None:
-            if pillar_key is None:
-                raise SaltInvocationError(
-                    "Either pillar_data or pillar_key must be provided."
-                )
-            # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
-            debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
-            if isinstance(full_pillar_data, dict):
-                debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if "bmh" in full_pillar_data and isinstance(
-                    full_pillar_data["bmh"], dict
-                ):
-                    debug_pillar_msg += (
-                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    )
-                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(
-                    full_pillar_data.get(bmh_name), dict
-                ):
-                    pillar_data = full_pillar_data.get(bmh_name, {})
-                    debug_pillar_msg += f"direct host data for {bmh_name} found; "
-                else:
-                    pillar_data = {}
-                    debug_pillar_msg += f"no data for {bmh_name} found; "
-            else:
-                pillar_data = {}
-                debug_pillar_msg += f"value preview={repr(full_pillar_data)[:50]}...; "
-        else:
-            debug_pillar_msg = "Pillar data provided directly; "
+        pillar_data, debug_pillar_msg = _fetch_bmh_pillar(
+            pillar_key, bmh_name, pillar_data
+        )
 
         # Call the execution module function
-        result = __salt__["kinetic-k8s.bmh_present"](
+        result = __salt__["kinetic_k8s.bmh_present"](
             namespace, bmh_name, pillar_data, bmh_template_path
         )
 
@@ -263,40 +280,12 @@ def networkdata_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        # If pillar_data is not provided, fetch it using pillar_key and bmh_name
-        if pillar_data is None:
-            if pillar_key is None:
-                raise SaltInvocationError(
-                    "Either pillar_data or pillar_key must be provided."
-                )
-            # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
-            debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
-            if isinstance(full_pillar_data, dict):
-                debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if "bmh" in full_pillar_data and isinstance(
-                    full_pillar_data["bmh"], dict
-                ):
-                    debug_pillar_msg += (
-                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    )
-                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(
-                    full_pillar_data.get(bmh_name), dict
-                ):
-                    pillar_data = full_pillar_data.get(bmh_name, {})
-                    debug_pillar_msg += f"direct host data for {bmh_name} found; "
-                else:
-                    pillar_data = {}
-                    debug_pillar_msg += f"no data for {bmh_name} found; "
-            else:
-                pillar_data = {}
-                debug_pillar_msg += f"value preview={repr(full_pillar_data)[:50]}...; "
-        else:
-            debug_pillar_msg = "Pillar data provided directly; "
+        pillar_data, debug_pillar_msg = _fetch_bmh_pillar(
+            pillar_key, bmh_name, pillar_data
+        )
 
         # Call the execution module function
-        result = __salt__["kinetic-k8s.networkdata_present"](
+        result = __salt__["kinetic_k8s.networkdata_present"](
             namespace, bmh_name, defaults, pillar_data, network_template_path
         )
 
@@ -364,40 +353,12 @@ def userdata_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        # If pillar_data is not provided, fetch it using pillar_key and bmh_name
-        if pillar_data is None:
-            if pillar_key is None:
-                raise SaltInvocationError(
-                    "Either pillar_data or pillar_key must be provided."
-                )
-            # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
-            debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
-            if isinstance(full_pillar_data, dict):
-                debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if "bmh" in full_pillar_data and isinstance(
-                    full_pillar_data["bmh"], dict
-                ):
-                    debug_pillar_msg += (
-                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    )
-                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(
-                    full_pillar_data.get(bmh_name), dict
-                ):
-                    pillar_data = full_pillar_data.get(bmh_name, {})
-                    debug_pillar_msg += f"direct host data for {bmh_name} found; "
-                else:
-                    pillar_data = {}
-                    debug_pillar_msg += f"no data for {bmh_name} found; "
-            else:
-                pillar_data = {}
-                debug_pillar_msg += f"value preview={repr(full_pillar_data)[:50]}...; "
-        else:
-            debug_pillar_msg = "Pillar data provided directly; "
+        pillar_data, debug_pillar_msg = _fetch_bmh_pillar(
+            pillar_key, bmh_name, pillar_data
+        )
 
         # Call the execution module function
-        result = __salt__["kinetic-k8s.userdata_present"](
+        result = __salt__["kinetic_k8s.userdata_present"](
             namespace, bmh_name, pillar_data, userdata_template_path
         )
 
@@ -470,40 +431,12 @@ def host_bmc_auth_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        # If pillar_data is not provided, fetch it using pillar_key and bmh_name
-        if pillar_data is None:
-            if pillar_key is None:
-                raise SaltInvocationError(
-                    "Either pillar_data or pillar_key must be provided."
-                )
-            # Fetch the full BMH pillar data and extract the specific host entry
-            full_pillar_data = __salt__["pillar.get"](pillar_key, {})
-            debug_pillar_msg = f"Pillar data fetched for key '{pillar_key}': type={type(full_pillar_data).__name__}; "
-            if isinstance(full_pillar_data, dict):
-                debug_pillar_msg += f"keys={list(full_pillar_data.keys())[:5]}; "
-                if "bmh" in full_pillar_data and isinstance(
-                    full_pillar_data["bmh"], dict
-                ):
-                    debug_pillar_msg += (
-                        f"bmh keys={list(full_pillar_data['bmh'].keys())[:5]}; "
-                    )
-                    pillar_data = full_pillar_data["bmh"].get(bmh_name, {})
-                elif full_pillar_data.get(bmh_name) and isinstance(
-                    full_pillar_data.get(bmh_name), dict
-                ):
-                    pillar_data = full_pillar_data.get(bmh_name, {})
-                    debug_pillar_msg += f"direct host data for {bmh_name} found; "
-                else:
-                    pillar_data = {}
-                    debug_pillar_msg += f"no data for {bmh_name} found; "
-            else:
-                pillar_data = {}
-                debug_pillar_msg += f"value preview={repr(full_pillar_data)[:50]}...; "
-        else:
-            debug_pillar_msg = "Pillar data provided directly; "
+        pillar_data, debug_pillar_msg = _fetch_bmh_pillar(
+            pillar_key, bmh_name, pillar_data
+        )
 
         # Call the execution module function
-        result = __salt__["kinetic-k8s.host_bmc_auth_present"](
+        result = __salt__["kinetic_k8s.host_bmc_auth_present"](
             namespace, bmh_name, ipmi, pillar_data, bmc_auth_template_path
         )
 
@@ -621,7 +554,7 @@ def uuids_present(
                 pillar_data = {pillar_key: pillar_data}
 
         # Call the execution module function
-        result = __salt__["kinetic-k8s.uuids_secret_present"](
+        result = __salt__["kinetic_k8s.uuids_secret_present"](
             namespace,
             secret_name,
             pillar_data,
@@ -748,7 +681,7 @@ def mariadb_instance_present(
 
     try:
         # Call the execution module function
-        result = __salt__["kinetic-k8s.mariadb_instance_present"](
+        result = __salt__["kinetic_k8s.mariadb_instance_present"](
             namespace=namespace,
             instance_name=instance_name,
             root_password=root_password,
@@ -848,7 +781,7 @@ def local_storage_pv_pvc_present(
 
     try:
         # Call the execution module function
-        result = __salt__["kinetic-k8s.local_storage_pv_pvc_present"](
+        result = __salt__["kinetic_k8s.local_storage_pv_pvc_present"](
             namespace, pv_name, pvc_name, storage_size, node_name, path, storage_class
         )
 
@@ -950,7 +883,7 @@ def ironic_db_user_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.ironic_db_user_setup"](
+        result = __salt__["kinetic_k8s.ironic_db_user_setup"](
             namespace=namespace,
             mariadb_name=mariadb_name,
             mariadb_namespace=mariadb_namespace,
@@ -1045,7 +978,7 @@ def mariadb_database_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.mariadb_database_present"](
+        result = __salt__["kinetic_k8s.mariadb_database_present"](
             namespace=namespace,
             database_name=database_name,
             mariadb_name=mariadb_name,
@@ -1107,7 +1040,7 @@ def tls_secret_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.generate_tls_secret"](
+        result = __salt__["kinetic_k8s.generate_tls_secret"](
             namespace=namespace,
             secret_name=secret_name,
             common_name=common_name,
@@ -1161,7 +1094,7 @@ def ironic_operator_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.check_ironic_operator"](
+        result = __salt__["kinetic_k8s.check_ironic_operator"](
             namespace, deployment_name, timeout
         )
         ret["result"] = result["success"]
@@ -1333,7 +1266,7 @@ def ironic_instance_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.ironic_instance_present"](
+        result = __salt__["kinetic_k8s.ironic_instance_present"](
             namespace=namespace,
             instance_name=instance_name,
             database_secret_name=database_secret_name,
@@ -1400,7 +1333,7 @@ def image_server_present(
 ):
     """
     State to ensure that an image server for Ironic is present in Kubernetes.
-    This state uses the kinetic-k8s.image_server_present execution module to manage the image server resources.
+    This state uses the kinetic_k8s.image_server_present execution module to manage the image server resources.
 
     Args:
         name (str): The name of the state (used for Salt state ID).
@@ -1431,7 +1364,7 @@ def image_server_present(
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 
     try:
-        result = __salt__["kinetic-k8s.image_server_present"](
+        result = __salt__["kinetic_k8s.image_server_present"](
             namespace=namespace,
             deployment_name=deployment_name,
             service_name=service_name,
@@ -1497,7 +1430,7 @@ def bmh_state(name, namespace, bmh_name, desired_state):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.bmh_state"](namespace, bmh_name, desired_state)
+        result = __salt__["kinetic_k8s.bmh_state"](namespace, bmh_name, desired_state)
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
         if result["success"]:
@@ -1535,7 +1468,7 @@ def namespace_present(name, namespace):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.namespace_present"](namespace)
+        result = __salt__["kinetic_k8s.namespace_present"](namespace)
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
         if result["updated"]:
@@ -1586,7 +1519,7 @@ def ceph_cluster_present(name, namespace, cluster_name, spec):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.ceph_cluster_present"](
+        result = __salt__["kinetic_k8s.ceph_cluster_present"](
             namespace, cluster_name, spec
         )
         ret["result"] = result["success"]
@@ -1653,7 +1586,7 @@ def configmap_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.configmap_present"](
+        result = __salt__["kinetic_k8s.configmap_present"](
             namespace=namespace,
             name=configmap_name,
             data=data,
@@ -1744,7 +1677,7 @@ def service_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.service_present"](
+        result = __salt__["kinetic_k8s.service_present"](
             namespace=namespace,
             service_name=service_name,
             service_type=service_type,
@@ -1806,7 +1739,7 @@ def node_label_present(name, namespace, node_name, labels):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.node_label_present"](
+        result = __salt__["kinetic_k8s.node_label_present"](
             namespace, node_name, labels
         )
         ret["result"] = result["success"]
@@ -1864,13 +1797,13 @@ def metallb_pool_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.metallb_pool_present"](
+        result = __salt__["kinetic_k8s.metallb_pool_present"](
             namespace, pool_name, addresses, metallb_namespace
         )
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
         if result["updated"]:
-            ret["changes"] = {"pool_updated": True}
+            ret["changes"] = {"ingress_updated": True}
         else:
             ret[
                 "changes"
@@ -1921,7 +1854,7 @@ def metallb_l2_advertisement_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.metallb_l2_advertisement_present"](
+        result = __salt__["kinetic_k8s.metallb_l2_advertisement_present"](
             namespace, advertisement_name, pool_names, metallb_namespace
         )
         ret["result"] = result["success"]
@@ -1986,7 +1919,7 @@ def certmanager_issuer_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.certmanager_issuer_present"](
+        result = __salt__["kinetic_k8s.certmanager_issuer_present"](
             namespace, issuer_name, issuer_kind, spec
         )
         ret["result"] = result["success"]
@@ -2000,9 +1933,10 @@ def certmanager_issuer_present(
     except Exception as e:
         ret["result"] = False
         ret["comment"] = (
-            f"Failed to ensure {issuer_kind} {issuer_name}: {str(e)[:100]}..."
+            f"Failed to ensure Ingress {name} in namespace {namespace}: Full Exception: {str(e)}"
         )
         ret["changes"] = {}
+        __salt__["log.error"](f"Exception in ingress_present: {str(e)}")
 
     return ret
 
@@ -2036,7 +1970,7 @@ def ingress_present(
 
     try:
         # Delegate to the execution module for managing the Ingress
-        result = __salt__["kinetic-k8s.ingress_present"](
+        result = __salt__["kinetic_k8s.ingress_present"](
             name=name,
             namespace=namespace,
             hosts=hosts,
@@ -2145,24 +2079,52 @@ def certmanager_certificate_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.certmanager_certificate_present"](
-            name=certificate_name,
-            namespace=namespace,
-            secret_name=secret_name,
-            issuer_name=issuer_name,
-            issuer_kind=issuer_kind,
-            common_name=common_name,
-            dns_names=dns_names,
-            ip_addresses=ip_addresses,
-            duration=duration,
-            renew_before=renew_before,
-            is_ca=is_ca,
+        # Log input parameters for debugging
+        __salt__["log.debug"](
+            f"Calling certmanager_certificate_present with parameters: "
+            f"name={certificate_name}, namespace={namespace}, secret_name={secret_name}, "
+            f"issuer_name={issuer_name}, issuer_kind={issuer_kind}, common_name={common_name}, "
+            f"dns_names={dns_names}, ip_addresses={ip_addresses}, duration={duration}, "
+            f"renew_before={renew_before}, is_ca={is_ca}"
+        )
+
+        # Debug available modules for troubleshooting
+        available_modules = [mod for mod in __salt__.keys() if "kinetic" in mod]
+        __salt__["log.debug"](
+            f"Available modules with 'kinetic' in name: {available_modules}"
+        )
+
+        if "kinetic_k8s.certmanager_certificate_present" in __salt__:
+            result = __salt__["kinetic_k8s.certmanager_certificate_present"](
+                name=certificate_name,
+                namespace=namespace,
+                secret_name=secret_name,
+                issuer_name=issuer_name,
+                issuer_kind=issuer_kind,
+                common_name=common_name,
+                dns_names=dns_names,
+                ip_addresses=ip_addresses,
+                duration=duration,
+                renew_before=renew_before,
+                is_ca=is_ca,
+            )
+        else:
+            ret["result"] = False
+            ret["comment"] = (
+                "Module kinetic_k8s.certmanager_certificate_present is not available. Please ensure the module is synced to the minion."
+            )
+            ret["changes"] = {}
+            return ret
+
+        # Log the result for debugging
+        __salt__["log.debug"](
+            f"Result from kinetic_k8s.certmanager_certificate_present: {result}"
         )
 
         # Check if result is None or not a dictionary
         if result is None or not isinstance(result, dict):
             raise ValueError(
-                f"Unexpected return type from kinetic-k8s.certmanager_certificate_present: {type(result)}"
+                f"Unexpected return type from kinetic_k8s.certmanager_certificate_present: {type(result)}"
             )
 
         ret["result"] = result.get("success", False)
@@ -2176,11 +2138,11 @@ def certmanager_certificate_present(
 
     except Exception as e:
         ret["result"] = False
-
         ret["comment"] = (
-            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: {str(e)}...\n"
+            f"Failed to ensure Certificate {certificate_name} in namespace {namespace}: Full Exception: {str(e)}"
         )
         ret["changes"] = {}
+        __salt__["log.error"](f"Exception in certmanager_certificate_present: {str(e)}")
 
     return ret
 
@@ -2226,7 +2188,7 @@ def cnpg_cluster_present(name, namespace, cluster_name, spec):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.cnpg_cluster_present"](
+        result = __salt__["kinetic_k8s.cnpg_cluster_present"](
             namespace, cluster_name, spec
         )
         ret["result"] = result["success"]
@@ -2298,7 +2260,7 @@ def secret_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.secret_present"](
+        result = __salt__["kinetic_k8s.secret_present"](
             namespace=namespace,
             secret_name=secret_name,
             data=data,
@@ -2435,7 +2397,7 @@ def keycloak_cluster_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.keycloak_cluster_present"](
+        result = __salt__["kinetic_k8s.keycloak_cluster_present"](
             namespace=namespace,
             hostname=hostname,
             cluster_name=cluster_name,
@@ -2537,7 +2499,7 @@ def certificate_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.certificate_present"](
+        result = __salt__["kinetic_k8s.certificate_present"](
             namespace=namespace,
             certificate_name=certificate_name,
             common_name=common_name,
@@ -2621,7 +2583,7 @@ def pvc_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.pvc_present"](
+        result = __salt__["kinetic_k8s.pvc_present"](
             name=pvc_name,
             namespace=namespace,
             storage_class=storage_class,
@@ -2670,7 +2632,7 @@ def job_cleanup(name, namespace=None):
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.job_cleanup"](namespace=namespace)
+        result = __salt__["kinetic_k8s.job_cleanup"](namespace=namespace)
 
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
@@ -2843,7 +2805,7 @@ def ceph_object_store_present(
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-k8s.ceph_object_store_present"](
+        result = __salt__["kinetic_k8s.ceph_object_store_present"](
             name=name,
             namespace=namespace,
             replicas=replicas,
@@ -2886,5 +2848,74 @@ def ceph_object_store_present(
             f"Failed to ensure CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}..."
         )
         ret["changes"] = {}
+
+    return ret
+
+
+def kubernetes_deployment_present(
+    name,
+    namespace,
+    replicas=1,
+    image="",
+    containers=None,
+    labels=None,
+    annotations=None,
+    resources=None,
+    node_selector=None,
+    tolerations=None,
+    affinity=None,
+    service_account_name="",
+    init_containers=None,
+    volumes=None,
+    restart_policy="Always",
+):
+    """
+    Ensure a Kubernetes Deployment is present with the specified configuration.
+
+    Args:
+        name (str): Name of the Deployment.
+        namespace (str): Namespace in which to create the Deployment.
+        replicas (int): Number of pod replicas (default: 1).
+        image (str): Container image to use if containers list is not provided (default: "").
+        containers (list): List of container specifications.
+        labels (dict): Labels for the Deployment.
+        annotations (dict): Annotations for the Deployment.
+        resources (dict): Resource requirements for containers.
+        node_selector (dict): Node selector for pod scheduling.
+        tolerations (list): Tolerations for pod scheduling.
+        affinity (dict): Affinity rules for pod scheduling (default: None).
+        service_account_name (str): Service account to use for pods (default: "").
+        init_containers (list): List of init container specifications.
+        volumes (list): List of volume specifications.
+        restart_policy (str): Restart policy for pods (default: 'Always').
+
+    Returns:
+        dict: Result of the operation.
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    result = __salt__["kinetic_k8s.kubernetes_deployment_present"](
+        name=name,
+        namespace=namespace,
+        replicas=replicas,
+        image=image,
+        containers=containers,
+        labels=labels,
+        annotations=annotations,
+        resources=resources,
+        node_selector=node_selector,
+        tolerations=tolerations,
+        affinity=affinity,
+        service_account_name=service_account_name,
+        init_containers=init_containers,
+        volumes=volumes,
+        restart_policy=restart_policy,
+    )
+
+    if result.get("changes"):
+        ret["changes"] = result["changes"]
+    if result.get("comment"):
+        ret["comment"] = result["comment"]
+    ret["result"] = result.get("result", True)
 
     return ret

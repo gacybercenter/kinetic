@@ -1,7 +1,6 @@
 include:
   - /formulas/bmo/install
 
-
 bmo_ironic_env:
   file.managed:
     - name: {{ pillar['script_dir'] }}/config/default/ironic.env
@@ -96,21 +95,20 @@ ensure_{{ name }}_networkdata_present:
         gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
         nameserver: {{ pillar['dhcp-options']['dns'] }}
     - pillar_key: bmh
-    - require: 
+    - require:
       - k8s: ensure_{{ name }}_bmc_auth_present
 
 ensure_{{ name }}_userdata_present:
   k8s.userdata_present:
     - namespace: baremetal-operator-system
     - bmh_name: {{ name }}
-    - pillar_key: bmh    
+    - pillar_key: bmh
     - require:
       - k8s: ensure_{{ name }}_networkdata_present
 {% if pillar['hosts'][bmh_type]['style'] == 'virtual' %}
-  {% if salt['cmd.run']('virsh -c qmeu+ssh://ubuntu@10.150.1.76/system') %}
 check_qemu_address_for_{{ name }}:
   libvirt.check_qemu_address:
-    - connection_uri: '{{ pillar['bmh'][name]['connection'] }}'
+    - connection_uri: {{ pillar['bmh'][name]['connection'] }}
 
 # Ensure the storage pool is defined and running
 vms_{{ name }}_pool:
@@ -177,7 +175,7 @@ define_{{name }}_vm:
             <graphics type='spice' autoport='yes'/>
           </devices>
         </domain>
-    - connection: '{{ pillar['bmh'][name]['connection'] }}'
+    - connection: {{ pillar['bmh'][name]['connection'] }}
     - require:
       - module: {{ name }}_disk.qcow2
       - libvirt: check_qemu_address_for_{{ name }}
@@ -189,7 +187,6 @@ ensure_{{ name }}_vbmc_connection:
     - require:
       - module: define_{{ name }}_vm
       - libvirt: check_qemu_address_for_{{ name }}
-  {% endif %}
 {% endif %}
 
 ensure_{{ name }}_bmh_present:

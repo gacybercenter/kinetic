@@ -14,7 +14,6 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/configure
 
 {% set type = grains['type'] %}
 
@@ -125,7 +124,7 @@ fs:
     - makedirs: True
     - require:
       - /kvm
-  
+
 /kvm/vms:
   file.directory:
     - user: libvirt-qemu
@@ -155,7 +154,7 @@ apparmor_libvirt_dir:
     - mkdirs: True
     - dir_mode: 755
     - file_mode: 644
-  
+
 apparmor_libvirt_profile:
   file.managed:
     - name: /etc/apparmor.d/abstractions/libvirt-qemu.d/kvm_vms
@@ -226,7 +225,7 @@ haveged_service:
 libvirt_control_key:
   ssh_auth.present:
     - user: ubuntu
-    - names: 
+    - names:
       - {{ pillar['hosts']['controller']['ssh_cert'] }}
     - enc: {{ pillar['hosts']['controller']['ssh_enc'] }}
 
