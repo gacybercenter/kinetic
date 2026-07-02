@@ -61,7 +61,8 @@ priv_network_attachment:
     - cidr: 10.150.4.0/24
     - range_start: 10.150.4.10
     - range_end: 10.150.4.200
-    - require: install_multus_manifest
+    - require:
+      - cmd: install_multus_manifest
 
 pub_network_attachment:
   k8s.networkattachmentdefinition_present:
@@ -71,3 +72,5 @@ pub_network_attachment:
     - range_start: 10.151.0.10
     - range_end: 10.151.255.200
     - gateway: 10.151.255.254
+    - require:
+      - cmd: install_multus_manifest
