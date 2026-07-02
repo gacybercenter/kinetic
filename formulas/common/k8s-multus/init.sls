@@ -20,6 +20,9 @@ include:
 #     - require:
 #       - k8s_helm: ensure_multus_helm_repo
 
+{% set multus_version = pillar.get('res-k8s:multus_version') %}
+{% set multus_manifest_url = pillar.get('res-k8s:multus_manifest_url') %}
+
 # Apply Multus manifest (idempotent via unless check)
 install_multus_manifest:
   cmd.run:
