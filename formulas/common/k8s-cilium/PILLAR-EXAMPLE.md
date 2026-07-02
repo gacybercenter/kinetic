@@ -5,8 +5,9 @@ The error you encountered (`nil pointer evaluating interface {}.name` in `hubble
 ## Recommended Pillar
 
 ```yaml
-cilium:
-  values:
+res-k8s:
+  cilium:
+    values:
     cluster:
       name: "kubernetes"   # Must be set when hubble.enabled=true
     
@@ -16,6 +17,9 @@ cilium:
     kubeProxyReplacement: true
     routingMode: tunnel
     tunnelProtocol: vxlan
+    
+    # Set MTU explicitly to 1500 (Cilium often defaults to 9000 which breaks many networks)
+    mtu: 1500
     
     ipv4:
       enabled: true

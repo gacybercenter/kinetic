@@ -2919,3 +2919,87 @@ def kubernetes_deployment_present(
     ret["result"] = result.get("result", True)
 
     return ret
+
+
+def networkattachmentdefinition_present(
+    name,
+    namespace="default",
+    cni_type="macvlan",
+    master="eth0",
+    mode="bridge",
+    cidr=None,
+    range_start=None,
+    range_end=None,
+    gateway=None,
+    ipam_type="whereabouts",
+):
+    """
+    Ensure a Multus NetworkAttachmentDefinition (NAD) exists with the specified IPAM configuration.
+
+    This state creates or updates a NetworkAttachmentDefinition CRD for use with the Multus CNI plugin.
+
+    name
+        Name of the NetworkAttachmentDefinition (e.g. 'sfe', 'sbe').
+
+    namespace
+        Kubernetes namespace. Defaults to 'default'.
+
+    cidr
+        IPAM CIDR range (required).
+
+    range_start, range_end
+        IP range boundaries for the IPAM allocator.
+
+    gateway
+        Optional gateway. If None, no gateway is configured (as requested).
+
+    Example:
+    .. code-block:: yaml
+
+        sfe_network:
+          k8s.networkattachmentdefinition_present:
+            - name: sfe
+            - cidr: 10.150.2.0/24
+            - range_start: 10.150.2.10
+            - range_end: 10.150.2.254
+            # gateway is intentionally omitted (no gateway)
+
+        sbe_network:
+          k8s.networkattachmentdefinition_present:
+            - name: sbe
+            - cidr: 10.150.3.0/24
+            - range_start: 10.150.3.10
+            - range_end: 10.150.3.254
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.networkattachmentdefinition_present"](
+            name=name,
+            namespace=namespace,
+            cni_type=cni_type,
+            master=master,
+            mode=mode,
+            cidr=cidr,
+            range_start=range_start,
+            range_end=range_end,
+            gateway=gateway,
+            ipam_type=ipam_type,
+        )
+
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"created": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure NetworkAttachmentDefinition {name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
+
+    return ret
