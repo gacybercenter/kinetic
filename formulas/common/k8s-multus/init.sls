@@ -30,8 +30,7 @@ install_multus_manifest:
     - unless: |
         kubectl get daemonset kube-multus-ds -n kube-system -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null | grep -q "{{ multus_version }}" ||
         kubectl get daemonset kube-multus-ds -n kube-system >/dev/null 2>&1 && echo "Multus {{ multus_version }} already installed"
-    - require:
-      - sls: /formulas/common/k8s-multus/install
+
 
 # Standard network attachments (SFE and SBE) - added to multus formula
 sfe_network_attachment:
