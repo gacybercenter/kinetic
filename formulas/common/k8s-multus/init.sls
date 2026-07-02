@@ -4,15 +4,15 @@ include:
 # Ensure the Multus Helm repository is available
 ensure_multus_helm_repo:
   k8s_helm.helm_repo_present:
-    - repo_name: k8snetworkplumbingwg
-    - repo_url: https://raw.githubusercontent.com/k8snetworkplumbingwg/helm-charts/main/charts
+    - repo_name: bitnami
+    - repo_url: https://charts.bitnami.com/bitnami
     - update_cache: true
 
 # Deploy Multus using the new k8s_helm state with pillar_key
 ensure_multus_release:
   k8s_helm.helm_release_present:
     - release_name: multus
-    - chart_name: k8snetworkplumbingwg/multus-cni
+    - chart_name: bitnami/multus-cni
     - namespace: kube-system
     - pillar_key: res-k8s:multus:values
     - wait_timeout: 300
@@ -20,7 +20,7 @@ ensure_multus_release:
     - require:
       - k8s_helm: ensure_multus_helm_repo
 
-# Create standard network attachments for SFE and SBE networks
+# Standard network attachments (SFE and SBE) - added to multus formula
 sfe_network_attachment:
   k8s.networkattachmentdefinition_present:
     - name: sfe
