@@ -37,7 +37,7 @@ sfe_network_attachment:
     - namespace: default
     - cidr: 10.150.2.0/24
     - range_start: 10.150.2.10
-    - range_end: 10.150.2.254
+    - range_end: 10.150.2.200
     - require:
       - cmd: install_multus_manifest
 
@@ -47,7 +47,7 @@ sbe_network_attachment:
     - namespace: default
     - cidr: 10.150.3.0/24
     - range_start: 10.150.3.10
-    - range_end: 10.150.3.254
+    - range_end: 10.150.3.200
     - require:
       - cmd: install_multus_manifest
 
@@ -57,7 +57,7 @@ priv_network_attachment:
     - namespace: default
     - cidr: 10.150.4.0/24
     - range_start: 10.150.4.10
-    - range_end: 10.150.4.254
+    - range_end: 10.150.4.200
     - require: install_multus_manifest
 
 pub_network_attachment:
