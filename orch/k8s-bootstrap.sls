@@ -74,7 +74,7 @@ init_kubernetes_cluster:
     - kwarg:
         pod_network_cidr: "10.244.0.0/16"
         service_cidr: "10.96.0.0/12"
-        kubernetes_version: "v1.29.0"
+        kubernetes_version: "v1.34.9"
         cri_socket: unix:///var/run/crio/crio.sock
         control_plane_endpoint: "{{ vip }}:6443"  # Use VIP for HA control plane
     - unless:
