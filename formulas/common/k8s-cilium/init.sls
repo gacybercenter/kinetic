@@ -19,4 +19,3 @@ ensure_cilium_release:
     - wait_interval: 15
     - require:
       - k8s_helm: ensure_cilium_helm_repo
-      - sls: /formulas/common/k8s-cilium/install

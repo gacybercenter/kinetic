@@ -19,4 +19,3 @@ ensure_multus_release:
     - wait_interval: 10
     - require:
       - k8s_helm: ensure_multus_helm_repo
-      - sls: /formulas/common/k8s-multus/install
