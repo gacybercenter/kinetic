@@ -33,7 +33,7 @@ debug_pillar_data:
 # Step 1: Ensure Kubernetes dependencies are installed on the first control plane node
 k8s_deps:
   salt.state:
-    - tgt: '{{ first_control_node }}' 
+    - tgt: '{{ first_control_node }}'
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
 # Step 2: Pull kube-vip container image using containerd
@@ -43,7 +43,7 @@ pull_kube_vip_image:
     - kwarg:
         cmd: ctr image pull ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }}
         onlyif: test ! -f /etc/kubernetes/manifests/kube-vip.yaml  # Only run if manifest doesn't exist
-    - tgt: '{{ first_control_node }}' 
+    - tgt: '{{ first_control_node }}'
     - require:
       - salt: k8s_deps
 
@@ -63,7 +63,7 @@ generate_kube_vip_manifest:
             --arp \
             --leaderElection > /etc/kubernetes/manifests/kube-vip.yaml
         creates: /etc/kubernetes/manifests/kube-vip.yaml  # Only run if the manifest doesn't exist
-    - tgt: '{{ first_control_node }}' 
+    - tgt: '{{ first_control_node }}'
     - require:
       - salt: pull_kube_vip_image
 
@@ -121,7 +121,7 @@ create_join_token:
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - require:
       - salt: init_kubernetes_cluster
-k8s_calico:
+k8s_cilium:
   salt.state:
-    - tgt: '{{ first_control_node }}' 
-    - sls: /formulas/common/k8s-calico  #calico
+    - tgt: '{{ first_control_node }}'
+    - sls: /formulas/common/k8s-cilium
