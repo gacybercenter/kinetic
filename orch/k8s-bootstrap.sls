@@ -126,28 +126,8 @@ k8s_cilium:
     - tgt: '{{ first_control_node }}'
     - sls: /formulas/common/k8s-cilium
 
+# Multus now includes the standard SFE and SBE network attachments
 k8s_multus:
   salt.state:
     - tgt: '{{ first_control_node }}'
     - sls: /formulas/common/k8s-multus
-
-# Create reusable NetworkAttachmentDefinitions (sfe and sbe)
-sfe_network_attachment:
-  k8s.networkattachmentdefinition_present:
-    - name: sfe
-    - namespace: default
-    - cidr: 10.150.2.0/24
-    - range_start: 10.150.2.10
-    - range_end: 10.150.2.254
-    - require:
-      - salt: k8s_multus
-
-sbe_network_attachment:
-  k8s.networkattachmentdefinition_present:
-    - name: sbe
-    - namespace: default
-    - cidr: 10.150.3.0/24
-    - range_start: 10.150.3.10
-    - range_end: 10.150.3.254
-    - require:
-      - k8s: sfe_network_attachment
