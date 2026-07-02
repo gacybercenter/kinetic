@@ -4,7 +4,7 @@ include:
 # Ensure the Multus Helm repository is available
 ensure_multus_helm_repo:
   k8s_helm.helm_repo_present:
-    - repo_name: k8snetworkplumbingwg
+    - repo_name: bitnami
     - repo_url: https://charts.bitnami.com/bitnami
     - update_cache: true
 
