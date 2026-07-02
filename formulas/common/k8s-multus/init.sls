@@ -5,7 +5,7 @@ include:
 ensure_multus_helm_repo:
   k8s_helm.helm_repo_present:
     - repo_name: k8snetworkplumbingwg
-    - repo_url: https://raw.githubusercontent.com/k8snetworkplumbingwg/helm-charts/main/charts
+    - repo_url: https://raw.githubusercontent.com/k8snetworkplumbingwg/helm-charts/refs/heads/master/multus/Chart.yaml
     - update_cache: true
 
 # Deploy Multus using the new k8s_helm state with pillar_key
