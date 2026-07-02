@@ -14,7 +14,7 @@ ensure_multus_release:
     - release_name: multus
     - chart_name: k8snetworkplumbingwg/multus-cni
     - namespace: kube-system
-    - pillar_key: multus:values
+    - pillar_key: res-k8s:multus:values
     - wait_timeout: 300
     - wait_interval: 10
     - require:

@@ -14,7 +14,7 @@ ensure_cilium_release:
     - release_name: cilium
     - chart_name: cilium/cilium
     - namespace: kube-system
-    - pillar_key: cilium:values
+    - pillar_key: res-k8s:cilium:values
     - wait_timeout: 600
     - wait_interval: 15
     - require:
