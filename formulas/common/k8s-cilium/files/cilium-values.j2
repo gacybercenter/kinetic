@@ -1,0 +1,45 @@
+cluster:
+  name: {{ pillar.get('cluster_name', 'kubernetes') }}
+
+ipam:
+  mode: kubernetes
+
+kubeProxyReplacement: true
+
+operator:
+  unmanaged: false
+
+gke:
+  enabled: false
+
+# Enable Hubble for observability (optional but recommended)
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+
+# Use the standard VXLAN for compatibility with most setups
+# You can change to native-routing or other modes via pillar
+routingMode: tunnel
+tunnelProtocol: vxlan
+
+# Enable IPv4 (disable IPv6 for simplicity unless needed)
+ipv4:
+  enabled: true
+ipv6:
+  enabled: false
+
+# Security and policy settings
+policy:
+  enforcement: default
+
+# BPF settings for performance
+bpf:
+  masquerade: true
+  preallocateMaps: true
+
+# Enable Prometheus metrics
+prometheus:
+  enabled: true
