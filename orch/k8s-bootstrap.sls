@@ -125,3 +125,7 @@ k8s_cilium:
   salt.state:
     - tgt: '{{ first_control_node }}'
     - sls: /formulas/common/k8s-cilium
+k8s_multus:
+  salt.state:
+    - tgt: '{{ first_control_node }}'
+    - sls: /formulas/common/k8s-cilium
