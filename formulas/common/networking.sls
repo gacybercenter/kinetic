@@ -18,8 +18,8 @@ include:
 network_util:
   pkg.installed:
     - name: ifupdown
-netplan.io:
-  pkg.removed
+# netplan.io:
+#   pkg.removed
 
 /etc/netplan:
   file.absent
