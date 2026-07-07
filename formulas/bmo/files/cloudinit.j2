@@ -22,5 +22,6 @@ runcmd:
   - dbus-uuidgen --ensure=/etc/machine-id
   - ['salt-call', 'state.apply', '/formulas/common/base']
   - ['salt-call', 'state.apply', '/formulas/common/networking']
-  - ['apt', 'remove', 'netplan.io', '-y']
+  - ['dpkg', '--configure', '-a']
+  - ['dpkg', '--remove', '--force-depends', 'netplan.io']
   - ['systemctl', 'reboot']
