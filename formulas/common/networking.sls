@@ -96,6 +96,7 @@ pyroute2_patch:
   {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
     {% set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
     {% set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
+
     {{ iface1 }}:
       network.managed:
         - enabled: True
