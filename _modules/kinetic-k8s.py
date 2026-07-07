@@ -7,6 +7,7 @@ for retrieving MAC addresses from HardwareData resources in a Metal3.io environm
 """
 
 import base64
+import json
 
 import salt.utils.decorators as decorators
 from kubernetes import client, config
@@ -5725,4 +5726,143 @@ def kubernetes_deployment_present(
             "updated": False,
             "message": f"Error managing Deployment {name} in namespace {namespace}: {str(e)[:100]}...",
             "resource": {},
+        }
+
+
+def networkattachmentdefinition_present(
+    name,
+    namespace="default",
+    cni_type="macvlan",
+    master="eth0",
+    mode="bridge",
+    cidr=None,
+    range_start=None,
+    range_end=None,
+    gateway=None,
+    ipam_type="whereabouts",
+):
+    """
+    Ensure a Multus NetworkAttachmentDefinition exists with the specified IPAM configuration.
+
+    This creates a NetworkAttachmentDefinition CRD for use with Multus CNI.
+
+    Args:
+        name (str): Name of the NetworkAttachmentDefinition (e.g. 'sfe', 'sbe')
+        namespace (str): Kubernetes namespace. Defaults to 'default'.
+        cni_type (str): CNI plugin type. Defaults to 'macvlan'.
+        master (str): Master interface for macvlan. Defaults to 'eth0'.
+        mode (str): Macvlan mode. Defaults to 'bridge'.
+        cidr (str): IPAM CIDR range (e.g. '10.150.2.0/24')
+        range_start (str): Starting IP in the range
+        range_end (str): Ending IP in the range
+        gateway (str, optional): Gateway IP. If None, no gateway is configured.
+        ipam_type (str): IPAM plugin to use. Defaults to 'whereabouts'.
+
+    Returns:
+        dict: Dictionary with success, updated, message, and resource info.
+    """
+    try:
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+
+        group = "k8s.cni.cncf.io"
+        version = "v1"
+        plural = "network-attachment-definitions"
+
+        # Build the IPAM configuration
+        ipam_config = {
+            "type": ipam_type,
+            "range": cidr,
+        }
+        if range_start:
+            ipam_config["range_start"] = range_start
+        if range_end:
+            ipam_config["range_end"] = range_end
+        if gateway:
+            ipam_config["gateway"] = gateway
+
+        # Build the CNI config
+        config = {
+            "cniVersion": "0.3.1",
+            "name": name,
+            "type": cni_type,
+            "master": master,
+            "mode": mode,
+            "ipam": ipam_config,
+        }
+
+        nad_body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "NetworkAttachmentDefinition",
+            "metadata": {
+                "name": name,
+                "namespace": namespace,
+            },
+            "spec": {"config": json.dumps(config)},
+        }
+
+        # Check if it already exists
+        exists = False
+        try:
+            existing = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=name,
+            )
+            exists = True
+            # Simple check - if config differs significantly, we'll update
+            current_config = json.loads(existing.get("spec", {}).get("config", "{}"))
+            if current_config.get("ipam", {}).get("range") != cidr:
+                matches = False
+            else:
+                matches = True
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                matches = False
+            else:
+                raise
+
+        if not exists or not matches:
+            if exists:
+                custom_api.replace_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=name,
+                    body=nad_body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"NetworkAttachmentDefinition {name} updated in {namespace}",
+                }
+            else:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=nad_body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"NetworkAttachmentDefinition {name} created in {namespace}",
+                }
+        else:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"NetworkAttachmentDefinition {name} already exists and matches desired state in {namespace}",
+            }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to ensure NetworkAttachmentDefinition {name}: {str(e)[:100]}...",
         }
