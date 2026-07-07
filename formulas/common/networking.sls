@@ -174,5 +174,6 @@ pyroute2_patch:
     - require:
       - network: {{ interface }}
     {% endif %}
+
   {% endif %}
 {% endfor %}
