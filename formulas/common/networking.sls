@@ -93,94 +93,86 @@ pyroute2_patch:
   {% set base_ip = subnet_cidr.split('.0/')[0] %}
   {% set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
   {% set ip_address = base_ip ~ '.' ~ host_id %}
-    {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-{{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}:
-  network.managed:
-    - enabled: True
-    - type: slave
-    - master: bond-{{ network }}
-{{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] }}:
-  network.managed:
-    - enabled: True
-    - type: slave
-    - master: bond-{{ network }}
-bond-{{ network }}:
-  network.managed:
-    - enabled: True
-    - type: bond
-    - proto: static
-    - mode: 802.3ad
-    - ipaddr: {{ ip_address }}
-    - netmask: {{ netmask }}
-    - slaves: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }} {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] }}
-    - dns:
-        - {{ pillar['dhcp-options']['dns'] }}
-    - mtu: 9000
+
+  {# Only management network gets an IP address. All others become slaves to network-specific bridges. #}
+  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+    {# === BONDED NETWORKS (2+ interfaces) === #}
+    {% set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
+    {% set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
+
+    {{ iface1 }}:
+      network.managed:
+        - enabled: True
+        - type: slave
+        - master: bond-{{ network }}
+
+    {{ iface2 }}:
+      network.managed:
+        - enabled: True
+        - type: slave
+        - master: bond-{{ network }}
+
+    bond-{{ network }}:
+      network.managed:
+        - enabled: True
+        - type: bond
+        - mode: 802.3ad
+        - slaves: {{ iface1 }} {{ iface2 }}
+        - mtu: 9000
+        - dns:
+            - {{ pillar['dhcp-options']['dns'] }}
+        - require:
+          - network: {{ iface1 }}
+          - network: {{ iface2 }}
+
       {% if network == 'management' %}
-    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+        # Management bond gets the IP address
+        - proto: static
+        - ipaddr: {{ ip_address }}
+        - netmask: {{ netmask }}
+        - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+      {% else %}
+        # All other bonds have no IP - they become slaves to a bridge
+        - proto: manual
+        - bridge: {{ network }}_br
       {% endif %}
-    - require:
-      - network: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}
-      - network: {{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] }}
-    {% else %}
 
-  {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
-
-{{ interface }}:
- {% if network == "public" %}
-  network.managed:
-    - enabled: True
-    - type: eth
-    - proto: manual
- {% else %}
-  network.managed:
-    - enabled: True
-    - type: eth
-  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
-    - proto: manual
-    - bridge: {{ network }}_br
   {% else %}
-    - proto: static
-    - ipaddr: {{ ip_address }}
-    - netmask: {{ netmask }}
-    - mtu: 9000
-    - dns:
-        - {{ pillar['dhcp-options']['dns'] }}
-    {% if network == 'management' %}
-    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-    {% endif %}
-  {% endif %}
- {% endif %}
-    {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':bridge', False) == True %}
- {% if network == "public" %}
+    {# === SINGLE INTERFACE NETWORKS === #}
+    {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
+
+    {{ interface }}:
+      network.managed:
+        - enabled: True
+        - type: eth
+        - mtu: 9000
+
+      {% if network == 'management' %}
+        # Only management interface gets an IP
+        - proto: static
+        - ipaddr: {{ ip_address }}
+        - netmask: {{ netmask }}
+        - dns:
+            - {{ pillar['dhcp-options']['dns'] }}
+        - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+      {% else %}
+        # All other interfaces become slaves to network-specific bridges (no IP)
+        - proto: manual
+        - bridge: {{ network }}_br
+      {% endif %}
+
+    # Create bridge for non-management networks (no IP on bridge)
+    {% if network != 'management' %}
 {{ network }}_br:
   network.managed:
     - enabled: True
+    - type: bridge
     - proto: manual
-    - type: bridge
-    - ports: {{ interface }}
- {% else %}
-{{ network }}_br:
-  network.managed:
-    - enabled: True
-    - proto: static
-    - type: bridge
     - mtu: 9000
-    - bridge: {{ network }}_br
     - delay: 0
     - ports: {{ interface }}
-    - ipaddr: {{ ip_address }}
-    - netmask: {{ netmask }}
-    - dns:
-        - {{ pillar['dhcp-options']['dns'] }}
-      {% if network == 'management' %}
-    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-    - use:
-      - network: {{ interface }}
     - require:
       - network: {{ interface }}
-      {% endif %}
-      {% endif %}
     {% endif %}
   {% endif %}
 {% endfor %}
