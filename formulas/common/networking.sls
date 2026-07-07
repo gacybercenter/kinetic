@@ -97,13 +97,13 @@ pyroute2_patch:
     {% set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
     {% set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
 
-    {{ iface1 }}:
+    bond-{{ iface1 }}:
       network.managed:
         - enabled: True
         - type: slave
         - master: bond-{{ network }}
 
-    {{ iface2 }}:
+    bond-{{ iface2 }}:
       network.managed:
         - enabled: True
         - type: slave
