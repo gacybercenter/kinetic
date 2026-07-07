@@ -13,12 +13,13 @@ write_files:
 - content: |
     autosign_grains:
       - uuid
-  path: /etc/salt/minion.d/autosign.conf 
+  path: /etc/salt/minion.d/autosign.conf
 runcmd:
+  - ['apt', 'remove', 'netplan.io', '-y']
   - ['curl', 'https://gitlab.com/gacybercenter/open/salt-bootstrap/-/raw/develop/bootstrap-salt.sh', '-o', 'bootstrap.sh' ]
   - ['chmod', '700', 'bootstrap.sh']
   - ['./bootstrap.sh', '-A', '10.150.1.31']
-  - rm -f /etc/machine-id 
+  - rm -f /etc/machine-id
   - dbus-uuidgen --ensure=/etc/machine-id
   - ['salt-call', 'state.apply', '/formulas/common/base']
   - ['salt-call', 'state.apply', '/formulas/common/networking']
