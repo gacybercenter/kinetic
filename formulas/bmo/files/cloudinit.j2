@@ -19,6 +19,7 @@ runcmd:
   - ['curl', 'https://gitlab.com/gacybercenter/open/salt-bootstrap/-/raw/develop/bootstrap-salt.sh', '-o', 'bootstrap.sh' ]
   - ['chmod', '700', 'bootstrap.sh']
   - ['./bootstrap.sh', '-A', '10.150.1.31']
+  - ['systemctl', 'restart', 'salt-minion']
   - rm -f /etc/machine-id
   - dbus-uuidgen --ensure=/etc/machine-id
   - ['salt-call', 'state.apply', '/formulas/common/base']
