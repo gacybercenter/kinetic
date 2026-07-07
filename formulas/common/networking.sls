@@ -93,10 +93,7 @@ pyroute2_patch:
   {% set base_ip = subnet_cidr.split('.0/')[0] %}
   {% set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
   {% set ip_address = base_ip ~ '.' ~ host_id %}
-
-  {# Only management network gets an IP address. All others become slaves to network-specific bridges. #}
   {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-    {# === BONDED NETWORKS (2+ interfaces) === #}
     {% set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
     {% set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
 
@@ -138,7 +135,6 @@ pyroute2_patch:
       {% endif %}
 
   {% else %}
-    {# === SINGLE INTERFACE NETWORKS === #}
     {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
 
     {{ interface }}:
