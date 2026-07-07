@@ -97,65 +97,65 @@ pyroute2_salt_pip:
     {% set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
     {% set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
 
-    bond-{{ iface1 }}:
-      network.managed:
-        - enabled: True
-        - type: slave
-        - master: bond-{{ network }}
+bond-{{ iface1 }}:
+  network.managed:
+    - enabled: True
+    - type: slave
+    - master: bond-{{ network }}
 
-    bond-{{ iface2 }}:
-      network.managed:
-        - enabled: True
-        - type: slave
-        - master: bond-{{ network }}
+bond-{{ iface2 }}:
+  network.managed:
+    - enabled: True
+    - type: slave
+    - master: bond-{{ network }}
 
-    bond-{{ network }}:
-      network.managed:
-        - enabled: True
-        - type: bond
-        - mode: 802.3ad
-        - slaves: {{ iface1 }} {{ iface2 }}
-        - mtu: 9000
-        - dns:
-            - {{ pillar['dhcp-options']['dns'] }}
-        - require:
-          - network: {{ iface1 }}
-          - network: {{ iface2 }}
+bond-{{ network }}:
+  network.managed:
+    - enabled: True
+    - type: bond
+    - mode: 802.3ad
+    - slaves: {{ iface1 }} {{ iface2 }}
+    - mtu: 9000
+    - dns:
+        - {{ pillar['dhcp-options']['dns'] }}
+    - require:
+      - network: {{ iface1 }}
+      - network: {{ iface2 }}
 
-      {% if network == 'management' %}
-        # Management bond gets the IP address
-        - proto: static
-        - ipaddr: {{ ip_address }}
-        - netmask: {{ netmask }}
-        - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-      {% else %}
-        # All other bonds have no IP - they become slaves to a bridge
-        - proto: manual
-        - bridge: {{ network }}_br
-      {% endif %}
+  {% if network == 'management' %}
+    # Management bond gets the IP address
+    - proto: static
+    - ipaddr: {{ ip_address }}
+    - netmask: {{ netmask }}
+    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+  {% else %}
+    # All other bonds have no IP - they become slaves to a bridge
+    - proto: manual
+    - bridge: {{ network }}_br
+  {% endif %}
 
   {% else %}
     {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
 
-    {{ interface }}:
-      network.managed:
-        - enabled: True
-        - type: eth
-        - mtu: 9000
+{{ interface }}:
+  network.managed:
+    - enabled: True
+    - type: eth
+    - mtu: 9000
 
-      {% if network == 'management' %}
-        # Only management interface gets an IP
-        - proto: static
-        - ipaddr: {{ ip_address }}
-        - netmask: {{ netmask }}
-        - dns:
-            - {{ pillar['dhcp-options']['dns'] }}
-        - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-      {% else %}
-        # All other interfaces become slaves to network-specific bridges (no IP)
-        - proto: manual
-        - bridge: {{ network }}_br
-      {% endif %}
+  {% if network == 'management' %}
+    # Only management interface gets an IP
+    - proto: static
+    - ipaddr: {{ ip_address }}
+    - netmask: {{ netmask }}
+    - dns:
+        - {{ pillar['dhcp-options']['dns'] }}
+    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+  {% else %}
+    # All other interfaces become slaves to network-specific bridges (no IP)
+    - proto: manual
+    - bridge: {{ network }}_br
+  {% endif %}
 
     # Create bridge for non-management networks (no IP on bridge)
     {% if network != 'management' %}
