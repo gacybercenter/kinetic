@@ -119,8 +119,8 @@ bond-{{ network }}:
     - dns:
         - {{ pillar['dhcp-options']['dns'] }}
     - require:
-      - network: bond-{{ iface1 }}
-      - network: bond-{{ iface2 }}
+      - network: {{ iface1 }}
+      - network: {{ iface2 }}
 
   {% if network == 'management' %}
     # Management bond gets the IP address
