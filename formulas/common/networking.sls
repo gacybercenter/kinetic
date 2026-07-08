@@ -85,114 +85,17 @@ pyroute2_salt_pip:
 #     - target: /run/systemd/resolve/resolv.conf
 #     - force: True
 
-{% for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
-  {% set subnet_cidr = pillar['networking']['subnets'][network] %}
-  {% set cidr_prefix = subnet_cidr.split('/')[1] %}
-  {% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
-  {% set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
-  {% set base_ip = subnet_cidr.split('.0/')[0] %}
-  {% set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
-  {% set ip_address = base_ip ~ '.' ~ host_id %}
-  {% if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-    {% set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
-    {% set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
+/etc/network/interfaces:
+  file.managed:
+    - source: salt://formulas/common/networking/files/interfaces.j2
+    - template: jinja
+    - mode: 644
+    - user: root
+    - group: root
 
-{{ iface1 }}:
-  network.managed:
-    - enabled: True
-    - type: slave
-    - master: bond-{{ network }}
-
-{{ iface2 }}:
-  network.managed:
-    - enabled: True
-    - type: slave
-    - master: bond-{{ network }}
-
-bond-{{ network }}:
-  network.managed:
-    - enabled: True
-    - type: bond
-    - mode: 802.3ad
-    - slaves: {{ iface1 }} {{ iface2 }}
-    - mtu: 9000
-    - dns:
-        - {{ pillar['dhcp-options']['dns'] }}
-    - require:
-      - network: {{ iface1 }}
-      - network: {{ iface2 }}
-
-  {% if network == 'management' %}
-    # Management bond gets the IP address
-    - proto: static
-    - ipaddr: {{ ip_address }}
-    - netmask: {{ netmask }}
-    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-  {% else %}
-    # All other bonds have no IP - they become slaves to a bridge
-    - proto: manual
-    - bridge: {{ network }}_br
-  {% endif %}
-
-
-  {% else %}
-    {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
-
-{{ interface }}:
-  network.managed:
-    - enabled: True
-    - type: eth
-    - mtu: 9000
-
-  {% if network == 'management' %}
-    # Only management interface gets an IP
-    - proto: static
-    - ipaddr: {{ ip_address }}
-    - netmask: {{ netmask }}
-    - dns:
-        - {{ pillar['dhcp-options']['dns'] }}
-    - gateway: {{ pillar['dhcp-options']['mgmt_gateway'] }}
-  {% else %}
-    # All other interfaces become slaves to network-specific bridges (no IP)
-    - proto: manual
-    - bridge: {{ network }}_br
-  {% endif %}
-
-    # Create bridge for non-management networks (no IP on bridge)
-    {% if network != 'management' %}
-{{ network }}_br:
-  network.managed:
-    - enabled: True
-    - type: bridge
-    - proto: manual
-    - mtu: 9000
-    - delay: 0
-    - ports: {{ interface }}
-    - require:
-      - network: {{ interface }}
-
-# Add promiscuous mode to bridge using file.line (since network.managed doesn't support it)
-promisc-bridge-{{ network }}:
-  file.line:
-    - name: /etc/network/interfaces
-    - content: '    up ip link set $IFACE promisc on'
-    - after: 'iface {{ network }}_br inet manual'
-    - mode: ensure
-    - require:
-      - network: {{ network }}_br
-    {% endif %}
-
-  {% endif %}
-{% endfor %}
-
-# Add promiscuous mode to bonds using file.line as well
-{% for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True and salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-promisc-bond-{{ network }}:
-  file.line:
-    - name: /etc/network/interfaces
-    - content: '    up ip link set $IFACE promisc on'
-    - after: 'iface bond-{{ network }} inet manual'
-    - mode: ensure
-    - require:
-      - network: bond-{{ network }}
-{% endfor %}
+# Restart networking when the interfaces file changes
+networking-restart:
+  service.running:
+    - name: networking
+    - watch:
+      - file: /etc/network/interfaces
