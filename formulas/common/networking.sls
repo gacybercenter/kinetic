@@ -172,6 +172,7 @@ promisc-bond-{{ network }}:
     - enabled: True
     - type: bridge
     - proto: manual
+    - promisc: on
     - mtu: 9000
     - delay: 0
     - ports: {{ interface }}
