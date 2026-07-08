@@ -178,14 +178,14 @@ promisc-bond-{{ network }}:
     - require:
       - network: {{ interface }}
 
-    # Enable promiscuous mode on bridges (required for macvlan and container networking)
-    promisc-bridge-{{ network }}:
-      cmd.run:
-        - name: ip link set {{ network }}_br promisc on
-        - unless: ip -o link show {{ network }}_br | grep -q PROMISC
-        - require:
-          - network: {{ network }}_br
-    {% endif %}
+# Enable promiscuous mode on bridges (required for macvlan and container networking)
+promisc-bridge-{{ network }}:
+  cmd.run:
+    - name: ip link set {{ network }}_br promisc on
+    - unless: ip -o link show {{ network }}_br | grep -q PROMISC
+    - require:
+      - network: {{ network }}_br
+{% endif %}
 
   {% endif %}
 {% endfor %}
