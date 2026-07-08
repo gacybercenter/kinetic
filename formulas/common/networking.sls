@@ -97,13 +97,13 @@ pyroute2_salt_pip:
     {% set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
     {% set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
 
-bond-{{ iface1 }}:
+{{ iface1 }}:
   network.managed:
     - enabled: True
     - type: slave
     - master: bond-{{ network }}
 
-bond-{{ iface2 }}:
+{{ iface2 }}:
   network.managed:
     - enabled: True
     - type: slave
