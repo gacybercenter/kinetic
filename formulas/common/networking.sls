@@ -134,6 +134,14 @@ bond-{{ network }}:
     - bridge: {{ network }}_br
   {% endif %}
 
+  # Enable promiscuous mode on bonds (required for many container networking scenarios)
+  promisc-bond-{{ network }}:
+    cmd.run:
+      - name: ip link set bond-{{ network }} promisc on
+      - unless: ip -o link show bond-{{ network }} | grep -q PROMISC
+      - require:
+        - network: bond-{{ network }}
+
   {% else %}
     {% set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
 
@@ -169,6 +177,14 @@ bond-{{ network }}:
     - ports: {{ interface }}
     - require:
       - network: {{ interface }}
+
+    # Enable promiscuous mode on bridges (required for macvlan and container networking)
+    promisc-bridge-{{ network }}:
+      cmd.run:
+        - name: ip link set {{ network }}_br promisc on
+        - unless: ip -o link show {{ network }}_br | grep -q PROMISC
+        - require:
+          - network: {{ network }}_br
     {% endif %}
 
   {% endif %}
