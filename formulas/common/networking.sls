@@ -178,15 +178,15 @@ promisc-bond-{{ network }}:
     - require:
       - network: {{ interface }}
 
-    # Add promiscuous mode to bridge using file.line (since network.managed doesn't support it)
-    promisc-bridge-{{ network }}:
-      file.line:
-        - name: /etc/network/interfaces
-        - content: '    up ip link set $IFACE promisc on'
-        - after: 'iface {{ network }}_br inet manual'
-        - mode: ensure
-        - require:
-          - network: {{ network }}_br
+# Add promiscuous mode to bridge using file.line (since network.managed doesn't support it)
+promisc-bridge-{{ network }}:
+  file.line:
+    - name: /etc/network/interfaces
+    - content: '    up ip link set $IFACE promisc on'
+    - after: 'iface {{ network }}_br inet manual'
+    - mode: ensure
+    - require:
+      - network: {{ network }}_br
     {% endif %}
 
   {% endif %}
