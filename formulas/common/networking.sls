@@ -134,7 +134,7 @@ bond-{{ network }}:
     - bridge: {{ network }}_br
   {% endif %}
 
-  # Enable promiscuous mode on bonds (required for many container networking scenarios)
+# Enable promiscuous mode on bonds (required for many container networking scenarios)
 promisc-bond-{{ network }}:
   cmd.run:
     - name: ip link set bond-{{ network }} promisc on
