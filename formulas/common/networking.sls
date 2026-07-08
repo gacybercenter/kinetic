@@ -172,21 +172,34 @@ promisc-bond-{{ network }}:
     - enabled: True
     - type: bridge
     - proto: manual
-    - promisc: on
     - mtu: 9000
     - delay: 0
     - ports: {{ interface }}
     - require:
       - network: {{ interface }}
 
-# Enable promiscuous mode on bridges (required for macvlan and container networking)
-promisc-bridge-{{ network }}:
-  cmd.run:
-    - name: ip link set {{ network }}_br promisc on
-    - unless: ip -o link show {{ network }}_br | grep -q PROMISC
-    - require:
-      - network: {{ network }}_br
-{% endif %}
+    # Add promiscuous mode to bridge using file.line (since network.managed doesn't support it)
+    promisc-bridge-{{ network }}:
+      file.line:
+        - name: /etc/network/interfaces
+        - content: '    up ip link set $IFACE promisc on'
+        - after: 'iface {{ network }}_br inet manual'
+        - mode: ensure
+        - require:
+          - network: {{ network }}_br
+    {% endif %}
 
   {% endif %}
+{% endfor %}
+
+# Add promiscuous mode to bonds using file.line as well
+{% for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True and salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+promisc-bond-{{ network }}:
+  file.line:
+    - name: /etc/network/interfaces
+    - content: '    up ip link set $IFACE promisc on'
+    - after: 'iface bond-{{ network }} inet manual'
+    - mode: ensure
+    - require:
+      - network: bond-{{ network }}
 {% endfor %}
