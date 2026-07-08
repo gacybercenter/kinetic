@@ -47,26 +47,37 @@ iface bond-{{ network }} inet manual
   {%- else %}
     {# === SINGLE INTERFACE NETWORKS === #}
     {%- set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
-
+{% if network == 'management' %}
+    {%- if grains['type'] == 'controller' %}
 auto {{ interface }}
 iface {{ interface }} inet manual
-    mtu 9000
-
-{%- if network == 'management' %}
+  mtu 9000
 auto management_br
 iface management_br inet static
     address {{ ip_address }}
     netmask {{ netmask }}
     gateway {{ pillar['dhcp-options']['mgmt_gateway'] }}
     dns-nameservers {{ pillar['dhcp-options']['dns'] }}
-    bridge_ports {{ interface }}
+    bridge_ports {{ interface if interface is defined else 'bond-' ~ network }}
     bridge_stp off
     bridge_maxwait 0
     bridge_fd 0
     mtu 9000
-    # Management bridge has promisc OFF (as requested)
-{%- else %}
-
+    # promisc OFF for management bridge
+    {%- else %}
+        # Management for non-controllers (direct interface, no bridge)
+auto {{ interface if interface is defined else 'bond-' ~ network }}
+iface {{ interface if interface is defined else 'bond-' ~ network }} inet static
+    address {{ ip_address }}
+    netmask {{ netmask }}
+    gateway {{ pillar['dhcp-options']['mgmt_gateway'] }}
+    dns-nameservers {{ pillar['dhcp-options']['dns'] }}
+    mtu 9000
+    {%- endif %}
+{% endif %}
+auto {{ interface }}
+iface {{ interface }} inet manual
+  mtu 9000
 auto {{ network }}_br
 iface {{ network }}_br inet manual
     mtu 9000
