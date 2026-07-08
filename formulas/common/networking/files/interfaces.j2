@@ -3,20 +3,18 @@
 auto lo
 iface lo inet loopback
 
-{% for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
-  {% set subnet_cidr = pillar['networking']['subnets'][network] %}
-  {% set cidr_prefix = subnet_cidr.split('/')[1] %}
-  {% set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
-  {% set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
-  {% set base_ip = subnet_cidr.split('.0/')[0] %}
-  {% set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
-  {% set ip_address = base_ip ~ '.' ~ host_id %}
-
+{%- for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
+  {%- set subnet_cidr = pillar['networking']['subnets'][network] %}
+  {%- set cidr_prefix = subnet_cidr.split('/')[1] %}
+  {%- set netmask_result = salt['network_utils.cidr_to_netmask'](cidr_prefix) %}
+  {%- set netmask = netmask_result['netmask'] if netmask_result['success'] else '255.255.255.0' %}
+  {%- set base_ip = subnet_cidr.split('.0/')[0] %}
+  {%- set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
+  {%- set ip_address = base_ip ~ '.' ~ host_id %}
   {%- if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
     {# === BONDED NETWORKS (2+ interfaces) === #}
     {%- set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
     {%- set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
-
 auto {{ iface1 }}
 iface {{ iface1 }} inet manual
     bond-master bond-{{ network }}
@@ -79,4 +77,4 @@ iface {{ network }}_br inet manual
     bridge_fd 0
     {%- endif %}
   {%- endif %}
-{% endfor %}
+{%- endfor %}
