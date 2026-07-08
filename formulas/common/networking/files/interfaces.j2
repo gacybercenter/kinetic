@@ -46,21 +46,6 @@ iface bond-{{ network }} inet manual
     up ip link set $IFACE promisc on
     {%- endif %}
 
-{%- if network == 'management' %}
-auto management_br
-iface management_br inet static
-    address {{ ip_address }}
-    netmask {{ netmask }}
-    gateway {{ pillar['dhcp-options']['mgmt_gateway'] }}
-    dns-nameservers {{ pillar['dhcp-options']['dns'] }}
-    bridge_ports bond-{{ network }}
-    bridge_stp off
-    bridge_maxwait 0
-    bridge_fd 0
-    mtu 9000
-    # Management bridge has promisc OFF (as requested)
-{%- endif %}
-
   {%- else %}
     {# === SINGLE INTERFACE NETWORKS === #}
     {%- set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
@@ -68,20 +53,22 @@ iface management_br inet static
 auto {{ interface }}
 iface {{ interface }} inet manual
     mtu 9000
-    up ip link set $IFACE promisc on
-    {%- if network == 'management' %}
+
+{%- if network == 'management' %}
+auto management_br
+iface management_br inet static
     address {{ ip_address }}
     netmask {{ netmask }}
     gateway {{ pillar['dhcp-options']['mgmt_gateway'] }}
     dns-nameservers {{ pillar['dhcp-options']['dns'] }}
-    {%- else %}
     bridge_ports {{ interface }}
     bridge_stp off
     bridge_maxwait 0
     bridge_fd 0
-    {%- endif %}
+    mtu 9000
+    # Management bridge has promisc OFF (as requested)
+{%- else %}
 
-    {%- if network != 'management' %}
 auto {{ network }}_br
 iface {{ network }}_br inet manual
     mtu 9000
