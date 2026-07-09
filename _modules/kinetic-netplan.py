@@ -55,6 +55,10 @@ def generate_config(pillar_data=None, host_type=None):
 
         networks = pillar_data.get(host_type, {}).get("networks", {})
 
+        # Get DHCP options and networking addresses from top-level pillar
+        dhcp_options = __salt__["pillar.get"]("dhcp-options", {})
+        networking_addresses = __salt__["pillar.get"]("networking:addresses", {})
+
         for network_name, network_config in networks.items():
             if not network_config.get("managed", True):
                 continue
@@ -113,17 +117,11 @@ def generate_config(pillar_data=None, host_type=None):
                         "routes": [
                             {
                                 "to": "default",
-                                "via": pillar_data.get("dhcp-options", {}).get(
-                                    "mgmt_gateway", "192.168.1.1"
-                                ),
+                                "via": dhcp_options.get("mgmt_gateway", "192.168.1.1"),
                             }
                         ],
                         "nameservers": {
-                            "addresses": [
-                                pillar_data.get("dhcp-options", {}).get(
-                                    "dns", "8.8.8.8"
-                                )
-                            ]
+                            "addresses": [dhcp_options.get("dns", "8.8.8.8")]
                         },
                         "parameters": {"stp": False, "forward-delay": 0},
                     }
@@ -137,17 +135,13 @@ def generate_config(pillar_data=None, host_type=None):
                             "routes": [
                                 {
                                     "to": "default",
-                                    "via": pillar_data.get("dhcp-options", {}).get(
+                                    "via": dhcp_options.get(
                                         "mgmt_gateway", "192.168.1.1"
                                     ),
                                 }
                             ],
                             "nameservers": {
-                                "addresses": [
-                                    pillar_data.get("dhcp-options", {}).get(
-                                        "dns", "8.8.8.8"
-                                    )
-                                ]
+                                "addresses": [dhcp_options.get("dns", "8.8.8.8")]
                             },
                         }
                     )
