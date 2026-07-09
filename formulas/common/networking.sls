@@ -54,34 +54,14 @@ pyroute2_salt_pip:
       - pin_salt_pip_version
 
 # Generate Netplan configuration
-/etc/netplan/01-netcfg.yaml:
-  file.managed:
-    - source: salt://formulas/common/networking/files/netplan.yaml.j2
-    - template: jinja
-    - mode: 600
-    - user: root
-    - group: root
+# Generate and apply Netplan configuration using the new kinetic_netplan module
+ensure_netplan_config:
+  kinetic_netplan.config_present:
+    - pillar_key: res-k8s
+    - apply_immediately: True
 
-# Create systemd service from Jinja2 template (dynamically generates commands for configured networks)
-/usr/lib/systemd/system/promisc-mode.service:
-  file.managed:
-    - source: salt://formulas/common/networking/files/promisc-mode.service.j2
-    - template: jinja
-    - mode: 644
-
-# Enable and start the promiscuous mode service
-promisc-mode-service:
-  service.running:
-    - name: promisc-mode
-    - enable: True
-    - require:
-      - file: /usr/lib/systemd/system/promisc-mode.service
-    - onchanges:
-      - file: /usr/lib/systemd/system/promisc-mode.service
-
-# Apply netplan configuration
-netplan-apply:
-  cmd.run:
-    - name: netplan apply
-    - onchanges:
-      - file: /etc/netplan/01-netcfg.yaml
+# Enable promiscuous mode on non-management networks using the new kinetic_netplan module
+ensure_promisc_mode:
+  kinetic_netplan.promisc_mode_enabled:
+    - networks: []
+    # Empty list means it will use all non-management networks from pillar automatically
