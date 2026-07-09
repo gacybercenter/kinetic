@@ -15,13 +15,15 @@
 include:
   - /formulas/common/nftables/nftables
 
-network_util:
-  pkg.installed:
-    - name: ifupdown
-# netplan.io:
-#   pkg.removed
+# Remove legacy networking tools
+ifupdown:
+  pkg.removed
 
-/etc/netplan:
+netplan.io:
+  pkg.installed
+
+# Clean up legacy networking files
+/etc/network/interfaces:
   file.absent
 
 /run/systemd/network:
@@ -51,51 +53,18 @@ pyroute2_salt_pip:
     - require:
       - pin_salt_pip_version
 
-## Patch pyroute2 to fix a bug in the compat module until it is fixed upstream
-## https://github.com/svinota/pyroute2/issues/1132
-## https://github.com/svinota/pyroute2/pull/1133
-## https://github.com/saltstack/salt/issues/65361
-# pyroute2_patch:
-#   file.managed:
-#     - makedirs: True
-#     - names:
-#       - /opt/saltstack/salt/extras-3.10/pyroute2/ndb/compat.py:
-#         - source: salt://formulas/common/pyroute2/compat.py
-#       - /usr/local/lib/python3.10/dist-packages/pyroute2/ndb/compat.py:
-#         - source: salt://formulas/common/pyroute2/compat.py
-#     - require:
-#       - pip: pyroute2_salt_pip
-# ###
-
-## This state doesn't apply to salt/pxe past this point
-
-## disable unneeded services and enable needed ones
-##
-
-
-### The stub resolver is causing bizarre issues and
-### intermittently returning publicly routable addresses
-### for hosts statically defined on the DNS server
-### This symlink points at the full resolver
-### You should only do this with versions of systemd
-### 241 or greater
-
-# /etc/resolv.conf:
-#   file.symlink:
-#     - target: /run/systemd/resolve/resolv.conf
-#     - force: True
-
-/etc/network/interfaces:
+# Generate Netplan configuration
+/etc/netplan/01-netcfg.yaml:
   file.managed:
-    - source: salt://formulas/common/networking/files/interfaces.j2
+    - source: salt://formulas/common/networking/files/netplan.yaml.j2
     - template: jinja
-    - mode: 644
+    - mode: 600
     - user: root
     - group: root
 
-# Restart networking when the interfaces file changes
-networking-restart:
-  service.running:
-    - name: networking
-    - watch:
-      - file: /etc/network/interfaces
+# Apply netplan configuration
+netplan-apply:
+  cmd.run:
+    - name: netplan apply
+    - onchanges:
+      - file: /etc/netplan/01-netcfg.yaml
