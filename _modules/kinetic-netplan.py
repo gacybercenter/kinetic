@@ -74,6 +74,14 @@ def generate_config(pillar_data=None, host_type=None):
             )
 
             if len(interfaces) > 1:
+                # Ensure each physical interface is declared in ethernets
+                for iface in interfaces:
+                    if iface not in config["network"]["ethernets"]:
+                        config["network"]["ethernets"][iface] = {
+                            "dhcp4": False,
+                            "mtu": 9000,
+                        }
+
                 # Create bond
                 bond_name = f"bond-{network_name}"
                 config["network"]["bonds"][bond_name] = {
@@ -90,10 +98,11 @@ def generate_config(pillar_data=None, host_type=None):
                 interface_ref = bond_name
             else:
                 interface_ref = interfaces[0]
-                config["network"]["ethernets"][interface_ref] = {
-                    "dhcp4": False,
-                    "mtu": 9000,
-                }
+                if interface_ref not in config["network"]["ethernets"]:
+                    config["network"]["ethernets"][interface_ref] = {
+                        "dhcp4": False,
+                        "mtu": 9000,
+                    }
 
             if network_name == "management":
                 if host_type == "controller":
