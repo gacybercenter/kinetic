@@ -57,7 +57,6 @@ pyroute2_salt_pip:
 # Generate and apply Netplan configuration using the new kinetic_netplan module
 ensure_netplan_config:
   kinetic_netplan.config_present:
-    - pillar_key: res-k8s
     - apply_immediately: True
 
 # Enable promiscuous mode on non-management networks using the new kinetic_netplan module
