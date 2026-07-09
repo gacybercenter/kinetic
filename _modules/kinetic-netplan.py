@@ -89,7 +89,7 @@ def generate_config(pillar_data=None, host_type=None):
                     "parameters": {
                         "mode": "802.3ad",
                         "mii-monitor-interval": 100,
-                        "lacp-rate": 1,
+                        "lacp-rate": "fast",
                     },
                     "mtu": 9000,
                     "dhcp4": False,
