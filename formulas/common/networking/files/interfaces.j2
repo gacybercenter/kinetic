@@ -60,7 +60,6 @@ iface {{ interface }} inet static
     gateway {{ pillar['dhcp-options']['mgmt_gateway'] }}
     dns-nameservers {{ pillar['dhcp-options']['dns'] }}
     mtu 9000
-    {%- endif %}
 {%- endif %}
 
 auto {{ interface }}
