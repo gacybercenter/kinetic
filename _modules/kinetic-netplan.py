@@ -60,16 +60,14 @@ def generate_config(pillar_data=None, host_type=None):
                 continue
 
             interfaces = network_config.get("interfaces", [])
-            subnet_cidr = (
-                pillar_data.get("networking", {})
-                .get("subnets", {})
-                .get(network_name, "192.168.1.0/24")
+            subnet_cidr = __salt__["pillar.get"]("networking:subnets", {}).get(
+                network_name, "192.168.1.0/24"
             )
             cidr_prefix = subnet_cidr.split("/")[1]
 
             # Get management IP for this host
             management_ip = (
-                pillar_data.get("bmh", {})
+                __salt__["pillar.get"]("bmh", {})
                 .get(__salt__["grains.get"]("id", ""), {})
                 .get("network", {})
                 .get("management_ip", "192.168.1.100")
