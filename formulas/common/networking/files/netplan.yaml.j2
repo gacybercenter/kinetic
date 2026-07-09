@@ -26,6 +26,18 @@ network:
   {%- endif %}
 {%- endfor %}
 
+  bonds:
+{%- for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True and salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+    bond-{{ network }}:
+      interfaces: [{{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'] | join(',') }}]
+      parameters:
+        mode: 802.3ad
+        mii-monitor-interval: 100
+        lacp-rate: 1
+      mtu: 9000
+      dhcp4: no
+{%- endfor %}
+
   bridges:
 {%- for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
   {%- set subnet_cidr = pillar['networking']['subnets'][network] %}
@@ -34,8 +46,9 @@ network:
   {%- set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
   {%- set ip_address = base_ip ~ '.' ~ host_id %}
   {%- if network == 'management' %}
+    {%- if grains['type'] == 'controller' %}
     management_br:
-      interfaces: [{{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'] | join(',') if pillar['hosts'][grains['type']]['networks'][network]['interfaces'] | length > 1 else pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}]
+      interfaces: [bond-{{ network }}]
       addresses:
         - {{ ip_address }}/{{ cidr_prefix }}
       routes:
@@ -46,10 +59,23 @@ network:
       parameters:
         stp: false
         forward-delay: 0
-      # Management bridge has promisc OFF (as requested)
+      # Management bridge has promisc OFF (as requested) for controllers
+    {%- else %}
+    # Non-controller management uses direct bond interface (no bridge)
+    bond-{{ network }}:
+      dhcp4: no
+      addresses:
+        - {{ ip_address }}/{{ cidr_prefix }}
+      routes:
+        - to: default
+          via: {{ pillar['dhcp-options']['mgmt_gateway'] }}
+      nameservers:
+        addresses: [{{ pillar['dhcp-options']['dns'] }}]
+      mtu: 9000
+    {%- endif %}
   {%- else %}
     {{ network }}_br:
-      interfaces: [{{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'] | join(',') if pillar['hosts'][grains['type']]['networks'][network]['interfaces'] | length > 1 else pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] }}]
+      interfaces: [bond-{{ network }}]
       dhcp4: no
       parameters:
         stp: false
