@@ -53,7 +53,7 @@ def generate_config(pillar_data=None, host_type=None):
             }
         }
 
-        networks = pillar_data.get("hosts", {}).get(host_type, {}).get("networks", {})
+        networks = pillar_data.get(host_type, {}).get("networks", {})
 
         for network_name, network_config in networks.items():
             if not network_config.get("managed", True):
