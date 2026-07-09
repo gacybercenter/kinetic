@@ -9,26 +9,17 @@ network:
   {%- set base_ip = subnet_cidr.split('.0/')[0] %}
   {%- set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
   {%- set ip_address = base_ip ~ '.' ~ host_id %}
-  {%- if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-    {%- set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
-    {%- set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
+    {%- if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
+      {%- set iface1 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
+      {%- set iface2 = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][1] %}
     {{ iface1 }}:
       dhcp4: no
       mtu: 9000
     {{ iface2 }}:
       dhcp4: no
       mtu: 9000
-  {%- else %}
-    {%- set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
-    {{ interface }}:
-      dhcp4: no
-      mtu: 9000
-  {%- endif %}
-{%- endfor %}
-
   bonds:
-{%- for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True and salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':interfaces') | length > 1 %}
-    bond-{{ network }}:
+   bond-{{ network }}:
       interfaces: [{{ pillar['hosts'][grains['type']]['networks'][network]['interfaces'] | join(',') }}]
       parameters:
         mode: 802.3ad
@@ -36,19 +27,13 @@ network:
         lacp-rate: fast
       mtu: 9000
       dhcp4: no
-{%- endfor %}
-
+  {%- else %}
+    {%- set interface = pillar['hosts'][grains['type']]['networks'][network]['interfaces'][0] %}
   bridges:
-{%- for network in pillar['hosts'][grains['type']]['networks'] if salt['pillar.get']('hosts:'+grains['type']+':networks:'+network+':managed', True) == True %}
-  {%- set subnet_cidr = pillar['networking']['subnets'][network] %}
-  {%- set cidr_prefix = subnet_cidr.split('/')[1] %}
-  {%- set base_ip = subnet_cidr.split('.0/')[0] %}
-  {%- set host_id = pillar['bmh'][grains['id']]['network']['management_ip'].split('.')[3] %}
-  {%- set ip_address = base_ip ~ '.' ~ host_id %}
   {%- if network == 'management' %}
     {%- if grains['type'] == 'controller' %}
     management_br:
-      interfaces: [bond-{{ network }}]
+      interfaces: {{ interface }}]
       addresses:
         - {{ ip_address }}/{{ cidr_prefix }}
       routes:
@@ -62,7 +47,7 @@ network:
       # Management bridge has promisc OFF (as requested) for controllers
     {%- else %}
     # Non-controller management uses direct bond interface (no bridge)
-    bond-{{ network }}:
+    {{ interface }}:
       dhcp4: no
       addresses:
         - {{ ip_address }}/{{ cidr_prefix }}
@@ -75,7 +60,7 @@ network:
     {%- endif %}
   {%- else %}
     {{ network }}_br:
-      interfaces: [bond-{{ network }}]
+      interfaces: [{{ interface }}]
       dhcp4: no
       parameters:
         stp: false
