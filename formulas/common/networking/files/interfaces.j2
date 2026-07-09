@@ -40,6 +40,7 @@ auto {{ interface }}
 iface {{ interface }} inet manual
   mtu 9000
 auto management_br
+
 iface management_br inet static
     address {{ ip_address }}
     netmask {{ netmask }}
@@ -51,8 +52,7 @@ iface management_br inet static
     bridge_fd 0
     mtu 9000
     # promisc OFF for management bridge
-    {%- else %}
-# Management for non-controllers (direct interface, no bridge)
+    {%- endif %}
 auto {{ interface }}
 iface {{ interface }} inet static
     address {{ ip_address }}
@@ -61,7 +61,8 @@ iface {{ interface }} inet static
     dns-nameservers {{ pillar['dhcp-options']['dns'] }}
     mtu 9000
     {%- endif %}
-{% endif %}
+{%- endif %}
+
 auto {{ interface }}
 iface {{ interface }} inet manual
   mtu 9000
