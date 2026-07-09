@@ -62,6 +62,23 @@ pyroute2_salt_pip:
     - user: root
     - group: root
 
+# Create systemd service from Jinja2 template (dynamically generates commands for configured networks)
+/usr/lib/systemd/system/promisc-mode.service:
+  file.managed:
+    - source: salt://formulas/common/networking/files/promisc-mode.service.j2
+    - template: jinja
+    - mode: 644
+
+# Enable and start the promiscuous mode service
+promisc-mode-service:
+  service.running:
+    - name: promisc-mode
+    - enable: True
+    - require:
+      - file: /usr/lib/systemd/system/promisc-mode.service
+    - onchanges:
+      - file: /usr/lib/systemd/system/promisc-mode.service
+
 # Apply netplan configuration
 netplan-apply:
   cmd.run:
