@@ -52,7 +52,7 @@ iface management_br inet static
     bridge_fd 0
     mtu 9000
     # promisc OFF for management bridge
-    {%- endif %}
+    {%- else %}
 
 auto {{ interface }}
 iface {{ interface }} inet static
@@ -61,6 +61,7 @@ iface {{ interface }} inet static
     gateway {{ pillar['dhcp-options']['mgmt_gateway'] }}
     dns-nameservers {{ pillar['dhcp-options']['dns'] }}
     mtu 9000
+  {%- endif %}
 {%- else %}
 
 auto {{ interface }}
