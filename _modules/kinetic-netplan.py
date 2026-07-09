@@ -167,13 +167,13 @@ def generate_config(pillar_data=None, host_type=None):
         }
 
 
-def apply_config(config=None, pillar_key="res-k8s"):
+def apply_config(config=None, pillar_key="hosts"):
     """
     Apply Netplan configuration.
 
     Args:
         config (dict): Netplan config to apply. If None, generated from pillar.
-        pillar_key (str): Pillar key to use for config generation.
+        pillar_key (str): Pillar key to use for config generation. Defaults to 'hosts'.
 
     Returns:
         dict: Result with success, changes, and message.
@@ -232,14 +232,11 @@ def promisc_mode(networks=None):
     try:
         if not networks:
             # Get all non-management networks from pillar
-            pillar_data = __salt__["pillar.get"]("res-k8s", {})
+            pillar_data = __salt__["pillar.get"]("hosts", {})
             host_type = __salt__["grains.get"]("type", "default")
             networks = []
             for network, config in (
-                pillar_data.get("hosts", {})
-                .get(host_type, {})
-                .get("networks", {})
-                .items()
+                pillar_data.get(host_type, {}).get("networks", {}).items()
             ):
                 if network != "management" and config.get("managed", True):
                     networks.append(network)
@@ -252,7 +249,7 @@ def promisc_mode(networks=None):
             if (
                 len(
                     __salt__["pillar.get"](
-                        f"res-k8s:hosts:{host_type}:networks:{network}:interfaces", []
+                        f"hosts:{host_type}:networks:{network}:interfaces", []
                     )
                 )
                 > 1
