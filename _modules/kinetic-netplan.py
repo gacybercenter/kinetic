@@ -38,7 +38,7 @@ def generate_config(pillar_data=None, host_type=None):
     """
     try:
         if not pillar_data:
-            pillar_data = __salt__["pillar.get"]("res-k8s", {})
+            pillar_data = __salt__["pillar.get"]("hosts", {})
 
         if not host_type:
             host_type = __salt__["grains.get"]("type", "default")
