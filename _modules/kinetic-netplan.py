@@ -191,8 +191,8 @@ def apply_config(config=None, pillar_key="res-k8s"):
         with open("/etc/netplan/01-netcfg.yaml", "w") as f:
             yaml.safe_dump(config, f, default_flow_style=False, sort_keys=False)
 
-        __salt__["file.chown"]("/etc/netplan/01-netcfg.yaml", "root", "root")
-        __salt__["file.chmod"]("/etc/netplan/01-netcfg.yaml", "600")
+        os.chown("/etc/netplan/01-netcfg.yaml", 0, 0)
+        os.chmod("/etc/netplan/01-netcfg.yaml", 0o600)
 
         # Apply configuration
         result = __salt__["cmd.run_all"]("netplan apply", python_shell=False)
