@@ -221,31 +221,37 @@ def apply_config(config=None, pillar_key="hosts"):
 
 def promisc_mode(networks=None):
     """
-    Enable promiscuous mode on specified networks using systemd service approach.
-
-    Args:
-        networks (list): List of network names to enable promiscuous mode on.
-                         If None, uses all non-management networks from pillar.
-
-    Returns:
-        dict: Result with success and message.
+    Ensure promiscuous mode is enabled on the specified networks
+    and that it persists across reboots via a systemd one-shot service.
     """
     try:
         if not networks:
-            # Get all non-management networks from pillar
             pillar_data = __salt__["pillar.get"]("hosts", {})
             host_type = __salt__["grains.get"]("type", "default")
             networks = []
-            for network, config in (
+            for network, cfg in (
                 pillar_data.get(host_type, {}).get("networks", {}).items()
             ):
-                if network != "management" and config.get("managed", True):
+                if network != "management" and cfg.get("managed", True):
                     networks.append(network)
 
-        commands = []
+        if not networks:
+            return {"success": True, "message": "No networks require promiscuous mode"}
+
+        # Create the systemd service file
+        service_content = """[Unit]
+Description=Enable promiscuous mode on network bridges and bonds
+After=network.target netplan-apply.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '
+  echo "=== Enabling promiscuous mode on network interfaces ==="
+"""
         for network in networks:
-            commands.append(
-                f'ip link set "{network}_br" promisc on 2>/dev/null || true'
+            service_content += f'  echo "Setting promiscuous mode on {network}_br"\n'
+            service_content += (
+                f'  ip link set "{network}_br" promisc on 2>/dev/null || true\n'
             )
             if (
                 len(
@@ -255,17 +261,34 @@ def promisc_mode(networks=None):
                 )
                 > 1
             ):
-                commands.append(
-                    f'ip link set "bond-{network}" promisc on 2>/dev/null || true'
+                service_content += (
+                    f'  echo "Setting promiscuous mode on bond-{network}"\n'
+                )
+                service_content += (
+                    f'  ip link set "bond-{network}" promisc on 2>/dev/null || true\n'
                 )
 
-        # Execute all commands
-        for cmd in commands:
-            __salt__["cmd.run"](cmd, python_shell=True)
+        service_content += """  echo "Promiscuous mode configuration complete"
+'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+        service_path = "/etc/systemd/system/promisc-mode.service"
+        with open(service_path, "w") as f:
+            f.write(service_content)
+
+        # Reload systemd and enable/start the service
+        __salt__["cmd.run"]("systemctl daemon-reload", python_shell=True)
+        __salt__["cmd.run"](
+            "systemctl enable --now promisc-mode.service", python_shell=True
+        )
 
         return {
             "success": True,
-            "message": f"Promiscuous mode enabled on networks: {networks}",
+            "message": f"Promiscuous mode service created and enabled for: {networks}",
         }
 
     except Exception as e:
