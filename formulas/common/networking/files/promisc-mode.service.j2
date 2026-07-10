@@ -1,0 +1,17 @@
+[Unit]
+Description=Enable promiscuous mode on network interfaces
+After=network.target netplan-apply.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '
+{%- for iface in interfaces %}
+  echo "Setting promiscuous mode on {{ iface }}"
+  ip link set {{ iface }} promisc on 2>/dev/null || true
+{%- endfor %}
+  echo "Promiscuous mode enabled on physical interfaces"
+'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
