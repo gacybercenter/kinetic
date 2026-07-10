@@ -3,7 +3,6 @@ include:
   - /formulas/common/vbmc
   - /formulas/common/k8s-mariadb
   - /formulas/ironic-operator
-  - /formulas/k8s-logger/install
 
 ingress_values:
   file.managed:
@@ -61,7 +60,7 @@ ensure_k8s_storage:
     - storage_class: local-storage
     - require:
       - file: create_ironic_db_dir
-  
+
 ensure_mariadb_instance:
   k8s.mariadb_instance_present:
     - namespace: {{ pillar['bmo_namespace'] }}

@@ -32,11 +32,12 @@ install_multus_manifest:
         kubectl get daemonset kube-multus-ds -n kube-system >/dev/null 2>&1 && echo "Multus {{ multus_version }} already installed"
 
 
-# Standard network attachments (SFE and SBE) - added to multus formula
+# Standard network attachments (SFE, SBE, PRIV, PUB) - added to multus formula
 sfe_network_attachment:
   k8s.networkattachmentdefinition_present:
     - name: sfe
     - namespace: default
+    - master: sfe_br
     - cidr: 10.150.2.0/24
     - range_start: 10.150.2.10
     - range_end: 10.150.2.200
@@ -47,6 +48,7 @@ sbe_network_attachment:
   k8s.networkattachmentdefinition_present:
     - name: sbe
     - namespace: default
+    - master: sbe_br
     - cidr: 10.150.3.0/24
     - range_start: 10.150.3.10
     - range_end: 10.150.3.200
@@ -57,6 +59,7 @@ priv_network_attachment:
   k8s.networkattachmentdefinition_present:
     - name: priv
     - namespace: default
+    - master: priv_br
     - cidr: 10.150.4.0/24
     - range_start: 10.150.4.10
     - range_end: 10.150.4.200
@@ -67,6 +70,7 @@ pub_network_attachment:
   k8s.networkattachmentdefinition_present:
     - name: pub
     - namespace: default
+    - master: pub_br
     - cidr: 10.151.0.0/16
     - range_start: 10.151.0.10
     - range_end: 10.151.255.200
