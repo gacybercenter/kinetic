@@ -4,10 +4,9 @@ After=network.target netplan-apply.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c '
+ExecStart=
 {%- for iface in interfaces %}
-  echo "Setting promiscuous mode on {{ iface }}"
-  ip link set {{ iface }} promisc on 2>/dev/null || true
+ExecStart=ip link set {{ iface }} promisc on
 {%- endfor %}
   echo "Promiscuous mode enabled on physical interfaces"
 '
