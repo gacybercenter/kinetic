@@ -59,8 +59,31 @@ ensure_netplan_config:
   kinetic_netplan.config_present:
     - apply_immediately: True
 
-# Enable promiscuous mode on non-management networks using the new kinetic_netplan module
-ensure_promisc_mode:
-  kinetic_netplan.promisc_mode_enabled:
-    - networks: []
-    # Empty list means it will use all non-management networks from pillar automatically
+# === Promiscuous Mode Service (declarative) ===
+
+# Build list of physical interfaces for non-management networks
+{%- set host_type = grains['type'] %}
+{%- set non_mgmt_interfaces = [] %}
+{%- for network, config in pillar['hosts'][host_type]['networks'].items() if network != 'management' and config.get('managed', True) %}
+  {%- for iface in config.get('interfaces', []) %}
+    {%- do non_mgmt_interfaces.append(iface) %}
+  {%- endfor %}
+{%- endfor %}
+
+# Install the systemd service (enables promisc on physical interfaces)
+promisc-mode-service-file:
+  file.managed:
+    - name: /etc/systemd/system/promisc-mode.service
+    - source: salt://formulas/common/networking/files/promisc-mode.service.j2
+    - template: jinja
+    - mode: 644
+    - context:
+        interfaces: {{ non_mgmt_interfaces | unique | list }}
+
+# Enable and start the service
+promisc-mode-service:
+  service.running:
+    - name: promisc-mode
+    - enable: True
+    - require:
+      - file: promisc-mode-service-file

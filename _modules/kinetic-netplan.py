@@ -221,8 +221,9 @@ def apply_config(config=None, pillar_key="hosts"):
 
 def promisc_mode(networks=None):
     """
-    Ensure promiscuous mode is enabled on the specified networks
-    and that it persists across reboots via a systemd one-shot service.
+    Create and enable a systemd one-shot service to persistently
+    enable promiscuous mode on the physical interfaces of
+    non-management networks.
     """
     try:
         if not networks:
@@ -238,47 +239,31 @@ def promisc_mode(networks=None):
         if not networks:
             return {"success": True, "message": "No networks require promiscuous mode"}
 
-        # Create the systemd service file
-        service_content = """[Unit]
-Description=Enable promiscuous mode on network bridges and bonds
-After=network.target netplan-apply.service
-
-[Service]
-Type=oneshot
-ExecStart=/bin/bash -c '
-  echo "=== Enabling promiscuous mode on network interfaces ==="
-"""
+        # Collect all physical interfaces
+        interfaces = set()
         for network in networks:
-            service_content += f'  echo "Setting promiscuous mode on {network}_br"\n'
-            service_content += (
-                f'  ip link set "{network}_br" promisc on 2>/dev/null || true\n'
+            ifaces = __salt__["pillar.get"](
+                f"hosts:{host_type}:networks:{network}:interfaces", []
             )
-            if (
-                len(
-                    __salt__["pillar.get"](
-                        f"hosts:{host_type}:networks:{network}:interfaces", []
-                    )
-                )
-                > 1
-            ):
-                service_content += (
-                    f'  echo "Setting promiscuous mode on bond-{network}"\n'
-                )
-                service_content += (
-                    f'  ip link set "bond-{network}" promisc on 2>/dev/null || true\n'
-                )
+            interfaces.update(ifaces)
 
-        service_content += """  echo "Promiscuous mode configuration complete"
-'
-RemainAfterExit=yes
+        if not interfaces:
+            return {
+                "success": True,
+                "message": "No interfaces found for promiscuous mode",
+            }
 
-[Install]
-WantedBy=multi-user.target
-"""
+        # Render the service template
+        template_path = (
+            "salt://formulas/common/networking/files/promisc-mode.service.j2"
+        )
+        rendered = __salt__["slsutil.renderer"](
+            template_path, context={"interfaces": list(interfaces)}
+        )
 
         service_path = "/etc/systemd/system/promisc-mode.service"
         with open(service_path, "w") as f:
-            f.write(service_content)
+            f.write(rendered)
 
         # Reload systemd and enable/start the service
         __salt__["cmd.run"]("systemctl daemon-reload", python_shell=True)
@@ -288,7 +273,7 @@ WantedBy=multi-user.target
 
         return {
             "success": True,
-            "message": f"Promiscuous mode service created and enabled for: {networks}",
+            "message": f"Promiscuous mode service created and enabled for interfaces: {list(interfaces)}",
         }
 
     except Exception as e:
