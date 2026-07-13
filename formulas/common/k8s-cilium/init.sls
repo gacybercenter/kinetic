@@ -17,8 +17,5 @@ ensure_cilium_release:
     - pillar_key: res-k8s:cilium:values
     - wait_timeout: 600
     - wait_interval: 15
-    # Force standard MTU of 1500 (overrides Cilium's auto-detection which often picks 9000)
-    - set_values:
-      - mtu=1500
     - require:
       - k8s_helm: ensure_cilium_helm_repo
