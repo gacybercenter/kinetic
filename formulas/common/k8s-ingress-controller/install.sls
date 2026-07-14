@@ -56,7 +56,7 @@ install_traefik_internal_ingress_controller:
     - release_name: traefik-internal
     - chart_name: traefik/traefik
     - namespace: {{ pillar.get('traefik_internal_namespace', 'internal-ingress') }}
-    - pillar_key: res-k8s:lbs:internal
+    - pillar_key: res-k8s:lbs:internal:ingress
     - wait_timeout: 300
     - wait_interval: 10
     - keep_values_file: True
