@@ -70,20 +70,6 @@ install_traefik_internal_ingress_controller:
 #     - release_name: traefik-external
 #     - chart_name: traefik/traefik
 #     - namespace: {{ pillar.get('traefik_external_namespace', 'external-ingress') }}
-#     - values_dict:
-#         logs:
-#           general:
-#             level: DEBUG
-#         service:
-#           type: {{ pillar.get('traefik_external_service_type', 'LoadBalancer') }}
-#           spec:
-#             loadBalancerIP: {{ external_ip }}
-#         ingressClass:
-#           name: traefik-external
-#           isDefaultClass: false
-#         additionalArguments:
-#           - "--providers.kubernetesIngressNGINX"
-#           - "--serversTransport.insecureSkipVerify=true"
 #     - keep_values_file: True
 #     - wait_timeout: 300
 #     - wait_interval: 10
