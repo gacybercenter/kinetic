@@ -3011,6 +3011,7 @@ def gateway_present(
     gateway_class_name,
     listeners=None,
     addresses=None,
+    allowed_listeners=None,
     spec=None,
 ):
     """
@@ -3040,6 +3041,7 @@ def gateway_present(
             gateway_class_name=gateway_class_name,
             listeners=listeners,
             addresses=addresses,
+            allowed_listeners=allowed_listeners,
             spec=spec,
         )
         ret["result"] = result.get("success", False)
