@@ -22,13 +22,13 @@ add_metallb_repo:
 # {% set internal_ip = pillar['res-k8s']['lbs']['internal']['ip'] %}
 # {% set external_ip = pillar['res-k8s']['lbs']['external']['ip'] %}
 
-# # Add the Traefik Ingress Controller Helm repository
-# add_traefik_ingress_repo:
-#   k8s_helm.helm_repo_present:
-#     - repo_name: traefik
-#     - repo_url: https://traefik.github.io/charts
-#     - require:
-#       - test: helm_installed
+# Add the Traefik Ingress Controller Helm repository
+add_traefik_ingress_repo:
+  k8s_helm.helm_repo_present:
+    - repo_name: traefik
+    - repo_url: https://traefik.github.io/charts
+    - require:
+      - test: helm_installed
 
 # # Update Helm repositories to ensure the latest charts are available
 update_helm_repos:
@@ -36,7 +36,7 @@ update_helm_repos:
     - name: helm repo update
     - require:
       - k8s_helm: add_metallb_repo
-#      - k8s_helm: add_traefik_ingress_repo
+      - k8s_helm: add_traefik_ingress_repo
 
 # # Install or upgrade MetalLB using Helm via k8s_helm state
 install_metallb:
@@ -51,31 +51,18 @@ install_metallb:
        - cmd: update_helm_repos
 
 # # Install or upgrade Traefik Ingress Controller for internal traffic
-# install_traefik_internal_ingress_controller:
-#   k8s_helm.helm_release_present:
-#     - release_name: traefik-internal
-#     - chart_name: traefik/traefik
-#     - namespace: {{ pillar.get('traefik_internal_namespace', 'internal-ingress') }}
-#     - values_dict:
-#         logs:
-#           general:
-#             level: DEBUG
-#         service:
-#           type: {{ pillar.get('traefik_internal_service_type', 'LoadBalancer') }}
-#           spec:
-#             loadBalancerIP: {{ internal_ip }}
-#         ingressClass:
-#           name: traefik-internal
-#           isDefaultClass: false
-#         additionalArguments:
-#           - "--providers.kubernetesIngressNGINX"
-#           - "--serversTransport.insecureSkipVerify=true"
-#     - wait_timeout: 300
-#     - wait_interval: 10
-#     - keep_values_file: True
-#     - require:
-#       - cmd: update_helm_repos
-#       - k8s_helm: install_metallb
+install_traefik_internal_ingress_controller:
+  k8s_helm.helm_release_present:
+    - release_name: traefik-internal
+    - chart_name: traefik/traefik
+    - namespace: {{ pillar.get('traefik_internal_namespace', 'internal-ingress') }}
+    - pillar_key: res-k8s:lbs:internal
+    - wait_timeout: 300
+    - wait_interval: 10
+    - keep_values_file: True
+    - require:
+      - cmd: update_helm_repos
+      - k8s_helm: install_metallb
 
 # # Install or upgrade Traefik Ingress Controller for external traffic
 # install_traefik_external_ingress_controller:

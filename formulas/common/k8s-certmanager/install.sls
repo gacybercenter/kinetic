@@ -11,6 +11,5 @@ certmanager_helm_install:
     - chart: jetstack/cert-manager
     - flags:
       - create-namespace
-    - kvflags:
-        set: 'crds.enabled=true'
+    - pillar_key: res-k8s:cert-manager
     - unless: helm list -n cert-manager |grep cert-manager
