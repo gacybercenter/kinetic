@@ -3003,3 +3003,154 @@ def networkattachmentdefinition_present(
         ret["changes"] = {}
 
     return ret
+
+
+def gateway_present(
+    name,
+    namespace,
+    gateway_class_name,
+    listeners=None,
+    addresses=None,
+    spec=None,
+):
+    """
+    Ensure a Gateway (from Gateway API) is present.
+
+    See kinetic_k8s.gateway_present for parameter details.
+
+    Example:
+    .. code-block:: yaml
+
+        mygateway:
+          k8s.gateway_present:
+            - name: my-gateway
+            - namespace: default
+            - gateway_class_name: my-gateway-class
+            - listeners:
+              - name: http
+                port: 80
+                protocol: HTTP
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.gateway_present"](
+            namespace=namespace,
+            name=name,
+            gateway_class_name=gateway_class_name,
+            listeners=listeners,
+            addresses=addresses,
+            spec=spec,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"created": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Gateway {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def httproute_present(
+    name,
+    namespace,
+    parent_refs=None,
+    rules=None,
+    spec=None,
+):
+    """
+    Ensure an HTTPRoute (from Gateway API) is present.
+
+    See kinetic_k8s.httproute_present for parameter details.
+
+    Example:
+    .. code-block:: yaml
+
+        myroute:
+          k8s.httproute_present:
+            - name: my-route
+            - namespace: default
+            - parent_refs:
+              - name: my-gateway
+                sectionName: http
+            - rules:
+              - matches:
+                - path:
+                    type: PathPrefix
+                    value: /
+                backendRefs:
+                - name: my-service
+                  port: 80
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.httproute_present"](
+            namespace=namespace,
+            name=name,
+            parent_refs=parent_refs,
+            rules=rules,
+            spec=spec,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"created": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure HTTPRoute {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def gatewayclass_present(
+    name,
+    spec=None,
+):
+    """
+    Ensure a cluster-scoped GatewayClass (from Gateway API) is present.
+
+    See kinetic_k8s.gatewayclass_present for parameter details.
+
+    Example:
+    .. code-block:: yaml
+
+        mygatewayclass:
+          k8s.gatewayclass_present:
+            - name: my-gateway-class
+            - spec:
+                controllerName: gateway.kgateway.dev/kgateway
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.gatewayclass_present"](
+            name=name,
+            spec=spec,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"created": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure GatewayClass {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
