@@ -5897,10 +5897,6 @@ def gateway_present(
     CLI Example:
         salt '*' kinetic_k8s.gateway_present default my-gateway my-gateway-class \
             listeners='[{"name": "http", "port": 80, "protocol": "HTTP"}]'
-
-        # Listener-less gateway (your use case):
-        salt '*' kinetic_k8s.gateway_present default internal-gateway my-gateway-class \
-            allowed_listeners='{"namespaces": {"from": "Same"}}'
     """
     try:
         _load_k8s_config()
@@ -5965,7 +5961,7 @@ def gateway_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Error checking Gateway {name}: {str(e)[:50]}...",
+                    "message": f"Error checking Gateway {name}: {str(e)}",
                 }
 
         if not exists:
@@ -5983,7 +5979,7 @@ def gateway_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to create Gateway {name}: {str(e)[:100]}...",
+                    "message": f"Failed to create Gateway {name}: {str(e)}...",
                 }
         elif not matches:
             try:
@@ -6008,7 +6004,7 @@ def gateway_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to update Gateway {name}: {str(e)[:100]}...",
+                    "message": f"Failed to update Gateway {name}: {str(e)}...",
                 }
         else:
             message = f"Gateway {name} in namespace {namespace} already exists and matches desired state"
@@ -6019,7 +6015,7 @@ def gateway_present(
         return {
             "success": False,
             "updated": False,
-            "message": f"Gateway operation error: {str(e)[:100]}...",
+            "message": f"Gateway operation error: {str(e)}...",
         }
 
 
