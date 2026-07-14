@@ -5873,6 +5873,7 @@ def gateway_present(
     gateway_class_name,
     listeners=None,
     addresses=None,
+    allowed_listeners=None,
     spec=None,
 ):
     """
@@ -5886,6 +5887,8 @@ def gateway_present(
         gateway_class_name (str): The GatewayClass this Gateway references.
         listeners (list, optional): List of listener definitions.
         addresses (list, optional): List of address definitions.
+        allowed_listeners (dict, optional): allowedListeners block. Useful for listener-less/parent gateways.
+            Example: {"namespaces": {"from": "Same"}}
         spec (dict, optional): Full spec dictionary (overrides other params if provided).
 
     Returns:
@@ -5894,6 +5897,10 @@ def gateway_present(
     CLI Example:
         salt '*' kinetic_k8s.gateway_present default my-gateway my-gateway-class \
             listeners='[{"name": "http", "port": 80, "protocol": "HTTP"}]'
+
+        # Listener-less gateway (your use case):
+        salt '*' kinetic_k8s.gateway_present default internal-gateway my-gateway-class \
+            allowed_listeners='{"namespaces": {"from": "Same"}}'
     """
     try:
         _load_k8s_config()
@@ -5911,11 +5918,15 @@ def gateway_present(
                 spec["listeners"] = listeners
             if addresses:
                 spec["addresses"] = addresses
+            if allowed_listeners:
+                spec["allowedListeners"] = allowed_listeners
         else:
-            # Ensure gatewayClassName is present
+            # Ensure gatewayClassName is present and merge allowedListeners if provided
             spec = dict(spec)  # copy to avoid mutating caller's dict
             if "gatewayClassName" not in spec:
                 spec["gatewayClassName"] = gateway_class_name
+            if allowed_listeners and "allowedListeners" not in spec:
+                spec["allowedListeners"] = allowed_listeners
 
         body = {
             "apiVersion": f"{group}/{version}",
