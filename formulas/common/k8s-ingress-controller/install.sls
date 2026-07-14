@@ -51,18 +51,18 @@ install_metallb:
        - cmd: update_helm_repos
 
 # Install or upgrade Traefik Ingress Controller for internal traffic
-# install_traefik_internal_ingress_controller:
-#   k8s_helm.helm_release_present:
-#     - release_name: traefik-internal
-#     - chart_name: traefik/traefik
-#     - namespace: {{ pillar.get('traefik_internal_namespace', 'internal-ingress') }}
-#     - pillar_key: res-k8s:lbs:internal
-#     - wait_timeout: 300
-#     - wait_interval: 10
-#     - keep_values_file: True
-#     - require:
-#       - cmd: update_helm_repos
-#       - k8s_helm: install_metallb
+install_traefik_internal_ingress_controller:
+  k8s_helm.helm_release_present:
+    - release_name: traefik-internal
+    - chart_name: traefik/traefik
+    - namespace: {{ pillar.get('traefik_internal_namespace', 'internal-ingress') }}
+    - pillar_key: res-k8s:lbs:internal
+    - wait_timeout: 300
+    - wait_interval: 10
+    - keep_values_file: True
+    - require:
+      - cmd: update_helm_repos
+      - k8s_helm: install_metallb
 
 # # Install or upgrade Traefik Ingress Controller for external traffic
 # install_traefik_external_ingress_controller:
