@@ -3017,20 +3017,24 @@ def gateway_present(
     """
     Ensure a Gateway (from Gateway API) is present.
 
-    See kinetic_k8s.gateway_present for parameter details.
+    Important behavior:
+      If only `allowed_listeners` is provided (and no listeners), a dummy listener
+      is automatically added by the execution module. This is required by most
+      Gateway API implementations.
 
-    Example:
+    See kinetic_k8s.gateway_present for full details.
+
+    Example (listener-less/parent gateway):
     .. code-block:: yaml
 
-        mygateway:
+        internal_gateway:
           k8s.gateway_present:
-            - name: my-gateway
+            - name: internal-gateway
             - namespace: default
             - gateway_class_name: my-gateway-class
-            - listeners:
-              - name: http
-                port: 80
-                protocol: HTTP
+            - allowed_listeners:
+                namespaces:
+                  from: Same
     """
     ret = _state_ret(name)
 

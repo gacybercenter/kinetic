@@ -5877,9 +5877,13 @@ def gateway_present(
     spec=None,
 ):
     """
-    Ensure a Kubernetes Gateway (Gateway API) exists in the specified namespace.
+    Ensure a Kubernetes Gateway (Gateway API) exists.
 
-    This is a flexible function that accepts either individual parameters or a full spec dict.
+    Special behavior:
+    - If `allowed_listeners` is provided and `listeners` is None, a dummy listener
+      is automatically added. This is required by most Gateway API implementations
+      (Envoy Gateway, Gloo, etc.) even for "listener-less" parent gateways.
+    - You can still override this behavior by passing a full `spec` dict.
 
     Args:
         namespace (str): Namespace for the Gateway resource.
@@ -5887,16 +5891,16 @@ def gateway_present(
         gateway_class_name (str): The GatewayClass this Gateway references.
         listeners (list, optional): List of listener definitions.
         addresses (list, optional): List of address definitions.
-        allowed_listeners (dict, optional): allowedListeners block. Useful for listener-less/parent gateways.
+        allowed_listeners (dict, optional): allowedListeners block for cross-namespace routing.
             Example: {"namespaces": {"from": "Same"}}
-        spec (dict, optional): Full spec dictionary (overrides other params if provided).
+        spec (dict, optional): Full spec dictionary (overrides all other parameters).
 
     Returns:
         dict: A dictionary with 'success', 'updated', and 'message'.
 
     CLI Example:
-        salt '*' kinetic_k8s.gateway_present default my-gateway my-gateway-class \
-            listeners='[{"name": "http", "port": 80, "protocol": "HTTP"}]'
+        salt '*' kinetic_k8s.gateway_present default internal-gateway my-gateway-class \
+            allowed_listeners='{"namespaces": {"from": "Same"}}'
     """
     try:
         _load_k8s_config()
@@ -5910,15 +5914,28 @@ def gateway_present(
         # Build spec if not provided directly
         if spec is None:
             spec = {"gatewayClassName": gateway_class_name}
+
             if listeners:
                 spec["listeners"] = listeners
+            elif allowed_listeners:
+                # Add dummy listener when only allowedListeners is used.
+                # Many controllers require at least one listener.
+                spec["listeners"] = [{
+                    "name": "dummy",
+                    "port": 9999,
+                    "protocol": "TCP",
+                    "allowedRoutes": {
+                        "namespaces": {"from": "Same"}
+                    }
+                }]
+
             if addresses:
                 spec["addresses"] = addresses
             if allowed_listeners:
                 spec["allowedListeners"] = allowed_listeners
         else:
-            # Ensure gatewayClassName is present and merge allowedListeners if provided
-            spec = dict(spec)  # copy to avoid mutating caller's dict
+            # User provided full spec - respect it, but merge allowed_listeners if given
+            spec = dict(spec)
             if "gatewayClassName" not in spec:
                 spec["gatewayClassName"] = gateway_class_name
             if allowed_listeners and "allowedListeners" not in spec:
@@ -5961,7 +5978,7 @@ def gateway_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Error checking Gateway {name}: {str(e)}",
+                    "message": f"Error checking Gateway {name}: {str(e)[:80]}...",
                 }
 
         if not exists:
@@ -6015,7 +6032,7 @@ def gateway_present(
         return {
             "success": False,
             "updated": False,
-            "message": f"Gateway operation error: {str(e)}...",
+            "message": f"Failed to ensure Gateway {name}: {str(e)}",
         }
 
 
