@@ -56,6 +56,14 @@ internal_gateway:
     - allowed_listeners:
         namespaces:
           from: All
+external_gateway:
+  k8s.gateway_present:
+    - name: external-gateway
+    - namespace: default
+    - gateway_class_name: external-gateway
+    - allowed_listeners:
+        namespaces:
+          from: All
 
 # # Create a Service for internal ingress controller
 # ensure_service_internal:
