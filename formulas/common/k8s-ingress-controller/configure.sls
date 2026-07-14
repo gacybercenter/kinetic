@@ -57,28 +57,28 @@ internal_gateway:
         namespaces:
           from: All
 
-# # Create a Service for internal ingress controller
-# ensure_service_internal:
-#   k8s.service_present:
-#     - namespace: {{ pillar.get('traefik_internal_namespace', 'internal-ingress') }}
-#     - service_name: traefik-internal
-#     - service_type: LoadBalancer
-#     - selector:
-#         app.kubernetes.io/name: traefik
-#         app.kubernetes.io/instance: traefik-internal
-#     - ports:
-#         - name: http
-#           port: 80
-#           targetPort: 80
-#           protocol: TCP
-#         - name: https
-#           port: 443
-#           targetPort: 443
-#           protocol: TCP
-#     - annotations:
-#         metallb.universe.tf/address-pool: lb-pool-internal
-#     - require:
-#         - k8s: ensure_metallb_advertisement_internal
+# Create a Service for internal ingress controller
+ensure_service_internal:
+  k8s.service_present:
+    - namespace: {{ pillar.get('traefik_internal_namespace', 'internal-ingress') }}
+    - service_name: traefik-internal
+    - service_type: LoadBalancer
+    - selector:
+        app.kubernetes.io/name: traefik
+        app.kubernetes.io/instance: traefik-internal
+    - ports:
+        - name: http
+          port: 80
+          targetPort: 80
+          protocol: TCP
+        - name: https
+          port: 443
+          targetPort: 443
+          protocol: TCP
+    - annotations:
+        metallb.universe.tf/address-pool: lb-pool-internal
+    - require:
+        - k8s: ensure_metallb_advertisement_internal
 
 # # Create a Service for external ingress controller
 # ensure_service_external:
