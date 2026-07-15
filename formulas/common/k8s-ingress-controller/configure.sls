@@ -51,7 +51,7 @@ ensure_metallb_advertisement_external:
 internal_gateway:
   k8s.gateway_present:
     - name: internal-gateway
-    - namespace: metallb-system
+    - namespace: internal-ingress
     - gateway_class_name: internal-gateway
     - allowed_listeners:
         namespaces:
@@ -59,7 +59,7 @@ internal_gateway:
 external_gateway:
   k8s.gateway_present:
     - name: external-gateway
-    - namespace: metallb-system
+    - namespace: external-ingress
     - gateway_class_name: external-gateway
     - allowed_listeners:
         namespaces:
