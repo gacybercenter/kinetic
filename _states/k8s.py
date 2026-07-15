@@ -3018,13 +3018,13 @@ def gateway_present(
     Ensure a Gateway (from Gateway API) is present.
 
     Important behavior:
-      If only `allowed_listeners` is provided (and no listeners), a dummy listener
-      is automatically added by the execution module. This is required by most
-      Gateway API implementations.
+      If only `allowed_listeners` is provided (and no `listeners`), listeners on
+      ports **80 (HTTP)** and **443 (HTTPS)** are automatically added by the
+      execution module. This is required by most Gateway controllers.
 
     See kinetic_k8s.gateway_present for full details.
 
-    Example (listener-less/parent gateway):
+    Example (parent/reference gateway):
     .. code-block:: yaml
 
         internal_gateway:

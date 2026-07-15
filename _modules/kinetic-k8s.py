@@ -5880,10 +5880,11 @@ def gateway_present(
     Ensure a Kubernetes Gateway (Gateway API) exists.
 
     Special behavior:
-    - If `allowed_listeners` is provided and `listeners` is None, a dummy listener
-      is automatically added. This is required by most Gateway API implementations
-      (Envoy Gateway, Gloo, etc.) even for "listener-less" parent gateways.
-    - You can still override this behavior by passing a full `spec` dict.
+    - If `allowed_listeners` is provided **and** no `listeners` are given, listeners on
+      ports 80 (HTTP) and 443 (HTTPS) are automatically added.
+      This satisfies Gateway API validation while still using allowedListeners for
+      cross-namespace routing (parent/reference gateway pattern).
+    - You can still override this by passing a full `spec` dict or explicit listeners.
 
     Args:
         namespace (str): Namespace for the Gateway resource.
@@ -5918,16 +5919,27 @@ def gateway_present(
             if listeners:
                 spec["listeners"] = listeners
             elif allowed_listeners:
-                # Add dummy listener when only allowedListeners is used.
-                # Many controllers require at least one listener.
-                spec["listeners"] = [{
-                    "name": "dummy",
-                    "port": 9999,
-                    "protocol": "TCP",
-                    "allowedRoutes": {
-                        "namespaces": {"from": "Same"}
+                # When only allowedListeners is used (common for parent/reference gateways),
+                # we must still provide listeners. Many controllers require at least one.
+                # We use the standard ports 80 and 443 as requested.
+                spec["listeners"] = [
+                    {
+                        "name": "http",
+                        "port": 80,
+                        "protocol": "HTTP",
+                        "allowedRoutes": {
+                            "namespaces": {"from": "Same"}
+                        }
+                    },
+                    {
+                        "name": "https",
+                        "port": 443,
+                        "protocol": "HTTPS",
+                        "allowedRoutes": {
+                            "namespaces": {"from": "Same"}
+                        }
                     }
-                }]
+                ]
 
             if addresses:
                 spec["addresses"] = addresses
