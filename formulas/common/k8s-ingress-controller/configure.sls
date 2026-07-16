@@ -48,23 +48,6 @@ ensure_metallb_advertisement_external:
     - require:
         - k8s: ensure_metallb_pool_external
 
-internal_gateway:
-  k8s.gateway_present:
-    - name: internal-gateway
-    - namespace: internal-ingress
-    - gateway_class_name: internal-gateway
-    - allowed_listeners:
-        namespaces:
-          from: All
-external_gateway:
-  k8s.gateway_present:
-    - name: external-gateway
-    - namespace: external-ingress
-    - gateway_class_name: external-gateway
-    - allowed_listeners:
-        namespaces:
-          from: All
-
 # # Create a Service for internal ingress controller
 # ensure_service_internal:
 #   k8s.service_present:

@@ -50,6 +50,34 @@ install_metallb:
        - k8s: metallb_namespace
        - cmd: update_helm_repos
 
+ext_ingress_tls_certificate:
+  k8s.certmanager_certificate_present:
+    - name: ext-ingress-tls
+    - namespace: external-ingress
+    - certificate_name: ext-ingress-tls-secret
+    - secret_name: ext-ingress-tls-secret
+    - issuer_name: cyberrange-ca-issuer
+    - issuer_kind: ClusterIssuer
+    - common_name: ext-dashboard.svc.cluster.local
+    - dns_names:
+      - ext-dashboard.services.gacyberrange.org
+    - duration: 2160h
+    - renew_before: 360h
+
+int_ingress_tls_certificate:
+  k8s.certmanager_certificate_present:
+    - name: int-ingress-tls
+    - namespace: internal-ingress
+    - certificate_name: int-ingress-tls-secret
+    - secret_name: int-ingress-tls-secret
+    - issuer_name: cyberrange-ca-issuer
+    - issuer_kind: ClusterIssuer
+    - common_name: int-dashboard.svc.cluster.local
+    - dns_names:
+      - int-dashboard.services.gacyberrange.org
+    - duration: 2160h
+    - renew_before: 360h
+
 # Install or upgrade Traefik Ingress Controller for internal traffic
 install_traefik_internal_ingress_controller:
   k8s_helm.helm_release_present:
