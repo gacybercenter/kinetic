@@ -7,8 +7,8 @@ metallb_namespace:
     - namespace: {{ pillar.get('metallb_namespace', 'metallb-system') }}
 
 # Define internal and external IPs for the ingress controllers
-{% set internal_ip = pillar['res-k8s']['lbs']['internal']['ingress']['ip'] %}
-{% set external_ip = pillar['res-k8s']['lbs']['external']['ingress']['ip'] %}
+{% set internal_ip = pillar['res-k8s']['lbs']['internal']['ip'] %}
+{% set external_ip = pillar['res-k8s']['lbs']['external']['ip'] %}
 
 # Configure MetalLB pool and advertisement for internal IP
 ensure_metallb_pool_internal:
