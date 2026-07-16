@@ -8,7 +8,7 @@ metallb_namespace:
 
 # Define internal and external IPs for the ingress controllers
 {% set internal_ip = pillar['res-k8s']['lbs']['internal']['ingress']['service']['spec']['loadBalancerIP'] %}
-{% set external_ip = pillar['res-k8s']['lbs']['external']['ingress']['service']['spec']['loadBalancerIP'] %}
+{% set external_ip = pillar['res-k8s']['lbs']['external']['ingress']['providers']['kubernetesGateway']['statusAddress']['ip'] %}
 
 # Configure MetalLB pool and advertisement for internal IP
 ensure_metallb_pool_internal:
