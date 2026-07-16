@@ -19,15 +19,15 @@ ensure_metallb_pool_internal:
         - {{ internal_ip }}-{{ internal_ip }}
     - metallb_namespace: metallb-system
 
-ensure_metallb_advertisement_internal:
-  k8s.metallb_l2_advertisement_present:
-    - namespace: unused-namespace
-    - advertisement_name: lb-pool-internal-l2
-    - pool_names:
-        - lb-pool-internal
-    - metallb_namespace: metallb-system
-    - require:
-        - k8s: ensure_metallb_pool_internal
+# ensure_metallb_advertisement_internal:
+#   k8s.metallb_l2_advertisement_present:
+#     - namespace: unused-namespace
+#     - advertisement_name: lb-pool-internal-l2
+#     - pool_names:
+#         - lb-pool-internal
+#     - metallb_namespace: metallb-system
+#     - require:
+#         - k8s: ensure_metallb_pool_internal
 
 # Configure MetalLB pool and advertisement for external IP
 ensure_metallb_pool_external:
@@ -38,15 +38,15 @@ ensure_metallb_pool_external:
         - {{ external_ip }}-{{ external_ip }}
     - metallb_namespace: metallb-system
 
-ensure_metallb_advertisement_external:
-  k8s.metallb_l2_advertisement_present:
-    - namespace: unused-namespace
-    - advertisement_name: lb-pool-external-l2
-    - pool_names:
-        - lb-pool-external
-    - metallb_namespace: metallb-system
-    - require:
-        - k8s: ensure_metallb_pool_external
+# ensure_metallb_advertisement_external:
+# k8s.metallb_l2_advertisement_present:
+#     - namespace: unused-namespace
+#     - advertisement_name: lb-pool-external-l2
+#     - pool_names:
+#         - lb-pool-external
+#     - metallb_namespace: metallb-system
+#     - require:
+#         - k8s: ensure_metallb_pool_external
 
 # # Create a Service for internal ingress controller
 # ensure_service_internal:
