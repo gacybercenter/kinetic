@@ -19,7 +19,7 @@ ensure_metallb_pool_internal:
         - {{ internal_ip }}-{{ internal_ip }}
     - metallb_namespace: metallb-system
 
-# ensure_metallb_advertisement_internal:
+ensure_metallb_advertisement_internal:
   k8s.metallb_l2_advertisement_present:
     - namespace: unused-namespace
     - advertisement_name: lb-pool-internal-l2
