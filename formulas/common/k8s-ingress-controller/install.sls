@@ -67,7 +67,7 @@ ext_ingress_tls_certificate:
 int_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
     - name: int-ingress-tls
-    - namespace: internal-ingress
+    - namespace: external-ingress
     - certificate_name: int-ingress-tls-secret
     - secret_name: int-ingress-tls-secret
     - issuer_name: cyberrange-ca-issuer
