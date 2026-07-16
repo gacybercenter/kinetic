@@ -38,8 +38,8 @@ ensure_metallb_pool_external:
         - {{ external_ip }}-{{ external_ip }}
     - metallb_namespace: metallb-system
 
-# ensure_metallb_advertisement_external:
-k8s.metallb_l2_advertisement_present:
+ensure_metallb_advertisement_external:
+  k8s.metallb_l2_advertisement_present:
     - namespace: unused-namespace
     - advertisement_name: lb-pool-external-l2
     - pool_names:
