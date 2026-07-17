@@ -64,7 +64,7 @@ install_traefik_external_ingress_controller:
 ext_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
     - name: ext-ingress-tls
-    - namespace: external-ingress
+    - namespace: ingress
     - certificate_name: ext-ingress-tls-secret
     - secret_name: ext-ingress-tls-secret
     - issuer_name: cyberrange-ca-issuer
@@ -80,7 +80,7 @@ ext_ingress_tls_certificate:
 int_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
     - name: int-ingress-tls
-    - namespace: external-ingress
+    - namespace: ingress
     - certificate_name: int-ingress-tls-secret
     - secret_name: int-ingress-tls-secret
     - issuer_name: cyberrange-ca-issuer
