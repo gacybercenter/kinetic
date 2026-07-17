@@ -113,7 +113,7 @@ def ceph_cluster_present(
                     "provider": network_provider
                 },
                 "storage": {
-                    "useAllNodes": True,
+                    "useAllNodes": False,
                     "useAllDevices": use_all_devices,
                 }
             }
