@@ -74,6 +74,8 @@ ext_ingress_tls_certificate:
       - ext-dashboard.services.gacyberrange.org
     - duration: 2160h
     - renew_before: 360h
+    - require:
+      - k8s_helm: install_traefik_external_ingress_controller
 
 int_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
@@ -88,3 +90,5 @@ int_ingress_tls_certificate:
       - int-dashboard.services.gacyberrange.org
     - duration: 2160h
     - renew_before: 360h
+    - require:
+      - k8s_helm: install_traefik_external_ingress_controller
