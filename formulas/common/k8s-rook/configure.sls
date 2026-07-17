@@ -1,28 +1,19 @@
 include:
   - /formulas/common/k8s-rook/install
 
-rook_values:
-  file.managed:
-    - name: /tmp/rook.yaml
-    - source: salt://formulas/common/k8s-rook/files/rook-values.j2
-    - template: jinja
-helm_rook_repo:
-  helm.repo_managed:
-    - present:
-      - name: rook-release
-        url: https://charts.rook.io/release
-        repo_update: true
-        namespace: rook-ceph
+# Add Rook Helm repo
+add_rook_repo:
+  k8s_helm.helm_repo_present:
+    - repo_name: rook-release
+    - repo_url: https://charts.rook.io/release
 
-helm_rook_release:
-  helm.release_present:
-    - name: rook-ceph
-    - chart: rook-release/rook-ceph
-    - namespace: rook-ceph
-    - kvflags:
-        values: /tmp/rook.yaml
-    - unless: helm list -n rook-ceph |grep rook
+# Install Rook Operator
+rook_operator:
+  k8s_helm.helm_release_present:
+    - release_name: rook-ceph
+    - chart_name: rook-release/rook-ceph
+    - namespace: {{ pillar['rook']['namespace'] }}
+    - pillar_key: rook:operator
+    - wait_timeout: 300
     - require:
-      - file: rook_values
-    - watch:
-      - file: rook_values
+      - k8s_helm: add_rook_repo
