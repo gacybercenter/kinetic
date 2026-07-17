@@ -50,6 +50,8 @@ def ceph_cluster_present(
     dashboard_enabled=True,
     monitoring_enabled=True,
     toolbox_enabled=True,
+    placement=None,
+    placement_pillar=None,  # Pillar key containing component placements (e.g. 'rook:placement')
     spec=None,
 ):
     """
@@ -70,6 +72,10 @@ def ceph_cluster_present(
         dashboard_enabled (bool): Enable Ceph dashboard
         monitoring_enabled (bool): Enable Prometheus monitoring
         toolbox_enabled (bool): Deploy debug toolbox pod
+        placement (dict, optional): Direct placement configuration (affinity, tolerations, etc.)
+        placement_pillar (str, optional): Pillar key containing placement config
+            (e.g. 'rook:placement' or 'ceph:placement'). If a component is named 'node',
+            it will be mapped to 'all' as per Rook conventions.
         spec (dict, optional): Complete spec to override all other parameters
 
     Returns:
@@ -77,6 +83,10 @@ def ceph_cluster_present(
     """
     try:
         _load_k8s_config()
+
+        # Load placement from pillar if placement_pillar is provided
+        if placement_pillar and not placement:
+            placement = __salt__['pillar.get'](placement_pillar, {})
 
         custom_api = client.CustomObjectsApi()
         group = "ceph.rook.io"
@@ -105,15 +115,6 @@ def ceph_cluster_present(
                 "storage": {
                     "useAllNodes": True,
                     "useAllDevices": use_all_devices,
-                },
-                "placement": {
-                    "all": {
-                        "tolerations": [{
-                            "key": "node-role.kubernetes.io/rook-node",
-                            "operator": "Exists",
-                            "effect": "NoSchedule"
-                        }]
-                    }
                 }
             }
 
@@ -136,6 +137,24 @@ def ceph_cluster_present(
             # Add toolbox if requested
             if toolbox_enabled:
                 spec["toolbox"] = {"enabled": True}
+
+            # Add placement configuration with 'node' -> 'all' mapping
+            if placement:
+                placement_dict = dict(placement)  # copy to avoid mutation
+                if "node" in placement_dict and "all" not in placement_dict:
+                    placement_dict["all"] = placement_dict.pop("node")
+                spec["placement"] = placement_dict
+            else:
+                # Default sensible placement for production
+                spec["placement"] = {
+                    "all": {
+                        "tolerations": [{
+                            "key": "node-role.kubernetes.io/rook-node",
+                            "operator": "Exists",
+                            "effect": "NoSchedule"
+                        }]
+                    }
+                }
         else:
             spec = dict(spec)  # avoid mutating original
 

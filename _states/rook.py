@@ -35,6 +35,8 @@ def ceph_cluster_present(
     dashboard_enabled=True,
     monitoring_enabled=True,
     toolbox_enabled=True,
+    placement=None,
+    placement_pillar=None,
     spec=None,
 ):
     """
@@ -66,6 +68,13 @@ def ceph_cluster_present(
 
     dashboard_enabled, monitoring_enabled, toolbox_enabled
         Feature flags for common Ceph components.
+
+    placement
+        Direct placement configuration (affinity, tolerations, etc.)
+
+    placement_pillar
+        Pillar key containing placement configuration. If a component is named 'node',
+        it will be automatically mapped to 'all' (Rook convention).
 
     spec
         Full CephCluster .spec dictionary. Overrides all other parameters if provided.
@@ -100,6 +109,8 @@ def ceph_cluster_present(
             dashboard_enabled=dashboard_enabled,
             monitoring_enabled=monitoring_enabled,
             toolbox_enabled=toolbox_enabled,
+            placement=placement,
+            placement_pillar=placement_pillar,
             spec=spec,
         )
 
