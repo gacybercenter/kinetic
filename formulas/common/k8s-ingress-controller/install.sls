@@ -92,3 +92,59 @@ int_ingress_tls_certificate:
     - renew_before: 360h
     - require:
       - k8s_helm: install_traefik_external_ingress_controller
+
+traefik_external_gateway:
+  k8s.gateway_present:
+    - name: traefik-external
+    - namespace: default
+    - gateway_class_name: traefik
+    - addresses:
+      - type: IPAddress
+        value: 10.150.1.247
+    - listeners:
+      - name: web-ext
+        protocol: HTTP
+        port: 9080
+        allowedRoutes:
+          namespaces:
+            from: All
+      - name: websecure-ext
+        protocol: HTTPS
+        port: 9443
+        allowedRoutes:
+          namespaces:
+            from: All
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - group: ""
+              kind: Secret
+              name: ext-ingress-tls-secret
+
+traefik_internal_gateway:
+  k8s.gateway_present:
+    - name: traefik-internal
+    - namespace: default
+    - gateway_class_name: traefik
+    - addresses:
+      - type: IPAddress
+        value: 10.150.1.43
+    - listeners:
+      - name: web
+        port: 80
+        protocol: HTTP
+        allowedRoutes:
+          namespaces:
+            from: All
+      - name: websecure
+        port: 443
+        protocol: HTTPS
+        allowedRoutes:
+          namespaces:
+            from: All
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - kind: Secret
+              name: int-ingress-tls-secret
+              group: ""
