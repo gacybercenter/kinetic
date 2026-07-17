@@ -15,5 +15,3 @@ rook_ceph_cluster:
     - dashboard_enabled: true
     - monitoring_enabled: true
     - toolbox_enabled: true
-    - require:
-      - k8s: create_rook_namespace
