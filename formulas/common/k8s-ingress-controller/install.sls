@@ -96,7 +96,7 @@ int_ingress_tls_certificate:
 traefik_external_gateway:
   k8s.gateway_present:
     - name: traefik-external
-    - namespace: default
+    - namespace: ingress
     - gateway_class_name: traefik
     - addresses:
       - type: IPAddress
@@ -120,11 +120,12 @@ traefik_external_gateway:
             - group: ""
               kind: Secret
               name: ext-ingress-tls-secret
-
+      - require:
+        - k8s_helm: install_traefik_external_ingress_controller
 traefik_internal_gateway:
   k8s.gateway_present:
     - name: traefik-internal
-    - namespace: default
+    - namespace: ingress
     - gateway_class_name: traefik
     - addresses:
       - type: IPAddress
@@ -148,3 +149,5 @@ traefik_internal_gateway:
             - kind: Secret
               name: int-ingress-tls-secret
               group: ""
+      - require:
+        - k8s_helm: install_traefik_external_ingress_controller
