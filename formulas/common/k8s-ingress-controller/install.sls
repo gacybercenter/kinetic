@@ -120,8 +120,8 @@ traefik_external_gateway:
             - group: ""
               kind: Secret
               name: ext-ingress-tls-secret
-      - require:
-        - k8s_helm: install_traefik_external_ingress_controller
+    - require:
+      - k8s_helm: install_traefik_external_ingress_controller
 traefik_internal_gateway:
   k8s.gateway_present:
     - name: traefik-internal
@@ -149,5 +149,5 @@ traefik_internal_gateway:
             - kind: Secret
               name: int-ingress-tls-secret
               group: ""
-      - require:
-        - k8s_helm: install_traefik_external_ingress_controller
+    - require:
+      - k8s_helm: install_traefik_external_ingress_controller
