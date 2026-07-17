@@ -8,7 +8,7 @@ rook_ceph_cluster:
     - namespace: {{ pillar['res-k8s']['rook']['namespace'] }}
     - ceph_version: {{ pillar['res-k8s']['rook']['ceph_image'] }}
     - devices: {{ pillar['res-k8s']['rook']['osd_mappings']['storage']['osd']  }}
-    - placement_pillar: rook:placement        # Clean!
+    - placement_pillar: res-k8s:rook:placement        # Clean!
     - network_provider: {{ pillar['res-k8s']['rook']['cluster']['network']['provider'] }}
     - public_network: {{ pillar['res-k8s']['rook']['cluster']['network']['public'] }}
     - cluster_network: {{ pillar['res-k8s']['rook']['cluster']['network']['cluster'] }}
