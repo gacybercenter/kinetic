@@ -5582,7 +5582,6 @@ def ceph_object_store_present(
             "resource": {},
         }
 
-
 def kubernetes_deployment_present(
     name,
     namespace,
@@ -5865,4 +5864,433 @@ def networkattachmentdefinition_present(
             "success": False,
             "updated": False,
             "message": f"Failed to ensure NetworkAttachmentDefinition {name}: {str(e)[:100]}...",
+        }
+
+
+def gateway_present(
+    namespace,
+    name,
+    gateway_class_name,
+    listeners=None,
+    addresses=None,
+    allowed_listeners=None,
+    spec=None,
+):
+    """
+    Ensure a Kubernetes Gateway (Gateway API) exists.
+
+    Special behavior:
+    - If `allowed_listeners` is provided **and** no `listeners` are given, listeners on
+      ports 80 (HTTP) and 443 (HTTPS) are automatically added.
+      This satisfies Gateway API validation while still using allowedListeners for
+      cross-namespace routing (parent/reference gateway pattern).
+    - You can still override this by passing a full `spec` dict or explicit listeners.
+
+    Args:
+        namespace (str): Namespace for the Gateway resource.
+        name (str): Name of the Gateway.
+        gateway_class_name (str): The GatewayClass this Gateway references.
+        listeners (list, optional): List of listener definitions.
+        addresses (list, optional): List of address definitions.
+        allowed_listeners (dict, optional): allowedListeners block for cross-namespace routing.
+            Example: {"namespaces": {"from": "Same"}}
+        spec (dict, optional): Full spec dictionary (overrides all other parameters).
+
+    Returns:
+        dict: A dictionary with 'success', 'updated', and 'message'.
+
+    CLI Example:
+        salt '*' kinetic_k8s.gateway_present default internal-gateway my-gateway-class \
+            allowed_listeners='{"namespaces": {"from": "Same"}}'
+    """
+    try:
+        _load_k8s_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "gateway.networking.k8s.io"
+        version = "v1"
+        plural = "gateways"
+        kind = "Gateway"
+
+        # Build spec if not provided directly
+        if spec is None:
+            spec = {"gatewayClassName": gateway_class_name}
+
+            if listeners:
+                spec["listeners"] = listeners
+            elif allowed_listeners:
+                # When only allowedListeners is used (common for parent/reference gateways),
+                # we must still provide listeners. Many controllers require at least one.
+                # We use the standard ports 80 and 443 as requested.
+                spec["listeners"] = [
+                    {
+                        "name": "http",
+                        "port": 80,
+                        "protocol": "HTTP",
+                        "allowedRoutes": {
+                            "namespaces": {"from": "Same"}
+                        }
+                    },
+                    {
+                        "name": "https",
+                        "port": 443,
+                        "protocol": "HTTPS",
+                        "allowedRoutes": {
+                            "namespaces": {"from": "Same"}
+                        }
+                    }
+                ]
+
+            if addresses:
+                spec["addresses"] = addresses
+            if allowed_listeners:
+                spec["allowedListeners"] = allowed_listeners
+        else:
+            # User provided full spec - respect it, but merge allowed_listeners if given
+            spec = dict(spec)
+            if "gatewayClassName" not in spec:
+                spec["gatewayClassName"] = gateway_class_name
+            if allowed_listeners and "allowedListeners" not in spec:
+                spec["allowedListeners"] = allowed_listeners
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": kind,
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        exists = False
+        updated = False
+        matches = False
+        resource = None
+
+        # Check if Gateway exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=name,
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            if current_spec == spec:
+                matches = True
+                message = f"Gateway {name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"Gateway {name} in namespace {namespace} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"Gateway {name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking Gateway {name}: {str(e)[:80]}...",
+                }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                updated = True
+                message = f"Gateway {name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create Gateway {name}: {str(e)}...",
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion to avoid conflicts
+                if (
+                    resource
+                    and "metadata" in resource
+                    and "resourceVersion" in resource["metadata"]
+                ):
+                    body["metadata"]["resourceVersion"] = resource["metadata"]["resourceVersion"]
+                custom_api.replace_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=name,
+                    body=body,
+                )
+                updated = True
+                message = f"Gateway {name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update Gateway {name}: {str(e)}...",
+                }
+        else:
+            message = f"Gateway {name} in namespace {namespace} already exists and matches desired state"
+
+        return {"success": True, "updated": updated, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to ensure Gateway {name}: {str(e)}",
+        }
+
+
+def httproute_present(
+    namespace,
+    name,
+    parent_refs=None,
+    rules=None,
+    spec=None,
+):
+    """
+    Ensure a Kubernetes HTTPRoute (Gateway API) exists in the specified namespace.
+
+    Args:
+        namespace (str): Namespace for the HTTPRoute.
+        name (str): Name of the HTTPRoute.
+        parent_refs (list, optional): List of parentRefs (which Gateways this route attaches to).
+        rules (list, optional): List of HTTPRoute rules (matches, backendRefs, filters).
+        spec (dict, optional): Full spec if provided.
+
+    Returns:
+        dict: A dictionary with 'success', 'updated', and 'message'.
+
+    CLI Example:
+        salt '*' kinetic_k8s.httproute_present default my-route \
+            parent_refs='[{"name": "my-gateway", "sectionName": "http"}]' \
+            rules='[{"matches": [{"path": {"type": "PathPrefix", "value": "/"}}], "backendRefs": [{"name": "my-service", "port": 80}]}]'
+    """
+    try:
+        _load_k8s_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "gateway.networking.k8s.io"
+        version = "v1"
+        plural = "httproutes"
+        kind = "HTTPRoute"
+
+        # Build spec if not provided directly
+        if spec is None:
+            spec = {}
+            if parent_refs:
+                spec["parentRefs"] = parent_refs
+            if rules:
+                spec["rules"] = rules
+        else:
+            spec = dict(spec)  # copy
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": kind,
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        exists = False
+        updated = False
+        matches = False
+        resource = None
+
+        # Check if HTTPRoute exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=name,
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            if current_spec == spec:
+                matches = True
+                message = f"HTTPRoute {name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"HTTPRoute {name} in namespace {namespace} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"HTTPRoute {name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking HTTPRoute {name}: {str(e)[:50]}...",
+                }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                updated = True
+                message = f"HTTPRoute {name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create HTTPRoute {name}: {str(e)[:100]}...",
+                }
+        elif not matches:
+            try:
+                if (
+                    resource
+                    and "metadata" in resource
+                    and "resourceVersion" in resource["metadata"]
+                ):
+                    body["metadata"]["resourceVersion"] = resource["metadata"]["resourceVersion"]
+                custom_api.replace_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=name,
+                    body=body,
+                )
+                updated = True
+                message = f"HTTPRoute {name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update HTTPRoute {name}: {str(e)[:100]}...",
+                }
+        else:
+            message = f"HTTPRoute {name} in namespace {namespace} already exists and matches desired state"
+
+        return {"success": True, "updated": updated, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"HTTPRoute operation error: {str(e)[:100]}...",
+        }
+
+
+def gatewayclass_present(
+    name,
+    spec=None,
+):
+    """
+    Ensure a cluster-scoped GatewayClass (Gateway API) exists.
+
+    Args:
+        name (str): Name of the GatewayClass.
+        spec (dict): Specification for the GatewayClass (e.g. controllerName).
+
+    Returns:
+        dict: success, updated, message.
+    """
+    try:
+        _load_k8s_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "gateway.networking.k8s.io"
+        version = "v1"
+        plural = "gatewayclasses"
+        kind = "GatewayClass"
+
+        if spec is None:
+            spec = {"controllerName": "gateway.kgateway.dev/kgateway"}  # sensible default
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": kind,
+            "metadata": {"name": name},
+            "spec": spec,
+        }
+
+        exists = False
+        updated = False
+        matches = False
+        resource = None
+
+        try:
+            resource = custom_api.get_cluster_custom_object(
+                group=group, version=version, plural=plural, name=name
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            if current_spec == spec:
+                matches = True
+                message = f"GatewayClass {name} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"GatewayClass {name} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"GatewayClass {name} does not exist"
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking GatewayClass {name}: {str(e)[:50]}...",
+                }
+
+        if not exists:
+            try:
+                custom_api.create_cluster_custom_object(
+                    group=group, version=version, plural=plural, body=body
+                )
+                updated = True
+                message = f"GatewayClass {name} created"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create GatewayClass {name}: {str(e)[:100]}...",
+                }
+        elif not matches:
+            try:
+                if (
+                    resource
+                    and "metadata" in resource
+                    and "resourceVersion" in resource["metadata"]
+                ):
+                    body["metadata"]["resourceVersion"] = resource["metadata"]["resourceVersion"]
+                custom_api.replace_cluster_custom_object(
+                    group=group,
+                    version=version,
+                    plural=plural,
+                    name=name,
+                    body=body,
+                )
+                updated = True
+                message = f"GatewayClass {name} updated"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update GatewayClass {name}: {str(e)[:100]}...",
+                }
+        else:
+            message = f"GatewayClass {name} already exists and matches desired state"
+
+        return {"success": True, "updated": updated, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"GatewayClass operation error: {str(e)[:100]}...",
         }
