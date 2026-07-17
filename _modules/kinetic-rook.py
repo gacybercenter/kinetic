@@ -67,8 +67,8 @@ def ceph_cluster_present(
         devices (list): List of device paths to use for OSDs
         use_all_devices (bool): Whether to use all available devices
         network_provider (str): Network provider ('host' or 'multus')
-        public_network (str): CIDR for public network (if not using host network)
-        cluster_network (str): CIDR for cluster network (if not using host network)
+        public_network (str): For Multus, use "namespace/nadname" format (e.g. "default/public")
+        cluster_network (str): For Multus, use "namespace/nadname" format (e.g. "default/cluster")
         dashboard_enabled (bool): Enable Ceph dashboard
         monitoring_enabled (bool): Enable Prometheus monitoring
         toolbox_enabled (bool): Deploy debug toolbox pod
@@ -129,9 +129,16 @@ def ceph_cluster_present(
                 spec["network"]["provider"] = "host"
             elif public_network and cluster_network:
                 spec["network"]["provider"] = "multus"
+                # Rook Multus expects "namespace/nadname" format (e.g. "default/public")
+                # If only NAD name is provided without namespace, assume "default"
+                def _format_multus_net(net):
+                    if isinstance(net, str) and "/" not in net:
+                        return f"default/{net}"
+                    return net
+
                 spec["network"]["selectors"] = {
-                    "public": public_network,
-                    "cluster": cluster_network
+                    "public": _format_multus_net(public_network),
+                    "cluster": _format_multus_net(cluster_network)
                 }
 
             # Add toolbox if requested
