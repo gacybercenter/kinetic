@@ -13,5 +13,5 @@ rook_ceph_cluster:
     - public_network: {{ pillar['res-k8s']['rook']['cluster']['network']['public'] }}
     - cluster_network: {{ pillar['res-k8s']['rook']['cluster']['network']['cluster'] }}
     - dashboard_enabled: true
-    - monitoring_enabled: true
+    - monitoring_enabled: false
     - toolbox_enabled: true
