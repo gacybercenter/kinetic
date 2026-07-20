@@ -17,7 +17,6 @@ assign_rook_node_role:
         cmd: |
           for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep 'rook-rsc'); do
             kubectl label nodes "$node" node-role.kubernetes.io/rook-node= --overwrite
-            kubectl label nodes "$node" ceph-type=mon --overwrite
             kubectl taint node "$node" node-role.kubernetes.io/rook-node=:NoSchedule --overwrite
           done
     - tgt: '{{ k8s }}'
@@ -44,7 +43,7 @@ assign_storage_node_role:
 # Step 4: Apply Rook configuration
 k8s_rook-op:
   salt.state:
-    - tgt: '{{ k8s }}' 
+    - tgt: '{{ k8s }}'
     - sls: /formulas/common/k8s-rook/configure
     - require:
       - salt: assign_rook_node_role

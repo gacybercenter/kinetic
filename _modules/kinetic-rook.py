@@ -115,6 +115,7 @@ def ceph_cluster_present(
                 "storage": {
                     "useAllNodes": False,
                     "useAllDevices": use_all_devices,
+                    "onlyApplyOSDPlacement": True
                 }
             }
 
