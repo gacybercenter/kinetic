@@ -27,9 +27,9 @@ def ceph_cluster_present(
     name,
     namespace="rook-ceph",
     ceph_version="quay.io/ceph/ceph:v18.2.4",
-    devices=None,
     use_all_devices=False,
-    osd_mappings=None,          # Per-node storage configuration from pillar
+    use_all_nodes=True,
+    device_filter=None,         # e.g. "^sd." or "nvme.*"
     network_provider="host",
     public_network=None,
     cluster_network=None,
@@ -55,20 +55,14 @@ def ceph_cluster_present(
     ceph_version
         Full Ceph container image (e.g. quay.io/ceph/ceph:v18.2.4).
 
-    devices
-        List of block device paths to use for OSDs (legacy).
-
-    osd_mappings
-        Per-node storage configuration (preferred). Example:
-          storage:
-            nodes:
-              - storage-01:
-                  device_filter: "^sd."
-              - storage-02:
-                  device_filter: "^sd."
-
     use_all_devices
-        Whether to use all available devices (alternative to explicit devices list).
+        Whether to use all available devices for OSDs.
+
+    use_all_nodes
+        Whether to use all nodes in the cluster (default: True).
+
+    device_filter
+        Regex filter for devices (e.g. "^sd." or "nvme.*").
 
     network_provider
         Usually 'host'. Can be 'multus' if public_network and cluster_network are set.
@@ -115,8 +109,9 @@ def ceph_cluster_present(
             namespace=namespace,
             name=name,
             ceph_version=ceph_version,
-            devices=devices,
             use_all_devices=use_all_devices,
+            use_all_nodes=use_all_nodes,
+            device_filter=device_filter,
             network_provider=network_provider,
             public_network=public_network,
             cluster_network=cluster_network,
