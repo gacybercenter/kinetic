@@ -7,7 +7,9 @@ rook_ceph_cluster:
     - name: rook-ceph
     - namespace: {{ pillar['res-k8s']['rook']['namespace'] }}
     - ceph_version: {{ pillar['res-k8s']['rook']['ceph_image'] }}
-    - osd_mappings: {{ pillar['res-k8s']['rook']['osd_mappings'] }}
+    - use_all_nodes: {{ pillar.get('rook:use_all_nodes', True) }}
+    - use_all_devices: {{ pillar.get('rook:use_all_devices', False) }}
+    - device_filter: {{ pillar.get('rook:device_filter') }}
     - placement_pillar: res-k8s:rook:placement        # Clean!
     - network_provider: {{ pillar['res-k8s']['rook']['cluster']['network']['provider'] }}
     - public_network: {{ pillar['res-k8s']['rook']['cluster']['network']['public'] }}
