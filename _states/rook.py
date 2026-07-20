@@ -30,6 +30,7 @@ def ceph_cluster_present(
     use_all_devices=False,
     use_all_nodes=True,
     device_filter=None,         # e.g. "^sd." or "nvme.*"
+    only_apply_osd_placement=False,
     network_provider="host",
     public_network=None,
     cluster_network=None,
@@ -63,6 +64,9 @@ def ceph_cluster_present(
 
     device_filter
         Regex filter for devices (e.g. "^sd." or "nvme.*").
+
+    only_apply_osd_placement
+        Whether placement rules should only apply to OSDs (default: False).
 
     network_provider
         Usually 'host'. Can be 'multus' if public_network and cluster_network are set.
@@ -112,6 +116,7 @@ def ceph_cluster_present(
             use_all_devices=use_all_devices,
             use_all_nodes=use_all_nodes,
             device_filter=device_filter,
+            only_apply_osd_placement=only_apply_osd_placement,
             network_provider=network_provider,
             public_network=public_network,
             cluster_network=cluster_network,
