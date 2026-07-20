@@ -31,6 +31,7 @@ def ceph_cluster_present(
     use_all_nodes=True,
     device_filter=None,         # e.g. "^sd." or "nvme.*"
     only_apply_osd_placement=False,
+    metadata_device=None,       # Dedicated device for metadata (e.g. "md0", "nvme0n1")
     network_provider="host",
     public_network=None,
     cluster_network=None,
@@ -67,6 +68,9 @@ def ceph_cluster_present(
 
     only_apply_osd_placement
         Whether placement rules should only apply to OSDs (default: False).
+
+    metadata_device
+        Dedicated device for Ceph metadata (e.g. "md0", "nvme0n1").
 
     network_provider
         Usually 'host'. Can be 'multus' if public_network and cluster_network are set.
@@ -117,6 +121,7 @@ def ceph_cluster_present(
             use_all_nodes=use_all_nodes,
             device_filter=device_filter,
             only_apply_osd_placement=only_apply_osd_placement,
+            metadata_device=metadata_device,
             network_provider=network_provider,
             public_network=public_network,
             cluster_network=cluster_network,

@@ -46,6 +46,7 @@ def ceph_cluster_present(
     use_all_nodes=True,
     device_filter=None,         # e.g. "^sd." or "nvme.*"
     only_apply_osd_placement=False,  # Apply placement rules only to OSDs (default: False)
+    metadata_device=None,       # Dedicated device for metadata (e.g. "md0", "nvme0n1")
     network_provider="host",
     public_network=None,
     cluster_network=None,
@@ -69,7 +70,8 @@ def ceph_cluster_present(
         use_all_devices (bool): Use all devices on nodes for OSDs
         use_all_nodes (bool): Use all nodes in the cluster for Ceph (default: True)
         device_filter (str): Regex to filter devices (e.g. "^sd." or "nvme.*")
-        only_apply_osd_placement (bool): Apply placement rules only to OSDs (default: True)
+        only_apply_osd_placement (bool): Apply placement rules only to OSDs (default: False)
+        metadata_device (str): Dedicated device for Ceph metadata (e.g. "md0", "nvme0n1")
         network_provider (str): Network provider ('host' or 'multus')
         public_network (str): For Multus, use "namespace/nadname" format (e.g. "default/public")
         cluster_network (str): For Multus, use "namespace/nadname" format (e.g. "default/cluster")
@@ -126,6 +128,10 @@ def ceph_cluster_present(
             # Add storage configuration based on new simpler parameters
             if device_filter:
                 spec["storage"]["deviceFilter"] = device_filter
+            if metadata_device:
+                if "config" not in spec["storage"]:
+                    spec["storage"]["config"] = {}
+                spec["storage"]["config"]["metadataDevice"] = metadata_device
             # Note: nodes configuration can still be provided via full `spec` override if needed
 
             # Add network configuration
