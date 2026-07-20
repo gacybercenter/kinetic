@@ -44,6 +44,7 @@ def ceph_cluster_present(
     ceph_version="quay.io/ceph/ceph:v18.2.4",
     devices=None,
     use_all_devices=False,
+    osd_mappings=None,          # Per-node storage configuration (new)
     network_provider="host",
     public_network=None,
     cluster_network=None,
@@ -64,8 +65,16 @@ def ceph_cluster_present(
         namespace (str): Namespace for the CephCluster (default: rook-ceph)
         name (str): Name of the CephCluster (default: rook-ceph)
         ceph_version (str): Ceph container image (default: latest v18)
-        devices (list): List of device paths to use for OSDs
+        devices (list): List of device paths to use for OSDs (legacy)
         use_all_devices (bool): Whether to use all available devices
+        osd_mappings (dict): Per-node storage configuration from pillar (preferred)
+            Example:
+              storage:
+                nodes:
+                  - storage-01:
+                      device_filter: "^sd."
+                  - storage-02:
+                      device_filter: "^sd."
         network_provider (str): Network provider ('host' or 'multus')
         public_network (str): For Multus, use "namespace/nadname" format (e.g. "default/public")
         cluster_network (str): For Multus, use "namespace/nadname" format (e.g. "default/cluster")
@@ -119,8 +128,31 @@ def ceph_cluster_present(
                 }
             }
 
-            # Add device configuration
-            if devices:
+            # Add storage configuration (support both legacy and new per-node osd_mappings)
+            if osd_mappings and isinstance(osd_mappings, dict) and 'storage' in osd_mappings:
+                storage_config = osd_mappings['storage']
+                if 'nodes' in storage_config:
+                    # New per-node configuration format
+                    nodes = []
+                    for node_entry in storage_config['nodes']:
+                        for node_name, node_config in node_entry.items():
+                            node_spec = {
+                                "name": node_name,
+                                "config": {}
+                            }
+                            if isinstance(node_config, dict):
+                                if 'device_filter' in node_config:
+                                    node_spec["config"]["deviceFilter"] = node_config['device_filter']
+                                elif 'devices' in node_config:
+                                    node_spec["devices"] = [{"name": d} for d in node_config['devices']]
+                            nodes.append(node_spec)
+                    spec["storage"]["nodes"] = nodes
+                else:
+                    # Legacy format
+                    if 'devices' in storage_config:
+                        spec["storage"]["devices"] = [{"name": d} for d in storage_config['devices']]
+            elif devices:
+                # Legacy devices list
                 spec["storage"]["devices"] = [{"name": d} for d in devices]
             elif use_all_devices:
                 spec["storage"]["useAllDevices"] = True
