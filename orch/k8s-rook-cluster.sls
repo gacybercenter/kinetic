@@ -13,8 +13,6 @@ assign_rook_node_role:
           done
     - tgt: '{{ k8s }}'
     - output_loglevel: info
-    - require:
-      - salt: create_rook_namespace
 
 # Step 3: Assign role label 'node-role.kubernetes.io/rook-osd-node' to nodes with names containing storage*
 assign_storage_node_role:
@@ -29,9 +27,6 @@ assign_storage_node_role:
           done
     - tgt: '{{ k8s }}'
     - output_loglevel: info
-    - require:
-      - salt: create_rook_namespace
-
 install_rook_cluster:
   salt.state:
     - tgt: {{ k8s }}
