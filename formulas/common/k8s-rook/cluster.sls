@@ -12,7 +12,7 @@ rook_ceph_cluster:
     - device_filter: {{ pillar['res-k8s']['rook']['device_filter'] }}
     - only_apply_osd_placement: true
     - metadata_device: nvme1n1
-    - resources: {{ pillar['rest-k8s']['rook']['resources'] }}
+    - resources: {{ pillar['res-k8s']['rook']['resources'] }}
     - placement_pillar: res-k8s:rook:placement        # Clean!
     - network_provider: {{ pillar['res-k8s']['rook']['cluster']['network']['provider'] }}
     - public_network: {{ pillar['res-k8s']['rook']['cluster']['network']['public'] }}
