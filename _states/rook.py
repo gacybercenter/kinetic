@@ -39,6 +39,7 @@ def ceph_cluster_present(
     monitoring_enabled=True,
     toolbox_enabled=True,
     resources=None,         # Per-daemon resource limits/requests from pillar
+    resources_pillar=None,  # Pillar key for resources (e.g. 'res-k8s:rook:resources')
     placement=None,
     placement_pillar=None,
     spec=None,
@@ -83,7 +84,7 @@ def ceph_cluster_present(
         Feature flags for common Ceph components.
 
     resources
-        Per-daemon resource limits/requests. Example:
+        Per-daemon resource limits/requests. Example (under res-k8s:rook:resources):
           mon:
             limits:
               cpu: "2"
@@ -95,6 +96,9 @@ def ceph_cluster_present(
             limits:
               cpu: "4"
               memory: "8Gi"
+
+    resources_pillar
+        Pillar key for resources (e.g. 'res-k8s:rook:resources')
 
     placement
         Direct placement configuration (affinity, tolerations, etc.)
@@ -138,6 +142,7 @@ def ceph_cluster_present(
             only_apply_osd_placement=only_apply_osd_placement,
             metadata_device=metadata_device,
             resources=resources,
+            resources_pillar=resources_pillar,
             network_provider=network_provider,
             public_network=public_network,
             cluster_network=cluster_network,

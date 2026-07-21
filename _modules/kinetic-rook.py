@@ -53,7 +53,8 @@ def ceph_cluster_present(
     dashboard_enabled=True,
     monitoring_enabled=True,
     toolbox_enabled=True,
-    resources=None,         # Per-daemon resource limits/requests from pillar
+    resources=None,         # Per-daemon resource limits/requests (or use resources_pillar)
+    resources_pillar=None,  # Pillar key for resources (e.g. 'res-k8s:rook:resources')
     placement=None,
     placement_pillar=None,  # Pillar key containing component placements (e.g. 'rook:placement')
     spec=None,
@@ -80,7 +81,7 @@ def ceph_cluster_present(
         monitoring_enabled (bool): Enable Prometheus monitoring
         toolbox_enabled (bool): Deploy debug toolbox pod
         resources (dict, optional): Per-daemon resource limits/requests.
-            Example:
+            Example (under res-k8s:rook:resources):
               mon:
                 limits:
                   cpu: "2"
@@ -92,6 +93,7 @@ def ceph_cluster_present(
                 limits:
                   cpu: "4"
                   memory: "8Gi"
+        resources_pillar (str, optional): Pillar key for resources (e.g. 'res-k8s:rook:resources')
         placement (dict, optional): Direct placement configuration (affinity, tolerations, etc.)
         placement_pillar (str, optional): Pillar key containing placement config
             (e.g. 'rook:placement' or 'ceph:placement'). If a component is named 'node',
@@ -107,6 +109,10 @@ def ceph_cluster_present(
         # Load placement from pillar if placement_pillar is provided
         if placement_pillar and not placement:
             placement = __salt__['pillar.get'](placement_pillar, {})
+
+        # Load resources from pillar if resources_pillar is provided
+        if resources_pillar and not resources:
+            resources = __salt__['pillar.get'](resources_pillar, {})
 
         custom_api = client.CustomObjectsApi()
         group = "ceph.rook.io"
