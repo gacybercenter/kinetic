@@ -16,7 +16,7 @@ rook_operator:
   k8s_helm.helm_release_present:
     - release_name: rook-ceph
     - chart_name: rook-release/rook-ceph
-    - namespace: {{ pillar['rook']['namespace'] }}
+    - namespace: {{ pillar['res-k8s']['rook']['namespace'] }}
     - pillar_key: rook:operator
     - wait_timeout: 300
     - require:
@@ -25,7 +25,7 @@ rook-csi-operator:
   k8s_helm.helm_release_present:
     - release_name: rook-csi-drivers
     - chart_name: ceph-csi-operator/ceph-csi-drivers
-    - namespace: {{ pillar['rook']['namespace'] }}
+    - namespace: {{ pillar['res-k8s']['rook']['namespace'] }}
     - pillar_key: rook:csi_drivers
     - wait_timeout: 300
     - require:
