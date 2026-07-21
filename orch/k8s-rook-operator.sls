@@ -14,6 +14,3 @@ k8s_rook-op:
   salt.state:
     - tgt: '{{ k8s }}'
     - sls: /formulas/common/k8s-rook/configure
-    - require:
-      - salt: assign_rook_node_role
-      - salt: assign_storage_node_role
