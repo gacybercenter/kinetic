@@ -38,6 +38,7 @@ def ceph_cluster_present(
     dashboard_enabled=True,
     monitoring_enabled=True,
     toolbox_enabled=True,
+    resources=None,         # Per-daemon resource limits/requests from pillar
     placement=None,
     placement_pillar=None,
     spec=None,
@@ -81,6 +82,20 @@ def ceph_cluster_present(
     dashboard_enabled, monitoring_enabled, toolbox_enabled
         Feature flags for common Ceph components.
 
+    resources
+        Per-daemon resource limits/requests. Example:
+          mon:
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+            requests:
+              cpu: "1"
+              memory: "512Mi"
+          osd:
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+
     placement
         Direct placement configuration (affinity, tolerations, etc.)
 
@@ -122,6 +137,7 @@ def ceph_cluster_present(
             device_filter=device_filter,
             only_apply_osd_placement=only_apply_osd_placement,
             metadata_device=metadata_device,
+            resources=resources,
             network_provider=network_provider,
             public_network=public_network,
             cluster_network=cluster_network,

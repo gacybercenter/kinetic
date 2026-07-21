@@ -53,6 +53,7 @@ def ceph_cluster_present(
     dashboard_enabled=True,
     monitoring_enabled=True,
     toolbox_enabled=True,
+    resources=None,         # Per-daemon resource limits/requests from pillar
     placement=None,
     placement_pillar=None,  # Pillar key containing component placements (e.g. 'rook:placement')
     spec=None,
@@ -78,6 +79,19 @@ def ceph_cluster_present(
         dashboard_enabled (bool): Enable Ceph dashboard
         monitoring_enabled (bool): Enable Prometheus monitoring
         toolbox_enabled (bool): Deploy debug toolbox pod
+        resources (dict, optional): Per-daemon resource limits/requests.
+            Example:
+              mon:
+                limits:
+                  cpu: "2"
+                  memory: "2Gi"
+                requests:
+                  cpu: "1"
+                  memory: "512Mi"
+              osd:
+                limits:
+                  cpu: "4"
+                  memory: "8Gi"
         placement (dict, optional): Direct placement configuration (affinity, tolerations, etc.)
         placement_pillar (str, optional): Pillar key containing placement config
             (e.g. 'rook:placement' or 'ceph:placement'). If a component is named 'node',
@@ -154,6 +168,10 @@ def ceph_cluster_present(
             # Add toolbox if requested
             if toolbox_enabled:
                 spec["toolbox"] = {"enabled": True}
+
+            # Add per-daemon resource configuration from pillar
+            if resources:
+                spec["resources"] = resources
 
             # Add placement configuration with 'node' -> 'all' mapping
             if placement:
