@@ -15,8 +15,8 @@ rook_ceph_cluster:
     - resources: {{ pillar['res-k8s']['rook']['resources'] }}
     - placement_pillar: res-k8s:rook:placement        # Clean!
     - network_provider: {{ pillar['res-k8s']['rook']['cluster']['network']['provider'] }}
-    - public_network: {{ pillar['res-k8s']['rook']['cluster']['network']['public'] }}
-    - cluster_network: {{ pillar['res-k8s']['rook']['cluster']['network']['cluster'] }}
+    - public_network: {{ pillar['res-k8s']['rook']['cluster']['network']['addressRanges']['public'] }}
+    - cluster_network: {{ pillar['res-k8s']['rook']['cluster']['network']['addressRanges']['cluster'] }}
     - dashboard_enabled: true
     - monitoring_enabled: false
     - toolbox_enabled: true
