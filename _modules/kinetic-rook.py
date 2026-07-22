@@ -157,7 +157,7 @@ def ceph_cluster_present(
             # Add network configuration
             if network_provider == "host":
                 spec["network"]["provider"] = "host"
-            elif public_network and cluster_network:
+            elif cluster_network:
                 spec["network"]["provider"] = "multus"
                 # Rook Multus expects "namespace/nadname" format (e.g. "default/public")
                 # If only NAD name is provided without namespace, assume "default"
