@@ -169,3 +169,145 @@ def ceph_cluster_present(
         ret["changes"] = {}
 
     return ret
+
+
+def ceph_blockpool_present(
+    name,
+    namespace="rook-ceph",
+    failure_domain="host",
+    replicated_size=3,
+    spec=None,
+):
+    """
+    Ensure a CephBlockPool Custom Resource exists.
+
+    name
+        Name of the block pool.
+
+    namespace
+        Namespace for the CephBlockPool.
+
+    failure_domain
+        Failure domain (host, osd, etc.).
+
+    replicated_size
+        Number of replicas.
+
+    spec
+        Full spec to override defaults.
+
+    Example:
+    .. code-block:: yaml
+
+        general_pool:
+          rook.ceph_blockpool_present:
+            - name: general
+            - namespace: rook-ceph
+            - failure_domain: host
+            - replicated_size: 3
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_rook.ceph_blockpool_present"](
+            namespace=namespace,
+            name=name,
+            failure_domain=failure_domain,
+            replicated_size=replicated_size,
+            spec=spec,
+        )
+
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"ceph_blockpool_updated": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure CephBlockPool {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def storageclass_present(
+    name="rook-ceph-block",
+    provisioner="rook-ceph.rbd.csi.ceph.com",
+    parameters=None,
+    reclaim_policy="Delete",
+    volume_binding_mode="Immediate",
+    allow_volume_expansion=True,
+    spec=None,
+):
+    """
+    Ensure a StorageClass for Rook Ceph RBD exists.
+
+    name
+        Name of the StorageClass.
+
+    provisioner
+        CSI provisioner name.
+
+    parameters
+        StorageClass parameters.
+
+    reclaim_policy
+        Reclaim policy (Delete/Retain).
+
+    volume_binding_mode
+        Volume binding mode.
+
+    allow_volume_expansion
+        Allow volume expansion.
+
+    spec
+        Full spec to override defaults.
+
+    Example:
+    .. code-block:: yaml
+
+        rook_ceph_block:
+          rook.storageclass_present:
+            - name: rook-ceph-block
+            - provisioner: rook-ceph.rbd.csi.ceph.com
+            - parameters:
+                pool: general
+                imageFormat: "2"
+                imageFeatures: layering,fast-diff,object-map,deep-flatten,exclusive-lock
+                csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+                csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+                csi.storage.k8s.io/fstype: ext4
+            - reclaim_policy: Delete
+            - volume_binding_mode: Immediate
+            - allow_volume_expansion: true
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_rook.storageclass_present"](
+            name=name,
+            provisioner=provisioner,
+            parameters=parameters,
+            reclaim_policy=reclaim_policy,
+            volume_binding_mode=volume_binding_mode,
+            allow_volume_expansion=allow_volume_expansion,
+            spec=spec,
+        )
+
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"storageclass_updated": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure StorageClass {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret

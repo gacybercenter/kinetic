@@ -304,3 +304,292 @@ def ceph_cluster_present(
             "updated": False,
             "message": f"Failed to ensure CephCluster {name}: {str(e)}",
         }
+
+
+def ceph_blockpool_present(
+    namespace="rook-ceph",
+    name="general",
+    failure_domain="host",
+    replicated_size=3,
+    spec=None,
+):
+    """
+    Ensure a CephBlockPool Custom Resource exists.
+
+    Args:
+        namespace (str): Namespace for the CephBlockPool
+        name (str): Name of the block pool
+        failure_domain (str): Failure domain (host, osd, etc.)
+        replicated_size (int): Number of replicas
+        spec (dict, optional): Full spec to override defaults
+
+    Returns:
+        dict: success, updated, message
+    """
+    try:
+        _load_k8s_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "ceph.rook.io"
+        version = "v1"
+        plural = "cephblockpools"
+
+        if spec is None:
+            spec = {
+                "failureDomain": failure_domain,
+                "replicated": {
+                    "size": replicated_size
+                }
+            }
+        else:
+            spec = dict(spec)
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "CephBlockPool",
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        exists = False
+        updated = False
+        matches = False
+        resource = None
+
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=name,
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            if current_spec == spec:
+                matches = True
+                message = f"CephBlockPool {name} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"CephBlockPool {name} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"CephBlockPool {name} does not exist"
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking CephBlockPool {name}: {str(e)[:80]}...",
+                }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                updated = True
+                message = f"CephBlockPool {name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create CephBlockPool {name}: {str(e)[:100]}...",
+                }
+        elif not matches:
+            try:
+                if (
+                    resource
+                    and "metadata" in resource
+                    and "resourceVersion" in resource["metadata"]
+                ):
+                    body["metadata"]["resourceVersion"] = resource["metadata"]["resourceVersion"]
+                custom_api.replace_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=name,
+                    body=body,
+                )
+                updated = True
+                message = f"CephBlockPool {name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update CephBlockPool {name}: {str(e)[:100]}...",
+                }
+        else:
+            message = f"CephBlockPool {name} in namespace {namespace} already exists and matches desired state"
+
+        return {"success": True, "updated": updated, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to ensure CephBlockPool {name}: {str(e)}",
+        }
+
+
+def storageclass_present(
+    name="rook-ceph-block",
+    provisioner="rook-ceph.rbd.csi.ceph.com",
+    parameters=None,
+    reclaim_policy="Delete",
+    volume_binding_mode="Immediate",
+    allow_volume_expansion=True,
+    spec=None,
+):
+    """
+    Ensure a StorageClass for Rook Ceph RBD exists.
+
+    Args:
+        name (str): Name of the StorageClass
+        provisioner (str): CSI provisioner name
+        parameters (dict): StorageClass parameters
+        reclaim_policy (str): Reclaim policy (Delete/Retain)
+        volume_binding_mode (str): Volume binding mode
+        allow_volume_expansion (bool): Allow volume expansion
+        spec (dict, optional): Full spec to override defaults
+
+    Returns:
+        dict: success, updated, message
+    """
+    try:
+        _load_k8s_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "storage.k8s.io"
+        version = "v1"
+        plural = "storageclasses"
+
+        if spec is None:
+            if parameters is None:
+                parameters = {
+                    "pool": "general",
+                    "imageFormat": "2",
+                    "imageFeatures": "layering,fast-diff,object-map,deep-flatten,exclusive-lock",
+                    "csi.storage.k8s.io/provisioner-secret-name": "rook-csi-rbd-provisioner",
+                    "csi.storage.k8s.io/provisioner-secret-namespace": "rook-ceph",
+                    "csi.storage.k8s.io/controller-expand-secret-name": "rook-csi-rbd-provisioner",
+                    "csi.storage.k8s.io/controller-expand-secret-namespace": "rook-ceph",
+                    "csi.storage.k8s.io/controller-publish-secret-name": "rook-csi-rbd-provisioner",
+                    "csi.storage.k8s.io/controller-publish-secret-namespace": "rook-ceph",
+                    "csi.storage.k8s.io/node-stage-secret-name": "rook-csi-rbd-node",
+                    "csi.storage.k8s.io/node-stage-secret-namespace": "rook-ceph",
+                    "csi.storage.k8s.io/node-publish-secret-name": "rook-csi-rbd-node",
+                    "csi.storage.k8s.io/node-publish-secret-namespace": "rook-ceph",
+                    "csi.storage.k8s.io/fstype": "ext4"
+                }
+
+            spec = {
+                "provisioner": provisioner,
+                "parameters": parameters,
+                "reclaimPolicy": reclaim_policy,
+                "volumeBindingMode": volume_binding_mode,
+                "allowVolumeExpansion": allow_volume_expansion
+            }
+        else:
+            spec = dict(spec)
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "StorageClass",
+            "metadata": {"name": name},
+            "provisioner": provisioner,
+            "parameters": parameters or spec.get("parameters", {}),
+            "reclaimPolicy": reclaim_policy,
+            "volumeBindingMode": volume_binding_mode,
+            "allowVolumeExpansion": allow_volume_expansion,
+        }
+
+        exists = False
+        updated = False
+        matches = False
+        resource = None
+
+        try:
+            resource = custom_api.get_cluster_custom_object(
+                group=group,
+                version=version,
+                plural=plural,
+                name=name,
+            )
+            exists = True
+            # Simple comparison for StorageClass
+            if (
+                resource.get("provisioner") == provisioner and
+                resource.get("parameters") == parameters
+            ):
+                matches = True
+                message = f"StorageClass {name} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"StorageClass {name} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"StorageClass {name} does not exist"
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking StorageClass {name}: {str(e)[:80]}...",
+                }
+
+        if not exists:
+            try:
+                custom_api.create_cluster_custom_object(
+                    group=group,
+                    version=version,
+                    plural=plural,
+                    body=body,
+                )
+                updated = True
+                message = f"StorageClass {name} created"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create StorageClass {name}: {str(e)[:100]}...",
+                }
+        elif not matches:
+            try:
+                if (
+                    resource
+                    and "metadata" in resource
+                    and "resourceVersion" in resource["metadata"]
+                ):
+                    body["metadata"]["resourceVersion"] = resource["metadata"]["resourceVersion"]
+                custom_api.replace_cluster_custom_object(
+                    group=group,
+                    version=version,
+                    plural=plural,
+                    name=name,
+                    body=body,
+                )
+                updated = True
+                message = f"StorageClass {name} updated"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update StorageClass {name}: {str(e)[:100]}...",
+                }
+        else:
+            message = f"StorageClass {name} already exists and matches desired state"
+
+        return {"success": True, "updated": updated, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to ensure StorageClass {name}: {str(e)}",
+        }
