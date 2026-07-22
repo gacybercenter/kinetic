@@ -1,57 +1,71 @@
 # k8s-rook Formula
 
-Modern Rook Ceph deployment using direct `CephCluster` CRD management instead of Helm for the cluster component.
+This formula installs and configures **Rook Ceph** using direct `CephCluster` CRD management instead of the Helm `rook-ceph-cluster` chart. It provides a clean, pillar-driven approach with high-level parameters.
 
-## What We've Built
+## Current Features
 
-### New Modules
+The `rook.ceph_cluster_present` state supports:
 
-1. **`kinetic/_modules/kinetic-rook.py`** - Execution module with `ceph_cluster_present()`
-2. **`kinetic/_states/rook.py`** - Salt state `rook.ceph_cluster_present`
-
-### Key Features Implemented
-
-- **Placement Configuration**: Full support for Rook's placement model (affinity, tolerations, nodeSelector)
-- **`placement_pillar`**: Clean way to specify complex placement from pillar without cluttering formulas
-- **Smart `node` → `all` mapping**: If pillar uses a `node` key, it's automatically mapped to `all` (Rook convention)
-- **Multus Network Support**: Properly handles `namespace/nadname` format (e.g. `default/public`)
-- **High-level API with sensible defaults**: Easy to use while allowing full `spec` override
+- **Storage Configuration**: `use_all_nodes`, `use_all_devices`, `device_filter`, `metadata_device`, `only_apply_osd_placement`
+- **Resource Configuration**: Per-daemon limits/requests via `resources` or `resources_pillar`
+- **Network Configuration**: Both `host` (with `addressRanges`) and `multus` (with `namespace/nadname` format)
+- **Placement Configuration**: Full Rook placement support via `placement` or `placement_pillar`
+- **Smart Behaviors**: `node`→`all` mapping, automatic Multus formatting, sensible defaults
 
 ## Pillar Structure
 
-### Recommended Pillar
+### Complete Example (`res-k8s:rook`)
 
 ```yaml
-rook:
-  namespace: rook-ceph
-  ceph_version: quay.io/ceph/ceph:v18.2.4
+res-k8s:
+  rook:
+    namespace: rook-ceph
+    ceph_version: quay.io/ceph/ceph:v18.2.4
 
-  # Resource defaults
-  resources:
-    limits:
-      cpu: "2"
-      memory: 4Gi
-    requests:
-      cpu: 500m
-      memory: 1Gi
+    # Storage configuration
+    use_all_nodes: true
+    use_all_devices: false
+    device_filter: "^sd."                    # or "nvme.*"
+    metadata_device: "md0"                   # dedicated metadata device
+    only_apply_osd_placement: false
 
-  # Network configuration
-  network:
-    provider: multus
-    public: default/sfe-net      # namespace/nadname format
-    cluster: default/sbe-net
+    # Resource limits per daemon (mon, mgr, osd, etc.)
+    resources:
+      mon:
+        limits:
+          cpu: "2"
+          memory: "2Gi"
+        requests:
+          cpu: "1"
+          memory: "512Mi"
+      mgr:
+        limits:
+          cpu: "2"
+          memory: "4Gi"
+        requests:
+          cpu: "500m"
+          memory: "1Gi"
+      osd:
+        limits:
+          cpu: "4"
+          memory: "8Gi"
+        requests:
+          cpu: "2"
+          memory: "4Gi"
 
-# OSD devices
-osd_mappings:
-  storage:
-    osd:
-      - /dev/sdb
-      - /dev/sdc
+    # Network configuration
+    network:
+      provider: host
+      public:
+        - "10.150.2.0/24"
+        - "10.150.3.0/24"
+      cluster:
+        - "10.150.4.0/24"
 
 # Placement configuration (highly recommended)
 rook:
   placement:
-    node:                    # This gets mapped to 'all' automatically
+    node:                                 # Gets mapped to 'all' automatically
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
@@ -89,7 +103,6 @@ rook:
 ## Formula Usage (`cluster.sls`)
 
 ```sls
-{% set devices = salt['pillar.get']('osd_mappings:storage:osd', []) %}
 {% set namespace = pillar['rook']['namespace'] %}
 
 include:
@@ -104,11 +117,16 @@ rook_ceph_cluster:
     - name: rook-ceph
     - namespace: {{ namespace }}
     - ceph_version: {{ pillar['rook']['ceph_version'] }}
-    - devices: {{ devices }}
-    - placement_pillar: rook:placement        # Clean!
-    - network_provider: {{ pillar.get('rook:network:provider', 'host') }}
-    - public_network: {{ pillar.get('rook:network:public') }}
-    - cluster_network: {{ pillar.get('rook:network:cluster') }}
+    - use_all_nodes: {{ pillar.get('res-k8s:rook:use_all_nodes', True) }}
+    - use_all_devices: {{ pillar.get('res-k8s:rook:use_all_devices', False) }}
+    - device_filter: {{ pillar.get('res-k8s:rook:device_filter') }}
+    - metadata_device: {{ pillar.get('res-k8s:rook:metadata_device') }}
+    - only_apply_osd_placement: {{ pillar.get('res-k8s:rook:only_apply_osd_placement', False) }}
+    - resources_pillar: res-k8s:rook:resources
+    - placement_pillar: rook:placement
+    - network_provider: {{ pillar.get('res-k8s:rook:network:provider', 'host') }}
+    - public_network: {{ pillar.get('res-k8s:rook:network:public') }}
+    - cluster_network: {{ pillar.get('res-k8s:rook:network:cluster') }}
     - dashboard_enabled: true
     - monitoring_enabled: true
     - toolbox_enabled: true
@@ -116,58 +134,34 @@ rook_ceph_cluster:
       - k8s: create_rook_namespace
 ```
 
-## Alternative: Direct Placement
-
-```sls
-rook_ceph_cluster:
-  rook.ceph_cluster_present:
-    - name: rook-ceph
-    - namespace: rook-ceph
-    - placement:
-        all:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-              - matchExpressions:
-                - key: ceph-type
-                  operator: In
-                  values:
-                  - storage
-```
-
 ## Module Architecture
 
 ### `kinetic_rook.ceph_cluster_present()`
 
-**Parameters:**
-- `placement`: Direct placement dict
-- `placement_pillar`: Pillar key (e.g. `rook:placement`)
-- `network_provider`: `host` or `multus`
-- `public_network`/`cluster_network`: For Multus, accepts `namespace/nadname` format
-- Full `spec` override available
+**Key Parameters:**
+- Storage: `use_all_nodes`, `use_all_devices`, `device_filter`, `metadata_device`, `only_apply_osd_placement`
+- Resources: `resources` or `resources_pillar` (per-daemon limits/requests)
+- Placement: `placement` or `placement_pillar`
+- Network: `network_provider`, `public_network`, `cluster_network`
 
 **Smart Behaviors:**
-1. **`node` → `all` mapping**: If your pillar has a `node` key, it's automatically renamed to `all`
-2. **Multus formatting**: If you provide just a NAD name like `public`, it becomes `default/public`
-3. **Sensible defaults**: Good production defaults for tolerations and placement
-
-### State Module
-
-Provides `rook.ceph_cluster_present` state that wraps the execution module, consistent with other states in the project.
+1. **`node` → `all` mapping**: Pillar component `node` is automatically renamed to `all`
+2. **Host networking**: Uses `addressRanges.public` and `addressRanges.cluster` structure as requested
+3. **Multus formatting**: Converts simple NAD names to `namespace/nadname` format
+4. **Sensible defaults**: Production-ready defaults for placement and storage
 
 ## Migration Notes
 
-**From old Helm-based approach (`rook-ceph-cluster` chart):**
-
-- Replace Helm release with `rook.ceph_cluster_present` state
-- Move values from `rook-cluster.j2` into pillar under `rook:` and `rook:placement:`
-- Use `placement_pillar: rook:placement` to keep formulas clean
+- Replaced the complex `osd_mappings` nested structure with simple parameters
+- Moved from Jinja2 templates to pillar-driven configuration
+- Much cleaner SLS files using `placement_pillar` and `resources_pillar`
 - The Rook Operator is still installed via Helm (recommended approach)
 
 ## Related Documentation
 
 - [Rook CephCluster CRD](https://rook.io/docs/rook/v1.20/CRDs/Cluster/ceph-cluster-crd/)
 - [Placement Configuration](https://rook.io/docs/rook/v1.20/CRDs/Cluster/ceph-cluster-crd/#placement-example)
-- [Multus Network Configuration](https://rook.io/docs/rook/v1.20/CRDs/Cluster/network-providers/#multus-configuration)
+- [Network Configuration](https://rook.io/docs/rook/v1.20/CRDs/Cluster/network-providers/)
+- [Resource Configuration](https://rook.io/docs/rook/v1.20/CRDs/Cluster/ceph-cluster-crd/#cluster-wide-resources-configuration-settings)
 
 **Last updated**: July 2025

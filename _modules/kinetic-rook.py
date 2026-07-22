@@ -157,6 +157,19 @@ def ceph_cluster_present(
             # Add network configuration
             if network_provider == "host":
                 spec["network"]["provider"] = "host"
+                # For host networking, use addressRanges as requested
+                if public_network or cluster_network:
+                    spec["network"]["addressRanges"] = {}
+                    if public_network:
+                        if isinstance(public_network, str):
+                            spec["network"]["addressRanges"]["public"] = [public_network]
+                        elif isinstance(public_network, list):
+                            spec["network"]["addressRanges"]["public"] = public_network
+                    if cluster_network:
+                        if isinstance(cluster_network, str):
+                            spec["network"]["addressRanges"]["cluster"] = [cluster_network]
+                        elif isinstance(cluster_network, list):
+                            spec["network"]["addressRanges"]["cluster"] = cluster_network
             elif cluster_network:
                 spec["network"]["provider"] = "multus"
                 # Rook Multus expects "namespace/nadname" format (e.g. "default/public")

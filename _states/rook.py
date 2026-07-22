@@ -78,7 +78,8 @@ def ceph_cluster_present(
         Usually 'host'. Can be 'multus' if public_network and cluster_network are set.
 
     public_network, cluster_network
-        CIDR ranges for public and cluster traffic (used with multus).
+        For host provider: CIDR ranges (string or list).
+        For multus: "namespace/nadname" format (e.g. "default/public").
 
     dashboard_enabled, monitoring_enabled, toolbox_enabled
         Feature flags for common Ceph components.
