@@ -2,6 +2,45 @@
 
 This formula installs and configures **Rook Ceph** using direct `CephCluster` CRD management instead of the Helm `rook-ceph-cluster` chart. It provides a clean, pillar-driven approach with high-level parameters.
 
+## Orchestration Architecture
+
+The deployment is now split into two phases for better reliability:
+
+### 1. `orch/k8s-rook-cluster.sls`
+- Node labeling and tainting
+- CephCluster installation via `rook.ceph_cluster_present`
+- **Health check**: Runs `kubectl rook-ceph ceph status` and waits for `HEALTH_OK`
+- Only proceeds to pool creation once Ceph is healthy
+
+### 2. `orch/k8s-rook-pools.sls`
+- Creates CephBlockPool(s)
+- Creates corresponding StorageClass(es)
+- Only runs after the health check passes
+# k8s-rook Formula
+
+This formula installs and configures **Rook Ceph** using direct `CephCluster` CRD management. The orchestration has been split into two phases for better reliability and to ensure pools are only created after Ceph reports `HEALTH_OK`.
+
+## Orchestration Architecture
+
+The deployment is now split into two orchestration files:
+
+### 1. `orch/k8s-rook-cluster.sls`
+- Assigns node labels and taints (`rook-node`, `rook-osd-node`)
+- Installs the Rook Operator and CephCluster via `rook.ceph_cluster_present`
+- **Health Check**: Runs `kubectl rook-ceph ceph status` and waits for `HEALTH_OK`
+- Uses retry logic (30 attempts, 10s intervals, 5 minutes total)
+- Only proceeds to pool creation once Ceph is healthy
+
+### 2. `orch/k8s-rook-pools.sls`
+- Creates CephBlockPool(s) via `rook.ceph_blockpool_present`
+- Creates corresponding StorageClass(es) via `rook.storageclass_present`
+- Only runs after the health check in the cluster orchestration passes
+
+Run with:
+```bash
+salt-run state.orch k8s-rook-cluster
+```
+
 ## Current Features
 
 The `rook.ceph_cluster_present` state supports:
@@ -10,6 +49,7 @@ The `rook.ceph_cluster_present` state supports:
 - **Resource Configuration**: Per-daemon limits/requests via `resources` or `resources_pillar`
 - **Network Configuration**: Both `host` (with `addressRanges`) and `multus` (with `namespace/nadname` format)
 - **Placement Configuration**: Full Rook placement support via `placement` or `placement_pillar`
+- **CephBlockPool & StorageClass**: Dedicated states for RBD pools and StorageClasses
 - **Smart Behaviors**: `node`→`all` mapping, automatic Multus formatting, sensible defaults
 
 ## Pillar Structure
@@ -62,6 +102,37 @@ res-k8s:
       cluster:
         - "10.150.4.0/24"
 
+    # RBD Pool and StorageClass configuration
+    rbd_pool:
+      pool:
+        name: general
+        spec:
+          failureDomain: host
+          replicated:
+            size: 3
+      class:
+        name: rook-ceph-block
+        provisioner: rook-ceph.rbd.csi.ceph.com
+        parameters:
+          pool: general
+          imageFormat: "2"
+          imageFeatures: layering,fast-diff,object-map,deep-flatten,exclusive-lock
+          csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+          csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+          csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+          csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+          csi.storage.k8s.io/controller-publish-secret-name: rook-csi-rbd-provisioner
+          csi.storage.k8s.io/controller-publish-secret-namespace: rook-ceph
+          csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+          csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+          csi.storage.k8s.io/node-publish-secret-name: rook-csi-rbd-node
+          csi.storage.k8s.io/node-publish-secret-namespace: rook-ceph
+          csi.storage.k8s.io/fstype: ext4
+          clusterID: rook-ceph
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+        allowVolumeExpansion: true
+
 # Placement configuration (highly recommended)
 rook:
   placement:
@@ -100,68 +171,55 @@ rook:
               - osd
 ```
 
-## Formula Usage (`cluster.sls`)
+## Orchestration Usage
 
-```sls
-{% set namespace = pillar['rook']['namespace'] %}
+### Full Deployment
 
-include:
-  - /formulas/common/k8s
+```bash
+salt-run state.orch k8s-rook-cluster
+```
 
-create_rook_namespace:
-  k8s.namespace_present:
-    - namespace: {{ namespace }}
+This runs:
+1. Node labeling and tainting
+2. CephCluster installation
+3. Health check (`kubectl rook-ceph ceph status`)
+4. Pool and StorageClass creation (only if HEALTH_OK)
 
-rook_ceph_cluster:
-  rook.ceph_cluster_present:
-    - name: rook-ceph
-    - namespace: {{ namespace }}
-    - ceph_version: {{ pillar['rook']['ceph_version'] }}
-    - use_all_nodes: {{ pillar.get('res-k8s:rook:use_all_nodes', True) }}
-    - use_all_devices: {{ pillar.get('res-k8s:rook:use_all_devices', False) }}
-    - device_filter: {{ pillar.get('res-k8s:rook:device_filter') }}
-    - metadata_device: {{ pillar.get('res-k8s:rook:metadata_device') }}
-    - only_apply_osd_placement: {{ pillar.get('res-k8s:rook:only_apply_osd_placement', False) }}
-    - resources_pillar: res-k8s:rook:resources
-    - placement_pillar: rook:placement
-    - network_provider: {{ pillar.get('res-k8s:rook:network:provider', 'host') }}
-    - public_network: {{ pillar.get('res-k8s:rook:network:public') }}
-    - cluster_network: {{ pillar.get('res-k8s:rook:network:cluster') }}
-    - dashboard_enabled: true
-    - monitoring_enabled: true
-    - toolbox_enabled: true
-    - require:
-      - k8s: create_rook_namespace
+### Pools Only (after cluster is healthy)
+
+```bash
+salt-run state.orch k8s-rook-pools
 ```
 
 ## Module Architecture
 
-### `kinetic_rook.ceph_cluster_present()`
+### Core States
 
-**Key Parameters:**
-- Storage: `use_all_nodes`, `use_all_devices`, `device_filter`, `metadata_device`, `only_apply_osd_placement`
-- Resources: `resources` or `resources_pillar` (per-daemon limits/requests)
-- Placement: `placement` or `placement_pillar`
-- Network: `network_provider`, `public_network`, `cluster_network`
+- `rook.ceph_cluster_present()` - Creates and manages `CephCluster`
+- `rook.ceph_blockpool_present()` - Creates `CephBlockPool` CRs
+- `rook.storageclass_present()` - Creates Kubernetes StorageClasses with proper CSI parameters including `clusterID`
 
-**Smart Behaviors:**
-1. **`node` → `all` mapping**: Pillar component `node` is automatically renamed to `all`
-2. **Host networking**: Uses `addressRanges.public` and `addressRanges.cluster` structure as requested
-3. **Multus formatting**: Converts simple NAD names to `namespace/nadname` format
-4. **Sensible defaults**: Production-ready defaults for placement and storage
+### Smart Behaviors
 
-## Migration Notes
+1. **`node` → `all` mapping** in placement configuration
+2. **Automatic Multus formatting** (`public` becomes `default/public`)
+3. **Health verification** before pool creation using your kubectl plugin
+4. **Pillar-driven configuration** for all components
 
-- Replaced the complex `osd_mappings` nested structure with simple parameters
-- Moved from Jinja2 templates to pillar-driven configuration
-- Much cleaner SLS files using `placement_pillar` and `resources_pillar`
-- The Rook Operator is still installed via Helm (recommended approach)
+## Key Files
+
+- `formulas/common/k8s-rook/cluster.sls` - CephCluster installation
+- `formulas/common/k8s-rook/pools.sls` - Pool and StorageClass creation
+- `orch/k8s-rook-cluster.sls` - Main orchestration with health check
+- `orch/k8s-rook-pools.sls` - Pool orchestration (run after HEALTH_OK)
+- `_modules/kinetic-rook.py` - Execution module with all Ceph states
+- `_states/rook.py` - State wrappers
 
 ## Related Documentation
 
 - [Rook CephCluster CRD](https://rook.io/docs/rook/v1.20/CRDs/Cluster/ceph-cluster-crd/)
-- [Placement Configuration](https://rook.io/docs/rook/v1.20/CRDs/Cluster/ceph-cluster-crd/#placement-example)
-- [Network Configuration](https://rook.io/docs/rook/v1.20/CRDs/Cluster/network-providers/)
-- [Resource Configuration](https://rook.io/docs/rook/v1.20/CRDs/Cluster/ceph-cluster-crd/#cluster-wide-resources-configuration-settings)
+- [Rook Storage Configuration](https://rook.io/docs/rook/v1.20/CRDs/Cluster/ceph-cluster-crd/#storage-configuration)
+- [Rook Placement Configuration](https://rook.io/docs/rook/v1.20/CRDs/Cluster/ceph-cluster-crd/#placement-example)
+- [Rook Network Providers](https://rook.io/docs/rook/v1.20/CRDs/Cluster/network-providers/)
 
 **Last updated**: July 2025
