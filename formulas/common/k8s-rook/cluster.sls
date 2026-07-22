@@ -21,13 +21,6 @@ rook_ceph_cluster:
     - monitoring_enabled: false
     - toolbox_enabled: true
 
-general_rbd_pool:
-  rook.ceph_blockpool_present:
-    - name: general
-    - namespace: rook-ceph
-    - failure_domain: host
-    - replicated_size: 3
-
 rook_ceph_block_storageclass:
   rook.storageclass_present:
     - name: rook-ceph-block
