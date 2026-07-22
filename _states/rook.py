@@ -240,6 +240,7 @@ def storageclass_present(
     reclaim_policy="Delete",
     volume_binding_mode="Immediate",
     allow_volume_expansion=True,
+    cluster_id="rook-ceph",  # clusterID for Rook CSI driver
     spec=None,
 ):
     """
@@ -294,6 +295,7 @@ def storageclass_present(
             reclaim_policy=reclaim_policy,
             volume_binding_mode=volume_binding_mode,
             allow_volume_expansion=allow_volume_expansion,
+            cluster_id=cluster_id,
             spec=spec,
         )
 

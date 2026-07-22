@@ -444,6 +444,7 @@ def storageclass_present(
     reclaim_policy="Delete",
     volume_binding_mode="Immediate",
     allow_volume_expansion=True,
+    cluster_id="rook-ceph",  # clusterID for Rook CSI driver
     spec=None,
 ):
     """
@@ -456,6 +457,7 @@ def storageclass_present(
         reclaim_policy (str): Reclaim policy (Delete/Retain)
         volume_binding_mode (str): Volume binding mode
         allow_volume_expansion (bool): Allow volume expansion
+        cluster_id (str): clusterID for Rook CSI driver (default: rook-ceph)
         spec (dict, optional): Full spec to override defaults
 
     Returns:
@@ -485,7 +487,8 @@ def storageclass_present(
                     "csi.storage.k8s.io/node-stage-secret-namespace": "rook-ceph",
                     "csi.storage.k8s.io/node-publish-secret-name": "rook-csi-rbd-node",
                     "csi.storage.k8s.io/node-publish-secret-namespace": "rook-ceph",
-                    "csi.storage.k8s.io/fstype": "ext4"
+                    "csi.storage.k8s.io/fstype": "ext4",
+                    "clusterID": cluster_id  # Configurable via cluster_id parameter
                 }
 
             spec = {
