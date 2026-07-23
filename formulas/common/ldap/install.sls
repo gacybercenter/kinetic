@@ -64,7 +64,7 @@ ldap_tls_cert:
     - certificate_name: {{ cert['name'] }}
     - secret_name: {{ cert['secret_name'] }}
     - issuer_name: {{ cert['issuer'] }}
-    - issuer_kind: ClusterIssuer
+    - issuer_kind: {{ cert['issuer_kind'] }}
     - common_name: {{ cert['commonname'] }}
     - dns_names: {{ cert['dns_names'] | default([]) }}
     - ip_addresses: {{ pillar['ldap']['cert']['ip_addresses'] | default([]) }}
