@@ -66,9 +66,9 @@ ext_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
     - name: ext-ingress-tls
     - namespace: ingress
-    - certificate_name: ext-ingress-tls-secret
-    - secret_name: ext-ingress-tls-secret
-    - issuer_name: cyberrange-ca-issuer
+    - certificate_name: {{ certs['name'] }}
+    - secret_name: {{ certs['name'] }}-secret
+    - issuer_name: {{ certs['issuer'] }}
     - issuer_kind: ClusterIssuer
     - common_name: {{ certs['commonname'] }}
     - dns_names: {{ certs['dns_names'] }}
@@ -82,9 +82,9 @@ int_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
     - name: int-ingress-tls
     - namespace: ingress
-    - certificate_name: int-ingress-tls-secret
-    - secret_name: int-ingress-tls-secret
-    - issuer_name: cyberrange-ca-issuer
+    - certificate_name: {{ certs['name'] }}
+    - secret_name: {{ certs['name']-secret }}
+    - issuer_name: {{ certs['issuer'] }}
     - issuer_kind: ClusterIssuer
     - common_name: {{ certs['commonname'] }}
     - dns_names: {{ certs['dns_names'] }}
