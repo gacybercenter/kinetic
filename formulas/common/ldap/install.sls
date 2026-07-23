@@ -56,13 +56,13 @@ ensure_ldap_pull_secret:
       - k8s: ensure_ldap_namespace
 
 # Create TLS certificate for LDAP using the new certs structure
-{% set cert = pillar['res-k8s']['certs']['internal'] %}
+{% set cert = pillar['ldap']['cert'] %}
 ldap_tls_cert:
   k8s.certmanager_certificate_present:
     - name: {{ cert['name'] }}
-    - namespace: {{ ldap_namespace }}
+    - namespace: {{ namespace }}
     - certificate_name: {{ cert['name'] }}
-    - secret_name: {{ cert['name'] }}
+    - secret_name: {{ cert['secret_name'] }}
     - issuer_name: {{ cert['issuer'] }}
     - issuer_kind: ClusterIssuer
     - common_name: {{ cert['commonname'] }}
