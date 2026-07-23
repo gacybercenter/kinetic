@@ -1,13 +1,23 @@
 include:
   - /formulas/common/ldap/install
 
+# Ensure CA certificate file is present on the minion from pillar
+ensure_config_ca_cert_file:
+  file.managed:
+    - name: /tmp/ca.pem
+    - contents: {{ pillar['ldap']['cert']['ca'] | json }}
+    - mode: 644
+    - user: root
+    - group: root
+    - makedirs: True
+
 # Ensure LDAP connection spec is created
 ensure_ldap_config_connect_spec:
   ldap.connect_spec_present:
     - name: ldap_config_connection_setup
     - spec_name: ldap_config_connection
     - connection_dict:
-        url: {{ "ldap://" ~ pillar['ldap']['cert']['common_name'] }}
+        url: {{ "ldap://" ~ pillar['ldap']['cert']['commonname'] }}
         bind:
           dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ "dc=rsc,dc=gacyberrange,dc=org" }}
           password: {{ pillar['ldap']['admin-user']['password'] }}
