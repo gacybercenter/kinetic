@@ -2,7 +2,6 @@
 
 include:
   - /formulas/common/helm/install
-  - /formulas/common/k8s
 
 # Ensure Helm is available
 helm_installed:
