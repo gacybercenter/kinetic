@@ -76,6 +76,7 @@ ext_ingress_tls_certificate:
     - renew_before: 360h
     - require:
       - k8s_helm: install_traefik_external_ingress_controller
+
 {% set certs = pillar['res-k8s']['certs']['internal'] %}
 int_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
