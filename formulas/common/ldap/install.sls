@@ -1,41 +1,42 @@
-# Include Helm installation formula to ensure Helm is available
-include:
-  - formulas.common.helm.install
+# Install OpenLDAP-HA using modern k8s_helm states
 
-# Add or update the Helm repository for OpenLDAP
+include:
+  - /formulas/common/helm/install
+  - /formulas/common/k8s
+
+# Ensure Helm is available
+helm_installed:
+  test.nop:
+    - require:
+      - sls: /formulas/common/helm/install
+
+# Add OpenLDAP Helm repository
 add_openldap_repo:
-  k8s-helm.helm_repo_present:
+  k8s_helm.helm_repo_present:
     - repo_name: helm-openldap
     - repo_url: https://jp-gouin.github.io/helm-openldap/
-    - update_cache: True
     - require:
-      - sls: formulas.common.helm.install
+      - test: helm_installed
 
-{% set ldap_lb_1 = pillar['ldap']['cert']['ip_addresses'][0] %}
-{% set ldap_lb_2 = pillar['ldap']['cert']['ip_addresses'][1] %}
+# Update Helm repositories
+update_helm_repos:
+  cmd.run:
+    - name: helm repo update
+    - require:
+      - k8s_helm: add_openldap_repo
 
-# Configure MetalLB pool and advertisement for internal IP
-ensure_metallb_pool_ldap:
-  k8s.metallb_pool_present:
-    - namespace: metallb-system
-    - pool_name: ldap-lb-pool
-    - addresses:
-        - {{ ldap_lb_1 }}-{{ ldap_lb_2 }}
-    - metallb_namespace: metallb-system
-
-# Fetch additional configurable parameters from pillar with defaults
+# Define variables from pillar
 {% set ldap_namespace = pillar['ldap']['namespace'] %}
 {% set ldap_version = pillar['ldap']['version'] %}
 {% set ldap_admin_secret = pillar['ldap']['values']['global']['existingSecret'] %}
-{% set ldap_values = pillar['ldap']['values'] %}
 {% set ldap_pull_secret = pillar['ldap']['pull_secret'] %}
 
+# Create namespace for LDAP
 ensure_ldap_namespace:
   k8s.namespace_present:
-    - name: ensure_ldap_namespace
-    - namespace: {{ pillar['ldap']['namespace'] }}
+    - namespace: {{ ldap_namespace }}
 
-# Create Kubernetes pull secret for LDAP Helm chart repository
+# Create Kubernetes pull secret for LDAP container images
 ensure_ldap_pull_secret:
   k8s.secret_present:
     - secret_name: {{ ldap_pull_secret.get('name', 'ldap-repo-secret') }}
@@ -55,41 +56,37 @@ ensure_ldap_pull_secret:
     - require:
       - k8s: ensure_ldap_namespace
 
-# Manage Certificate for TLS using certmanager_certificate_present from k8s.py, with pillar-driven values
+# Create TLS certificate for LDAP using the new certs structure
+{% set cert = pillar['res-k8s']['certs']['internal'] %}
 ldap_tls_cert:
   k8s.certmanager_certificate_present:
-    - name: {{ pillar['ldap']['cert']['name'] }}
-    - certificate_name: {{ pillar['ldap']['cert']['name'] }}
-    - namespace: {{ pillar['ldap']['cert']['namespace'] }}
-    - secret_name: {{ pillar['ldap']['cert']['secret_name'] }}
-    - issuer_name: {{ pillar['ldap']['cert']['issuer_name'] }}
-    - issuer_kind: {{ pillar['ldap']['cert']['issuer_kind'] }}
-    - common_name: {{ pillar['ldap']['cert']['common_name'] }}
-    - dns_names: {{ pillar['ldap']['cert']['dns_names'] }}
-    - ip_addresses: {{ pillar['ldap']['cert']['ip_addresses'] }}
-    - duration: {{ pillar['ldap']['cert']['duration'] }}
-    - renew_before: {{ pillar['ldap']['cert']['renew_before'] }}
+    - name: {{ cert['name'] }}
+    - namespace: {{ ldap_namespace }}
+    - certificate_name: {{ cert['name'] }}
+    - secret_name: {{ cert['name'] }}
+    - issuer_name: {{ cert['issuer'] }}
+    - issuer_kind: ClusterIssuer
+    - common_name: {{ cert['commonname'] }}
+    - dns_names: {{ cert['dns_names'] | default([]) }}
+    - ip_addresses: {{ pillar['ldap']['cert']['ip_addresses'] | default([]) }}
+    - duration: 2160h
+    - renew_before: 360h
+    - require:
+      - k8s: ensure_ldap_namespace
 
-# Ensure CA certificate file is present on the minion
-ensure_config_ca_cert_file:
-  file.managed:
-    - name: /tmp/ca.pem
-    - contents: {{ pillar['ldap']['cert']['ca'] | json }}
-    - mode: 644
-    - user: root
-    - group: root
-    - makedirs: True
-
-# Create Kubernetes secret for LDAP admin credentials
+# Create admin credentials secret
 ensure_ldap_admin_secret:
   k8s.secret_present:
     - secret_name: {{ ldap_admin_secret }}
     - namespace: {{ ldap_namespace }}
     - data:
-        LDAP_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] }}
-        LDAP_CONFIG_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] }}
+        LDAP_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] | string }}
+        LDAP_CONFIG_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] | string }}
+    - require:
+      - k8s: ldap_tls_cert
 
-#Create opensearch auth secret
+# Create OpenSearch/FluentBit credentials secret (if configured)
+{% if pillar.get('opensearch_fluentbit_username') %}
 ensure_fluentbit_user_secret:
   k8s.secret_present:
     - secret_name: fluentbit-creds
@@ -97,21 +94,25 @@ ensure_fluentbit_user_secret:
     - data:
         OPENSEARCH_USERNAME: {{ pillar['opensearch_fluentbit_username'] }}
         OPENSEARCH_PASSWORD: {{ pillar['opensearch_fluentbit_password'] }}
+    - require:
+      - k8s: ensure_ldap_admin_secret
+{% endif %}
 
-# Create ConfigMap for FluentBit LDAP logging configuration
-{% set cm_yaml = pillar['ldap']['logger-cm']['data'] |yaml %}
+# Create ConfigMap for FluentBit LDAP logging (if configured)
+{% if pillar.get('ldap', {}).get('logger-cm') %}
+{% set cm = pillar['ldap']['logger-cm'] %}
 ensure_ldap_fluentbit_configmap:
   k8s.configmap_present:
-    - name: {{ pillar['ldap']['logger-cm']['name'] }}
-    - configmap_name: {{ pillar['ldap']['logger-cm']['name'] }}
+    - name: {{ cm['name'] }}
     - namespace: {{ ldap_namespace }}
-    - data: {{ cm_yaml }}
+    - data: {{ cm['data'] | yaml }}
     - require:
       - k8s: ensure_fluentbit_user_secret
+{% endif %}
 
-# Install or upgrade OpenLDAP HA stack using Helm via k8s_helm state
+# Install OpenLDAP HA stack using modern k8s_helm state
 install_openldap_ha:
-  k8s-helm.helm_release_present:
+  k8s_helm.helm_release_present:
     - release_name: openldap-ha
     - chart_name: helm-openldap/openldap-stack-ha
     - namespace: {{ ldap_namespace }}
@@ -122,5 +123,8 @@ install_openldap_ha:
     - keep_values_file: True
     - require:
       - k8s: ldap_tls_cert
-      - k8s: ensure_ldap_fluentbit_configmap
       - k8s_helm: add_openldap_repo
+      - cmd: update_helm_repos
+{% if pillar.get('ldap', {}).get('logger-cm') %}
+      - k8s: ensure_ldap_fluentbit_configmap
+{% endif %}
