@@ -1,242 +1,99 @@
-# Documentation: Creating and Provisioning OpenLDAP-HA with SaltStack
+# ldap Formula
 
-This document provides a comprehensive guide to creating and provisioning an OpenLDAP-HA (High Availability) setup using SaltStack states, modules, and pillar data. The setup leverages custom SaltStack modules (`ldap_utils.py`) and states (`ldap.py`) to manage LDAP directory structures, including root DN, organizational units (OUs), users, and groups. The provisioning is driven by pillar files for configuration and a state file (`configure.sls`) for orchestration.
-
-The guide assumes a Kubernetes environment (based on pillar values like `replicaCount` and service configurations) and focuses on the LDAP directory initialization. It is based on the provided files and can be extended for production use.
+Deploys OpenLDAP-HA using Helm and configures the LDAP directory structure using custom LDAP states and modules.
 
 ## Overview
 
-OpenLDAP-HA is provisioned as a replicated service (e.g., 3 replicas) using a Helm chart or direct Kubernetes manifests, with SaltStack handling the LDAP directory configuration (e.g., creating root DN, OUs, users, and groups). Key components include:
+This formula:
+1. Deploys OpenLDAP-HA via Helm chart (`helm-openldap/openldap-stack-ha`)
+2. Creates TLS certificates using cert-manager
+3. Configures LDAP directory (root DN, OUs, users, groups)
+4. Sets up connection specs for SaltStack LDAP operations
+5. Supports StartTLS for secure communication
 
-- **Pillar Files**: Define LDAP structure (root DN, OUs, users, groups) and deployment settings (e.g., images, secrets, persistence).
-- **Execution Module (`ldap_utils.py`)**: Low-level functions for LDAP operations like checking existence (`dn_exists`), creating/updating root DN, OUs, users, and groups.
-- **State Module (`ldap.py`)**: High-level states (e.g., `user_present`, `group_present`) that ensure desired LDAP state using the execution module.
-- **State File (`configure.sls`)**: Orchestrates the creation of the LDAP connection spec, root DN, OUs, users, and groups, with dependencies for order.
+The formula uses modern `k8s_helm` states and the existing `ldap` state/module infrastructure.
 
-This setup ensures idempotency: Running the states multiple times won't recreate existing entries but will update them if needed.
+## Pillar Structure Summary
 
-## Prerequisites
+**Key sections to configure:**
 
-- **SaltStack Installation**: Salt Minion and Master set up, with the provided modules and states synced to the minion (e.g., in `/srv/salt/_modules/` and `/srv/salt/_states/`).
-- **LDAP Server**: An OpenLDAP server (e.g., deployed via Helm with the provided pillar values) accessible via the URL in `configure.sls` (e.g., `ldap://<common_name>`).
-- **Dependencies**:
-  - Python libraries: `python-ldap` for LDAP operations, `re` for regex (used in states).
-  - Pillar data: Encrypted with GPG (e.g., passwords in `ldap-users.sls`).
-  - Kubernetes/Helm: For deploying OpenLDAP-HA (based on pillar values like `replicaCount: 3`, `image.repository`).
-- **Permissions**: The bind DN in `configure.sls` (e.g., `cn=admin,dc=rsc,dc=gacyberrange,dc=org`) must have admin rights to create/modify entries.
-- **Tools**: GPG for decrypting pillar values, regex support in Python.
+- `ldap:namespace`, `ldap:version` - deployment settings
+- `ldap:values` - Helm chart values (replicaCount, image, persistence, replication, ingress, etc.)
+- `ldap:cert` - certificate configuration (common_name, dns_names, ip_addresses, issuer)
+- `ldap:admin-user` - admin credentials (GPG encrypted)
+- `ldap:root_dn` - root DN and organization info
+- `ldap:orgunits` - organizational units to create
+- `ldap:users` and `ldap:groups` - users and groups with GPG-encrypted passwords
+- `ldap:pull_secret` - container registry credentials
+- `ldap:logger-cm` - FluentBit/OpenSearch logging configuration
 
-## Pillar Configuration
+See the attached pillar files (`ldap.sls`, `ldap-ous.sls`, `ldap-users.sls`) for complete structure.
 
-Pillar files define the LDAP structure and deployment settings. They are included in `ldap.sls` and used in states.
+**Note**: Passwords and sensitive data should be GPG-encrypted in pillar.
 
-### `ldap.sls` (Main Pillar)
-This file includes other pillars and defines deployment settings for OpenLDAP-HA.
+## Usage
 
-- **Key Sections**:
-  - `include`: Loads users and OUs from other files.
-  - `admin-user`: Admin credentials (GPG-encrypted).
-  - `ldap`: Deployment values (e.g., namespace, version, pull secrets, logging config with FluentBit, replication settings, persistence, ingress).
-
-Example excerpt (decrypted for illustration):
-```
-ldap:
-  namespace: keycloak
-  version: 4.3.3
-  admin-user:
-    name: admin
-    password: <decrypted_password>
-  pull_secret:
-    name: ldap-repo-secret
-    repo: registry.gitlab.com
-    user: build-token
-    key: <decrypted_key>
-  values:
-    replicaCount: 3
-    image:
-      repository: gacybercenter/open/kinetic/containers/openldap
-      tag: "latest"
-    persistence:
-      enabled: true
-    replication:
-      enabled: true
-    # ... (other settings like logging, ingress, etc.)
+```yaml
+include:
+  - /formulas/common/ldap
 ```
 
-### `ldap-ous.sls` (Organizational Units)
-Defines the root DN and OUs.
+## Orchestration
 
-Example:
-```
-ldap:
-  root_dn:
-    dn: "dc=rsc,dc=gacyberrange,dc=org"
-    o: "Georgia Cyber Range GovCloud and Research"
-  orgunits:
-    - name: users
-      dc: rsc
-    - name: groups
-      dc: rsc
-    - name: workstations
-      dc: rsc
-    - name: servers
-      dc: rsc
+Use the orchestration script `orch/k8s-authldap.sls` to deploy the complete solution:
+
+```bash
+salt-run state.orchestrate orch.k8s-authldap
 ```
 
-### `ldap-users.sls` (Users and Groups)
-Defines users and groups with GPG-encrypted passwords.
+This handles node preparation, LDAP deployment, certificate creation, and directory initialization in the correct order.
 
-Example:
-```
-ldap:
-  users:
-    - name: "Mark Danielson"
-      sn: Danielson
-      uid: mdanielson
-      pass: <GPG-encrypted_password>
-    - name: "Marc Danielson"
-      sn: Danielson
-      uid: mdanielson1
-      pass: <GPG-encrypted_password>
-  groups:
-    - name: admins
-      members:
-        - mdanielson
-        - mdanielson1
-```
+## Key Components
 
-## Execution Module: `ldap_utils.py`
+### 1. OpenLDAP-HA Deployment
+- Uses `k8s_helm.helm_release_present` with pillar-driven values
+- Creates pull secrets for container registry access
+- Sets up replication (3 replicas by default)
+- Configures persistence and logging (FluentBit to OpenSearch)
 
-This module provides functions for LDAP operations. Key functions for provisioning:
+### 2. Certificate Management
+- Uses `k8s.certmanager_certificate_present` for TLS certificates
+- Supports both internal CA and Let's Encrypt issuers
+- Creates Kubernetes secrets for the certificates
 
-- `dn_exists`: Checks if a DN exists and attributes match.
-- `create_root_dn` / `update_root_dn`: Manage the root DN.
-- `create_ou` / `update_ou`: Manage OUs.
-- `create_user` / `update_user`: Manage users (with fixed objectClasses and attributes).
-- `create_group` / `update_group`: Manage groups (with members).
+### 3. LDAP Directory Initialization
+- Creates connection spec with StartTLS support
+- Sets up root DN with proper object classes
+- Creates organizational units from pillar
+- Creates users and groups with proper attributes and memberships
+- Uses the `ldap.*_present` states for idempotent management
 
-Functions return standardized dicts: `{'result': bool, 'comment': str, 'changes': dict}`.
+### 4. Security
+- Uses StartTLS for all LDAP communications
+- Supports mTLS (though not currently implemented in states)
+- GPG-encrypted passwords in pillar
+- Proper RBAC and service account configuration
 
-## State Module: `ldap.py`
+## Dependencies
 
-This module defines states that use `ldap_utils.py` to ensure LDAP entities exist.
+- `formulas/common/helm` (via `k8s_helm` states)
+- `formulas/common/k8s` (namespace, secret, certmanager, configmap states)
+- `ldap` state and `ldap_utils` execution modules
+- cert-manager with appropriate issuers configured
+- OpenSearch/FluentBit for logging (optional but configured)
 
-- `root_dn_present`: Ensures root DN with attributes.
-- `ou_present`: Ensures OUs (single or multiple via pillar loop).
-- `user_present`: Ensures users (creates/updates with fixed attributes, password on create only).
-- `group_present`: Ensures groups (creates/updates with members).
+## Files
 
-States are idempotent and support test mode.
+- `init.sls` — Main entrypoint
+- `install.sls` — Helm deployment, certificates, secrets, and ConfigMaps
+- `configure.sls` — LDAP directory initialization (root DN, OUs, users, groups)
+- `README.md` — This file
 
-## State File: `configure.sls`
+## Related
 
-This SLS file orchestrates provisioning:
+- `common/k8s-certmanager`
+- `common/k8s`
+- `_modules/ldap_utils.py`
+- `_states/ldap.py`
 
-- Creates LDAP connection spec.
-- Sets up root DN.
-- Loops through pillar to create OUs.
-- Loops through pillar to create users (under `ou=users`).
-- Loops through pillar to create groups (under `ou=groups`).
-
-Example excerpt:
-```
-# Ensure Organizational Units
-{% for ou in pillar['ldap']['orgunits'] %}
-ensure_ou_{{ ou.name }}:
-  ldap.ou_present:
-    - name: ou={{ ou.name }}
-    - base_dn: {{ pillar['ldap']['root_dn']['dn'] }}
-    - spec_name: ldap_config_connection
-    - require:
-      - ldap: ensure_root_dn
-{% endfor %}
-
-# Ensure users
-{% for user in pillar['ldap']['users'] %}
-ensure_user_{{ user.uid }}:
-  ldap.user_present:
-    - name: ensure_user_{{ user.uid }}
-    - spec_name: ldap_config_connection
-    - base_dn: ou=users,{{ pillar['ldap']['root_dn']['dn'] }}
-    - uid: {{ user.uid }}
-    - cn: {{ user.uid }}
-    - sn: {{ user.sn }}
-    - description: {{ user.name }}
-    - password: {{ user.pass }}
-    - require:
-      - ldap: ensure_ou_users
-{% endfor %}
-
-# Ensure groups
-{% for group in pillar['ldap']['groups'] %}
-ensure_group_{{ group.name }}:
-  ldap.group_present:
-    - name: ensure_group_{{ group.name }}
-    - spec_name: ldap_config_connection
-    - base_dn: ou=groups,{{ pillar['ldap']['root_dn']['dn'] }}
-    - cn: {{ group.name }}
-    - description: {{ group.get('description', '') }}
-    - members:
-      {% for member in group.members %}
-      - cn={{ member }},ou=users,{{ pillar['ldap']['root_dn']['dn'] }}
-      {% endfor %}
-    - require:
-      - ldap: ensure_ou_groups
-{% endfor %}
-```
-
-
-
-## Step-by-Step Provisioning Guide
-
-1. **Setup Pillar Files**:
-   - Configure `ldap.sls`, `ldap-ous.sls`, `ldap-users.sls` with your values (encrypt sensitive data with GPG).
-   - Apply pillars to the minion: `salt '*' pillar.refresh`.
-
-2. **Deploy OpenLDAP-HA Infrastructure**:
-   - Use the orchestration script `k8s-authldap.sls` to deploy on the targeted minion (defined in pillar 'k8s'):
-     - Run: `salt-run state.orchestrate orch.k8s-authldap`.
-   - This applies the ldap formula, setting up replicas, persistence, logging (FluentBit to OpenSearch), replication, and ingress.
-
-3. **Sync Modules and States**:
-   - Place `ldap_utils.py` in `/srv/salt/_modules/` and `ldap.py` in `/srv/salt/_states/`.
-   - Sync to minion: `salt '*' saltutil.sync_all`.
-
-4. **Apply Configuration State**:
-   - Run: `salt '*' state.apply formulas.common.ldap.configure`.
-   - This:
-     - Creates the connection spec.
-     - Ensures root DN.
-     - Creates OUs from pillar.
-     - Creates users from pillar (with dependencies on OUs).
-     - Creates groups from pillar (with members referencing users).
-
-5. **Verify**:
-   - Use `ldapsearch` to check entries (e.g., `ldapsearch -ZZ -x -H ldap://<server> -b "dc=rsc,dc=gacyberrange,dc=org" "(objectClass=*)"`).
-   - Check Salt output for `result: true` and changes.
-
-## Security Notes: Using StartTLS
-
-StartTLS is required for secure communication with the OpenLDAP server to protect against eavesdropping and man-in-the-middle attacks. It upgrades a plain LDAP connection to an encrypted one using TLS.
-
-- **Requirement**: Always use StartTLS when connecting to the server. The connection spec in `configure.sls` enables it with `starttls: True`. Communicating without StartTLS (e.g., plain LDAP) will result in errors like "confidentiality required" or "TLS confidentiality required".
-- **mTLS Support**: Mutual TLS (client certificate authentication) is technically possible but currently not supported in this Salt state or module. It requires additional configuration in the connection spec and server settings.
-- **ldapsearch Examples** (include `-ZZ` for StartTLS):
-  - Basic query with StartTLS: `ldapsearch -x -H ldap://<server> -b "dc=rsc,dc=gacyberrange,dc=org" "(objectClass=*)" -ZZ`
-    - `-ZZ`: Enforces StartTLS and fails if it can't be established.
-  - With bind credentials: `ldapsearch -x -H ldap://<server> -D "cn=admin,dc=rsc,dc=gacyberrange,dc=org" -W -b "dc=rsc,dc=gacyberrange,dc=org" "(objectClass=*)" -ZZ`
-
-For troubleshooting, if StartTLS fails, check TLS settings in pillar (e.g., `tls_cacert`, certificate validity).
-
-## Troubleshooting
-
-- **Common Errors**:
-  - "TLS confidentiality required": TLS/StartTLS is required. Add `-ZZ` to ldapsearch commands or ensure `starttls: True` in the connection spec.
-  - "confidentiality required": Attempted plain LDAP connection; use StartTLS or LDAPS.
-  - "No such object": DN doesn't exist—check existence logic in `dn_exists`.
-  - "Already exists": Handled as success in states.
-  - Permission issues: Verify bind DN credentials.
-- **Logs**: Check Salt minion logs for debug info (set `log_level: debug` in minion config).
-- **Test Mode**: Run with `--test=true` to simulate without changes.
-
-This setup provides a robust, idempotent way to manage OpenLDAP-HA provisioning. For extensions (e.g., password updates), modify the update functions accordingly.
+**Last updated**: July 2025

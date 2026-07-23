@@ -4,7 +4,7 @@ include:
 
 # Add or update the Helm repository for OpenLDAP
 add_openldap_repo:
-  k8s_helm.helm_repo_present:
+  k8s-helm.helm_repo_present:
     - repo_name: helm-openldap
     - repo_url: https://jp-gouin.github.io/helm-openldap/
     - update_cache: True
@@ -111,7 +111,7 @@ ensure_ldap_fluentbit_configmap:
 
 # Install or upgrade OpenLDAP HA stack using Helm via k8s_helm state
 install_openldap_ha:
-  k8s_helm.helm_release_present:
+  k8s-helm.helm_release_present:
     - release_name: openldap-ha
     - chart_name: helm-openldap/openldap-stack-ha
     - namespace: {{ ldap_namespace }}
