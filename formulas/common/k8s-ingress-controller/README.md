@@ -17,25 +17,20 @@ flowchart TD
         InternetClients[Internet Clients]
     end
 
-    subgraph "External Network (NAT)"
+    subgraph "External Network \(NAT\)"
         ExternalIP[External IP: 10.150.1.247]
-        ExternalGateway[External Gateway
-traefik-external
-Port 9080→80, 9443→443]
+        ExternalGateway["External Gateway<br/>traefik-external<br/>Port 9080→80, 9443→443"]
     end
 
     subgraph "Internal Network"
         InternalIP[Internal IP: 10.150.1.43]
-        InternalGateway[Internal Gateway
-traefik-internal
-Port 80, 443]
-        LocalServices[Local Services
-\(API, Dashboard, etc.\)]
+        InternalGateway["Internal Gateway<br/>traefik-internal<br/>Port 80, 443"]
+        LocalServices["Local Services<br/>(API, Dashboard, etc.)"]
     end
 
     InternetClients -->|External Traffic| ExternalIP
     ExternalIP --> ExternalGateway
-    ExternalGateway -->|NAT'd| LocalServices
+    ExternalGateway -->|NATed| LocalServices
 
     LocalClients[Internal Clients] --> InternalIP
     InternalIP --> InternalGateway
