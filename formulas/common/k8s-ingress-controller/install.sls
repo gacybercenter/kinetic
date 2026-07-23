@@ -69,7 +69,7 @@ ext_ingress_tls_certificate:
     - secret_name: ext-ingress-tls-secret
     - issuer_name: cyberrange-ca-issuer
     - issuer_kind: ClusterIssuer
-    - common_name: ext.rsc.gacyberrange.org
+    - common_name: rsc.gacyberrange.org
     - dns_names: {{ pillar['res-k8s']['certs']['external'] }}
     - duration: 2160h
     - renew_before: 360h
