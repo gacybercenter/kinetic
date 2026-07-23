@@ -103,6 +103,7 @@ ensure_fluentbit_user_secret:
 ensure_ldap_fluentbit_configmap:
   k8s.configmap_present:
     - name: {{ cm['name'] }}
+    - configmap_name: {{ cm['name'] }}
     - namespace: {{ ldap_namespace }}
     - data: {{ cm['data'] | yaml }}
     - require:
