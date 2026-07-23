@@ -60,7 +60,7 @@ ensure_ldap_pull_secret:
 ldap_tls_cert:
   k8s.certmanager_certificate_present:
     - name: {{ cert['name'] }}
-    - namespace: {{ namespace }}
+    - namespace: {{ cert['namespace'] }}
     - certificate_name: {{ cert['name'] }}
     - secret_name: {{ cert['secret_name'] }}
     - issuer_name: {{ cert['issuer'] }}
