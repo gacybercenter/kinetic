@@ -21,7 +21,7 @@ ensure_ldap_connect_spec:
     - name: ldap_connection_setup
     - spec_name: {{ ldap_spec }}
     - connection_dict:
-        url: {{ "ldap://" ~ pillar['ldap']['cert']['common_name'] }}
+        url: {{ "ldap://" ~ pillar['ldap']['cert']['commonname'] }}
         bind:
           dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ base_dn }}
           password: {{ pillar['ldap']['admin-user']['password'] }}
