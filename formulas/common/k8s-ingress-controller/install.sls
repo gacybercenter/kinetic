@@ -83,7 +83,7 @@ int_ingress_tls_certificate:
     - name: int-ingress-tls
     - namespace: ingress
     - certificate_name: {{ certs['name'] }}
-    - secret_name: {{ certs['name']-secret }}
+    - secret_name: {{ certs['name'] }}-secret
     - issuer_name: {{ certs['issuer'] }}
     - issuer_kind: ClusterIssuer
     - common_name: {{ certs['commonname'] }}
