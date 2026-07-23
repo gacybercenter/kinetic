@@ -70,7 +70,7 @@ ext_ingress_tls_certificate:
     - secret_name: ext-ingress-tls-secret
     - issuer_name: cyberrange-ca-issuer
     - issuer_kind: ClusterIssuer
-    - common_name: {{ certs['common_name'] }}
+    - common_name: {{ certs['commonname'] }}
     - dns_names: {{ certs['dns_names'] }}
     - duration: 2160h
     - renew_before: 360h
@@ -86,7 +86,7 @@ int_ingress_tls_certificate:
     - secret_name: int-ingress-tls-secret
     - issuer_name: cyberrange-ca-issuer
     - issuer_kind: ClusterIssuer
-    - common_name: {{ certs['common_name'] }}
+    - common_name: {{ certs['commonname'] }}
     - dns_names: {{ certs['dns_names'] }}
     - duration: 2160h
     - renew_before: 360h
