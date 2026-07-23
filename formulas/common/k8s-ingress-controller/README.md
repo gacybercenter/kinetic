@@ -1,27 +1,77 @@
 # k8s-ingress-controller Formula
 
-Deploys Traefik as a dual (internal + external) ingress controller using Gateway API and MetalLB.
+Deploys Traefik as a dual (internal + external) ingress controller using Gateway API and MetalLB, with HTTPRoute-based certificate management.
 
 ## Purpose
 
 This formula sets up a complete ingress solution with:
-- MetalLB for LoadBalancer IP management
-- Two Traefik instances (internal on 10.150.1.43, external on 10.150.1.247)
-- Gateway API `Gateway` resources
-- Protected Traefik dashboard with basic auth
-- Automatic TLS certificate management
+- MetalLB for LoadBalancer IP management (internal: 10.150.1.43, external: 10.150.1.247)
+- Two Traefik instances with Gateway API
+- Automatic TLS certificates via HTTP-01 challenges (using HTTPRoute)
 
-## Pillar Requirements
+## Network Flow
 
-The formula expects data under `res-k8s:lbs:ingress`. See the attached pillar example for the full structure.
+```mermaid
+flowchart TD
+    subgraph Internet
+        InternetClients[Internet Clients]
+    end
 
-Key sections:
-- `ips.external` and `ips.internal`
-- `ingress.providers.kubernetesGateway.enabled: true`
-- `ingress.gatewayClass.enabled: true`
-- Custom `ports` for external exposure (9080, 9443)
-- `extraObjects` for dashboard auth secret and middleware
-- `ingressRoute.dashboard` for the protected dashboard
+    subgraph "External Network \(NAT\)"
+        ExternalIP[External IP: 10.150.1.247]
+        ExternalGateway["External Gateway<br/>traefik-external<br/>Port 9080→80, 9443→443"]
+    end
+
+    subgraph "Internal Network"
+        InternalIP[Internal IP: 10.150.1.43]
+        InternalGateway["Internal Gateway<br/>traefik-internal<br/>Port 80, 443"]
+        LocalServices["Local Services<br/>(API, Dashboard, etc.)"]
+    end
+
+    InternetClients -->|External Traffic| ExternalIP
+    ExternalIP --> ExternalGateway
+    ExternalGateway -->|NATed| LocalServices
+
+    LocalClients[Internal Clients] --> InternalIP
+    InternalIP --> InternalGateway
+    InternalGateway --> LocalServices
+
+    style Internet fill:#f0f0f0,stroke:#666
+    style ExternalIP fill:#e3f2fd,stroke:#1976d2
+    style InternalIP fill:#f3e5f5,stroke:#7b1fa2
+    style ExternalGateway fill:#e3f2fd,stroke:#1976d2
+    style InternalGateway fill:#f3e5f5,stroke:#7b1fa2
+```
+
+**Key Points:**
+- **Internal Gateway**: Direct access within local networks only
+- **External Gateway**: Traffic is NAT'd from the external IP to reach internal services
+- Both gateways use the same backend services but through different entry points
+
+## Refactored Certificate Management
+
+Certificates are now managed via the new `res-k8s:certs` pillar structure with separate `external` and `internal` configurations.
+
+**Important**: For external certificates, use `letsencrypt-staging` during testing to avoid rate limiting. Switch to `letsencrypt-prod` for production.
+
+## Pillar Structure Summary
+
+**Key sections to configure:**
+
+- `res-k8s:lbs:ingress` - Traefik Helm values (ports, providers, securityContext)
+- `res-k8s:certs` - Certificate configuration with `external` and `internal` sections
+  - `name`, `issuer`, `commonname`, `dns_names`
+  - External uses Let's Encrypt (`letsencrypt-prod` or `letsencrypt-staging`), internal uses your CA (`cyberrange-ca-issuer`)
+- `metallb_namespace`, `traefik_external_namespace` - namespace settings
+
+See the attached pillar example for the complete structure.
+
+## Key Components Installed
+
+1. **MetalLB** with two IP pools and L2 advertisements
+2. **Traefik** (two Helm releases: internal + external)
+3. **Certificates** via `k8s.certmanager_certificate_present` with HTTPRoute
+4. **Gateway API** resources (`Gateway` with HTTP/HTTPS listeners)
 
 ## Usage
 
@@ -30,26 +80,24 @@ include:
   - /formulas/common/k8s-ingress-controller
 ```
 
-## What it installs
-
-1. **MetalLB** with two IP pools (`lb-pool-internal`, `lb-pool-external`)
-2. **Traefik** Helm releases (`traefik-internal`, `traefik-external`)
-3. Two `Gateway` resources (`traefik-internal`, `traefik-external`)
-4. TLS certificates (`int-ingress-tls-secret`, `ext-ingress-tls-secret`)
-5. Dashboard authentication middleware
-
 ## Dependencies
 
-- `formulas/common/helm`
-- `formulas/common/k8s` (namespace, metallb, gateway_present, certmanager states)
-- cert-manager with `ClusterIssuer: cyberrange-ca-issuer`
-- Existing `GatewayClass` named `traefik`
+- `formulas/common/helm` (via `k8s_helm` states)
+- `formulas/common/k8s` (namespace, metallb, gateway, certmanager states)
+- cert-manager with issuers: `letsencrypt-prod`/`letsencrypt-staging` and `cyberrange-ca-issuer`
+- Pre-existing `GatewayClass` named `traefik`
 
 ## Notes
 
-- Uses **Gateway API** instead of traditional Ingress
+- **HTTPRoute-based certificates** replace the previous approach
+- Use staging issuer for external certs during development to avoid rate limits
 - Two separate Traefik releases to support different external IPs
-- Dashboard available at `https://dashboard.services.gacyberrange.org`
-- Update the default password in the pillar before production use
 
-Last updated: July 2025
+## Files
+
+- `init.sls` — Main entrypoint
+- `install.sls` — Helm releases, certificates (via HTTPRoute), and Gateway resources
+- `configure.sls` — MetalLB configuration
+- `README.md` — This file
+
+**Last updated**: July 2025

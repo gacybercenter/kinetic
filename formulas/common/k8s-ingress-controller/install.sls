@@ -61,33 +61,33 @@ install_traefik_external_ingress_controller:
       - cmd: update_helm_repos
       - k8s_helm: install_metallb
 
+{% set certs = pillar['res-k8s']['certs']['external'] %}
 ext_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
     - name: ext-ingress-tls
     - namespace: ingress
-    - certificate_name: ext-ingress-tls-secret
-    - secret_name: ext-ingress-tls-secret
-    - issuer_name: cyberrange-ca-issuer
+    - certificate_name: {{ certs['name'] }}
+    - secret_name: {{ certs['name'] }}-secret
+    - issuer_name: {{ certs['issuer'] }}
     - issuer_kind: ClusterIssuer
-    - common_name: ext-dashboard.svc.cluster.local
-    - dns_names:
-      - ext-dashboard.services.gacyberrange.org
+    - common_name: {{ certs['commonname'] }}
+    - dns_names: {{ certs['dns_names'] }}
     - duration: 2160h
     - renew_before: 360h
     - require:
       - k8s_helm: install_traefik_external_ingress_controller
 
+{% set certs = pillar['res-k8s']['certs']['internal'] %}
 int_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
     - name: int-ingress-tls
     - namespace: ingress
-    - certificate_name: int-ingress-tls-secret
-    - secret_name: int-ingress-tls-secret
-    - issuer_name: cyberrange-ca-issuer
+    - certificate_name: {{ certs['name'] }}
+    - secret_name: {{ certs['name'] }}-secret
+    - issuer_name: {{ certs['issuer'] }}
     - issuer_kind: ClusterIssuer
-    - common_name: int-dashboard.svc.cluster.local
-    - dns_names:
-      - int-dashboard.services.gacyberrange.org
+    - common_name: {{ certs['commonname'] }}
+    - dns_names: {{ certs['dns_names'] }}
     - duration: 2160h
     - renew_before: 360h
     - require:
