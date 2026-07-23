@@ -69,9 +69,8 @@ ext_ingress_tls_certificate:
     - secret_name: ext-ingress-tls-secret
     - issuer_name: cyberrange-ca-issuer
     - issuer_kind: ClusterIssuer
-    - common_name: ext-dashboard.svc.cluster.local
-    - dns_names:
-      - ext-dashboard.services.gacyberrange.org
+    - common_name: ext.rsc.gacyberrange.org
+    - dns_names: {{ pillar['res-k8s']['certs']['external'] }}
     - duration: 2160h
     - renew_before: 360h
     - require:
@@ -85,9 +84,8 @@ int_ingress_tls_certificate:
     - secret_name: int-ingress-tls-secret
     - issuer_name: cyberrange-ca-issuer
     - issuer_kind: ClusterIssuer
-    - common_name: int-dashboard.svc.cluster.local
-    - dns_names:
-      - int-dashboard.services.gacyberrange.org
+    - common_name: int.rsc.gacyberrange.org
+    - dns_names: {{ pillar['res-k8s']['certs']['internal'] }}
     - duration: 2160h
     - renew_before: 360h
     - require:
