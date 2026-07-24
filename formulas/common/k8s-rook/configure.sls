@@ -26,7 +26,7 @@ rook-csi-operator:
     - release_name: ceph-csi-operator
     - chart_name: ceph-csi-operator/ceph-csi-operator
     - namespace: {{ pillar['res-k8s']['rook']['namespace'] }}
-    - pillar_key: res-k8s:rook:csi-operator
+    - pillar_key: res-k8s:rook:csi_operator
     - wait_timeout: 300
     - require:
       - k8s_helm: add_csi_op_repo
