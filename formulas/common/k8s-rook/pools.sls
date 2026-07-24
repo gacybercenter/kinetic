@@ -1,3 +1,13 @@
+rook-csi-drivers:
+  k8s_helm.helm_release_present:
+    - release_name: ceph-csi-drivers
+    - chart_name: ceph-csi-operator/ceph-csi-drivers
+    - namespace: {{ pillar['res-k8s']['rook']['namespace'] }}
+    - pillar_key: res-k8s:rook:csi_drivers
+    - wait_timeout: 300
+    - require:
+      - k8s_helm: add_csi_repo
+
 general_rbd_pool:
   rook.ceph_blockpool_present:
     - name: general
