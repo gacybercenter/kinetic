@@ -1,8 +1,5 @@
-# Ensure Helm is available
-helm_installed:
-  test.nop:
-    - require:
-      - sls: /formulas/common/helm/install
+include:
+  - /formulas/common/helm
 
 # Add HashiCorp Helm repository for Vault
 add_hashicorp_repo:
