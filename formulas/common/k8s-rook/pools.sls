@@ -5,8 +5,6 @@ rook-csi-drivers:
     - namespace: {{ pillar['res-k8s']['rook']['namespace'] }}
     - pillar_key: res-k8s:rook:csi_drivers
     - wait_timeout: 300
-    - require:
-      - k8s_helm: add_csi_repo
 
 general_rbd_pool:
   rook.ceph_blockpool_present:
