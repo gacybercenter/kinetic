@@ -6,8 +6,6 @@ add_hashicorp_repo:
   k8s_helm.helm_repo_present:
     - repo_name: hashicorp
     - repo_url: https://helm.releases.hashicorp.com
-    - require:
-      - test: helm_installed
 
 # Update Helm repositories
 update_helm_repos:
