@@ -34,16 +34,30 @@ ensure_vault_namespace:
     - secret_name: {{ node }}-tls
     - issuer_name: {{ issuer }}
     - issuer_kind: ClusterIssuer
-    - common_name: {{ node }}.{{ vault_namespace }}.svc.cluster.local
+    - common_name: vault.{{ vault_namespace }}.svc.cluster.local
     - dns_names:
+      # Individual pods
+      {% for node in vault_nodes %}
       - {{ node }}
       - {{ node }}.{{ vault_namespace }}
       - {{ node }}.{{ vault_namespace }}.svc
       - {{ node }}.{{ vault_namespace }}.svc.cluster.local
+      {% endfor %}
+      # Services
+      - vault
+      - vault.{{ vault_namespace }}
+      - vault.{{ vault_namespace }}.svc
+      - vault.{{ vault_namespace }}.svc.cluster.local
+      # Headless service (very important for Raft)
+      - vault-internal
+      - vault-internal.{{ vault_namespace }}
+      - vault-internal.{{ vault_namespace }}.svc
+      - vault-internal.{{ vault_namespace }}.svc.cluster.local
     - duration: 8760h    # 1 year
     - renew_before: 720h # 30 days
     - require:
       - k8s: ensure_vault_namespace
+
 {% endfor %}
 
 # Install Vault using Helm with pillar-driven values
