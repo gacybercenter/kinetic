@@ -17,11 +17,34 @@ update_helm_repos:
 # Define variables from pillar
 {% set vault_namespace = pillar['res-k8s']['vault']['global']['namespace'] %}
 {% set vault_version = pillar['res-k8s']['vault']['version'] %}
+{% set vault_nodes = pillar['res-k8s']['vault']['nodes'] %}
 
 # Create namespace for Vault if specified
 ensure_vault_namespace:
   k8s.namespace_present:
     - namespace: {{ vault_namespace }}
+# Create certificates for each Vault node
+
+{% for node in vault_nodes %}
+{{ node }}_cert:
+  k8s.certmanager_certificate_present:
+    - name: {{ node }}-cert
+    - namespace: {{ vault_namespace }}
+    - certificate_name: {{ node }}-cert
+    - secret_name: {{ node }}-tls
+    - issuer_name: gacyberrange-ca-issuer
+    - issuer_kind: ClusterIssuer
+    - common_name: {{ node }}.{{ vault_namespace }}.svc.cluster.local
+    - dns_names:
+      - {{ node }}
+      - {{ node }}.{{ vault_namespace }}
+      - {{ node }}.{{ vault_namespace }}.svc
+      - {{ node }}.{{ vault_namespace }}.svc.cluster.local
+    - duration: 8760h    # 1 year
+    - renew_before: 720h # 30 days
+    - require:
+      - k8s: ensure_vault_namespace
+{% endfor %}
 
 # Install Vault using Helm with pillar-driven values
 install_vault:
