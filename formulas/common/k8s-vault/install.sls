@@ -25,13 +25,12 @@ ensure_vault_namespace:
     - namespace: {{ vault_namespace }}
 # Create certificates for each Vault node
 
-{% for node in vault_nodes %}
-{{ node }}_cert:
+vault_cert:
   k8s.certmanager_certificate_present:
-    - name: {{ node }}-cert
+    - name: vault-transport-cert
     - namespace: {{ vault_namespace }}
-    - certificate_name: {{ node }}-cert
-    - secret_name: {{ node }}-tls
+    - certificate_name: vault-transport-cert
+    - secret_name: vault-transport-tls
     - issuer_name: {{ issuer }}
     - issuer_kind: ClusterIssuer
     - common_name: vault.{{ vault_namespace }}.svc.cluster.local
@@ -57,8 +56,6 @@ ensure_vault_namespace:
     - renew_before: 720h # 30 days
     - require:
       - k8s: ensure_vault_namespace
-
-{% endfor %}
 
 # Install Vault using Helm with pillar-driven values
 install_vault:
