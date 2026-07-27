@@ -18,7 +18,7 @@ update_helm_repos:
 {% set vault_namespace = pillar['res-k8s']['vault']['global']['namespace'] %}
 {% set vault_version = pillar['res-k8s']['vault']['version'] %}
 {% set vault_nodes = pillar['res-k8s']['vault']['nodes'] %}
-
+{% set issuer = "cyberrange-ca-issuer" %}
 # Create namespace for Vault if specified
 ensure_vault_namespace:
   k8s.namespace_present:
@@ -32,7 +32,7 @@ ensure_vault_namespace:
     - namespace: {{ vault_namespace }}
     - certificate_name: {{ node }}-cert
     - secret_name: {{ node }}-tls
-    - issuer_name: gacyberrange-ca-issuer
+    - issuer_name: {{ issuer }}
     - issuer_kind: ClusterIssuer
     - common_name: {{ node }}.{{ vault_namespace }}.svc.cluster.local
     - dns_names:
