@@ -47,10 +47,10 @@ rook_ceph_block_storageclass:
   rook.storageclass_present:
     - name: {{ pool['class']['name'] }}
     - provisioner: {{ pool['class']['provisioner'] }}
-    - parameters: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['parameters'] }}
-    - reclaim_policy: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['reclaimPolicy'] }}
-    - volume_binding_mode: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['volumeBindingMode'] }}
-    - allow_volume_expansion: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['allowVolumeExpansion'] }}
+    - parameters: {{ pool['class']['parameters'] }}
+    - reclaim_policy: {{ pool['class']['reclaimPolicy'] }}
+    - volume_binding_mode: {{ pool['class']['volumeBindingMode'] }}
+    - allow_volume_expansion: {{ pool['class']['allowVolumeExpansion'] }}
     - require:
       - rook: general_rbd_pool
 
@@ -68,9 +68,9 @@ rook_ceph_block_encrypted_storageclass:
   rook.storageclass_present:
     - name: {{ pool['class']['name'] }}
     - provisioner: {{ pool['class']['provisioner'] }}
-    - parameters: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['parameters'] }}
-    - reclaim_policy: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['reclaimPolicy'] }}
-    - volume_binding_mode: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['volumeBindingMode'] }}
-    - allow_volume_expansion: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['allowVolumeExpansion'] }}
+    - parameters: {{ pool['class']['parameters'] }}
+    - reclaim_policy: {{ pool['class']['reclaimPolicy'] }}
+    - volume_binding_mode: {{ pool['class']['volumeBindingMode'] }}
+    - allow_volume_expansion: {{ pool['class']['allowVolumeExpansion'] }}
     - require:
       - rook: general_rbd_encrypted_pool
