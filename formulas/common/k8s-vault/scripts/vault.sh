@@ -7,7 +7,13 @@ ROOK_NAMESPACE=rook-ceph
 ROOK_VAULT_SA=rook-vault-auth
 ROOK_SYSTEM_SA=rook-ceph-system
 ROOK_OSD_SA=rook-ceph-osd
-VAULT_POLICY_NAME=rook
+# CSI ServiceAccounts that need access for PVC encryption
+CSI_PROVISIONER_SA="rook-csi-rbd-provisioner"
+CSI_NODE_SA="rook-csi-rbd-node"
+
+VAULT_POLICY_NAME="rook"
+VAULT_ROLE_NAME="rook-ceph"
+VAULT_CSI_ROLE_NAME="rook-ceph-csi"
 
 # ======================
 # 1. Create ServiceAccount for Vault
@@ -75,13 +81,16 @@ kill $proxy_pid
 $exec_start vault secrets enable -path=rook kv-v2
 $exec_start vault policy delete "$VAULT_POLICY_NAME"
 $exec_start vault policy write "$VAULT_POLICY_NAME" - <<EOF
-path "rook/*" {
-  capabilities = ["list"]
-}
 path "rook/data/*" {
   capabilities = ["create", "read", "update", "delete", "list"]
 }
 path "rook/metadata/*" {
+  capabilities = ["list", "read", "delete", "update"]
+}
+path "rook/data/ceph-csi/*" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+path "rook/metadata/ceph-csi/*" {
   capabilities = ["list", "read", "delete", "update"]
 }
 path "sys/mounts" {
@@ -102,7 +111,15 @@ $exec_start vault write auth/kubernetes/role/"$ROOK_NAMESPACE" \
   ttl=1440h \
   audience="https://kubernetes.default.svc.cluster.local"
 
-
+# ======================
+# 9. Role for CSI pods (PVC encryption)
+# ======================
+$exec_start vault write auth/kubernetes/role/"$VAULT_CSI_ROLE_NAME" \
+  bound_service_account_names="$CSI_PROVISIONER_SA,$CSI_NODE_SA" \
+  bound_service_account_namespaces="$ROOK_NAMESPACE" \
+  policies="$VAULT_POLICY_NAME" \
+  ttl=1440h \
+  audience="https://kubernetes.default.svc.cluster.local"
 # 9.  break glass approle #
 
 $exec_start vault policy write admin - <<EOF
