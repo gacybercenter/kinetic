@@ -40,7 +40,7 @@ general_rbd_pool:
     - failure_domain: host
     - replicated_size: 3
     - require:
-      - k8s_helm: ceph-csi-drivers
+      - k8s_helm: rook-csi-drivers
 
 rook_ceph_block_storageclass:
   rook.storageclass_present:
@@ -61,7 +61,7 @@ general_rbd_encrypted_pool:
     - failure_domain: host
     - replicated_size: 3
     - require:
-      - k8s_helm: ceph-csi-drivers
+      - k8s_helm: rook-csi-drivers
 
 rook_ceph_block_encrypted_storageclass:
   rook.storageclass_present:
@@ -72,4 +72,4 @@ rook_ceph_block_encrypted_storageclass:
     - volume_binding_mode: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['volumeBindingMode'] }}
     - allow_volume_expansion: {{ pillar['res-k8s']['rook']['rbd_pool']['class']['allowVolumeExpansion'] }}
     - require:
-      - rook: general_rbd_pool
+      - rook: general_rbd_encrypted_pool
