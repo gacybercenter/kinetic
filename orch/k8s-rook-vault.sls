@@ -35,20 +35,26 @@ initialize_vault:
     - tgt: '{{ k8s }}'
     - kwarg:
         cmd: |
-          echo "Checking if Vault is initialized..."
-          STATUS=$(kubectl -n rook-ceph exec -it vault-0 -- vault status 2>/dev/null || echo "uninitialized")
-          if echo "$STATUS" | grep -q "Initialized.*false" || echo "$STATUS" | grep -q "uninitialized"; then
-            echo "Initializing Vault..."
+          echo "Checking if Vault is initialized using your exact command..."
+          INITIALIZED=$(kubectl -n rook-ceph exec -it vault-0 -- vault status 2>/dev/null | grep Initialized | awk '{print $2}')
+          
+          if [ "$INITIALIZED" = "false" ] || [ -z "$INITIALIZED" ]; then
+            echo "Vault is not initialized. Initializing now..."
             INIT_RESPONSE=$(kubectl -n rook-ceph exec -it vault-0 -- vault operator init -key-shares=1 -key-threshold=1 -format=json)
             ROOT_TOKEN=$(echo "$INIT_RESPONSE" | jq -r '.root_token')
             UNSEAL_KEY=$(echo "$INIT_RESPONSE" | jq -r '.unseal_keys_b64[0]')
-            echo "Vault initialized. Root token and unseal key retrieved."
+            echo "Vault initialized successfully."
+            echo "Root token: $ROOT_TOKEN"
+            echo "Unseal key: $UNSEAL_KEY"
+            
+            # Save token for the configuration script
             echo "export VAULT_TOKEN=$ROOT_TOKEN" > /tmp/.vault-token
             echo "VAULT_TOKEN=$ROOT_TOKEN" >> /tmp/.vault-token
-            echo "Vault will auto-unseal. Waiting for it to be ready..."
+            
+            echo "Vault will auto-unseal itself. Waiting for it to be ready..."
             sleep 15
           else
-            echo "Vault is already initialized."
+            echo "Vault is already initialized (status: $INITIALIZED)."
           fi
     - require:
       - salt: wait_for_vault_pods
