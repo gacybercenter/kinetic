@@ -60,17 +60,16 @@ initialize_vault:
     - require:
       - salt: wait_for_vault_pods
 
-# Step 3: Run the Vault configuration script
+# Step 4: Run the Vault configuration script
 configure_vault_for_rook:
   salt.function:
     - name: cmd.script
     - tgt: '{{ k8s }}'
     - kwarg:
         source: salt://docs/vault.sh
-        args: "--"
         runas: root
     - require:
-      - salt: wait_for_vault_ready
+      - salt: initialize_vault
 
 # Step 4: Verify Vault configuration for Rook
 verify_vault_config:
