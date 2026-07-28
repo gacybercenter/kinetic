@@ -54,7 +54,7 @@ rook_ceph_block_storageclass:
       - rook: general_rbd_pool
 
 {% set pool = pillar['res-k8s']['rook']['encrypted_rbd_pool'] %}
-general_rbd_pool:
+general_rbd_encrypted_pool:
   rook.ceph_blockpool_present:
     - name: {{ pool['pool']['name'] }}
     - namespace: rook-ceph
@@ -63,7 +63,7 @@ general_rbd_pool:
     - require:
       - k8s_helm: ceph-csi-drivers
 
-rook_ceph_block_storageclass:
+rook_ceph_block_encrypted_storageclass:
   rook.storageclass_present:
     - name: {{ pool['class']['name'] }}
     - provisioner: {{ pool['class']['provisioner'] }}
