@@ -38,6 +38,7 @@ vault_cert:
       # Individual pods
       {% for node in vault_nodes %}
       - {{ node }}
+      - {{ node }}.vault-internal
       - {{ node }}.{{ vault_namespace }}
       - {{ node }}.{{ vault_namespace }}.svc
       - {{ node }}.{{ vault_namespace }}.svc.cluster.local
@@ -64,6 +65,8 @@ install_vault:
     - chart_name: hashicorp/vault
     - namespace: {{ vault_namespace }}
     - pillar_key: res-k8s:vault
+    - set_values:
+      - image.tag=latest
     - version: {{ vault_version }}
     - wait_timeout: 300
     - wait_interval: 10
