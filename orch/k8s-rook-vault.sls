@@ -38,20 +38,20 @@ initialize_vault:
         cmd: |
           echo "Checking if Vault is initialized using your exact command..."
           INITIALIZED=$(kubectl -n rook-ceph exec -it vault-0 -- vault status 2>/dev/null | grep Initialized | awk '{print $2}')
-          
+
           if [ "$INITIALIZED" = "false" ] || [ -z "$INITIALIZED" ]; then
             echo "Vault is not initialized. Initializing with Azure Key Vault compatible settings..."
             # For Azure Key Vault auto-unseal, we typically use 5 key shares with threshold of 3
             # The Azure KMS will handle the actual unseal process
-            INIT_RESPONSE=$(kubectl -n rook-ceph exec -it vault-0 -- vault operator init -key-shares=5 -key-threshold=3 -format=json)
+            INIT_RESPONSE=$(kubectl -n rook-ceph exec -it vault-0 -- vault operator init -format=json)
             ROOT_TOKEN=$(echo "$INIT_RESPONSE" | jq -r '.root_token')
             echo "Vault initialized successfully."
             echo "Root token: $ROOT_TOKEN"
-            
+
             # Save token for the configuration script
             echo "export VAULT_TOKEN=$ROOT_TOKEN" > /tmp/.vault-token
             echo "VAULT_TOKEN=$ROOT_TOKEN" >> /tmp/.vault-token
-            
+
             echo "Vault will be auto-unsealed by Azure Key Vault. Waiting for it to be ready..."
             sleep 15
           else
