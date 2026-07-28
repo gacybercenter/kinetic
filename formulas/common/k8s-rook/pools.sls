@@ -1,8 +1,8 @@
 # Create KMS ConfigMap for Ceph CSI (Vault integration)
 rook_csi_kms_configmap:
   k8s.configmap_present:
-    - name: csi-kms-connection-detail
-    - configmap_name: csi-kms-connection-detail
+    - name: rook-ceph-csi-kms-config
+    - configmap_name: rook-ceph-csi-kms-config
     - namespace: rook-ceph
     - data:
         config.json: |-
