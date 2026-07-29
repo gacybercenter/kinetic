@@ -35,7 +35,7 @@ initialize_vault:
     - name: kinetic_vault.initialize
     - tgt: '{{ k8s }}'
     - kwarg:
-        vault_addr: https://vault.rook-ceph.svc:8200
+        vault_addr: k8s://rook-ceph/vault:8200
         namespace: rook-ceph
         secret_name: vault-init
     - require:
@@ -56,6 +56,6 @@ verify_vault_config:
     - name: kinetic_vault.status
     - tgt: '{{ k8s }}'
     - kwarg:
-        vault_addr: https://vault.rook-ceph.svc:8200
+        vault_addr: k8s://rook-ceph/vault:8200
     - require:
       - salt: configure_vault_for_rook

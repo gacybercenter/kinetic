@@ -3,7 +3,10 @@ include:
 
 {% set vault = pillar['res-k8s']['vault'] %}
 {% set vault_namespace = vault['global']['namespace'] %}
-{% set vault_addr = vault.get('addr', 'https://vault.' ~ vault_namespace ~ '.svc:8200') %}
+{# Default transport: Kubernetes API server service proxy (Vault API is not
+   exposed outside the cluster). Override with res-k8s:vault:addr for direct
+   https:// access if the API is ever exposed. #}
+{% set vault_addr = vault.get('addr', 'k8s://' ~ vault_namespace ~ '/vault:8200') %}
 {% set vault_sa = vault.get('auth_sa', 'rook-vault-auth') %}
 
 # ======================

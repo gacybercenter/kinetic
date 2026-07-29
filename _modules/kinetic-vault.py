@@ -29,7 +29,11 @@ log = logging.getLogger(__name__)
 
 __virtualname__ = "kinetic_vault"
 
-DEFAULT_VAULT_ADDR = "https://vault.rook-ceph.svc:8200"
+# Default transport routes through the Kubernetes API server service proxy,
+# so the Vault API does not need to be exposed outside the cluster.
+# Format: k8s://<namespace>/<service>:<port>
+# A regular https:// address is also supported for direct access.
+DEFAULT_VAULT_ADDR = "k8s://rook-ceph/vault:8200"
 DEFAULT_KUBERNETES_HOST = "https://kubernetes.default.svc.cluster.local"
 
 
@@ -55,13 +59,80 @@ def _load_k8s_config():
         config.load_kube_config()
 
 
-def _vault_request(method, vault_addr, path, token=None, payload=None, verify=False):
+def _vault_request_via_k8s_proxy(method, vault_addr, path, token=None, payload=None):
     """
-    Make an HTTP request against the Vault API.
+    Make an HTTP request against the Vault API through the Kubernetes API
+    server service proxy. This works even when the Vault API is not exposed
+    outside the cluster; only Kubernetes API access is required.
+
+    vault_addr format: k8s://<namespace>/<service>:<port>
 
     Returns:
         tuple: (status_code, json_body_or_None)
     """
+    _load_k8s_config()
+
+    # Parse k8s://<namespace>/<service>:<port>
+    addr = vault_addr[len("k8s://"):]
+    svc_namespace, service_port = addr.split("/", 1)
+
+    api_client = client.ApiClient()
+    proxy_path = (
+        f"/api/v1/namespaces/{svc_namespace}/services/"
+        f"https:{service_port}/proxy/v1/{path}"
+    )
+
+    header_params = {"Accept": "application/json"}
+    if token:
+        header_params["X-Vault-Token"] = token
+    if payload is not None:
+        header_params["Content-Type"] = "application/json"
+
+    try:
+        resp = api_client.call_api(
+            proxy_path,
+            method.upper(),
+            header_params=header_params,
+            body=payload,
+            auth_settings=["BearerToken"],
+            _preload_content=False,
+            _return_http_data_only=True,
+            _request_timeout=15,
+        )
+        status_code = resp.status
+        raw = resp.data
+    except ApiException as e:
+        # Vault intentionally returns non-2xx codes (e.g. sys/health 429/503);
+        # the kubernetes client raises for those, so unwrap the response.
+        status_code = e.status
+        raw = e.body
+
+    try:
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        body = json.loads(raw) if raw else None
+    except (ValueError, TypeError):
+        body = None
+    return status_code, body
+
+
+def _vault_request(method, vault_addr, path, token=None, payload=None, verify=False):
+    """
+    Make an HTTP request against the Vault API.
+
+    Supports two transports based on the vault_addr scheme:
+    - k8s://<namespace>/<service>:<port>  -> Kubernetes API server service proxy
+      (use when the Vault API is not exposed outside the cluster)
+    - https://host:port                   -> direct HTTPS
+
+    Returns:
+        tuple: (status_code, json_body_or_None)
+    """
+    if vault_addr.startswith("k8s://"):
+        return _vault_request_via_k8s_proxy(
+            method, vault_addr, path, token=token, payload=payload
+        )
+
     headers = {}
     if token:
         headers["X-Vault-Token"] = token
