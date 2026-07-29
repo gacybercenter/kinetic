@@ -3,7 +3,7 @@ add_typo3_repo:
     - repo_name: christianhuth
     - repo_url: https://charts.christianhuth.de
 
-# Install Rook Operator
+# Install typo3 Operator
 typo3_install:
   k8s_helm.helm_release_present:
     - release_name: typo3
