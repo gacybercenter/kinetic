@@ -16,5 +16,5 @@ typo3_main_httproute:
           - name: typo3   # Service created by the Helm chart
             port: 8080
     - spec:
-        hostnames: {{ route.get('hostnames', []) }}
+        hostnames: {{ typo3['values']['route']['main']['hostnames'] }}
 {% endif %}
