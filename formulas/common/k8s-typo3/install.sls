@@ -12,4 +12,4 @@ typo3_install:
     - pillar_key: res-k8s:rook:operator
     - wait_timeout: 300
     - require:
-      - k8s_helm: add_rook_repo
+      - k8s_helm: add_typo3_repo
