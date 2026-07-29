@@ -58,7 +58,7 @@ K8S_HOST=$(kubectl config view --minify --flatten -o jsonpath="{.clusters[0].clu
 # 6. Enable Kubernetes auth method in Vault
 # ======================
 $exec_start vault login $VAULT_TOKEN
-$exec_start vault auth enable kubernetes
+$exec_start vault auth enable kubernetes || echo "kubernetes not  enabled"
 
 # ======================
 # 7. Configure the Kubernetes auth method
