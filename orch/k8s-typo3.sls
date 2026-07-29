@@ -4,4 +4,4 @@
 k8s_typo3_install:
   salt.state:
     - tgt: '{{ k8s }}'
-    - sls: formulas.common.typo3
+    - sls: formulas.common.k8s-typo3
