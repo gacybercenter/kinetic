@@ -3160,3 +3160,147 @@ def gatewayclass_present(
         ret["changes"] = {}
 
     return ret
+
+
+def serviceaccount_present(name, namespace, labels=None, annotations=None):
+    """
+    Ensure a Kubernetes ServiceAccount exists in the specified namespace.
+
+    name
+        The name of the ServiceAccount.
+
+    namespace
+        The namespace for the ServiceAccount.
+
+    labels, annotations
+        Optional metadata to apply.
+
+    Example:
+    .. code-block:: yaml
+
+        rook_vault_sa:
+          k8s.serviceaccount_present:
+            - name: rook-vault-auth
+            - namespace: rook-ceph
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.serviceaccount_present"](
+            namespace=namespace,
+            name=name,
+            labels=labels,
+            annotations=annotations,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"created": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure ServiceAccount {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def clusterrolebinding_present(name, cluster_role, service_accounts):
+    """
+    Ensure a Kubernetes ClusterRoleBinding exists binding a ClusterRole to ServiceAccounts.
+
+    name
+        The name of the ClusterRoleBinding.
+
+    cluster_role
+        The ClusterRole to bind (e.g. 'system:auth-delegator').
+
+    service_accounts
+        List of "namespace:serviceaccount" strings.
+
+    Example:
+    .. code-block:: yaml
+
+        vault_tokenreview_binding:
+          k8s.clusterrolebinding_present:
+            - name: vault-tokenreview-binding
+            - cluster_role: system:auth-delegator
+            - service_accounts:
+              - rook-ceph:rook-vault-auth
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.clusterrolebinding_present"](
+            name=name,
+            cluster_role=cluster_role,
+            service_accounts=service_accounts,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"updated": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure ClusterRoleBinding {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def serviceaccount_token_secret_present(name, namespace, service_account):
+    """
+    Ensure a long-lived ServiceAccount token Secret exists (Kubernetes 1.24+).
+
+    Create-only: Kubernetes populates the token/ca.crt data automatically,
+    so this state never updates an existing Secret.
+
+    name
+        The name of the Secret.
+
+    namespace
+        The namespace for the Secret.
+
+    service_account
+        The ServiceAccount name to annotate the Secret with.
+
+    Example:
+    .. code-block:: yaml
+
+        rook_vault_sa_token:
+          k8s.serviceaccount_token_secret_present:
+            - name: rook-vault-auth-token
+            - namespace: rook-ceph
+            - service_account: rook-vault-auth
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.serviceaccount_token_secret_present"](
+            namespace=namespace,
+            name=name,
+            service_account=service_account,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"created": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to ensure ServiceAccount token Secret {name}: {str(e)[:100]}..."
+        )
+        ret["changes"] = {}
+
+    return ret

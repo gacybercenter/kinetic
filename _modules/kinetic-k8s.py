@@ -6294,3 +6294,217 @@ def gatewayclass_present(
             "updated": False,
             "message": f"GatewayClass operation error: {str(e)[:100]}...",
         }
+
+
+def serviceaccount_present(namespace, name, labels=None, annotations=None):
+    """
+    Ensure a Kubernetes ServiceAccount exists in the specified namespace.
+
+    Args:
+        namespace (str): The namespace for the ServiceAccount.
+        name (str): The name of the ServiceAccount.
+        labels (dict, optional): Labels to apply. Defaults to None.
+        annotations (dict, optional): Annotations to apply. Defaults to None.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.serviceaccount_present rook-ceph rook-vault-auth
+    """
+    try:
+        _load_k8s_config()
+
+        core_v1_api = client.CoreV1Api()
+
+        # Check if ServiceAccount exists
+        try:
+            core_v1_api.read_namespaced_service_account(name=name, namespace=namespace)
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"ServiceAccount {name} already exists in namespace {namespace}",
+            }
+        except ApiException as e:
+            if e.status != 404:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking ServiceAccount {name}: {str(e)[:100]}...",
+                }
+
+        # Create the ServiceAccount
+        sa_body = client.V1ServiceAccount(
+            metadata=client.V1ObjectMeta(
+                name=name,
+                namespace=namespace,
+                labels=labels or {},
+                annotations=annotations or {},
+            )
+        )
+        core_v1_api.create_namespaced_service_account(namespace=namespace, body=sa_body)
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"ServiceAccount {name} created in namespace {namespace}",
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"ServiceAccount operation error: {str(e)[:100]}...",
+        }
+
+
+def clusterrolebinding_present(name, cluster_role, service_accounts):
+    """
+    Ensure a Kubernetes ClusterRoleBinding exists binding a ClusterRole to ServiceAccounts.
+
+    Args:
+        name (str): The name of the ClusterRoleBinding.
+        cluster_role (str): The name of the ClusterRole to bind (e.g. 'system:auth-delegator').
+        service_accounts (list): List of "namespace:serviceaccount" strings
+            (e.g. ["rook-ceph:rook-vault-auth"]).
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.clusterrolebinding_present vault-tokenreview-binding \
+            system:auth-delegator '["rook-ceph:rook-vault-auth"]'
+    """
+    try:
+        _load_k8s_config()
+
+        rbac_api = client.RbacAuthorizationV1Api()
+
+        # Build desired subjects
+        subjects = []
+        for sa in service_accounts:
+            sa_namespace, sa_name = sa.split(":", 1)
+            subjects.append(
+                client.RbacV1Subject(
+                    kind="ServiceAccount",
+                    name=sa_name,
+                    namespace=sa_namespace,
+                )
+            )
+
+        # Check if ClusterRoleBinding exists
+        exists = False
+        matches = False
+        try:
+            existing = rbac_api.read_cluster_role_binding(name=name)
+            exists = True
+            current_role = existing.role_ref.name if existing.role_ref else ""
+            current_subjects = {
+                (s.kind, s.namespace, s.name) for s in (existing.subjects or [])
+            }
+            desired_subjects = {("ServiceAccount", s.namespace, s.name) for s in subjects}
+            if current_role == cluster_role and current_subjects == desired_subjects:
+                matches = True
+        except ApiException as e:
+            if e.status != 404:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking ClusterRoleBinding {name}: {str(e)[:100]}...",
+                }
+
+        if exists and matches:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"ClusterRoleBinding {name} already exists and matches desired state",
+            }
+
+        crb_body = client.V1ClusterRoleBinding(
+            metadata=client.V1ObjectMeta(name=name),
+            role_ref=client.V1RoleRef(
+                api_group="rbac.authorization.k8s.io",
+                kind="ClusterRole",
+                name=cluster_role,
+            ),
+            subjects=subjects,
+        )
+
+        if not exists:
+            rbac_api.create_cluster_role_binding(body=crb_body)
+            message = f"ClusterRoleBinding {name} created"
+        else:
+            rbac_api.replace_cluster_role_binding(name=name, body=crb_body)
+            message = f"ClusterRoleBinding {name} updated"
+
+        return {"success": True, "updated": True, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"ClusterRoleBinding operation error: {str(e)[:100]}...",
+        }
+
+
+def serviceaccount_token_secret_present(namespace, name, service_account):
+    """
+    Ensure a long-lived ServiceAccount token Secret exists (required on Kubernetes 1.24+).
+
+    This is create-only: once the Secret exists, Kubernetes populates the token/ca.crt
+    data automatically, so we never attempt to update it.
+
+    Args:
+        namespace (str): The namespace for the Secret.
+        name (str): The name of the Secret (e.g. 'rook-vault-auth-token').
+        service_account (str): The ServiceAccount name to annotate the Secret with.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.serviceaccount_token_secret_present rook-ceph rook-vault-auth-token rook-vault-auth
+    """
+    try:
+        _load_k8s_config()
+
+        core_v1_api = client.CoreV1Api()
+
+        # Check if Secret exists (create-only, never update)
+        try:
+            core_v1_api.read_namespaced_secret(name=name, namespace=namespace)
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"ServiceAccount token Secret {name} already exists in namespace {namespace}",
+            }
+        except ApiException as e:
+            if e.status != 404:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking Secret {name}: {str(e)[:100]}...",
+                }
+
+        secret_body = client.V1Secret(
+            metadata=client.V1ObjectMeta(
+                name=name,
+                namespace=namespace,
+                annotations={
+                    "kubernetes.io/service-account.name": service_account,
+                },
+            ),
+            type="kubernetes.io/service-account-token",
+        )
+        core_v1_api.create_namespaced_secret(namespace=namespace, body=secret_body)
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"ServiceAccount token Secret {name} created in namespace {namespace}",
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"ServiceAccount token Secret operation error: {str(e)[:100]}...",
+        }

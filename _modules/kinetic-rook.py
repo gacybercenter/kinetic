@@ -583,7 +583,7 @@ def storageclass_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to update StorageClass {name}: {str(e)[:100]}...",
+                    "message": f"Failed to update StorageClass {name}: {str(e)}...",
                 }
         else:
             message = f"StorageClass {name} already exists and matches desired state"
