@@ -1,15 +1,12 @@
 exec_start="kubectl -n rook-ceph exec -ti vault-1 -- env VAULT_ADDR=https://vault:8200"
 source /tmp/.vault-token
-# ======================
-# Variables (edit if needed)
-# ======================
+
 ROOK_NAMESPACE=rook-ceph
 ROOK_VAULT_SA=rook-vault-auth
 ROOK_SYSTEM_SA=rook-ceph-system
 ROOK_OSD_SA=rook-ceph-osd
-# CSI ServiceAccounts that need access for PVC encryption
-CSI_PROVISIONER_SA="rook-csi-rbd-provisioner"
-CSI_NODE_SA="rook-csi-rbd-node"
+CSI_PROVISIONER_SA="rook-ceph-rbd-csi-ceph-com-ctrlplugin-sa"
+CSI_NODE_SA="rook-ceph-rbd-csi-ceph-com-nodeplugin-sa"
 
 VAULT_POLICY_NAME="rook"
 VAULT_ROLE_NAME="rook-ceph"
