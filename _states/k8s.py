@@ -3069,24 +3069,53 @@ def httproute_present(
     namespace,
     parent_refs=None,
     rules=None,
+    hostname=None,
+    hostnames=None,
     spec=None,
 ):
     """
     Ensure an HTTPRoute (from Gateway API) is present.
+rules
+    List of HTTPRoute rules (matches, backendRefs, filters).
 
-    See kinetic_k8s.httproute_present for parameter details.
+hostname
+    Single hostname for the route (will be converted to hostnames list).
 
-    Example:
-    .. code-block:: yaml
+hostnames
+    List of hostnames for the route.
 
-        myroute:
-          k8s.httproute_present:
-            - name: my-route
-            - namespace: default
-            - parent_refs:
+spec
+    Full spec if provided (hostnames will be merged if provided).
+
+Example:
+.. code-block:: yaml
+
+    myroute:
+      k8s.httproute_present:
+        - name: my-route
+        - namespace: default
+        - parent_refs:
+          - name: my-gateway
+            sectionName: http
+        - rules:
+          - matches:
+            - path:
+                type: PathPrefix
+                value: /
+            backendRefs:
+            - name: my-service
+              port: 80
+
+    # with hostname
+    myroute:
+      k8s.httproute_present:
+        - name: my-route
+        - namespace: default
+        - spec:
+            parentRefs:
               - name: my-gateway
                 sectionName: http
-            - rules:
+            rules:
               - matches:
                 - path:
                     type: PathPrefix
@@ -3094,7 +3123,8 @@ def httproute_present(
                 backendRefs:
                 - name: my-service
                   port: 80
-    """
+        - hostname: docs.int.rsc.gacyberrange.org
+"""
     ret = _state_ret(name)
 
     try:
@@ -3103,6 +3133,8 @@ def httproute_present(
             name=name,
             parent_refs=parent_refs,
             rules=rules,
+            hostname=hostname,
+            hostnames=hostnames,
             spec=spec,
         )
         ret["result"] = result.get("success", False)

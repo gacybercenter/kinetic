@@ -6053,6 +6053,8 @@ def httproute_present(
     name,
     parent_refs=None,
     rules=None,
+    hostname=None,
+    hostnames=None,
     spec=None,
 ):
     """
@@ -6063,7 +6065,9 @@ def httproute_present(
         name (str): Name of the HTTPRoute.
         parent_refs (list, optional): List of parentRefs (which Gateways this route attaches to).
         rules (list, optional): List of HTTPRoute rules (matches, backendRefs, filters).
-        spec (dict, optional): Full spec if provided.
+        hostname (str, optional): Single hostname for the route (will be converted to hostnames list).
+        hostnames (list, optional): List of hostnames for the route.
+        spec (dict, optional): Full spec if provided (hostnames will be merged if provided).
 
     Returns:
         dict: A dictionary with 'success', 'updated', and 'message'.
@@ -6071,7 +6075,13 @@ def httproute_present(
     CLI Example:
         salt '*' kinetic_k8s.httproute_present default my-route \
             parent_refs='[{"name": "my-gateway", "sectionName": "http"}]' \
-            rules='[{"matches": [{"path": {"type": "PathPrefix", "value": "/"}}], "backendRefs": [{"name": "my-service", "port": 80}]}]'
+            rules='[{"matches": [{"path": {"type": "PathPrefix", "value": "/"}}], "backendRefs": [{"name": "my-service", "port": 80}]}]' \
+            hostname=docs.int.rsc.gacyberrange.org
+
+        # or with full spec and hostnames list
+        salt '*' kinetic_k8s.httproute_present default my-route \
+            spec='{"parentRefs": [...], "rules": [...]}' \
+            hostnames='["docs.int.rsc.gacyberrange.org", "docs2.int.rsc.gacyberrange.org"]'
     """
     try:
         _load_k8s_config()
@@ -6091,6 +6101,12 @@ def httproute_present(
                 spec["rules"] = rules
         else:
             spec = dict(spec)  # copy
+
+        # Merge hostnames into spec if provided
+        if hostname or hostnames:
+            hn = hostnames or ([hostname] if hostname else [])
+            if hn:
+                spec["hostnames"] = hn
 
         body = {
             "apiVersion": f"{group}/{version}",
