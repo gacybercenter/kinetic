@@ -66,7 +66,7 @@ configure_vault_for_rook:
     - name: cmd.script
     - tgt: '{{ k8s }}'
     - kwarg:
-        source: salt://docs/vault.sh
+        source: salt://formulas/cmmon/k8s-vault/scripts/vault.sh
         runas: root
     - require:
       - salt: initialize_vault
