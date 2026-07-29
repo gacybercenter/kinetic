@@ -1,17 +1,17 @@
 include:
   - /formulas/common/k8s-typo3/install
 
-{% set typo3 = pillar.get('res-k8s:typo3', {}) %}
+{% set typo3 = pillar['res-k8s']['typo3'] %}
 {% set route = typo3.get('values', {}).get('route', {}).get('main', {}) %}
 
-{% if route.get('enabled', False) %}
+{% if typo3['values']['route']['main']['enabled'] == true %}
 typo3_main_httproute:
   k8s.httproute_present:
     - name: typo3-main
-    - namespace: {{ typo3.get('namespace', 'typo3') }}
-    - parent_refs: {{ route.get('parentRefs', []) }}
+    - namespace: {{ typo3['namespace'] }}
+    - parent_refs: {{ typo3['values']['route']['main']['parentRefs'] }}
     - rules:
-      - matches: {{ route.get('matches', []) }}
+      - matches: {{ typo3['values']['route']['main']['matches'] }}
         backendRefs:
           - name: typo3   # Service created by the Helm chart
             port: 8080
