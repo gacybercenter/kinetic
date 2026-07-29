@@ -199,6 +199,7 @@ def initialize(
     vault_addr=DEFAULT_VAULT_ADDR,
     namespace="rook-ceph",
     secret_name="vault-init",
+    kms_unseal=True,
     key_shares=5,
     key_threshold=3,
     verify=False,
@@ -211,12 +212,20 @@ def initialize(
     root_token and init.json. This Secret is the source of truth
     for the root token.
 
+    When kms_unseal is True (KMS auto-unseal, e.g. Azure Key Vault),
+    secret_shares/secret_threshold must NOT be sent - the seal type does not
+    accept them. Recovery keys are generated instead, using key_shares and
+    key_threshold as recovery_shares/recovery_threshold.
+
     Args:
-        vault_addr (str): Vault API address (default: https://vault.rook-ceph.svc:8200)
+        vault_addr (str): Vault API address (default: k8s://rook-ceph/vault:8200)
         namespace (str): Namespace for the init Secret (default: rook-ceph)
         secret_name (str): Name of the init Secret (default: vault-init)
-        key_shares (int): Number of key shares (default: 5)
-        key_threshold (int): Key threshold (default: 3)
+        kms_unseal (bool): Vault uses a KMS auto-unseal seal such as Azure
+            Key Vault (default: True). Sends recovery_shares/recovery_threshold
+            instead of secret_shares/secret_threshold.
+        key_shares (int): Number of key shares / recovery shares (default: 5)
+        key_threshold (int): Key / recovery threshold (default: 3)
         verify (bool): Verify TLS certificates (default: False)
 
     Returns:
@@ -236,10 +245,18 @@ def initialize(
                 "message": "Vault is already initialized",
             }
 
-        payload = {
-            "secret_shares": key_shares,
-            "secret_threshold": key_threshold,
-        }
+        if kms_unseal:
+            # KMS auto-unseal (e.g. Azure Key Vault): secret_shares/threshold
+            # are not applicable; recovery keys are generated instead.
+            payload = {
+                "recovery_shares": key_shares,
+                "recovery_threshold": key_threshold,
+            }
+        else:
+            payload = {
+                "secret_shares": key_shares,
+                "secret_threshold": key_threshold,
+            }
         status_code, body = _vault_request(
             "PUT", vault_addr, "sys/init", payload=payload, verify=verify
         )
@@ -266,12 +283,15 @@ def initialize(
             },
         )
 
+        unseal_note = (
+            "vault will auto-unseal (KMS)" if kms_unseal else "manual unseal required"
+        )
         return {
             "success": True,
             "updated": True,
             "message": (
                 f"Vault initialized; init material {action} in secret "
-                f"{namespace}/{secret_name}; vault will auto-unseal (KMS)"
+                f"{namespace}/{secret_name}; {unseal_note}"
             ),
         }
 

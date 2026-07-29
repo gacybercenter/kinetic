@@ -29,6 +29,7 @@ def initialized(
     vault_addr="k8s://rook-ceph/vault:8200",
     namespace="rook-ceph",
     secret_name="vault-init",
+    kms_unseal=True,
     key_shares=5,
     key_threshold=3,
     verify=False,
@@ -40,7 +41,7 @@ def initialized(
         The name of the state.
 
     vault_addr
-        Vault API address (default: https://vault.rook-ceph.svc:8200).
+        Vault API address (default: k8s://rook-ceph/vault:8200).
 
     namespace
         Namespace for the init Secret (default: rook-ceph).
@@ -48,11 +49,16 @@ def initialized(
     secret_name
         Name of the Kubernetes Secret holding the init material (default: vault-init).
 
+    kms_unseal
+        Vault uses a KMS auto-unseal seal such as Azure Key Vault (default: True).
+        When True, secret_shares/secret_threshold are not sent (not accepted by
+        KMS seal types); recovery_shares/recovery_threshold are used instead.
+
     key_shares
-        Number of key shares (default: 5).
+        Number of key shares / recovery shares (default: 5).
 
     key_threshold
-        Key threshold (default: 3).
+        Key / recovery threshold (default: 3).
 
     verify
         Verify TLS certificates (default: False).
@@ -63,11 +69,10 @@ def initialized(
         vault_initialized:
           vault.initialized:
             - name: vault-init
-            - vault_addr: https://vault.rook-ceph.svc:8200
+            - vault_addr: k8s://rook-ceph/vault:8200
             - namespace: rook-ceph
             - secret_name: vault-init
-            - key_shares: 5
-            - key_threshold: 3
+            - kms_unseal: true
     """
     ret = _state_ret(name)
 
@@ -76,6 +81,7 @@ def initialized(
             vault_addr=vault_addr,
             namespace=namespace,
             secret_name=secret_name,
+            kms_unseal=kms_unseal,
             key_shares=key_shares,
             key_threshold=key_threshold,
             verify=verify,
