@@ -2,7 +2,7 @@
 rook_csi_kms_configmap:
   k8s.configmap_present:
     - name: rook-ceph-csi-kms-config
-    - configmap_name: rook-ceph-csi-kms-config
+    - configmap_name: csi-kms-connection-details
     - namespace: rook-ceph
     - data:
         config.json: |-
