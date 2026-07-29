@@ -5,19 +5,17 @@ rook_csi_kms_configmap:
     - configmap_name: csi-kms-connection-details
     - namespace: rook-ceph
     - data:
-        config.json: |-
+        vault-kms: |-
           {
-            "vault-kms": {
-              "encryptionKMSType": "vault",
-              "vaultAddress": "https://vault.rook-ceph.svc:8200",
-              "vaultAuthPath": "/v1/auth/kubernetes/login",
-              "vaultRole": "rook-ceph-csi",
-              "vaultBackend": "kv-v2",
-              "vaultBackendPath": "rook",
-              "vaultPassphrasePath": "ceph-csi/",
-              "vaultDestroyKeys": "true",
-              "vaultCAVerify": "false"
-            }
+            "encryptionKMSType": "vault",
+            "vaultAddress": "https://vault.rook-ceph.svc:8200",
+            "vaultAuthPath": "/v1/auth/kubernetes/login",
+            "vaultRole": "rook-ceph-csi",
+            "vaultBackend": "kv-v2",
+            "vaultBackendPath": "rook",
+            "vaultPassphrasePath": "ceph-csi/",
+            "vaultDestroyKeys": "true",
+            "vaultCAVerify": "false"
           }
     - labels:
         app: rook-ceph
