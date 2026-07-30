@@ -57,7 +57,7 @@ create_keycloak_httproute:
             type: PathPrefix
             value: /
         backendRefs:
-        - name: keycloak   # Service created by the Keycloak Operator
+        - name: keycloak-service   # Service created by the Keycloak Operator
           port: 8080
     - require:
       - k8s: create_keycloak_cert
