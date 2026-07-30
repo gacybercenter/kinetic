@@ -33,15 +33,6 @@ create_auth_pg_cluster:
     - spec: {{ pillar['kc-db']['db']['spec'] }}
 
 {% set kcert = pillar['kc-cluster']['cert'] %}
-create_keycloak_cert:
-  k8s.certmanager_certificate_present:
-    - namespace: {{ kcert['namespace'] }}
-    - certificate_name: {{ kcert['name'] }}
-    - secret_name: {{ kcert['name'] }}-tls
-    - common_name: {{ kcert['commonName'] }}
-    - dns_names: {{ kcert['dns_names'] }}
-    - issuer_name: {{ kcert['issuer_name'] }}
-    - issuer_kind: {{ kcert['issuer_kind'] }}
 
 create_keycloak_httproute:
   k8s.httproute_present:
@@ -60,7 +51,7 @@ create_keycloak_httproute:
         - name: keycloak   # Service created by the Keycloak Operator
           port: 8080
     - require:
-      - k8s: create_keycloak_cert
+      - k8s: create_auth_pg_cluster
 
 ensure_keycloak_cluster:
   k8s.keycloak_cluster_present:
