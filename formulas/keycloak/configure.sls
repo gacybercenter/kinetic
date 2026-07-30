@@ -43,16 +43,22 @@ create_keycloak_cert:
     - issuer_name: {{ kcert['issuer_name'] }}
     - issuer_kind: {{ kcert['issuer_kind'] }}
 
-create_keycloak_ingress:
-  k8s.ingress_present:
+create_keycloak_httproute:
+  k8s.httproute_present:
     - name: {{ kcluster['ingress']['name'] }}
     - namespace: {{ kcluster['ingress']['namespace'] }}
-    - hosts: {{ kcluster['ingress']['hosts'] }}
-    - tls:
-      - secretName: {{ kcert['name'] }}-tls
-        hosts: {{ kcert['dns_names'] }}
-    - ingress_class_name: {{ kcluster['ingress']['class_name'] }}
-    - annotations: {{ kcluster['ingress']['annotations'] }}
+    - parent_refs:
+      - name: {{ kcluster['ingress']['class_name'] }}   # Gateway name == old ingressClass
+        namespace: ingress
+    - hostnames: {{ kcert['dns_names'] }}
+    - rules:
+      - matches:
+        - path:
+            type: PathPrefix
+            value: /
+        backendRefs:
+        - name: keycloak   # Service created by the Keycloak Operator
+          port: 8080
     - require:
       - k8s: create_keycloak_cert
 
