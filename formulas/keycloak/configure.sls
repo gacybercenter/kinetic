@@ -75,4 +75,3 @@ ensure_keycloak_cluster:
     - truststores: {{ pillar['kc-cluster']['truststores'] }}
     - require:
       - k8s: create_auth_pg_cluster
-      - k8s: create_keycloak_cert
