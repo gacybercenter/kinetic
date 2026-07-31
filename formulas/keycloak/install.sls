@@ -36,6 +36,6 @@ create_auth_pg_cluster:
 keycloak_install:
   k8s_helm.helm_release_present:
     - release_name: keycloak
-    - chart_name: {{ pillar['res-k8s']['keycloak']['chart_name']
+    - chart_name: {{ pillar['res-k8s']['keycloak']['chart_name'] }}
     - namespace: keycloak
     - pillar_key: res-k8s:keycloak:values
