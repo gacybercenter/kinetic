@@ -21,10 +21,10 @@ my-nginx:
     - namespace: default
     - pillar_key: helm:nginx:values
     - version: 15.0.0
+```
 
+### OCI chart
 
-
-### OCI chart (new)
 ```yaml
 myapp:
   k8s_helm.helm_release_present:
@@ -33,9 +33,11 @@ myapp:
     - namespace: default
     - version: 1.2.3
     - pillar_key: helm:myapp:values
+```
+
+### OCI chart with explicit values and multiple value files
 
 ```yaml
-### OCI chart with explicit values and multiple value files
 myapp:
   k8s_helm.helm_release_present:
     - release_name: myapp
@@ -50,12 +52,11 @@ myapp:
     - values_files:
         - /path/to/base-values.yaml
         - /path/to/env-values.yaml
-
+```
 
 ## State Module
 
-Use the  state module for declarative orchestration:
-
+Use the `k8s_helm` state module for declarative orchestration:
 
 ```yaml
 ensure_helm_release:
@@ -64,12 +65,12 @@ ensure_helm_release:
     - chart_name: oci://ghcr.io/org/chart
     - namespace: default
     - pillar_key: helm:values
-
+```
 
 ## Notes
 
-- OCI charts do not require a  step
-- Private OCI registries may require prior 
-- The module uses  for all cases
+- OCI charts do not require a `helm repo add` step
+- Private OCI registries may require prior `helm registry login`
+- The module uses `helm upgrade --install` for all cases
 
 Last updated: July 2025
