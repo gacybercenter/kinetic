@@ -759,6 +759,8 @@ def user_federation_present(
     provider_id="ldap",
     provider_type="org.keycloak.storage.UserStorageProvider",
     parent_id=None,
+    start_tls=None,
+    use_truststore_spi=None,
     config=None,
     keycloak_addr="k8s://keycloak/keycloak-service:8443",
     token=None,
@@ -779,6 +781,15 @@ def user_federation_present(
     realm
         The realm to create the federation provider in.
 
+    start_tls
+        Use StartTLS to negotiate encryption on the plain LDAP port
+        (config key startTls). Ignored if config already sets startTls.
+
+    use_truststore_spi
+        When to use Keycloak's truststore SPI for LDAP connections
+        (config key useTruststoreSpi): one of "always", "ldapsOnly", or
+        "never". Ignored if config already sets useTruststoreSpi.
+
     Example:
     .. code-block:: yaml
 
@@ -787,8 +798,10 @@ def user_federation_present(
             - name: corp-ldap
             - realm: myrealm
             - provider_id: ldap
+            - start_tls: true
+            - use_truststore_spi: ldapsOnly
             - config:
-                connectionUrl: ldaps://ldap.example.com:636
+                connectionUrl: ldap://ldap.example.com:389
                 usersDn: ou=People,dc=example,dc=com
                 bindDn: cn=admin,dc=example,dc=com
                 bindCredential: {{ pillar['ldap']['bind_password'] }}
@@ -805,6 +818,8 @@ def user_federation_present(
             provider_id=provider_id,
             provider_type=provider_type,
             parent_id=parent_id,
+            start_tls=start_tls,
+            use_truststore_spi=use_truststore_spi,
             config=config,
             keycloak_addr=keycloak_addr,
             token=token,

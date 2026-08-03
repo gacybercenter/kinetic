@@ -257,6 +257,12 @@ kc_{{ realm_name }}_federation_{{ fed_key }}:
 {%- if fed.get('parent_id') is not none %}
     - parent_id: {{ fed.get('parent_id') }}
 {%- endif %}
+{%- if fed.get('start_tls') is not none %}
+    - start_tls: {{ fed.get('start_tls') }}
+{%- endif %}
+{%- if fed.get('use_truststore_spi') is not none %}
+    - use_truststore_spi: {{ fed.get('use_truststore_spi') }}
+{%- endif %}
 {%- if fed.get('config') is not none %}
     - config: {{ fed.get('config') | tojson }}
 {%- endif %}

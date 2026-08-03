@@ -1559,6 +1559,8 @@ def user_federation_present(
     provider_id="ldap",
     provider_type="org.keycloak.storage.UserStorageProvider",
     parent_id=None,
+    start_tls=None,
+    use_truststore_spi=None,
     config=None,
     keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
     token=None,
@@ -1584,8 +1586,17 @@ def user_federation_present(
         provider_type (str): Component provider type
             (default: org.keycloak.storage.UserStorageProvider)
         parent_id (str): Parent id (default: realm, for realm-level providers)
+        start_tls (bool): Use StartTLS to negotiate encryption on the plain
+            LDAP port (config key startTls). Sets config["startTls"] unless
+            already set in config.
+        use_truststore_spi (str): When to use Keycloak's truststore SPI for
+            LDAP connections (config key useTruststoreSpi); one of "always",
+            "ldapsOnly", or "never". Sets config["useTruststoreSpi"] unless
+            already set in config.
         config (dict): Provider config; values are normalized to List[str]
-            as required by the Keycloak component representation
+            as required by the Keycloak component representation. Explicit
+            startTls/useTruststoreSpi keys in config take precedence over
+            the start_tls/use_truststore_spi kwargs.
         keycloak_addr (str): Keycloak API address
             (default: k8s://keycloak/keycloak-service:8443)
         token (str): Bearer token; obtained via get_admin_token if not given
@@ -1620,7 +1631,14 @@ def user_federation_present(
             }
         headers = _auth_headers(resolved_token)
 
-        normalized_config = _to_component_config(config)
+        merged_config = {}
+        if start_tls is not None:
+            merged_config["startTls"] = "true" if start_tls else "false"
+        if use_truststore_spi is not None:
+            merged_config["useTruststoreSpi"] = use_truststore_spi
+        if config:
+            merged_config.update(config)
+        normalized_config = _to_component_config(merged_config)
 
         status_code, body = _request(
             "GET", keycloak_addr,

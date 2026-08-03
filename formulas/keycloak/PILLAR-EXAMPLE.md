@@ -140,11 +140,19 @@ res-k8s:
             secret: {{ pillar['keycloak-secrets']['my-service-client-secret'] }}
 
         # --- User Federation (OpenLDAP) ---
+        # start_tls and use_truststore_spi are convenience fields for the
+        # config keys startTls/useTruststoreSpi; set them directly under
+        # config instead if you'd rather manage them there.
         user_federation:
           corp-ldap:
             provider_id: ldap
+            # Use StartTLS on the plain LDAP port instead of ldaps://
+            start_tls: true
+            # Only apply Keycloak's truststore SPI for LDAPS connections
+            # (one of: always, ldapsOnly, never)
+            use_truststore_spi: ldapsOnly
             config:
-              connectionUrl: ldaps://ldap.example.com:636
+              connectionUrl: ldap://ldap.example.com:389
               usersDn: ou=users,dc=example,dc=com
               bindDn: cn=admin,dc=example,dc=com
               bindCredential: {{ pillar['ldap']['bind_password'] }}

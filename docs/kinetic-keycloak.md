@@ -54,7 +54,7 @@ All functions return `{"success": bool, "updated": bool, "message": str}`.
 | Required Actions | `required_action_present` | `POST admin/realms/{realm}/authentication/register-required-action`, `GET/PUT .../authentication/required-actions/{alias}` |
 | Authentication Flows | `authentication_flow_present`, `authentication_flow_absent`, `authentication_execution_present` | Full CRUD under `admin/realms/{realm}/authentication/flows` |
 | Clients | `client_present`, `client_absent` | Full CRUD under `admin/realms/{realm}/clients` |
-| User Federation (OpenLDAP) | `user_federation_present`, `user_federation_absent` | `admin/realms/{realm}/components` (LDAP provider) |
+| User Federation (OpenLDAP) | `user_federation_present` (`start_tls`, `use_truststore_spi`, `config`), `user_federation_absent` | `admin/realms/{realm}/components` (LDAP provider) |
 
 Every `*_present` function builds a desired-state dict from its convenience kwargs, checks the current representation first (idempotent - a no-op run reports `updated: False`), and accepts an optional full `spec` dict that is merged over (and wins conflicts with) the built dict - the same override pattern used by `kinetic-rook.py`.
 
@@ -164,12 +164,32 @@ corp_ldap:
         pagination: "true"
 ```
 
+Using StartTLS on the plain LDAP port instead of `ldaps://`, with the truststore SPI applied only for LDAPS connections:
+
+```yaml
+corp_ldap:
+  keycloak.user_federation_present:
+    - realm: myrealm
+    - provider_id: ldap
+    - start_tls: true
+    - use_truststore_spi: ldapsOnly
+    - config:
+        connectionUrl: ldap://ldap.example.com:389
+        usersDn: ou=users,dc=example,dc=com
+        bindDn: cn=admin,dc=example,dc=com
+        bindCredential: "{{ pillar['ldap']['bind_password'] }}"
+        userObjectClasses: "inetOrgPerson, organizationalPerson"
+        vendor: other
+        editMode: READ_ONLY
+```
+
 ## Notes
 
 - `client_present`/`client_absent` use Keycloak's `clientId` (the human-readable identifier), not the internal UUID `id` used in REST paths once the client exists; the internal id is looked up automatically.
 - Keycloak never returns a confidential client's `secret` on GET, so `secret` is excluded from the idempotency comparison in `client_present` but is still sent on create/update when provided.
 - `authentication_execution_present` manages an execution's `requirement` (DISABLED/ALTERNATIVE/REQUIRED/CONDITIONAL) but does not manage execution ordering/priority (raise/lower) - that is out of scope for now.
 - LDAP (and other component) `config` values must be `List[str]` per the Keycloak component representation; `user_federation_present` normalizes scalar values automatically.
+- `user_federation_present` accepts convenience kwargs `start_tls` (bool, sets config `startTls`) and `use_truststore_spi` (one of `always`/`ldapsOnly`/`never`, sets config `useTruststoreSpi`). Both are merged into `config` and are overridden if the corresponding key is already present in an explicit `config` dict.
 - The connection kwarg for the admin login client was named `admin_client_id`/`admin_client_secret` (rather than bare `client_id`/`client_secret`) specifically to avoid colliding with `client_present`'s own `client_id` parameter, which refers to the Keycloak client being managed.
 
 Last updated: July 2025
