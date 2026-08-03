@@ -1615,9 +1615,6 @@ def user_federation_present(
 
         salt-call kinetic_keycloak.user_federation_present realm=myrealm name=corp-ldap
     """
-    if parent_id is None:
-        parent_id = realm
-
     try:
         resolved_token = _resolve_token(
             token, keycloak_addr, "master", realm_username, realm_password,
@@ -1630,6 +1627,24 @@ def user_federation_present(
                 "message": "Failed to obtain Keycloak admin access token",
             }
         headers = _auth_headers(resolved_token)
+
+        if parent_id is None:
+            # Realm-level components (e.g. LDAP user federation) must be
+            # parented to the realm's internal id (a UUID assigned by
+            # Keycloak), which is generally NOT the same as the realm name.
+            # Falling back to the realm name here would silently create
+            # components with a bogus parentId that never show up in the
+            # admin console.
+            status_code, realm_body = _request(
+                "GET", keycloak_addr, f"admin/realms/{realm}",
+                headers=headers, verify=verify,
+            )
+            if status_code == 200 and isinstance(realm_body, dict) and realm_body.get("id"):
+                parent_id = realm_body["id"]
+            else:
+                return _http_error(
+                    f"Resolving internal id for realm {realm}", status_code, realm_body
+                )
 
         merged_config = {}
         if start_tls is not None:
