@@ -253,7 +253,7 @@ kc_{{ realm_name }}_federation_{{ fed_key }}:
     - name: {{ fed_key }}
     - realm: {{ realm_name }}
     - provider_id: {{ fed.get('provider_id', 'ldap') }}
-    - provider_type: {{ fed.get('provider_type', 'org.keycloak.storage.UserStorageProvider') }}
+    - provider_type: {{ fed.get('provider_type', 'other') }}
 {%- if fed.get('parent_id') is not none %}
     - parent_id: {{ fed.get('parent_id') }}
 {%- endif %}
