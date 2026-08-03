@@ -15,7 +15,7 @@ include:
     - verify: {{ verify }}
 {%- endmacro %}
 
-{% set realms = kc.get('realms', {}) %}
+{% set realms = pillar['ldap']['realms'] %}
 {% for realm_name, realm in realms.items() %}
 
 # --- Realm: {{ realm_name }} ---
