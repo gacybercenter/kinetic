@@ -903,3 +903,164 @@ def user_federation_absent(
         ret["changes"] = {}
 
     return ret
+
+
+def ldap_mapper_present(
+    name,
+    realm,
+    federation_name,
+    provider_id,
+    config=None,
+    provider_type="org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
+    keycloak_addr="k8s://keycloak/keycloak-service:8443",
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """
+    Ensure an LDAP mapper component (e.g. group-ldap-mapper,
+    user-attribute-ldap-mapper, full-name-ldap-mapper,
+    hardcoded-ldap-role-mapper, msad-user-account-control-mapper) exists
+    under a given realm-level user storage federation provider (e.g. LDAP).
+
+    name
+        The name of the state. Also used as the Keycloak mapper component
+        name.
+
+    realm
+        The realm the federation provider belongs to.
+
+    federation_name
+        Name of the parent user federation provider component (as set via
+        keycloak.user_federation_present's name).
+
+    provider_id
+        Mapper provider id (e.g. group-ldap-mapper).
+
+    Example:
+    .. code-block:: yaml
+
+        corp_ldap_groups_mapper:
+          keycloak.ldap_mapper_present:
+            - name: corp-ldap-groups
+            - realm: myrealm
+            - federation_name: corp-ldap
+            - provider_id: group-ldap-mapper
+            - config:
+                groups.dn: ou=groups,dc=example,dc=com
+                group.name.ldap.attribute: cn
+                group.object.classes: groupOfNames
+                membership.ldap.attribute: member
+                membership.attribute.type: DN
+                membership.user.ldap.attribute: uid
+                mode: READ_ONLY
+                user.roles.retrieve.strategy: LOAD_GROUPS_BY_MEMBER_ATTRIBUTE
+                mapped.group.attributes: ""
+                drop.non.existing.groups.during.sync: "false"
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_keycloak.ldap_mapper_present"](
+            realm=realm,
+            federation_name=federation_name,
+            name=name,
+            provider_id=provider_id,
+            config=config,
+            provider_type=provider_type,
+            keycloak_addr=keycloak_addr,
+            token=token,
+            realm_username=realm_username,
+            realm_password=realm_password,
+            admin_client_id=admin_client_id,
+            admin_client_secret=admin_client_secret,
+            namespace=namespace,
+            secret_name=secret_name,
+            verify=verify,
+        )
+
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure LDAP mapper {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def ldap_mapper_absent(
+    name,
+    realm,
+    federation_name,
+    provider_type="org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
+    keycloak_addr="k8s://keycloak/keycloak-service:8443",
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """
+    Ensure an LDAP mapper component does not exist under a given
+    realm-level user storage federation provider (e.g. LDAP).
+
+    name
+        The name of the state. Also used as the Keycloak mapper component
+        name.
+
+    realm
+        The realm the federation provider belongs to.
+
+    federation_name
+        Name of the parent user federation provider component (as set via
+        keycloak.user_federation_present's name).
+
+    Example:
+    .. code-block:: yaml
+
+        corp_ldap_groups_mapper_absent:
+          keycloak.ldap_mapper_absent:
+            - name: corp-ldap-groups
+            - realm: myrealm
+            - federation_name: corp-ldap
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_keycloak.ldap_mapper_absent"](
+            realm=realm,
+            federation_name=federation_name,
+            name=name,
+            provider_type=provider_type,
+            keycloak_addr=keycloak_addr,
+            token=token,
+            realm_username=realm_username,
+            realm_password=realm_password,
+            admin_client_id=admin_client_id,
+            admin_client_secret=admin_client_secret,
+            namespace=namespace,
+            secret_name=secret_name,
+            verify=verify,
+        )
+
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to delete LDAP mapper {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret

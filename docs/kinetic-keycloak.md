@@ -55,6 +55,7 @@ All functions return `{"success": bool, "updated": bool, "message": str}`.
 | Authentication Flows | `authentication_flow_present`, `authentication_flow_absent`, `authentication_execution_present` | Full CRUD under `admin/realms/{realm}/authentication/flows` |
 | Clients | `client_present`, `client_absent` | Full CRUD under `admin/realms/{realm}/clients` |
 | User Federation (OpenLDAP) | `user_federation_present` (`start_tls`, `use_truststore_spi`, `config`), `user_federation_absent` | `admin/realms/{realm}/components` (LDAP provider) |
+| User Federation LDAP Mappers (group/attribute/role/etc.) | `ldap_mapper_present`, `ldap_mapper_absent` | `admin/realms/{realm}/components` (LDAP mapper, parented to the federation provider) |
 
 Every `*_present` function builds a desired-state dict from its convenience kwargs, checks the current representation first (idempotent - a no-op run reports `updated: False`), and accepts an optional full `spec` dict that is merged over (and wins conflicts with) the built dict - the same override pattern used by `kinetic-rook.py`.
 
@@ -183,6 +184,40 @@ corp_ldap:
         editMode: READ_ONLY
 ```
 
+### LDAP mapper (e.g. group-ldap-mapper)
+
+LDAP mapper components (group, attribute, role, full-name mappers, etc.) are
+sub-components of a user federation provider - their `parentId` must be the
+federation provider's own internal component id, not the realm's. Rather
+than requiring you to look that id up yourself, `ldap_mapper_present`/
+`ldap_mapper_absent` resolve it automatically from the federation provider's
+`name` (the same `name` given to `keycloak.user_federation_present`).
+
+```yaml
+corp_ldap_groups:
+  keycloak.ldap_mapper_present:
+    - realm: myrealm
+    - federation_name: corp-ldap
+    - provider_id: group-ldap-mapper
+    - config:
+        groups.dn: ou=groups,dc=example,dc=com
+        group.name.ldap.attribute: cn
+        group.object.classes: groupOfNames
+        membership.ldap.attribute: member
+        membership.attribute.type: DN
+        membership.user.ldap.attribute: uid
+        mode: READ_ONLY
+        user.roles.retrieve.strategy: LOAD_GROUPS_BY_MEMBER_ATTRIBUTE
+        drop.non.existing.groups.during.sync: "false"
+```
+
+Other common `provider_id` values for `ldap_mapper_present`:
+
+- `user-attribute-ldap-mapper` - maps an LDAP attribute to a Keycloak user attribute (`user.model.attribute`, `ldap.attribute`, `read.only`, `always.read.value.from.ldap`, `is.mandatory.in.ldap`)
+- `full-name-ldap-mapper` - maps a single LDAP attribute (e.g. `cn`) to `firstName`/`lastName` (`ldap.full.name.attribute`, `read.only`, `write.only`)
+- `hardcoded-ldap-role-mapper` - grants a hardcoded realm/client role to every federated user (`role`)
+- `msad-user-account-control-mapper` - integrates Microsoft Active Directory account state (enabled/expired password) into Keycloak
+
 ## Notes
 
 - `client_present`/`client_absent` use Keycloak's `clientId` (the human-readable identifier), not the internal UUID `id` used in REST paths once the client exists; the internal id is looked up automatically.
@@ -192,5 +227,6 @@ corp_ldap:
 - `user_federation_present` accepts convenience kwargs `start_tls` (bool, sets config `startTls`) and `use_truststore_spi` (one of `always`/`ldapsOnly`/`never`, sets config `useTruststoreSpi`). Both are merged into `config` and are overridden if the corresponding key is already present in an explicit `config` dict.
 - `user_federation_present`'s `parent_id` defaults to the realm's *internal* `id` (a server-assigned UUID, resolved via `GET admin/realms/{realm}`), **not** the realm name - Keycloak's realm `id` and `realm` (name) are different values unless explicitly set equal at creation time. Passing the realm name as `parentId` creates an orphaned component that never appears in the admin console. If you have such an orphaned component from before this fix, remove it with `user_federation_absent` (which matches by `name` across all parents, so it will find it) and re-apply to recreate it correctly parented.
 - The connection kwarg for the admin login client was named `admin_client_id`/`admin_client_secret` (rather than bare `client_id`/`client_secret`) specifically to avoid colliding with `client_present`'s own `client_id` parameter, which refers to the Keycloak client being managed.
+- `ldap_mapper_present`/`ldap_mapper_absent` resolve the parent federation provider's internal component id automatically from `federation_name` (looked up by component `name` under the realm's internal id), so you never need to know or hardcode Keycloak-generated component ids in pillar data.
 
-Last updated: July 2025
+Last updated: August 2026

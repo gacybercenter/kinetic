@@ -15,7 +15,7 @@ include:
     - verify: {{ verify }}
 {%- endmacro %}
 
-{% set realms = pillar['ldap']['realms'] %}
+{% set realms = kc.get('realms', {}) %}
 {% for realm_name, realm in realms.items() %}
 
 # --- Realm: {{ realm_name }} ---
@@ -269,6 +269,23 @@ kc_{{ realm_name }}_federation_{{ fed_key }}:
 {{ kc_conn(keycloak_addr, kc_namespace, kc_secret_name, kc_verify) }}
     - require:
       - keycloak: kc_{{ realm_name }}_realm
+
+{# --- LDAP Mappers (e.g. group-ldap-mapper) for this federation provider --- #}
+{% for mapper_key, mapper in fed.get('mappers', {}).items() %}
+kc_{{ realm_name }}_federation_{{ fed_key }}_mapper_{{ mapper_key }}:
+  keycloak.ldap_mapper_present:
+    - name: {{ mapper_key }}
+    - realm: {{ realm_name }}
+    - federation_name: {{ fed_key }}
+    - provider_id: {{ mapper['provider_id'] }}
+    - provider_type: {{ mapper.get('provider_type', 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper') }}
+{%- if mapper.get('config') is not none %}
+    - config: {{ mapper.get('config') | tojson }}
+{%- endif %}
+{{ kc_conn(keycloak_addr, kc_namespace, kc_secret_name, kc_verify) }}
+    - require:
+      - keycloak: kc_{{ realm_name }}_federation_{{ fed_key }}
+{% endfor %}
 {% endfor %}
 
 {% endfor %}

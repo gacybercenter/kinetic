@@ -164,6 +164,30 @@ res-k8s:
               uuidLDAPAttribute: entryUUID
               syncRegistrations: "false"
               pagination: "true"
+
+            # --- LDAP Mappers (sub-components of this federation provider) ---
+            # Each mapper's parentId is resolved automatically from this
+            # federation's name (corp-ldap) - no need to know Keycloak's
+            # internal component ids.
+            mappers:
+              corp-ldap-groups:
+                provider_id: group-ldap-mapper
+                config:
+                  groups.dn: ou=groups,dc=example,dc=com
+                  group.name.ldap.attribute: cn
+                  group.object.classes: groupOfNames
+                  membership.ldap.attribute: member
+                  membership.attribute.type: DN
+                  membership.user.ldap.attribute: uid
+                  mode: READ_ONLY
+                  user.roles.retrieve.strategy: LOAD_GROUPS_BY_MEMBER_ATTRIBUTE
+                  drop.non.existing.groups.during.sync: "false"
+              corp-ldap-fullname:
+                provider_id: full-name-ldap-mapper
+                config:
+                  ldap.full.name.attribute: cn
+                  read.only: "true"
+                  write.only: "false"
 ```
 
 ## Notes
@@ -175,6 +199,13 @@ res-k8s:
   alias / client_id / component name unless overridden with `alias:`,
   `client_id:`, or `name:` respectively - not applicable for federation,
   whose key is always the component name).
+- `user_federation.<federation>.mappers` is an optional keyed dict of LDAP
+  mapper sub-components (e.g. `group-ldap-mapper`, `user-attribute-ldap-mapper`,
+  `full-name-ldap-mapper`, `hardcoded-ldap-role-mapper`,
+  `msad-user-account-control-mapper`). Each mapper key becomes the Keycloak
+  component name, and its `parentId` is resolved automatically from the
+  enclosing federation's name - see `docs/kinetic-keycloak.md` for the full
+  list of common mapper `provider_id` values and their `config` keys.
 - `required_actions` is a list because Keycloak allows several required
   actions per realm and order doesn't otherwise matter for identification
   (each is keyed by `provider_id`).

@@ -1820,3 +1820,326 @@ def user_federation_absent(
             "updated": False,
             "message": f"Failed to delete user federation provider {name}: {str(e)}",
         }
+
+
+def _resolve_realm_id(realm, keycloak_addr, headers, verify):
+    """
+    Resolve a realm's internal id (a server-assigned UUID, distinct from the
+    realm name) via GET admin/realms/{realm}.
+
+    Returns:
+        tuple: (realm_id, error_dict). error_dict is None on success, or a
+            standard failure return dict (from _http_error) on failure.
+    """
+    status_code, body = _request(
+        "GET", keycloak_addr, f"admin/realms/{realm}", headers=headers, verify=verify,
+    )
+    if status_code == 200 and isinstance(body, dict) and body.get("id"):
+        return body["id"], None
+    return None, _http_error(f"Resolving internal id for realm {realm}", status_code, body)
+
+
+def _resolve_federation_id(realm, federation_name, realm_id, keycloak_addr, headers, verify):
+    """
+    Resolve the internal component id of a realm-level user storage
+    federation provider (e.g. LDAP) by its component name.
+
+    Returns:
+        tuple: (federation_id, error_dict). error_dict is None on success, or
+            a standard failure return dict (from _http_error, or a
+            not-found message) on failure.
+    """
+    status_code, body = _request(
+        "GET", keycloak_addr,
+        f"admin/realms/{realm}/components?parent={realm_id}"
+        f"&type=org.keycloak.storage.UserStorageProvider",
+        headers=headers, verify=verify,
+    )
+    if status_code != 200 or not isinstance(body, list):
+        return None, _http_error(
+            f"Listing user federation providers in realm {realm}", status_code, body
+        )
+    federation = next((c for c in body if c.get("name") == federation_name), None)
+    if federation is None or not federation.get("id"):
+        return None, {
+            "success": False,
+            "updated": False,
+            "message": (
+                f"User federation provider {federation_name} not found in realm {realm}"
+            ),
+        }
+    return federation["id"], None
+
+
+def ldap_mapper_present(
+    realm,
+    federation_name,
+    name,
+    provider_id,
+    config=None,
+    provider_type="org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """
+    Ensure an LDAP mapper component (e.g. group-ldap-mapper,
+    user-attribute-ldap-mapper, full-name-ldap-mapper,
+    hardcoded-ldap-role-mapper, msad-user-account-control-mapper) exists
+    under a given realm-level user storage federation provider (e.g. LDAP).
+
+    Keycloak Admin REST API:
+        GET/POST admin/realms/{realm}/components
+        GET/PUT admin/realms/{realm}/components/{id}
+
+    Args:
+        realm (str): Realm name.
+        federation_name (str): Name of the parent user federation provider
+            component (as set via user_federation_present's name).
+        name (str): Component name for this mapper.
+        provider_id (str): Mapper provider id (e.g. group-ldap-mapper).
+        config (dict): Mapper config; values are normalized to List[str] as
+            required by the Keycloak component representation.
+        provider_type (str): Component provider type (default:
+            org.keycloak.storage.ldap.mappers.LDAPStorageMapper)
+        keycloak_addr (str): Keycloak API address
+            (default: k8s://keycloak/keycloak-service:8443)
+        token (str): Bearer token; obtained via get_admin_token if not given
+        realm_username (str): Admin username used to obtain a token
+        realm_password (str): Admin password used to obtain a token
+        admin_client_id (str): Client id used for the admin login (default: admin-cli)
+        admin_client_secret (str): Client secret for confidential client login
+        namespace (str): Namespace of the admin credentials Secret (default: keycloak)
+        secret_name (str): Name of the admin credentials Secret (default: keycloak-admin)
+        verify (bool): Verify TLS certificates (default: False)
+
+    Returns:
+        dict: success, updated, message
+
+    CLI Example:
+
+        salt-call kinetic_keycloak.ldap_mapper_present realm=myrealm \
+            federation_name=corp-ldap name=corp-ldap-groups provider_id=group-ldap-mapper
+    """
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+
+        realm_id, error = _resolve_realm_id(realm, keycloak_addr, headers, verify)
+        if error:
+            return error
+
+        federation_id, error = _resolve_federation_id(
+            realm, federation_name, realm_id, keycloak_addr, headers, verify
+        )
+        if error:
+            return error
+
+        normalized_config = _to_component_config(config)
+
+        status_code, body = _request(
+            "GET", keycloak_addr,
+            f"admin/realms/{realm}/components?parent={federation_id}&type={provider_type}",
+            headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, list):
+            return _http_error(
+                f"Listing LDAP mappers for federation provider {federation_name} "
+                f"in realm {realm}",
+                status_code, body,
+            )
+
+        existing = next((c for c in body if c.get("name") == name), None)
+
+        desired = {
+            "name": name,
+            "providerId": provider_id,
+            "providerType": provider_type,
+            "parentId": federation_id,
+            "config": normalized_config,
+        }
+
+        if existing is None:
+            status_code, body = _request(
+                "POST", keycloak_addr, f"admin/realms/{realm}/components",
+                headers=headers, payload=desired, verify=verify,
+            )
+            if status_code == 201:
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": (
+                        f"LDAP mapper {name} created for federation provider "
+                        f"{federation_name} in realm {realm}"
+                    ),
+                }
+            return _http_error(f"Creating LDAP mapper {name}", status_code, body)
+
+        current_config = _to_component_config(existing.get("config"))
+        if existing.get("providerId") == provider_id and current_config == normalized_config:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"LDAP mapper {name} already matches desired state",
+            }
+
+        component_id = existing.get("id")
+        payload = {**existing, **desired}
+        status_code, body = _request(
+            "PUT", keycloak_addr, f"admin/realms/{realm}/components/{component_id}",
+            headers=headers, payload=payload, verify=verify,
+        )
+        if status_code == 204:
+            return {
+                "success": True,
+                "updated": True,
+                "message": (
+                    f"LDAP mapper {name} updated for federation provider "
+                    f"{federation_name} in realm {realm}"
+                ),
+            }
+        return _http_error(f"Updating LDAP mapper {name}", status_code, body)
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to ensure LDAP mapper {name}: {str(e)}",
+        }
+
+
+def ldap_mapper_absent(
+    realm,
+    federation_name,
+    name,
+    provider_type="org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """
+    Ensure an LDAP mapper component does not exist under a given
+    realm-level user storage federation provider (e.g. LDAP).
+
+    Keycloak Admin REST API:
+        GET admin/realms/{realm}/components
+        DELETE admin/realms/{realm}/components/{id}
+
+    Args:
+        realm (str): Realm name.
+        federation_name (str): Name of the parent user federation provider
+            component (as set via user_federation_present's name).
+        name (str): Component name for this mapper.
+        provider_type (str): Component provider type (default:
+            org.keycloak.storage.ldap.mappers.LDAPStorageMapper)
+        keycloak_addr (str): Keycloak API address
+            (default: k8s://keycloak/keycloak-service:8443)
+        token (str): Bearer token; obtained via get_admin_token if not given
+        realm_username (str): Admin username used to obtain a token
+        realm_password (str): Admin password used to obtain a token
+        admin_client_id (str): Client id used for the admin login (default: admin-cli)
+        admin_client_secret (str): Client secret for confidential client login
+        namespace (str): Namespace of the admin credentials Secret (default: keycloak)
+        secret_name (str): Name of the admin credentials Secret (default: keycloak-admin)
+        verify (bool): Verify TLS certificates (default: False)
+
+    Returns:
+        dict: success, updated, message
+
+    CLI Example:
+
+        salt-call kinetic_keycloak.ldap_mapper_absent realm=myrealm \
+            federation_name=corp-ldap name=corp-ldap-groups
+    """
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+
+        realm_id, error = _resolve_realm_id(realm, keycloak_addr, headers, verify)
+        if error:
+            return error
+
+        federation_id, error = _resolve_federation_id(
+            realm, federation_name, realm_id, keycloak_addr, headers, verify
+        )
+        if error:
+            # If the parent federation provider itself is already gone, the
+            # mapper is necessarily absent too.
+            return {
+                "success": True,
+                "updated": False,
+                "message": (
+                    f"LDAP mapper {name} already absent (federation provider "
+                    f"{federation_name} not found in realm {realm})"
+                ),
+            }
+
+        status_code, body = _request(
+            "GET", keycloak_addr,
+            f"admin/realms/{realm}/components?parent={federation_id}&type={provider_type}",
+            headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, list):
+            return _http_error(
+                f"Listing LDAP mappers for federation provider {federation_name} "
+                f"in realm {realm}",
+                status_code, body,
+            )
+
+        existing = next((c for c in body if c.get("name") == name), None)
+        if existing is None:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"LDAP mapper {name} already absent",
+            }
+
+        component_id = existing.get("id")
+        status_code, body = _request(
+            "DELETE", keycloak_addr, f"admin/realms/{realm}/components/{component_id}",
+            headers=headers, verify=verify,
+        )
+        if status_code == 204:
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"LDAP mapper {name} deleted",
+            }
+        return _http_error(f"Deleting LDAP mapper {name}", status_code, body)
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to delete LDAP mapper {name}: {str(e)}",
+        }
