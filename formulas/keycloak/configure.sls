@@ -3,9 +3,9 @@ include:
 
 {% set kc = pillar.get('res-k8', {}).get('keycloak', {}) %}
 {% set conn = kc.get('connection', {}) %}
-{% set keycloak_addr = conn.get('keycloak_addr') %}
+{% set keycloak_addr = conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') %}
 {% set kc_namespace = conn.get('namespace', 'keycloak') %}
-{% set kc_secret_name = conn.get('secret_name') %}
+{% set kc_secret_name = conn.get('secret_name', 'keycloak-admin') %}
 {% set kc_verify = conn.get('verify', False) %}
 
 {% macro kc_conn(addr, ns, secret, verify) %}
