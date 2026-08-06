@@ -9,7 +9,7 @@
 #       - uid: mdanielson
 #         cn: "Mark Danielson"
 #         sn: Danielson
-#         description: ""            # optional
+#         description: "..."         # optional; defaults to cn (LDAP rejects an empty string here)
 #         pass: "..."                # optional, GPG-encrypted in practice
 #         kubernetes:                # optional
 #           cluster_roles: [...]
@@ -167,7 +167,7 @@ ldap_user_{{ user['uid'] }}:
     - uid: {{ user['uid'] }}
     - cn: {{ user['cn'] | yaml_dquote }}
     - sn: {{ user.get('sn', user['uid']) | yaml_dquote }}
-    - description: {{ user.get('description', '') | yaml_dquote }}
+    - description: {{ user.get('description', user['cn']) | yaml_dquote }}
 {%- if user.get('pass') %}
     - password: {{ user['pass'] | yaml_dquote }}
 {%- endif %}
