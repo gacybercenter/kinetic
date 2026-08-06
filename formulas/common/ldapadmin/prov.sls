@@ -120,7 +120,7 @@ ensure_ldap_connect_spec:
     - name: ldap_connection_setup
     - spec_name: ldap_keycloak_connection
     - connection_dict:
-        url: {{ "ldap://" ~ pillar['ldap']['cert']['common_name'] }}
+        url: {{ "ldap://" ~ pillar['ldap']['cert']['commonname'] }}
         bind:
           dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ pillar['ldap']['values']['global']['ldapDomain'] }}
           password: {{ pillar['ldap']['admin-user']['password'] }}
