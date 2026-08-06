@@ -1302,6 +1302,8 @@ def client_present(
     base_url=None,
     client_authenticator_type="client-secret",
     secret=None,
+    pkce_code_challenge_method=None,
+    attributes=None,
     spec=None,
     keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
     token=None,
@@ -1315,6 +1317,11 @@ def client_present(
 ):
     """
     Ensure a Keycloak client exists in the given realm.
+
+    For public clients, PKCE is enabled by default (S256) unless explicitly
+    overridden via pkce_code_challenge_method or attributes, since public
+    clients cannot securely hold a client secret and are therefore more
+    exposed to authorization code interception.
 
     client_id is Keycloak's "clientId" (the human-readable identifier), not
     the internal UUID "id" used in the REST paths once the client exists.
@@ -1348,6 +1355,16 @@ def client_present(
             secret in GET responses for confidential clients, so it is
             excluded from the idempotency comparison, but is still sent in
             the PUT/POST body when provided.
+        pkce_code_challenge_method (str, optional): PKCE code challenge
+            method (e.g. S256, plain). Sets the client attribute
+            pkce.code.challenge.method. Defaults to "S256" for public
+            clients (public_client=True) unless explicitly set here or in
+            attributes/spec; not defaulted for confidential clients. Pass an
+            empty string to explicitly disable PKCE enforcement for a
+            public client.
+        attributes (dict, optional): Free-form client attributes to merge
+            into (not replace) the client's existing attributes map. Useful
+            for attributes not covered by other kwargs.
         spec (dict, optional): Full client representation fields to merge
             over (and override) the fields built from the other kwargs
         keycloak_addr (str): Keycloak API address
@@ -1405,6 +1422,19 @@ def client_present(
                 desired[camel] = value
         if secret is not None:
             desired["secret"] = secret
+
+        merged_attributes = dict(attributes) if attributes else {}
+        if "pkce.code.challenge.method" not in merged_attributes:
+            if pkce_code_challenge_method is not None:
+                merged_attributes["pkce.code.challenge.method"] = pkce_code_challenge_method
+            elif public_client:
+                # Public clients cannot securely hold a client secret, so
+                # enforce PKCE (S256) by default to protect the
+                # authorization code from interception.
+                merged_attributes["pkce.code.challenge.method"] = "S256"
+        if merged_attributes:
+            desired["attributes"] = merged_attributes
+
         if spec:
             desired = {**desired, **spec}
 
@@ -1432,8 +1462,18 @@ def client_present(
                 }
             return _http_error(f"Creating client {client_id}", status_code, body)
 
-        comparable = {k: v for k, v in desired.items() if k != "secret"}
-        if all(existing.get(k) == v for k, v in comparable.items()):
+        # Keycloak auto-populates many other client attributes (e.g.
+        # client.secret.creation.time), so attributes are compared and
+        # merged as a subset rather than requiring full-dict equality.
+        desired_attributes = desired.get("attributes")
+        comparable = {k: v for k, v in desired.items() if k not in ("secret", "attributes")}
+        attributes_match = True
+        if desired_attributes is not None:
+            existing_attributes = existing.get("attributes") or {}
+            attributes_match = all(
+                str(existing_attributes.get(k)) == str(v) for k, v in desired_attributes.items()
+            )
+        if attributes_match and all(existing.get(k) == v for k, v in comparable.items()):
             return {
                 "success": True,
                 "updated": False,
@@ -1442,6 +1482,8 @@ def client_present(
 
         internal_id = existing.get("id")
         payload = {**existing, **desired}
+        if desired_attributes is not None:
+            payload["attributes"] = {**(existing.get("attributes") or {}), **desired_attributes}
         status_code, body = _request(
             "PUT", keycloak_addr, f"admin/realms/{realm}/clients/{internal_id}",
             headers=headers, payload=payload, verify=verify,

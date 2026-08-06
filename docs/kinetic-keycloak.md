@@ -53,7 +53,7 @@ All functions return `{"success": bool, "updated": bool, "message": str}`.
 | Events / Admin Events | `events_config_present` | `GET/PUT admin/realms/{realm}/events/config` |
 | Required Actions | `required_action_present` | `POST admin/realms/{realm}/authentication/register-required-action`, `GET/PUT .../authentication/required-actions/{alias}` |
 | Authentication Flows | `authentication_flow_present`, `authentication_flow_absent`, `authentication_execution_present` | Full CRUD under `admin/realms/{realm}/authentication/flows` |
-| Clients | `client_present`, `client_absent` | Full CRUD under `admin/realms/{realm}/clients` |
+| Clients | `client_present` (`pkce_code_challenge_method`, `attributes`), `client_absent` | Full CRUD under `admin/realms/{realm}/clients` |
 | User Federation (OpenLDAP) | `user_federation_present` (`start_tls`, `use_truststore_spi`, `config`), `user_federation_absent` | `admin/realms/{realm}/components` (LDAP provider) |
 | User Federation LDAP Mappers (group/attribute/role/etc.) | `ldap_mapper_present`, `ldap_mapper_absent` | `admin/realms/{realm}/components` (LDAP mapper, parented to the federation provider) |
 
@@ -143,6 +143,22 @@ my-app:
       - https://app.example.com
 ```
 
+Public clients (e.g. SPAs, mobile apps) automatically get PKCE (`S256`)
+enforced - no need to set it explicitly:
+
+```yaml
+my-spa:
+  keycloak.client_present:
+    - realm: myrealm
+    - client_name: My SPA
+    - public_client: true
+    - redirect_uris:
+      - https://spa.example.com/*
+    # pkce.code.challenge.method defaults to S256 automatically since
+    # public_client is true; override with pkce_code_challenge_method
+    # or attributes if a different value (or none at all) is required.
+```
+
 ### User federation (OpenLDAP)
 
 ```yaml
@@ -228,5 +244,6 @@ Other common `provider_id` values for `ldap_mapper_present`:
 - `user_federation_present`'s `parent_id` defaults to the realm's *internal* `id` (a server-assigned UUID, resolved via `GET admin/realms/{realm}`), **not** the realm name - Keycloak's realm `id` and `realm` (name) are different values unless explicitly set equal at creation time. Passing the realm name as `parentId` creates an orphaned component that never appears in the admin console. If you have such an orphaned component from before this fix, remove it with `user_federation_absent` (which matches by `name` across all parents, so it will find it) and re-apply to recreate it correctly parented.
 - The connection kwarg for the admin login client was named `admin_client_id`/`admin_client_secret` (rather than bare `client_id`/`client_secret`) specifically to avoid colliding with `client_present`'s own `client_id` parameter, which refers to the Keycloak client being managed.
 - `ldap_mapper_present`/`ldap_mapper_absent` resolve the parent federation provider's internal component id automatically from `federation_name` (looked up by component `name` under the realm's internal id), so you never need to know or hardcode Keycloak-generated component ids in pillar data.
+- `client_present` defaults `attributes['pkce.code.challenge.method']` to `S256` whenever `public_client` is `True`, unless a value is explicitly supplied via `pkce_code_challenge_method`, `attributes`, or `spec`. This is a security default since public clients (SPAs, mobile/native apps, etc.) cannot securely hold a client secret and are more exposed to authorization code interception. Confidential clients are unaffected. Client `attributes` are merged into (not replacing) whatever Keycloak already has stored, and only the submitted attribute keys are compared for idempotency - Keycloak auto-populates many other attributes on every client (e.g. `client.secret.creation.time`) that would otherwise make a naive full-dict comparison always report a spurious change.
 
 Last updated: August 2026

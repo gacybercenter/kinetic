@@ -595,6 +595,8 @@ def client_present(
     base_url=None,
     client_authenticator_type="client-secret",
     secret=None,
+    pkce_code_challenge_method=None,
+    attributes=None,
     spec=None,
     keycloak_addr="k8s://keycloak/keycloak-service:8443",
     token=None,
@@ -622,6 +624,16 @@ def client_present(
     client_name
         Display name for the client (Keycloak's "name" field).
 
+    pkce_code_challenge_method
+        PKCE code challenge method (e.g. S256, plain). Defaults to "S256"
+        when public_client is true, unless explicitly set here or in
+        attributes/spec. Pass an empty string to explicitly disable PKCE
+        enforcement for a public client.
+
+    attributes
+        Free-form client attributes to merge into (not replace) the
+        client's existing attributes map.
+
     Example:
     .. code-block:: yaml
 
@@ -637,6 +649,17 @@ def client_present(
             - public_client: false
             - standard_flow_enabled: true
             - direct_access_grants_enabled: false
+
+        my_spa_client:
+          keycloak.client_present:
+            - name: my-spa
+            - realm: myrealm
+            - client_name: My SPA
+            - public_client: true
+            - redirect_uris:
+                - https://spa.example.com/*
+            # pkce.code.challenge.method defaults to S256 automatically
+            # for public clients; no need to set it explicitly.
     """
     ret = _state_ret(name)
 
@@ -662,6 +685,8 @@ def client_present(
             base_url=base_url,
             client_authenticator_type=client_authenticator_type,
             secret=secret,
+            pkce_code_challenge_method=pkce_code_challenge_method,
+            attributes=attributes,
             spec=spec,
             keycloak_addr=keycloak_addr,
             token=token,

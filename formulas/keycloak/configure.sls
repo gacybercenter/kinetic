@@ -15,7 +15,7 @@ include:
     - verify: {{ verify }}
 {%- endmacro %}
 
-{% set realms = pillar['ldap']['realms'] %}
+{% set realms = kc.get('realms', {}) %}
 {% for realm_name, realm in realms.items() %}
 
 # --- Realm: {{ realm_name }} ---
@@ -237,6 +237,12 @@ kc_{{ realm_name }}_client_{{ client_key }}:
     - client_authenticator_type: {{ client.get('client_authenticator_type', 'client-secret') }}
 {%- if client.get('secret') is not none %}
     - secret: {{ client.get('secret') | yaml_dquote }}
+{%- endif %}
+{%- if client.get('pkce_code_challenge_method') is not none %}
+    - pkce_code_challenge_method: {{ client.get('pkce_code_challenge_method') | yaml_dquote }}
+{%- endif %}
+{%- if client.get('attributes') is not none %}
+    - attributes: {{ client.get('attributes') | tojson }}
 {%- endif %}
 {%- if client.get('spec') is not none %}
     - spec: {{ client.get('spec') | tojson }}

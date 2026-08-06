@@ -138,6 +138,18 @@ res-k8s:
             service_accounts_enabled: true
             client_authenticator_type: client-secret
             secret: {{ pillar['keycloak-secrets']['my-service-client-secret'] }}
+          my-spa:
+            # Public clients (SPAs, mobile/native apps) get PKCE (S256)
+            # enforced automatically since public_client is true - no need
+            # to set pkce_code_challenge_method unless overriding it.
+            client_name: My SPA
+            public_client: true
+            standard_flow_enabled: true
+            direct_access_grants_enabled: false
+            redirect_uris:
+              - https://spa.example.com/*
+            web_origins:
+              - https://spa.example.com
 
         # --- User Federation (OpenLDAP) ---
         # start_tls and use_truststore_spi are convenience fields for the
@@ -209,6 +221,12 @@ res-k8s:
 - `required_actions` is a list because Keycloak allows several required
   actions per realm and order doesn't otherwise matter for identification
   (each is keyed by `provider_id`).
+- For clients, `public_client: true` automatically enforces PKCE (`S256`)
+  via `attributes.pkce.code.challenge.method`, since public clients (SPAs,
+  mobile/native apps) cannot securely hold a client secret. Override with
+  `pkce_code_challenge_method` (e.g. an empty string to disable it) or set
+  `attributes.pkce.code.challenge.method` directly if you need a different
+  value. This default does not apply to confidential clients.
 - Any field not covered by the convenience kwargs above can still be set via
   a raw `spec:` dict on `realms.<realm>.spec` or `clients.<client>.spec`,
   which is merged over (and wins conflicts with) the built dict - see
