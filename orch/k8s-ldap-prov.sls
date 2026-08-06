@@ -7,4 +7,4 @@ provision_ldap:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.common.ldap.prov
+      - formulas.common.ldapadmin.prov
