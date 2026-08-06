@@ -1,3 +1,109 @@
+# ==========================================================================
+# LDAP provisioning: root DN / OUs / users / groups, plus optional Kubernetes
+# RBAC bindings driven by each user/group's `kubernetes` pillar key.
+#
+# Expected pillar shape (see docs/kinetic-k8s.md for the RBAC contract):
+#
+#   ldap:
+#     users:
+#       - uid: mdanielson
+#         cn: "Mark Danielson"
+#         sn: Danielson
+#         description: ""            # optional
+#         pass: "..."                # optional, GPG-encrypted in practice
+#         kubernetes:                # optional
+#           cluster_roles: [...]
+#           roles:
+#             - namespace: default
+#               role: view
+#           custom_roles:
+#             - name: my-role
+#               namespace: default   # omit for a ClusterRole
+#               rules: [...]
+#     groups:
+#       - cn: admins
+#         members: [mdanielson]      # uids; resolved to member DNs when the
+#                                    # uid matches a user defined above
+#         kubernetes:                # optional, same shape as above
+#           cluster_roles: [...]
+#
+# Note: `kubernetes.roles`/`kubernetes.cluster_roles` bind an *existing*
+# Role/ClusterRole (built-in or one of this entry's own `custom_roles`).
+# `kubernetes.custom_roles` creates a Role (if `namespace` is set) or a
+# ClusterRole (if not) via k8s.role_present/k8s.clusterrole_present.
+# ==========================================================================
+
+{% set users_base_dn = "ou=users,dc=rsc,dc=gacyberrange,dc=org" %}
+{% set groups_base_dn = "ou=groups,dc=rsc,dc=gacyberrange,dc=org" %}
+
+{# Map uid -> user DN, for resolving group members that are managed here. #}
+{% set uid_to_dn = {} %}
+{% for user in pillar['ldap'].get('users', []) %}
+{% do uid_to_dn.update({user['uid']: "cn=" ~ user['cn'] ~ "," ~ users_base_dn}) %}
+{% endfor %}
+
+{# ------------------------------------------------------------------------
+   Emits Role/ClusterRole + RoleBinding/ClusterRoleBinding states for a
+   single user or group's `kubernetes` pillar key.
+
+   entity_kind:   'user' or 'group' (used for state-id namespacing only)
+   entity_key:    the uid (for users) or cn (for groups) - used as the
+                  Kubernetes Group/User RBAC subject name
+   k8s_spec:      the entity's `kubernetes` dict
+   subject_kwarg: 'users' or 'groups' - the k8s state kwarg to bind as
+   require_id:    the ldap.user_present/ldap.group_present state id to
+                  require
+   ------------------------------------------------------------------------ #}
+{%- macro k8s_rbac_for(entity_kind, entity_key, k8s_spec, subject_kwarg, require_id) -%}
+{% set safe_entity = entity_key | lower | replace('_', '-') | replace(' ', '-') %}
+
+{% for custom_role in k8s_spec.get('custom_roles', []) %}
+{% set safe_role = custom_role['name'] | lower | replace('_', '-') %}
+{% if custom_role.get('namespace') %}
+k8s_role_{{ safe_role }}_{{ custom_role['namespace'] }}:
+  k8s.role_present:
+    - name: {{ custom_role['name'] }}
+    - namespace: {{ custom_role['namespace'] }}
+    - rules: {{ custom_role['rules'] | tojson }}
+    - require:
+      - ldap: {{ require_id }}
+{% else %}
+k8s_clusterrole_{{ safe_role }}:
+  k8s.clusterrole_present:
+    - name: {{ custom_role['name'] }}
+    - rules: {{ custom_role['rules'] | tojson }}
+    - require:
+      - ldap: {{ require_id }}
+{% endif %}
+{% endfor %}
+
+{% for role in k8s_spec.get('roles', []) %}
+{% set safe_role = role['role'] | lower | replace('_', '-') %}
+k8s_{{ entity_kind }}_{{ safe_entity }}_role_{{ role['namespace'] }}_{{ safe_role }}:
+  k8s.rolebinding_present:
+    - name: {{ safe_entity }}-{{ safe_role }}-binding
+    - namespace: {{ role['namespace'] }}
+    - role_ref: {{ role['role'] }}
+    - role_ref_kind: {{ role.get('kind', 'ClusterRole') }}
+    - {{ subject_kwarg }}:
+      - {{ entity_key }}
+    - require:
+      - ldap: {{ require_id }}
+{% endfor %}
+
+{% for cluster_role in k8s_spec.get('cluster_roles', []) %}
+{% set safe_role = cluster_role | lower | replace('_', '-') %}
+k8s_{{ entity_kind }}_{{ safe_entity }}_clusterrole_{{ safe_role }}:
+  k8s.clusterrolebinding_group_present:
+    - name: {{ safe_entity }}-{{ safe_role }}-clusterbinding
+    - cluster_role: {{ cluster_role }}
+    - {{ subject_kwarg }}:
+      - {{ entity_key }}
+    - require:
+      - ldap: {{ require_id }}
+{% endfor %}
+{%- endmacro -%}
+
 # Ensure CA certificate file is present on the minion
 ensure_ca_cert_file:
   file.managed:
@@ -26,7 +132,6 @@ ensure_ldap_connect_spec:
       - file: ensure_ca_cert_file
 
 # Ensure LDAP root DN is present
-
 ensure_ldap_root_dn:
   ldap.root_dn_present:
     - name: ldap_root_dn_setup
@@ -49,25 +154,59 @@ ensure_ldap_ous:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_root_dn
 
-# Ensure Users are created
-ensure_ldap_users:
+# ==========================================================================
+# Users
+# ==========================================================================
+{% for user in pillar['ldap'].get('users', []) %}
+
+ldap_user_{{ user['uid'] }}:
   ldap.user_present:
-    - name: ldap_user_setup
+    - name: ldap_user_{{ user['uid'] }}
     - spec_name: ldap_keycloak_connection
-    - base_dn: {{ "ou=users,dc=rsc,dc=gacyberrange,dc=org" }}
-    - users: {{ pillar['ldap'].get('users', []) }}
+    - base_dn: {{ users_base_dn }}
+    - uid: {{ user['uid'] }}
+    - cn: {{ user['cn'] | yaml_dquote }}
+    - sn: {{ user.get('sn', user['uid']) | yaml_dquote }}
+    - description: {{ user.get('description', '') | yaml_dquote }}
+{%- if user.get('pass') %}
+    - password: {{ user['pass'] | yaml_dquote }}
+{%- endif %}
     - require:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_ous
 
-# Ensure Groups are created
-ensure_ldap_groups:
+{% if user.get('kubernetes') %}
+{{ k8s_rbac_for('user', user['uid'], user['kubernetes'], 'users', 'ldap_user_' ~ user['uid']) }}
+{% endif %}
+{% endfor %}
+
+# ==========================================================================
+# Groups
+# ==========================================================================
+{% for group in pillar['ldap'].get('groups', []) %}
+{% set member_dns = [] %}
+{% for member in group.get('members', []) %}
+{% do member_dns.append(uid_to_dn.get(member, member)) %}
+{% endfor %}
+
+ldap_group_{{ group['cn'] }}:
   ldap.group_present:
-    - name: ldap_group_setup
+    - name: ldap_group_{{ group['cn'] }}
     - spec_name: ldap_keycloak_connection
-    - base_dn: {{ "ou=groups,dc=rsc,dc=gacyberrange,dc=org" }}
-    - groups: {{ pillar['ldap'].get('groups', []) }}
+    - base_dn: {{ groups_base_dn }}
+    - cn: {{ group['cn'] | yaml_dquote }}
+{%- if group.get('description') %}
+    - description: {{ group['description'] | yaml_dquote }}
+{%- endif %}
+    - members: {{ member_dns | tojson }}
     - require:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_ous
-      - ldap: ensure_ldap_users
+{%- for member in group.get('members', []) if member in uid_to_dn %}
+      - ldap: ldap_user_{{ member }}
+{%- endfor %}
+
+{% if group.get('kubernetes') %}
+{{ k8s_rbac_for('group', group['cn'], group['kubernetes'], 'groups', 'ldap_group_' ~ group['cn']) }}
+{% endif %}
+{% endfor %}

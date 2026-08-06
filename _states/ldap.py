@@ -522,11 +522,15 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     group_dn = f"cn={cn},{base_dn}"
 
     # Prepare attributes for existence check (mirroring fixed attributes in create_group/update_group)
-    attributes = {"objectClass": ["posixGroup"], "cn": cn}
+    attributes = {"objectClass": ["groupOfNames"], "cn": cn}
     if description:
         attributes["description"] = description
     if members:
-        attributes["memberUid"] = members  # Use memberUid for posixGroup
+        attributes["member"] = members  # groupOfNames uses full member DNs
+    else:
+        # groupOfNames requires at least one member; create_group/update_group
+        # default to the group's own DN when none is provided.
+        attributes["member"] = [group_dn]
 
     # Check if group exists and attributes match
     if "ldap_utils.dn_exists" not in __salt__:
