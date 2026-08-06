@@ -1,7 +1,7 @@
 include:
   - /formulas/keycloak/install
 
-{% set kc = pillar.get('res-k8s', {}).get('keycloak', {}) %}
+{% set kc = pillar['res-k8s']['keycloak'] %}
 {% set conn = kc.get('connection', {}) %}
 {% set keycloak_addr = conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') %}
 {% set kc_namespace = conn.get('namespace', 'keycloak') %}
