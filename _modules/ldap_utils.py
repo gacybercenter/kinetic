@@ -987,65 +987,23 @@ def update_group(
                 f"Group {group_dn} does not exist. Use create_group to create."
             )
             __salt__["log.error"](
-                f"Group {group_dn} does not exist for update during initial dn_exists check."
+                f"Group {group_dn} does not exist for update."
             )
-            # Fallback to create_group if group does not exist
-        if "attributes_match" in check and check["attributes_match"] and not members:
-            # Check if objectClass includes posixGroup, force update if not
-            current_obj_classes = check["current_attributes"]["objectClass"]
-            if isinstance(current_obj_classes, str):
-                current_obj_classes = [current_obj_classes]
-            if "groupofnames" not in current_obj_classes:
-                __salt__["log.debug"](
-                    f"Group {group_dn} does not have groupofnames in objectClass, forcing update. Current: {current_obj_classes}"
-                )
-                # Force update since objectClass needs to change
-                update_attrs = attributes.copy()
-                changes = {"objectClass": "updated to include groupofnames"}
-                update_result = update_root_dn(spec_name, group_dn, update_attrs)
-                if update_result.get("result", False):
-                    ret["result"] = True
-                    ret["comment"] = (
-                        f"Group {group_dn} updated to groupofnames objectClass."
-                    )
-                    ret["changes"] = update_result.get("changes", {})
-                    return ret
-                else:
-                    ret["result"] = False
-                    ret["comment"] = (
-                        f"Failed to update group {group_dn} to groupofnames: {update_result.get('comment', str(update_result))}"
-                    )
-                    return ret
-            else:
-                if check["attributes_match"] and not members:
-                    ret["result"] = True
-                    ret["comment"] = (
-                        f"Group {group_dn} already has matching attributes and members."
-                    )
-                    return ret
-        else:
-            if check["attributes_match"] and not members:
-                if "attributes_match" in check:
-                    if check["attributes_match"] and not members:
-                        __salt__["log.debug"](
-                            f"Group {group_dn} appears to match attributes, but forcing update to ensure posixGroup and attributes are applied."
-                        )
-                    else:
-                        __salt__["log.debug"](
-                            f"Group {group_dn} exists but attributes do not match. Expected: {attributes}, Got: {check.get('current_attributes', 'unknown')}."
-                        )
-                        if "current_attributes" in check:
-                            __salt__["log.debug"](
-                                f"Attribute mismatch for {group_dn}. Expected objectClass: {attributes['objectClass']}, Got: {check.get('current_attributes', {}).get('objectClass', 'unknown')}"
-                            )
-                # Force update regardless of attributes_match to ensure groupofnames and attributes are applied
-                __salt__["log.debug"](
-                    f"Forcing update for group {group_dn} to apply groupofnames configuration."
-                )
+            return ret
+
+        if check.get("attributes_match") and not members:
+            ret["result"] = True
+            ret["comment"] = (
+                f"Group {group_dn} already has matching attributes and members."
+            )
+            return ret
+
+        __salt__["log.debug"](
+            f"Group {group_dn} exists but attributes do not match. Expected: {attributes}, Got: {check.get('current_attributes', 'unknown')}."
+        )
 
         # Update attributes or members
         update_attrs = attributes.copy()
-        changes = {}  # Track changes
         __salt__["log.debug"](
             f"Attempting to update group {group_dn} with attributes: {update_attrs}"
         )
@@ -1250,7 +1208,10 @@ def dn_exists(spec_name, dn, desired_attributes=None):
         desired_attributes (dict, optional): Desired attributes to compare against existing ones.
 
     Returns:
-        dict: A dictionary with 'result' (bool), 'comment' (str), 'exists' (bool), 'attributes_match' (bool), and 'changes' (dict).
+        dict: A dictionary with 'result' (bool), 'comment' (str), 'exists' (bool),
+            'attributes_match' (bool), 'changes' (dict), and - when the DN exists -
+            'current_attributes' (dict of the DN's current attribute values, with
+            byte-string values decoded to str).
     """
     ret = {
         "result": False,
@@ -1278,6 +1239,17 @@ def dn_exists(spec_name, dn, desired_attributes=None):
         )
         if result and len(result) > 0:
             ret["exists"] = True
+            raw_attrs = result[0][1] if result[0][1] else {}
+            # Decode byte-string values so callers can rely on plain str
+            # attribute values regardless of whether a comparison happened.
+            decoded_attrs = {
+                attr: [
+                    v.decode("utf-8") if isinstance(v, bytes) else v for v in values
+                ]
+                for attr, values in raw_attrs.items()
+            }
+            ret["current_attributes"] = decoded_attrs
+
             if not desired_attributes:
                 ret["result"] = True
                 ret["comment"] = f"DN {dn} exists."
@@ -1285,7 +1257,7 @@ def dn_exists(spec_name, dn, desired_attributes=None):
                 return ret
 
             # Compare current attributes with desired attributes
-            current_attrs = result[0][1] if result[0][1] else {}
+            current_attrs = raw_attrs
             matches = True
             for attr, desired_val in desired_attributes.items():
                 current_val = current_attrs.get(attr, [])
