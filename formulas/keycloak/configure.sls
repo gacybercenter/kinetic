@@ -1,7 +1,7 @@
 include:
   - /formulas/keycloak/install
 
-{% set kc = pillar.get('res-k8s', {}).get('keycloak', {}) %}
+{% set kc = pillar.get('res-k8', {}).get('keycloak', {}) %}
 {% set conn = kc.get('connection', {}) %}
 {% set keycloak_addr = conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') %}
 {% set kc_namespace = conn.get('namespace', 'keycloak') %}
@@ -15,7 +15,7 @@ include:
     - verify: {{ verify }}
 {%- endmacro %}
 
-{% set realms = kc.get('realms', {}) %}
+{% set realms = pillar.get('ldap', {}).get('realms', {}) %}
 {% for realm_name, realm in realms.items() %}
 
 # --- Realm: {{ realm_name }} ---
