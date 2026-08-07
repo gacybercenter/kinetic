@@ -7,6 +7,7 @@ for retrieving MAC addresses from HardwareData resources in a Metal3.io environm
 """
 
 import base64
+import inspect
 import json
 
 import salt.utils.decorators as decorators
@@ -6462,6 +6463,25 @@ def clusterrolebinding_present(name, cluster_role, service_accounts):
         }
 
 
+def _non_resource_urls_kwarg_name():
+    """
+    Determine which keyword the installed kubernetes client library's
+    V1PolicyRule accepts for the non-resource-URLs field.
+
+    This varies across kubernetes client versions due to a codegen quirk:
+    some versions use the correctly-spelled non_resource_urls, others use
+    non_resource_ur_ls. Our own rule dict API always uses the
+    correctly-spelled non_resource_urls key regardless of which one the
+    installed client actually accepts.
+    """
+    params = inspect.signature(client.V1PolicyRule.__init__).parameters
+    if "non_resource_urls" in params:
+        return "non_resource_urls"
+    if "non_resource_ur_ls" in params:
+        return "non_resource_ur_ls"
+    return None
+
+
 def _build_policy_rules(rules):
     """
     Build a list of kubernetes.client.V1PolicyRule from a list of rule dicts.
@@ -6470,32 +6490,33 @@ def _build_policy_rules(rules):
     resource_names, non_resource_urls (all optional except verbs, which is
     required by the Kubernetes API).
     """
+    non_resource_urls_kwarg = _non_resource_urls_kwarg_name()
     policy_rules = []
     for rule in rules or []:
-        policy_rules.append(
-            client.V1PolicyRule(
-                api_groups=rule.get("api_groups", [""]),
-                resources=rule.get("resources") or None,
-                verbs=rule.get("verbs", []),
-                resource_names=rule.get("resource_names") or None,
-                # Note: the kubernetes client library's generated attribute for
-                # this field is misspelled as non_resource_ur_ls (not
-                # non_resource_urls); our own rule dict API still uses the
-                # correctly-spelled non_resource_urls key.
-                non_resource_ur_ls=rule.get("non_resource_urls") or None,
-            )
-        )
+        kwargs = {
+            "api_groups": rule.get("api_groups", [""]),
+            "resources": rule.get("resources") or None,
+            "verbs": rule.get("verbs", []),
+            "resource_names": rule.get("resource_names") or None,
+        }
+        non_resource_urls = rule.get("non_resource_urls")
+        if non_resource_urls and non_resource_urls_kwarg:
+            kwargs[non_resource_urls_kwarg] = non_resource_urls
+        policy_rules.append(client.V1PolicyRule(**kwargs))
     return policy_rules
 
 
 def _normalize_rule(rule):
     """Build a hashable, order-independent representation of a V1PolicyRule."""
+    non_resource_urls = getattr(rule, "non_resource_urls", None)
+    if non_resource_urls is None:
+        non_resource_urls = getattr(rule, "non_resource_ur_ls", None)
     return (
         tuple(sorted(rule.api_groups or [])),
         tuple(sorted(rule.resources or [])),
         tuple(sorted(rule.verbs or [])),
         tuple(sorted(rule.resource_names or [])),
-        tuple(sorted(rule.non_resource_ur_ls or [])),
+        tuple(sorted(non_resource_urls or [])),
     )
 
 
