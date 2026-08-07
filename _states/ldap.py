@@ -401,15 +401,10 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
         exists = check_result.get("exists", False)
         attributes_match = check_result.get("attributes_match", False)
 
-    # Check password separately if provided (password updates are special case)
-    password_changed = False
-    if password and exists:
-        # We need to check if password needs updating (this requires a separate check)
-        # For now, we'll always update password if provided and user exists
-        password_changed = True
-
-    # If exists, attributes match, and no password change, we're done
-    if exists and attributes_match and not password_changed:
+    # Password is only ever set on creation, never on update - if the user
+    # already exists, its password is left untouched regardless of what is
+    # provided in pillar, so it has no bearing on whether anything changed.
+    if exists and attributes_match:
         ret["comment"] = f"User {user_dn} already exists with matching attributes."
         return ret
 

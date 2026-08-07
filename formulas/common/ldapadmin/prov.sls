@@ -26,6 +26,14 @@
 #                                    # uid matches a user defined above
 #         kubernetes:                # optional, same shape as above
 #           cluster_roles: [...]
+#       - cn: se_cyber
+#         member_groups: [admins]    # group cns; resolved to group DNs when
+#                                    # the cn matches another group defined
+#                                    # here. groupOfNames requires at least
+#                                    # one member - use member_groups (e.g.
+#                                    # nesting the admins group) instead of
+#                                    # letting the group default to a
+#                                    # self-reference.
 #
 # Note: `kubernetes.roles`/`kubernetes.cluster_roles` bind an *existing*
 # Role/ClusterRole (built-in or one of this entry's own `custom_roles`).
@@ -40,6 +48,12 @@
 {% set uid_to_dn = {} %}
 {% for user in pillar['ldap'].get('users', []) %}
 {% do uid_to_dn.update({user['uid']: "cn=" ~ user['cn'] ~ "," ~ users_base_dn}) %}
+{% endfor %}
+
+{# Map cn -> group DN, for resolving nested group members (member_groups). #}
+{% set cn_to_dn = {} %}
+{% for group in pillar['ldap'].get('groups', []) %}
+{% do cn_to_dn.update({group['cn']: "cn=" ~ group['cn'] ~ "," ~ groups_base_dn}) %}
 {% endfor %}
 
 {# ------------------------------------------------------------------------
@@ -188,6 +202,9 @@ ldap_user_{{ user['uid'] }}:
 {% for member in group.get('members', []) %}
 {% do member_dns.append(uid_to_dn.get(member, member)) %}
 {% endfor %}
+{% for member_group in group.get('member_groups', []) %}
+{% do member_dns.append(cn_to_dn.get(member_group, member_group)) %}
+{% endfor %}
 
 ldap_group_{{ group['cn'] }}:
   ldap.group_present:
@@ -204,6 +221,9 @@ ldap_group_{{ group['cn'] }}:
       - ldap: ensure_ldap_ous
 {%- for member in group.get('members', []) if member in uid_to_dn %}
       - ldap: ldap_user_{{ member }}
+{%- endfor %}
+{%- for member_group in group.get('member_groups', []) if member_group in cn_to_dn and member_group != group['cn'] %}
+      - ldap: ldap_group_{{ member_group }}
 {%- endfor %}
 
 {% if group.get('kubernetes') %}
