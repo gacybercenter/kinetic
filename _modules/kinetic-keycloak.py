@@ -946,8 +946,10 @@ def authentication_flow_present(
         alias (str): Flow alias (unique name).
         description (str): Flow description.
         provider_id (str): Flow provider id (default: basic-flow)
-        top_level (bool): Whether this is a top-level flow (default: True)
-        built_in (bool): Whether this flow is built-in (default: False)
+        top_level (bool): Whether this is a top-level flow (default: True).
+            Sub-flows (top_level=False) are not created via this function;
+            they are created implicitly when referenced by a parent flow via
+            authentication_execution_present(..., type="flow").
         keycloak_addr (str): Keycloak API address
             (default: k8s://keycloak/keycloak-service:8443)
         token (str): Bearer token; obtained via get_admin_token if not given
@@ -992,6 +994,15 @@ def authentication_flow_present(
         existing = next((f for f in body if f.get("alias") == alias), None)
 
         if existing is None:
+            if not top_level:
+                # Sub-flows are created implicitly when referenced by a parent flow
+                # via authentication_execution_present(..., type="flow")
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"Sub-flow {alias} will be created when referenced by a parent flow",
+                }
+
             payload = {
                 "alias": alias,
                 "description": description or "",
