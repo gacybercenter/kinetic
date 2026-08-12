@@ -1155,6 +1155,7 @@ def authentication_execution_present(
     flow_alias,
     provider_id,
     requirement="DISABLED",
+    type="execution",          # "execution" or "flow"
     keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
     token=None,
     realm_username=None,
@@ -1180,8 +1181,9 @@ def authentication_execution_present(
     Args:
         realm (str): Realm name.
         flow_alias (str): Alias of the flow to add/update the execution in.
-        provider_id (str): Execution provider id.
+        provider_id (str): Execution provider id (or sub-flow alias when type="flow").
         requirement (str): Execution requirement (default: DISABLED)
+        type (str): "execution" (default) or "flow" (to register a sub-flow)
         keycloak_addr (str): Keycloak API address
             (default: k8s://keycloak/keycloak-service:8443)
         token (str): Bearer token; obtained via get_admin_token if not given
@@ -1228,13 +1230,26 @@ def authentication_execution_present(
         created = False
 
         if execution is None:
-            status_code, add_body = _request(
-                "POST", keycloak_addr, f"{executions_path}/execution",
-                headers=headers, payload={"provider": provider_id}, verify=verify,
-            )
+            if type == "flow":
+                # Register a sub-flow
+                payload = {
+                    "alias": provider_id,
+                    "type": "basic-flow",
+                    "provider": "basic-flow",
+                }
+                status_code, add_body = _request(
+                    "POST", keycloak_addr, f"{executions_path}/flow",
+                    headers=headers, payload=payload, verify=verify,
+                )
+            else:
+                # Register a normal execution
+                status_code, add_body = _request(
+                    "POST", keycloak_addr, f"{executions_path}/execution",
+                    headers=headers, payload={"provider": provider_id}, verify=verify,
+                )
             if status_code not in (200, 201, 204):
                 return _http_error(
-                    f"Adding execution {provider_id} to flow {flow_alias}",
+                    f"Adding {type} {provider_id} to flow {flow_alias}",
                     status_code, add_body,
                 )
             created = True

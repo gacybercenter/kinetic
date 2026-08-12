@@ -197,6 +197,9 @@ kc_{{ realm_name }}_flow_{{ flow_key }}_exec_{{ loop.index }}_{{ execution['prov
     - flow_alias: {{ flow.get('alias', flow_key) }}
     - provider_id: {{ execution['provider_id'] }}
     - requirement: {{ execution.get('requirement', 'DISABLED') }}
+{%- if execution.get('type') is not none %}
+    - type: {{ execution['type'] }}
+{%- endif %}
 {{ kc_conn(keycloak_addr, kc_namespace, kc_secret_name, kc_verify) }}
     - require:
       - keycloak: kc_{{ realm_name }}_flow_{{ flow_key }}

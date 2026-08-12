@@ -507,6 +507,7 @@ def authentication_execution_present(
     flow_alias,
     provider_id,
     requirement="DISABLED",
+    type="execution",          # "execution" or "flow"
     keycloak_addr="k8s://keycloak/keycloak-service:8443",
     token=None,
     realm_username=None,
@@ -531,7 +532,10 @@ def authentication_execution_present(
         Alias of the flow to add/update the execution in.
 
     provider_id
-        Execution provider id.
+        Execution provider id (or sub-flow alias when type="flow").
+
+    type
+        "execution" (default) or "flow" (to register a sub-flow).
 
     Example:
     .. code-block:: yaml
@@ -552,6 +556,7 @@ def authentication_execution_present(
             flow_alias=flow_alias,
             provider_id=provider_id,
             requirement=requirement,
+            type=type,
             keycloak_addr=keycloak_addr,
             token=token,
             realm_username=realm_username,
