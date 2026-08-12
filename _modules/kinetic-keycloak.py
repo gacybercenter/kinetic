@@ -1238,13 +1238,19 @@ def authentication_execution_present(
             )
 
         # For sub-flow executions, match on authenticationFlow + alias/displayName
-        # instead of providerId (which is the sub-flow provider, e.g. basic-flow)
+        # instead of providerId (which is the sub-flow provider, e.g. basic-flow).
+        # Comparisons are normalized (trimmed + lowercased) to tolerate minor
+        # formatting differences across Keycloak versions.
+        def _norm(value):
+            return value.strip().lower() if isinstance(value, str) else value
+
         def _matches(e):
             if type == "flow":
-                return (
-                    e.get("authenticationFlow") is True
-                    and (e.get("alias") == provider_id or e.get("displayName") == provider_id)
-                )
+                if not e.get("authenticationFlow"):
+                    return False
+                return _norm(e.get("alias")) == _norm(provider_id) or _norm(
+                    e.get("displayName")
+                ) == _norm(provider_id)
             return e.get("providerId") == provider_id
 
         execution = next((e for e in body if _matches(e)), None)
@@ -1268,12 +1274,19 @@ def authentication_execution_present(
                     "POST", keycloak_addr, f"{executions_path}/execution",
                     headers=headers, payload={"provider": provider_id}, verify=verify,
                 )
-            if status_code not in (200, 201, 204):
+
+            already_exists = (
+                status_code == 409
+                and isinstance(add_body, dict)
+                and "already exists" in str(add_body.get("errorMessage", "")).lower()
+            )
+
+            if status_code not in (200, 201, 204) and not already_exists:
                 return _http_error(
                     f"Adding {type} {provider_id} to flow {flow_alias}",
                     status_code, add_body,
                 )
-            created = True
+            created = not already_exists
 
             status_code, body = _request(
                 "GET", keycloak_addr, executions_path, headers=headers, verify=verify
@@ -1284,6 +1297,22 @@ def authentication_execution_present(
                 )
             execution = next((e for e in body if _matches(e)), None)
             if execution is None:
+                if already_exists:
+                    # Keycloak reports the alias already exists (e.g. as an
+                    # orphaned flow from an earlier partial run), but it is
+                    # not linked under this parent flow. Manual cleanup of
+                    # the orphaned flow alias may be required in Keycloak.
+                    return {
+                        "success": False,
+                        "updated": False,
+                        "message": (
+                            f"{type.capitalize()} alias {provider_id} already exists in "
+                            f"realm {realm} but is not linked under flow {flow_alias}. "
+                            f"It may be an orphaned flow from a previous run - check "
+                            f"the realm's authentication flows in Keycloak and remove "
+                            f"or rename the conflicting flow."
+                        ),
+                    }
                 return {
                     "success": False,
                     "updated": False,
