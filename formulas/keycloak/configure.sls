@@ -105,6 +105,9 @@ kc_{{ realm_name }}_realm:
 {%- if realm.get('email_theme') is not none %}
     - email_theme: {{ realm.get('email_theme') }}
 {%- endif %}
+{%- if realm.get('smtp_server') is not none %}
+    - smtp_server: {{ realm.get('smtp_server') | tojson }}
+{%- endif %}
 {%- if realm.get('attributes') is not none %}
     - attributes: {{ realm.get('attributes') | tojson }}
 {%- endif %}

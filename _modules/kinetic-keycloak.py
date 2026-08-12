@@ -384,6 +384,7 @@ def realm_present(
     account_theme=None,
     admin_theme=None,
     email_theme=None,
+    smtp_server=None,
     attributes=None,
     spec=None,
     keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
@@ -433,6 +434,19 @@ def realm_present(
         account_theme (str): Account console theme name
         admin_theme (str): Admin console theme name
         email_theme (str): Email theme name
+        smtp_server (dict): SMTP server settings for email (maps to Keycloak's
+            smtpServer realm field). Example:
+            {
+                "host": "smtp.example.com",
+                "port": "587",
+                "from": "keycloak@example.com",
+                "fromDisplayName": "Keycloak",
+                "auth": "true",
+                "user": "username",
+                "password": "secret",
+                "starttls": "true",
+                "ssl": "false"
+            }
         attributes (dict): Free-form realm attributes
         spec (dict, optional): Full realm representation fields to merge over
             (and override) the fields built from the other kwargs
@@ -495,6 +509,7 @@ def realm_present(
             "account_theme": "accountTheme",
             "admin_theme": "adminTheme",
             "email_theme": "emailTheme",
+            "smtp_server": "smtpServer",
             "attributes": "attributes",
         }
         local_vars = locals()
