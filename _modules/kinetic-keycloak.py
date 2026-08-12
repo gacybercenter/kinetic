@@ -385,6 +385,12 @@ def realm_present(
     admin_theme=None,
     email_theme=None,
     smtp_server=None,
+    browser_flow=None,
+    registration_flow=None,
+    direct_grant_flow=None,
+    reset_credentials_flow=None,
+    client_authentication_flow=None,
+    docker_authentication_flow=None,
     attributes=None,
     spec=None,
     keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
@@ -447,6 +453,18 @@ def realm_present(
                 "starttls": "true",
                 "ssl": "false"
             }
+        browser_flow (str): Alias of the authentication flow to bind as this
+            realm's browser login flow (maps to browserFlow)
+        registration_flow (str): Alias of the flow to bind as the
+            registration flow (maps to registrationFlow)
+        direct_grant_flow (str): Alias of the flow to bind as the direct
+            grant flow (maps to directGrantFlow)
+        reset_credentials_flow (str): Alias of the flow to bind as the reset
+            credentials flow (maps to resetCredentialsFlow)
+        client_authentication_flow (str): Alias of the flow to bind as the
+            client authentication flow (maps to clientAuthenticationFlow)
+        docker_authentication_flow (str): Alias of the flow to bind as the
+            docker authentication flow (maps to dockerAuthenticationFlow)
         attributes (dict): Free-form realm attributes
         spec (dict, optional): Full realm representation fields to merge over
             (and override) the fields built from the other kwargs
@@ -510,6 +528,12 @@ def realm_present(
             "admin_theme": "adminTheme",
             "email_theme": "emailTheme",
             "smtp_server": "smtpServer",
+            "browser_flow": "browserFlow",
+            "registration_flow": "registrationFlow",
+            "direct_grant_flow": "directGrantFlow",
+            "reset_credentials_flow": "resetCredentialsFlow",
+            "client_authentication_flow": "clientAuthenticationFlow",
+            "docker_authentication_flow": "dockerAuthenticationFlow",
             "attributes": "attributes",
         }
         local_vars = locals()

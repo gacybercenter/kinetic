@@ -56,6 +56,12 @@ def realm_present(
     admin_theme=None,
     email_theme=None,
     smtp_server=None,
+    browser_flow=None,
+    registration_flow=None,
+    direct_grant_flow=None,
+    reset_credentials_flow=None,
+    client_authentication_flow=None,
+    docker_authentication_flow=None,
     attributes=None,
     spec=None,
     keycloak_addr="k8s://keycloak/keycloak-service:8443",
@@ -77,6 +83,12 @@ def realm_present(
     enabled
         Whether the realm is enabled (default: True).
 
+    browser_flow
+        Alias of the authentication flow to bind as this realm's browser
+        login flow (maps to browserFlow). Also see registration_flow,
+        direct_grant_flow, reset_credentials_flow, client_authentication_flow,
+        and docker_authentication_flow for the other flow bindings.
+
     spec
         Full realm representation fields to merge over (and override) the
         fields built from the other arguments.
@@ -91,6 +103,7 @@ def realm_present(
             - login_theme: keycloak
             - sso_session_idle_timeout: 1800
             - brute_force_protected: true
+            - browser_flow: "browser with otp"
     """
     ret = _state_ret(name)
 
@@ -126,6 +139,12 @@ def realm_present(
             admin_theme=admin_theme,
             email_theme=email_theme,
             smtp_server=smtp_server,
+            browser_flow=browser_flow,
+            registration_flow=registration_flow,
+            direct_grant_flow=direct_grant_flow,
+            reset_credentials_flow=reset_credentials_flow,
+            client_authentication_flow=client_authentication_flow,
+            docker_authentication_flow=docker_authentication_flow,
             attributes=attributes,
             spec=spec,
             keycloak_addr=keycloak_addr,

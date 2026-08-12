@@ -206,6 +206,40 @@ kc_{{ realm_name }}_flow_{{ flow_key }}_exec_{{ loop.index }}_{{ execution['prov
 {% endfor %}
 {% endfor %}
 
+{# --- Realm flow bindings (browserFlow, registrationFlow, etc.) - applied
+     after all authentication flows/executions exist, since Keycloak
+     rejects binding a realm flow field to an alias that doesn't exist yet --- #}
+{% if realm.get('browser_flow') is not none or realm.get('registration_flow') is not none or realm.get('direct_grant_flow') is not none or realm.get('reset_credentials_flow') is not none or realm.get('client_authentication_flow') is not none or realm.get('docker_authentication_flow') is not none %}
+kc_{{ realm_name }}_flow_bindings:
+  keycloak.realm_present:
+    - name: {{ realm_name }}
+    - enabled: {{ realm.get('enabled', True) }}
+{%- if realm.get('browser_flow') is not none %}
+    - browser_flow: {{ realm.get('browser_flow') | yaml_dquote }}
+{%- endif %}
+{%- if realm.get('registration_flow') is not none %}
+    - registration_flow: {{ realm.get('registration_flow') | yaml_dquote }}
+{%- endif %}
+{%- if realm.get('direct_grant_flow') is not none %}
+    - direct_grant_flow: {{ realm.get('direct_grant_flow') | yaml_dquote }}
+{%- endif %}
+{%- if realm.get('reset_credentials_flow') is not none %}
+    - reset_credentials_flow: {{ realm.get('reset_credentials_flow') | yaml_dquote }}
+{%- endif %}
+{%- if realm.get('client_authentication_flow') is not none %}
+    - client_authentication_flow: {{ realm.get('client_authentication_flow') | yaml_dquote }}
+{%- endif %}
+{%- if realm.get('docker_authentication_flow') is not none %}
+    - docker_authentication_flow: {{ realm.get('docker_authentication_flow') | yaml_dquote }}
+{%- endif %}
+{{ kc_conn(keycloak_addr, kc_namespace, kc_secret_name, kc_verify) }}
+    - require:
+      - keycloak: kc_{{ realm_name }}_realm
+{%- for flow_key, flow in realm.get('authentication_flows', {}).items() %}
+      - keycloak: kc_{{ realm_name }}_flow_{{ flow_key }}
+{%- endfor %}
+{% endif %}
+
 {# --- Clients --- #}
 {% for client_key, client in realm.get('clients', {}).items() %}
 kc_{{ realm_name }}_client_{{ client_key }}:
