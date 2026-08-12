@@ -1237,7 +1237,17 @@ def authentication_execution_present(
                 f"Listing executions for flow {flow_alias}", status_code, body
             )
 
-        execution = next((e for e in body if e.get("providerId") == provider_id), None)
+        # For sub-flow executions, match on authenticationFlow + alias/displayName
+        # instead of providerId (which is the sub-flow provider, e.g. basic-flow)
+        def _matches(e):
+            if type == "flow":
+                return (
+                    e.get("authenticationFlow") is True
+                    and (e.get("alias") == provider_id or e.get("displayName") == provider_id)
+                )
+            return e.get("providerId") == provider_id
+
+        execution = next((e for e in body if _matches(e)), None)
         created = False
 
         if execution is None:
@@ -1272,15 +1282,13 @@ def authentication_execution_present(
                 return _http_error(
                     f"Listing executions for flow {flow_alias}", status_code, body
                 )
-            execution = next(
-                (e for e in body if e.get("providerId") == provider_id), None
-            )
+            execution = next((e for e in body if _matches(e)), None)
             if execution is None:
                 return {
                     "success": False,
                     "updated": False,
                     "message": (
-                        f"Execution {provider_id} was added to flow {flow_alias} "
+                        f"{type.capitalize()} {provider_id} was added to flow {flow_alias} "
                         f"but could not be found afterwards"
                     ),
                 }
