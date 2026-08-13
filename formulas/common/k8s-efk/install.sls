@@ -115,7 +115,7 @@ opensearch_config_secret:
                     order: 1
                     http_authenticator:
                       type: openid
-                      challenge: false
+                      challenge: true
                       config:
                         subject_key: preferred_username
                         roles_key: roles
