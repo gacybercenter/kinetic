@@ -6203,6 +6203,23 @@ def httproute_present(
         }
 
 
+def _normalize_local_policy_ref(ref, default_kind):
+    """
+    Normalize a LocalPolicyTargetReference-style dict (used by targetRefs and
+    caCertificateRefs on BackendTLSPolicy) so that the required `group` and
+    `kind` fields are always present, even if the caller omitted them.
+
+    The Gateway API CRD schema marks `group` as a required field on these
+    reference objects (with an empty string meaning "core API group"), so
+    omitting it entirely causes a 422 Unprocessable Entity from the API
+    server, not just a validation default.
+    """
+    ref = dict(ref)
+    ref.setdefault("group", "")
+    ref.setdefault("kind", default_kind)
+    return ref
+
+
 def backendtlspolicy_present(
     namespace,
     name,
@@ -6272,13 +6289,18 @@ def backendtlspolicy_present(
         if spec is None:
             spec = {}
             if target_refs:
-                spec["targetRefs"] = target_refs
+                spec["targetRefs"] = [
+                    _normalize_local_policy_ref(ref, "Service") for ref in target_refs
+                ]
 
             built_validation = dict(validation) if validation else {}
             if hostname and "hostname" not in built_validation:
                 built_validation["hostname"] = hostname
             if ca_certificate_refs and "caCertificateRefs" not in built_validation:
-                built_validation["caCertificateRefs"] = ca_certificate_refs
+                built_validation["caCertificateRefs"] = [
+                    _normalize_local_policy_ref(ref, "ConfigMap")
+                    for ref in ca_certificate_refs
+                ]
             if well_known_ca_certificates and "wellKnownCACertificates" not in built_validation:
                 built_validation["wellKnownCACertificates"] = well_known_ca_certificates
             if built_validation:
