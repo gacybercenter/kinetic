@@ -119,7 +119,7 @@ opensearch_config_secret:
                       config:
                         subject_key: preferred_username
                         roles_key: roles
-                        openid_connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/certs"
+                        openid_connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/.well-known/openid-configuration"
                         jwt_clock_skew_tolerance_seconds: 30
                     authentication_backend:
                       type: noop
