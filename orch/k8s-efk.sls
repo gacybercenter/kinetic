@@ -4,4 +4,4 @@
 k8s_efk_install:
   salt.state:
     - tgt: '{{ k8s }}'
-    - sls: formulas.common.k8s-efk.install
+    - sls: formulas.common.k8s-efk
