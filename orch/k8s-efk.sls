@@ -5,4 +5,4 @@ deploy_elk:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.common.k8s-elk
+      - formulas.common.k8s-efk
