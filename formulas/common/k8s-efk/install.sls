@@ -112,3 +112,28 @@ opensearch_dashboards_helm_install:
       - k8s: efk_namespace
       - k8s_helm: opensearch_repo
       - k8s_helm: opensearch_helm_install
+
+# Create an HTTPRoute for OpenSearch Dashboards (Gateway API), attached to
+# the shared traefik-internal Gateway managed by k8s-ingress-controller.
+# See the note on opensearch_api_httproute above regarding TLS being
+# terminated at the Gateway listener rather than per-HTTPRoute.
+opensearch_dashboards_httproute:
+  k8s.httproute_present:
+    - name: opensearch-dashboards-route
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - parent_refs:
+        - name: traefik-internal
+          namespace: ingress
+          sectionName: websecure
+    - hostnames:
+        - dashboard.logger.services.gacyberrange.org
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: opensearch-dashboards
+              port: 5601
+    - require:
+      - k8s_helm: opensearch_dashboards_helm_install
