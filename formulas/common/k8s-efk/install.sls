@@ -108,6 +108,21 @@ opensearch_config_secret:
                       challenge: true
                     authentication_backend:
                       type: internal
+                  openid_auth_domain:
+                    description: "Authenticate via Keycloak OIDC"
+                    http_enabled: true
+                    transport_enabled: true
+                    order: 1
+                    http_authenticator:
+                      type: openid
+                      challenge: false
+                      config:
+                        subject_key: preferred_username
+                        roles_key: roles
+                        openid_connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/.well-known/openid-configuration"
+                        jwt_clock_skew_tolerance_seconds: 30
+                    authentication_backend:
+                      type: noop
 opensearch_tenants_secret:
   k8s.secret_present:
     - name: tenantsSecret
