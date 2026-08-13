@@ -307,6 +307,7 @@ opensearch_dashboards_configmap:
           opensearch_security.auth.type: "openid"
           opensearch_security.openid.connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/certs"
           opensearch_security.openid.client_id: "opensearch-dashboard"
+          opensearch_security.openid.client_secret: {{ pillar['ldap']['realms']['clients']['opensearch']['secret'] }}
           logging.verbose: true
     - labels:
         app: opensearch-dashboards
