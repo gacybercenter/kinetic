@@ -6203,6 +6203,183 @@ def httproute_present(
         }
 
 
+def backendtlspolicy_present(
+    namespace,
+    name,
+    target_refs=None,
+    hostname=None,
+    ca_certificate_refs=None,
+    well_known_ca_certificates=None,
+    validation=None,
+    spec=None,
+    version="v1",
+):
+    """
+    Ensure a Kubernetes BackendTLSPolicy (Gateway API) exists in the specified namespace.
+
+    BackendTLSPolicy configures TLS from the Gateway/proxy to a backend Service
+    (verifying the backend's certificate), similar in purpose to the
+    'backend protocol: HTTPS' style annotations used with Ingress.
+
+    Args:
+        namespace (str): Namespace for the BackendTLSPolicy.
+        name (str): Name of the BackendTLSPolicy.
+        target_refs (list, optional): List of targetRefs (which Services this
+            policy applies to). Each entry supports: group (default ""),
+            kind (default "Service"), name, sectionName (optional, matches a
+            named port on the Service).
+        hostname (str, optional): SNI hostname used to validate the backend's
+            certificate. Merged into validation.hostname unless validation
+            already sets it.
+        ca_certificate_refs (list, optional): List of refs to CA certificate
+            ConfigMaps/Secrets used to validate the backend certificate.
+            Each entry supports: group (default ""), kind (default
+            "ConfigMap"), name. Merged into validation.caCertificateRefs
+            unless validation already sets it.
+        well_known_ca_certificates (str, optional): Set to "System" to trust
+            the system CA bundle instead of caCertificateRefs. Merged into
+            validation.wellKnownCACertificates unless validation already
+            sets it.
+        validation (dict, optional): Full validation dict. Built-from-kwargs
+            values (hostname, ca_certificate_refs, well_known_ca_certificates)
+            are merged in for any keys not already present.
+        spec (dict, optional): Full spec dict; overrides target_refs/
+            validation/hostname/ca_certificate_refs/well_known_ca_certificates
+            entirely if provided.
+        version (str): Gateway API version for this CRD (default: v1, the
+            stable/GA version as of Gateway API 1.3+; use v1alpha3 or
+            v1alpha2 for older Gateway API installations where
+            BackendTLSPolicy is still experimental).
+
+    Returns:
+        dict: A dictionary with 'success', 'updated', and 'message'.
+
+    CLI Example:
+        salt '*' kinetic_k8s.backendtlspolicy_present efk opensearch-backend-tls \
+            target_refs='[{"kind": "Service", "name": "opensearch-cluster-master", "sectionName": "9200"}]' \
+            hostname=opensearch-cluster-master.efk.svc.cluster.local \
+            well_known_ca_certificates=System
+    """
+    try:
+        _load_k8s_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "gateway.networking.k8s.io"
+        plural = "backendtlspolicies"
+        kind = "BackendTLSPolicy"
+
+        # Build spec if not provided directly
+        if spec is None:
+            spec = {}
+            if target_refs:
+                spec["targetRefs"] = target_refs
+
+            built_validation = dict(validation) if validation else {}
+            if hostname and "hostname" not in built_validation:
+                built_validation["hostname"] = hostname
+            if ca_certificate_refs and "caCertificateRefs" not in built_validation:
+                built_validation["caCertificateRefs"] = ca_certificate_refs
+            if well_known_ca_certificates and "wellKnownCACertificates" not in built_validation:
+                built_validation["wellKnownCACertificates"] = well_known_ca_certificates
+            if built_validation:
+                spec["validation"] = built_validation
+        else:
+            spec = dict(spec)  # copy
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": kind,
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        exists = False
+        updated = False
+        matches = False
+        resource = None
+
+        # Check if BackendTLSPolicy exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=name,
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            if current_spec == spec:
+                matches = True
+                message = f"BackendTLSPolicy {name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"BackendTLSPolicy {name} in namespace {namespace} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"BackendTLSPolicy {name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking BackendTLSPolicy {name}: {str(e)[:80]}...",
+                }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                updated = True
+                message = f"BackendTLSPolicy {name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create BackendTLSPolicy {name}: {str(e)[:100]}...",
+                }
+        elif not matches:
+            try:
+                if (
+                    resource
+                    and "metadata" in resource
+                    and "resourceVersion" in resource["metadata"]
+                ):
+                    body["metadata"]["resourceVersion"] = resource["metadata"]["resourceVersion"]
+                custom_api.replace_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=name,
+                    body=body,
+                )
+                updated = True
+                message = f"BackendTLSPolicy {name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update BackendTLSPolicy {name}: {str(e)[:100]}...",
+                }
+        else:
+            message = f"BackendTLSPolicy {name} in namespace {namespace} already exists and matches desired state"
+
+        return {"success": True, "updated": updated, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"BackendTLSPolicy operation error: {str(e)[:100]}...",
+        }
+
+
 def gatewayclass_present(
     name,
     spec=None,

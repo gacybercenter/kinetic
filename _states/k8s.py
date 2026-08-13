@@ -3153,6 +3153,119 @@ Example:
     return ret
 
 
+def backendtlspolicy_present(
+    name,
+    namespace,
+    target_refs=None,
+    hostname=None,
+    ca_certificate_refs=None,
+    well_known_ca_certificates=None,
+    validation=None,
+    spec=None,
+    version="v1",
+):
+    """
+    Ensure a BackendTLSPolicy (from Gateway API) is present.
+
+    BackendTLSPolicy configures TLS from the Gateway/proxy to a backend
+    Service (verifying the backend's certificate), similar in purpose to
+    the 'backend protocol: HTTPS' style annotations used with Ingress.
+
+    name
+        The name of the BackendTLSPolicy.
+
+    namespace
+        The namespace for the BackendTLSPolicy.
+
+    target_refs
+        List of targetRefs (which Services this policy applies to). Each
+        entry supports: group (default ""), kind (default "Service"), name,
+        sectionName (optional, matches a named port on the Service).
+
+    hostname
+        SNI hostname used to validate the backend's certificate. Merged
+        into validation.hostname unless validation already sets it.
+
+    ca_certificate_refs
+        List of refs to CA certificate ConfigMaps/Secrets used to validate
+        the backend certificate. Merged into validation.caCertificateRefs
+        unless validation already sets it.
+
+    well_known_ca_certificates
+        Set to "System" to trust the system CA bundle instead of
+        ca_certificate_refs. Merged into validation.wellKnownCACertificates
+        unless validation already sets it.
+
+    validation
+        Full validation dict. Built-from-kwargs values (hostname,
+        ca_certificate_refs, well_known_ca_certificates) are merged in for
+        any keys not already present.
+
+    spec
+        Full spec dict; overrides target_refs/validation/hostname/
+        ca_certificate_refs/well_known_ca_certificates entirely if provided.
+
+    version
+        Gateway API version for this CRD (default: v1, the stable/GA version
+        as of Gateway API 1.3+; use v1alpha3 or v1alpha2 for older Gateway
+        API installations where BackendTLSPolicy is still experimental).
+
+    Example:
+    .. code-block:: yaml
+
+        efk_backend_tls:
+          k8s.backendtlspolicy_present:
+            - name: efk-backend-tls
+            - namespace: efk
+            - target_refs:
+              - kind: Service
+                name: opensearch-cluster-master
+            - hostname: api.logger.services.gacyberrange.org
+            - ca_certificate_refs:
+              - kind: Secret
+                name: opensearch-tls-secret
+
+        # using the system trust store instead of a CA ConfigMap
+        opensearch_backend_tls_system_ca:
+          k8s.backendtlspolicy_present:
+            - name: opensearch-backend-tls
+            - namespace: efk
+            - target_refs:
+              - kind: Service
+                name: opensearch-cluster-master
+            - hostname: opensearch-cluster-master.efk.svc.cluster.local
+            - well_known_ca_certificates: System
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.backendtlspolicy_present"](
+            namespace=namespace,
+            name=name,
+            target_refs=target_refs,
+            hostname=hostname,
+            ca_certificate_refs=ca_certificate_refs,
+            well_known_ca_certificates=well_known_ca_certificates,
+            validation=validation,
+            spec=spec,
+            version=version,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"created": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure BackendTLSPolicy {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
 def gatewayclass_present(
     name,
     spec=None,

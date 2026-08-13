@@ -77,6 +77,21 @@ opensearch_api_httproute:
     - require:
       - k8s_helm: opensearch_helm_install
 
+efk_backend_tls:
+  k8s.backendtlspolicy_present:
+    - name: efk-backend-tls
+    - namespace: efk
+    - target_refs:
+      - kind: Service
+        name: opensearch-cluster-master
+    - hostname: api.logger.services.gacyberrange.org
+    - ca_certificate_refs:
+      - kind: Secret
+        name: opensearch-tls-secret
+    - require:
+      - k8s_helm: opensearch_helm_install
+      - k8s: opensearch_tls_certificate
+
 # Create ConfigMap for OpenSearch Dashboards configuration
 opensearch_dashboards_configmap:
   k8s.configmap_present:
