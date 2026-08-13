@@ -3287,6 +3287,405 @@ def clusterrolebinding_present(name, cluster_role, service_accounts):
     return ret
 
 
+def role_present(name, namespace, rules):
+    """
+    Ensure a namespaced Kubernetes Role exists with the given rules.
+
+    name
+        The name of the Role.
+
+    namespace
+        The namespace for the Role.
+
+    rules
+        List of rule dicts, e.g.
+        [{"api_groups": [""], "resources": ["pods"], "verbs": ["get", "list"]}]
+
+    Example:
+    .. code-block:: yaml
+
+        pod_reader_role:
+          k8s.role_present:
+            - name: pod-reader
+            - namespace: default
+            - rules:
+              - api_groups: [""]
+                resources: ["pods"]
+                verbs: ["get", "list", "watch"]
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.role_present"](
+            namespace=namespace,
+            name=name,
+            rules=rules,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"updated": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Role {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def role_absent(name, namespace):
+    """
+    Ensure a namespaced Kubernetes Role does not exist.
+
+    name
+        The name of the Role.
+
+    namespace
+        The namespace of the Role.
+
+    Example:
+    .. code-block:: yaml
+
+        pod_reader_role_absent:
+          k8s.role_absent:
+            - name: pod-reader
+            - namespace: default
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.role_absent"](
+            namespace=namespace,
+            name=name,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"deleted": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to remove Role {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def clusterrole_present(name, rules):
+    """
+    Ensure a Kubernetes ClusterRole exists with the given rules.
+
+    name
+        The name of the ClusterRole.
+
+    rules
+        List of rule dicts, e.g.
+        [{"api_groups": [""], "resources": ["pods"], "verbs": ["get", "list"]}]
+
+    Example:
+    .. code-block:: yaml
+
+        pod_reader_clusterrole:
+          k8s.clusterrole_present:
+            - name: pod-reader
+            - rules:
+              - api_groups: [""]
+                resources: ["pods"]
+                verbs: ["get", "list", "watch"]
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.clusterrole_present"](
+            name=name,
+            rules=rules,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"updated": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure ClusterRole {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def clusterrole_absent(name):
+    """
+    Ensure a Kubernetes ClusterRole does not exist.
+
+    name
+        The name of the ClusterRole.
+
+    Example:
+    .. code-block:: yaml
+
+        pod_reader_clusterrole_absent:
+          k8s.clusterrole_absent:
+            - name: pod-reader
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.clusterrole_absent"](name=name)
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"deleted": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to remove ClusterRole {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def rolebinding_present(
+    name,
+    namespace,
+    role_ref,
+    role_ref_kind="Role",
+    groups=None,
+    users=None,
+    service_accounts=None,
+    subjects=None,
+):
+    """
+    Ensure a namespaced Kubernetes RoleBinding exists.
+
+    name
+        The name of the RoleBinding.
+
+    namespace
+        The namespace for the RoleBinding.
+
+    role_ref
+        Name of the Role or ClusterRole to bind.
+
+    role_ref_kind
+        'Role' or 'ClusterRole'. Defaults to 'Role'.
+
+    groups
+        Group names to bind (e.g. from an OIDC "groups" claim sourced from
+        an LDAP group, surfaced via Keycloak). Bound as kind=Group.
+
+    users
+        Usernames to bind. Bound as kind=User.
+
+    service_accounts
+        List of "namespace:serviceaccount" strings, or bare names (defaulting
+        to this RoleBinding's namespace).
+
+    subjects
+        Raw list of subject dicts for full control, e.g.
+        [{"kind": "Group", "name": "k8s-admins"}]. Merged with the
+        convenience arguments above.
+
+    Example:
+    .. code-block:: yaml
+
+        admins_binding:
+          k8s.rolebinding_present:
+            - name: admins-binding
+            - namespace: default
+            - role_ref: admin
+            - role_ref_kind: ClusterRole
+            - groups:
+              - k8s-admins
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.rolebinding_present"](
+            namespace=namespace,
+            name=name,
+            role_ref=role_ref,
+            role_ref_kind=role_ref_kind,
+            groups=groups,
+            users=users,
+            service_accounts=service_accounts,
+            subjects=subjects,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"updated": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure RoleBinding {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def rolebinding_absent(name, namespace):
+    """
+    Ensure a namespaced Kubernetes RoleBinding does not exist.
+
+    name
+        The name of the RoleBinding.
+
+    namespace
+        The namespace of the RoleBinding.
+
+    Example:
+    .. code-block:: yaml
+
+        admins_binding_absent:
+          k8s.rolebinding_absent:
+            - name: admins-binding
+            - namespace: default
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.rolebinding_absent"](
+            namespace=namespace,
+            name=name,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"deleted": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to remove RoleBinding {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def clusterrolebinding_group_present(
+    name,
+    cluster_role,
+    groups=None,
+    users=None,
+    service_accounts=None,
+    subjects=None,
+):
+    """
+    Ensure a Kubernetes ClusterRoleBinding exists binding a ClusterRole to
+    arbitrary subjects (Groups, Users, and/or ServiceAccounts).
+
+    This is a more general counterpart to k8s.clusterrolebinding_present
+    (which is narrowly scoped to ServiceAccount subjects only). Use this
+    state for bindings driven by OIDC/LDAP Group subjects.
+
+    name
+        The name of the ClusterRoleBinding.
+
+    cluster_role
+        The ClusterRole to bind.
+
+    groups
+        Group names to bind (e.g. from an OIDC "groups" claim sourced from
+        an LDAP group, surfaced via Keycloak). Bound as kind=Group.
+
+    users
+        Usernames to bind. Bound as kind=User.
+
+    service_accounts
+        List of "namespace:serviceaccount" strings.
+
+    subjects
+        Raw list of subject dicts for full control.
+
+    Example:
+    .. code-block:: yaml
+
+        k8s_admins_binding:
+          k8s.clusterrolebinding_group_present:
+            - name: k8s-admins-binding
+            - cluster_role: cluster-admin
+            - groups:
+              - k8s-admins
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.clusterrolebinding_group_present"](
+            name=name,
+            cluster_role=cluster_role,
+            groups=groups,
+            users=users,
+            service_accounts=service_accounts,
+            subjects=subjects,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"updated": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure ClusterRoleBinding {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def clusterrolebinding_group_absent(name):
+    """
+    Ensure a Kubernetes ClusterRoleBinding does not exist.
+
+    name
+        The name of the ClusterRoleBinding.
+
+    Example:
+    .. code-block:: yaml
+
+        k8s_admins_binding_absent:
+          k8s.clusterrolebinding_group_absent:
+            - name: k8s-admins-binding
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.clusterrolebinding_group_absent"](name=name)
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"deleted": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to remove ClusterRoleBinding {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
 def serviceaccount_token_secret_present(name, namespace, service_account):
     """
     Ensure a long-lived ServiceAccount token Secret exists (Kubernetes 1.24+).

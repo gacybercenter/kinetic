@@ -7,6 +7,7 @@ for retrieving MAC addresses from HardwareData resources in a Metal3.io environm
 """
 
 import base64
+import inspect
 import json
 
 import salt.utils.decorators as decorators
@@ -6459,6 +6460,639 @@ def clusterrolebinding_present(name, cluster_role, service_accounts):
             "success": False,
             "updated": False,
             "message": f"ClusterRoleBinding operation error: {str(e)[:100]}...",
+        }
+
+
+def _non_resource_urls_kwarg_name():
+    """
+    Determine which keyword the installed kubernetes client library's
+    V1PolicyRule accepts for the non-resource-URLs field.
+
+    This varies across kubernetes client versions due to a codegen quirk:
+    some versions use the correctly-spelled non_resource_urls, others use
+    non_resource_ur_ls. Our own rule dict API always uses the
+    correctly-spelled non_resource_urls key regardless of which one the
+    installed client actually accepts.
+    """
+    params = inspect.signature(client.V1PolicyRule.__init__).parameters
+    if "non_resource_urls" in params:
+        return "non_resource_urls"
+    if "non_resource_ur_ls" in params:
+        return "non_resource_ur_ls"
+    return None
+
+
+def _build_policy_rules(rules):
+    """
+    Build a list of kubernetes.client.V1PolicyRule from a list of rule dicts.
+
+    Each rule dict supports the keys: api_groups, resources, verbs,
+    resource_names, non_resource_urls (all optional except verbs, which is
+    required by the Kubernetes API).
+    """
+    non_resource_urls_kwarg = _non_resource_urls_kwarg_name()
+    policy_rules = []
+    for rule in rules or []:
+        kwargs = {
+            "api_groups": rule.get("api_groups", [""]),
+            "resources": rule.get("resources") or None,
+            "verbs": rule.get("verbs", []),
+            "resource_names": rule.get("resource_names") or None,
+        }
+        non_resource_urls = rule.get("non_resource_urls")
+        if non_resource_urls and non_resource_urls_kwarg:
+            kwargs[non_resource_urls_kwarg] = non_resource_urls
+        policy_rules.append(client.V1PolicyRule(**kwargs))
+    return policy_rules
+
+
+def _normalize_rule(rule):
+    """Build a hashable, order-independent representation of a V1PolicyRule."""
+    non_resource_urls = getattr(rule, "non_resource_urls", None)
+    if non_resource_urls is None:
+        non_resource_urls = getattr(rule, "non_resource_ur_ls", None)
+    return (
+        tuple(sorted(rule.api_groups or [])),
+        tuple(sorted(rule.resources or [])),
+        tuple(sorted(rule.verbs or [])),
+        tuple(sorted(rule.resource_names or [])),
+        tuple(sorted(non_resource_urls or [])),
+    )
+
+
+def _rules_match(existing_rules, desired_rules):
+    """Compare two lists of V1PolicyRule for equality, ignoring order."""
+    existing_norm = sorted(_normalize_rule(r) for r in (existing_rules or []))
+    desired_norm = sorted(_normalize_rule(r) for r in (desired_rules or []))
+    return existing_norm == desired_norm
+
+
+def _build_rbac_subjects(groups=None, users=None, service_accounts=None, subjects=None, default_namespace=None):
+    """
+    Build a list of kubernetes.client.RbacV1Subject from convenience kwargs.
+
+    Args:
+        groups (list): Group names (e.g. LDAP/OIDC group names surfaced in
+            the "groups" claim of an OIDC ID token). Bound as kind=Group.
+        users (list): Usernames. Bound as kind=User.
+        service_accounts (list): "namespace:serviceaccount" strings, or bare
+            "serviceaccount" names (defaulting to default_namespace).
+            Bound as kind=ServiceAccount.
+        subjects (list): Raw subject dicts for full control, e.g.
+            [{"kind": "Group", "name": "my-group"}]. Merged with the
+            convenience kwargs above.
+        default_namespace (str): Namespace to use for bare ServiceAccount
+            names that don't include a "namespace:" prefix.
+
+    Returns:
+        list: kubernetes.client.RbacV1Subject objects.
+    """
+    result = []
+    for group_name in groups or []:
+        result.append(
+            client.RbacV1Subject(
+                kind="Group",
+                name=group_name,
+                api_group="rbac.authorization.k8s.io",
+            )
+        )
+    for username in users or []:
+        result.append(
+            client.RbacV1Subject(
+                kind="User",
+                name=username,
+                api_group="rbac.authorization.k8s.io",
+            )
+        )
+    for sa in service_accounts or []:
+        if ":" in sa:
+            sa_namespace, sa_name = sa.split(":", 1)
+        else:
+            sa_namespace, sa_name = default_namespace, sa
+        result.append(
+            client.RbacV1Subject(
+                kind="ServiceAccount",
+                name=sa_name,
+                namespace=sa_namespace,
+            )
+        )
+    for subject in subjects or []:
+        kind = subject.get("kind", "Group")
+        api_group = None if kind == "ServiceAccount" else "rbac.authorization.k8s.io"
+        result.append(
+            client.RbacV1Subject(
+                kind=kind,
+                name=subject["name"],
+                namespace=subject.get("namespace", default_namespace if kind == "ServiceAccount" else None),
+                api_group=subject.get("api_group", api_group),
+            )
+        )
+    return result
+
+
+def _subject_set(subjects):
+    """Build a hashable, order-independent representation of RBAC subjects."""
+    return {(s.kind, s.namespace or "", s.name) for s in (subjects or [])}
+
+
+def role_present(namespace, name, rules):
+    """
+    Ensure a namespaced Kubernetes Role exists with the given rules.
+
+    Args:
+        namespace (str): Namespace for the Role.
+        name (str): Name of the Role.
+        rules (list): List of rule dicts, e.g.
+            [{"api_groups": [""], "resources": ["pods"], "verbs": ["get", "list"]}]
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.role_present default pod-reader \
+            '[{"api_groups": [""], "resources": ["pods"], "verbs": ["get", "list"]}]'
+    """
+    try:
+        _load_k8s_config()
+        rbac_api = client.RbacAuthorizationV1Api()
+        desired_rules = _build_policy_rules(rules)
+
+        exists = False
+        try:
+            existing = rbac_api.read_namespaced_role(name=name, namespace=namespace)
+            exists = True
+        except ApiException as e:
+            if e.status != 404:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking Role {name}: {str(e)[:100]}...",
+                }
+            existing = None
+
+        if exists and _rules_match(existing.rules, desired_rules):
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"Role {name} in namespace {namespace} already matches desired state",
+            }
+
+        role_body = client.V1Role(
+            metadata=client.V1ObjectMeta(name=name, namespace=namespace),
+            rules=desired_rules,
+        )
+
+        if not exists:
+            rbac_api.create_namespaced_role(namespace=namespace, body=role_body)
+            message = f"Role {name} created in namespace {namespace}"
+        else:
+            rbac_api.replace_namespaced_role(name=name, namespace=namespace, body=role_body)
+            message = f"Role {name} updated in namespace {namespace}"
+
+        return {"success": True, "updated": True, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Role operation error: {str(e)[:100]}...",
+        }
+
+
+def role_absent(namespace, name):
+    """
+    Ensure a namespaced Kubernetes Role does not exist.
+
+    Args:
+        namespace (str): Namespace of the Role.
+        name (str): Name of the Role.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+    """
+    try:
+        _load_k8s_config()
+        rbac_api = client.RbacAuthorizationV1Api()
+        try:
+            rbac_api.delete_namespaced_role(name=name, namespace=namespace)
+        except ApiException as e:
+            if e.status == 404:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"Role {name} in namespace {namespace} already absent",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Error deleting Role {name}: {str(e)[:100]}...",
+            }
+
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"Role {name} deleted from namespace {namespace}",
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Role delete error: {str(e)[:100]}...",
+        }
+
+
+def clusterrole_present(name, rules):
+    """
+    Ensure a Kubernetes ClusterRole exists with the given rules.
+
+    Args:
+        name (str): Name of the ClusterRole.
+        rules (list): List of rule dicts, e.g.
+            [{"api_groups": [""], "resources": ["pods"], "verbs": ["get", "list"]}]
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.clusterrole_present pod-reader \
+            '[{"api_groups": [""], "resources": ["pods"], "verbs": ["get", "list"]}]'
+    """
+    try:
+        _load_k8s_config()
+        rbac_api = client.RbacAuthorizationV1Api()
+        desired_rules = _build_policy_rules(rules)
+
+        exists = False
+        try:
+            existing = rbac_api.read_cluster_role(name=name)
+            exists = True
+        except ApiException as e:
+            if e.status != 404:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking ClusterRole {name}: {str(e)[:100]}...",
+                }
+            existing = None
+
+        if exists and _rules_match(existing.rules, desired_rules):
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"ClusterRole {name} already matches desired state",
+            }
+
+        role_body = client.V1ClusterRole(
+            metadata=client.V1ObjectMeta(name=name),
+            rules=desired_rules,
+        )
+
+        if not exists:
+            rbac_api.create_cluster_role(body=role_body)
+            message = f"ClusterRole {name} created"
+        else:
+            rbac_api.replace_cluster_role(name=name, body=role_body)
+            message = f"ClusterRole {name} updated"
+
+        return {"success": True, "updated": True, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"ClusterRole operation error: {str(e)[:100]}...",
+        }
+
+
+def clusterrole_absent(name):
+    """
+    Ensure a Kubernetes ClusterRole does not exist.
+
+    Args:
+        name (str): Name of the ClusterRole.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+    """
+    try:
+        _load_k8s_config()
+        rbac_api = client.RbacAuthorizationV1Api()
+        try:
+            rbac_api.delete_cluster_role(name=name)
+        except ApiException as e:
+            if e.status == 404:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"ClusterRole {name} already absent",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Error deleting ClusterRole {name}: {str(e)[:100]}...",
+            }
+
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"ClusterRole {name} deleted",
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"ClusterRole delete error: {str(e)[:100]}...",
+        }
+
+
+def rolebinding_present(
+    namespace,
+    name,
+    role_ref,
+    role_ref_kind="Role",
+    groups=None,
+    users=None,
+    service_accounts=None,
+    subjects=None,
+):
+    """
+    Ensure a namespaced Kubernetes RoleBinding exists.
+
+    Args:
+        namespace (str): Namespace for the RoleBinding.
+        name (str): Name of the RoleBinding.
+        role_ref (str): Name of the Role or ClusterRole to bind.
+        role_ref_kind (str): 'Role' or 'ClusterRole'. Defaults to 'Role'.
+        groups (list): Group names to bind (e.g. from an OIDC "groups" claim
+            sourced from an LDAP group, surfaced via Keycloak). Bound as kind=Group.
+        users (list): Usernames to bind. Bound as kind=User.
+        service_accounts (list): "namespace:serviceaccount" strings, or bare
+            names (defaulting to this RoleBinding's namespace).
+        subjects (list): Raw list of subject dicts for full control, e.g.
+            [{"kind": "Group", "name": "k8s-admins"}]. Merged with the
+            convenience kwargs above.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.rolebinding_present default admins-binding admin \
+            role_ref_kind=ClusterRole groups='["k8s-admins"]'
+    """
+    try:
+        _load_k8s_config()
+        rbac_api = client.RbacAuthorizationV1Api()
+
+        desired_subjects = _build_rbac_subjects(
+            groups=groups,
+            users=users,
+            service_accounts=service_accounts,
+            subjects=subjects,
+            default_namespace=namespace,
+        )
+
+        exists = False
+        try:
+            existing = rbac_api.read_namespaced_role_binding(name=name, namespace=namespace)
+            exists = True
+        except ApiException as e:
+            if e.status != 404:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking RoleBinding {name}: {str(e)[:100]}...",
+                }
+            existing = None
+
+        if (
+            exists
+            and existing.role_ref.name == role_ref
+            and existing.role_ref.kind == role_ref_kind
+            and _subject_set(existing.subjects) == _subject_set(desired_subjects)
+        ):
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"RoleBinding {name} in namespace {namespace} already matches desired state",
+            }
+
+        binding_body = client.V1RoleBinding(
+            metadata=client.V1ObjectMeta(name=name, namespace=namespace),
+            role_ref=client.V1RoleRef(
+                api_group="rbac.authorization.k8s.io",
+                kind=role_ref_kind,
+                name=role_ref,
+            ),
+            subjects=desired_subjects,
+        )
+
+        if not exists:
+            rbac_api.create_namespaced_role_binding(namespace=namespace, body=binding_body)
+            message = f"RoleBinding {name} created in namespace {namespace}"
+        elif existing.role_ref.name != role_ref or existing.role_ref.kind != role_ref_kind:
+            # roleRef is immutable; recreate the binding.
+            rbac_api.delete_namespaced_role_binding(name=name, namespace=namespace)
+            rbac_api.create_namespaced_role_binding(namespace=namespace, body=binding_body)
+            message = f"RoleBinding {name} in namespace {namespace} recreated (roleRef changed)"
+        else:
+            rbac_api.replace_namespaced_role_binding(name=name, namespace=namespace, body=binding_body)
+            message = f"RoleBinding {name} in namespace {namespace} updated"
+
+        return {"success": True, "updated": True, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"RoleBinding operation error: {str(e)[:100]}...",
+        }
+
+
+def rolebinding_absent(namespace, name):
+    """
+    Ensure a namespaced Kubernetes RoleBinding does not exist.
+
+    Args:
+        namespace (str): Namespace of the RoleBinding.
+        name (str): Name of the RoleBinding.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+    """
+    try:
+        _load_k8s_config()
+        rbac_api = client.RbacAuthorizationV1Api()
+        try:
+            rbac_api.delete_namespaced_role_binding(name=name, namespace=namespace)
+        except ApiException as e:
+            if e.status == 404:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"RoleBinding {name} in namespace {namespace} already absent",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Error deleting RoleBinding {name}: {str(e)[:100]}...",
+            }
+
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"RoleBinding {name} deleted from namespace {namespace}",
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"RoleBinding delete error: {str(e)[:100]}...",
+        }
+
+
+def clusterrolebinding_group_present(
+    name,
+    cluster_role,
+    groups=None,
+    users=None,
+    service_accounts=None,
+    subjects=None,
+):
+    """
+    Ensure a Kubernetes ClusterRoleBinding exists binding a ClusterRole to
+    arbitrary subjects (Groups, Users, and/or ServiceAccounts).
+
+    This is a more general counterpart to clusterrolebinding_present (which
+    is narrowly scoped to ServiceAccount subjects only and must not be
+    changed, since it is already in active use). Use this function for
+    bindings driven by OIDC/LDAP Group subjects.
+
+    Args:
+        name (str): The name of the ClusterRoleBinding.
+        cluster_role (str): The name of the ClusterRole to bind.
+        groups (list): Group names to bind (e.g. from an OIDC "groups" claim
+            sourced from an LDAP group, surfaced via Keycloak). Bound as kind=Group.
+        users (list): Usernames to bind. Bound as kind=User.
+        service_accounts (list): "namespace:serviceaccount" strings.
+        subjects (list): Raw list of subject dicts for full control.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.clusterrolebinding_group_present k8s-admins-binding \
+            cluster-admin groups='["k8s-admins"]'
+    """
+    try:
+        _load_k8s_config()
+        rbac_api = client.RbacAuthorizationV1Api()
+
+        desired_subjects = _build_rbac_subjects(
+            groups=groups,
+            users=users,
+            service_accounts=service_accounts,
+            subjects=subjects,
+        )
+
+        exists = False
+        try:
+            existing = rbac_api.read_cluster_role_binding(name=name)
+            exists = True
+        except ApiException as e:
+            if e.status != 404:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking ClusterRoleBinding {name}: {str(e)[:100]}...",
+                }
+            existing = None
+
+        if (
+            exists
+            and existing.role_ref.name == cluster_role
+            and existing.role_ref.kind == "ClusterRole"
+            and _subject_set(existing.subjects) == _subject_set(desired_subjects)
+        ):
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"ClusterRoleBinding {name} already matches desired state",
+            }
+
+        binding_body = client.V1ClusterRoleBinding(
+            metadata=client.V1ObjectMeta(name=name),
+            role_ref=client.V1RoleRef(
+                api_group="rbac.authorization.k8s.io",
+                kind="ClusterRole",
+                name=cluster_role,
+            ),
+            subjects=desired_subjects,
+        )
+
+        if not exists:
+            rbac_api.create_cluster_role_binding(body=binding_body)
+            message = f"ClusterRoleBinding {name} created"
+        elif existing.role_ref.name != cluster_role:
+            # roleRef is immutable; recreate the binding.
+            rbac_api.delete_cluster_role_binding(name=name)
+            rbac_api.create_cluster_role_binding(body=binding_body)
+            message = f"ClusterRoleBinding {name} recreated (roleRef changed)"
+        else:
+            rbac_api.replace_cluster_role_binding(name=name, body=binding_body)
+            message = f"ClusterRoleBinding {name} updated"
+
+        return {"success": True, "updated": True, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"ClusterRoleBinding operation error: {str(e)[:100]}...",
+        }
+
+
+def clusterrolebinding_group_absent(name):
+    """
+    Ensure a Kubernetes ClusterRoleBinding does not exist.
+
+    Args:
+        name (str): The name of the ClusterRoleBinding.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+    """
+    try:
+        _load_k8s_config()
+        rbac_api = client.RbacAuthorizationV1Api()
+        try:
+            rbac_api.delete_cluster_role_binding(name=name)
+        except ApiException as e:
+            if e.status == 404:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"ClusterRoleBinding {name} already absent",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Error deleting ClusterRoleBinding {name}: {str(e)[:100]}...",
+            }
+
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"ClusterRoleBinding {name} deleted",
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"ClusterRoleBinding delete error: {str(e)[:100]}...",
         }
 
 

@@ -401,15 +401,10 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
         exists = check_result.get("exists", False)
         attributes_match = check_result.get("attributes_match", False)
 
-    # Check password separately if provided (password updates are special case)
-    password_changed = False
-    if password and exists:
-        # We need to check if password needs updating (this requires a separate check)
-        # For now, we'll always update password if provided and user exists
-        password_changed = True
-
-    # If exists, attributes match, and no password change, we're done
-    if exists and attributes_match and not password_changed:
+    # Password is only ever set on creation, never on update - if the user
+    # already exists, its password is left untouched regardless of what is
+    # provided in pillar, so it has no bearing on whether anything changed.
+    if exists and attributes_match:
         ret["comment"] = f"User {user_dn} already exists with matching attributes."
         return ret
 
@@ -522,11 +517,15 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
     group_dn = f"cn={cn},{base_dn}"
 
     # Prepare attributes for existence check (mirroring fixed attributes in create_group/update_group)
-    attributes = {"objectClass": ["posixGroup"], "cn": cn}
+    attributes = {"objectClass": ["groupOfNames"], "cn": cn}
     if description:
         attributes["description"] = description
     if members:
-        attributes["memberUid"] = members  # Use memberUid for posixGroup
+        attributes["member"] = members  # groupOfNames uses full member DNs
+    else:
+        # groupOfNames requires at least one member; create_group/update_group
+        # default to the group's own DN when none is provided.
+        attributes["member"] = [group_dn]
 
     # Check if group exists and attributes match
     if "ldap_utils.dn_exists" not in __salt__:

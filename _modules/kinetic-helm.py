@@ -163,6 +163,8 @@ def helm_release_present(
         values_file_path = ""
         message = f"Configuring Helm release {release_name} in namespace {namespace}"
 
+        is_oci_chart = chart_name.startswith("oci://")
+
         # Step 1: Fetch values from pillar if pillar_key is provided and values_dict is not
         if pillar_key and not values_dict:
             values_dict = __salt__["pillar.get"](pillar_key, {})
@@ -171,7 +173,7 @@ def helm_release_present(
             values_dict = {}
             message += f"; No values provided, using default chart values"
 
-        # Step 2: Check if release exists
+        # Step 2: Check if release exists (skip repo logic for OCI charts)
         release_list_cmd = ["helm", "list", "-n", namespace, "-o", "json"]
         release_list_result = __salt__["cmd.run"](
             release_list_cmd, python_shell=False, ignore_retcode=True
@@ -182,17 +184,13 @@ def helm_release_present(
                 for release in releases:
                     if release.get("name") == release_name:
                         release_exists = True
-                        # We can't easily compare values or chart version without Helm's internal state,
-                        # so assume update needed if version specified or values provided
                         if (
                             version
                             and release.get("chart") != f"{chart_name}-{version}"
                         ):
                             release_matches = False
                         elif values_dict or set_values or values_files:
-                            release_matches = (
-                                False  # Assume mismatch if any values are provided
-                            )
+                            release_matches = False
                         else:
                             release_matches = True
                         break
