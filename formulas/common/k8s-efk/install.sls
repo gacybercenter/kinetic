@@ -307,6 +307,7 @@ opensearch_dashboards_configmap:
           opensearch_security.auth.type: "openid"
           opensearch_security.openid.connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/certs"
           opensearch_security.openid.client_id: "opensearch-dashboard"
+          opensearch_security.openid.base_redirect_url: "https://dashboard.logger.services.gacyberrange.org"
           opensearch_security.openid.client_secret: {{ pillar['ldap']['realms']['rsc']['clients']['opensearch-dashboard']['secret'] }}
           logging.verbose: true
     - labels:
