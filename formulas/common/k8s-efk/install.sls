@@ -316,7 +316,7 @@ opensearch_dashboards_configmap:
           opensearch_security.openid.client_id: "opensearch-dashboard"
           opensearch_security.openid.verify_hostnames: false
           opensearch_security.openid.refresh_tokens: false
-          opensearch_security.openid.scope: "openid profile email roles"
+          opensearch_security.openid.scope: "openid profile email"
           opensearch_security.openid.header: Authorization
           opensearch_security.openid.base_redirect_url: "https://dashboard.logger.services.gacyberrange.org"
           opensearch_security.openid.client_secret: {{ pillar['ldap']['realms']['rsc']['clients']['opensearch-dashboard']['secret'] }}
