@@ -105,9 +105,9 @@ opensearch_config_secret:
                     order: 0
                     http_authenticator:
                       type: basic
-                      challenge: true
+                      challenge: false
                     authentication_backend:
-                      type: internal
+                      type: intern
                   openid_auth_domain:
                     description: "Authenticate via Keycloak OIDC"
                     http_enabled: true
@@ -115,10 +115,10 @@ opensearch_config_secret:
                     order: 1
                     http_authenticator:
                       type: openid
-                      challenge: true
+                      challenge: false
                       config:
                         subject_key: preferred_username
-                        roles_key: roles
+                        roles_key: groups
                         openid_connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/.well-known/openid-configuration"
                         jwt_clock_skew_tolerance_seconds: 30
                     authentication_backend:
@@ -146,8 +146,8 @@ opensearch_roles_mapping_secret:
                 config_version: 2
             all_access:
                 reserved: true
-                users:
-                - "admin"
+                backend_roles:
+                  - "admins"
             admin:
                 reserved: true
                 users:
@@ -160,8 +160,10 @@ opensearch_roles_mapping_secret:
                 - "fluentbit"
             dashboard_reader:
                 reserved: false
-                users:
-                - "dashboard_user"
+                backend_roles:
+                  - "admins"
+                  - "se_cyber"
+                  - "ro"
 opensearch_roles_secret:
   k8s.secret_present:
     - name: rolesSecret
@@ -307,8 +309,12 @@ opensearch_dashboards_configmap:
           opensearch_security.auth.type: "openid"
           opensearch_security.openid.connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/certs"
           opensearch_security.openid.client_id: "opensearch-dashboard"
+          opensearch_security.openid.verify_hostnames: true
+          opensearch_security.openid.scope: "openid profile email roles"
+          opensearch_security.openid.header: Authorization
           opensearch_security.openid.base_redirect_url: "https://dashboard.logger.services.gacyberrange.org"
           opensearch_security.openid.client_secret: {{ pillar['ldap']['realms']['rsc']['clients']['opensearch-dashboard']['secret'] }}
+          opensearch_security.openid.logout_url: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/logout
           logging.verbose: true
     - labels:
         app: opensearch-dashboards
