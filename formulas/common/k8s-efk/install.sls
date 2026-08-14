@@ -315,7 +315,7 @@ opensearch_dashboards_configmap:
           opensearch_security.openid.connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/.well-known/openid-configuration"
           opensearch_security.openid.client_id: "opensearch-dashboard"
           opensearch_security.openid.verify_hostnames: false
-          opensearch_security.openid.refresh_token: false
+          opensearch_security.openid.refresh_tokens: false
           opensearch_security.openid.scope: "openid profile email roles"
           opensearch_security.openid.header: Authorization
           opensearch_security.openid.base_redirect_url: "https://dashboard.logger.services.gacyberrange.org"
