@@ -158,6 +158,10 @@ opensearch_roles_mapping_secret:
                 reserved: false
                 users:
                 - "fluentbit"
+            kibana_user:
+                reserved: false
+                backend_roles:
+                  - "admins"
             dashboard_reader:
                 reserved: false
                 backend_roles:
