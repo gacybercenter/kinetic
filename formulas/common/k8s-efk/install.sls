@@ -308,7 +308,7 @@ opensearch_dashboards_configmap:
           opensearch.ssl.certificateAuthorities: ["/usr/share/opensearch-dashboards/config/certs/ca.crt"]
           opensearch_security.auth.type: ["openid", "basicauth"]
           opensearch_security.ui.openid.login.buttonname: "Log in with GCR"
-          opensearch_security.ui.basicauth.login.buttonname: "Log in with Opensearch"
+          opensearch_security.ui.basic.login.buttonname: "Log in with Opensearch"
           opensearch_security.openid.connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/.well-known/openid-configuration"
           opensearch_security.openid.client_id: "opensearch-dashboard"
           opensearch_security.openid.verify_hostnames: true
