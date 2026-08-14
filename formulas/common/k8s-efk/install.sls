@@ -306,6 +306,7 @@ opensearch_dashboards_configmap:
           opensearch.password: "{{ pillar.get('opensearch_admin_password') }}"
           opensearch.ssl.verificationMode: {{ pillar.get('opensearch_ssl_verification_mode', 'none') }}
           opensearch.ssl.certificateAuthorities: ["/usr/share/opensearch-dashboards/config/certs/ca.crt"]
+          opensearch_security.auth.multiple_auth_enabled: true
           opensearch_security.auth.type: ["openid", "basicauth"]
           opensearch_security.openid.connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/.well-known/openid-configuration"
           opensearch_security.openid.client_id: "opensearch-dashboard"
