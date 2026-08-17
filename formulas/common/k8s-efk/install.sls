@@ -354,17 +354,6 @@ opensearch_helm_install:
       - k8s_helm: opensearch_repo
       - k8s: opensearch_tls_certificate
 
-# Create an HTTPRoute for the OpenSearch API (Gateway API), attached to the
-# shared traefik-internal Gateway managed by k8s-ingress-controller.
-#
-# Note: unlike Ingress, Gateway API terminates TLS at the Gateway's listener,
-# not per-HTTPRoute - so the opensearch-tls-secret cert generated above is
-# not referenced here. TLS for this hostname is served by whatever
-# certificateRefs are configured on the traefik-internal Gateway's
-# "websecure" listener (see formulas/common/k8s-ingress-controller). If
-# api.logger.services.gacyberrange.org needs its own dedicated certificate
-# rather than the shared internal cert, a listener for that hostname (using
-# opensearch-tls-secret) needs to be added to that Gateway.
 opensearch_api_httproute:
   k8s.httproute_present:
     - name: opensearch-api-route
