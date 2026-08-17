@@ -4383,6 +4383,9 @@ def certmanager_certificate_present(
     duration=None,
     renew_before=None,
     is_ca=False,
+    subject=None,
+    private_key=None,
+    usages=None,
 ):
     """
     Ensure a cert-manager Certificate exists in the specified Kubernetes namespace with the given spec.
@@ -4399,6 +4402,9 @@ def certmanager_certificate_present(
         duration (str, optional): Duration of the certificate validity (e.g., '2160h'). Defaults to None.
         renew_before (str, optional): Time before expiration to renew the certificate (e.g., '360h'). Defaults to None.
         is_ca (bool, optional): If True, the certificate will be marked as a CA certificate. Defaults to False.
+        subject (dict, optional): Subject block (organizations, organizationalUnits, countries, etc.).
+        private_key (dict, optional): Private-key settings (algorithm, size, encoding).
+        usages (list, optional): Extended key usages.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
@@ -4444,6 +4450,12 @@ def certmanager_certificate_present(
             spec["renewBefore"] = renew_before
         if is_ca:
             spec["isCA"] = True
+        if subject:
+            spec["subject"] = subject
+        if private_key:
+            spec["privateKey"] = private_key
+        if usages:
+            spec["usages"] = usages
 
         # Define the full Certificate object
         cert_body = {

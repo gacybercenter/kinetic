@@ -2019,6 +2019,9 @@ def certmanager_certificate_present(
     duration="2160h",
     renew_before="360h",
     is_ca=False,
+    subject=None,
+    private_key=None,
+    usages=None,
 ):
     """
     Ensure a cert-manager Certificate exists in the specified Kubernetes namespace.
@@ -2059,6 +2062,15 @@ def certmanager_certificate_present(
     is_ca
         Optional. If True, the certificate will be marked as a CA certificate. Defaults to False.
 
+    subject
+        Optional. Subject block (organizations, organizationalUnits, countries, …).
+
+    private_key
+        Optional. Private-key settings (algorithm, size, encoding).
+
+    usages
+        Optional. Extended key usages list.
+
     Example:
     .. code-block:: yaml
 
@@ -2085,7 +2097,8 @@ def certmanager_certificate_present(
             f"name={certificate_name}, namespace={namespace}, secret_name={secret_name}, "
             f"issuer_name={issuer_name}, issuer_kind={issuer_kind}, common_name={common_name}, "
             f"dns_names={dns_names}, ip_addresses={ip_addresses}, duration={duration}, "
-            f"renew_before={renew_before}, is_ca={is_ca}"
+            f"renew_before={renew_before}, is_ca={is_ca}, "
+            f"subject={subject}, private_key={private_key}, usages={usages}"
         )
 
         # Debug available modules for troubleshooting
@@ -2107,6 +2120,9 @@ def certmanager_certificate_present(
                 duration=duration,
                 renew_before=renew_before,
                 is_ca=is_ca,
+                subject=subject,
+                private_key=private_key,
+                usages=usages,
             )
         else:
             ret["result"] = False
