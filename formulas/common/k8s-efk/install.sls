@@ -299,17 +299,17 @@ opensearch_roles_secret:
                 index_permissions:
                 - index_patterns:
                     - "*"
-                    allowed_actions:
+                  allowed_actions:
                     - "*"
                     - "indices:data/write/index*"
                     - "indices:data/write/update*"
                     - "indices:data/write/bulk*"
                     - "indices:admin/create"
                     - "indices:admin/mapping/put"
-                    tenant_permissions:
-                    - tenant_patterns:
+                tenant_permissions:
+                - tenant_patterns:
                     - "*"
-                    allowed_actions:
+                  allowed_actions:
                     - "*"
             log_writer:
                 reserved: false
@@ -319,7 +319,7 @@ opensearch_roles_secret:
                 index_permissions:
                 - index_patterns:
                     - "*"
-                    allowed_actions:
+                  allowed_actions:
                     - "write"
                     - "create_index"
                     - "manage"
@@ -332,13 +332,13 @@ opensearch_roles_secret:
                 index_permissions:
                 - index_patterns:
                     - "*"
-                    allowed_actions:
+                  allowed_actions:
                     - "read"
                     - "view_index_metadata"
                 tenant_permissions:
                 - tenant_patterns:
                     - "global_tenant"
-                    allowed_actions:
+                  allowed_actions:
                     - "kibana_all_read"
 
 opensearch_repo:
