@@ -44,7 +44,7 @@ opensearch_admin_certificate:
     - private_key:
         algorithm: RSA
         size: 2048
-        encoding: PKCS1
+        encoding: PKCS8
     - usages:
         - client auth
         - digital signature
