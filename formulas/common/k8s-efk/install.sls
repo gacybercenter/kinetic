@@ -315,7 +315,8 @@ opensearch_dashboards_configmap:
           opensearch_security.openid.verify_hostnames: false
           opensearch_security.openid.refresh_tokens: false
           opensearch_security.openid.scope: "openid profile email"
-          opensearch.requestHeadersAllowlist: ["Authorization", "securitytenant", "security_tenant"]
+          opensearch_security.openid.trust_dynamic_headers: true
+          opensearch.requestHeadersAllowlist: ["Authorization", "securitytenant", "WWW-Authenticate", "security_tenant"]
           opensearch_security.openid.base_redirect_url: "https://dashboard.logger.services.gacyberrange.org"
           opensearch_security.openid.client_secret: {{ pillar['ldap']['realms']['rsc']['clients']['opensearch-dashboard']['secret'] }}
           opensearch_security.openid.logout_url: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/logout
