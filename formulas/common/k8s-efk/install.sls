@@ -87,7 +87,7 @@ opensearch_apply_security_config:
   k8s.job_present:
     - name: opensearch-securityadmin
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - image: {{ pillar.get('opensearch_image', 'opensearchproject/opensearch:2.11.0') }}
+    - image: {{ pillar.get('opensearch_image', 'docker.io/opensearchproject/opensearch:2.11.0') }}
     - service_account: opensearch-securityadmin
     - restart_policy: OnFailure
     - backoff_limit: 2
