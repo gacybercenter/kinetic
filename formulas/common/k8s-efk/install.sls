@@ -214,6 +214,7 @@ opensearch_roles_secret:
                 reserved: true
                 cluster_permissions:
                 - "*"
+                - "cluster:monitor/health"
                 index_permissions:
                 - index_patterns:
                     - "*"
