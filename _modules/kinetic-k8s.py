@@ -5741,6 +5741,118 @@ def kubernetes_deployment_present(
         }
 
 
+def job_present(
+    namespace,
+    name,
+    image,
+    command=None,
+    args=None,
+    service_account=None,
+    restart_policy="OnFailure",
+    backoff_limit=1,
+    ttl_seconds_after_finished=300,
+    labels=None,
+    annotations=None,
+    env=None,
+    volumes=None,
+    volume_mounts=None,
+    resources=None,
+    spec=None,
+):
+    """
+    Ensure a Kubernetes Job exists.
+
+    Args:
+        namespace (str): Namespace for the Job.
+        name (str): Name of the Job.
+        image (str): Container image.
+        command (list, optional): Entrypoint command.
+        args (list, optional): Arguments to the command.
+        service_account (str, optional): ServiceAccount to run as.
+        restart_policy (str): "OnFailure" or "Never".
+        backoff_limit (int): Number of retries before marking as failed.
+        ttl_seconds_after_finished (int): Time to keep the Job after it finishes.
+        labels (dict, optional): Labels for the Job.
+        annotations (dict, optional): Annotations for the Job.
+        env (list, optional): Environment variables.
+        volumes (list, optional): Volume definitions.
+        volume_mounts (list, optional): Volume mounts for containers.
+        resources (dict, optional): Resource requests/limits.
+        spec (dict, optional): Full Job spec (overrides other arguments).
+
+    Returns:
+        dict: success, updated, message
+    """
+    try:
+        _load_k8s_config()
+        batch_api = client.BatchV1Api()
+
+        if spec is None:
+            container = {"name": name, "image": image}
+            if command:
+                container["command"] = command
+            if args:
+                container["args"] = args
+            if env:
+                container["env"] = env
+            if volume_mounts:
+                container["volumeMounts"] = volume_mounts
+            if resources:
+                container["resources"] = resources
+
+            pod_spec = {
+                "restartPolicy": restart_policy,
+                "containers": [container],
+            }
+            if service_account:
+                pod_spec["serviceAccountName"] = service_account
+            if volumes:
+                pod_spec["volumes"] = volumes
+
+            job_spec = {
+                "template": {"spec": pod_spec},
+                "backoffLimit": backoff_limit,
+            }
+            if ttl_seconds_after_finished is not None:
+                job_spec["ttlSecondsAfterFinished"] = ttl_seconds_after_finished
+
+            job_body = {
+                "apiVersion": "batch/v1",
+                "kind": "Job",
+                "metadata": {"name": name, "namespace": namespace},
+                "spec": job_spec,
+            }
+            if labels:
+                job_body["metadata"]["labels"] = labels
+            if annotations:
+                job_body["metadata"]["annotations"] = annotations
+        else:
+            job_body = {
+                "apiVersion": "batch/v1",
+                "kind": "Job",
+                "metadata": {"name": name, "namespace": namespace},
+                "spec": spec,
+            }
+
+        try:
+            existing = batch_api.read_namespaced_job(name=name, namespace=namespace)
+            if existing.spec == job_body["spec"]:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"Job {name} already exists and matches desired state",
+                }
+            batch_api.replace_namespaced_job(name=name, namespace=namespace, body=job_body)
+            return {"success": True, "updated": True, "message": f"Job {name} updated"}
+        except ApiException as e:
+            if e.status == 404:
+                batch_api.create_namespaced_job(namespace=namespace, body=job_body)
+                return {"success": True, "updated": True, "message": f"Job {name} created"}
+            return {"success": False, "updated": False, "message": str(e)}
+    except Exception as e:
+        return {"success": False, "updated": False, "message": str(e)}
+
+
 def networkattachmentdefinition_present(
     name,
     namespace="default",

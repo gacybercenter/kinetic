@@ -2937,6 +2937,59 @@ def kubernetes_deployment_present(
     return ret
 
 
+def job_present(
+    name,
+    namespace,
+    image,
+    command=None,
+    args=None,
+    service_account=None,
+    restart_policy="OnFailure",
+    backoff_limit=1,
+    ttl_seconds_after_finished=300,
+    labels=None,
+    annotations=None,
+    env=None,
+    volumes=None,
+    volume_mounts=None,
+    resources=None,
+    spec=None,
+):
+    """
+    Ensure a Kubernetes Job exists.
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.job_present"](
+            namespace=namespace,
+            name=name,
+            image=image,
+            command=command,
+            args=args,
+            service_account=service_account,
+            restart_policy=restart_policy,
+            backoff_limit=backoff_limit,
+            ttl_seconds_after_finished=ttl_seconds_after_finished,
+            labels=labels,
+            annotations=annotations,
+            env=env,
+            volumes=volumes,
+            volume_mounts=volume_mounts,
+            resources=resources,
+            spec=spec,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"created": True} if result.get("updated", False) else {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Job {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
 def networkattachmentdefinition_present(
     name,
     namespace="default",

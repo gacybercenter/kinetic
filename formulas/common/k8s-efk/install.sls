@@ -52,6 +52,78 @@ opensearch_admin_certificate:
     - require:
       - k8s: efk_namespace
 
+# --- ServiceAccount + RBAC for running securityadmin.sh ---
+opensearch_securityadmin_sa:
+  k8s.serviceaccount_present:
+    - name: opensearch-securityadmin
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - require:
+      - k8s: opensearch_admin_certificate
+
+opensearch_securityadmin_role:
+  k8s.role_present:
+    - name: opensearch-securityadmin
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - rules:
+        - apiGroups: [""]
+          resources: ["pods/exec"]
+          verbs: ["create"]
+    - require:
+      - k8s: opensearch_securityadmin_sa
+
+opensearch_securityadmin_rolebinding:
+  k8s.rolebinding_present:
+    - name: opensearch-securityadmin
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - role_ref: opensearch-securityadmin
+    - role_ref_kind: Role
+    - service_accounts:
+        - opensearch-securityadmin
+    - require:
+      - k8s: opensearch_securityadmin_role
+
+# --- Job that runs securityadmin.sh inside the cluster ---
+opensearch_apply_security_config:
+  k8s.job_present:
+    - name: opensearch-securityadmin
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - image: {{ pillar.get('opensearch_image', 'opensearchproject/opensearch:2.11.0') }}
+    - service_account: opensearch-securityadmin
+    - restart_policy: OnFailure
+    - backoff_limit: 2
+    - ttl_seconds_after_finished: 600
+    - command:
+        - /bin/sh
+        - -c
+        - |
+          /usr/share/opensearch/plugins/opensearch-security/tools/securityadmin.sh \
+            -cd /usr/share/opensearch/plugins/opensearch-security/securityconfig/ \
+            -icl -nhnv \
+            -cacert /usr/share/opensearch/config/certs/ca.crt \
+            -cert /usr/share/opensearch/config/certs/admin.pem \
+            -key /usr/share/opensearch/config/certs/admin-key.pem
+    - volume_mounts:
+        - name: admin-cert
+          mountPath: /usr/share/opensearch/config/certs
+          readOnly: true
+    - volumes:
+        - name: admin-cert
+          secret:
+            secretName: opensearch-admin-tls
+            items:
+              - key: ca.crt
+                path: ca.crt
+              - key: tls.crt
+                path: admin.pem
+              - key: tls.key
+                path: admin-key.pem
+    - require:
+      - k8s: opensearch_securityadmin_rolebinding
+      - k8s: opensearch_roles_secret
+      - k8s: opensearch_roles_mapping_secret
+      - k8s: opensearch_config_secret
+      - k8s: opensearch_admin_certificate
+
 opensearch_internal_users:
   k8s.secret_present:
     - name: internalUsersSecret
