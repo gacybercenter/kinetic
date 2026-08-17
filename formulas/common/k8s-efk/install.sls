@@ -228,8 +228,6 @@ opensearch_roles_secret:
                     allowed_actions:
                     - "kibana_all_read"
 
-
-
 opensearch_repo:
   k8s_helm.helm_repo_present:
     - repo_name: opensearch
@@ -317,7 +315,7 @@ opensearch_dashboards_configmap:
           opensearch_security.openid.verify_hostnames: false
           opensearch_security.openid.refresh_tokens: false
           opensearch_security.openid.scope: "openid profile email"
-          opensearch_security.openid.header: Authorization
+          opensearch.requestHeadersAllowlist: ["Authorization", "securitytenant", "security_tenant"]
           opensearch_security.openid.base_redirect_url: "https://dashboard.logger.services.gacyberrange.org"
           opensearch_security.openid.client_secret: {{ pillar['ldap']['realms']['rsc']['clients']['opensearch-dashboard']['secret'] }}
           opensearch_security.openid.logout_url: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/logout
