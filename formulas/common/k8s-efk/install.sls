@@ -92,6 +92,13 @@ opensearch_apply_security_config:
     - restart_policy: OnFailure
     - backoff_limit: 2
     - ttl_seconds_after_finished: 600
+    # Bump opensearch_security_config_revision in pillar any time the
+    # security config secrets (roles/users/config/etc.) or the admin cert
+    # need to be re-pushed. job_present only recreates the Job when its
+    # spec/annotations differ, so without this the Job will never rerun on
+    # subsequent highstates even if the secrets it reads from changed.
+    - annotations:
+        security-config-revision: "{{ pillar.get('opensearch_security_config_revision', 1) }}"
     - command:
         - /bin/sh
         - -c
@@ -212,7 +219,7 @@ opensearch_config_secret:
                       type: basic
                       challenge: false
                     authentication_backend:
-                      type: intern
+                      type: internal
                   openid_auth_domain:
                     description: "Authenticate via Keycloak OIDC"
                     http_enabled: true

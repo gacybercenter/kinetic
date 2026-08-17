@@ -5836,14 +5836,25 @@ def job_present(
 
         try:
             existing = batch_api.read_namespaced_job(name=name, namespace=namespace)
-            if existing.spec == job_body["spec"]:
+            existing_annotations = (existing.metadata.annotations or {}) if existing.metadata else {}
+            desired_annotations = job_body["metadata"].get("annotations", {})
+            if existing.spec == job_body["spec"] and existing_annotations == desired_annotations:
                 return {
                     "success": True,
                     "updated": False,
                     "message": f"Job {name} already exists and matches desired state",
                 }
-            batch_api.replace_namespaced_job(name=name, namespace=namespace, body=job_body)
-            return {"success": True, "updated": True, "message": f"Job {name} updated"}
+            # Most Job spec fields (pod template, selector, etc.) are immutable
+            # after creation, so an in-place replace will fail with a 422 for
+            # any real change. Delete and recreate instead.
+            batch_api.delete_namespaced_job(
+                name=name,
+                namespace=namespace,
+                propagation_policy="Foreground",
+            )
+            _wait_for_job_deleted(batch_api, name, namespace)
+            batch_api.create_namespaced_job(namespace=namespace, body=job_body)
+            return {"success": True, "updated": True, "message": f"Job {name} recreated"}
         except ApiException as e:
             if e.status == 404:
                 batch_api.create_namespaced_job(namespace=namespace, body=job_body)
@@ -5851,6 +5862,20 @@ def job_present(
             return {"success": False, "updated": False, "message": str(e)}
     except Exception as e:
         return {"success": False, "updated": False, "message": str(e)}
+
+
+def _wait_for_job_deleted(batch_api, name, namespace, timeout=30):
+    import time as _time
+
+    deadline = _time.time() + timeout
+    while _time.time() < deadline:
+        try:
+            batch_api.read_namespaced_job(name=name, namespace=namespace)
+        except ApiException as e:
+            if e.status == 404:
+                return
+            raise
+        _time.sleep(1)
 
 
 def networkattachmentdefinition_present(
