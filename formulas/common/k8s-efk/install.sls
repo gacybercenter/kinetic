@@ -97,7 +97,7 @@ opensearch_apply_security_config:
         - -c
         - |
           /usr/share/opensearch/plugins/opensearch-security/tools/securityadmin.sh \
-            -cd /usr/share/opensearch/plugins/opensearch-security/securityconfig/ \
+            -cd /usr/share/opensearch/config/opensearch-security/ \
             -icl -nhnv \
             -h opensearch-cluster-master \
             -p 9200 \
