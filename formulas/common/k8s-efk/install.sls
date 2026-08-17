@@ -21,6 +21,37 @@ opensearch_tls_certificate:
     - renew_before: 360h
     - require:
       - k8s: efk_namespace
+
+# Admin client certificate for securityadmin.sh (OpenSearch security plugin)
+opensearch_admin_certificate:
+  k8s.certmanager_certificate_present:
+    - name: opensearch-admin
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - certificate_name: opensearch-admin
+    - secret_name: opensearch-admin-tls
+    - issuer_name: cyberrange-ca-issuer
+    - issuer_kind: ClusterIssuer
+    - common_name: opensearch-admin
+    - subject:
+        organizations:
+          - gacyberrange
+        organizationalUnits:
+          - opensearch
+        countries:
+          - US
+    - duration: 8760h
+    - renew_before: 720h
+    - private_key:
+        algorithm: RSA
+        size: 2048
+        encoding: PKCS1
+    - usages:
+        - client auth
+        - digital signature
+        - key encipherment
+    - require:
+      - k8s: efk_namespace
+
 opensearch_internal_users:
   k8s.secret_present:
     - name: internalUsersSecret
