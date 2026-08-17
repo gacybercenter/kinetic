@@ -99,6 +99,8 @@ opensearch_apply_security_config:
           /usr/share/opensearch/plugins/opensearch-security/tools/securityadmin.sh \
             -cd /usr/share/opensearch/plugins/opensearch-security/securityconfig/ \
             -icl -nhnv \
+            -h opensearch-cluster-master \
+            -p 9200 \
             -cacert /usr/share/opensearch/config/certs/ca.crt \
             -cert /usr/share/opensearch/config/certs/admin.pem \
             -key /usr/share/opensearch/config/certs/admin-key.pem
