@@ -314,7 +314,7 @@ opensearch_dashboards_configmap:
           opensearch_security.openid.client_id: "opensearch-dashboard"
           opensearch_security.openid.verify_hostnames: false
           opensearch_security.openid.refresh_tokens: false
-          opensearch_security.openid.scope: "openid profile email"
+          opensearch_security.openid.scope: "openid profile email groups"
           opensearch_security.openid.trust_dynamic_headers: true
           opensearch.requestHeadersAllowlist: ["Authorization", "securitytenant", "WWW-Authenticate", "security_tenant"]
           opensearch_security.openid.base_redirect_url: "https://dashboard.logger.services.gacyberrange.org"
