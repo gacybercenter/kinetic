@@ -1,9 +1,128 @@
-opensearch_internal_users:
+opensearch_security_config:
   k8s.secret_present:
-    - name: internalUsersSecret
-    - secret_name: internal-users-secret
+    - name: opensearchSecurityConfig
+    - secret_name: opensearch-security-config
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - data:
+        config.yml: |
+            _meta:
+              type: "config"
+              config_version: 2
+            config:
+              dynamic:
+                http:
+                  anonymous_auth_enabled: false
+                authc:
+                  basic_internal_auth_domain:
+                    description: "Authenticate via HTTP Basic against internal users database"
+                    http_enabled: true
+                    transport_enabled: true
+                    order: 0
+                    http_authenticator:
+                      type: basic
+                      challenge: false
+                    authentication_backend:
+                      type: internal
+                  openid_auth_domain:
+                    description: "Authenticate via Keycloak OIDC"
+                    http_enabled: true
+                    transport_enabled: true
+                    order: 1
+                    http_authenticator:
+                      type: openid
+                      challenge: false
+                      config:
+                        subject_key: preferred_username
+                        roles_key: groups
+                        openid_connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/.well-known/openid-configuration"
+                        jwt_clock_skew_tolerance_seconds: 30
+                    authentication_backend:
+                      type: noop
+        roles.yml: |
+            # This defines the access control roles
+            _meta:
+                type: "roles"
+                config_version: 2
+            admin:
+                reserved: true
+                cluster_permissions:
+                - "*"
+                - "cluster:monitor/health"
+                index_permissions:
+                - index_patterns:
+                    - "*"
+                  allowed_actions:
+                    - "*"
+                    - "indices:data/write/index*"
+                    - "indices:data/write/update*"
+                    - "indices:data/write/bulk*"
+                    - "indices:admin/create"
+                    - "indices:admin/mapping/put"
+                tenant_permissions:
+                - tenant_patterns:
+                    - "*"
+                  allowed_actions:
+                    - "*"
+            log_writer:
+                reserved: false
+                cluster_permissions:
+                - "cluster_monitor"
+                - "cluster_composite_ops"
+                index_permissions:
+                - index_patterns:
+                    - "*"
+                  allowed_actions:
+                    - "write"
+                    - "create_index"
+                    - "manage"
+                    - "indices:data/write/index"
+                    - "indices:data/write/bulk"
+            dashboard_reader:
+                reserved: false
+                cluster_permissions:
+                - "cluster_monitor"
+                index_permissions:
+                - index_patterns:
+                    - "*"
+                  allowed_actions:
+                    - "read"
+                    - "view_index_metadata"
+                tenant_permissions:
+                - tenant_patterns:
+                    - "global_tenant"
+                  allowed_actions:
+                    - "kibana_all_read"
+        roles_mapping.yml: |
+            # This maps roles to users and groups
+            _meta:
+                type: "rolesmapping"
+                config_version: 2
+            all_access:
+                reserved: true
+                backend_roles:
+                  - "admins"
+                users:
+                  - "admin"
+            admin:
+                reserved: true
+                users:
+                - "admin"
+                backend_roles:
+                - "all_access"
+            log_writer:
+                reserved: false
+                users:
+                - "fluentbit"
+            kibana_user:
+                reserved: false
+                backend_roles:
+                  - "admins"
+            dashboard_reader:
+                reserved: false
+                backend_roles:
+                  - "admins"
+                  - "se_cyber"
+                  - "ro"
         internal_users.yml: |
             # This is the internal user database
             # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
@@ -29,13 +148,6 @@ opensearch_internal_users:
                 backend_roles:
                     - "dashboard_reader"
                 description: "OpenSearch Dashboards read-only user"
-
-opensearch_action_groups_secret:
-  k8s.secret_present:
-    - name: actionGroupsSecret
-    - secret_name: action-groups-secret
-    - namespace: {{ pillar['efk_namespace'] }}
-    - data:
         action_groups.yml: |
             # This defines reusable action groups for permissions
             gcr_action_group:
@@ -49,7 +161,7 @@ opensearch_action_groups_secret:
                 - "read"
                 - "write"
                 static: false
-            admin_action_group:  # Optional: Add for future admin-related roles if needed
+            admin_action_group:
                 reserved: false
                 hidden: false
                 allowed_actions:
@@ -60,126 +172,7 @@ opensearch_action_groups_secret:
             _meta:
                 type: "actiongroups"
                 config_version: 2
-opensearch_config_secret:
-  k8s.secret_present:
-    - name: configSecret
-    - secret_name: config-secret
-    - namespace: {{ pillar['efk_namespace'] }}
-    - data:
-        config.yml: |
-            _meta:
-              type: "config"
-              config_version: 2
-            config:
-              dynamic:
-                http:
-                  anonymous_auth_enabled: false
-                authc:
-                  basic_internal_auth_domain:
-                    description: "Authenticate via HTTP Basic against internal users database"
-                    http_enabled: true
-                    transport_enabled: true
-                    order: 0
-                    http_authenticator:
-                      type: basic
-                      challenge: true
-                    authentication_backend:
-                      type: internal
-opensearch_tenants_secret:
-  k8s.secret_present:
-    - name: tenantsSecret
-    - secret_name: tenants-secret
-    - namespace: {{ pillar['efk_namespace'] }}
-    - data:
         tenants.yml: |
             _meta:
                 type: "tenants"
                 config_version: 2
-opensearch_roles_mapping_secret:
-  k8s.secret_present:
-    - name: roleMappingSecret
-    - secret_name: role-mapping-secret
-    - namespace: {{ pillar['efk_namespace'] }}
-    - data:
-        roles_mapping.yml: |
-            # This maps roles to users and groups
-            _meta:
-                type: "rolesmapping"
-                config_version: 2
-            all_access:
-                reserved: true
-                users:
-                - "admin"
-            admin:
-                reserved: true
-                users:
-                - "admin"
-                backend_roles:
-                - "all_access"
-            log_writer:
-                reserved: false
-                users:
-                - "fluentbit"
-            dashboard_reader:
-                reserved: false
-                users:
-                - "dashboard_user"
-opensearch_roles_secret:
-  k8s.secret_present:
-    - name: rolesSecret
-    - secret_name: roles-secret
-    - namespace: {{ pillar['efk_namespace'] }}
-    - data:
-        roles.yml: |
-            # This defines the access control roles
-            _meta:
-                type: "roles"
-                config_version: 2
-            admin:
-                reserved: true
-                cluster_permissions:
-                - "*"
-                index_permissions:
-                - index_patterns:
-                    - "*"
-                    allowed_actions:
-                    - "*"
-                    - "indices:data/write/index*"
-                    - "indices:data/write/update*"
-                    - "indices:data/write/bulk*"
-                    - "indices:admin/create"
-                    - "indices:admin/mapping/put"
-                    tenant_permissions:
-                    - tenant_patterns:
-                    - "*"
-                    allowed_actions:
-                    - "*"
-            log_writer:
-                reserved: false
-                cluster_permissions:
-                - "cluster_monitor"
-                - "cluster_composite_ops"
-                index_permissions:
-                - index_patterns:
-                    - "*"
-                    allowed_actions:
-                    - "write"
-                    - "create_index"
-                    - "manage"
-                    - "indices:data/write/index"
-                    - "indices:data/write/bulk"
-            dashboard_reader:
-                reserved: false
-                cluster_permissions:
-                - "cluster_monitor"
-                index_permissions:
-                - index_patterns:
-                    - "*"
-                    allowed_actions:
-                    - "read"
-                    - "view_index_metadata"
-                tenant_permissions:
-                - tenant_patterns:
-                    - "global_tenant"
-                    allowed_actions:
-                    - "kibana_all_read"
