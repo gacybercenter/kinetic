@@ -113,6 +113,10 @@ opensearch_security_config:
                 reserved: false
                 users:
                 - "fluentbit"
+            kibana_server:
+                reserved: true
+                users:
+                - "kibanaserver"
             kibana_user:
                 reserved: false
                 backend_roles:
