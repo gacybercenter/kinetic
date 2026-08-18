@@ -31,7 +31,7 @@ opensearch_cluster_cr:
   k8s.opensearch_cluster_present:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - cluster_name: opensearch
-    - spec: {{ pillar.get('res-k8s:efk:cluster:spec', {}) }}
+    - spec: {{ pillar['res-k8s']['efk']['cluster']['spec'] }}
     - require:
       - k8s_helm: opensearch_operator_repo
       - k8s: opensearch_security_config
