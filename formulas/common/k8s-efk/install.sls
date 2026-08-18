@@ -105,11 +105,46 @@ opensearch_api_httproute:
                 type: PathPrefix
                 value: "/"
           backendRefs:
-            - name: opensearch-cluster-master
+            - name: opensearch
               port: 9200
     - require:
       - k8s: opensearch_cluster_cr
 
+opensearch_dashboard_httproute:
+  k8s.httproute_present:
+    - name: opensearch-dashboard-route
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - parent_refs:
+        - name: traefik-internal
+          namespace: ingress
+          sectionName: websecure
+    - hostnames:
+        - dashboard.logger.services.gacyberrange.org
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: opensearch-dashboards
+              port: 5601
+    - require:
+      - k8s: opensearch_cluster_cr
+
+efk_backend_dashboard_tls:
+  k8s.backendtlspolicy_present:
+    - name: efk-backend-tls
+    - namespace: efk
+    - target_refs:
+      - kind: Service
+        name: opensearch-dashboards
+    - hostname: dashboard.logger.services.gacyberrange.org
+    - ca_certificate_refs:
+      - kind: Secret
+        name: opensearch-tls-secret
+    - require:
+      - k8s: opensearch_cluster_cr
+      - k8s: opensearch_tls_certificate
 
 efk_backend_tls:
   k8s.backendtlspolicy_present:
@@ -117,7 +152,7 @@ efk_backend_tls:
     - namespace: efk
     - target_refs:
       - kind: Service
-        name: opensearch-cluster-master
+        name: opensearch
     - hostname: api.logger.services.gacyberrange.org
     - ca_certificate_refs:
       - kind: Secret
