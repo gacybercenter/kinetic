@@ -314,112 +314,41 @@ opensearch_cluster_install:
       - k8s: opensearch_security_config
       - k8s: opensearch_tls_certificate
 
-# Example pillar for the new cluster chart (put this in your pillar):
-# res-k8s:
-#   efk:
-#     cluster:
-#       helm_values:
-#         cluster:
-#           name: opensearch
-#           general:
-#             version: "2.11.0"
-#             additionalConfig:
-#               logger.securityjwt.level: trace
-#               network.host: 0.0.0.0
-#               plugins.query.datasources.encryption.masterkey: 672e64c87e2e0ada37cfcd98
-#             setVMMaxMapCount: true
-#           nodePools:
-#             - component: masters
-#               replicas: 3
-#               roles:
-#                 - master
-#                 - data
-#                 - ingest
-#               diskSize: "10Gi"
-#               resources:
-#                 requests:
-#                   memory: "8Gi"
-#                   cpu: "2"
-#                 limits:
-#                   memory: "8Gi"
-#                   cpu: "2"
-#           security:
-#             config:
-#               securityConfigSecret:
-#                 name: opensearch-security-config
-#             tls:
-#               http:
-#                 enabled: true
-#                 generate: false
-#                 secret:
-#                   name: opensearch-tls-secret
-#               transport:
-#                 enabled: true
-#                 generate: false
-#                 secret:
-#                   name: opensearch-tls-secret
-#                 perNode: true
-#           dashboards:
-#             enable: true
-#             version: "2.11.0"
-#             image: "docker.io/opensearchproject/opensearch-dashboards"
-#             replicas: 1
+opensearch_api_httproute:
+  k8s.httproute_present:
+    - name: opensearch-api-route
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - parent_refs:
+        - name: traefik-internal
+          namespace: ingress
+          sectionName: websecure
+    - hostnames:
+        - api.logger.services.gacyberrange.org
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: opensearch-cluster-master
+              port: 9200
+    - require:
+      - k8s_helm: opensearch_helm_install
 
-# opensearch_repo:
-#   k8s_helm.helm_repo_present:
-#     - repo_name: opensearch
-#     - repo_url: https://opensearch-project.github.io/helm-charts/
-#     - update_cache: True
-
-# opensearch_helm_install:
-#   k8s_helm.helm_release_present:
-#     - release_name: opensearch
-#     - chart_name: opensearch/opensearch
-#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-#     - version: {{ pillar.get('opensearch_version') }}
-#     - pillar_key: opensearch_helm
-#     - keep_values_file: True
-#     - wait_timeout: 300
-#     - require:
-#       - k8s: efk_namespace
-#       - k8s_helm: opensearch_repo
-#       - k8s: opensearch_tls_certificate
-
-# opensearch_api_httproute:
-#   k8s.httproute_present:
-#     - name: opensearch-api-route
-#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-#     - parent_refs:
-#         - name: traefik-internal
-#           namespace: ingress
-#           sectionName: websecure
-#     - hostnames:
-#         - api.logger.services.gacyberrange.org
-#     - rules:
-#         - matches:
-#             - path:
-#                 type: PathPrefix
-#                 value: "/"
-#           backendRefs:
-#             - name: opensearch-cluster-master
-#               port: 9200
-#     - require:
-#       - k8s_helm: opensearch_helm_install
-
-# efk_backend_tls:
-#   k8s.backendtlspolicy_present:
-#     - name: efk-backend-tls
-#     - namespace: efk
-#     - target_refs:
-#       - kind: Service
-#         name: opensearch-cluster-master
-#     - hostname: api.logger.services.gacyberrange.org
-#     - ca_certificate_refs:
-#       - kind: Secret
-#         name: opensearch-tls-secret
-#     - require:
-#       - k8s_helm: opensearch_helm_install
-#       - k8s: opensearch_tls_certificate
+efk_backend_tls:
+  k8s.backendtlspolicy_present:
+    - name: efk-backend-tls
+    - namespace: efk
+    - target_refs:
+      - kind: Service
+        name: opensearch-cluster-master
+    - hostname: api.logger.services.gacyberrange.org
+    - ca_certificate_refs:
+      - kind: Secret
+        name: opensearch-tls-secret
+    - require:
+      - k8s_helm: opensearch_helm_install
+      - k8s: opensearch_tls_certificate
 
 # # Create ConfigMap for OpenSearch Dashboards configuration
 # opensearch_dashboards_configmap:
@@ -453,43 +382,3 @@ opensearch_cluster_install:
 #         description: Configuration for OpenSearch Dashboards
 #     - require:
 #       - k8s: efk_namespace
-
-# # Install OpenSearch Dashboards in the same namespace as OpenSearch using --set options
-# opensearch_dashboards_helm_install:
-#   k8s_helm.helm_release_present:
-#     - release_name: opensearch-dashboards
-#     - chart_name: opensearch/opensearch-dashboards
-#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-#     - version: {{ pillar.get('opensearch_dashboards_version', '3.5.0') }}
-#     - pillar_key: opensearch_dashboards_helm_values
-#     - wait_timeout: 300
-#     - keep_values_file: True
-#     - require:
-#       - k8s: efk_namespace
-#       - k8s_helm: opensearch_repo
-#       - k8s_helm: opensearch_helm_install
-
-# # Create an HTTPRoute for OpenSearch Dashboards (Gateway API), attached to
-# # the shared traefik-internal Gateway managed by k8s-ingress-controller.
-# # See the note on opensearch_api_httproute above regarding TLS being
-# # terminated at the Gateway listener rather than per-HTTPRoute.
-# opensearch_dashboards_httproute:
-#   k8s.httproute_present:
-#     - name: opensearch-dashboards-route
-#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-#     - parent_refs:
-#         - name: traefik-internal
-#           namespace: ingress
-#           sectionName: websecure
-#     - hostnames:
-#         - dashboard.logger.services.gacyberrange.org
-#     - rules:
-#         - matches:
-#             - path:
-#                 type: PathPrefix
-#                 value: "/"
-#           backendRefs:
-#             - name: opensearch-dashboards
-#               port: 5601
-#     - require:
-#       - k8s_helm: opensearch_dashboards_helm_install
