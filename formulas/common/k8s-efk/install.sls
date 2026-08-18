@@ -25,11 +25,32 @@ opensearch_operator_install:
     - version: {{ pillar.get('opensearch_operator_version') }}
 {%- endif %}
     - pillar_key: res-k8s:efk:operator:helm_values
-    - wait_timeout: {{ pillar.get('opensearch_operator_wait_timeout', 300) }}
+    - wait_timeout: {{ pillar.get('opensearch_operator_wait_timeout', 900) }}
+    - wait_interval: 15
     - keep_values_file: True
     - require:
       - k8s: efk_namespace
       - k8s_helm: opensearch_operator_repo
+
+opensearch_cluster_repo:
+  k8s_helm.helm_repo_present:
+    - repo_name: opensearch-operator
+    - repo_url: https://opensearch-project.github.io/opensearch-k8s-operator/
+    - update_cache: True
+
+opensearch_cluster_install:
+  k8s_helm.helm_release_present:
+    - release_name: opensearch
+    - chart_name: opensearch-cluster/opensearch-cluster
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - pillar_key: res-k8s:efk:cluster:helm_values
+    - wait_timeout: {{ pillar.get('opensearch_wait_timeout', 600) }}
+    - keep_values_file: True
+    - require:
+      - k8s_helm: opensearch_cluster_repo
+      - k8s_helm: opensearch_operator_repo
+      - k8s: opensearch_security_config
+      - k8s: opensearch_tls_certificate
 
 opensearch_tls_certificate:
   k8s.certmanager_certificate_present:
@@ -81,73 +102,11 @@ opensearch_admin_certificate:
     - require:
       - k8s: efk_namespace
 
-opensearch_internal_users:
+opensearch_security_config:
   k8s.secret_present:
-    - name: internalUsersSecret
-    - secret_name: internal-users-secret
+    - name: opensearchSecurityConfig
+    - secret_name: opensearch-security-config
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - data:
-        internal_users.yml: |
-            # This is the internal user database
-            # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
-            _meta:
-                type: "internalusers"
-                config_version: 2
-            admin:
-                hash: {{ pillar['opensearch_admin_hash'] }}
-                reserved: true
-                backend_roles:
-                    - "admin"
-                    - "all_access"
-                description: "Admin user"
-            fluentbit:
-                hash: {{ pillar['opensearch_fluentbit_hash'] }}
-                reserved: false
-                backend_roles:
-                    - "log_writer"
-                description: "Fluent Bit log writer"
-            dashboard_user:
-                hash: {{ pillar['opensearch_dashboard_user_hash'] }}
-                reserved: false
-                backend_roles:
-                    - "dashboard_reader"
-                description: "OpenSearch Dashboards read-only user"
-
-opensearch_action_groups_secret:
-  k8s.secret_present:
-    - name: actionGroupsSecret
-    - secret_name: action-groups-secret
-    - namespace: {{ pillar['efk_namespace'] }}
-    - data:
-        action_groups.yml: |
-            # This defines reusable action groups for permissions
-            gcr_action_group:
-                reserved: false
-                hidden: false
-                allowed_actions:
-                - "indices:data/write/index*"
-                - "indices:data/write/update*"
-                - "indices:admin/mapping/put"
-                - "indices:data/write/bulk*"
-                - "read"
-                - "write"
-                static: false
-            admin_action_group:  # Optional: Add for future admin-related roles if needed
-                reserved: false
-                hidden: false
-                allowed_actions:
-                - "indices:admin/*"
-                - "indices:data/*"
-                - "cluster:admin/*"
-                static: false
-            _meta:
-                type: "actiongroups"
-                config_version: 2
-opensearch_config_secret:
-  k8s.secret_present:
-    - name: configSecret
-    - secret_name: config-secret
-    - namespace: {{ pillar['efk_namespace'] }}
     - data:
         config.yml: |
             _meta:
@@ -183,59 +142,6 @@ opensearch_config_secret:
                         jwt_clock_skew_tolerance_seconds: 30
                     authentication_backend:
                       type: noop
-opensearch_tenants_secret:
-  k8s.secret_present:
-    - name: tenantsSecret
-    - secret_name: tenants-secret
-    - namespace: {{ pillar['efk_namespace'] }}
-    - data:
-        tenants.yml: |
-            _meta:
-                type: "tenants"
-                config_version: 2
-opensearch_roles_mapping_secret:
-  k8s.secret_present:
-    - name: roleMappingSecret
-    - secret_name: role-mapping-secret
-    - namespace: {{ pillar['efk_namespace'] }}
-    - data:
-        roles_mapping.yml: |
-            # This maps roles to users and groups
-            _meta:
-                type: "rolesmapping"
-                config_version: 2
-            all_access:
-                reserved: true
-                backend_roles:
-                  - "admins"
-                users:
-                  - "admin"
-            admin:
-                reserved: true
-                users:
-                - "admin"
-                backend_roles:
-                - "all_access"
-            log_writer:
-                reserved: false
-                users:
-                - "fluentbit"
-            kibana_user:
-                reserved: false
-                backend_roles:
-                  - "admins"
-            dashboard_reader:
-                reserved: false
-                backend_roles:
-                  - "admins"
-                  - "se_cyber"
-                  - "ro"
-opensearch_roles_secret:
-  k8s.secret_present:
-    - name: rolesSecret
-    - secret_name: roles-secret
-    - namespace: {{ pillar['efk_namespace'] }}
-    - data:
         roles.yml: |
             # This defines the access control roles
             _meta:
@@ -290,6 +196,174 @@ opensearch_roles_secret:
                     - "global_tenant"
                   allowed_actions:
                     - "kibana_all_read"
+        roles_mapping.yml: |
+            # This maps roles to users and groups
+            _meta:
+                type: "rolesmapping"
+                config_version: 2
+            all_access:
+                reserved: true
+                backend_roles:
+                  - "admins"
+                users:
+                  - "admin"
+            admin:
+                reserved: true
+                users:
+                - "admin"
+                backend_roles:
+                - "all_access"
+            log_writer:
+                reserved: false
+                users:
+                - "fluentbit"
+            kibana_user:
+                reserved: false
+                backend_roles:
+                  - "admins"
+            dashboard_reader:
+                reserved: false
+                backend_roles:
+                  - "admins"
+                  - "se_cyber"
+                  - "ro"
+        internal_users.yml: |
+            # This is the internal user database
+            # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
+            _meta:
+                type: "internalusers"
+                config_version: 2
+            admin:
+                hash: {{ pillar['opensearch_admin_hash'] }}
+                reserved: true
+                backend_roles:
+                    - "admin"
+                    - "all_access"
+                description: "Admin user"
+            fluentbit:
+                hash: {{ pillar['opensearch_fluentbit_hash'] }}
+                reserved: false
+                backend_roles:
+                    - "log_writer"
+                description: "Fluent Bit log writer"
+            dashboard_user:
+                hash: {{ pillar['opensearch_dashboard_user_hash'] }}
+                reserved: false
+                backend_roles:
+                    - "dashboard_reader"
+                description: "OpenSearch Dashboards read-only user"
+        action_groups.yml: |
+            # This defines reusable action groups for permissions
+            gcr_action_group:
+                reserved: false
+                hidden: false
+                allowed_actions:
+                - "indices:data/write/index*"
+                - "indices:data/write/update*"
+                - "indices:admin/mapping/put"
+                - "indices:data/write/bulk*"
+                - "read"
+                - "write"
+                static: false
+            admin_action_group:
+                reserved: false
+                hidden: false
+                allowed_actions:
+                - "indices:admin/*"
+                - "indices:data/*"
+                - "cluster:admin/*"
+                static: false
+            _meta:
+                type: "actiongroups"
+                config_version: 2
+        tenants.yml: |
+            _meta:
+                type: "tenants"
+                config_version: 2
+
+opensearch_operator_repo:
+  k8s_helm.helm_repo_present:
+    - repo_name: opensearch-operator
+    - repo_url: https://opensearch-project.github.io/opensearch-k8s-operator/
+    - update_cache: True
+
+opensearch_operator_install:
+  k8s_helm.helm_release_present:
+    - release_name: opensearch-operator
+    - chart_name: opensearch-operator/opensearch-operator
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - pillar_key: res-k8s:efk:operator:helm_values
+    - wait_timeout: {{ pillar.get('opensearch_operator_wait_timeout', 900) }}
+    - wait_interval: 15
+    - keep_values_file: True
+    - require:
+      - k8s: efk_namespace
+      - k8s_helm: opensearch_operator_repo
+
+# OpenSearch Cluster via the operator (replaces old direct Helm chart)
+opensearch_cluster_install:
+  k8s_helm.helm_release_present:
+    - release_name: opensearch
+    - chart_name: opensearch-cluster/opensearch-cluster
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - pillar_key: res-k8s:efk:cluster:helm_values
+    - wait_timeout: {{ pillar.get('opensearch_wait_timeout', 600) }}
+    - keep_values_file: True
+    - require:
+      - k8s_helm: opensearch_operator_repo
+      - k8s: opensearch_security_config
+      - k8s: opensearch_tls_certificate
+
+# Example pillar for the new cluster chart (put this in your pillar):
+# res-k8s:
+#   efk:
+#     cluster:
+#       helm_values:
+#         cluster:
+#           name: opensearch
+#           general:
+#             version: "2.11.0"
+#             additionalConfig:
+#               logger.securityjwt.level: trace
+#               network.host: 0.0.0.0
+#               plugins.query.datasources.encryption.masterkey: 672e64c87e2e0ada37cfcd98
+#             setVMMaxMapCount: true
+#           nodePools:
+#             - component: masters
+#               replicas: 3
+#               roles:
+#                 - master
+#                 - data
+#                 - ingest
+#               diskSize: "10Gi"
+#               resources:
+#                 requests:
+#                   memory: "8Gi"
+#                   cpu: "2"
+#                 limits:
+#                   memory: "8Gi"
+#                   cpu: "2"
+#           security:
+#             config:
+#               securityConfigSecret:
+#                 name: opensearch-security-config
+#             tls:
+#               http:
+#                 enabled: true
+#                 generate: false
+#                 secret:
+#                   name: opensearch-tls-secret
+#               transport:
+#                 enabled: true
+#                 generate: false
+#                 secret:
+#                   name: opensearch-tls-secret
+#                 perNode: true
+#           dashboards:
+#             enable: true
+#             version: "2.11.0"
+#             image: "docker.io/opensearchproject/opensearch-dashboards"
+#             replicas: 1
 
 # opensearch_repo:
 #   k8s_helm.helm_repo_present:
