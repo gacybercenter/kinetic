@@ -1,5 +1,3 @@
-#!yaml
-
 efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar['efk_namespace'] }}
