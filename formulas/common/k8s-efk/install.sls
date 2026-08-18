@@ -2,6 +2,35 @@ efk_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar['efk_namespace'] }}
 
+# --- OpenSearch Kubernetes Operator ---
+# https://github.com/opensearch-project/opensearch-k8s-operator/blob/main/charts/opensearch-operator/values.yaml
+# Installs the operator and its CRDs (OpenSearchCluster, OpenSearchISMPolicy,
+# OpenSearchActionGroup, etc). This is independent of the opensearch/opensearch
+# Helm chart installed later in this file - the two are alternative ways to
+# run OpenSearch and are not wired together here. Override chart values via
+# pillar under res-k8s:opensearch-operator:helm_values (e.g.
+# manager.watchNamespace, useRoleBindings, legacyAPI.enabled).
+opensearch_operator_repo:
+  k8s_helm.helm_repo_present:
+    - repo_name: opensearch-operator
+    - repo_url: https://opensearch-project.github.io/opensearch-k8s-operator/
+    - update_cache: True
+
+opensearch_operator_install:
+  k8s_helm.helm_release_present:
+    - release_name: opensearch-operator
+    - chart_name: opensearch-operator/opensearch-operator
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+{%- if pillar.get('opensearch_operator_version') is not none %}
+    - version: {{ pillar.get('opensearch_operator_version') }}
+{%- endif %}
+    - pillar_key: res-k8s:opensearch-operator:helm_values
+    - wait_timeout: {{ pillar.get('opensearch_operator_wait_timeout', 300) }}
+    - keep_values_file: True
+    - require:
+      - k8s: efk_namespace
+      - k8s_helm: opensearch_operator_repo
+
 opensearch_tls_certificate:
   k8s.certmanager_certificate_present:
     - name: opensearch-tls
@@ -262,131 +291,131 @@ opensearch_roles_secret:
                   allowed_actions:
                     - "kibana_all_read"
 
-opensearch_repo:
-  k8s_helm.helm_repo_present:
-    - repo_name: opensearch
-    - repo_url: https://opensearch-project.github.io/helm-charts/
-    - update_cache: True
+# opensearch_repo:
+#   k8s_helm.helm_repo_present:
+#     - repo_name: opensearch
+#     - repo_url: https://opensearch-project.github.io/helm-charts/
+#     - update_cache: True
 
-opensearch_helm_install:
-  k8s_helm.helm_release_present:
-    - release_name: opensearch
-    - chart_name: opensearch/opensearch
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - version: {{ pillar.get('opensearch_version') }}
-    - pillar_key: opensearch_helm
-    - keep_values_file: True
-    - wait_timeout: 300
-    - require:
-      - k8s: efk_namespace
-      - k8s_helm: opensearch_repo
-      - k8s: opensearch_tls_certificate
+# opensearch_helm_install:
+#   k8s_helm.helm_release_present:
+#     - release_name: opensearch
+#     - chart_name: opensearch/opensearch
+#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+#     - version: {{ pillar.get('opensearch_version') }}
+#     - pillar_key: opensearch_helm
+#     - keep_values_file: True
+#     - wait_timeout: 300
+#     - require:
+#       - k8s: efk_namespace
+#       - k8s_helm: opensearch_repo
+#       - k8s: opensearch_tls_certificate
 
-opensearch_api_httproute:
-  k8s.httproute_present:
-    - name: opensearch-api-route
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - parent_refs:
-        - name: traefik-internal
-          namespace: ingress
-          sectionName: websecure
-    - hostnames:
-        - api.logger.services.gacyberrange.org
-    - rules:
-        - matches:
-            - path:
-                type: PathPrefix
-                value: "/"
-          backendRefs:
-            - name: opensearch-cluster-master
-              port: 9200
-    - require:
-      - k8s_helm: opensearch_helm_install
+# opensearch_api_httproute:
+#   k8s.httproute_present:
+#     - name: opensearch-api-route
+#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+#     - parent_refs:
+#         - name: traefik-internal
+#           namespace: ingress
+#           sectionName: websecure
+#     - hostnames:
+#         - api.logger.services.gacyberrange.org
+#     - rules:
+#         - matches:
+#             - path:
+#                 type: PathPrefix
+#                 value: "/"
+#           backendRefs:
+#             - name: opensearch-cluster-master
+#               port: 9200
+#     - require:
+#       - k8s_helm: opensearch_helm_install
 
-efk_backend_tls:
-  k8s.backendtlspolicy_present:
-    - name: efk-backend-tls
-    - namespace: efk
-    - target_refs:
-      - kind: Service
-        name: opensearch-cluster-master
-    - hostname: api.logger.services.gacyberrange.org
-    - ca_certificate_refs:
-      - kind: Secret
-        name: opensearch-tls-secret
-    - require:
-      - k8s_helm: opensearch_helm_install
-      - k8s: opensearch_tls_certificate
+# efk_backend_tls:
+#   k8s.backendtlspolicy_present:
+#     - name: efk-backend-tls
+#     - namespace: efk
+#     - target_refs:
+#       - kind: Service
+#         name: opensearch-cluster-master
+#     - hostname: api.logger.services.gacyberrange.org
+#     - ca_certificate_refs:
+#       - kind: Secret
+#         name: opensearch-tls-secret
+#     - require:
+#       - k8s_helm: opensearch_helm_install
+#       - k8s: opensearch_tls_certificate
 
-# Create ConfigMap for OpenSearch Dashboards configuration
-opensearch_dashboards_configmap:
-  k8s.configmap_present:
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - configmap_name: opensearch-dashboards-config
-    - data:
-        opensearch_dashboards.yml: |
-          # OpenSearch connection configuration
-          opensearch.hosts: ["https://{{ pillar.get('opensearch_service_host') }}:9200"]
-          opensearch.username: "admin"
-          opensearch.password: "{{ pillar.get('opensearch_admin_password') }}"
-          opensearch.ssl.verificationMode: {{ pillar.get('opensearch_ssl_verification_mode', 'none') }}
-          opensearch.ssl.certificateAuthorities: ["/usr/share/opensearch-dashboards/config/certs/ca.crt"]
-          opensearch_security.auth.multiple_auth_enabled: true
-          opensearch_security.auth.type: ["openid", "basicauth"]
-          opensearch_security.openid.connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/.well-known/openid-configuration"
-          opensearch_security.openid.client_id: "opensearch-dashboard"
-          opensearch_security.openid.verify_hostnames: false
-          opensearch_security.openid.refresh_tokens: false
-          opensearch_security.openid.scope: "openid profile email groups"
-          opensearch_security.openid.trust_dynamic_headers: true
-          opensearch.requestHeadersAllowlist: ["Authorization", "securitytenant", "WWW-Authenticate", "security_tenant"]
-          opensearch_security.openid.base_redirect_url: "https://dashboard.logger.services.gacyberrange.org"
-          opensearch_security.openid.client_secret: {{ pillar['ldap']['realms']['rsc']['clients']['opensearch-dashboard']['secret'] }}
-          opensearch_security.openid.logout_url: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/logout
-          logging.root.level: debug
-    - labels:
-        app: opensearch-dashboards
-    - annotations:
-        description: Configuration for OpenSearch Dashboards
-    - require:
-      - k8s: efk_namespace
+# # Create ConfigMap for OpenSearch Dashboards configuration
+# opensearch_dashboards_configmap:
+#   k8s.configmap_present:
+#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+#     - configmap_name: opensearch-dashboards-config
+#     - data:
+#         opensearch_dashboards.yml: |
+#           # OpenSearch connection configuration
+#           opensearch.hosts: ["https://{{ pillar.get('opensearch_service_host') }}:9200"]
+#           opensearch.username: "admin"
+#           opensearch.password: "{{ pillar.get('opensearch_admin_password') }}"
+#           opensearch.ssl.verificationMode: {{ pillar.get('opensearch_ssl_verification_mode', 'none') }}
+#           opensearch.ssl.certificateAuthorities: ["/usr/share/opensearch-dashboards/config/certs/ca.crt"]
+#           opensearch_security.auth.multiple_auth_enabled: true
+#           opensearch_security.auth.type: ["openid", "basicauth"]
+#           opensearch_security.openid.connect_url: "https://keycloak.rsc.gacyberrange.org/realms/rsc/.well-known/openid-configuration"
+#           opensearch_security.openid.client_id: "opensearch-dashboard"
+#           opensearch_security.openid.verify_hostnames: false
+#           opensearch_security.openid.refresh_tokens: false
+#           opensearch_security.openid.scope: "openid profile email groups"
+#           opensearch_security.openid.trust_dynamic_headers: true
+#           opensearch.requestHeadersAllowlist: ["Authorization", "securitytenant", "WWW-Authenticate", "security_tenant"]
+#           opensearch_security.openid.base_redirect_url: "https://dashboard.logger.services.gacyberrange.org"
+#           opensearch_security.openid.client_secret: {{ pillar['ldap']['realms']['rsc']['clients']['opensearch-dashboard']['secret'] }}
+#           opensearch_security.openid.logout_url: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/logout
+#           logging.root.level: debug
+#     - labels:
+#         app: opensearch-dashboards
+#     - annotations:
+#         description: Configuration for OpenSearch Dashboards
+#     - require:
+#       - k8s: efk_namespace
 
-# Install OpenSearch Dashboards in the same namespace as OpenSearch using --set options
-opensearch_dashboards_helm_install:
-  k8s_helm.helm_release_present:
-    - release_name: opensearch-dashboards
-    - chart_name: opensearch/opensearch-dashboards
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - version: {{ pillar.get('opensearch_dashboards_version', '3.5.0') }}
-    - pillar_key: opensearch_dashboards_helm_values
-    - wait_timeout: 300
-    - keep_values_file: True
-    - require:
-      - k8s: efk_namespace
-      - k8s_helm: opensearch_repo
-      - k8s_helm: opensearch_helm_install
+# # Install OpenSearch Dashboards in the same namespace as OpenSearch using --set options
+# opensearch_dashboards_helm_install:
+#   k8s_helm.helm_release_present:
+#     - release_name: opensearch-dashboards
+#     - chart_name: opensearch/opensearch-dashboards
+#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+#     - version: {{ pillar.get('opensearch_dashboards_version', '3.5.0') }}
+#     - pillar_key: opensearch_dashboards_helm_values
+#     - wait_timeout: 300
+#     - keep_values_file: True
+#     - require:
+#       - k8s: efk_namespace
+#       - k8s_helm: opensearch_repo
+#       - k8s_helm: opensearch_helm_install
 
-# Create an HTTPRoute for OpenSearch Dashboards (Gateway API), attached to
-# the shared traefik-internal Gateway managed by k8s-ingress-controller.
-# See the note on opensearch_api_httproute above regarding TLS being
-# terminated at the Gateway listener rather than per-HTTPRoute.
-opensearch_dashboards_httproute:
-  k8s.httproute_present:
-    - name: opensearch-dashboards-route
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - parent_refs:
-        - name: traefik-internal
-          namespace: ingress
-          sectionName: websecure
-    - hostnames:
-        - dashboard.logger.services.gacyberrange.org
-    - rules:
-        - matches:
-            - path:
-                type: PathPrefix
-                value: "/"
-          backendRefs:
-            - name: opensearch-dashboards
-              port: 5601
-    - require:
-      - k8s_helm: opensearch_dashboards_helm_install
+# # Create an HTTPRoute for OpenSearch Dashboards (Gateway API), attached to
+# # the shared traefik-internal Gateway managed by k8s-ingress-controller.
+# # See the note on opensearch_api_httproute above regarding TLS being
+# # terminated at the Gateway listener rather than per-HTTPRoute.
+# opensearch_dashboards_httproute:
+#   k8s.httproute_present:
+#     - name: opensearch-dashboards-route
+#     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+#     - parent_refs:
+#         - name: traefik-internal
+#           namespace: ingress
+#           sectionName: websecure
+#     - hostnames:
+#         - dashboard.logger.services.gacyberrange.org
+#     - rules:
+#         - matches:
+#             - path:
+#                 type: PathPrefix
+#                 value: "/"
+#           backendRefs:
+#             - name: opensearch-dashboards
+#               port: 5601
+#     - require:
+#       - k8s_helm: opensearch_dashboards_helm_install
