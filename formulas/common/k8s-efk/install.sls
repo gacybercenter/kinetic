@@ -32,12 +32,6 @@ opensearch_operator_install:
       - k8s: efk_namespace
       - k8s_helm: opensearch_operator_repo
 
-opensearch_cluster_repo:
-  k8s_helm.helm_repo_present:
-    - repo_name: opensearch-operator
-    - repo_url: https://opensearch-project.github.io/opensearch-k8s-operator/
-    - update_cache: True
-
 opensearch_cluster_install:
   k8s_helm.helm_release_present:
     - release_name: opensearch
@@ -47,7 +41,6 @@ opensearch_cluster_install:
     - wait_timeout: {{ pillar.get('opensearch_wait_timeout', 600) }}
     - keep_values_file: True
     - require:
-      - k8s_helm: opensearch_cluster_repo
       - k8s_helm: opensearch_operator_repo
       - k8s: opensearch_security_config
       - k8s: opensearch_tls_certificate
@@ -280,39 +273,6 @@ opensearch_security_config:
             _meta:
                 type: "tenants"
                 config_version: 2
-
-opensearch_operator_repo:
-  k8s_helm.helm_repo_present:
-    - repo_name: opensearch-operator
-    - repo_url: https://opensearch-project.github.io/opensearch-k8s-operator/
-    - update_cache: True
-
-opensearch_operator_install:
-  k8s_helm.helm_release_present:
-    - release_name: opensearch-operator
-    - chart_name: opensearch-operator/opensearch-operator
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - pillar_key: res-k8s:efk:operator:helm_values
-    - wait_timeout: {{ pillar.get('opensearch_operator_wait_timeout', 900) }}
-    - wait_interval: 15
-    - keep_values_file: True
-    - require:
-      - k8s: efk_namespace
-      - k8s_helm: opensearch_operator_repo
-
-# OpenSearch Cluster via the operator (replaces old direct Helm chart)
-opensearch_cluster_install:
-  k8s_helm.helm_release_present:
-    - release_name: opensearch
-    - chart_name: opensearch-cluster/opensearch-cluster
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - pillar_key: res-k8s:efk:cluster:helm_values
-    - wait_timeout: {{ pillar.get('opensearch_wait_timeout', 600) }}
-    - keep_values_file: True
-    - require:
-      - k8s_helm: opensearch_operator_repo
-      - k8s: opensearch_security_config
-      - k8s: opensearch_tls_certificate
 
 opensearch_api_httproute:
   k8s.httproute_present:
