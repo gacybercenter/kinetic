@@ -10,7 +10,7 @@ check_opensearch_health:
     - admin_password: {{ pillar.get('opensearch_admin_password') }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
     - require:
-      - k8s_helm: opensearch_helm_install
+      - k8s: opensearch_cluster_cr
 
 # Create or update the log_writer role with necessary permissions for index creation and writing
 update_log_writer_role:
