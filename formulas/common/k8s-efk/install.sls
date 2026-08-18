@@ -20,7 +20,7 @@ opensearch_operator_install:
     - version: {{ pillar.get('opensearch_operator_version') }}
 {%- endif %}
     - pillar_key: res-k8s:efk:operator:helm_values
-    - wait_timeout: {{ pillar.get('opensearch_operator_wait_timeout', 900) }}
+    - wait_timeout: {{ pillar.get('opensearch_operator_wait_timeout', 300) }}
     - wait_interval: 15
     - keep_values_file: True
     - require:
@@ -33,7 +33,7 @@ opensearch_cluster_install:
     - chart_name: opensearch-cluster/opensearch-cluster
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - pillar_key: res-k8s:efk:cluster:helm_values
-    - wait_timeout: {{ pillar.get('opensearch_wait_timeout', 600) }}
+    - wait_timeout: {{ pillar.get('opensearch_wait_timeout', 300) }}
     - keep_values_file: True
     - require:
       - k8s_helm: opensearch_operator_repo
