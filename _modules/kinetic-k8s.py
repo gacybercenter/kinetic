@@ -4680,6 +4680,123 @@ def cnpg_cluster_present(namespace, cluster_name, spec):
         }
 
 
+def opensearch_cluster_present(namespace, cluster_name, spec):
+    """
+    Ensure that an OpenSearchCluster Custom Resource exists in the specified
+    namespace. If it does not exist, create it. If it exists, update it if
+    necessary.
+
+    Args:
+        namespace (str): The namespace for the OpenSearchCluster resource.
+        cluster_name (str): The name of the OpenSearchCluster resource.
+        spec (dict): The specification for the OpenSearchCluster resource.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.opensearch_cluster_present efk my-cluster spec_dict
+    """
+    try:
+        _load_k8s_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "opensearch.org"
+        version = "v1"
+        plural = "opensearchclusters"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if OpenSearchCluster exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=cluster_name,
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            if current_spec == spec:
+                matches = True
+                message = f"OpenSearchCluster {cluster_name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"OpenSearchCluster {cluster_name} in namespace {namespace} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = (
+                    f"OpenSearchCluster {cluster_name} in namespace {namespace} does not exist"
+                )
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking OpenSearchCluster {cluster_name}: {str(e)[:50]}...",
+                }
+
+        # Create or update OpenSearchCluster
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "OpenSearchCluster",
+            "metadata": {"name": cluster_name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                updated = True
+                message = f"OpenSearchCluster {cluster_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create OpenSearchCluster {cluster_name}: {str(e)}...",
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if "metadata" in resource and "resourceVersion" in resource["metadata"]:
+                    body["metadata"]["resourceVersion"] = resource["metadata"][
+                        "resourceVersion"
+                    ]
+                custom_api.replace_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=cluster_name,
+                    body=body,
+                )
+                updated = True
+                message = f"OpenSearchCluster {cluster_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update OpenSearchCluster {cluster_name}: {str(e)[:50]}...",
+                }
+        return {"success": True, "updated": updated, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"OpenSearchCluster operation error: {str(e)[:50]}...",
+        }
+
+
 def secret_present(
     namespace, secret_name, data, secret_type="Opaque", labels=None, annotations=None
 ):

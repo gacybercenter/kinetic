@@ -2218,6 +2218,87 @@ def cnpg_cluster_present(name, namespace, cluster_name, spec):
     except Exception as e:
         ret["result"] = False
         ret["comment"] = f"Failed to ensure Cluster {cluster_name}: {str(e)[:100]}..."
+
+
+def opensearch_cluster_present(name, namespace, cluster_name, spec):
+    """
+    Ensure that an OpenSearchCluster Custom Resource is present in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the OpenSearchCluster resource.
+
+    cluster_name
+        The name of the OpenSearchCluster resource.
+
+    spec
+        The specification for the OpenSearchCluster resource.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_opensearch_cluster:
+          k8s.opensearch_cluster_present:
+            - namespace: efk
+            - cluster_name: opensearch
+            - spec:
+                general:
+                  version: "2.11.0"
+                  image: "docker.io/opensearchproject/opensearch"
+                  additionalConfig:
+                    logger.securityjwt.level: trace
+                nodePools:
+                  - component: masters
+                    replicas: 3
+                    roles:
+                      - master
+                      - data
+                      - ingest
+                    diskSize: "10Gi"
+                    resources:
+                      requests:
+                        memory: "8Gi"
+                        cpu: "2"
+                      limits:
+                        memory: "8Gi"
+                        cpu: "2"
+                security:
+                  config:
+                    securityConfigSecret:
+                      name: opensearch-security-config
+                  tls:
+                    http:
+                      enabled: true
+                      generate: false
+                      secret:
+                        name: opensearch-tls-secret
+                    transport:
+                      enabled: true
+                      generate: false
+                      secret:
+                        name: opensearch-tls-secret
+                      perNode: true
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        result = __salt__["kinetic_k8s.opensearch_cluster_present"](
+            namespace, cluster_name, spec
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"cluster_updated": True}
+        else:
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure OpenSearchCluster {cluster_name}: {str(e)[:100]}..."
         ret["changes"] = {}
 
     return ret
