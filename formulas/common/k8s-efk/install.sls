@@ -179,6 +179,8 @@ opensearch_roles_mapping_secret:
                 reserved: true
                 backend_roles:
                   - "admins"
+                users:
+                  - "admin"
             admin:
                 reserved: true
                 users:
