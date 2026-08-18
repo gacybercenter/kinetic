@@ -108,7 +108,7 @@ opensearch_api_httproute:
             - name: opensearch-cluster-master
               port: 9200
     - require:
-      - k8s.opensearch_cluster_cr
+      - k8s: opensearch_cluster_cr
 
 
 efk_backend_tls:
@@ -123,7 +123,7 @@ efk_backend_tls:
       - kind: Secret
         name: opensearch-tls-secret
     - require:
-      - k8s_helm: opensearch_helm_install
+      - k8s: opensearch_cluster_cr
       - k8s: opensearch_tls_certificate
 
 # # Create ConfigMap for OpenSearch Dashboards configuration
