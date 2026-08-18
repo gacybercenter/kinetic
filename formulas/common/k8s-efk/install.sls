@@ -24,7 +24,7 @@ opensearch_operator_install:
 {%- if pillar.get('opensearch_operator_version') is not none %}
     - version: {{ pillar.get('opensearch_operator_version') }}
 {%- endif %}
-    - pillar_key: res-k8s:opensearch-operator:helm_values
+    - pillar_key: res-k8s:efk:operator:helm_values
     - wait_timeout: {{ pillar.get('opensearch_operator_wait_timeout', 900) }}
     - wait_interval: 15
     - keep_values_file: True
