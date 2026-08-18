@@ -108,7 +108,8 @@ opensearch_api_httproute:
             - name: opensearch-cluster-master
               port: 9200
     - require:
-      - k8s_helm: opensearch_helm_install
+      - k8s.opensearch_cluster_cr
+
 
 efk_backend_tls:
   k8s.backendtlspolicy_present:
