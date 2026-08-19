@@ -133,7 +133,7 @@ opensearch_dashboard_httproute:
 
 efk_backend_dashboard_tls:
   k8s.backendtlspolicy_present:
-    - name: efk-backend-tls
+    - name: efk-dashboard-backend-tls
     - namespace: efk
     - target_refs:
       - kind: Service
