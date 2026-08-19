@@ -79,8 +79,8 @@ ensure_ldap_admin_secret:
     - secret_name: {{ ldap_admin_secret }}
     - namespace: {{ ldap_namespace }}
     - data:
-        LDAP_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] | string }}
-        LDAP_CONFIG_ADMIN_PASSWORD: {{ pillar['admin-user']['password'] | string }}
+        LDAP_ADMIN_PASSWORD: {{ pillar['ldap']['admin-user']['password'] | string }}
+        LDAP_CONFIG_ADMIN_PASSWORD: {{ pillar['ldap']['admin-user']['password'] | string }}
     - require:
       - k8s: ldap_tls_cert
 
