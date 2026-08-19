@@ -1,14 +1,31 @@
 # -*- coding: utf-8 -*-
 """
-SaltStack execution module for interacting with OpenSearch API.
+SaltStack execution module for interacting with OpenSearch.
 
-This module provides functions to manage OpenSearch resources like indices, roles, and user mappings.
+This module provides functions to manage OpenSearch resources like indices,
+roles, and user mappings.
+
+Roles and user/role bindings are managed via the OpenSearch Kubernetes
+Operator's Custom Resources (OpensearchRole, OpensearchUserRoleBinding -
+opensearch.org/v1) instead of calling the OpenSearch Security REST API
+directly. Index creation and cluster health checks have no equivalent CRD in
+the operator (only OpensearchIndexTemplate/OpensearchComponentTemplate exist
+for templates, not one-off indices), so those still talk to the OpenSearch
+HTTP API directly.
 """
 
 import json
 
 import requests
 from requests.auth import HTTPBasicAuth
+
+try:
+    from kubernetes import client, config
+    from kubernetes.client.rest import ApiException
+
+    HAS_KUBERNETES = True
+except ImportError:
+    HAS_KUBERNETES = False
 
 __virtualname__ = "kinetic-os"
 
@@ -26,6 +43,14 @@ def __virtual__():
             False,
             'The requests library is not installed. Please install it using "pip install requests".',
         )
+
+
+def _load_k8s_config():
+    """Load Kubernetes configuration, preferring in-cluster config then kubeconfig."""
+    try:
+        config.load_incluster_config()
+    except config.ConfigException:
+        config.load_kube_config()
 
 
 def check_health(
@@ -126,93 +151,254 @@ def create_index(
 def create_role(
     index_name,
     role_name="fluentbit_role",
-    admin_user="admin",
-    admin_password=None,
-    host="https://api.logger.services.gacyberrange.org:443",
+    namespace="efk",
+    cluster_name="opensearch",
+    cluster_permissions=None,
+    index_allowed_actions=None,
+    tenant_patterns=None,
+    tenant_allowed_actions=None,
 ):
     """
-    Create or update a role in OpenSearch with permissions for a specific index.
+    Ensure an OpensearchRole Custom Resource exists with permissions for a specific index.
+
+    This creates/updates an `OpensearchRole` (opensearch.org/v1) Custom Resource that the
+    OpenSearch Kubernetes Operator reconciles into the cluster's security config, instead
+    of calling the OpenSearch Security REST API directly.
+
+    Args:
+        index_name (str): Index name/pattern prefix to grant permissions on. A trailing
+            "*" is appended automatically (e.g. "openldap-audit-logs-" becomes
+            "openldap-audit-logs-*").
+        role_name (str): Name of the OpensearchRole resource (and the resulting
+            OpenSearch role).
+        namespace (str): Namespace to create the OpensearchRole in. Must match the
+            namespace of the OpenSearchCluster it targets.
+        cluster_name (str): Name of the OpenSearchCluster this role applies to.
+        cluster_permissions (list, optional): Cluster-level permissions. Defaults to
+            ["cluster_composite_ops", "indices_monitor"].
+        index_allowed_actions (list, optional): Allowed actions for the index pattern.
+            Defaults to a standard read/write/manage/create set.
+        tenant_patterns (list, optional): Tenant patterns to grant tenant permissions for.
+            If omitted, no tenantPermissions block is added.
+        tenant_allowed_actions (list, optional): Allowed actions for the tenant patterns.
+            Defaults to ["kibana_all_read"] when tenant_patterns is set.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
     """
+    if not HAS_KUBERNETES:
+        return {
+            "success": False,
+            "updated": False,
+            "message": 'The kubernetes python library is not installed. Please install it using "pip install kubernetes".',
+        }
+
     try:
-        if admin_password is None:
-            admin_password = __salt__["pillar.get"]("admin_password", "")
-        url = f"{host}/_plugins/_security/api/roles/{role_name}"
-        payload = {
-            "cluster_permissions": ["cluster_composite_ops", "indices_monitor"],
-            "index_permissions": [
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+        group = "opensearch.org"
+        version = "v1"
+        plural = "opensearchroles"
+
+        spec = {
+            "opensearchCluster": {"name": cluster_name},
+            "clusterPermissions": cluster_permissions
+            or ["cluster_composite_ops", "indices_monitor"],
+            "indexPermissions": [
                 {
-                    "index_patterns": [f"{index_name}*"],
-                    "dls": "",
-                    "fls": [],
-                    "masked_fields": [],
-                    "allowed_actions": [
+                    "indexPatterns": [f"{index_name}*"],
+                    "allowedActions": index_allowed_actions
+                    or [
                         "read",
                         "write",
                         "manage",
                         "indices:data/write/index",
                         "indices:data/write/bulk",
-                        "indices:admin/create",  # Added to allow index creation
+                        "indices:admin/create",
                     ],
                 }
             ],
-            "tenant_permissions": [
+        }
+        if tenant_patterns:
+            spec["tenantPermissions"] = [
                 {
-                    "tenant_patterns": ["human_resources"],
-                    "allowed_actions": ["kibana_all_read"],
+                    "tenantPatterns": tenant_patterns,
+                    "allowedActions": tenant_allowed_actions or ["kibana_all_read"],
                 }
-            ],
+            ]
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "OpensearchRole",
+            "metadata": {"name": role_name, "namespace": namespace},
+            "spec": spec,
         }
 
-        response = requests.put(
-            url,
-            auth=HTTPBasicAuth(admin_user, admin_password),
-            json=payload,
-            verify=False,
-        )
-        response.raise_for_status()
-        return {
-            "success": True,
-            "updated": True,
-            "message": f"Role {role_name} created or updated successfully",
-        }
+        try:
+            existing = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=role_name,
+            )
+            if existing.get("spec") == spec:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"OpensearchRole {role_name} already up-to-date",
+                }
+            body["metadata"]["resourceVersion"] = existing["metadata"][
+                "resourceVersion"
+            ]
+            custom_api.replace_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=role_name,
+                body=body,
+            )
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"OpensearchRole {role_name} updated",
+            }
+        except ApiException as e:
+            if e.status == 404:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"OpensearchRole {role_name} created",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Failed to create/update OpensearchRole {role_name}: {str(e)[:150]}",
+            }
     except Exception as e:
         return {
             "success": False,
             "updated": False,
-            "message": f"Failed to create/update role {role_name}: {response.status_code if 'response' in locals() else 'N/A'} - {str(e)[:100]}...",
+            "message": f"Failed to create/update OpensearchRole {role_name}: {str(e)[:150]}",
         }
 
 
 def map_user_to_role(
     role_name="fluentbit_role",
     user_name="fluentbit",
-    admin_user="admin",
-    admin_password=None,
-    host="https://api.logger.services.gacyberrange.org:443",
+    namespace="efk",
+    cluster_name="opensearch",
+    backend_roles=None,
 ):
     """
-    Map a user to a role in OpenSearch.
+    Ensure an OpensearchUserRoleBinding Custom Resource maps a user to a role.
+
+    This creates/updates an `OpensearchUserRoleBinding` (opensearch.org/v1) Custom
+    Resource that the OpenSearch Kubernetes Operator reconciles into the cluster's
+    security config, instead of calling the OpenSearch Security REST API directly.
+
+    Args:
+        role_name (str): Name of the OpensearchRole (or built-in role) to bind.
+        user_name (str): Name of the OpenSearch user to bind to the role.
+        namespace (str): Namespace to create the OpensearchUserRoleBinding in. Must
+            match the namespace of the OpenSearchCluster it targets.
+        cluster_name (str): Name of the OpenSearchCluster this binding applies to.
+        backend_roles (list, optional): Backend roles to also bind to the role.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
     """
-    try:
-        if admin_password is None:
-            admin_password = __salt__["pillar.get"]("opensearch_admin_password", "")
-        url = f"{host}/_plugins/_security/api/rolesmapping/{role_name}"
-        payload = {"users": [user_name]}
-        response = requests.put(
-            url,
-            auth=HTTPBasicAuth(admin_user, admin_password),
-            json=payload,
-            verify=False,
-        )
-        response.raise_for_status()
+    if not HAS_KUBERNETES:
         return {
-            "success": True,
-            "updated": True,
-            "message": f"User {user_name} mapped to role {role_name} successfully",
+            "success": False,
+            "updated": False,
+            "message": 'The kubernetes python library is not installed. Please install it using "pip install kubernetes".',
         }
+
+    binding_name = f"{role_name}-{user_name}"
+
+    try:
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+        group = "opensearch.org"
+        version = "v1"
+        plural = "opensearchuserrolebindings"
+
+        spec = {
+            "opensearchCluster": {"name": cluster_name},
+            "roles": [role_name],
+            "users": [user_name],
+        }
+        if backend_roles:
+            spec["backendRoles"] = backend_roles
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "OpensearchUserRoleBinding",
+            "metadata": {"name": binding_name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        try:
+            existing = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=binding_name,
+            )
+            if existing.get("spec") == spec:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"OpensearchUserRoleBinding {binding_name} already up-to-date",
+                }
+            body["metadata"]["resourceVersion"] = existing["metadata"][
+                "resourceVersion"
+            ]
+            custom_api.replace_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=binding_name,
+                body=body,
+            )
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"OpensearchUserRoleBinding {binding_name} updated",
+            }
+        except ApiException as e:
+            if e.status == 404:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"OpensearchUserRoleBinding {binding_name} created",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Failed to create/update OpensearchUserRoleBinding {binding_name}: {str(e)[:150]}",
+            }
     except Exception as e:
         return {
             "success": False,
             "updated": False,
-            "message": f"Failed to map user {user_name} to role {role_name}: {str(e)[:100]}...",
+            "message": f"Failed to create/update OpensearchUserRoleBinding {binding_name}: {str(e)[:150]}",
         }

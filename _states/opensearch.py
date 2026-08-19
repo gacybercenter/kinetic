@@ -75,27 +75,43 @@ def index_present(name, index_name, admin_user='admin', admin_password=None, hos
 
     return ret
 
-def role_present(name, index_name, role_name='fluentbit_role', admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
+def role_present(name, index_name, role_name='fluentbit_role', namespace='efk', cluster_name='opensearch', cluster_permissions=None, index_allowed_actions=None, tenant_patterns=None, tenant_allowed_actions=None):
     """
-    Ensure that a role exists in OpenSearch with permissions for a specific index.
+    Ensure that an OpensearchRole Custom Resource exists with permissions for a specific index.
+
+    This is reconciled by the OpenSearch Kubernetes Operator (opensearch.org/v1
+    OpensearchRole) instead of calling the OpenSearch Security REST API directly.
 
     name
         The name of the state (arbitrary, for SaltStack identification).
 
     role_name
-        The name of the role to create or update. Defaults to 'fluentbit_role'.
+        The name of the OpensearchRole resource (and resulting OpenSearch role).
+        Defaults to 'fluentbit_role'.
 
     index_name
-        The name of the index to grant permissions on. Defaults to 'kvm-logs'.
+        The name/pattern prefix of the index to grant permissions on. A trailing
+        "*" is appended automatically.
 
-    admin_user
-        The admin username for authentication. Defaults to 'admin'.
+    namespace
+        The Kubernetes namespace to create the OpensearchRole in. Must match the
+        namespace of the OpenSearchCluster. Defaults to 'efk'.
 
-    admin_password
-        The admin password for authentication. If None, retrieved from pillar.
+    cluster_name
+        The name of the OpenSearchCluster this role applies to. Defaults to 'opensearch'.
 
-    host
-        The OpenSearch host URL. Defaults to 'https://api.logger.services.gacyberrange.org:443'.
+    cluster_permissions
+        Optional list of cluster-level permissions. Defaults to
+        ['cluster_composite_ops', 'indices_monitor'].
+
+    index_allowed_actions
+        Optional list of allowed actions for the index pattern.
+
+    tenant_patterns
+        Optional list of tenant patterns to grant tenant permissions for.
+
+    tenant_allowed_actions
+        Optional list of allowed actions for the tenant patterns.
 
     Example:
     .. code-block:: yaml
@@ -104,7 +120,8 @@ def role_present(name, index_name, role_name='fluentbit_role', admin_user='admin
           opensearch.role_present:
             - role_name: fluentbit_role
             - index_name: kvm-logs
-            - admin_user: admin
+            - namespace: efk
+            - cluster_name: opensearch
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
@@ -112,9 +129,12 @@ def role_present(name, index_name, role_name='fluentbit_role', admin_user='admin
         result = __salt__['kinetic-os.create_role'](
             role_name=role_name,
             index_name=index_name,
-            admin_user=admin_user,
-            admin_password=admin_password,
-            host=host
+            namespace=namespace,
+            cluster_name=cluster_name,
+            cluster_permissions=cluster_permissions,
+            index_allowed_actions=index_allowed_actions,
+            tenant_patterns=tenant_patterns,
+            tenant_allowed_actions=tenant_allowed_actions,
         )
         ret['result'] = result['success']
         ret['comment'] = result['message']
@@ -129,9 +149,13 @@ def role_present(name, index_name, role_name='fluentbit_role', admin_user='admin
 
     return ret
 
-def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluentbit', admin_user='admin', admin_password=None, host='https://api.logger.services.gacyberrange.org:443'):
+def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluentbit', namespace='efk', cluster_name='opensearch', backend_roles=None):
     """
     Ensure that a user is mapped to a role in OpenSearch.
+
+    This is reconciled by the OpenSearch Kubernetes Operator (opensearch.org/v1
+    OpensearchUserRoleBinding) instead of calling the OpenSearch Security REST
+    API directly.
 
     name
         The name of the state (arbitrary, for SaltStack identification).
@@ -142,14 +166,15 @@ def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluen
     user_name
         The name of the user to map to the role. Defaults to 'fluentbit'.
 
-    admin_user
-        The admin username for authentication. Defaults to 'admin'.
+    namespace
+        The Kubernetes namespace to create the OpensearchUserRoleBinding in. Must
+        match the namespace of the OpenSearchCluster. Defaults to 'efk'.
 
-    admin_password
-        The admin password for authentication. If None, retrieved from pillar.
+    cluster_name
+        The name of the OpenSearchCluster this binding applies to. Defaults to 'opensearch'.
 
-    host
-        The OpenSearch host URL. Defaults to 'https://api.logger.services.gacyberrange.org:443'.
+    backend_roles
+        Optional list of backend roles to also bind to the role.
 
     Example:
     .. code-block:: yaml
@@ -158,7 +183,8 @@ def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluen
           opensearch.user_role_mapping_present:
             - role_name: fluentbit_role
             - user_name: fluentbit
-            - admin_user: admin
+            - namespace: efk
+            - cluster_name: opensearch
     """
     ret = {'name': name, 'result': False, 'comment': '', 'changes': {}}
 
@@ -166,9 +192,9 @@ def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluen
         result = __salt__['kinetic-os.map_user_to_role'](
             role_name=role_name,
             user_name=user_name,
-            admin_user=admin_user,
-            admin_password=admin_password,
-            host=host
+            namespace=namespace,
+            cluster_name=cluster_name,
+            backend_roles=backend_roles,
         )
         ret['result'] = result['success']
         ret['comment'] = result['message']
