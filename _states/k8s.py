@@ -2019,6 +2019,9 @@ def certmanager_certificate_present(
     duration="2160h",
     renew_before="360h",
     is_ca=False,
+    subject=None,
+    private_key=None,
+    usages=None,
 ):
     """
     Ensure a cert-manager Certificate exists in the specified Kubernetes namespace.
@@ -2059,6 +2062,15 @@ def certmanager_certificate_present(
     is_ca
         Optional. If True, the certificate will be marked as a CA certificate. Defaults to False.
 
+    subject
+        Optional. Subject block (organizations, organizationalUnits, countries, …).
+
+    private_key
+        Optional. Private-key settings (algorithm, size, encoding).
+
+    usages
+        Optional. Extended key usages list.
+
     Example:
     .. code-block:: yaml
 
@@ -2085,7 +2097,8 @@ def certmanager_certificate_present(
             f"name={certificate_name}, namespace={namespace}, secret_name={secret_name}, "
             f"issuer_name={issuer_name}, issuer_kind={issuer_kind}, common_name={common_name}, "
             f"dns_names={dns_names}, ip_addresses={ip_addresses}, duration={duration}, "
-            f"renew_before={renew_before}, is_ca={is_ca}"
+            f"renew_before={renew_before}, is_ca={is_ca}, "
+            f"subject={subject}, private_key={private_key}, usages={usages}"
         )
 
         # Debug available modules for troubleshooting
@@ -2107,6 +2120,9 @@ def certmanager_certificate_present(
                 duration=duration,
                 renew_before=renew_before,
                 is_ca=is_ca,
+                subject=subject,
+                private_key=private_key,
+                usages=usages,
             )
         else:
             ret["result"] = False
@@ -2202,7 +2218,130 @@ def cnpg_cluster_present(name, namespace, cluster_name, spec):
     except Exception as e:
         ret["result"] = False
         ret["comment"] = f"Failed to ensure Cluster {cluster_name}: {str(e)[:100]}..."
-        ret["changes"] = {}
+
+
+def opensearch_cluster_present(name, namespace, cluster_name, spec):
+    """
+    Ensure that an OpenSearchCluster Custom Resource is present in the specified namespace.
+    If it does not exist, create it. If it exists, update it if necessary.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the OpenSearchCluster resource.
+
+    cluster_name
+        The name of the OpenSearchCluster resource.
+
+    spec
+        The specification for the OpenSearchCluster resource.
+
+    Example:
+    .. code-block:: yaml
+
+        ensure_opensearch_cluster:
+          k8s.opensearch_cluster_present:
+            - namespace: efk
+            - cluster_name: opensearch
+            - spec:
+                general:
+                  version: "2.11.0"
+                  image: "docker.io/opensearchproject/opensearch"
+                  additionalConfig:
+                    logger.securityjwt.level: trace
+                nodePools:
+                  - component: masters
+                    replicas: 3
+                    roles:
+                      - master
+                      - data
+                      - ingest
+                    diskSize: "10Gi"
+                    resources:
+                      requests:
+                        memory: "8Gi"
+                        cpu: "2"
+                      limits:
+                        memory: "8Gi"
+                        cpu: "2"
+                security:
+                  config:
+                    securityConfigSecret:
+                      name: opensearch-security-config
+                  tls:
+                    http:
+                      enabled: true
+                      generate: false
+                      secret:
+                        name: opensearch-tls-secret
+                    transport:
+                      enabled: true
+                      generate: false
+                      secret:
+                        name: opensearch-tls-secret
+                      perNode: true
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        result = __salt__["kinetic_k8s.opensearch_cluster_present"](
+            namespace, cluster_name, spec
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result["updated"]:
+            ret["changes"] = {"cluster_updated": True}
+        else:
+            ret[
+                "changes"
+            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure OpenSearchCluster {cluster_name}: {str(e)[:100]}..."
+
+    return ret
+
+
+def opensearch_user_present(
+    name, namespace, user_name, cluster_name, password_secret_name, password_key="password"
+):
+    """
+    Ensure that an OpensearchUser Custom Resource exists.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the OpensearchUser resource.
+
+    user_name
+        The name of the OpensearchUser resource.
+
+    cluster_name
+        The name of the target OpenSearchCluster.
+
+    password_secret_name
+        Name of the Secret containing the user's password.
+
+    password_key
+        Key inside the Secret that holds the password. Defaults to 'password'.
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        result = __salt__["kinetic_k8s.opensearch_user_present"](
+            namespace, user_name, cluster_name, password_secret_name, password_key
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result.get("updated"):
+            ret["changes"] = {"user_updated": True}
+        else:
+            ret["changes"] = {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure OpensearchUser {user_name}: {str(e)[:100]}..."
 
     return ret
 
@@ -2921,6 +3060,59 @@ def kubernetes_deployment_present(
     return ret
 
 
+def job_present(
+    name,
+    namespace,
+    image,
+    command=None,
+    args=None,
+    service_account=None,
+    restart_policy="OnFailure",
+    backoff_limit=1,
+    ttl_seconds_after_finished=300,
+    labels=None,
+    annotations=None,
+    env=None,
+    volumes=None,
+    volume_mounts=None,
+    resources=None,
+    spec=None,
+):
+    """
+    Ensure a Kubernetes Job exists.
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.job_present"](
+            namespace=namespace,
+            name=name,
+            image=image,
+            command=command,
+            args=args,
+            service_account=service_account,
+            restart_policy=restart_policy,
+            backoff_limit=backoff_limit,
+            ttl_seconds_after_finished=ttl_seconds_after_finished,
+            labels=labels,
+            annotations=annotations,
+            env=env,
+            volumes=volumes,
+            volume_mounts=volume_mounts,
+            resources=resources,
+            spec=spec,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"created": True} if result.get("updated", False) else {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Job {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
 def networkattachmentdefinition_present(
     name,
     namespace="default",
@@ -3148,6 +3340,119 @@ Example:
     except Exception as e:
         ret["result"] = False
         ret["comment"] = f"Failed to ensure HTTPRoute {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def backendtlspolicy_present(
+    name,
+    namespace,
+    target_refs=None,
+    hostname=None,
+    ca_certificate_refs=None,
+    well_known_ca_certificates=None,
+    validation=None,
+    spec=None,
+    version="v1",
+):
+    """
+    Ensure a BackendTLSPolicy (from Gateway API) is present.
+
+    BackendTLSPolicy configures TLS from the Gateway/proxy to a backend
+    Service (verifying the backend's certificate), similar in purpose to
+    the 'backend protocol: HTTPS' style annotations used with Ingress.
+
+    name
+        The name of the BackendTLSPolicy.
+
+    namespace
+        The namespace for the BackendTLSPolicy.
+
+    target_refs
+        List of targetRefs (which Services this policy applies to). Each
+        entry supports: group (default ""), kind (default "Service"), name,
+        sectionName (optional, matches a named port on the Service).
+
+    hostname
+        SNI hostname used to validate the backend's certificate. Merged
+        into validation.hostname unless validation already sets it.
+
+    ca_certificate_refs
+        List of refs to CA certificate ConfigMaps/Secrets used to validate
+        the backend certificate. Merged into validation.caCertificateRefs
+        unless validation already sets it.
+
+    well_known_ca_certificates
+        Set to "System" to trust the system CA bundle instead of
+        ca_certificate_refs. Merged into validation.wellKnownCACertificates
+        unless validation already sets it.
+
+    validation
+        Full validation dict. Built-from-kwargs values (hostname,
+        ca_certificate_refs, well_known_ca_certificates) are merged in for
+        any keys not already present.
+
+    spec
+        Full spec dict; overrides target_refs/validation/hostname/
+        ca_certificate_refs/well_known_ca_certificates entirely if provided.
+
+    version
+        Gateway API version for this CRD (default: v1, the stable/GA version
+        as of Gateway API 1.3+; use v1alpha3 or v1alpha2 for older Gateway
+        API installations where BackendTLSPolicy is still experimental).
+
+    Example:
+    .. code-block:: yaml
+
+        efk_backend_tls:
+          k8s.backendtlspolicy_present:
+            - name: efk-backend-tls
+            - namespace: efk
+            - target_refs:
+              - kind: Service
+                name: opensearch-cluster-master
+            - hostname: api.logger.services.gacyberrange.org
+            - ca_certificate_refs:
+              - kind: Secret
+                name: opensearch-tls-secret
+
+        # using the system trust store instead of a CA ConfigMap
+        opensearch_backend_tls_system_ca:
+          k8s.backendtlspolicy_present:
+            - name: opensearch-backend-tls
+            - namespace: efk
+            - target_refs:
+              - kind: Service
+                name: opensearch-cluster-master
+            - hostname: opensearch-cluster-master.efk.svc.cluster.local
+            - well_known_ca_certificates: System
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.backendtlspolicy_present"](
+            namespace=namespace,
+            name=name,
+            target_refs=target_refs,
+            hostname=hostname,
+            ca_certificate_refs=ca_certificate_refs,
+            well_known_ca_certificates=well_known_ca_certificates,
+            validation=validation,
+            spec=spec,
+            version=version,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"created": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure BackendTLSPolicy {name}: {str(e)[:100]}..."
         ret["changes"] = {}
 
     return ret

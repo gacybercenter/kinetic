@@ -1,7 +1,8 @@
 {% set k8s = salt['pillar.get']('k8s') %}
 
-# Step 2: Apply EFK configuration (Elasticsearch via Helm)
-k8s_efk_install:
+
+deploy_elk:
   salt.state:
-    - tgt: '{{ k8s }}'
-    - sls: formulas.common.k8s-efk.install
+    - tgt: {{ k8s }}
+    - sls:
+      - formulas.common.k8s-efk

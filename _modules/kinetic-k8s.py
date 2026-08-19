@@ -4383,6 +4383,9 @@ def certmanager_certificate_present(
     duration=None,
     renew_before=None,
     is_ca=False,
+    subject=None,
+    private_key=None,
+    usages=None,
 ):
     """
     Ensure a cert-manager Certificate exists in the specified Kubernetes namespace with the given spec.
@@ -4399,6 +4402,9 @@ def certmanager_certificate_present(
         duration (str, optional): Duration of the certificate validity (e.g., '2160h'). Defaults to None.
         renew_before (str, optional): Time before expiration to renew the certificate (e.g., '360h'). Defaults to None.
         is_ca (bool, optional): If True, the certificate will be marked as a CA certificate. Defaults to False.
+        subject (dict, optional): Subject block (organizations, organizationalUnits, countries, etc.).
+        private_key (dict, optional): Private-key settings (algorithm, size, encoding).
+        usages (list, optional): Extended key usages.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
@@ -4444,6 +4450,12 @@ def certmanager_certificate_present(
             spec["renewBefore"] = renew_before
         if is_ca:
             spec["isCA"] = True
+        if subject:
+            spec["subject"] = subject
+        if private_key:
+            spec["privateKey"] = private_key
+        if usages:
+            spec["usages"] = usages
 
         # Define the full Certificate object
         cert_body = {
@@ -4668,6 +4680,246 @@ def cnpg_cluster_present(namespace, cluster_name, spec):
         }
 
 
+def opensearch_cluster_present(namespace, cluster_name, spec):
+    """
+    Ensure that an OpenSearchCluster Custom Resource exists in the specified
+    namespace. If it does not exist, create it. If it exists, update it if
+    necessary.
+
+    Args:
+        namespace (str): The namespace for the OpenSearchCluster resource.
+        cluster_name (str): The name of the OpenSearchCluster resource.
+        spec (dict): The specification for the OpenSearchCluster resource.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.opensearch_cluster_present efk my-cluster spec_dict
+    """
+    try:
+        _load_k8s_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "opensearch.org"
+        version = "v1"
+        plural = "opensearchclusters"
+
+        exists = False
+        updated = False
+        matches = False
+
+        # Check if OpenSearchCluster exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=cluster_name,
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            if current_spec == spec:
+                matches = True
+                message = f"OpenSearchCluster {cluster_name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"OpenSearchCluster {cluster_name} in namespace {namespace} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = (
+                    f"OpenSearchCluster {cluster_name} in namespace {namespace} does not exist"
+                )
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking OpenSearchCluster {cluster_name}: {str(e)[:50]}...",
+                }
+
+        # Create or update OpenSearchCluster
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "OpenSearchCluster",
+            "metadata": {"name": cluster_name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                updated = True
+                message = f"OpenSearchCluster {cluster_name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create OpenSearchCluster {cluster_name}: {str(e)}...",
+                }
+        elif not matches:
+            try:
+                # Include resourceVersion if updating to avoid conflicts
+                if "metadata" in resource and "resourceVersion" in resource["metadata"]:
+                    body["metadata"]["resourceVersion"] = resource["metadata"][
+                        "resourceVersion"
+                    ]
+                custom_api.replace_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=cluster_name,
+                    body=body,
+                )
+                updated = True
+                message = f"OpenSearchCluster {cluster_name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update OpenSearchCluster {cluster_name}: {str(e)[:50]}...",
+                }
+        return {"success": True, "updated": updated, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"OpenSearchCluster operation error: {str(e)[:50]}...",
+        }
+
+
+def opensearch_user_present(
+    namespace, user_name, cluster_name, password_secret_name, password_key="password"
+):
+    """
+    Ensure that an OpensearchUser Custom Resource exists.
+
+    The password is sourced from a Kubernetes Secret via passwordFrom.
+    """
+    try:
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+        group = "opensearch.org"
+        version = "v1"
+        plural = "opensearchusers"
+
+        spec = {
+            "opensearchCluster": {"name": cluster_name},
+            "passwordFrom": {
+                "name": password_secret_name,
+                "key": password_key,
+            },
+        }
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "OpensearchUser",
+            "metadata": {"name": user_name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        try:
+            existing = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=user_name,
+            )
+            if existing.get("spec") == spec:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"OpensearchUser {user_name} already up-to-date",
+                }
+            body["metadata"]["resourceVersion"] = existing["metadata"][
+                "resourceVersion"
+            ]
+            custom_api.replace_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=user_name,
+                body=body,
+            )
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"OpensearchUser {user_name} updated",
+            }
+        except ApiException as e:
+            if e.status == 404:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"OpensearchUser {user_name} created",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Failed to create/update OpensearchUser {user_name}: {str(e)[:150]}",
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"OpensearchUser operation error: {str(e)[:150]}",
+        }
+
+
+def get_secret_value(namespace, secret_name, key, default=None):
+    """
+    Retrieve a single decoded value from a Kubernetes Secret.
+
+    Useful for reading credentials that are generated/managed outside of Salt
+    (e.g. an admin password auto-generated by an operator) directly from the
+    cluster instead of duplicating them in pillar.
+
+    Args:
+        namespace (str): Namespace containing the secret.
+        secret_name (str): Name of the secret.
+        key (str): Key within the secret's data/stringData to retrieve.
+        default: Value to return if the secret or key does not exist, or on error.
+
+    Returns:
+        str: The decoded value, or `default` if not found.
+
+    CLI Example:
+        salt '*' kinetic_k8s.get_secret_value efk opensearch-admin-password password
+    """
+    try:
+        _load_k8s_config()
+        core_v1_api = client.CoreV1Api()
+        secret = core_v1_api.read_namespaced_secret(
+            name=secret_name, namespace=namespace
+        )
+        data = _decode_k8s_secret(secret)
+        return data.get(key, default)
+    except ApiException as e:
+        if e.status == 404:
+            return default
+        return default
+    except Exception:
+        return default
+
+
 def secret_present(
     namespace, secret_name, data, secret_type="Opaque", labels=None, annotations=None
 ):
@@ -4777,7 +5029,7 @@ def secret_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to create Secret {secret_name}: {str(e)[:50]}...",
+                    "message": f"Failed to create Secret {secret_name}: {str(e)}...",
                 }
         elif not matches:
             try:
@@ -4790,7 +5042,7 @@ def secret_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to update Secret {secret_name}: {str(e)[:50]}...",
+                    "message": f"Failed to update Secret {secret_name}: {str(e)}...",
                 }
 
         return {"success": True, "updated": updated, "message": message}
@@ -4799,7 +5051,7 @@ def secret_present(
         return {
             "success": False,
             "updated": False,
-            "message": f"Secret operation error: {str(e)[:50]}...",
+            "message": f"Secret operation error: {str(e)}...",
         }
 
 
@@ -5729,6 +5981,143 @@ def kubernetes_deployment_present(
         }
 
 
+def job_present(
+    namespace,
+    name,
+    image,
+    command=None,
+    args=None,
+    service_account=None,
+    restart_policy="OnFailure",
+    backoff_limit=1,
+    ttl_seconds_after_finished=300,
+    labels=None,
+    annotations=None,
+    env=None,
+    volumes=None,
+    volume_mounts=None,
+    resources=None,
+    spec=None,
+):
+    """
+    Ensure a Kubernetes Job exists.
+
+    Args:
+        namespace (str): Namespace for the Job.
+        name (str): Name of the Job.
+        image (str): Container image.
+        command (list, optional): Entrypoint command.
+        args (list, optional): Arguments to the command.
+        service_account (str, optional): ServiceAccount to run as.
+        restart_policy (str): "OnFailure" or "Never".
+        backoff_limit (int): Number of retries before marking as failed.
+        ttl_seconds_after_finished (int): Time to keep the Job after it finishes.
+        labels (dict, optional): Labels for the Job.
+        annotations (dict, optional): Annotations for the Job.
+        env (list, optional): Environment variables.
+        volumes (list, optional): Volume definitions.
+        volume_mounts (list, optional): Volume mounts for containers.
+        resources (dict, optional): Resource requests/limits.
+        spec (dict, optional): Full Job spec (overrides other arguments).
+
+    Returns:
+        dict: success, updated, message
+    """
+    try:
+        _load_k8s_config()
+        batch_api = client.BatchV1Api()
+
+        if spec is None:
+            container = {"name": name, "image": image}
+            if command:
+                container["command"] = command
+            if args:
+                container["args"] = args
+            if env:
+                container["env"] = env
+            if volume_mounts:
+                container["volumeMounts"] = volume_mounts
+            if resources:
+                container["resources"] = resources
+
+            pod_spec = {
+                "restartPolicy": restart_policy,
+                "containers": [container],
+            }
+            if service_account:
+                pod_spec["serviceAccountName"] = service_account
+            if volumes:
+                pod_spec["volumes"] = volumes
+
+            job_spec = {
+                "template": {"spec": pod_spec},
+                "backoffLimit": backoff_limit,
+            }
+            if ttl_seconds_after_finished is not None:
+                job_spec["ttlSecondsAfterFinished"] = ttl_seconds_after_finished
+
+            job_body = {
+                "apiVersion": "batch/v1",
+                "kind": "Job",
+                "metadata": {"name": name, "namespace": namespace},
+                "spec": job_spec,
+            }
+            if labels:
+                job_body["metadata"]["labels"] = labels
+            if annotations:
+                job_body["metadata"]["annotations"] = annotations
+        else:
+            job_body = {
+                "apiVersion": "batch/v1",
+                "kind": "Job",
+                "metadata": {"name": name, "namespace": namespace},
+                "spec": spec,
+            }
+
+        try:
+            existing = batch_api.read_namespaced_job(name=name, namespace=namespace)
+            existing_annotations = (existing.metadata.annotations or {}) if existing.metadata else {}
+            desired_annotations = job_body["metadata"].get("annotations", {})
+            if existing.spec == job_body["spec"] and existing_annotations == desired_annotations:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"Job {name} already exists and matches desired state",
+                }
+            # Most Job spec fields (pod template, selector, etc.) are immutable
+            # after creation, so an in-place replace will fail with a 422 for
+            # any real change. Delete and recreate instead.
+            batch_api.delete_namespaced_job(
+                name=name,
+                namespace=namespace,
+                propagation_policy="Foreground",
+            )
+            _wait_for_job_deleted(batch_api, name, namespace)
+            batch_api.create_namespaced_job(namespace=namespace, body=job_body)
+            return {"success": True, "updated": True, "message": f"Job {name} recreated"}
+        except ApiException as e:
+            if e.status == 404:
+                batch_api.create_namespaced_job(namespace=namespace, body=job_body)
+                return {"success": True, "updated": True, "message": f"Job {name} created"}
+            return {"success": False, "updated": False, "message": str(e)}
+    except Exception as e:
+        return {"success": False, "updated": False, "message": str(e)}
+
+
+def _wait_for_job_deleted(batch_api, name, namespace, timeout=30):
+    import time as _time
+
+    deadline = _time.time() + timeout
+    while _time.time() < deadline:
+        try:
+            batch_api.read_namespaced_job(name=name, namespace=namespace)
+        except ApiException as e:
+            if e.status == 404:
+                return
+            raise
+        _time.sleep(1)
+
+
 def networkattachmentdefinition_present(
     name,
     namespace="default",
@@ -6200,6 +6589,205 @@ def httproute_present(
             "success": False,
             "updated": False,
             "message": f"HTTPRoute operation error: {str(e)[:100]}...",
+        }
+
+
+def _normalize_local_policy_ref(ref, default_kind):
+    """
+    Normalize a LocalPolicyTargetReference-style dict (used by targetRefs and
+    caCertificateRefs on BackendTLSPolicy) so that the required `group` and
+    `kind` fields are always present, even if the caller omitted them.
+
+    The Gateway API CRD schema marks `group` as a required field on these
+    reference objects (with an empty string meaning "core API group"), so
+    omitting it entirely causes a 422 Unprocessable Entity from the API
+    server, not just a validation default.
+    """
+    ref = dict(ref)
+    ref.setdefault("group", "")
+    ref.setdefault("kind", default_kind)
+    return ref
+
+
+def backendtlspolicy_present(
+    namespace,
+    name,
+    target_refs=None,
+    hostname=None,
+    ca_certificate_refs=None,
+    well_known_ca_certificates=None,
+    validation=None,
+    spec=None,
+    version="v1",
+):
+    """
+    Ensure a Kubernetes BackendTLSPolicy (Gateway API) exists in the specified namespace.
+
+    BackendTLSPolicy configures TLS from the Gateway/proxy to a backend Service
+    (verifying the backend's certificate), similar in purpose to the
+    'backend protocol: HTTPS' style annotations used with Ingress.
+
+    Args:
+        namespace (str): Namespace for the BackendTLSPolicy.
+        name (str): Name of the BackendTLSPolicy.
+        target_refs (list, optional): List of targetRefs (which Services this
+            policy applies to). Each entry supports: group (default ""),
+            kind (default "Service"), name, sectionName (optional, matches a
+            named port on the Service).
+        hostname (str, optional): SNI hostname used to validate the backend's
+            certificate. Merged into validation.hostname unless validation
+            already sets it.
+        ca_certificate_refs (list, optional): List of refs to CA certificate
+            ConfigMaps/Secrets used to validate the backend certificate.
+            Each entry supports: group (default ""), kind (default
+            "ConfigMap"), name. Merged into validation.caCertificateRefs
+            unless validation already sets it.
+        well_known_ca_certificates (str, optional): Set to "System" to trust
+            the system CA bundle instead of caCertificateRefs. Merged into
+            validation.wellKnownCACertificates unless validation already
+            sets it.
+        validation (dict, optional): Full validation dict. Built-from-kwargs
+            values (hostname, ca_certificate_refs, well_known_ca_certificates)
+            are merged in for any keys not already present.
+        spec (dict, optional): Full spec dict; overrides target_refs/
+            validation/hostname/ca_certificate_refs/well_known_ca_certificates
+            entirely if provided.
+        version (str): Gateway API version for this CRD (default: v1, the
+            stable/GA version as of Gateway API 1.3+; use v1alpha3 or
+            v1alpha2 for older Gateway API installations where
+            BackendTLSPolicy is still experimental).
+
+    Returns:
+        dict: A dictionary with 'success', 'updated', and 'message'.
+
+    CLI Example:
+        salt '*' kinetic_k8s.backendtlspolicy_present efk opensearch-backend-tls \
+            target_refs='[{"kind": "Service", "name": "opensearch-cluster-master", "sectionName": "9200"}]' \
+            hostname=opensearch-cluster-master.efk.svc.cluster.local \
+            well_known_ca_certificates=System
+    """
+    try:
+        _load_k8s_config()
+
+        custom_api = client.CustomObjectsApi()
+        group = "gateway.networking.k8s.io"
+        plural = "backendtlspolicies"
+        kind = "BackendTLSPolicy"
+
+        # Build spec if not provided directly
+        if spec is None:
+            spec = {}
+            if target_refs:
+                spec["targetRefs"] = [
+                    _normalize_local_policy_ref(ref, "Service") for ref in target_refs
+                ]
+
+            built_validation = dict(validation) if validation else {}
+            if hostname and "hostname" not in built_validation:
+                built_validation["hostname"] = hostname
+            if ca_certificate_refs and "caCertificateRefs" not in built_validation:
+                built_validation["caCertificateRefs"] = [
+                    _normalize_local_policy_ref(ref, "ConfigMap")
+                    for ref in ca_certificate_refs
+                ]
+            if well_known_ca_certificates and "wellKnownCACertificates" not in built_validation:
+                built_validation["wellKnownCACertificates"] = well_known_ca_certificates
+            if built_validation:
+                spec["validation"] = built_validation
+        else:
+            spec = dict(spec)  # copy
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": kind,
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        exists = False
+        updated = False
+        matches = False
+        resource = None
+
+        # Check if BackendTLSPolicy exists
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=name,
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            if current_spec == spec:
+                matches = True
+                message = f"BackendTLSPolicy {name} in namespace {namespace} already exists and matches desired spec"
+            else:
+                matches = False
+                message = f"BackendTLSPolicy {name} in namespace {namespace} exists but spec differs"
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+                message = f"BackendTLSPolicy {name} in namespace {namespace} does not exist"
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking BackendTLSPolicy {name}: {str(e)[:80]}...",
+                }
+
+        if not exists:
+            try:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                updated = True
+                message = f"BackendTLSPolicy {name} created in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create BackendTLSPolicy {name}: {str(e)[:100]}...",
+                }
+        elif not matches:
+            try:
+                if (
+                    resource
+                    and "metadata" in resource
+                    and "resourceVersion" in resource["metadata"]
+                ):
+                    body["metadata"]["resourceVersion"] = resource["metadata"]["resourceVersion"]
+                custom_api.replace_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    name=name,
+                    body=body,
+                )
+                updated = True
+                message = f"BackendTLSPolicy {name} updated in namespace {namespace}"
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update BackendTLSPolicy {name}: {str(e)[:100]}...",
+                }
+        else:
+            message = f"BackendTLSPolicy {name} in namespace {namespace} already exists and matches desired state"
+
+        return {"success": True, "updated": updated, "message": message}
+
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"BackendTLSPolicy operation error: {str(e)[:100]}...",
         }
 
 
