@@ -281,13 +281,13 @@ def create_role(
             return {
                 "success": False,
                 "updated": False,
-                "message": f"Failed to create/update OpensearchRole {role_name}: {str(e)[:150]}",
+                "message": f"Failed to create/update OpensearchRole {role_name}: {str(e)}",
             }
     except Exception as e:
         return {
             "success": False,
             "updated": False,
-            "message": f"Failed to create/update OpensearchRole {role_name}: {str(e)[:150]}",
+            "message": f"Failed to create/update OpensearchRole {role_name}: {str(e)}",
         }
 
 
