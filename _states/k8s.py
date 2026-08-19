@@ -2300,6 +2300,8 @@ def opensearch_cluster_present(name, namespace, cluster_name, spec):
         ret["result"] = False
         ret["comment"] = f"Failed to ensure OpenSearchCluster {cluster_name}: {str(e)[:100]}..."
 
+    return ret
+
 
 def opensearch_user_present(
     name, namespace, user_name, cluster_name, password_secret_name, password_key="password"
