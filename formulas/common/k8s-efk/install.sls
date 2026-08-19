@@ -131,21 +131,6 @@ opensearch_dashboard_httproute:
     - require:
       - k8s: opensearch_cluster_cr
 
-efk_backend_dashboard_tls:
-  k8s.backendtlspolicy_present:
-    - name: efk-dashboard-backend-tls
-    - namespace: efk
-    - target_refs:
-      - kind: Service
-        name: opensearch-dashboards
-    - hostname: dashboard.logger.services.gacyberrange.org
-    - ca_certificate_refs:
-      - kind: Secret
-        name: opensearch-tls-secret
-    - require:
-      - k8s: opensearch_cluster_cr
-      - k8s: opensearch_tls_certificate
-
 efk_backend_tls:
   k8s.backendtlspolicy_present:
     - name: efk-backend-tls
