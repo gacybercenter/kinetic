@@ -14,22 +14,25 @@ check_opensearch_health:
     - require:
       - k8s: opensearch_cluster_cr
 
-# Create or update the log_writer OpensearchRole CR with permissions for index creation and writing
+# Create or update the log-writer OpensearchRole CR with permissions for index creation and writing
+# Note: role_name becomes the Kubernetes object name (metadata.name) for the
+# OpensearchRole/OpensearchUserRoleBinding CRs, so it must be a valid DNS-1123
+# name (lowercase alphanumeric and "-" only - no underscores).
 update_log_writer_role:
   opensearch.role_present:
     - name: update_log_writer_role
-    - role_name: log_writer
+    - role_name: log-writer
     - index_name: openldap-audit-logs-  # Matches openldap-audit-logs-* pattern in kinetic-os.create_role
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - cluster_name: opensearch
     - require:
       - opensearch: check_opensearch_health
 
-# Map the fluentbit user to the log_writer role for write access (OpensearchUserRoleBinding CR)
+# Map the fluentbit user to the log-writer role for write access (OpensearchUserRoleBinding CR)
 map_fluentbit_user_to_log_writer:
   opensearch.user_role_mapping_present:
     - name: map_fluentbit_user_to_log_writer_role
-    - role_name: log_writer
+    - role_name: log-writer
     - user_name: fluentbit
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - cluster_name: opensearch

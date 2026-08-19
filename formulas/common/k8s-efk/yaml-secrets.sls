@@ -63,20 +63,8 @@ opensearch_security_config:
                     - "*"
                   allowed_actions:
                     - "*"
-            log_writer:
-                reserved: false
-                cluster_permissions:
-                - "cluster_monitor"
-                - "cluster_composite_ops"
-                index_permissions:
-                - index_patterns:
-                    - "*"
-                  allowed_actions:
-                    - "write"
-                    - "create_index"
-                    - "manage"
-                    - "indices:data/write/index"
-                    - "indices:data/write/bulk"
+            # log_writer role removed - now managed via the OpensearchRole CRD
+            # (name: log-writer) in formulas/common/k8s-efk/configure.sls
             dashboard_reader:
                 reserved: false
                 cluster_permissions:
@@ -109,10 +97,9 @@ opensearch_security_config:
                 - "admin"
                 backend_roles:
                 - "all_access"
-            log_writer:
-                reserved: false
-                users:
-                - "fluentbit"
+            # log_writer mapping removed - fluentbit is now bound to the
+            # log-writer role via the OpensearchUserRoleBinding CRD in
+            # formulas/common/k8s-efk/configure.sls
             kibana_server:
                 reserved: true
                 users:
@@ -143,8 +130,9 @@ opensearch_security_config:
             fluentbit:
                 hash: {{ pillar['opensearch_fluentbit_hash'] }}
                 reserved: false
-                backend_roles:
-                    - "log_writer"
+                # Role assignment now handled by the OpensearchUserRoleBinding
+                # CRD in formulas/common/k8s-efk/configure.sls (binds the
+                # "fluentbit" username directly to the log-writer role).
                 description: "Fluent Bit log writer"
             dashboard_user:
                 hash: {{ pillar['opensearch_dashboard_user_hash'] }}
