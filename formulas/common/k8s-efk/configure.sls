@@ -9,7 +9,7 @@ fluentbit_user_password_secret:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - secret_name: opensearch-fluentbit-password
     - data:
-        password: {{ pillar['opensearch_fluentbit_password'] | b64encode }}
+        password: {{ pillar['opensearch_fluentbit_password'] }}
     - require:
       - k8s: efk_namespace
 
