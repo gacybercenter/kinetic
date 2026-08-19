@@ -4906,7 +4906,7 @@ def secret_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to create Secret {secret_name}: {str(e)[:50]}...",
+                    "message": f"Failed to create Secret {secret_name}: {str(e)}...",
                 }
         elif not matches:
             try:
@@ -4919,7 +4919,7 @@ def secret_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to update Secret {secret_name}: {str(e)[:50]}...",
+                    "message": f"Failed to update Secret {secret_name}: {str(e)}...",
                 }
 
         return {"success": True, "updated": updated, "message": message}
@@ -4928,7 +4928,7 @@ def secret_present(
         return {
             "success": False,
             "updated": False,
-            "message": f"Secret operation error: {str(e)[:50]}...",
+            "message": f"Secret operation error: {str(e)}...",
         }
 
 
