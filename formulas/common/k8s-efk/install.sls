@@ -49,7 +49,7 @@ opensearch_tls_certificate:
     - dns_names:
         - {{ pillar.get('opensearch_service_host') }}
         - {{ pillar.get('opensearch_service_host') }}-headless
-        - {{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}
+        - {{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local
         - api.logger.services.gacyberrange.org
         - dashboard.logger.services.gacyberrange.org
     - duration: 2160h
