@@ -24,17 +24,6 @@ fluentbit_user_cr:
     - require:
       - k8s: fluentbit_user_password_secret
 
-# State formula to configure OpenSearch for logging with Fluent Bit
-# Ensures cluster health and sets up roles for Fluent Bit user access
-check_opensearch_health:
-  opensearch.cluster_health:
-    - name: check_opensearch_health
-    - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
-    - admin_password: {{ opensearch_admin_password | yaml_dquote }}
-    - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
-    - require:
-      - k8s: opensearch_cluster_cr
-
 # Create or update the log-writer OpensearchRole CR with permissions for index creation and writing
 # Note: role_name becomes the Kubernetes object name (metadata.name) for the
 # OpensearchRole/OpensearchUserRoleBinding CRs, so it must be a valid DNS-1123
