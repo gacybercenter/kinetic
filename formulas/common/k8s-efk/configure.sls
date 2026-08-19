@@ -36,7 +36,7 @@ update_log_writer_role:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - cluster_name: opensearch
     - require:
-      - opensearch: check_opensearch_health
+      - k8s: fluentbit_user_cr
 
 # Map the fluentbit user to the log-writer role for write access (OpensearchUserRoleBinding CR)
 map_fluentbit_user_to_log_writer:
@@ -58,7 +58,7 @@ create_fluentbit_audit_role:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - cluster_name: opensearch
     - require:
-      - opensearch: check_opensearch_health
+      - opensearch: map_fluentbit_user_to_log_writer
 
 # Map the Fluent Bit user to the audit logs role for write access (OpensearchUserRoleBinding CR)
 map_fluentbit_user_to_audit_role:
