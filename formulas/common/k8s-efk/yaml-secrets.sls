@@ -127,13 +127,8 @@ opensearch_security_config:
                     - "admin"
                     - "all_access"
                 description: "Admin user"
-            fluentbit:
-                hash: {{ pillar['opensearch_fluentbit_hash'] }}
-                reserved: false
-                # Role assignment now handled by the OpensearchUserRoleBinding
-                # CRD in formulas/common/k8s-efk/configure.sls (binds the
-                # "fluentbit" username directly to the log-writer role).
-                description: "Fluent Bit log writer"
+            # fluentbit user is now managed via the OpensearchUser CRD
+            # (with password from secret opensearch-fluentbit-password)
             dashboard_user:
                 hash: {{ pillar['opensearch_dashboard_user_hash'] }}
                 reserved: false

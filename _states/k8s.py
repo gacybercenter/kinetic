@@ -2299,7 +2299,47 @@ def opensearch_cluster_present(name, namespace, cluster_name, spec):
     except Exception as e:
         ret["result"] = False
         ret["comment"] = f"Failed to ensure OpenSearchCluster {cluster_name}: {str(e)[:100]}..."
-        ret["changes"] = {}
+
+
+def opensearch_user_present(
+    name, namespace, user_name, cluster_name, password_secret_name, password_key="password"
+):
+    """
+    Ensure that an OpensearchUser Custom Resource exists.
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    namespace
+        The Kubernetes namespace for the OpensearchUser resource.
+
+    user_name
+        The name of the OpensearchUser resource.
+
+    cluster_name
+        The name of the target OpenSearchCluster.
+
+    password_secret_name
+        Name of the Secret containing the user's password.
+
+    password_key
+        Key inside the Secret that holds the password. Defaults to 'password'.
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        result = __salt__["kinetic_k8s.opensearch_user_present"](
+            namespace, user_name, cluster_name, password_secret_name, password_key
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result.get("updated"):
+            ret["changes"] = {"user_updated": True}
+        else:
+            ret["changes"] = {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure OpensearchUser {user_name}: {str(e)[:100]}..."
 
     return ret
 

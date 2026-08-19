@@ -4797,6 +4797,93 @@ def opensearch_cluster_present(namespace, cluster_name, spec):
         }
 
 
+def opensearch_user_present(
+    namespace, user_name, cluster_name, password_secret_name, password_key="password"
+):
+    """
+    Ensure that an OpensearchUser Custom Resource exists.
+
+    The password is sourced from a Kubernetes Secret via passwordFrom.
+    """
+    try:
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+        group = "opensearch.org"
+        version = "v1"
+        plural = "opensearchusers"
+
+        spec = {
+            "opensearchCluster": {"name": cluster_name},
+            "passwordFrom": {
+                "name": password_secret_name,
+                "key": password_key,
+            },
+        }
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "OpensearchUser",
+            "metadata": {"name": user_name, "namespace": namespace},
+            "spec": spec,
+        }
+
+        try:
+            existing = custom_api.get_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=user_name,
+            )
+            if existing.get("spec") == spec:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"OpensearchUser {user_name} already up-to-date",
+                }
+            body["metadata"]["resourceVersion"] = existing["metadata"][
+                "resourceVersion"
+            ]
+            custom_api.replace_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                name=user_name,
+                body=body,
+            )
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"OpensearchUser {user_name} updated",
+            }
+        except ApiException as e:
+            if e.status == 404:
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=namespace,
+                    plural=plural,
+                    body=body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"OpensearchUser {user_name} created",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Failed to create/update OpensearchUser {user_name}: {str(e)[:150]}",
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"OpensearchUser operation error: {str(e)[:150]}",
+        }
+
+
 def get_secret_value(namespace, secret_name, key, default=None):
     """
     Retrieve a single decoded value from a Kubernetes Secret.

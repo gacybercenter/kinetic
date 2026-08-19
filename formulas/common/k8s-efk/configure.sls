@@ -3,6 +3,27 @@ include:
 
 {% set opensearch_admin_password = salt['kinetic_k8s.get_secret_value'](pillar.get('efk_namespace', 'efk'), 'opensearch-admin-password', 'password', pillar.get('opensearch_admin_password', '')) %}
 
+# Secret for the fluentbit user's password (CRD-managed OpensearchUser)
+fluentbit_user_password_secret:
+  k8s.secret_present:
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - secret_name: opensearch-fluentbit-password
+    - data:
+        password: {{ pillar['opensearch_fluentbit_password'] | b64encode }}
+    - require:
+      - k8s: efk_namespace
+
+# Declarative OpensearchUser CR for the fluentbit user
+fluentbit_user_cr:
+  k8s.opensearch_user_present:
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - user_name: fluentbit
+    - cluster_name: opensearch
+    - password_secret_name: opensearch-fluentbit-password
+    - password_key: password
+    - require:
+      - k8s: fluentbit_user_password_secret
+
 # State formula to configure OpenSearch for logging with Fluent Bit
 # Ensures cluster health and sets up roles for Fluent Bit user access
 check_opensearch_health:
