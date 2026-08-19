@@ -1,13 +1,15 @@
 include:
   - /formulas/common/k8s-efk/install
 
+{% set opensearch_admin_password = salt['kinetic_k8s.get_secret_value'](pillar.get('efk_namespace', 'efk'), 'opensearch-admin-password', 'password', pillar.get('opensearch_admin_password', '')) %}
+
 # State formula to configure OpenSearch for logging with Fluent Bit
 # Ensures cluster health and sets up roles for Fluent Bit user access
 check_opensearch_health:
   opensearch.cluster_health:
     - name: check_opensearch_health
     - admin_user: {{ pillar.get('opensearch_admin_user', 'admin') }}
-    - admin_password: {{ pillar.get('opensearch_admin_password') }}
+    - admin_password: {{ opensearch_admin_password | yaml_dquote }}
     - host: {{ pillar.get('opensearch_host', 'https://api.logger.services.gacyberrange.org:443') }}
     - require:
       - k8s: opensearch_cluster_cr
