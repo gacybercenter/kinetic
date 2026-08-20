@@ -28,10 +28,19 @@ fluentbit_user_cr:
 # Note: role_name becomes the Kubernetes object name (metadata.name) for the
 # OpensearchRole/OpensearchUserRoleBinding CRs, so it must be a valid DNS-1123
 # name (lowercase alphanumeric and "-" only - no underscores).
-update_log_writer_role:
+update_ldap_log_writer_role:
   opensearch.role_present:
-    - name: update_log_writer_role
-    - role_name: log-writer
+    - name: update_ldap_log_writer_role
+    - role_name: log-ldap-writer
+    - index_name: openldap-audit-logs-  # Matches openldap-audit-logs-* pattern in kinetic-os.create_role
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - cluster_name: opensearch
+    - require:
+      - k8s: fluentbit_user_cr
+update_kc_log_writer_role:
+  opensearch.role_present:
+    - name: update_kc_log_writer_role
+    - role_name: log-kc-writer
     - index_name: openldap-audit-logs-  # Matches openldap-audit-logs-* pattern in kinetic-os.create_role
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - cluster_name: opensearch
@@ -59,6 +68,16 @@ create_fluentbit_audit_role:
     - cluster_name: opensearch
     - require:
       - opensearch: map_fluentbit_user_to_log_writer
+create_fluentbit_kc_role:
+  opensearch.role_present:
+    - name: create_fluentbit_kc_role
+    - role_name: log-kc-writer
+    - index_name: keycloak-logs-*
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - cluster_name: opensearch
+    - require:
+      - opensearch: map_fluentbit_user_to_log_writer
+
 
 # Map the Fluent Bit user to the audit logs role for write access (OpensearchUserRoleBinding CR)
 map_fluentbit_user_to_audit_role:
@@ -70,3 +89,12 @@ map_fluentbit_user_to_audit_role:
     - cluster_name: opensearch
     - require:
       - opensearch: create_fluentbit_audit_role
+map_fluentbit_user_to_kc_role:
+  opensearch.user_role_mapping_present:
+    - name: map_fluentbit_user_to_kc_role
+    - role_name: log-kc-writer
+    - user_name: {{ pillar.get('opensearch_user_name', 'fluentbit') }}
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - cluster_name: opensearch
+    - require:
+      - opensearch: create_fluentbit_kc_role
