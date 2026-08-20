@@ -2219,6 +2219,8 @@ def cnpg_cluster_present(name, namespace, cluster_name, spec):
         ret["result"] = False
         ret["comment"] = f"Failed to ensure Cluster {cluster_name}: {str(e)[:100]}..."
 
+    return ret
+
 
 def opensearch_cluster_present(name, namespace, cluster_name, spec):
     """
