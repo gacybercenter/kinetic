@@ -33,6 +33,14 @@ create_auth_pg_cluster:
     - namespace: {{ pillar['kc-db']['namespace'] }}
     - spec: {{ pillar['kc-db']['db']['spec'] }}
 
+{% set cm = pillar['res-k8s']['logger-kc-cm'] %}
+ensure_ldap_fluentbit_configmap:
+  k8s.configmap_present:
+    - name: {{ cm['name'] }}
+    - configmap_name: {{ cm['name'] }}
+    - namespace: keycloak
+    - data: {{ cm['data'] | yaml }}
+
 keycloak_install:
   k8s_helm.helm_release_present:
     - release_name: keycloak
