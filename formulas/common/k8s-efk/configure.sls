@@ -37,26 +37,16 @@ update_ldap_log_writer_role:
     - cluster_name: opensearch
     - require:
       - k8s: fluentbit_user_cr
-update_kc_log_writer_role:
-  opensearch.role_present:
-    - name: update_kc_log_writer_role
-    - role_name: log-kc-writer
-    - index_name: openldap-audit-logs-  # Matches openldap-audit-logs-* pattern in kinetic-os.create_role
-    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
-    - cluster_name: opensearch
-    - require:
-      - k8s: fluentbit_user_cr
-
-# Map the fluentbit user to the log-writer role for write access (OpensearchUserRoleBinding CR)
+# Map the fluentbit user to the log-ldap-writer role for write access (OpensearchUserRoleBinding CR)
 map_fluentbit_user_to_log_writer:
   opensearch.user_role_mapping_present:
     - name: map_fluentbit_user_to_log_writer_role
-    - role_name: log-writer
+    - role_name: log-ldap-writer
     - user_name: fluentbit
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - cluster_name: opensearch
     - require:
-      - opensearch: update_log_writer_role
+      - opensearch: update_ldap_log_writer_role
 
 # Create or ensure an OpensearchRole CR with permissions for the audit log indices
 create_fluentbit_audit_role:
@@ -67,7 +57,7 @@ create_fluentbit_audit_role:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - cluster_name: opensearch
     - require:
-      - opensearch: map_fluentbit_user_to_log_writer
+      - k8s: fluentbit_user_cr
 create_fluentbit_kc_role:
   opensearch.role_present:
     - name: create_fluentbit_kc_role
@@ -76,7 +66,7 @@ create_fluentbit_kc_role:
     - namespace: {{ pillar.get('efk_namespace', 'efk') }}
     - cluster_name: opensearch
     - require:
-      - opensearch: map_fluentbit_user_to_log_writer
+      - k8s: fluentbit_user_cr
 
 
 # Map the Fluent Bit user to the audit logs role for write access (OpensearchUserRoleBinding CR)
@@ -89,6 +79,7 @@ map_fluentbit_user_to_audit_role:
     - cluster_name: opensearch
     - require:
       - opensearch: create_fluentbit_audit_role
+      
 map_fluentbit_user_to_kc_role:
   opensearch.user_role_mapping_present:
     - name: map_fluentbit_user_to_kc_role
