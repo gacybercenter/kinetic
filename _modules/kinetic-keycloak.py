@@ -1606,6 +1606,122 @@ def client_present(
         }
 
 
+def client_default_scope_present(
+    realm,
+    client_id,
+    scope_name,
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """
+    Ensure a client scope is assigned to a client as a DEFAULT client scope.
+
+    This is additive/idempotent: it only assigns the given scope and never
+    removes any other default or optional client scopes already present on
+    the client (unlike setting `defaultClientScopes` directly on the client
+    representation, which would require specifying the full list and risks
+    dropping Keycloak's built-in defaults like profile/email/roles).
+
+    Keycloak Admin REST API:
+        GET admin/realms/{realm}/clients?clientId={clientId}
+        GET admin/realms/{realm}/client-scopes
+        PUT admin/realms/{realm}/clients/{id}/default-client-scopes/{scopeId}
+
+    Args:
+        realm (str): Realm name.
+        client_id (str): Keycloak clientId of the client to manage.
+        scope_name (str): Name of the client scope to assign as default
+            (e.g. "groups"). Must already exist in the realm.
+        keycloak_addr (str): Keycloak API address.
+        token (str): Bearer token; obtained via get_admin_token if not given.
+        realm_username (str): Admin username used to obtain a token.
+        realm_password (str): Admin password used to obtain a token.
+        admin_client_id (str): Client id used for the admin login.
+        admin_client_secret (str): Client secret for confidential client login.
+        namespace (str): Namespace of the admin credentials Secret.
+        secret_name (str): Name of the admin credentials Secret.
+        verify (bool): Verify TLS certificates.
+
+    Returns:
+        dict: success, updated, message
+
+    CLI Example:
+
+        salt-call kinetic_keycloak.client_default_scope_present realm=myrealm client_id=my-app scope_name=groups
+    """
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+
+        status_code, body = _request(
+            "GET", keycloak_addr, f"admin/realms/{realm}/clients?clientId={client_id}",
+            headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, list) or not body:
+            return _http_error(f"Looking up client {client_id}", status_code, body)
+        client = body[0]
+        internal_id = client.get("id")
+        current_default_scopes = client.get("defaultClientScopes") or []
+        if scope_name in current_default_scopes:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"Client {client_id} already has default client scope {scope_name}",
+            }
+
+        status_code, body = _request(
+            "GET", keycloak_addr, f"admin/realms/{realm}/client-scopes",
+            headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, list):
+            return _http_error(f"Listing client scopes in realm {realm}", status_code, body)
+        scope = next((s for s in body if s.get("name") == scope_name), None)
+        if scope is None:
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Client scope {scope_name} does not exist in realm {realm}",
+            }
+        scope_id = scope.get("id")
+
+        status_code, body = _request(
+            "PUT", keycloak_addr,
+            f"admin/realms/{realm}/clients/{internal_id}/default-client-scopes/{scope_id}",
+            headers=headers, verify=verify,
+        )
+        if status_code == 204:
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"Assigned default client scope {scope_name} to client {client_id}",
+            }
+        return _http_error(
+            f"Assigning default client scope {scope_name} to client {client_id}", status_code, body
+        )
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to ensure default client scope {scope_name} on client {client_id}: {str(e)[:150]}",
+        }
+
+
 def client_absent(
     realm,
     client_id,

@@ -288,6 +288,21 @@ kc_{{ realm_name }}_client_{{ client_key }}:
 {{ kc_conn(keycloak_addr, kc_namespace, kc_secret_name, kc_verify) }}
     - require:
       - keycloak: kc_{{ realm_name }}_realm
+
+{# --- Default client scopes (additive; does not remove existing ones) --- #}
+{% for scope_name in client.get('default_client_scopes', []) %}
+kc_{{ realm_name }}_client_{{ client_key }}_default_scope_{{ scope_name }}:
+  keycloak.client_default_scope_present:
+    - name: {{ client_key }}
+    - realm: {{ realm_name }}
+    - scope_name: {{ scope_name }}
+{%- if client.get('client_id') is not none %}
+    - client_id: {{ client.get('client_id') }}
+{%- endif %}
+{{ kc_conn(keycloak_addr, kc_namespace, kc_secret_name, kc_verify) }}
+    - require:
+      - keycloak: kc_{{ realm_name }}_client_{{ client_key }}
+{% endfor %}
 {% endfor %}
 
 {# --- User Federation (e.g. OpenLDAP) --- #}

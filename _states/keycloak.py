@@ -737,6 +737,83 @@ def client_present(
     return ret
 
 
+def client_default_scope_present(
+    name,
+    realm,
+    scope_name,
+    client_id=None,
+    keycloak_addr="k8s://keycloak/keycloak-service:8443",
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """
+    Ensure a client scope is assigned to a client as a DEFAULT client scope.
+
+    This is additive/idempotent - it does not remove any other default or
+    optional client scopes already assigned to the client.
+
+    name
+        The name of the state. Used as the Keycloak clientId if client_id
+        is not set.
+
+    realm
+        The realm the client belongs to.
+
+    scope_name
+        Name of the client scope to assign as default (e.g. "groups").
+        Must already exist in the realm.
+
+    client_id
+        Keycloak clientId of the client to manage (default: name).
+
+    Example:
+    .. code-block:: yaml
+
+        my_app_groups_scope:
+          keycloak.client_default_scope_present:
+            - name: my-app
+            - realm: myrealm
+            - scope_name: groups
+    """
+    ret = _state_ret(name)
+
+    if client_id is None:
+        client_id = name
+
+    try:
+        result = __salt__["kinetic_keycloak.client_default_scope_present"](
+            realm=realm,
+            client_id=client_id,
+            scope_name=scope_name,
+            keycloak_addr=keycloak_addr,
+            token=token,
+            realm_username=realm_username,
+            realm_password=realm_password,
+            admin_client_id=admin_client_id,
+            admin_client_secret=admin_client_secret,
+            namespace=namespace,
+            secret_name=secret_name,
+            verify=verify,
+        )
+
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure default client scope {scope_name} on client {client_id}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
 def client_absent(
     name,
     realm,
