@@ -14,7 +14,6 @@
 
 include:
   - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/configure
 
 {% set type = grains['type'] %}
 
@@ -120,16 +119,64 @@ fs:
 
 /kvm/images:
   file.directory:
+    - user: libvirt-qemu
+    - group: kvm
     - makedirs: True
     - require:
       - /kvm
 
 /kvm/vms:
   file.directory:
+    - user: libvirt-qemu
+    - group: kvm
     - makedirs: True
     - require:
       - /kvm
 
+
+# Define the libvirt storage pool
+define_vms_pool:
+  virt.pool_defined:
+    - name: vms
+    - ptype: dir
+    - target: /kvm/vms
+    - autostart: True
+    - require:
+      - file: /kvm/vms
+    - unless: virsh pool-list |grep vms
+
+# New: Manage AppArmor profile for libvirt-qemu
+apparmor_libvirt_dir:
+  file.directory:
+    - name: /etc/apparmor.d/abstractions/libvirt-qemu.d
+    - user: root
+    - group: root
+    - mkdirs: True
+    - dir_mode: 755
+    - file_mode: 644
+
+apparmor_libvirt_profile:
+  file.managed:
+    - name: /etc/apparmor.d/abstractions/libvirt-qemu.d/kvm_vms
+    - contents: |
+        /kvm/vms/** rwk,
+    - user: root
+    - group: root
+    - mode: 644
+    - require:
+      - file: apparmor_libvirt_dir
+    - watch_in:
+      - service: apparmor_service
+
+apparmor_service:
+  service.running:
+    - name: apparmor
+    - enable: True
+    - watch:
+      - file: apparmor_libvirt_profile
+apparmor_pkg:
+  pkg.installed:
+    - name: apparmor
 {% for os, args in pillar.get('images', {}).items() %}
   {% if args['type'] == 'virt-builder' %}
 create_{{ args['name'] }}:
@@ -155,7 +202,6 @@ set_format_{{ os }}:
       - /kvm/images/{{ os }}.raw
 
   {% endif %}
-
 sysprep_{{ args['name'] }}:
   cmd.run:
     - name: virt-sysprep -a {{ os }}.raw --truncate /etc/machine-id
@@ -175,3 +221,20 @@ haveged_service:
   service.running:
     - name: haveged
     - enable: true
+
+libvirt_control_key:
+  ssh_auth.present:
+    - user: ubuntu
+    - names:
+      - {{ pillar['hosts']['controller']['ssh_cert'] }}
+    - enc: {{ pillar['hosts']['controller']['ssh_enc'] }}
+
+## add libvirt control key
+#ssh_libvirt_key:
+#  file.managed:
+#    - name: /home/ubuntu/.ssh/id_ed25519
+#    - user: ubuntu
+#    - group: ubuntu
+#    - mode: 600
+#    - attrs: a
+#    - contents_pillar: hosts:controller:ssh_key

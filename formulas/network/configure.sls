@@ -52,7 +52,7 @@ conf-files:
     - template: jinja
     - defaults:
         core_plugin: neutron.plugins.ml2.plugin.Ml2Plugin
-        service_plugins: router
+        service_plugins: router,taas
         transport_url: {{ constructor.rabbitmq_url_constructor() }}
         sql_connection_string: {{ constructor.mysql_url_constructor(user='neutron', database='neutron') }}
         www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
@@ -98,6 +98,8 @@ conf-files:
         - source: salt://formulas/network/files/fwaas_driver.ini
       - /etc/neutron/metadata_agent.ini:
         - source: salt://formulas/network/files/metadata_agent.ini
+      - /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters:
+        - source: salt://formulas/neutron/files/taas_rootwrap_filter
 
 fs.inotify.max_user_instances:
   sysctl.present:

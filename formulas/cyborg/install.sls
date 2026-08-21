@@ -17,14 +17,19 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
-
+## current error in pip installed memcache
+cyborg_pip:
+  pip.installed:
+    - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-memcached==1.59
 cyborg_packages:
   pkg.installed:
     - pkgs:
       - python3-pip
       - git
       - python3-openstackclient
-      - python3-memcache
       - python3-pymysql
       - python3-etcd3gw
 
@@ -34,7 +39,6 @@ cyborg_pip:
     - reload_modules: True
     - names:
       - pymysql
-      - memcache
       - python-openstackclient
       - etcd3gw
     - require:
@@ -46,7 +50,6 @@ salt-pip_installs:
     - reload_modules: true
     - pkgs:
       - pymysql
-      - memcache
       - python-openstackclient
       - etcd3gw
     - require:
@@ -98,7 +101,7 @@ git_config:
 cyborg_latest:
   git.latest:
     - name: https://opendev.org/openstack/cyborg.git
-    - branch: master
+    - branch: {{ pillar['openstack']['git_version'] }}
     - target: /var/lib/cyborg
     - force_clone: true
     - require:

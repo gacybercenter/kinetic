@@ -140,6 +140,9 @@ create_{{ flavor }}:
         console_domain: {{ pillar['haproxy']['console_domain'] }}
         dashboard_domain: {{ pillar['haproxy']['dashboard_domain'] }}
         token_ttl: {{ pillar['nova']['token_ttl'] }}
+        gpu_vendor_id: {{ pillar['hosts']['gpu']['gpu_vendor_id'][0] }}
+        gpu_product_id: {{ pillar['hosts']['gpu']['gpu_product_id'][0] }}
+        gpu_alias: {{ pillar['hosts']['gpu']['gpu_name'][0] }}
 
 spice-html5:
   git.latest:

@@ -40,6 +40,16 @@ neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neu
       - fun: grains.equals
         key: build_phase
         value: configure
+taas-db-manage_upgrade:
+  cmd.run:
+    - name: neutron-db-manage --subproject tap-as-a-service upgrade head
+    - runas: neutron
+    - require:
+      - file: /etc/neutron/neutron.conf
+    - unless:
+      - fun: grains.equals
+        key: build_phase
+        value: configure
 
 {% set start = pillar['networking']['addresses']['float_start'] %}
 {% set end = pillar['networking']['addresses']['float_end'] %}
@@ -93,7 +103,7 @@ conf-files:
         ovn_metadata_enabled: True
         enable_distributed_floating_ip: False
 {% else %}
-        service_plugins: router
+        service_plugins: router,taas
         type_drivers: {{ pillar['neutron']['openvswitch']['type_drivers'] }}
         tenant_network_types: {{ pillar['neutron']['openvswitch']['tenant_network_types'] }}
         mechanism_drivers: {{ pillar['neutron']['openvswitch']['mechanism_drivers'] }}
@@ -130,6 +140,8 @@ conf-files:
         - source: salt://formulas/neutron/files/ml2_conf.ini
       - /etc/sudoers.d/neutron_sudoers:
         - source: salt://formulas/neutron/files/neutron_sudoers
+      - /etc/neutron/rootwrap.d/taas-i40e-sysfs.filters:
+        - source: salt://formulas/neutron/files/taas_rootwrap_filter
 
 fs.inotify.max_user_instances:
   sysctl.present:

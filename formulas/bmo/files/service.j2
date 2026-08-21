@@ -1,0 +1,46 @@
+#!jinja|gpg|yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+    name: ironic
+    namespace: {{ pillar['bmo_namespace'] }}
+spec:
+    selector:
+        name: ironic
+    ports:
+      - protocol: TCP
+        name: web
+        port: 80
+        targetPort: 80
+      - protocol: TCP
+        name: ironic
+        port: 6385
+        targetPort: 6385
+      - protocol: UDP
+        name: ironic-dnsmasq
+        port: 67
+        targetPort: 67
+      - protocol: TCP
+        name: ironic-http
+        port: 6180
+        targetPort: 6180
+
+    type: LoadBalancer
+    loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: baremetal-controller
+    namespace: {{ pillar['bmo_namespace'] }}
+spec:
+    selector: 
+      control-plane: controller-manager
+    ports:
+      - protocol: TCP
+        name: controller
+        port: 8443
+        targetPort: 8443
+    type: LoadBalancer
+    loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}

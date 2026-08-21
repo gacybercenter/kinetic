@@ -43,6 +43,7 @@ base:
     - placement
     - swift
     - cyborg
+    - openstack
   'storage*':
     - ceph
     - swift

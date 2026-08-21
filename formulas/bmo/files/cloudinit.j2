@@ -1,0 +1,25 @@
+#cloud-config
+users:
+  - default
+  - name: gcr
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    ssh_pwauth: True
+    passwd: "{{ pass }}"
+    ssh_authorized_keys:
+        - {{ pillar['node_deploy_key'] }}
+write_files:
+- content: |
+    autosign_grains:
+      - uuid
+  path: /etc/salt/minion.d/autosign.conf
+runcmd:
+  - ['curl', 'https://gitlab.com/gacybercenter/open/salt-bootstrap/-/raw/develop/bootstrap-salt.sh', '-o', 'bootstrap.sh' ]
+  - ['chmod', '700', 'bootstrap.sh']
+  - ['./bootstrap.sh', '-A', '10.150.1.31']
+  - rm -f /etc/machine-id
+  - dbus-uuidgen --ensure=/etc/machine-id
+  - ['salt-call', 'state.apply', '/formulas/common/base']
+  - ['salt-call', 'state.apply', '/formulas/common/networking']
+  - ['systemctl', 'reboot']

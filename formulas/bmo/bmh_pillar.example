@@ -1,0 +1,78 @@
+bmh:
+  compute-133-26:
+    online: true
+    bmc:
+      address: ipmi://192.168.1.20
+      credentialsName: bmc-auth
+    bootMACAddress: aa:bb:cc:dd:ee
+    bootMode: UEFI
+    image:
+      checksum: http://BMO_IP:6180/images/noble.checksum
+      format: qcow2
+      url: http://BMO_IP:6180/images/noble.img
+    rootDeviceHints:
+      deviceName: /dev/nvme0n1
+    network:
+      net-env: onprem
+      management_ip: 10.1.20.23
+    uuid: 00000000-0000-0000-0000-00000000
+
+  controller-133-32:
+    online: true
+    bmc:
+      address: ipmi://192.168.1.20
+      credentialsName: bmc-auth
+    bootMACAddress: bb:cc:dd:ee:ff
+    bootMode: UEFI
+    image:
+      checksum: http://BMO_IP:6180/images/noble.checksum
+      format: qcow2
+      url: http://BMO_IP:6180/images/noble.img
+    rootDeviceHints:
+      deviceName: /dev/nvme0n1
+    network:
+      net-env: onprem
+      management_ip: 10.1.20.24
+    uuid: 00000000-0000-0000-0000-00000001
+  storage-133-13:
+    online: true
+    bmc:
+      address: ipmi://10.1.20.28
+      credentialsName: bmc-auth
+    bootMACAddress: cc:dd:ee:ff:gg
+    bootMode: UEFI
+    image:
+      checksum: http://BMO_IP:6180/images/noble.checksum
+      format: qcow2
+      url: http://BMO_IP:6180/images/noble.img
+    rootDeviceHints:
+      deviceName: /dev/nvme0n1
+    network:
+      net-env: onprem
+      management_ip: 10.1.20.24
+    uuid: 00000000-0000-0000-0000-00000002
+  master-rsc-0:
+    mem: 34359
+    cpu: 8
+    disk: 64000
+    os_type: linux
+    os_variant: ubuntu2004
+    connection: 'qemu+ssh://ubuntu@CONTROL_IP/system'
+    connection-port: 6230
+    online: true
+    bmc:
+      address: ipmi://127.0.0.1:6230
+      credentialsName: bmc-auth
+    interface: ens1
+    bootMACAddress: dd:ee:ff:gg:hh
+    bootMode: UEFI
+    image:
+      checksum: http://BMO_IP:6180/images/noble.checksum
+      format: qcow2
+      url: http://BMO_IP:6180/images/noble.img
+    rootDeviceHints:
+      deviceName: /dev/vda
+    network:
+      net-env: onprem
+      management_ip: 10.1.20.25
+    uuid: 00000000-0000-0000-0000-00000003

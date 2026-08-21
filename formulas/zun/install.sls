@@ -77,13 +77,30 @@ zun:
     - group: root
     - makedirs: True
 
-git_config:
-  cmd.run:
-    - name: git config --system --add safe.directory "/var/lib/zun"
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
+git_config_safe_dir:
+  git.config_set:
+    - name: safe.directory
+    - value: "/var/lib/zun"
+    - global: True
+git_config_email:
+  git.config_set:
+    - name: user.email
+    - value: "gacyberrange@augusta.edu"
+    - global: True
+git_config_user:
+  git.config_set:
+    - name: user.name
+    - value: "gacyberrange"
+    - global: True
+
+
+##git_config:
+#  cmd.run:
+#    - name: git config --system --add safe.directory "/var/lib/zun"
+#    - unless:
+#      - fun: grains.equals
+#        key: build_phase
+#        value: configure
 
 zun_latest:
   git.latest:
@@ -91,22 +108,31 @@ zun_latest:
     - branch: stable/{{ pillar['openstack']['version'] }}
     - target: /var/lib/zun
     - force_clone: true
+    - force_reset: true
+    - rev: stable/{{ pillar['openstack']['version'] }}
     - require:
-      - cmd: git_config
+      - git: git_config_safe_dir
 
-zun_requirements:
-  cmd.run:
-    - name: pip3 install -r /var/lib/zun/requirements.txt
-    - unless:
-      - systemctl is-active zun-api
-    - require:
-      - git: zun_latest
+zun_virtenv:
+  virtualenv.managed:
+    - name: /var/lib/zun
+    - systems_site_packages: True
+    - venv_bin: /var/lib/zun/bin
+    - requirements: /var/lib/zun/requirements.txt
+
+#zun_requirements:
+#  cmd.run:
+#    - name: pip3 install -r /var/lib/zun/requirements.txt
+#    - unless:
+#      - systemctl is-active zun-api
+#    - require:
+#      - git: zun_latest
 
 installzun:
   cmd.run:
-    - name: python3 setup.py install
+    - name: /var/lib/zun/bin/python3 setup.py install
     - cwd : /var/lib/zun/
     - unless:
       - systemctl is-active zun-api
     - require:
-      - cmd: zun_requirements
+      - virtualenv: zun_virtenv

@@ -15,6 +15,9 @@
 {% set type = opts.id.split('-')[0] %}
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 
+include:
+  - /formulas/common/auditd/configure
+
 initial_module_sync:
   saltutil.sync_all:
     - refresh: True
@@ -43,9 +46,17 @@ role:
 
 python3_pip:
   pkg.installed:
-    - pkgs:
-      - python3-pip
-    - reload_modules: True
+    - name: python3-pip
+test_module_sync:
+  saltutil.sync_all:
+    - refresh: True
+
+## Fix pkg if previous install failed/timedout
+dpkg_fix:
+  cmd.run:
+    - name: dpkg --configure -a
+    - onlyif:
+      - dpkg -l | grep -E '^[A-Za-z][A-Z]'
 
 # Allow for minion result checkin randomization
 /etc/salt/minion.d/98-tunning.conf:
@@ -80,7 +91,7 @@ sysctl -p:
     - enc: {{ pillar['authorized_keys'][ key ]['encoding'] }}
 {% endfor %}
 
-{% if opts.id not in ['salt', 'pxe'] %}
+{% if opts.id not in ['salt', 'pxe', 'bmo'] %}
 hosts_name_resolution:
   host.present:
     - ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}

@@ -3,7 +3,17 @@ include:
 
 {% import 'formulas/common/macros/constructor.sls' as constructor with context %}
 
+/root/clouds.yaml:
+  file.managed:
+    - source: salt://formulas/common/openstack/files/clouds.yml
+    - makedirs: True
+    - template: jinja
+    - defaults:
+        password: {{ pillar['openstack']['admin_password'] }}
+        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
+
 {% if pillar['gpu']['backend'] == "cyborg" %}
+
 gpu-conf-files:
   file.managed:
     - template: jinja
@@ -21,13 +31,15 @@ gpu-conf-files:
         api: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
         placement_password: {{ pillar['placement']['placement_service_password'] }}
         nova_password: {{ pillar['nova']['nova_service_password'] }}
-        mdev_type: {{ pillar['hosts']['gpu']['mdev_type'][0] }}
+        mdev_type: {{ pillar['hosts']['gpu']['mdev_type'] }}
         busid: {{ constructor.gpu_busid_constructor() }}
     - names:
       - /etc/cyborg/cyborg.conf:
         - source: salt://formulas/gpu/files/cyborg.conf
       - /etc/nova/nova-compute.conf:
-        - source: salt://formulas/gpu/files/nova-compute.conf
+        - source: salt://formulas/gpu/files/nova-compute_cyborg.conf
+      - /root/rp.sh:
+        - source: salt://formulas/gpu/files/rp.sh
 
 /etc/sudoers.d/cyborg_sudoers:
   file.managed:
@@ -38,13 +50,12 @@ gpu-conf-files:
     - source: salt://formulas/gpu/files/cyborg-agent.service
     - require:
       - sls: /formulas/gpu/install
+sriov_manage:
+  cron.present:
+    - name: sh -c "/usr/lib/nvidia/sriov-manage -e ALL"
+    - user: root
+    - special: '@reboot'
 
-cyborg_agent_service:
-  service.running:
-    - name: cyborg-agent
-    - enable: true
-    - watch:
-      - file: /etc/cyborg/cyborg.conf
 
 {% endif %}
 
@@ -63,20 +74,27 @@ pci_passthrough_files:
         busid_gpu4: {{ pillar['hosts']['gpu']['busid_gpu'][3] }}
         gpu_vendor_id: {{ pillar['hosts']['gpu']['gpu_vendor_id'][0] }}
         gpu_product_id: {{ pillar['hosts']['gpu']['gpu_product_id'][0] }}
+        gpu_alias: {{ pillar['hosts']['gpu']['gpu_name'][0] }}
     - names:
       - /etc/default/grub.d/10-pci-passthrough.cfg:
         - source: salt://formulas/gpu/files/10-pci-passthrough.cfg
       - /etc/initramfs-tools/scripts/init-top/vfio.sh:
         - source: salt://formulas/gpu/files/vfio.sh
-
+      - /etc/nova/nova-compute.conf:
+        - source: salt://formulas/gpu/files/nova-compute_passthrough.conf
 update-grub:
   cmd.run:
     - onchanges:
       - file: /etc/default/grub.d/10-pci-passthrough.cfg
-
 update-initramfs -u -k all:
   cmd.run:
     - onchanges:
       - file: /etc/initramfs-tools/scripts/init-top/vfio.sh
-
 {% endif %}
+
+nove_compute_service:
+  service.running:
+    - name: nova-compute
+    - enable: true
+    - watch:
+      - file: /etc/nova/nova-compute.conf

@@ -21,7 +21,6 @@
         "name": "arm64",
         "test": "substring(option[60].hex,0,9) == 'PXEClient' and option[93].hex == 0x000b",
         "only-if-required": true,
-        "next-server": "{{ tftp }}",
         "server-hostname": "{{ pxe_record }}",
         "boot-file-name": "{{ arm_efi }}"
       },
@@ -29,7 +28,6 @@
         "name": "amd64",
         "test": "substring(option[60].hex,0,9) == 'PXEClient' and not member('arm64')",
         "only-if-required": true,
-        "next-server": "{{ tftp }}",
         "server-hostname": "{{ pxe_record }}",
         "boot-file-name": "{{ x86_efi }}"
       },
@@ -50,6 +48,7 @@
     "valid-lifetime": 3600,
     "renew-timer": 1000,
     "rebind-timer": 2000,
+    "match-client-id": false,
     "subnet4": [
       {
         "id": 1,
@@ -84,6 +83,7 @@
       {
         "id": 4,
         "subnet": "{{ mgmt }}",
+        "next-server": "{{ tftp }}",
         "interface": "ens3",
         "pools": [
           {
@@ -140,7 +140,7 @@
             "maxver": 8
           }
         ],
-        "severity": "INFO"
+        "severity": "DEBUG"
       }
     ]
   }

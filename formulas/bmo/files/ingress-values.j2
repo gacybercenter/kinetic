@@ -1,0 +1,12 @@
+controller:
+  service:
+    loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}
+    lbClass: kube-vip.io/kube-vip-class
+  extraArgs:
+    enable-ssl-passthrough: 'true'
+    tcp-services-configmap: baremetal-operator-system/tcp-services
+  config:
+    use-forwarded-headers: 'true'
+    ssl-redirect: 'true'
+    force-ssl-redirect: 'true'
+    ssl-passthrough: 'true'

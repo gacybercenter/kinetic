@@ -1,0 +1,96 @@
+opensearch_helm:
+  replicas: {{ pillar.get('opensearch_replicas', 3) }}
+  config:
+    opensearch.yml: |
+      cluster.name: {{ pillar.get('opensearch_cluster_name', 'opensearch-cluster') }}
+      network.host: 0.0.0.0
+      plugins:
+        query:
+          datasources:
+            encryption:
+              masterkey: 672e64c87e2e0ada37cfcd98
+        security:
+          restapi:
+            roles_enabled: ["all_access", "security_rest_api_access", "admin"]
+          allow_default_init_securityindex: true
+          ssl:
+            transport:
+              enabled: {{ pillar.get('opensearch_transport_tls_enabled', true) }}
+              pemcert_filepath: certs/tls.crt
+              pemkey_filepath: certs/tls.key
+              pemtrustedcas_filepath: certs/ca.crt
+              enforce_hostname_verification: {{ pillar.get('opensearch_transport_ssl_hostname_verification', false) }}
+            http:
+              enabled: true
+              pemcert_filepath: certs/tls.crt
+              pemkey_filepath: certs/tls.key
+              pemtrustedcas_filepath: certs/ca.crt
+              enabled_ciphers:
+                - "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+                - "TLS_ECDHE_ECDSA_WITH_AES_256_ GCM_SHA384"
+                - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+                - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+              enabled_protocols:
+                - "TLSv1.2"
+              clientauth_mode: OPTIONAL
+          nodes_dn:
+            - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local"
+            - "CN={{ pillar.get('opensearch_service_host') }}"
+            - "CN={{ pillar.get('opensearch_service_host') }}-headless"
+            - "CN={{ pillar.get('opensearch_service_host') }}.{{ pillar.get('efk_namespace') }}.svc.cluster.local:{{ pillar.get('opensearch_service_port', 9200) }}"
+            - "CN=api.logger.gacyberrange.org"
+          system_indices:
+            indices: ['.opendistro-alerting-config', '.opendistro-ism-*', '.opendistro-reports-*', '.opensearch-notifications-*', '.opensearch-notebooks', '.opensearch-observability', '.opendistro-asynchronous-search-response*', '.replication-metadata-store']
+  securityConfig:
+    enabled: true
+    path: "/usr/share/opensearch/config/opensearch-security"
+    config:
+      securityConfigSecret: "opensearch-security-config"
+      dataComplete: true
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/proxy-body-size: 50m
+    path: /
+    hosts:
+      - {{ pillar.get('opensearch_api_ingress_host', 'api.logger.services.gacyberrange.org') }}
+    tls:
+      - secretName: opensearch-tls-secret
+        hosts:
+          - {{ pillar.get('opensearch_api_ingress_host', 'api.logger.services.gacyberrange.org') }}
+  tls:
+    enabled: true
+    secretName: "opensearch-tls-secret"
+    transport:
+      enabled: true
+      secretName: "opensearch-tls-secret"
+  extraVolumes:
+    - name: opensearch-tls-secret
+      secret:
+        secretName: opensearch-tls-secret
+  extraVolumeMounts:
+    - name: opensearch-tls-secret
+      mountPath: /usr/share/opensearch/config/certs
+      readOnly: true
+  extraEnvs:
+    - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+      value: {{ pillar.get('opensearch_admin_password', 'YourStrongPassword123!') }}
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  roles:
+    - master
+    - data
+    - ingest
+  resources:
+    limits:
+      cpu: {{ pillar.get('opensearch_cpu_limit', '20000m') }}
+      memory: {{ pillar.get('opensearch_memory_limit', '8192Mi') }}
+    requests:
+      cpu: {{ pillar.get('opensearch_cpu_request', '20000m') }}
+      memory: {{ pillar.get('opensearch_memory_request', '8192Mi') }}
+  persistence:
+    enabled: {{ pillar.get('opensearch_persistence_enabled', true) }}
+    size: {{ pillar.get('opensearch_persistence_size', '10Gi') }}
+  service:
+    type: {{ pillar.get('opensearch_service_type', 'ClusterIP') }}

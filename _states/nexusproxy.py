@@ -57,7 +57,44 @@ def update_user_password(name, host, port, username, password, user, new_passwor
     ret["comment"] = f'The state of "{name}" returned status code: {new_state}'
     ret["result"] = False
     return ret
-
+def activate_realms(name, realms, host, port, username, password):
+    '''
+    This function is used to activate the auth realms if needed
+    
+    @param host: Nexus host ip or dns name to inlude the http:// or https://
+    @param port: Nexus listening port
+    @param username: Nexus username
+    @param password: Nexus password
+    '''
+    ret = {"name": name, "realms": realms, "result": False, "changes": {}, "comment": ""}
+    current_state = __salt__["nexusproxy.list_active_realms"](host,
+                                                                         port,
+                                                                         username,
+                                                                         password)
+    if current_state == realms:
+        ret["comment"] = f'Realms: "{current_state}" is already set'
+        ret["result"] = True
+        return ret
+    new_realms = __salt__["nexusproxy.activate_realms"](host,
+                                                       port,
+                                                       username,
+                                                       password,
+                                                       json.dumps(realms))
+    if new_realms == 204:
+        current_realms = __salt__["nexusproxy.list_active_realms"](host,
+                                                                              port,
+                                                                              username,
+                                                                              password)
+        ret["comment"] = f'Realms: "{current_realms}" have been added!'
+        ret["changes"] = {
+            "old": '',
+            "new": current_realms
+        }
+        ret["result"] = True
+        return ret
+    ret["comment"] = f'The state of "{realms}"and "{current_state}" returned status code: {new_realms}'
+    ret["result"] = False
+    return ret
 def add_proxy_repository(name, host, port, username, password, repoType, remoteUrl, test: bool = False, **kwargs):
     '''
     This function is used to add a proxy repository in Nexus Proxy.
@@ -111,3 +148,5 @@ def add_proxy_repository(name, host, port, username, password, repoType, remoteU
     ret["comment"] = f'The state of "{name}" returned status code: {new_state}'
     ret["result"] = False
     return ret
+
+

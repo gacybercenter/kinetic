@@ -1,0 +1,2 @@
+include:
+  - /formulas/bmo/install

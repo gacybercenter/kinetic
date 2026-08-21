@@ -1,0 +1,20 @@
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+    name: compute-133-26
+    namespace: baremetal-operator-system
+spec:
+  automatedCleaningMode: metadata
+  bmc:
+    address: ipmi://10.100.0.85
+    credentialsName: bmc-auth
+  bootMACAddress: ac:1f:6b:7d:14:e9
+  bootMode: UEFI
+  image:
+    checksum: https://cloud-images.ubuntu.com/noble/current/SHA256SUMS
+    checksumType: auto
+    format: raw
+    url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+  online: true
+  rootDeviceHints:
+    deviceName: /dev/nvme0n1

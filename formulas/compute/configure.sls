@@ -68,8 +68,6 @@ conf-files:
         - source: salt://formulas/compute/files/neutron.conf
       - /etc/hosts:
         - source: salt://formulas/compute/files/hosts
-      # - /etc/frr/daemons:
-      #   - source: salt://formulas/common/frr/files/daemons
 
 ceph_keyrings:
   file.managed:
@@ -154,15 +152,17 @@ nova:
     - enc: {{ pillar['nova_live_migration_auth_key'][ key ]['encoding'] }}
 {% endfor %}
 
+{% set neutron_backend = pillar['neutron']['backend'] %}
+{% if neutron_backend != "networking-ovn" %}
+
 nova_compute_service:
   service.running:
     - name: nova-compute
     - enable: true
     - watch:
       - file: /etc/nova/nova.conf
+      - service: neutron_{{ neutron_backend }}_agent_service
 
-{% set neutron_backend = pillar['neutron']['backend'] %}
-{% if neutron_backend != "networking-ovn" %}
 /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini:
   file.managed:
     - source: salt://formulas/compute/files/{{ neutron_backend }}_agent.ini
@@ -171,7 +171,7 @@ nova_compute_service:
         local_ip: {{ salt['network.ip_addrs'](cidr=pillar['networking']['subnets']['private'])[0] }}
         public_interface: {{ public_interface }}
   {% if neutron_backend == "openvswitch" %}
-        extensions: qos
+        extensions: qos,taas
         bridge_mappings: public_br
         explicitly_egress_direct: True
 
@@ -190,8 +190,8 @@ neutron_{{ neutron_backend }}_agent_service:
     - name: neutron-{{ neutron_backend }}-agent
     - enable: true
     - watch:
-      - file: conf-files
       - file: /etc/neutron/plugins/ml2/{{ neutron_backend }}_agent.ini
+      - file: ovs_bridge_patch
 
 {% elif neutron_backend == "networking-ovn" %}
 neutron-ovn-metadata-agent.ini:
@@ -316,6 +316,12 @@ ovn_metadata_service:
     - require:
       - cmd: ovsdb_listen
 {% endif %}
+
+ovs_bridge_patch:
+  file.patch:
+    - name: /usr/lib/python3/dist-packages/neutron_taas/services/taas/drivers/linux/ovs_taas.py
+    - source: salt://formulas/compute/files/ovs_tap_patch
+    - options: -u
 
 libvirtd_service:
   service.running:
