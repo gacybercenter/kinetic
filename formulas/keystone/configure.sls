@@ -19,8 +19,6 @@ keystone_httproute:
           backendRefs:
             - name: keystone-api
               port: 5000
-
-
 install_keystone:
   k8s_helm.helm_release_present:
     - release_name: keystone
