@@ -1,0 +1,58 @@
+{%- set oidc = oidc | default({}) -%}
+
+{%- raw %}
+{{- $portInt := tuple "identity" "service" "api" $ | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+{%- endraw %}
+
+Listen 0.0.0.0:{{ '{{ $portInt }}' }}
+
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" proxy
+
+# ----- OIDC / Keycloak configuration -----
+OIDCClaimPrefix "OIDC-"
+OIDCClaimDelimiter ";"
+OIDCResponseType "code"
+OIDCScope "openid email profile groups"
+OIDCProviderMetadataURL "{{ oidc_provider_metadata_url }}"
+OIDCClientID "{{ oidc_client_id }}"
+OIDCClientSecret "{{ oidc_client_secret }}"
+OIDCCryptoPassphrase "{{ oidc_crypto_passphrase }}"
+OIDCRedirectURI "{{ oidc_redirect_uri }}"
+
+SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+CustomLog /dev/stdout combined env=!forwarded
+CustomLog /dev/stdout proxy env=forwarded
+ErrorLogFormat "%{cu}t %M"
+ErrorLog /dev/stdout
+
+<VirtualHost *:{{ '{{ $portInt }}' }}>
+    ServerName keystone.example.com
+
+    WSGIDaemonProcess keystone-public processes=1 threads=1 user=keystone group=keystone display-name=%{GROUP}
+    WSGIProcessGroup keystone-public
+    WSGIScriptAlias / /var/www/cgi-bin/keystone/wsgi.py
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+
+    <Location /v3/OS-FEDERATION/identity_providers/keycloak/protocols/openid/auth>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+
+    <Location /v3/auth/OS-FEDERATION/websso/openid>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+
+    <Location /v3/OS-FEDERATION/identity_providers/keycloak/protocols/openid/auth/redirect>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+
+    ErrorLogFormat "%{cu}t %M"
+    ErrorLog /dev/stdout
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout combined env=!forwarded
+    CustomLog /dev/stdout proxy env=forwarded
+</VirtualHost>
