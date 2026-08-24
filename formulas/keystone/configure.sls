@@ -44,5 +44,4 @@ install_keystone:
 {% filter indent(12, true) %}{% include 'formulas/keystone/files/wsgi_keystone.conf.j2' %}{% endfilter %}
 
     - require:
-      - k8s: keystone_external_certificate
       - k8s: keystone_httproute
