@@ -41,7 +41,8 @@ install_keystone:
       - endpoints.identity.auth.test.password={{ pillar['osh']['osh_users']['test'] }}
       - conf.ks_domains.ldap.ldap.password={{ pillar['ldap']['admin-user']['password'] }}
       - conf.keystone.wsgi_keystone: |
-          {% include 'formulas/keystone/files/wsgi_keystone.conf.j2' %}
+{% filter indent(12, true) %}{% include 'formulas/keystone/files/wsgi_keystone.conf.j2' %}{% endfilter %}
+
     - require:
       - k8s: keystone_external_certificate
       - k8s: keystone_httproute
