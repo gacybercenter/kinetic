@@ -43,13 +43,7 @@ install_keystone:
       - endpoints.identity.auth.test.password={{ pillar['osh']['osh_users']['test'] }}
       - conf.ks_domains.ldap.ldap.password={{ pillar['ldap']['admin-user']['password'] }}
       - conf.keystone.wsgi_keystone: |
-{{ include('formulas/keystone/files/wsgi_keystone.conf.j2', context={
-    'oidc_provider_metadata_url': pillar.get('osh', {}).get('keystone', {}).get('oidc', {}).get('provider_metadata_url'),
-    'oidc_client_id': pillar.get('osh', {}).get('keystone', {}).get('oidc', {}).get('client_id'),
-    'oidc_client_secret': pillar.get('osh', {}).get('keystone', {}).get('oidc', {}).get('client_secret'),
-    'oidc_crypto_passphrase': pillar.get('osh', {}).get('keystone', {}).get('oidc', {}).get('crypto_passphrase'),
-    'oidc_redirect_uri': pillar.get('osh', {}).get('keystone', {}).get('oidc', {}).get('redirect_uri')
-}) | indent(8) }}
+{% include 'formulas/keystone/files/wsgi_keystone.conf.j2' %}
     - require:
       - k8s: keystone_external_certificate
       - k8s: keystone_httproute
