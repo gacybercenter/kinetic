@@ -39,8 +39,8 @@ install_keystone:
       - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh']['rabbitmq_admin'] }}
       - endpoints.oslo_messaging.auth.keystone.username=keystone
       - endpoints.oslo_messaging.auth.keystone.password={{ pillar['osh']['keystone-rq-user'] }}
-      - endpoints.identity.auth.admin.password={{ pillar['osh']['admin'] }}
-      - endpoints.identity.auth.test.password={{ pillar['osh']['test'] }}
+      - endpoints.identity.auth.admin.password={{ pillar['osh']['osh_users']['admin'] }}
+      - endpoints.identity.auth.test.password={{ pillar['osh']['osh_users']['test'] }}
       - conf.ks_domains.ldap.ldap.password={{ pillar['ldap']['admin-user']['password'] }}
       - conf.keystone.wsgi_keystone: |
 {{ include('formulas/keystone/files/wsgi_keystone.conf.j2', context={
