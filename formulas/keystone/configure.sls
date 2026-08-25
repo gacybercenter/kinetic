@@ -20,6 +20,19 @@ keystone_httproute:
             - name: keystone-api
               port: 5000
 
+# conf.keystone.wsgi_keystone is a large multi-line Apache config, which
+# cannot be passed via set_values (Helm --set only supports flat
+# key=value strings, not multi-line block content). Render it as a proper
+# Helm values file instead and pass it via values_files (--values).
+keystone_wsgi_values_file:
+  file.managed:
+    - name: /tmp/keystone-wsgi-values.yaml
+    - source: salt://formulas/keystone/files/keystone-wsgi-values.yaml.j2
+    - template: jinja
+    - mode: '0600'
+    - user: root
+    - group: root
+
 install_keystone:
   k8s_helm.helm_release_present:
     - release_name: keystone
@@ -40,8 +53,12 @@ install_keystone:
       - endpoints.oslo_messaging.auth.keystone.password={{ pillar['osh']['keystone-rq-user'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh']['osh_users']['admin'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh']['osh_users']['test'] }}
+      - conf.ks_domains.ldap.ldap.password={{ pillar['ldap']['admin-user']['password'] }}
+    - values_files:
+      - /tmp/keystone-wsgi-values.yaml
     - require:
       - k8s: keystone_httproute
+      - file: keystone_wsgi_values_file
 
 # The values file contains secrets (OIDC client secret, crypto passphrase)
 # in plaintext - remove it immediately after Helm has consumed it.

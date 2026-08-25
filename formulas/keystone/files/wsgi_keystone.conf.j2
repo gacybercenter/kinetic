@@ -1,9 +1,9 @@
-{%- set oidc = pillar.get('osh', {}).get('keystone', {}).get('oidc', {}) -%}
+{%- set oidc = pillar.get('osh', {}).get('keystone_oidc', {}) -%}
 {%- set oidc_provider_metadata_url = oidc.get('provider_metadata_url', '') -%}
-{%- set oidc_client_id           = oidc.get('client_id', '') -%}
+{%- set oidc_client_id           = oidc.get('client_id', 'keystone') -%}
 {%- set oidc_client_secret       = oidc.get('client_secret', '') -%}
 {%- set oidc_crypto_passphrase   = oidc.get('crypto_passphrase', '') -%}
-{%- set oidc_redirect_uri        = oidc.get('redirect_uri', '') -%}
+{%- set oidc_redirect_uri        = oidc.get('redirect_uri', 'https://keystone.rsc.gacyberrange.org/v3/OS-FEDERATION/identity_providers/keycloak/protocols/openid/auth') -%}
 
 {%- raw %}
 {{- $portInt := tuple "identity" "service" "api" $ | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
