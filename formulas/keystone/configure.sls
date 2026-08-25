@@ -2,36 +2,23 @@ include:
   - /formulas/keystone/install
   - /formulas/osh-helm-repos/configure
 
-keystone_external_certificate:
-  k8s.certmanager_certificate_present:
-    - name: keystone-tls
-    - certificate_name: keystone-tls
+keystone_httproute:
+  k8s.httproute_present:
+    - name: keystone-route
     - namespace: openstack
-    - secret_name: keystone-tls
-    - issuer_name: letsencrypt-prod
-    - issuer_kind: ClusterIssuer
-    - common_name: {{ pillar['osh_values']['keystone_cert']['common_name'] }}
-    - dns_names: {{ pillar['osh_values']['keystone_cert']['dns_names'] }}
-
-keystone_internal_certificate:
-  k8s.certmanager_certificate_present:
-    - name: keystone-tls-api
-    - certificate_name: keystone-tls-api
-    - namespace: openstack
-    - secret_name: keystone-tls-api
-    - issuer_name: cyberrange-ca-issuer
-    - issuer_kind: ClusterIssuer
-    - common_name: {{ pillar['osh_values']['keystone_internal_api']['common_name'] }}
-    - dns_names: {{ pillar['osh_values']['keystone_internal_api']['dns_names'] }}
-
-keystone_ingress:
-  k8s.ingress_present:
-    - name: keystone-ingress
-    - namespace: openstack
-    - hosts: {{ pillar['osh_values']['keystone_ingress']['hosts'] }}
-    - tls: {{ pillar['osh_values']['keystone_ingress']['tls'] }}
-    - require:
-      - k8s: keystone_external_certificate
+    - parent_refs:
+        - name: traefik-internal
+          namespace: ingress
+          sectionName: websecure
+    - hostnames: {{ pillar['osh']['keystone_ingress']['hosts'] | map(attribute='host') | list }}
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: keystone-api
+              port: 5000
 
 install_keystone:
   k8s_helm.helm_release_present:
@@ -41,19 +28,25 @@ install_keystone:
     - wait_timeout: 300
     - wait_interval: 10
     - keep_values_file: false
-    - pillar_key: osh_values:keystone
+    - pillar_key: osh:keystone
     - set_values:
       - endpoints.oslo_db.auth.admin.username=root
-      - endpoints.oslo_db.auth.admin.password={{ pillar['osh_values']['mariadb_admin'] }}
+      - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
       - endpoints.oslo_db.auth.keystone.username=keystone
-      - endpoints.oslo_db.auth.keystone.password={{ pillar['osh_values']['keystone_admin'] }}
+      - endpoints.oslo_db.auth.keystone.password={{ pillar['osh']['keystone_admin'] }}
       - endpoints.oslo_messaging.auth.admin.username=rabbitmq
-      - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh_values']['rabbitmq_admin'] }}
+      - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh']['rabbitmq_admin'] }}
       - endpoints.oslo_messaging.auth.keystone.username=keystone
-      - endpoints.oslo_messaging.auth.keystone.password={{ pillar['osh_values']['keystone-rq-user'] }}
-      - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
-      - endpoints.identity.auth.test.password={{ pillar['osh_users']['test'] }}
-      - conf.ks_domains.ldap.ldap.password={{ pillar['ldap']['admin-user']['password'] }}
+      - endpoints.oslo_messaging.auth.keystone.password={{ pillar['osh']['keystone-rq-user'] }}
+      - endpoints.identity.auth.admin.password={{ pillar['osh']['osh_users']['admin'] }}
+      - endpoints.identity.auth.test.password={{ pillar['osh']['osh_users']['test'] }}
     - require:
-      - k8s: keystone_external_certificate
-      - k8s: keystone_ingress
+      - k8s: keystone_httproute
+
+# The values file contains secrets (OIDC client secret, crypto passphrase)
+# in plaintext - remove it immediately after Helm has consumed it.
+keystone_wsgi_values_file_cleanup:
+  file.absent:
+    - name: /tmp/keystone-wsgi-values.yaml
+    - require:
+      - k8s_helm: install_keystone
