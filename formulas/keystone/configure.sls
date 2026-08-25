@@ -40,7 +40,7 @@ install_keystone:
     - namespace: openstack
     - wait_timeout: 300
     - wait_interval: 10
-    - keep_values_file: false
+    - keep_values_file: true
     - pillar_key: osh:keystone
     - set_values:
       - endpoints.oslo_db.auth.admin.username=root
