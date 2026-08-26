@@ -52,6 +52,11 @@ ErrorLog /dev/stdout
         Require valid-user
     </Location>
 
+    <Location ~ "/v3/OS-FEDERATION/identity_providers/keycloak/protocols/openid/auth">
+        AuthType "auth-openidc"
+        Require valid-user
+    </Location>
+
     ErrorLogFormat "%{cu}t %M"
     ErrorLog /dev/stdout
     SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
