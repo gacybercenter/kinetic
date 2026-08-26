@@ -78,6 +78,7 @@ keystone_federation_configmap:
 
           [federation]
           remote_id_attribute = HTTP_OIDC_ISS
+          trusted_dashboard=http://localhost:9990/auth/websso/
 
           [openid]
           remote_id_attribute = HTTP_OIDC_ISS
