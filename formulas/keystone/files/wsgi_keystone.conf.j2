@@ -52,8 +52,13 @@ ErrorLog /dev/stdout
         Require valid-user
     </Location>
 
-    <Location ~ "/v3/OS-FEDERATION/identity_providers/keycloak/protocols/openid/auth">
-        AuthType "auth-openidc"
+    <Location /v3/auth/OS-FEDERATION/identity_providers/keycloak/protocols/openid/websso>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+
+    <Location /v3/auth/OS-FEDERATION/websso/openid>
+        AuthType openid-connect
         Require valid-user
     </Location>
 
