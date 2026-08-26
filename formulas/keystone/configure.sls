@@ -2,6 +2,53 @@ include:
   - /formulas/keystone/install
   - /formulas/osh-helm-repos/configure
 
+{% set kc = pillar.get('res-k8s', {}).get('keycloak', {}) %}
+{% set kc_conn = kc.get('connection', {}) %}
+{% set keycloak_addr = kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') %}
+{% set kc_namespace = kc_conn.get('namespace', 'keycloak') %}
+{% set kc_secret_name = kc_conn.get('secret_name', 'keycloak-admin') %}
+{% set kc_verify = kc_conn.get('verify', False) %}
+{% set kc_realm = pillar.get('osh', {}).get('keystone_oidc', {}).get('realm', 'rsc') %}
+{% set keystone_oidc = pillar.get('osh', {}).get('keystone_oidc', {}) %}
+
+# Register Keystone as a confidential OIDC client in Keycloak, driven from
+# the same osh:keystone_oidc pillar used by the wsgi_keystone Apache config.
+keystone_keycloak_client:
+  keycloak.client_present:
+    - name: keystone
+    - realm: {{ kc_realm }}
+    - client_id: {{ keystone_oidc.get('client_id', 'keystone') }}
+    - client_name: Keystone
+    - description: "OpenStack Keystone federation client"
+    - enabled: true
+    - protocol: openid-connect
+    - public_client: false
+    - standard_flow_enabled: true
+    - direct_access_grants_enabled: false
+    - service_accounts_enabled: false
+    - redirect_uris:
+        - {{ keystone_oidc['redirect_uri'] }}
+    - secret: {{ keystone_oidc['client_secret'] | yaml_dquote }}
+    - keycloak_addr: {{ keycloak_addr }}
+    - namespace: {{ kc_namespace }}
+    - secret_name: {{ kc_secret_name }}
+    - verify: {{ kc_verify }}
+
+{% for scope_name in keystone_oidc.get('default_client_scopes', []) %}
+keystone_keycloak_client_default_scope_{{ scope_name }}:
+  keycloak.client_default_scope_present:
+    - name: keystone
+    - realm: {{ kc_realm }}
+    - scope_name: {{ scope_name }}
+    - client_id: {{ keystone_oidc.get('client_id', 'keystone') }}
+    - keycloak_addr: {{ keycloak_addr }}
+    - namespace: {{ kc_namespace }}
+    - secret_name: {{ kc_secret_name }}
+    - verify: {{ kc_verify }}
+    - require:
+      - keycloak: keystone_keycloak_client
+{% endfor %}
+
 keystone_httproute:
   k8s.httproute_present:
     - name: keystone-route
