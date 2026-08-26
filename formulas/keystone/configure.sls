@@ -7,7 +7,7 @@ keystone_httproute:
     - name: keystone-route
     - namespace: openstack
     - parent_refs:
-        - name: traefik-internal
+        - name: traefik-external
           namespace: ingress
           sectionName: websecure
     - hostnames: {{ pillar['osh']['keystone_ingress']['hosts'] | map(attribute='host') | list }}
