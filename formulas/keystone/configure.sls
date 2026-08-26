@@ -9,7 +9,7 @@ keystone_httproute:
     - parent_refs:
         - name: traefik-external
           namespace: ingress
-          sectionName: websecure
+          sectionName: websecure-ext
     - hostnames: {{ pillar['osh']['keystone_ingress']['hosts'] | map(attribute='host') | list }}
     - rules:
         - matches:
