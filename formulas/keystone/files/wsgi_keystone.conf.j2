@@ -21,6 +21,7 @@ OIDCClientID "{{ oidc_client_id }}"
 OIDCClientSecret "{{ oidc_client_secret }}"
 OIDCCryptoPassphrase "{{ oidc_crypto_passphrase }}"
 OIDCRedirectURI "{{ oidc_redirect_uri }}"
+OIDCXForwardedHeaders X-Forwarded-Host X-Forwarded-Port X-Forwarded-Proto
 
 SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
 CustomLog /dev/stdout combined env=!forwarded
@@ -29,7 +30,7 @@ ErrorLogFormat "%{cu}t %M"
 ErrorLog /dev/stdout
 
 <VirtualHost *:{{ '{{ $portInt }}' }}>
-    ServerName keystone.example.com
+    ServerName keystone.rsc.gacyberrange.org
 
     WSGIDaemonProcess keystone-public processes=1 threads=1 user=keystone group=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-public
