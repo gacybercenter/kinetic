@@ -58,7 +58,7 @@ ensure_cyberrange_ca_configmap:
 # needing its own copy of the CA cert.
 ensure_cyberrange_ca_bundle:
   k8s.bundles_present:
-    - name: {{ pillar['res-k8s']['rsc-cert-ca'] }}
+    - name: {{ pillar['res-k8s']['rsc-cert-ca']['name'] }}
     - sources:
       - config_map:
           name: cyberrange-ca
