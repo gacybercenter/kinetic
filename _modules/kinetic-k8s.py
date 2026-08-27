@@ -4956,6 +4956,47 @@ def get_configmap_value(namespace, configmap_name, key, default=None):
         return default
 
 
+def set_nested_value(data, path, value, separator=":"):
+    """
+    Return a deep copy of `data` with a nested key path set to `value`.
+
+    Useful for merging a dynamically-fetched value (e.g. from
+    get_configmap_value/get_secret_value) into a larger pillar-sourced dict
+    from Jinja, since Jinja templates cannot perform nested item assignment
+    (`d['a']['b'] = value`) as an expression.
+
+    Missing intermediate dicts along the path are created automatically. Any
+    existing non-dict value at an intermediate path segment is replaced with
+    a new dict.
+
+    Args:
+        data (dict): The source dict. Not mutated - a deep copy is returned.
+        path (str): Delimited path to the key to set, e.g. "endpoints:ldap:auth:client:tls:ca".
+        value: The value to set at that path.
+        separator (str): Path segment separator. Defaults to ":".
+
+    Returns:
+        dict: A new dict with the value set at the given path.
+
+    CLI Example:
+        salt '*' kinetic_k8s.set_nested_value '{"a": {"b": 1}}' a:c 2
+    """
+    import copy
+
+    result = copy.deepcopy(data) if isinstance(data, dict) else {}
+    keys = [k for k in path.split(separator) if k]
+    if not keys:
+        return result
+
+    node = result
+    for key in keys[:-1]:
+        if not isinstance(node.get(key), dict):
+            node[key] = {}
+        node = node[key]
+    node[keys[-1]] = value
+    return result
+
+
 def secret_present(
     namespace, secret_name, data, secret_type="Opaque", labels=None, annotations=None
 ):

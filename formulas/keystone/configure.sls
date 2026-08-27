@@ -115,6 +115,16 @@ keystone_wsgi_values_file:
     - user: root
     - group: root
 
+# The keystone Helm values are built explicitly here (instead of via
+# pillar_key) so we can merge in the live CA value from the trust-manager
+# Bundle's target ConfigMap (see install.sls's keystone_ldap_tls_secret) at
+# endpoints.ldap.auth.client.tls.ca. This keeps the actual mounted secret
+# content and the value that triggers the chart's ldap-tls volume/mount in
+# sync, rather than using a separate static placeholder.
+{% set rsc_cert_ca_bundle = pillar['res-k8s']['rsc-cert-ca'] %}
+{% set rsc_ca_value = salt['kinetic_k8s.get_configmap_value']('openstack', rsc_cert_ca_bundle, 'ca.crt', '') %}
+{% set keystone_values = salt['kinetic_k8s.set_nested_value'](pillar.get('osh', {}).get('keystone', {}), 'endpoints:ldap:auth:client:tls:ca', rsc_ca_value) %}
+
 install_keystone:
   k8s_helm.helm_release_present:
     - release_name: keystone
@@ -123,7 +133,7 @@ install_keystone:
     - wait_timeout: 300
     - wait_interval: 10
     - keep_values_file: true
-    - pillar_key: osh:keystone
+    - values_dict: {{ keystone_values | tojson }}
     - set_values:
       - endpoints.oslo_db.auth.admin.username=root
       - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
