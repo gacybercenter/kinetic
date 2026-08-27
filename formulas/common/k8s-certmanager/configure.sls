@@ -37,3 +37,33 @@ ensure_cyberrange_ca_cluster_issuer:
           secretName: ca-cyberrange-secret
     - require:
       - k8s: ensure_cyberrange_ca
+
+# bundles_present only accepts ConfigMap sources (no Secret sources), so
+# copy the CA cert out of the Certificate's Secret into a ConfigMap first.
+# Since ensure_cyberrange_ca sets is_ca: True, cert-manager populates a
+# ca.crt key in ca-cyberrange-secret (identical to tls.crt, since this CA
+# is self-signed).
+ensure_cyberrange_ca_configmap:
+  k8s.configmap_present:
+    - namespace: {{ cert_manager_namespace }}
+    - configmap_name: cyberrange-ca
+    - data:
+        ca.crt: {{ salt['kinetic_k8s.get_secret_value'](cert_manager_namespace, 'ca-cyberrange-secret', 'ca.crt', '') | yaml_dquote }}
+    - require:
+      - k8s: ensure_cyberrange_ca
+
+# Distribute the CyberRange CA (plus trust-manager's default OS CA package)
+# as a trusted bundle ConfigMap into every namespace, so workloads can
+# verify certificates issued by cyberrange-ca-issuer without each namespace
+# needing its own copy of the CA cert.
+ensure_cyberrange_ca_bundle:
+  k8s.bundles_present:
+    - name: {{ pillar['res-k8s']['rsc-cert-ca'] }}
+    - sources:
+      - config_map:
+          name: cyberrange-ca
+          key: ca.crt
+      - use_default_cas: true
+    - target_configmap_key: ca.crt
+    - require:
+      - k8s: ensure_cyberrange_ca_configmap
