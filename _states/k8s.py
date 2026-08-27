@@ -4042,3 +4042,82 @@ def serviceaccount_token_secret_present(name, namespace, service_account):
         ret["changes"] = {}
 
     return ret
+
+
+def bundles_present(
+    name,
+    sources,
+    target_configmap_key,
+    target_metadata=None,
+    target_namespace_selector=None,
+    target_additional_formats=None,
+):
+    """
+    Ensure a trust-manager Bundle Custom Resource exists (trust.cert-manager.io/v1alpha1).
+
+    Bundle is a cluster-scoped resource. Only ConfigMap-backed sources and a
+    ConfigMap target are supported - Secret sources/targets are intentionally
+    not exposed, since trust-manager needs no RBAC to read/write Secrets when
+    restricted to ConfigMaps only.
+
+    name
+        Name of the Bundle resource.
+
+    sources
+        List of source dicts. Each dict may contain one of:
+          - config_map: {name, key, include_all_keys, selector}
+          - in_line: raw PEM data to append as a source
+          - use_default_cas: true to include trust-manager's default CA package
+
+    target_configmap_key
+        Key of the entry in the target ConfigMap's data field the synced
+        bundle will be written to, in every namespace.
+
+    target_metadata
+        Optional {labels: {...}, annotations: {...}} copied onto the target
+        ConfigMap in every namespace.
+
+    target_namespace_selector
+        Optional label selector ({matchLabels: {...}} and/or
+        {matchExpressions: [...]}) restricting which namespaces the target
+        ConfigMap is synced into.
+
+    target_additional_formats
+        Optional additional binary formats to write to the target ConfigMap,
+        e.g. {pkcs12: {key: bundle.p12, password: ..., profile: Modern2023}}
+        and/or {jks: {key: bundle.jks, password: ...}}.
+
+    Example:
+    .. code-block:: yaml
+
+        ca_bundle:
+          k8s.bundles_present:
+            - name: gcr-ca-bundle
+            - sources:
+              - config_map:
+                  name: gcr-ca
+                  key: ca.crt
+              - use_default_cas: true
+            - target_configmap_key: root-certs.pem
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.bundles_present"](
+            name=name,
+            sources=sources,
+            target_configmap_key=target_configmap_key,
+            target_metadata=target_metadata,
+            target_namespace_selector=target_namespace_selector,
+            target_additional_formats=target_additional_formats,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Bundle {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
