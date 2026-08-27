@@ -4920,6 +4920,42 @@ def get_secret_value(namespace, secret_name, key, default=None):
         return default
 
 
+def get_configmap_value(namespace, configmap_name, key, default=None):
+    """
+    Retrieve a single value from a Kubernetes ConfigMap.
+
+    Useful for reading data generated/managed outside of Salt (e.g. a
+    trust-manager Bundle's target ConfigMap, synced into a namespace) directly
+    from the cluster instead of duplicating it in pillar.
+
+    Args:
+        namespace (str): Namespace containing the ConfigMap.
+        configmap_name (str): Name of the ConfigMap.
+        key (str): Key within the ConfigMap's data to retrieve.
+        default: Value to return if the ConfigMap or key does not exist, or on error.
+
+    Returns:
+        str: The value, or `default` if not found.
+
+    CLI Example:
+        salt '*' kinetic_k8s.get_configmap_value openstack cyberrange-ca-bundle ca.crt
+    """
+    try:
+        _load_k8s_config()
+        core_v1_api = client.CoreV1Api()
+        configmap = core_v1_api.read_namespaced_config_map(
+            name=configmap_name, namespace=namespace
+        )
+        data = configmap.data or {}
+        return data.get(key, default)
+    except ApiException as e:
+        if e.status == 404:
+            return default
+        return default
+    except Exception:
+        return default
+
+
 def secret_present(
     namespace, secret_name, data, secret_type="Opaque", labels=None, annotations=None
 ):
