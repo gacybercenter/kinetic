@@ -17,12 +17,6 @@ ensure_certmanager_release:
     - require:
       - k8s_helm: ensure_jetstack_helm_repo
 
-# trust-manager (https://cert-manager.io/docs/trust/trust-manager/installation/)
-# is distributed as an OCI Helm chart, so there's no separate "helm repo add"
-# step - helm pulls it directly from the OCI registry. It depends on
-# cert-manager being installed first to issue its webhook certificate
-# (unless app.webhook.tls.helmCert.enabled is set, which is not recommended
-# for production).
 ensure_trust_manager_release:
   k8s_helm.helm_release_present:
     - release_name: trust-manager
