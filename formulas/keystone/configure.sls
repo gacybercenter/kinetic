@@ -135,7 +135,8 @@ install_keystone:
     - keep_values_file: true
     - pillar_key: osh:keystone
     - set_values:
-      - {{ ("endpoints.ldap.auth.client.tls.ca=" ~ rsc_ca_value) | yaml_dquote }}
+      - endpoints.ldap.auth.client.tls.ca= |
+        {{ rsc_ca_value | yaml_dquote }}
       - endpoints.oslo_db.auth.admin.username=root
       - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
       - endpoints.oslo_db.auth.keystone.username=keystone
