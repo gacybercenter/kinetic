@@ -85,6 +85,23 @@ keystone_federation_configmap:
     - require:
       - k8s: keystone_httproute
 
+keystone_application_credential_configmap:
+  k8s.configmap_present:
+    - namespace: openstack
+    - configmap_name: keystone-application-credential-conf
+    - data:
+        98-application-credential.conf: |
+          [application_credential]
+          driver = ttl_sql
+          user_limit = 10
+
+          [gcr_application_credential]
+          default_ttl_days = 30
+          max_ttl_days = 90
+          allow_never_expire = false
+    - require:
+      - k8s: keystone_httproute
+
 # conf.keystone.wsgi_keystone is a large multi-line Apache config, which
 # cannot be passed via set_values (Helm --set only supports flat
 # key=value strings, not multi-line block content). Render it as a proper
