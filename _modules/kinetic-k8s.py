@@ -7892,7 +7892,7 @@ def bundles_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Error checking Bundle {name}: {str(e)[:100]}...",
+                    "message": f"Error checking Bundle {name}: {str(e)}...",
                 }
 
         body = {
@@ -7916,7 +7916,7 @@ def bundles_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to create Bundle {name}: {str(e)[:200]}...",
+                    "message": f"Failed to create Bundle {name}: {str(e)}...",
                 }
         elif not matches:
             try:
@@ -7936,7 +7936,7 @@ def bundles_present(
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to update Bundle {name}: {str(e)[:200]}...",
+                    "message": f"Failed to update Bundle {name}: {str(e)}...",
                 }
         return {
             "success": True,
@@ -7947,5 +7947,5 @@ def bundles_present(
         return {
             "success": False,
             "updated": False,
-            "message": f"Bundle operation error: {str(e)[:150]}",
+            "message": f"Bundle operation error: {str(e)}",
         }
