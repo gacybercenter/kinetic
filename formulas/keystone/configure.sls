@@ -115,16 +115,10 @@ keystone_wsgi_values_file:
     - user: root
     - group: root
 
-# The live CA value is read from the trust-manager Bundle's target
-# ConfigMap (see install.sls's keystone_ldap_tls_secret) and injected via
-# set_values, so it stays in sync with the actual mounted secret content
-# instead of using a separate static placeholder. It's wrapped in
-# yaml_dquote since it's a multi-line PEM string - embedding raw newlines
-# directly into a plain YAML list item would break the block the same way
-# the wsgi_keystone content did (see keystone-wsgi-values.yaml.j2).
-{% set rsc_cert_ca_bundle = pillar['res-k8s']['rsc-cert-ca'] %}
-{% set rsc_ca_value = salt['kinetic_k8s.get_configmap_value']('openstack', rsc_cert_ca_bundle, 'ca.crt', '') %}
-
+# The LDAP CA is mounted from the trust-manager Bundle's target ConfigMap
+# (see the pod.mounts.keystone_api.keystone_api section of
+# keystone-wsgi-values.yaml.j2) rather than a Secret, so no CA-related
+# set_values entry is needed here.
 install_keystone:
   k8s_helm.helm_release_present:
     - release_name: keystone
@@ -135,8 +129,7 @@ install_keystone:
     - keep_values_file: true
     - pillar_key: osh:keystone
     - set_values:
-      - endpoints.ldap.auth.client.tls.ca= |
-        {{ rsc_ca_value | yaml_dquote }}
+      - pods.mounts.keystone_api.volumes.configmap.name={{ pillar['res-k8s']['rsc-cert-ca']['name'] }}
       - endpoints.oslo_db.auth.admin.username=root
       - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
       - endpoints.oslo_db.auth.keystone.username=keystone
