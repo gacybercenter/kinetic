@@ -38,50 +38,57 @@ include:
 {% set mapping_rules = oidc.get('mapping_rules', default_mapping_rules) %}
 
 {# ------------------------------------------------------------------------
-   Emits kinetic_openstack.project_present + role_assignment_present states
-   for a single LDAP group's `openstack` pillar key. Ensures the named
-   projects exist and assigns the given role(s) to this LDAP group
-   (Keystone domain {{ realm_domain }}) on them. Never creates OpenStack
-   users - this is group-driven only, matching how that domain is backed
-   by the LDAP tree provisioned in formulas/common/ldapadmin/prov.sls.
+   Build a single deduplicated map of OpenStack project -> role assignments
+   across ALL LDAP groups' `openstack` pillar keys, e.g.:
 
-   This lives here (rather than in prov.sls) because prov.sls is applied
-   via a standalone orchestration run (orch/k8s-ldap-prov.sls) that has no
-   guarantee Keystone is reachable - project/role assignment calls would
-   fail if Keystone isn't up yet. federation.sls already gates on
-   keystone_available.
+     ldap:
+       groups:
+         - cn: admins
+           openstack:
+             projects:
+               - name: se_cyber
+                 roles: [admin]
+         - cn: se_cyber
+           openstack:
+             projects:
+               roles: [member]      # name defaults to this group's cn verbatim
 
-   group_cn:  the group's cn - used as the Keystone group name (must match
-              the LDAP group cn 1:1, since {{ realm_domain }} is LDAP-backed)
-   os_spec:   the group's `openstack` dict, e.g.:
+   Multiple groups can reference the *same* project (as above - both
+   'admins' and 'se_cyber' resolve to project 'se_cyber'). Emitting a
+   kinetic_openstack.project_present state per *group* (instead of per
+   unique project) would render the same state ID twice and fail with
+   "found conflicting ID" - so every group's projects are folded into
+   projects_map first, and exactly one project_present state is emitted
+   per unique project name below.
 
-                openstack:
-                  projects:
-                    - name: my-project      # optional, defaults to this group's cn
-                                             # verbatim (so it matches whatever
-                                             # name another group's role
-                                             # assignment onto this same
-                                             # project would need to use)
-                      description: "..."    # optional, defaults to "Project for <name>"
-                      domain: Default       # optional, project's domain, defaults to Default
-                      roles: [member]       # optional, defaults to [member]
+   `openstack.projects` may be a single mapping (shorthand for one project)
+   or a list of mappings.
 
-              `projects` may also be a single mapping (rather than a list of
-              one) for the common one-project-per-group case, e.g.:
-
-                openstack:
-                  projects:
-                    roles: [member]
+   Never creates OpenStack users - this is group-driven only, matching how
+   the {{ realm_domain }} domain is backed by the LDAP tree provisioned in
+   formulas/common/ldapadmin/prov.sls. This lives here (rather than in
+   prov.sls) because prov.sls is applied via a standalone orchestration run
+   (orch/k8s-ldap-prov.sls) that has no guarantee Keystone is reachable -
+   project/role assignment calls would fail if Keystone isn't up yet.
+   federation.sls already gates on keystone_available.
    ------------------------------------------------------------------------ #}
-{%- macro openstack_projects_for(group_cn, os_spec) -%}
+{% set projects_map = {} %}
+{% for group in pillar.get('ldap', {}).get('groups', []) %}
+{% set os_spec = group.get('openstack') %}
+{% if os_spec %}
 {% set projects = os_spec.get('projects', []) %}
 {% if projects is mapping %}
 {% set projects = [projects] %}
 {% endif %}
 {% for project in projects %}
-{% set project_name = project.get('name', group_cn) %}
-{% set safe_project = project_name | lower | replace('_', '-') | replace(' ', '-') %}
-{% set project_domain = project.get('domain', 'Default') %}
+{% set project_name = project.get('name', group['cn']) %}
+{% set entry = projects_map.setdefault(project_name, {'description': None, 'domain': 'Default', 'assignments': []}) %}
+{% if project.get('description') %}
+{% do entry.update({'description': project['description']}) %}
+{% endif %}
+{% if project.get('domain') %}
+{% do entry.update({'domain': project['domain']}) %}
+{% endif %}
 {% if project.get('roles') %}
 {% set roles = project['roles'] %}
 {% elif project.get('role') %}
@@ -89,30 +96,15 @@ include:
 {% else %}
 {% set roles = ['member'] %}
 {% endif %}
-
-openstack_project_{{ safe_project }}:
-  kinetic_openstack.project_present:
-    - name: {{ project_name }}
-    - description: {{ project.get('description', "Project for " ~ project_name) | yaml_dquote }}
-    - enabled: True
-    - cloud: {{ cloud_name }}
-    - require:
-      - kinetic_openstack: keystone_available
-
 {% for role in roles %}
-openstack_role_assignment_{{ safe_project }}_{{ group_cn }}_{{ role }}:
-  kinetic_openstack.role_assignment_present:
-    - role_name: {{ role }}
-    - project_name: {{ project_name }}
-    - group_name: {{ group_cn }}
-    - group_domain: {{ realm_domain }}
-    - project_domain: {{ project_domain }}
-    - cloud: {{ cloud_name }}
-    - require:
-      - kinetic_openstack: openstack_project_{{ safe_project }}
+{% set assignment = {'group': group['cn'], 'role': role} %}
+{% if assignment not in entry['assignments'] %}
+{% do entry['assignments'].append(assignment) %}
+{% endif %}
 {% endfor %}
 {% endfor %}
-{%- endmacro -%}
+{% endif %}
+{% endfor %}
 
 # Gate: don't attempt any federation setup until Keystone is actually
 # reachable and issuing tokens. Helm reporting the release as deployed
@@ -162,11 +154,30 @@ keystone_keycloak_protocol:
 
 # Projects + role assignments for LDAP groups. formulas/common/ldapadmin's
 # prov.sls provisions the LDAP groups themselves; the OpenStack side lives
-# here instead, since it needs Keystone to actually be reachable. Driven by
-# each group's `openstack` key in the same pillar['ldap']['groups'] list
-# consumed by prov.sls - see the openstack_projects_for macro above.
-{% for group in pillar.get('ldap', {}).get('groups', []) %}
-{% if group.get('openstack') %}
-{{ openstack_projects_for(group['cn'], group['openstack']) }}
-{% endif %}
+# here instead, since it needs Keystone to actually be reachable. Exactly
+# one project_present state is emitted per unique project name (see
+# projects_map above), even if multiple LDAP groups reference it.
+{% for project_name, entry in projects_map.items() %}
+{% set safe_project = project_name | lower | replace('_', '-') | replace(' ', '-') %}
+openstack_project_{{ safe_project }}:
+  kinetic_openstack.project_present:
+    - name: {{ project_name }}
+    - description: {{ (entry['description'] or ("Project for " ~ project_name)) | yaml_dquote }}
+    - enabled: True
+    - cloud: {{ cloud_name }}
+    - require:
+      - kinetic_openstack: keystone_available
+
+{% for assignment in entry['assignments'] %}
+openstack_role_assignment_{{ safe_project }}_{{ assignment['group'] }}_{{ assignment['role'] }}:
+  kinetic_openstack.role_assignment_present:
+    - role_name: {{ assignment['role'] }}
+    - project_name: {{ project_name }}
+    - group_name: {{ assignment['group'] }}
+    - group_domain: {{ realm_domain }}
+    - project_domain: {{ entry['domain'] }}
+    - cloud: {{ cloud_name }}
+    - require:
+      - kinetic_openstack: openstack_project_{{ safe_project }}
+{% endfor %}
 {% endfor %}
