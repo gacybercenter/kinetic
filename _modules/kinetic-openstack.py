@@ -277,6 +277,90 @@ def get_groups(cloud=None):
         conn.close()
 
 
+def get_group(group_name, domain_id=None, cloud=None):
+    """
+    Look up a single Keystone group by name, optionally scoped to a domain.
+
+    Args:
+        group_name (str): Name of the group.
+        domain_id (str, optional): Domain ID to scope the lookup to.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_group admins domain_id=default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        if domain_id:
+            group = conn.identity.find_group(
+                group_name, domain_id=domain_id, ignore_missing=True
+            )
+        else:
+            group = conn.identity.find_group(group_name, ignore_missing=True)
+        if not group:
+            return None
+        return {
+            "id": group.id,
+            "name": group.name,
+            "domain_id": getattr(group, "domain_id", None),
+            "description": getattr(group, "description", None),
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to get group {group_name}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def create_group(group_name, domain_id=None, description=None, cloud=None):
+    """
+    Create a Keystone group (SQL-backed - i.e. NOT within a domain that uses
+    a domain-specific LDAP identity driver).
+
+    Args:
+        group_name (str): Name of the group to create.
+        domain_id (str, optional): Domain ID to create the group in.
+        description (str, optional): Description of the group.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_group admins domain_id=default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        attrs = {"name": group_name}
+        if domain_id is not None:
+            attrs["domain_id"] = domain_id
+        if description is not None:
+            attrs["description"] = description
+        group = conn.identity.create_group(**attrs)
+        return {
+            "id": group.id,
+            "name": group.name,
+            "domain_id": getattr(group, "domain_id", None),
+            "description": getattr(group, "description", None),
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to create group {group_name}: {str(e)}")
+    finally:
+        conn.close()
+
+
 def create_project(name, description=None, domain_id="default", cloud=None):
     """
     Create a new project in OpenStack

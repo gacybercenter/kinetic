@@ -11,6 +11,20 @@ include:
 {% set health_interval = oidc.get('health_check_interval', 5) %}
 {% set remote_id = oidc.get('remote_id', oidc.get('provider_metadata_url', '').split('/.well-known')[0]) %}
 
+{# Domain that federated OIDC group memberships/role-assignments are scoped
+   to. This must be a SQL-backed domain (default: Default), NOT the
+   LDAP-backed realm_domain ('rsc'). Keystone's federated shadow-user group
+   membership tracking (ExpiringUserGroupMembership) writes a row with a
+   foreign key into the SQL `group` table on every federated login - this
+   fails with a DB IntegrityError for groups that live in a domain using a
+   domain-specific LDAP identity driver, since those groups never have a
+   corresponding row in the SQL group table. See openstack_federated_group_*
+   below, which creates empty SQL-backed "shadow" groups (same names as the
+   real LDAP groups) purely so federated logins have somewhere valid to
+   land - Keystone manages their membership dynamically per-login based on
+   the IdP's claims, so these groups are never populated with members here. #}
+{% set federated_group_domain = oidc.get('federated_group_domain', 'Default') %}
+
 {# mod_wsgi drops the HTTP_OIDC_PREFERRED_USERNAME header, so the username
    claim must be read from OIDC-preferred_username instead (per keystone's
    mod_auth_openidc debug dump). The second rule is a fallback for users
@@ -23,13 +37,16 @@ include:
    The singular form only handles one atomic value; when a user has
    multiple groups, Keystone still splits the assertion into a list, but
    the singular form then tries to use that whole Python list as a single
-   literal group name (breaks the LDAP group lookup and, downstream,
-   token validation for any user in more than one group). #}
+   literal group name (breaks the group lookup).
+
+   The groups rule targets federated_group_domain (SQL-backed), not
+   realm_domain (LDAP-backed) - see the comment on federated_group_domain
+   above for why. #}
 {% set default_mapping_rules = [
     {
         'local': [
             {'user': {'name': '{0}', 'domain': {'name': realm_domain}}},
-            {'groups': '{1}', 'domain': {'name': realm_domain}},
+            {'groups': '{1}', 'domain': {'name': federated_group_domain}},
         ],
         'remote': [
             {'type': 'OIDC-preferred_username'},
@@ -69,20 +86,23 @@ include:
    unique project) would render the same state ID twice and fail with
    "found conflicting ID" - so every group's projects are folded into
    projects_map first, and exactly one project_present state is emitted
-   per unique project name below.
+   per unique project name below. federated_group_names collects every
+   group referenced this way, so we can also emit exactly one
+   openstack_federated_group_* state per unique group name.
 
    `openstack.projects` may be a single mapping (shorthand for one project)
    or a list of mappings.
 
-   Never creates OpenStack users - this is group-driven only, matching how
-   the {{ realm_domain }} domain is backed by the LDAP tree provisioned in
-   formulas/common/ldapadmin/prov.sls. This lives here (rather than in
-   prov.sls) because prov.sls is applied via a standalone orchestration run
-   (orch/k8s-ldap-prov.sls) that has no guarantee Keystone is reachable -
-   project/role assignment calls would fail if Keystone isn't up yet.
-   federation.sls already gates on keystone_available.
+   Never creates OpenStack users - this is group-driven only. This lives
+   here (rather than in formulas/common/ldapadmin/prov.sls, which
+   provisions the LDAP groups themselves) because prov.sls is applied via
+   a standalone orchestration run (orch/k8s-ldap-prov.sls) that has no
+   guarantee Keystone is reachable - project/role assignment calls would
+   fail if Keystone isn't up yet. federation.sls already gates on
+   keystone_available.
    ------------------------------------------------------------------------ #}
 {% set projects_map = {} %}
+{% set federated_group_names = [] %}
 {% for group in pillar.get('ldap', {}).get('groups', []) %}
 {% set os_spec = group.get('openstack') %}
 {% if os_spec %}
@@ -111,6 +131,9 @@ include:
 {% if assignment not in entry['assignments'] %}
 {% do entry['assignments'].append(assignment) %}
 {% endif %}
+{% if group['cn'] not in federated_group_names %}
+{% do federated_group_names.append(group['cn']) %}
+{% endif %}
 {% endfor %}
 {% endfor %}
 {% endif %}
@@ -128,9 +151,9 @@ keystone_available:
       - k8s_helm: install_keystone
 
 # Scope the Keycloak identity provider to the existing 'rsc' domain (owned
-# by LDAP) so federated logins resolve to the LDAP users/groups already in
-# that domain, instead of a brand new IdP-owned domain. This never creates
-# the domain itself - domain rsc must already exist.
+# by LDAP) so federated logins resolve to the LDAP users already in that
+# domain, instead of a brand new IdP-owned domain. This never creates the
+# domain itself - domain rsc must already exist.
 keystone_keycloak_idp:
   kinetic_openstack.identity_provider_present:
     - name: {{ idp_name }}
@@ -142,8 +165,24 @@ keystone_keycloak_idp:
     - require:
       - kinetic_openstack: keystone_available
 
-# Map Keycloak's OIDC claims onto existing LDAP users/groups in the 'rsc'
-# domain. Never creates users or groups - LDAP already owns them.
+# Empty SQL-backed "shadow" groups (same names as the real LDAP groups),
+# purely so Keystone's federated group-membership tracking has a valid SQL
+# `group` row to reference. Never populated with static members here -
+# Keystone adds/removes federated users' membership dynamically per-login
+# based on the IdP's claims. See the federated_group_domain comment above.
+{% for group_name in federated_group_names %}
+openstack_federated_group_{{ group_name }}:
+  kinetic_openstack.group_present:
+    - name: {{ group_name }}
+    - domain_name: {{ federated_group_domain }}
+    - cloud: {{ cloud_name }}
+    - require:
+      - kinetic_openstack: keystone_available
+{% endfor %}
+
+# Map Keycloak's OIDC claims onto the existing LDAP user (in the 'rsc'
+# domain) and the SQL-backed shadow groups created above. Never creates
+# users - LDAP already owns them.
 keystone_keycloak_mapping:
   kinetic_openstack.mapping_present:
     - name: {{ mapping_id }}
@@ -162,11 +201,9 @@ keystone_keycloak_protocol:
       - kinetic_openstack: keystone_keycloak_idp
       - kinetic_openstack: keystone_keycloak_mapping
 
-# Projects + role assignments for LDAP groups. formulas/common/ldapadmin's
-# prov.sls provisions the LDAP groups themselves; the OpenStack side lives
-# here instead, since it needs Keystone to actually be reachable. Exactly
-# one project_present state is emitted per unique project name (see
-# projects_map above), even if multiple LDAP groups reference it.
+# Projects + role assignments for the shadow groups above. Exactly one
+# project_present state is emitted per unique project name (see
+# projects_map above), even if multiple groups reference it.
 {% for project_name, entry in projects_map.items() %}
 {% set safe_project = project_name | lower | replace('_', '-') | replace(' ', '-') %}
 openstack_project_{{ safe_project }}:
@@ -184,10 +221,11 @@ openstack_role_assignment_{{ safe_project }}_{{ assignment['group'] }}_{{ assign
     - role_name: {{ assignment['role'] }}
     - project_name: {{ project_name }}
     - group_name: {{ assignment['group'] }}
-    - group_domain: {{ realm_domain }}
+    - group_domain: {{ federated_group_domain }}
     - project_domain: {{ entry['domain'] }}
     - cloud: {{ cloud_name }}
     - require:
       - kinetic_openstack: openstack_project_{{ safe_project }}
+      - kinetic_openstack: openstack_federated_group_{{ assignment['group'] }}
 {% endfor %}
 {% endfor %}

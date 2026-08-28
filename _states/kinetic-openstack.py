@@ -465,6 +465,86 @@ def health_check(name, timeout=180, interval=5, **kwargs):
     return ret
 
 
+def group_present(name, domain_name=None, description=None, **kwargs):
+    """
+    Ensure a Keystone group exists, scoped to a domain.
+
+    Intended for groups referenced by OIDC/SAML federation mapping rules
+    (e.g. a `groups: "{1}"` local rule) - Keystone's federated shadow-user
+    group membership tracking (ExpiringUserGroupMembership) writes a row
+    with a foreign key into the SQL `group` table on every federated login,
+    which fails for groups that live in a domain using a domain-specific
+    LDAP identity driver. Federated group mappings must instead target a
+    SQL-backed domain (e.g. Default) - this state never adds members,
+    since Keystone manages federated membership dynamically per-login
+    based on the IdP's claims.
+
+    Args:
+        name (str): The group name.
+        domain_name (str): Name of the (existing, SQL-backed) domain to
+            create the group in. Required.
+        description (str, optional): Description of the group.
+
+    Example:
+
+    .. code-block:: yaml
+
+        openstack_federated_group_admins:
+          kinetic_openstack.group_present:
+            - name: admins
+            - domain_name: Default
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    domain_id = None
+    if domain_name:
+        domain = __salt__["kinetic_openstack.get_domain"](
+            domain_name, cloud=cloud_name
+        )
+        if not domain:
+            return {
+                "name": name,
+                "result": False,
+                "changes": {},
+                "comment": f"Domain '{domain_name}' does not exist. This state does not create domains.",
+            }
+        domain_id = domain["id"]
+
+    existing = __salt__["kinetic_openstack.get_group"](
+        name, domain_id=domain_id, cloud=cloud_name
+    )
+    if existing:
+        ret["comment"] = f"Group '{name}' already exists."
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Group '{name}' would be created."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_group"](
+            name, domain_id=domain_id, description=description, cloud=cloud_name
+        )
+        ret["changes"] = {"created": name}
+        ret["comment"] = f"Group '{name}' created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating group '{name}': {str(e)}"
+
+    return ret
+
+
 def identity_provider_present(
     name,
     domain_name=None,
