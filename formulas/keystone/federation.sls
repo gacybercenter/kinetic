@@ -14,12 +14,22 @@ include:
 {# mod_wsgi drops the HTTP_OIDC_PREFERRED_USERNAME header, so the username
    claim must be read from OIDC-preferred_username instead (per keystone's
    mod_auth_openidc debug dump). The second rule is a fallback for users
-   who authenticate without a groups claim. #}
+   who authenticate without a groups claim.
+
+   The first rule's local entry uses the plural groups form (a bare
+   groups: '{1}' key, sibling to domain) rather than the singular
+   group: {name: '{1}', domain: ...} form, because HTTP_OIDC_GROUPS is a
+   multi-valued claim - a user can belong to more than one Keycloak group.
+   The singular form only handles one atomic value; when a user has
+   multiple groups, Keystone still splits the assertion into a list, but
+   the singular form then tries to use that whole Python list as a single
+   literal group name (breaks the LDAP group lookup and, downstream,
+   token validation for any user in more than one group). #}
 {% set default_mapping_rules = [
     {
         'local': [
             {'user': {'name': '{0}', 'domain': {'name': realm_domain}}},
-            {'group': {'name': '{1}', 'domain': {'name': realm_domain}}},
+            {'groups': '{1}', 'domain': {'name': realm_domain}},
         ],
         'remote': [
             {'type': 'OIDC-preferred_username'},
