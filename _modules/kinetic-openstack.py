@@ -1059,7 +1059,7 @@ def get_identity_provider(idp_id, cloud=None):
             "id": idp.id,
             "domain_id": idp.domain_id,
             "description": idp.description,
-            "enabled": idp.enabled,
+            "enabled": idp.is_enabled,
             "remote_ids": idp.remote_ids or [],
         }
     except exceptions.SDKException as e:
@@ -1102,7 +1102,10 @@ def create_identity_provider(
     if conn is None:
         return None
     try:
-        attrs = {"enabled": enabled, "remote_ids": remote_ids or []}
+        # openstacksdk's IdentityProvider resource exposes this as
+        # is_enabled (the REST API's wire-format key is "enabled", but the
+        # Python attribute/constructor kwarg is is_enabled).
+        attrs = {"is_enabled": enabled, "remote_ids": remote_ids or []}
         if domain_id is not None:
             attrs["domain_id"] = domain_id
         if description is not None:
@@ -1112,7 +1115,7 @@ def create_identity_provider(
             "id": idp.id,
             "domain_id": idp.domain_id,
             "description": idp.description,
-            "enabled": idp.enabled,
+            "enabled": idp.is_enabled,
             "remote_ids": idp.remote_ids or [],
         }
     except exceptions.SDKException as e:
@@ -1148,12 +1151,16 @@ def update_identity_provider(idp_id, cloud=None, **attrs):
         idp = conn.identity.find_identity_provider(idp_id, ignore_missing=True)
         if not idp:
             raise CommandExecutionError(f"Identity provider {idp_id} not found")
+        # See create_identity_provider: the SDK attribute/kwarg is
+        # is_enabled, not enabled.
+        if "enabled" in attrs:
+            attrs["is_enabled"] = attrs.pop("enabled")
         idp = conn.identity.update_identity_provider(idp, **attrs)
         return {
             "id": idp.id,
             "domain_id": idp.domain_id,
             "description": idp.description,
-            "enabled": idp.enabled,
+            "enabled": idp.is_enabled,
             "remote_ids": idp.remote_ids or [],
         }
     except exceptions.SDKException as e:
