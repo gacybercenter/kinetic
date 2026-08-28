@@ -129,7 +129,8 @@ install_keystone:
     - keep_values_file: true
     - pillar_key: osh:keystone
     - set_values:
-      - pods.mounts.keystone_api.volumes.configmap.name={{ pillar['res-k8s']['rsc-cert-ca']['name'] }}
+      - pod.mounts.keystone_api.volumes.configmap.name={{ pillar['res-k8s']['rsc-cert-ca']['name'] }}
+      - pod.mounts.keystone_domain_manage.volumes.configmap.name={{ pillar['res-k8s']['rsc-cert-ca']['name'] }}
       - endpoints.oslo_db.auth.admin.username=root
       - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
       - endpoints.oslo_db.auth.keystone.username=keystone
