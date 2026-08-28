@@ -58,14 +58,28 @@ include:
                 openstack:
                   projects:
                     - name: my-project      # optional, defaults to this group's cn
-                                             # (underscores replaced with hyphens)
+                                             # verbatim (so it matches whatever
+                                             # name another group's role
+                                             # assignment onto this same
+                                             # project would need to use)
                       description: "..."    # optional, defaults to "Project for <name>"
                       domain: Default       # optional, project's domain, defaults to Default
                       roles: [member]       # optional, defaults to [member]
+
+              `projects` may also be a single mapping (rather than a list of
+              one) for the common one-project-per-group case, e.g.:
+
+                openstack:
+                  projects:
+                    roles: [member]
    ------------------------------------------------------------------------ #}
 {%- macro openstack_projects_for(group_cn, os_spec) -%}
-{% for project in os_spec.get('projects', []) %}
-{% set project_name = project.get('name', group_cn | replace('_', '-')) %}
+{% set projects = os_spec.get('projects', []) %}
+{% if projects is mapping %}
+{% set projects = [projects] %}
+{% endif %}
+{% for project in projects %}
+{% set project_name = project.get('name', group_cn) %}
 {% set safe_project = project_name | lower | replace('_', '-') | replace(' ', '-') %}
 {% set project_domain = project.get('domain', 'Default') %}
 {% if project.get('roles') %}
