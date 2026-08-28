@@ -10,6 +10,7 @@ for managing projects, roles, and LDAP group associations.
 import json
 import logging
 import os
+import time
 
 from salt.exceptions import CommandExecutionError
 
@@ -935,5 +936,436 @@ def diagnose_role_assignment(
             "error": str(e),
             "diagnostic": None,
         }
+    finally:
+        conn.close()
+
+
+def check_health(cloud=None, timeout=180, interval=5):
+    """
+    Poll the Keystone identity API until it responds successfully or the
+    timeout is reached. Intended as a gate before running federation setup:
+    a Helm release reporting "deployed" does not guarantee the external
+    Ingress/HTTPRoute/DNS path to Keystone is actually ready yet.
+
+    Args:
+        cloud (str): Name of the cloud configuration from clouds.yaml
+        timeout (int): Maximum time in seconds to wait for Keystone to respond
+        interval (int): Seconds to wait between retries
+
+    Returns:
+        dict: {"success": bool, "healthy": bool, "message": str}
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.check_health cloud=rsc timeout=180 interval=5
+    """
+    if cloud is None:
+        return {
+            "success": False,
+            "healthy": False,
+            "message": "No cloud configuration name provided.",
+        }
+
+    last_error = None
+    elapsed = 0
+    while True:
+        conn = None
+        try:
+            conn = connection.from_config(cloud=cloud)
+            conn.authorize()
+            return {
+                "success": True,
+                "healthy": True,
+                "message": "Keystone is reachable and issuing tokens.",
+            }
+        except Exception as e:
+            last_error = str(e)
+        finally:
+            if conn is not None:
+                conn.close()
+
+        if elapsed >= timeout:
+            break
+        time.sleep(min(interval, timeout - elapsed))
+        elapsed += interval
+
+    return {
+        "success": False,
+        "healthy": False,
+        "message": f"Keystone did not become healthy within {timeout}s: {last_error}",
+    }
+
+
+def get_domain(domain_name_or_id, cloud=None):
+    """
+    Look up an existing Keystone domain by name or ID. Never creates one.
+
+    Args:
+        domain_name_or_id (str): Name or ID of the domain.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None: {"id": ..., "name": ...} or None if not found.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_domain rsc cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        domain = conn.identity.find_domain(domain_name_or_id)
+        if not domain:
+            return None
+        return {"id": domain.id, "name": domain.name}
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to look up domain {domain_name_or_id}: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def get_identity_provider(idp_id, cloud=None):
+    """
+    Get a single OS-FEDERATION identity provider by ID.
+
+    Args:
+        idp_id (str): The identity provider ID.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_identity_provider keycloak cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        idp = conn.identity.find_identity_provider(idp_id, ignore_missing=True)
+        if not idp:
+            return None
+        return {
+            "id": idp.id,
+            "domain_id": idp.domain_id,
+            "description": idp.description,
+            "enabled": idp.enabled,
+            "remote_ids": idp.remote_ids or [],
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to get identity provider {idp_id}: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def create_identity_provider(
+    idp_id,
+    domain_id=None,
+    description=None,
+    enabled=True,
+    remote_ids=None,
+    cloud=None,
+):
+    """
+    Create an OS-FEDERATION identity provider.
+
+    Args:
+        idp_id (str): The identity provider ID.
+        domain_id (str): ID of the (existing) domain to scope the IdP to.
+        description (str, optional): Description of the identity provider.
+        enabled (bool, optional): Whether the identity provider is enabled. Defaults to True.
+        remote_ids (list, optional): List of remote IdP issuer URLs.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_identity_provider keycloak domain_id=abc123 remote_ids='["https://keycloak.example.com/realms/rsc"]' cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        attrs = {"enabled": enabled, "remote_ids": remote_ids or []}
+        if domain_id is not None:
+            attrs["domain_id"] = domain_id
+        if description is not None:
+            attrs["description"] = description
+        idp = conn.identity.create_identity_provider(id=idp_id, **attrs)
+        return {
+            "id": idp.id,
+            "domain_id": idp.domain_id,
+            "description": idp.description,
+            "enabled": idp.enabled,
+            "remote_ids": idp.remote_ids or [],
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to create identity provider {idp_id}: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def update_identity_provider(idp_id, cloud=None, **attrs):
+    """
+    Update an existing OS-FEDERATION identity provider.
+
+    Args:
+        idp_id (str): The identity provider ID.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+        **attrs: Attributes to update (e.g. enabled, description, remote_ids, domain_id).
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.update_identity_provider keycloak enabled=True cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        idp = conn.identity.find_identity_provider(idp_id, ignore_missing=True)
+        if not idp:
+            raise CommandExecutionError(f"Identity provider {idp_id} not found")
+        idp = conn.identity.update_identity_provider(idp, **attrs)
+        return {
+            "id": idp.id,
+            "domain_id": idp.domain_id,
+            "description": idp.description,
+            "enabled": idp.enabled,
+            "remote_ids": idp.remote_ids or [],
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to update identity provider {idp_id}: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def get_mapping(mapping_id, cloud=None):
+    """
+    Get a single OS-FEDERATION mapping by ID.
+
+    Args:
+        mapping_id (str): The mapping ID.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_mapping keycloak_openid cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        m = conn.identity.find_mapping(mapping_id, ignore_missing=True)
+        if not m:
+            return None
+        return {"id": m.id, "rules": m.rules}
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to get mapping {mapping_id}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def create_mapping(mapping_id, rules, cloud=None):
+    """
+    Create an OS-FEDERATION mapping.
+
+    Args:
+        mapping_id (str): The mapping ID.
+        rules (list): List of mapping rule dicts (local/remote).
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_mapping keycloak_openid rules='[...]' cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        m = conn.identity.create_mapping(id=mapping_id, rules=rules)
+        return {"id": m.id, "rules": m.rules}
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to create mapping {mapping_id}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def update_mapping(mapping_id, rules, cloud=None):
+    """
+    Update an existing OS-FEDERATION mapping's rules.
+
+    Args:
+        mapping_id (str): The mapping ID.
+        rules (list): List of mapping rule dicts (local/remote).
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.update_mapping keycloak_openid rules='[...]' cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        m = conn.identity.find_mapping(mapping_id, ignore_missing=True)
+        if not m:
+            raise CommandExecutionError(f"Mapping {mapping_id} not found")
+        m = conn.identity.update_mapping(m, rules=rules)
+        return {"id": m.id, "rules": m.rules}
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to update mapping {mapping_id}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def get_federation_protocol(idp_id, protocol_id, cloud=None):
+    """
+    Get a single federation protocol registered on an identity provider.
+
+    Args:
+        idp_id (str): The identity provider ID.
+        protocol_id (str): The protocol ID (e.g. "openid").
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_federation_protocol keycloak openid cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        proto = conn.identity.find_federation_protocol(
+            idp_id, protocol_id, ignore_missing=True
+        )
+        if not proto:
+            return None
+        return {"id": proto.id, "mapping_id": proto.mapping_id}
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to get federation protocol {protocol_id} for idp {idp_id}: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def create_federation_protocol(idp_id, protocol_id, mapping_id, cloud=None):
+    """
+    Register a federation protocol on an identity provider.
+
+    Args:
+        idp_id (str): The identity provider ID.
+        protocol_id (str): The protocol ID (e.g. "openid").
+        mapping_id (str): The mapping ID to associate with this protocol.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_federation_protocol keycloak openid keycloak_openid cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        proto = conn.identity.create_federation_protocol(
+            idp_id, id=protocol_id, mapping_id=mapping_id
+        )
+        return {"id": proto.id, "mapping_id": proto.mapping_id}
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to create federation protocol {protocol_id} for idp {idp_id}: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def update_federation_protocol(idp_id, protocol_id, mapping_id, cloud=None):
+    """
+    Update the mapping used by an existing federation protocol.
+
+    Args:
+        idp_id (str): The identity provider ID.
+        protocol_id (str): The protocol ID (e.g. "openid").
+        mapping_id (str): The mapping ID to associate with this protocol.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.update_federation_protocol keycloak openid keycloak_openid cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        proto = conn.identity.find_federation_protocol(
+            idp_id, protocol_id, ignore_missing=True
+        )
+        if not proto:
+            raise CommandExecutionError(
+                f"Federation protocol {protocol_id} for idp {idp_id} not found"
+            )
+        proto = conn.identity.update_federation_protocol(
+            idp_id, proto, mapping_id=mapping_id
+        )
+        return {"id": proto.id, "mapping_id": proto.mapping_id}
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to update federation protocol {protocol_id} for idp {idp_id}: {str(e)}"
+        )
     finally:
         conn.close()
