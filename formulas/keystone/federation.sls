@@ -52,16 +52,9 @@ include:
                     'domain': {'name': realm_domain},
                 }
             },
-            {
-                'group': {
-                    'name': '{1}',
-                    'domain': {'name': federated_group_domain},
-                }
-            },
         ],
         'remote': [
             {'type': 'OIDC-preferred_username'},
-            {'type': 'HTTP_OIDC_GROUPS'},
         ],
     },
 ] %}
