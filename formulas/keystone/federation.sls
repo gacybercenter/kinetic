@@ -45,20 +45,23 @@ include:
 {% set default_mapping_rules = [
     {
         'local': [
-            {'user': {'name': '{0}', 'domain': {'name': realm_domain}}},
-            {'group': '{1}', 'domain': {'name': federated_group_domain}},
+            {
+                'user': {
+                    'type': 'local',
+                    'name': '{0}',
+                    'domain': {'name': realm_domain},
+                }
+            },
+            {
+                'group': {
+                    'name': '{1}',
+                    'domain': {'name': federated_group_domain},
+                }
+            },
         ],
         'remote': [
             {'type': 'OIDC-preferred_username'},
             {'type': 'HTTP_OIDC_GROUPS'},
-        ],
-    },
-    {
-        'local': [
-            {'user': {'name': '{0}', 'domain': {'name': realm_domain}}},
-        ],
-        'remote': [
-            {'type': 'OIDC-preferred_username'},
         ],
     },
 ] %}
