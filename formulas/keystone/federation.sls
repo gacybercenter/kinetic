@@ -46,7 +46,7 @@ include:
     {
         'local': [
             {'user': {'name': '{0}', 'domain': {'name': realm_domain}}},
-            {'groups': '{1}', 'domain': {'name': federated_group_domain}},
+            {'group': '{1}', 'domain': {'name': federated_group_domain}},
         ],
         'remote': [
             {'type': 'OIDC-preferred_username'},
