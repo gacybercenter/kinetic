@@ -4920,6 +4920,83 @@ def get_secret_value(namespace, secret_name, key, default=None):
         return default
 
 
+def get_configmap_value(namespace, configmap_name, key, default=None):
+    """
+    Retrieve a single value from a Kubernetes ConfigMap.
+
+    Useful for reading data generated/managed outside of Salt (e.g. a
+    trust-manager Bundle's target ConfigMap, synced into a namespace) directly
+    from the cluster instead of duplicating it in pillar.
+
+    Args:
+        namespace (str): Namespace containing the ConfigMap.
+        configmap_name (str): Name of the ConfigMap.
+        key (str): Key within the ConfigMap's data to retrieve.
+        default: Value to return if the ConfigMap or key does not exist, or on error.
+
+    Returns:
+        str: The value, or `default` if not found.
+
+    CLI Example:
+        salt '*' kinetic_k8s.get_configmap_value openstack cyberrange-ca-bundle ca.crt
+    """
+    try:
+        _load_k8s_config()
+        core_v1_api = client.CoreV1Api()
+        configmap = core_v1_api.read_namespaced_config_map(
+            name=configmap_name, namespace=namespace
+        )
+        data = configmap.data or {}
+        return data.get(key, default)
+    except ApiException as e:
+        if e.status == 404:
+            return default
+        return default
+    except Exception:
+        return default
+
+
+def set_nested_value(data, path, value, separator=":"):
+    """
+    Return a deep copy of `data` with a nested key path set to `value`.
+
+    Useful for merging a dynamically-fetched value (e.g. from
+    get_configmap_value/get_secret_value) into a larger pillar-sourced dict
+    from Jinja, since Jinja templates cannot perform nested item assignment
+    (`d['a']['b'] = value`) as an expression.
+
+    Missing intermediate dicts along the path are created automatically. Any
+    existing non-dict value at an intermediate path segment is replaced with
+    a new dict.
+
+    Args:
+        data (dict): The source dict. Not mutated - a deep copy is returned.
+        path (str): Delimited path to the key to set, e.g. "endpoints:ldap:auth:client:tls:ca".
+        value: The value to set at that path.
+        separator (str): Path segment separator. Defaults to ":".
+
+    Returns:
+        dict: A new dict with the value set at the given path.
+
+    CLI Example:
+        salt '*' kinetic_k8s.set_nested_value '{"a": {"b": 1}}' a:c 2
+    """
+    import copy
+
+    result = copy.deepcopy(data) if isinstance(data, dict) else {}
+    keys = [k for k in path.split(separator) if k]
+    if not keys:
+        return result
+
+    node = result
+    for key in keys[:-1]:
+        if not isinstance(node.get(key), dict):
+            node[key] = {}
+        node = node[key]
+    node[keys[-1]] = value
+    return result
+
+
 def secret_present(
     namespace, secret_name, data, secret_type="Opaque", labels=None, annotations=None
 ):
@@ -7745,4 +7822,207 @@ def serviceaccount_token_secret_present(namespace, name, service_account):
             "success": False,
             "updated": False,
             "message": f"ServiceAccount token Secret operation error: {str(e)[:100]}...",
+        }
+
+
+def _build_bundle_sources(sources):
+    """
+    Build the list of trust-manager Bundle sources (trust.cert-manager.io/v1alpha1).
+
+    Only configMap, inLine, and useDefaultCAs sources are supported - secret
+    sources are intentionally rejected, since trust-manager needs no RBAC to
+    read Secrets when only ConfigMap-backed sources are used.
+
+    Args:
+        sources (list): List of source dicts. Each dict may contain:
+            config_map (dict, optional): {"name", "key", "include_all_keys", "selector"}
+            in_line (str, optional): Raw PEM data to append as a source.
+            use_default_cas (bool, optional): Use trust-manager's default CA package.
+
+    Returns:
+        list or None: The built list of source dicts (camelCase, ready for the
+            API), or None if validation fails.
+        str or None: An error message if validation failed, else None.
+    """
+    built_sources = []
+    for src in sources or []:
+        if not isinstance(src, dict):
+            return None, f"Invalid bundle source (expected a dict): {src!r}"
+        if "secret" in src:
+            return None, (
+                "Secret sources are not supported by bundles_present; "
+                "only configMap, inLine, and useDefaultCAs sources are allowed."
+            )
+
+        built = {}
+        if "config_map" in src and src["config_map"] is not None:
+            cm = src["config_map"]
+            cm_obj = {}
+            if cm.get("name") is not None:
+                cm_obj["name"] = cm["name"]
+            if cm.get("key") is not None:
+                cm_obj["key"] = cm["key"]
+            if cm.get("include_all_keys") is not None:
+                cm_obj["includeAllKeys"] = cm["include_all_keys"]
+            if cm.get("selector") is not None:
+                cm_obj["selector"] = cm["selector"]
+            built["configMap"] = cm_obj
+        if "in_line" in src and src["in_line"] is not None:
+            built["inLine"] = src["in_line"]
+        if "use_default_cas" in src and src["use_default_cas"] is not None:
+            built["useDefaultCAs"] = src["use_default_cas"]
+
+        if not built:
+            return None, (
+                f"Bundle source {src!r} did not contain a supported key "
+                "(config_map, in_line, use_default_cas)."
+            )
+        built_sources.append(built)
+
+    if not built_sources:
+        return None, "At least one bundle source is required."
+
+    return built_sources, None
+
+
+def bundles_present(
+    name,
+    sources,
+    target_configmap_key,
+    target_metadata=None,
+    target_namespace_selector=None,
+    target_additional_formats=None,
+):
+    """
+    Ensure a trust-manager Bundle Custom Resource exists (trust.cert-manager.io/v1alpha1).
+
+    Bundle is a cluster-scoped resource. Only ConfigMap-backed sources and a
+    ConfigMap target are supported - Secret sources/targets are intentionally
+    not exposed, since trust-manager needs no RBAC to read/write Secrets when
+    restricted to ConfigMaps only.
+
+    Args:
+        name (str): Name of the Bundle resource.
+        sources (list): List of source dicts. Each dict may contain:
+            config_map (dict, optional): {"name", "key", "include_all_keys", "selector"}
+            in_line (str, optional): Raw PEM data to append as a source.
+            use_default_cas (bool, optional): Use trust-manager's default CA package.
+        target_configmap_key (str): Key of the entry in the target ConfigMap's
+            data field the synced bundle will be written to.
+        target_metadata (dict, optional): {"labels": {...}, "annotations": {...}}
+            copied onto the target ConfigMap in every namespace.
+        target_namespace_selector (dict, optional): Label selector
+            ({"matchLabels": {...}} and/or {"matchExpressions": [...]}) restricting
+            which namespaces the target ConfigMap is synced into.
+        target_additional_formats (dict, optional): Additional binary formats to
+            write to the target ConfigMap, e.g.
+            {"pkcs12": {"key": "bundle.p12", "password": "...", "profile": "Modern2023"}}
+            and/or {"jks": {"key": "bundle.jks", "password": "..."}}.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.bundles_present my-ca-bundle sources_list target_configmap_key
+    """
+    try:
+        built_sources, err = _build_bundle_sources(sources)
+        if err:
+            return {"success": False, "updated": False, "message": err}
+
+        target = {"configMap": {"key": target_configmap_key}}
+        if target_metadata:
+            target["configMap"]["metadata"] = target_metadata
+        if target_namespace_selector:
+            target["namespaceSelector"] = target_namespace_selector
+        if target_additional_formats:
+            additional_formats = {}
+            if target_additional_formats.get("jks"):
+                additional_formats["jks"] = target_additional_formats["jks"]
+            if target_additional_formats.get("pkcs12"):
+                additional_formats["pkcs12"] = target_additional_formats["pkcs12"]
+            if additional_formats:
+                target["additionalFormats"] = additional_formats
+
+        spec = {"sources": built_sources, "target": target}
+
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+        group = "trust.cert-manager.io"
+        version = "v1alpha1"
+        plural = "bundles"
+
+        exists = False
+        matches = False
+
+        try:
+            resource = custom_api.get_cluster_custom_object(
+                group=group, version=version, plural=plural, name=name,
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            matches = current_spec == spec
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking Bundle {name}: {str(e)}...",
+                }
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Bundle",
+            "metadata": {"name": name},
+            "spec": spec,
+        }
+
+        if not exists:
+            try:
+                custom_api.create_cluster_custom_object(
+                    group=group, version=version, plural=plural, body=body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Bundle {name} created",
+                }
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create Bundle {name}: {str(e)}...",
+                }
+        elif not matches:
+            try:
+                if "metadata" in resource and "resourceVersion" in resource["metadata"]:
+                    body["metadata"]["resourceVersion"] = resource["metadata"][
+                        "resourceVersion"
+                    ]
+                custom_api.replace_cluster_custom_object(
+                    group=group, version=version, plural=plural, name=name, body=body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Bundle {name} updated",
+                }
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update Bundle {name}: {str(e)}...",
+                }
+        return {
+            "success": True,
+            "updated": False,
+            "message": f"Bundle {name} already exists and matches desired state",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Bundle operation error: {str(e)}",
         }

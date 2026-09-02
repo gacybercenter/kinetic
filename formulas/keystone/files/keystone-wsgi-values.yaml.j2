@@ -1,4 +1,3 @@
 conf:
-  keystone:
-    wsgi_keystone: |
-{% filter indent(6, true) %}{% include 'formulas/keystone/files/wsgi_keystone.conf.j2' %}{% endfilter %}
+  wsgi_keystone: |
+{% filter indent(4, true) %}{% include 'formulas/keystone/files/wsgi_keystone.conf.j2' %}{% endfilter %}

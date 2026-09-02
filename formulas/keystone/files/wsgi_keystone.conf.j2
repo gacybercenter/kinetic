@@ -1,13 +1,10 @@
-{%- set oidc = pillar.get('osh', {}).get('keystone', {}).get('oidc', {}) -%}
+{%- set oidc = pillar.get('osh', {}).get('keystone_oidc', {}) -%}
 {%- set oidc_provider_metadata_url = oidc.get('provider_metadata_url', '') -%}
-{%- set oidc_client_id           = oidc.get('client_id', '') -%}
+{%- set oidc_client_id           = oidc.get('client_id', 'keystone') -%}
 {%- set oidc_client_secret       = oidc.get('client_secret', '') -%}
 {%- set oidc_crypto_passphrase   = oidc.get('crypto_passphrase', '') -%}
-{%- set oidc_redirect_uri        = oidc.get('redirect_uri', '') -%}
-
-{%- raw %}
-{{- $portInt := tuple "identity" "service" "api" $ | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
-{%- endraw %}
+{%- set oidc_redirect_uri        = oidc.get('redirect_uri', 'https://keystone.rsc.gacyberrange.org/v3/OS-FEDERATION/identity_providers/keycloak/protocols/openid/auth') -%}
+{%- raw %}{{- $portInt := tuple "identity" "service" "api" $ | include "helm-toolkit.endpoints.endpoint_port_lookup" }}{% endraw %}
 
 Listen 0.0.0.0:{{ '{{ $portInt }}' }}
 
@@ -24,6 +21,7 @@ OIDCClientID "{{ oidc_client_id }}"
 OIDCClientSecret "{{ oidc_client_secret }}"
 OIDCCryptoPassphrase "{{ oidc_crypto_passphrase }}"
 OIDCRedirectURI "{{ oidc_redirect_uri }}"
+OIDCXForwardedHeaders X-Forwarded-Host X-Forwarded-Port X-Forwarded-Proto
 
 SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
 CustomLog /dev/stdout combined env=!forwarded
@@ -32,7 +30,7 @@ ErrorLogFormat "%{cu}t %M"
 ErrorLog /dev/stdout
 
 <VirtualHost *:{{ '{{ $portInt }}' }}>
-    ServerName keystone.example.com
+    ServerName keystone.rsc.gacyberrange.org
 
     WSGIDaemonProcess keystone-public processes=1 threads=1 user=keystone group=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-public
@@ -51,6 +49,16 @@ ErrorLog /dev/stdout
     </Location>
 
     <Location /v3/OS-FEDERATION/identity_providers/keycloak/protocols/openid/auth/redirect>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+
+    <Location /v3/auth/OS-FEDERATION/identity_providers/keycloak/protocols/openid/websso>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+
+    <Location /v3/auth/OS-FEDERATION/websso/openid>
         AuthType openid-connect
         Require valid-user
     </Location>

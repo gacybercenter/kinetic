@@ -39,6 +39,11 @@
 # Role/ClusterRole (built-in or one of this entry's own `custom_roles`).
 # `kubernetes.custom_roles` creates a Role (if `namespace` is set) or a
 # ClusterRole (if not) via k8s.role_present/k8s.clusterrole_present.
+#
+# OpenStack project/role provisioning for these LDAP groups happens in
+# formulas/keystone/federation.sls, not here - this file is applied via a
+# standalone orchestration run (orch/k8s-ldap-prov.sls) that doesn't wait
+# for Keystone to be reachable, so OpenStack API calls don't belong here.
 # ==========================================================================
 
 {% set users_base_dn = "ou=users,dc=rsc,dc=gacyberrange,dc=org" %}
