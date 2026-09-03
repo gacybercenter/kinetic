@@ -53,7 +53,7 @@ install_glance:
       - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh']['rabbitmq_admin'] }}
       - endpoints.oslo_messaging.auth.glance.username=glance
       - endpoints.oslo_messaging.auth.glance.password={{ pillar['osh']['glance']['values']['glance_rq_user'] }}
-      - endpoints.identity.auth.admin.password={{ pillar['osh']['admin'] }}
+      - endpoints.identity.auth.admin.password={{ pillar['osh']['osh_users']['admin'] }}
       - endpoints.identity.auth.glance.password={{ pillar['osh']['glance']['values']['glance_admin'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh']['glance']['values']['glance_test'] }}
     - require:
