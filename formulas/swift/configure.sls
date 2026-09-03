@@ -106,8 +106,6 @@ swift_service:
     - type: object-store
     - description: "Swift Object Storage"
     - cloud: {{ swift_cloud }}
-    - require:
-      - kinetic_openstack: keystone_available
 
 # Keystone endpoints require region_id to reference an existing Region -
 # it is not a free-form string, despite what it may look like from the API.
@@ -115,8 +113,6 @@ swift_region:
   kinetic_openstack.region_present:
     - name: {{ swift_region }}
     - cloud: {{ swift_cloud }}
-    - require:
-      - kinetic_openstack: keystone_available
 
 swift_endpoint_admin:
   kinetic_openstack.endpoint_present:
