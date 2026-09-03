@@ -17,7 +17,7 @@ include:
 {% endfor %}
 {% set swift_public_hostname = pillar['osh'].get('swift_public_hostname', swift_hostnames[0] if swift_hostnames else 'swift.rsc.gacyberrange.org') %}
 {% set swift_region = pillar['osh'].get('swift_region', 'default') %}
-{% set swift_cloud = pillar.get('osh_values', {}).get('cloud', 'rsc') %}
+{% set swift_cloud = pillar['osh']['cloud'] %}
 
 # Routes external Swift/S3 traffic through the external Gateway
 # (traefik-external, websecure-ext listener). TLS termination happens at
