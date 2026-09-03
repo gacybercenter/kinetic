@@ -2,37 +2,38 @@ include:
   - /formulas/glance/install
   - /formulas/osh-helm-repos/configure
 
-glance_external_certificate:
-  k8s.certmanager_certificate_present:
-    - name: glance-tls-public
-    - certificate_name: glance-tls-public
-    - namespace: openstack
-    - secret_name: glance-tls-public
-    - issuer_name: letsencrypt-prod
-    - issuer_kind: ClusterIssuer
-    - common_name: {{ pillar['osh_values']['glance_cert']['common_name'] }}
-    - dns_names: {{ pillar['osh_values']['glance_cert']['dns_names'] }}
+{# glance_ingress.hosts may be a list of plain hostname strings, or a list of
+   dicts with a 'host' key - normalize to a flat list of hostnames either way. #}
+{% set glance_hostnames = [] %}
+{% for h in pillar['osh']['glance_ingress']['hosts'] %}
+{% if h is mapping %}
+{% do glance_hostnames.append(h['host']) %}
+{% else %}
+{% do glance_hostnames.append(h) %}
+{% endif %}
+{% endfor %}
 
-glance_internal_certificate:
-  k8s.certmanager_certificate_present:
-    - name: glance-tls-api
-    - certificate_name: glance-tls-api
+# Routes external Glance API traffic through the external Gateway
+# (traefik-external, websecure-ext listener). TLS termination happens at
+# the Gateway listener - the certificate itself is managed elsewhere, not
+# here.
+glance_httproute:
+  k8s.httproute_present:
+    - name: glance-route
     - namespace: openstack
-    - secret_name: glance-tls-api
-    - issuer_name: cyberrange-ca-issuer
-    - issuer_kind: ClusterIssuer
-    - common_name: {{ pillar['osh_values']['glance_internal_api']['common_name'] }}
-    - dns_names: {{ pillar['osh_values']['glance_internal_api']['dns_names'] }}
-
-glance_ingress:
-  k8s.ingress_present:
-    - name: glance-ingress
-    - namespace: openstack
-    - ingress_class_name: {{ pillar['osh_values']['glance_ingress']['class_name'] }}
-    - hosts: {{ pillar['osh_values']['glance_ingress']['hosts'] }}
-    - tls: {{ pillar['osh_values']['glance_ingress']['tls'] }}
-    - require:
-      - k8s: glance_external_certificate
+    - parent_refs:
+        - name: traefik-external
+          namespace: ingress
+          sectionName: websecure-ext
+    - hostnames: {{ glance_hostnames | tojson }}
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: glance-api
+              port: 9292
 
 install_glance:
   k8s_helm.helm_release_present:
@@ -56,5 +57,4 @@ install_glance:
       - endpoints.identity.auth.glance.password={{ pillar['osh']['glance_admin'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh']['glance_test'] }}
     - require:
-      - k8s: glance_external_certificate
-      - k8s: glance_ingress
+      - k8s: glance_httproute
