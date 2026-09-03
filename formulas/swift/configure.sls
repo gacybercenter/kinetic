@@ -135,7 +135,7 @@ swift_endpoint_public:
     - service_name: swift
     - interface: public
     - region: {{ swift_region }}
-    - url: "https://{{ swift_hostnames | tojson }}/swift/v1"
+    - url: "https://{{ swift_hostnames[0] }}/swift/v1"
     - cloud: {{ swift_cloud }}
     - require:
       - kinetic_openstack: swift_service
