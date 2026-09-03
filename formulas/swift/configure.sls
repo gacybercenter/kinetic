@@ -7,7 +7,7 @@ include:
    the old Ingress resource) - normalize to a flat list of hostnames either
    way. #}
 {% set swift_hostnames = [] %}
-{% for h in pillar['osh_values']['swift_ingress']['hosts'] %}
+{% for h in pillar['osh']['swift_ingress']['hosts'] %}
 {% if h is mapping %}
 {% do swift_hostnames.append(h['host']) %}
 {% else %}
