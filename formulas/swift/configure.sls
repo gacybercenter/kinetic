@@ -1,4 +1,5 @@
 include:
+  - /formulas/keystone/federation
   - /formulas/swift/install
   - /formulas/osh-helm-repos/configure
 
@@ -14,6 +15,9 @@ include:
 {% do swift_hostnames.append(h) %}
 {% endif %}
 {% endfor %}
+{% set swift_public_hostname = pillar['osh'].get('swift_public_hostname', swift_hostnames[0] if swift_hostnames else 'swift.rsc.gacyberrange.org') %}
+{% set swift_region = pillar['osh'].get('swift_region', 'default') %}
+{% set swift_cloud = pillar.get('osh_values', {}).get('cloud', 'rsc') %}
 
 # Routes external Swift/S3 traffic through the external Gateway
 # (traefik-external, websecure-ext listener). TLS termination happens at
@@ -91,3 +95,48 @@ deploy_ceph_object_store:
           memory: "256Mi"
     - require:
       - k8s: keystone_admin_secret
+
+# Keystone service catalog entry + endpoints for Swift. The admin/internal
+# interfaces point directly at the in-cluster RGW Service (plain HTTP - the
+# object store itself has ssl_enabled: false/port 80, so https:// would not
+# work here). The public interface goes through swift_httproute above,
+# where the external Gateway terminates TLS.
+swift_service:
+  kinetic_openstack.service_present:
+    - name: swift
+    - type: object-store
+    - description: "Swift Object Storage"
+    - cloud: {{ swift_cloud }}
+    - require:
+      - kinetic_openstack: keystone_available
+
+swift_endpoint_admin:
+  kinetic_openstack.endpoint_present:
+    - service_name: swift
+    - interface: admin
+    - region: {{ swift_region }}
+    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc/swift/v1"
+    - cloud: {{ swift_cloud }}
+    - require:
+      - kinetic_openstack: swift_service
+
+swift_endpoint_internal:
+  kinetic_openstack.endpoint_present:
+    - service_name: swift
+    - interface: internal
+    - region: {{ swift_region }}
+    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc/swift/v1"
+    - cloud: {{ swift_cloud }}
+    - require:
+      - kinetic_openstack: swift_service
+
+swift_endpoint_public:
+  kinetic_openstack.endpoint_present:
+    - service_name: swift
+    - interface: public
+    - region: {{ swift_region }}
+    - url: "https://{{ swift_public_hostname }}/swift/v1"
+    - cloud: {{ swift_cloud }}
+    - require:
+      - kinetic_openstack: swift_service
+      - k8s: swift_httproute

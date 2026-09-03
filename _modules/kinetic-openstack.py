@@ -1460,3 +1460,267 @@ def update_federation_protocol(idp_id, protocol_id, mapping_id, cloud=None):
         )
     finally:
         conn.close()
+
+
+def get_service(name, cloud=None):
+    """
+    Look up a Keystone service catalog entry by name or ID.
+
+    Args:
+        name (str): The service name or ID (e.g. "swift").
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_service swift cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        svc = conn.identity.find_service(name, ignore_missing=True)
+        if not svc:
+            return None
+        return {
+            "id": svc.id,
+            "name": svc.name,
+            "type": svc.type,
+            "description": svc.description,
+            "enabled": svc.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to get service {name}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def create_service(name, type, description=None, enabled=True, cloud=None):
+    """
+    Create a Keystone service catalog entry.
+
+    Args:
+        name (str): The service name (e.g. "swift").
+        type (str): The service type (e.g. "object-store").
+        description (str, optional): Description of the service.
+        enabled (bool, optional): Whether the service is enabled. Defaults to True.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_service swift object-store cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        attrs = {"name": name, "type": type, "is_enabled": enabled}
+        if description is not None:
+            attrs["description"] = description
+        svc = conn.identity.create_service(**attrs)
+        return {
+            "id": svc.id,
+            "name": svc.name,
+            "type": svc.type,
+            "description": svc.description,
+            "enabled": svc.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to create service {name}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def update_service(name, cloud=None, **attrs):
+    """
+    Update an existing Keystone service catalog entry.
+
+    Args:
+        name (str): The service name or ID.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+        **attrs: Attributes to update (e.g. type, description, enabled).
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.update_service swift description="Swift Object Storage" cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        svc = conn.identity.find_service(name, ignore_missing=True)
+        if not svc:
+            raise CommandExecutionError(f"Service {name} not found")
+        # Service exposes the enabled flag as is_enabled, not enabled.
+        if "enabled" in attrs:
+            attrs["is_enabled"] = attrs.pop("enabled")
+        svc = conn.identity.update_service(svc, **attrs)
+        return {
+            "id": svc.id,
+            "name": svc.name,
+            "type": svc.type,
+            "description": svc.description,
+            "enabled": svc.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to update service {name}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def get_endpoint(service_name, interface, region=None, cloud=None):
+    """
+    Look up a Keystone endpoint by service, interface, and (optionally) region.
+
+    Args:
+        service_name (str): The service name or ID (e.g. "swift").
+        interface (str): One of "public", "internal", "admin".
+        region (str, optional): Region ID to filter by.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_endpoint swift public region=default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        svc = conn.identity.find_service(service_name, ignore_missing=True)
+        if not svc:
+            return None
+        for ep in conn.identity.endpoints(service_id=svc.id, interface=interface):
+            if region is not None and ep.region_id != region:
+                continue
+            return {
+                "id": ep.id,
+                "service_id": ep.service_id,
+                "interface": ep.interface,
+                "region_id": ep.region_id,
+                "url": ep.url,
+                "enabled": ep.is_enabled,
+            }
+        return None
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to get endpoint for service {service_name} ({interface}): {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def create_endpoint(service_name, interface, url, region=None, enabled=True, cloud=None):
+    """
+    Create a Keystone endpoint for a service.
+
+    Args:
+        service_name (str): The service name or ID (e.g. "swift").
+        interface (str): One of "public", "internal", "admin".
+        url (str): The endpoint URL.
+        region (str, optional): Region ID (e.g. "default"). Keystone does not
+            require a matching Region resource to already exist.
+        enabled (bool, optional): Whether the endpoint is enabled. Defaults to True.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_endpoint swift public https://swift.example.com/swift/v1 region=default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        svc = conn.identity.find_service(service_name, ignore_missing=True)
+        if not svc:
+            raise CommandExecutionError(f"Service {service_name} not found")
+        attrs = {
+            "service_id": svc.id,
+            "interface": interface,
+            "url": url,
+            "is_enabled": enabled,
+        }
+        if region is not None:
+            attrs["region_id"] = region
+        ep = conn.identity.create_endpoint(**attrs)
+        return {
+            "id": ep.id,
+            "service_id": ep.service_id,
+            "interface": ep.interface,
+            "region_id": ep.region_id,
+            "url": ep.url,
+            "enabled": ep.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to create endpoint for service {service_name} ({interface}): {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def update_endpoint(endpoint_id, cloud=None, **attrs):
+    """
+    Update an existing Keystone endpoint.
+
+    Args:
+        endpoint_id (str): The endpoint ID.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+        **attrs: Attributes to update (e.g. url, region (mapped to region_id), enabled).
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.update_endpoint <id> url=https://swift.example.com/swift/v1 cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        ep = conn.identity.find_endpoint(endpoint_id, ignore_missing=True)
+        if not ep:
+            raise CommandExecutionError(f"Endpoint {endpoint_id} not found")
+        if "enabled" in attrs:
+            attrs["is_enabled"] = attrs.pop("enabled")
+        if "region" in attrs:
+            attrs["region_id"] = attrs.pop("region")
+        ep = conn.identity.update_endpoint(ep, **attrs)
+        return {
+            "id": ep.id,
+            "service_id": ep.service_id,
+            "interface": ep.interface,
+            "region_id": ep.region_id,
+            "url": ep.url,
+            "enabled": ep.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to update endpoint {endpoint_id}: {str(e)}")
+    finally:
+        conn.close()

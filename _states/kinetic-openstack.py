@@ -860,3 +860,187 @@ def federation_protocol_present(name, idp_name, mapping_id, **kwargs):
         ret["comment"] = f"Error creating federation protocol '{name}': {str(e)}"
 
     return ret
+
+
+def service_present(name, type, description=None, enabled=True, **kwargs):
+    """
+    Ensure a Keystone service catalog entry exists.
+
+    Args:
+        name (str): The service name (e.g. "swift").
+        type (str): The service type (e.g. "object-store").
+        description (str, optional): Description of the service.
+        enabled (bool, optional): Whether the service is enabled. Defaults to True.
+
+    Example:
+
+    .. code-block:: yaml
+
+        swift_service:
+          kinetic_openstack.service_present:
+            - name: swift
+            - type: object-store
+            - description: "Swift Object Storage"
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    existing = __salt__["kinetic_openstack.get_service"](name, cloud=cloud_name)
+
+    if existing:
+        updates = {}
+        if existing.get("type") != type:
+            updates["type"] = type
+        if description is not None and existing.get("description") != description:
+            updates["description"] = description
+        if existing.get("enabled") != enabled:
+            updates["enabled"] = enabled
+
+        if not updates:
+            ret["comment"] = f"Service '{name}' already exists and matches the desired state."
+            return ret
+
+        if __opts__["test"]:
+            ret["result"] = None
+            ret["comment"] = f"Service '{name}' would be updated with {updates}."
+            return ret
+
+        try:
+            __salt__["kinetic_openstack.update_service"](
+                name, cloud=cloud_name, **updates
+            )
+            ret["changes"] = {"updated": updates}
+            ret["comment"] = f"Service '{name}' updated successfully."
+        except Exception as e:
+            ret["result"] = False
+            ret["comment"] = f"Error updating service '{name}': {str(e)}"
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Service '{name}' would be created."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_service"](
+            name, type, description=description, enabled=enabled, cloud=cloud_name
+        )
+        ret["changes"] = {"created": name}
+        ret["comment"] = f"Service '{name}' created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating service '{name}': {str(e)}"
+
+    return ret
+
+
+def endpoint_present(
+    name, service_name, interface, url, region=None, enabled=True, **kwargs
+):
+    """
+    Ensure a Keystone endpoint exists for a service/interface/region.
+
+    Args:
+        name (str): Arbitrary state ID.
+        service_name (str): The service name or ID this endpoint belongs to (e.g. "swift").
+        interface (str): One of "public", "internal", "admin".
+        url (str): The endpoint URL.
+        region (str, optional): Region ID (e.g. "default").
+        enabled (bool, optional): Whether the endpoint is enabled. Defaults to True.
+
+    Example:
+
+    .. code-block:: yaml
+
+        swift_endpoint_public:
+          kinetic_openstack.endpoint_present:
+            - service_name: swift
+            - interface: public
+            - region: default
+            - url: https://swift.rsc.gacyberrange.org/swift/v1
+            - cloud: rsc
+            - require:
+              - kinetic_openstack: swift_service
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    existing = __salt__["kinetic_openstack.get_endpoint"](
+        service_name, interface, region=region, cloud=cloud_name
+    )
+
+    if existing:
+        updates = {}
+        if existing.get("url") != url:
+            updates["url"] = url
+        if existing.get("enabled") != enabled:
+            updates["enabled"] = enabled
+
+        if not updates:
+            ret["comment"] = (
+                f"Endpoint for service '{service_name}' ({interface}) already matches "
+                "the desired state."
+            )
+            return ret
+
+        if __opts__["test"]:
+            ret["result"] = None
+            ret["comment"] = (
+                f"Endpoint for service '{service_name}' ({interface}) would be updated "
+                f"with {updates}."
+            )
+            return ret
+
+        try:
+            __salt__["kinetic_openstack.update_endpoint"](
+                existing["id"], cloud=cloud_name, **updates
+            )
+            ret["changes"] = {"updated": updates}
+            ret["comment"] = (
+                f"Endpoint for service '{service_name}' ({interface}) updated successfully."
+            )
+        except Exception as e:
+            ret["result"] = False
+            ret["comment"] = f"Error updating endpoint for service '{service_name}': {str(e)}"
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = (
+            f"Endpoint for service '{service_name}' ({interface}) would be created."
+        )
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_endpoint"](
+            service_name,
+            interface,
+            url,
+            region=region,
+            enabled=enabled,
+            cloud=cloud_name,
+        )
+        ret["changes"] = {"created": f"{service_name} ({interface})"}
+        ret["comment"] = f"Endpoint for service '{service_name}' ({interface}) created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating endpoint for service '{service_name}': {str(e)}"
+
+    return ret
