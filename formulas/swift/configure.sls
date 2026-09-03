@@ -1,5 +1,4 @@
 include:
-  - /formulas/keystone/federation
   - /formulas/swift/install
   - /formulas/osh-helm-repos/configure
 
