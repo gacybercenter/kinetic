@@ -43,7 +43,7 @@ install_glance:
     - wait_timeout: 300
     - wait_interval: 10
     - keep_values_file: true
-    - pillar_key: osh:glance
+    - pillar_key: osh:glance:glance
     - set_values:
       - endpoints.oslo_db.auth.admin.username=root
       - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
