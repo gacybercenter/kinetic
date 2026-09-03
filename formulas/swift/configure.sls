@@ -2,40 +2,45 @@ include:
   - /formulas/swift/install
   - /formulas/osh-helm-repos/configure
 
-swift_external_certificate:
-  k8s.certmanager_certificate_present:
-    - name: swift-tls-public
-    - certificate_name: swift-tls-public
-    - namespace: rook-ceph
-    - secret_name: swift-tls-public
-    - issuer_name: letsencrypt-prod
-    - issuer_kind: ClusterIssuer
-    - common_name: {{ pillar['osh_values']['swift_cert']['common_name'] }}
-    - dns_names: {{ pillar['osh_values']['swift_cert']['dns_names'] }}
+{# swift_ingress.hosts may be a list of plain hostname strings, or a list of
+   dicts with a 'host' key (the shape historically used alongside 'tls' for
+   the old Ingress resource) - normalize to a flat list of hostnames either
+   way. #}
+{% set swift_hostnames = [] %}
+{% for h in pillar['osh_values']['swift_ingress']['hosts'] %}
+{% if h is mapping %}
+{% do swift_hostnames.append(h['host']) %}
+{% else %}
+{% do swift_hostnames.append(h) %}
+{% endif %}
+{% endfor %}
 
-swift_internal_certificate:
-  k8s.certmanager_certificate_present:
-    - name: swift-internal-proxy
-    - certificate_name: swift-internal-proxy
+# Routes external Swift/S3 traffic through the external Gateway
+# (traefik-external, websecure-ext listener). TLS termination happens at
+# the Gateway listener - the certificate itself is managed elsewhere, not
+# here.
+swift_httproute:
+  k8s.httproute_present:
+    - name: swift-route
     - namespace: rook-ceph
-    - secret_name: swift-internal-proxy
-    - issuer_name: cyberrange-ca-issuer
-    - issuer_kind: ClusterIssuer
-    - common_name: {{ pillar['osh_values']['swift_internal_proxy']['common_name'] }}
-    - dns_names: {{ pillar['osh_values']['swift_internal_proxy']['dns_names'] }}
-
-swift_ingress:
-  k8s.ingress_present:
-    - name: swift-ingress
-    - namespace: rook-ceph
-    - ingress_class_name: {{ pillar['osh_values']['swift_ingress']['class_name'] }}
-    - hosts: {{ pillar['osh_values']['swift_ingress']['hosts'] }}
-    - tls: {{ pillar['osh_values']['swift_ingress']['tls'] }}
+    - parent_refs:
+        - name: traefik-external
+          namespace: ingress
+          sectionName: websecure-ext
+    - hostnames: {{ swift_hostnames | tojson }}
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: rook-ceph-rgw-rsc-object-store
+              port: 80
     - require:
-      - k8s: swift_external_certificate
+      - rook: deploy_ceph_object_store
 
 deploy_ceph_object_store:
-  k8s.ceph_object_store_present:
+  rook.ceph_object_store_present:
     - name: rsc-object-store
     - namespace: rook-ceph
     - replicas: 3
