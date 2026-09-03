@@ -42,11 +42,11 @@ swift_httproute:
     - require:
       - rook: deploy_ceph_object_store
 
-# Admin credentials RGW uses to authenticate itself against Keystone (NOT
-# an end-user's credentials). Referenced by deploy_ceph_object_store's
-# keystone_service_user_secret_name. Rook/RGW requires this exact set of
-# OS_* keys (matching an OpenStack `openrc` file) - a plain username/
-# password pair is not sufficient. See:
+# Admin credentials RGW uses to authenticate itself against Keystone.
+# This must be a real Keystone *identity* user (with admin/service roles),
+# NOT the internal MariaDB user. We reuse the existing OpenStack admin
+# user created by the Keystone bootstrap.
+# Rook/RGW expects the OS_* keys (openrc style). See:
 # https://rook.io/docs/rook/latest/Storage-Configuration/Object-Storage-RGW/ceph-object-swift/
 keystone_admin_secret:
   k8s.secret_present:
@@ -55,8 +55,8 @@ keystone_admin_secret:
     - data:
         OS_AUTH_TYPE: "password"
         OS_IDENTITY_API_VERSION: "3"
-        OS_USERNAME: "keystone"
-        OS_PASSWORD: {{ pillar['osh']['keystone_admin'] | yaml_dquote }}
+        OS_USERNAME: "admin"
+        OS_PASSWORD: {{ pillar['osh']['osh_users']['admin'] | yaml_dquote }}
         OS_PROJECT_NAME: "admin"
         OS_PROJECT_DOMAIN_NAME: "Default"
         OS_USER_DOMAIN_NAME: "Default"
