@@ -16,7 +16,7 @@ include:
 {% endif %}
 {% endfor %}
 {% set swift_public_hostname = pillar['osh'].get('swift_public_hostname', swift_hostnames[0] if swift_hostnames else 'swift.rsc.gacyberrange.org') %}
-{% set swift_region = pillar['osh'].get('swift_region', 'default') %}
+{% set swift_region = pillar['osh'].get('swift_region', 'RegionOne') %}
 {% set swift_cloud = pillar['osh']['cloud'] %}
 
 # Routes external Swift/S3 traffic through the external Gateway
@@ -110,6 +110,15 @@ swift_service:
     - require:
       - kinetic_openstack: keystone_available
 
+# Keystone endpoints require region_id to reference an existing Region -
+# it is not a free-form string, despite what it may look like from the API.
+swift_region:
+  kinetic_openstack.region_present:
+    - name: {{ swift_region }}
+    - cloud: {{ swift_cloud }}
+    - require:
+      - kinetic_openstack: keystone_available
+
 swift_endpoint_admin:
   kinetic_openstack.endpoint_present:
     - service_name: swift
@@ -119,6 +128,7 @@ swift_endpoint_admin:
     - cloud: {{ swift_cloud }}
     - require:
       - kinetic_openstack: swift_service
+      - kinetic_openstack: swift_region
 
 swift_endpoint_internal:
   kinetic_openstack.endpoint_present:
@@ -129,6 +139,7 @@ swift_endpoint_internal:
     - cloud: {{ swift_cloud }}
     - require:
       - kinetic_openstack: swift_service
+      - kinetic_openstack: swift_region
 
 swift_endpoint_public:
   kinetic_openstack.endpoint_present:
@@ -139,4 +150,5 @@ swift_endpoint_public:
     - cloud: {{ swift_cloud }}
     - require:
       - kinetic_openstack: swift_service
+      - kinetic_openstack: swift_region
       - k8s: swift_httproute

@@ -1462,6 +1462,83 @@ def update_federation_protocol(idp_id, protocol_id, mapping_id, cloud=None):
         conn.close()
 
 
+def get_region(region_id, cloud=None):
+    """
+    Look up a Keystone region by ID.
+
+    Args:
+        region_id (str): The region ID (e.g. "default").
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_region default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        region = conn.identity.find_region(region_id, ignore_missing=True)
+        if not region:
+            return None
+        return {
+            "id": region.id,
+            "description": region.description,
+            "parent_region_id": region.parent_region_id,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to get region {region_id}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def create_region(region_id, description=None, parent_region_id=None, cloud=None):
+    """
+    Create a Keystone region.
+
+    Args:
+        region_id (str): The region ID (e.g. "default"). Keystone endpoints'
+            region_id must reference an existing Region - it is not a
+            free-form string.
+        description (str, optional): Description of the region.
+        parent_region_id (str, optional): ID of a parent region, for nested regions.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_region default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        attrs = {"id": region_id}
+        if description is not None:
+            attrs["description"] = description
+        if parent_region_id is not None:
+            attrs["parent_region_id"] = parent_region_id
+        region = conn.identity.create_region(**attrs)
+        return {
+            "id": region.id,
+            "description": region.description,
+            "parent_region_id": region.parent_region_id,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to create region {region_id}: {str(e)}")
+    finally:
+        conn.close()
+
+
 def get_service(name, cloud=None):
     """
     Look up a Keystone service catalog entry by name or ID.

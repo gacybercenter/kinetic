@@ -862,6 +862,67 @@ def federation_protocol_present(name, idp_name, mapping_id, **kwargs):
     return ret
 
 
+def region_present(name, description=None, parent_region_id=None, **kwargs):
+    """
+    Ensure a Keystone region exists.
+
+    Keystone endpoints' region_id must reference an existing Region - it is
+    not a free-form string, despite what openstacksdk's endpoint API might
+    suggest. Creating an endpoint with a region_id that doesn't correspond
+    to an existing Region fails with: "Expecting to find endpoint region_id
+    in region table."
+
+    Args:
+        name (str): The region ID (e.g. "default").
+        description (str, optional): Description of the region.
+        parent_region_id (str, optional): ID of a parent region, for nested regions.
+
+    Example:
+
+    .. code-block:: yaml
+
+        swift_region:
+          kinetic_openstack.region_present:
+            - name: default
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    existing = __salt__["kinetic_openstack.get_region"](name, cloud=cloud_name)
+    if existing:
+        ret["comment"] = f"Region '{name}' already exists."
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Region '{name}' would be created."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_region"](
+            name,
+            description=description,
+            parent_region_id=parent_region_id,
+            cloud=cloud_name,
+        )
+        ret["changes"] = {"created": name}
+        ret["comment"] = f"Region '{name}' created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating region '{name}': {str(e)}"
+
+    return ret
+
+
 def service_present(name, type, description=None, enabled=True, **kwargs):
     """
     Ensure a Keystone service catalog entry exists.
