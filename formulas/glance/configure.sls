@@ -5,7 +5,7 @@ include:
 {# glance_ingress.hosts may be a list of plain hostname strings, or a list of
    dicts with a 'host' key - normalize to a flat list of hostnames either way. #}
 {% set glance_hostnames = [] %}
-{% for h in pillar['osh']['glance_ingress']['hosts'] %}
+{% for h in pillar['osh']['glance']['glance_ingress']['hosts'] %}
 {% if h is mapping %}
 {% do glance_hostnames.append(h['host']) %}
 {% else %}
