@@ -56,5 +56,6 @@ install_glance:
       - endpoints.identity.auth.admin.password={{ pillar['osh']['osh_users']['admin'] }}
       - endpoints.identity.auth.glance.password={{ pillar['osh']['glance']['values']['glance_admin'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh']['glance']['values']['glance_test'] }}
+      - endpoints.ceph_object_store.auth.glance.password={{ pillar['osh']['glance']['values']['glance_admin'] }}
     - require:
       - k8s: glance_httproute
