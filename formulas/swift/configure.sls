@@ -119,7 +119,7 @@ swift_endpoint_admin:
     - service_name: swift
     - interface: admin
     - region: {{ swift_region }}
-    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc.cluster.local/swift/v1/AUTH_"
+    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc.cluster.local/swift/v1/AUTH_%(project_id)s"
     - cloud: {{ swift_cloud }}
     - require:
       - kinetic_openstack: swift_service
@@ -130,7 +130,7 @@ swift_endpoint_internal:
     - service_name: swift
     - interface: internal
     - region: {{ swift_region }}
-    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc.cluster.local/swift/v1/AUTH_"
+    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc.cluster.local/swift/v1/AUTH_%(project_id)s"
     - cloud: {{ swift_cloud }}
     - require:
       - kinetic_openstack: swift_service
