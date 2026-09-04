@@ -1105,3 +1105,91 @@ def endpoint_present(
         ret["comment"] = f"Error creating endpoint for service '{service_name}': {str(e)}"
 
     return ret
+
+
+def account_temp_url_key_present(name, temp_url_key, temp_url_key_2=None,
+                                  project_name=None, project_domain_name="Default",
+                                  **kwargs):
+    """
+    Ensure a Swift account's temp-url-key(s) are set to the given value(s),
+    via the native Swift account-metadata API (no RGW Admin Ops API, Ceph
+    Mgr Dashboard API, or radosgw-admin CLI required).
+
+    name
+        Arbitrary state ID (not an OpenStack resource name).
+
+    temp_url_key
+        Desired value for X-Account-Meta-Temp-Url-Key.
+
+    temp_url_key_2
+        Optional desired value for X-Account-Meta-Temp-Url-Key-2 (a second
+        key, useful for zero-downtime key rotation).
+
+    project_name
+        Project whose Swift account should be updated, if different from
+        the cloud config's default scope (e.g. the project a service like
+        Glance authenticates as for its Swift store backend).
+
+    project_domain_name
+        Domain of project_name. Defaults to "Default".
+
+    Example:
+
+    .. code-block:: yaml
+
+        glance_swift_temp_url_key:
+          kinetic_openstack.account_temp_url_key_present:
+            - temp_url_key: {{ pillar['osh']['glance_swift_temp_url_key'] | yaml_dquote }}
+            - project_name: service
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    try:
+        existing = __salt__["kinetic_openstack.get_account_temp_url_key"](
+            cloud=cloud_name,
+            project_name=project_name,
+            project_domain_name=project_domain_name,
+        )
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error reading current account temp-url-key: {str(e)}"
+        return ret
+
+    needs_update = existing.get("temp_url_key") != temp_url_key
+    if temp_url_key_2 is not None:
+        needs_update = needs_update or existing.get("temp_url_key_2") != temp_url_key_2
+
+    if not needs_update:
+        ret["comment"] = "Account temp-url-key already matches the desired state."
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = "Account temp-url-key would be set."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.set_account_temp_url_key"](
+            temp_url_key,
+            temp_url_key_2=temp_url_key_2,
+            cloud=cloud_name,
+            project_name=project_name,
+            project_domain_name=project_domain_name,
+        )
+        ret["changes"] = {"temp_url_key": "set"}
+        ret["comment"] = "Account temp-url-key set successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error setting account temp-url-key: {str(e)}"
+
+    return ret

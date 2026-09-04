@@ -11,6 +11,8 @@ import salt.utils.decorators as decorators
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
+import requests
+
 __virtualname__ = "kinetic_rook"
 
 
@@ -813,3 +815,309 @@ def ceph_object_store_present(
             "message": f"Error managing CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}...",
             "resource": {},
         }
+
+
+def ceph_object_store_user_present(
+    name,
+    namespace,
+    store,
+    display_name=None,
+    cluster_namespace=None,
+    capabilities=None,
+    quotas=None,
+    op_mask=None,
+):
+    """
+    Ensure a Ceph RGW user exists via Rook's CephObjectStoreUser CRD
+    (https://rook.io/docs/rook/latest/CRDs/Object-Storage/ceph-object-store-user-crd/).
+
+    Rook's operator creates the RGW user itself (no Admin Ops/Dashboard API
+    calls or credentials needed from Salt) and writes the resulting S3
+    access/secret key pair into a Kubernetes secret named
+    ``rook-ceph-object-user-<store>-<name>`` in `namespace`.
+
+    Note: this does NOT support subusers or a Swift "temp URL key" - Rook's
+    CephObjectStoreUser CRD has no fields for either. Use
+    kinetic_rook.rgw_subuser_present (Ceph Mgr Dashboard API) for subusers;
+    temp-url-key remains radosgw-admin CLI only.
+
+    name
+        The CephObjectStoreUser resource name (becomes the RGW uid).
+
+    namespace
+        Namespace to create the CephObjectStoreUser in.
+
+    store
+        The CephObjectStore this user belongs to.
+
+    display_name
+        Optional display name (passed to `radosgw-admin user create
+        --display-name`). Defaults to name.
+
+    cluster_namespace
+        Namespace of the parent CephCluster/CephObjectStore, if different
+        from `namespace`. Requires the CephObjectStore's
+        `allowUsersInNamespaces` to include `namespace`.
+
+    capabilities
+        Optional dict of admin capabilities, e.g. {"user": "*", "buckets": "*"}.
+        Per Rook, capabilities can only be set at creation time - changing
+        them requires deleting and re-creating the CephObjectStoreUser.
+
+    quotas
+        Optional dict, e.g. {"maxBuckets": 100, "maxSize": "10G", "maxObjects": 10000}.
+
+    op_mask
+        Optional list of allowed RGW operations, e.g. ["read", "write", "delete"].
+
+    Returns a dict with 'success', 'updated', 'message', and 'resource'.
+    """
+    try:
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+
+        spec = {"store": store, "displayName": display_name or name}
+        if cluster_namespace:
+            spec["clusterNamespace"] = cluster_namespace
+        if capabilities:
+            spec["capabilities"] = capabilities
+        if quotas:
+            spec["quotas"] = quotas
+        if op_mask is not None:
+            spec["opMask"] = op_mask
+
+        user_body = {
+            "apiVersion": "ceph.rook.io/v1",
+            "kind": "CephObjectStoreUser",
+            "metadata": {
+                "name": name,
+                "namespace": namespace,
+            },
+            "spec": spec,
+        }
+
+        try:
+            existing_user = custom_api.get_namespaced_custom_object(
+                group="ceph.rook.io",
+                version="v1",
+                namespace=namespace,
+                plural="cephobjectstoreusers",
+                name=name,
+            )
+            if existing_user.get("spec") == spec:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"CephObjectStoreUser {name} already exists in namespace {namespace} with matching spec.",
+                    "resource": existing_user,
+                }
+            else:
+                # Spec differs (e.g. capabilities) - Rook only applies caps at
+                # creation, so delete and let the next run recreate it.
+                try:
+                    custom_api.delete_namespaced_custom_object(
+                        group="ceph.rook.io",
+                        version="v1",
+                        namespace=namespace,
+                        plural="cephobjectstoreusers",
+                        name=name,
+                    )
+                    return {
+                        "success": True,
+                        "updated": True,
+                        "message": f"CephObjectStoreUser {name} deletion initiated in namespace {namespace} (will recreate on next run).",
+                        "resource": {},
+                    }
+                except ApiException as delete_err:
+                    if delete_err.status == 409 and "object is being deleted" in str(delete_err):
+                        return {
+                            "success": True,
+                            "updated": True,
+                            "message": f"CephObjectStoreUser {name} is still terminating in namespace {namespace}; will recreate when ready.",
+                            "resource": {},
+                        }
+                    return {
+                        "success": False,
+                        "updated": False,
+                        "message": f"Failed to delete existing CephObjectStoreUser {name} in namespace {namespace}: {str(delete_err)[:100]}...",
+                        "resource": {},
+                    }
+        except ApiException as e:
+            if e.status == 404:
+                created_user = custom_api.create_namespaced_custom_object(
+                    group="ceph.rook.io",
+                    version="v1",
+                    namespace=namespace,
+                    plural="cephobjectstoreusers",
+                    body=user_body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"CephObjectStoreUser {name} created in namespace {namespace}.",
+                    "resource": created_user,
+                }
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to manage CephObjectStoreUser {name} in namespace {namespace}: {str(e)[:100]}...",
+                    "resource": {},
+                }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Error managing CephObjectStoreUser {name} in namespace {namespace}: {str(e)[:100]}...",
+            "resource": {},
+        }
+
+
+def _mgr_dashboard_login(endpoint, username, password, verify_ssl=True, timeout=30):
+    """
+    Log in to the Ceph Mgr Dashboard REST API
+    (https://docs.ceph.com/en/quincy/mgr/ceph_api/) and return a bearer token.
+    """
+    resp = requests.post(
+        endpoint.rstrip("/") + "/api/auth",
+        json={"username": username, "password": password},
+        headers={
+            "Accept": "application/vnd.ceph.api.v1.0+json",
+            "Content-Type": "application/json",
+        },
+        verify=verify_ssl,
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+    return resp.json()["token"]
+
+
+def _mgr_dashboard_request(method, endpoint, token, path, params=None, json_body=None,
+                           verify_ssl=True, timeout=30, api_version="1.0"):
+    """Issue an authenticated request against the Ceph Mgr Dashboard REST API."""
+    headers = {
+        "Accept": f"application/vnd.ceph.api.v{api_version}+json",
+        "Authorization": f"Bearer {token}",
+    }
+    if json_body is not None:
+        headers["Content-Type"] = "application/json"
+    return requests.request(
+        method,
+        endpoint.rstrip("/") + path,
+        params=params,
+        json=json_body,
+        headers=headers,
+        verify=verify_ssl,
+        timeout=timeout,
+    )
+
+
+def rgw_subuser_present(uid, subuser, dashboard_endpoint, dashboard_username, dashboard_password,
+                        access="full", generate_secret=True, secret=None,
+                        verify_ssl=True, **kwargs):
+    """
+    Ensure an RGW subuser exists under the given uid, using the Ceph Mgr
+    Dashboard REST API (https://docs.ceph.com/en/quincy/mgr/ceph_api/#rgwuser).
+
+    Rook's CephObjectStoreUser CRD has no subuser support, and the plain RGW
+    Admin Ops API requires AWS SigV4 request signing (an extra dependency) -
+    the Mgr Dashboard API supports subusers with simple username/password ->
+    JWT bearer-token auth instead, using only the `requests` library.
+
+    This requires the Dashboard module to already be linked to RGW (one-time
+    setup, not automated by Rook):
+
+    .. code-block:: bash
+
+        ceph dashboard set-rgw-api-access-key -i <accesskeyfile>
+        ceph dashboard set-rgw-api-secret-key -i <secretkeyfile>
+        ceph dashboard set-rgw-api-host <rgw-service>
+        ceph dashboard set-rgw-api-port <port>
+        ceph dashboard set-rgw-api-scheme http
+
+    uid
+        Parent user ID (must already exist, e.g. via
+        kinetic_rook.ceph_object_store_user_present).
+
+    subuser
+        Subuser name (e.g. "glance:swift").
+
+    dashboard_endpoint
+        Base URL of the Ceph Mgr Dashboard (e.g.
+        "https://rook-ceph-mgr-dashboard.rook-ceph.svc:8443").
+
+    dashboard_username / dashboard_password
+        Credentials of a Dashboard user with RGW management permissions
+        (e.g. the built-in "admin" user Rook provisions).
+
+    access
+        Access level (read, write, readwrite, full).
+
+    generate_secret / secret
+        Same semantics as keys above.
+
+    verify_ssl
+        Whether to verify TLS certificates when calling the endpoint.
+
+    Note: setting a Swift "temp URL key" is NOT supported here either - it
+    is not exposed by the Dashboard API's RgwUser endpoints, only by the
+    radosgw-admin CLI.
+    """
+    try:
+        token = _mgr_dashboard_login(
+            dashboard_endpoint, dashboard_username, dashboard_password, verify_ssl=verify_ssl,
+        )
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to authenticate to Ceph Dashboard at {dashboard_endpoint}: {e}",
+        }
+
+    try:
+        resp = _mgr_dashboard_request(
+            "GET", dashboard_endpoint, token, f"/api/rgw/user/{uid}", verify_ssl=verify_ssl,
+        )
+        if resp.status_code == 404:
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"RGW user {uid} does not exist; cannot create subuser {subuser}.",
+            }
+        resp.raise_for_status()
+        info = resp.json()
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to query RGW user {uid}: {e}",
+        }
+
+    existing = any(s.get("id") == subuser for s in info.get("subusers", []))
+
+    if not existing:
+        body = {"subuser": subuser, "access": access}
+        if generate_secret:
+            body["generate_secret"] = "true"
+        elif secret:
+            body["generate_secret"] = "false"
+            body["secret_key"] = secret
+
+        try:
+            resp = _mgr_dashboard_request(
+                "POST", dashboard_endpoint, token, f"/api/rgw/user/{uid}/subuser",
+                json_body=body, verify_ssl=verify_ssl,
+            )
+            resp.raise_for_status()
+        except Exception as e:
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Failed to create RGW subuser {subuser}: {e}",
+            }
+
+    return {
+        "success": True,
+        "updated": not existing,
+        "message": f"RGW subuser {subuser} ensured.",
+    }

@@ -315,6 +315,189 @@ def storageclass_present(
     return ret
 
 
+def ceph_object_store_user_present(
+    name,
+    namespace,
+    store,
+    display_name=None,
+    cluster_namespace=None,
+    capabilities=None,
+    quotas=None,
+    op_mask=None,
+):
+    """
+    Ensure a Ceph RGW user exists via Rook's CephObjectStoreUser CRD.
+
+    Rook's operator creates the RGW user directly and writes the resulting
+    S3 access/secret key pair into a Kubernetes secret named
+    ``rook-ceph-object-user-<store>-<name>`` in `namespace`. No admin
+    credentials or API signing are needed from Salt for this.
+
+    name
+        The CephObjectStoreUser resource name (becomes the RGW uid).
+
+    namespace
+        Namespace to create the CephObjectStoreUser in.
+
+    store
+        The CephObjectStore this user belongs to.
+
+    display_name
+        Optional display name. Defaults to name.
+
+    cluster_namespace
+        Namespace of the parent CephCluster/CephObjectStore, if different
+        from `namespace`.
+
+    capabilities
+        Optional dict of admin capabilities, e.g. {"user": "*", "buckets": "*"}.
+        Per Rook, capabilities can only be set at creation time - changing
+        them requires deleting and re-creating the CephObjectStoreUser.
+
+    quotas
+        Optional dict, e.g. {"maxBuckets": 100, "maxSize": "10G", "maxObjects": 10000}.
+
+    op_mask
+        Optional list of allowed RGW operations, e.g. ["read", "write", "delete"].
+
+    Note: this does NOT support subusers or a Swift "temp URL key" - use
+    rook.rgw_subuser_present (Ceph Mgr Dashboard API) for subusers;
+    temp-url-key remains radosgw-admin CLI only.
+
+    Example:
+    .. code-block:: yaml
+
+        glance_rgw_user:
+          rook.ceph_object_store_user_present:
+            - name: glance
+            - namespace: rook-ceph
+            - store: rsc-object-store
+            - display_name: glance
+            - require:
+              - rook: deploy_ceph_object_store
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_rook.ceph_object_store_user_present"](
+            name=name,
+            namespace=namespace,
+            store=store,
+            display_name=display_name,
+            cluster_namespace=cluster_namespace,
+            capabilities=capabilities,
+            quotas=quotas,
+            op_mask=op_mask,
+        )
+
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"ceph_object_store_user_updated": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure CephObjectStoreUser {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
+def rgw_subuser_present(uid, subuser, dashboard_endpoint, dashboard_username, dashboard_password,
+                        access="full", generate_secret=True, secret=None,
+                        verify_ssl=True, **kwargs):
+    """
+    Ensure an RGW subuser exists under the given uid, via the Ceph Mgr
+    Dashboard REST API (JWT bearer-token auth - no request signing or
+    extra pip dependency required).
+
+    Requires the Dashboard module to already be linked to RGW (one-time
+    setup, not automated by Rook):
+
+    .. code-block:: bash
+
+        ceph dashboard set-rgw-api-access-key -i <accesskeyfile>
+        ceph dashboard set-rgw-api-secret-key -i <secretkeyfile>
+        ceph dashboard set-rgw-api-host <rgw-service>
+        ceph dashboard set-rgw-api-port <port>
+        ceph dashboard set-rgw-api-scheme http
+
+    uid
+        Parent user ID (must already exist, e.g. via
+        rook.ceph_object_store_user_present).
+
+    subuser
+        Subuser name (e.g. "glance:swift").
+
+    dashboard_endpoint
+        Base URL of the Ceph Mgr Dashboard (e.g.
+        "https://rook-ceph-mgr-dashboard.rook-ceph.svc:8443").
+
+    dashboard_username / dashboard_password
+        Credentials of a Dashboard user with RGW management permissions.
+
+    access
+        Access level (read, write, readwrite, full).
+
+    generate_secret / secret
+        Same semantics as keys above.
+
+    verify_ssl
+        Whether to verify TLS certificates when calling the endpoint.
+
+    Note: this does NOT support setting a Swift "temp URL key" - not
+    exposed by the Dashboard API's RgwUser endpoints, only by the
+    radosgw-admin CLI.
+
+    Example:
+    .. code-block:: yaml
+
+        glance_rgw_subuser:
+          rook.rgw_subuser_present:
+            - uid: glance
+            - subuser: glance:swift
+            - access: full
+            - generate_secret: true
+            - dashboard_endpoint: https://rook-ceph-mgr-dashboard.rook-ceph.svc:8443
+            - dashboard_username: admin
+            - dashboard_password: {{ pillar['osh']['ceph_dashboard_password'] }}
+            - require:
+              - rook: glance_rgw_user
+    """
+    ret = _state_ret(subuser)
+
+    try:
+        result = __salt__["kinetic_rook.rgw_subuser_present"](
+            uid=uid,
+            subuser=subuser,
+            dashboard_endpoint=dashboard_endpoint,
+            dashboard_username=dashboard_username,
+            dashboard_password=dashboard_password,
+            access=access,
+            generate_secret=generate_secret,
+            secret=secret,
+            verify_ssl=verify_ssl,
+        )
+
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+
+        if result.get("updated", False):
+            ret["changes"] = {"rgw_subuser_updated": True}
+        else:
+            ret["changes"] = {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure RGW subuser {subuser}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
 def ceph_object_store_present(
     name,
     namespace,
