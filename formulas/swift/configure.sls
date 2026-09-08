@@ -77,7 +77,7 @@ deploy_ceph_object_store:
     - gateway_instances: 2
     - enable_swift_api: true
     - swift_port: 8080
-    - swift_account_in_url: false
+    - swift_account_in_url: true
     - swift_url_prefix: "swift"
     - enable_s3_api: true
     - preserve_pools_on_delete: true
@@ -94,7 +94,6 @@ deploy_ceph_object_store:
     - enable_apis:
         - s3
         - swift
-        - swift_auth
     - gateway_resources:
         limits:
           cpu: "500m"
