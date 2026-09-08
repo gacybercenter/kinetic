@@ -626,6 +626,7 @@ def ceph_object_store_present(
     rgw_keystone_implicit_tenants="true",
     rgw_s3_auth_use_keystone="true",
     debug_rgw="0",
+    enable_apis=None,
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -656,6 +657,12 @@ def ceph_object_store_present(
         rgw_keystone_implicit_tenants (str, optional): Enable implicit tenants for Keystone-Swift integration. Defaults to "true".
         rgw_s3_auth_use_keystone (str, optional): Use Keystone for S3 authentication. Defaults to "true".
         debug_rgw (str, optional): Debug level for RGW (e.g., "15" for detailed logging). Defaults to "0" (no debugging).
+        enable_apis (list, optional): Explicit value for spec.protocols.enableAPIs, controlling
+            which RGW frontends are actually mounted (e.g. ["s3", "swift", "swift_auth"],
+            or ["admin"] for an Admin-Ops-only instance - see Rook's Object Multi-instance
+            docs). If not given, defaults to ["s3"] and/or ["swift", "swift_auth"] based on
+            enable_s3_api/enable_swift_api, since Rook's own default for this field does not
+            reliably enable swift_auth alongside swift.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
@@ -698,6 +705,21 @@ def ceph_object_store_present(
                 },
             },
         }
+
+        # spec.protocols.enableAPIs controls which RGW frontends are actually
+        # mounted, separate from the per-protocol "enabled" flags above -
+        # without swift_auth explicitly listed here, Swift TempAuth-style
+        # requests (and some Keystone-Swift flows) never reach the gateway.
+        if enable_apis is not None:
+            object_store_body["spec"]["protocols"]["enableAPIs"] = enable_apis
+        else:
+            default_apis = []
+            if enable_s3_api:
+                default_apis.append("s3")
+            if enable_swift_api:
+                default_apis.extend(["swift", "swift_auth"])
+            if default_apis:
+                object_store_body["spec"]["protocols"]["enableAPIs"] = default_apis
 
         # Add annotations if provided
         if annotations:

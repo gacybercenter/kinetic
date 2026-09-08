@@ -91,6 +91,10 @@ deploy_ceph_object_store:
     - keystone_revocation_interval: 1200
     - keystone_service_user_secret_name: "keystone-admin"
     - keystone_token_cache_size: 1000
+    - enable_apis:
+        - s3
+        - swift
+        - swift_auth
     - gateway_resources:
         limits:
           cpu: "500m"

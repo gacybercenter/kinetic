@@ -524,6 +524,7 @@ def ceph_object_store_present(
     rgw_keystone_implicit_tenants="true",
     rgw_s3_auth_use_keystone="true",
     debug_rgw="0",
+    enable_apis=None,
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -603,6 +604,14 @@ def ceph_object_store_present(
     keystone_token_cache_size
         Optional. Size of token cache for Keystone authentication. Defaults to 1000.
 
+    enable_apis
+        Optional. Explicit value for spec.protocols.enableAPIs, controlling which RGW
+        frontends are actually mounted (e.g. ["s3", "swift", "swift_auth"], or ["admin"]
+        for an Admin-Ops-only instance - see Rook's Object Multi-instance docs). If not
+        given, defaults to ["s3"] and/or ["swift", "swift_auth"] based on
+        enable_s3_api/enable_swift_api, since Rook's own default for this field does not
+        reliably enable swift_auth alongside swift.
+
     Example:
     .. code-block:: yaml
 
@@ -634,6 +643,10 @@ def ceph_object_store_present(
             - rgw_keystone_implicit_tenants: "true"
             - rgw_s3_auth_use_keystone: "true"
             - debug_rgw: "15"
+            - enable_apis:
+                - s3
+                - swift
+                - swift_auth
             - gateway_resources:
                 limits:
                   cpu: "500m"
@@ -671,6 +684,7 @@ def ceph_object_store_present(
             rgw_keystone_implicit_tenants=rgw_keystone_implicit_tenants,
             rgw_s3_auth_use_keystone=rgw_s3_auth_use_keystone,
             debug_rgw=debug_rgw,
+            enable_apis=enable_apis,
         )
 
         ret["result"] = result.get("success", False)
