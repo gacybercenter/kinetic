@@ -627,6 +627,8 @@ def ceph_object_store_present(
     rgw_s3_auth_use_keystone="true",
     debug_rgw="0",
     enable_apis=None,
+    rgw_config=None,
+    rgw_command_flags=None,
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -663,6 +665,14 @@ def ceph_object_store_present(
             docs). If not given, defaults to ["s3"] and/or ["swift", "swift_auth"] based on
             enable_s3_api/enable_swift_api, since Rook's own default for this field does not
             reliably enable swift_auth alongside swift.
+        rgw_config (dict, optional): Additional spec.gateway.rgwConfig entries (raw ceph.conf
+            [client.rgw.*] key/value pairs, e.g. rgw_request_timeout, rgw_op_thread_timeout,
+            rgw_thread_pool_size), merged on top of the Keystone-related rgwConfig keys built
+            from the auth_keystone/rgw_keystone_*/debug_rgw args above (if auth_keystone is
+            False, this is used as-is). Values here win on key collisions.
+        rgw_command_flags (dict, optional): spec.gateway.rgwCommandFlags entries - extra
+            command-line flags passed to the radosgw process itself (e.g.
+            {"rgw-frontends": "beast port=80 request_timeout_ms=300000"}).
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
@@ -730,6 +740,7 @@ def ceph_object_store_present(
             object_store_body["spec"]["gateway"]["resources"] = gateway_resources
 
         # Configure Keystone authentication if enabled, under auth.keystone and gateway rgwConfig
+        merged_rgw_config = {}
         if auth_keystone:
             if not keystone_service_user_secret_name:
                 return {
@@ -750,12 +761,24 @@ def ceph_object_store_present(
                     "tokenCacheSize": keystone_token_cache_size,
                 }
             }
-            object_store_body["spec"]["gateway"]["rgwConfig"] = {
+            merged_rgw_config.update({
                 "rgw_keystone_api_version": rgw_keystone_api_version,
                 "rgw_keystone_implicit_tenants": rgw_keystone_implicit_tenants,
                 "rgw_s3_auth_use_keystone": rgw_s3_auth_use_keystone,
                 "debug_rgw": debug_rgw if debug_rgw != "0" else "0",
-            }
+            })
+
+        # rgw_config lets callers pass arbitrary extra ceph.conf [client.rgw.*]
+        # key/value pairs (e.g. rgw_request_timeout, rgw_thread_pool_size)
+        # without this function needing a named arg for every possible option.
+        # It merges on top of (and can override) the Keystone-derived keys above.
+        if rgw_config:
+            merged_rgw_config.update(rgw_config)
+        if merged_rgw_config:
+            object_store_body["spec"]["gateway"]["rgwConfig"] = merged_rgw_config
+
+        if rgw_command_flags:
+            object_store_body["spec"]["gateway"]["rgwCommandFlags"] = rgw_command_flags
 
         # Check if CephObjectStore already exists
         try:

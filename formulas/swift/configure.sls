@@ -94,6 +94,12 @@ deploy_ceph_object_store:
     - enable_apis:
         - s3
         - swift
+    - rgw_config:
+        rgw_request_timeout: "900"
+        rgw_op_thread_timeout: "900"
+        rgw_thread_pool_size: "8"
+    - rgw_command_flags:
+        rgw-frontends: "beast port=80 request_timeout_ms=300000"
     - gateway_resources:
         limits:
           cpu: "500m"

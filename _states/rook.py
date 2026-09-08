@@ -525,6 +525,8 @@ def ceph_object_store_present(
     rgw_s3_auth_use_keystone="true",
     debug_rgw="0",
     enable_apis=None,
+    rgw_config=None,
+    rgw_command_flags=None,
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -612,6 +614,17 @@ def ceph_object_store_present(
         enable_s3_api/enable_swift_api, since Rook's own default for this field does not
         reliably enable swift_auth alongside swift.
 
+    rgw_config
+        Optional. Dict of additional spec.gateway.rgwConfig entries (raw ceph.conf
+        [client.rgw.*] key/value pairs, e.g. rgw_request_timeout, rgw_op_thread_timeout,
+        rgw_thread_pool_size), merged on top of the Keystone-related rgwConfig keys (if
+        auth_keystone is False, used as-is). Values here win on key collisions.
+
+    rgw_command_flags
+        Optional. Dict for spec.gateway.rgwCommandFlags - extra command-line flags passed
+        to the radosgw process itself (e.g. {"rgw-frontends": "beast port=80
+        request_timeout_ms=300000"}).
+
     Example:
     .. code-block:: yaml
 
@@ -647,6 +660,12 @@ def ceph_object_store_present(
                 - s3
                 - swift
                 - swift_auth
+            - rgw_config:
+                rgw_request_timeout: "900"
+                rgw_op_thread_timeout: "900"
+                rgw_thread_pool_size: "8"
+            - rgw_command_flags:
+                rgw-frontends: "beast port=80 request_timeout_ms=300000"
             - gateway_resources:
                 limits:
                   cpu: "500m"
@@ -685,6 +704,8 @@ def ceph_object_store_present(
             rgw_s3_auth_use_keystone=rgw_s3_auth_use_keystone,
             debug_rgw=debug_rgw,
             enable_apis=enable_apis,
+            rgw_config=rgw_config,
+            rgw_command_flags=rgw_command_flags,
         )
 
         ret["result"] = result.get("success", False)
