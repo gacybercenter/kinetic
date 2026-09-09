@@ -152,7 +152,7 @@ def _diagnose_role_assignment(
         return diagnostic
 
 
-def _get_connection(cloud=None):
+def _get_connection(cloud=None, **overrides):
     """
     Create an OpenStack connection using a cloud configuration name from os-cloud-config.
     Returns None if no cloud name is provided.
@@ -161,6 +161,10 @@ def _get_connection(cloud=None):
         cloud (str): Name of the cloud configuration from clouds.yaml.
                      This corresponds to os-cloud-config settings typically found in ~/.config/openstack/clouds.yaml.
                      If not provided, the function will return None.
+        **overrides: Optional keyword overrides applied on top of the named
+                     cloud's configuration for this connection only (e.g.
+                     project_name/project_domain_name, to scope a token to a
+                     different project than the cloud's default scope).
 
     Returns:
         Connection object to OpenStack or None if no cloud name is provided
@@ -173,7 +177,7 @@ def _get_connection(cloud=None):
 
     # Use cloud configuration from clouds.yaml (os-cloud-config)
     try:
-        conn = connection.from_config(cloud=cloud)
+        conn = connection.from_config(cloud=cloud, **overrides)
         return conn
     except exceptions.SDKException as e:
         raise CommandExecutionError(
@@ -1799,5 +1803,101 @@ def update_endpoint(endpoint_id, cloud=None, **attrs):
         }
     except exceptions.SDKException as e:
         raise CommandExecutionError(f"Failed to update endpoint {endpoint_id}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def _account_overrides(project_name, project_domain_name):
+    overrides = {}
+    if project_name:
+        overrides["project_name"] = project_name
+        overrides["project_domain_name"] = project_domain_name
+    return overrides
+
+
+def get_account_temp_url_key(cloud=None, project_name=None, project_domain_name="Default"):
+    """
+    Get the Swift account's current temp-url-key(s) via the native Swift
+    account-metadata API (a GET on the account, reading the
+    X-Account-Meta-Temp-Url-Key[-2] response headers). This works against
+    RGW's Keystone-authenticated Swift API exactly the same way it works
+    against real OpenStack Swift - no RGW Admin Ops API or radosgw-admin
+    CLI is needed.
+
+    Args:
+        cloud (str): Name of the cloud configuration from clouds.yaml.
+        project_name (str, optional): Project whose Swift account should be
+            queried, if different from the cloud config's default scope
+            (e.g. the project a service like Glance authenticates as for
+            its Swift store backend).
+        project_domain_name (str): Domain of project_name. Defaults to "Default".
+
+    Returns:
+        dict: {"temp_url_key": str|None, "temp_url_key_2": str|None}
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_account_temp_url_key cloud=rsc project_name=service
+    """
+    conn = _get_connection(cloud, **_account_overrides(project_name, project_domain_name))
+    if conn is None:
+        return {"temp_url_key": None, "temp_url_key_2": None}
+    try:
+        resp = conn.object_store.get("")
+        headers = resp.headers
+        return {
+            "temp_url_key": headers.get("X-Account-Meta-Temp-Url-Key"),
+            "temp_url_key_2": headers.get("X-Account-Meta-Temp-Url-Key-2"),
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to get account temp-url-key: {str(e)}")
+    finally:
+        conn.close()
+
+
+def set_account_temp_url_key(temp_url_key, temp_url_key_2=None, cloud=None,
+                              project_name=None, project_domain_name="Default"):
+    """
+    Set the Swift account's temporary-URL signing key(s) via the native
+    Swift account-metadata API (a POST to the account setting
+    X-Account-Meta-Temp-Url-Key[-2]). This is the standard OpenStack Swift
+    mechanism apps like Glance use to generate time-limited download URLs -
+    RGW's Keystone-authenticated Swift API supports it exactly the same way
+    real Swift does, so no RGW Admin Ops API, Ceph Mgr Dashboard API, or
+    radosgw-admin CLI is needed for this.
+
+    Args:
+        temp_url_key (str): Value for X-Account-Meta-Temp-Url-Key.
+        temp_url_key_2 (str, optional): Value for X-Account-Meta-Temp-Url-Key-2
+            (a second key, useful for zero-downtime key rotation).
+        cloud (str): Name of the cloud configuration from clouds.yaml.
+        project_name (str, optional): Project whose Swift account should be
+            updated, if different from the cloud config's default scope.
+        project_domain_name (str): Domain of project_name. Defaults to "Default".
+
+    Returns:
+        dict: {"success": bool, "message": str}
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.set_account_temp_url_key <key> cloud=rsc project_name=service
+    """
+    conn = _get_connection(cloud, **_account_overrides(project_name, project_domain_name))
+    if conn is None:
+        return {"success": False, "message": "No cloud configuration name provided."}
+
+    headers = {"X-Account-Meta-Temp-Url-Key": temp_url_key}
+    if temp_url_key_2:
+        headers["X-Account-Meta-Temp-Url-Key-2"] = temp_url_key_2
+
+    try:
+        conn.object_store.post("", headers=headers)
+        return {"success": True, "message": "Swift account temp-url-key set."}
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to set account temp-url-key: {str(e)}")
     finally:
         conn.close()

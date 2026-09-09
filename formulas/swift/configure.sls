@@ -17,6 +17,12 @@ include:
 {% set swift_public_hostname = pillar['osh'].get('swift_public_hostname', swift_hostnames[0] if swift_hostnames else 'swift.rsc.gacyberrange.org') %}
 {% set swift_region = pillar['osh'].get('swift_region', 'RegionOne') %}
 {% set swift_cloud = pillar['osh']['cloud'] %}
+{# The project Glance authenticates as for its Swift store backend -
+   openstack-helm's default convention puts service accounts (glance, nova,
+   cinder, etc.) in the "service" project. The temp-url-key is Swift ACCOUNT
+   metadata (scoped per-project, via AUTH_<project_id>), not per-RGW-user,
+   so it must be set against whichever project owns Glance's Swift account. #}
+{% set glance_swift_account_project = pillar['osh'].get('glance_swift_account_project', 'service') %}
 
 # Routes external Swift/S3 traffic through the external Gateway
 # (traefik-external, websecure-ext listener). TLS termination happens at
@@ -85,6 +91,17 @@ deploy_ceph_object_store:
     - keystone_revocation_interval: 1200
     - keystone_service_user_secret_name: "keystone-admin"
     - keystone_token_cache_size: 1000
+    - enable_apis:
+        - s3
+        - swift
+    - rgw_config:
+        rgw_max_put_size: "34359738368"
+        rgw_max_chunk_size: "4194304"
+        rgw_request_timeout: "900"
+        rgw_op_thread_timeout: "900"
+        rgw_thread_pool_size: "8"
+    - rgw_command_flags:
+        rgw-frontends: "beast port=80 request_timeout_ms=300000"
     - gateway_resources:
         limits:
           cpu: "500m"
@@ -119,7 +136,7 @@ swift_endpoint_admin:
     - service_name: swift
     - interface: admin
     - region: {{ swift_region }}
-    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc.cluster.local/swift/v1/AUTH_%(project_id)s"
+    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc.cluster.local/swift/v1/AUTH_$(tenant_id)s"
     - cloud: {{ swift_cloud }}
     - require:
       - kinetic_openstack: swift_service
@@ -130,7 +147,7 @@ swift_endpoint_internal:
     - service_name: swift
     - interface: internal
     - region: {{ swift_region }}
-    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc.cluster.local/swift/v1/AUTH_%(project_id)s"
+    - url: "http://rook-ceph-rgw-rsc-object-store.rook-ceph.svc.cluster.local/swift/v1/AUTH_$(tenant_id)s"
     - cloud: {{ swift_cloud }}
     - require:
       - kinetic_openstack: swift_service
@@ -141,7 +158,7 @@ swift_endpoint_public:
     - service_name: swift
     - interface: public
     - region: {{ swift_region }}
-    - url: "https://{{ swift_hostnames[0] }}/swift/v1/AUTH_%(project_id)s"
+    - url: "https://{{ swift_hostnames[0] }}/swift/v1/AUTH_$(tenant_id)s"
     - cloud: {{ swift_cloud }}
     - require:
       - kinetic_openstack: swift_service

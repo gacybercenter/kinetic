@@ -238,8 +238,15 @@ kc_{{ realm_name }}_flow_bindings:
 {%- endfor %}
 {% endif %}
 
-{# --- Clients --- #}
+{# --- Clients ---
+   A client entry must be a mapping of client properties. Guard against
+   stray non-mapping keys (e.g. a realm-level setting like
+   provider_metadata_url accidentally nested under clients: due to a
+   pillar indentation mistake) so those don't crash rendering with
+   "'str object' has no attribute 'get'" or get misinterpreted as a
+   real client. #}
 {% for client_key, client in realm.get('clients', {}).items() %}
+{%- if client is mapping %}
 kc_{{ realm_name }}_client_{{ client_key }}:
   keycloak.client_present:
     - name: {{ client_key }}
@@ -288,6 +295,7 @@ kc_{{ realm_name }}_client_{{ client_key }}:
 {{ kc_conn(keycloak_addr, kc_namespace, kc_secret_name, kc_verify) }}
     - require:
       - keycloak: kc_{{ realm_name }}_realm
+{%- endif %}
 {% endfor %}
 
 {# --- User Federation (e.g. OpenLDAP) --- #}
