@@ -95,6 +95,8 @@ deploy_ceph_object_store:
         - s3
         - swift
     - rgw_config:
+        rgw_max_put_size: "34359738368"
+        rgw_max_chunk_size: "4194304"
         rgw_request_timeout: "900"
         rgw_op_thread_timeout: "900"
         rgw_thread_pool_size: "8"
