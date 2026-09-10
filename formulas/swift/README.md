@@ -29,6 +29,20 @@ This formula deploys OpenStack Swift object storage using Rook's Ceph RGW (`Ceph
 - The `keystone-admin` secret **must** exist before the `CephObjectStore` is created when `auth_keystone: true` is used.
 - Changing certain `rgw_config` keys or `enable_apis` will cause the state to delete and recreate the `CephObjectStore`. When `preserve_pools_on_delete: true`, you must manually remove the finalizer on the CR before the recreation can complete. See the [CRD recreation / finalizer workaround](../docs/kinetic-swift.md#crd-recreation--finalizer-workaround) section in the module documentation for the required steps.
 
+### Load Balancer Transport Settings (`res-k8s:lbs`)
+
+To support streaming large objects between the external Gateway and the Swift service, the following transport timeout settings are configured under the `res-k8s:lbs` pillar:
+
+```yaml
+transport:
+  respondingTimeouts:
+    readTimeout: 30m
+    writeTimeout: 30m
+    idleTimeout: 300s
+```
+
+These extended timeouts prevent the Gateway from prematurely closing connections during large uploads or downloads.
+
 ## Usage
 
 Apply via the normal orchestration or state run:

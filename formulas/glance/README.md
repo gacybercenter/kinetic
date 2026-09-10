@@ -35,6 +35,20 @@ TLS termination is handled at the Gateway listener; the certificate is managed e
 - Custom `uwsgi` settings under `conf:glance_api_uwsgi` are required to properly handle streaming between the external Gateway and the Glance API service. These settings will be documented in more detail later.
 - Endpoint ports (under `endpoints`) must be explicitly defined even though the chart documentation claims they have defaults. The Helm templates can otherwise emit partially-parsed JSON values that cause Helm to fail during rendering.
 
+### Load Balancer Transport Settings (`res-k8s:lbs`)
+
+To support streaming large images between the external Gateway and the Glance API service, the following transport timeout settings are configured under the `res-k8s:lbs` pillar:
+
+```yaml
+transport:
+  respondingTimeouts:
+    readTimeout: 30m
+    writeTimeout: 30m
+    idleTimeout: 300s
+```
+
+These extended timeouts prevent the Gateway from prematurely closing connections during large uploads or downloads.
+
 ## Usage
 
 Apply via the normal state or orchestration run:
