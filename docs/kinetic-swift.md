@@ -109,6 +109,11 @@ Swift/S3 hostnames through the `traefik-external` Gateway
 TLS termination happens at the Gateway (certificate managed elsewhere),
 so the HTTPRoute itself is plain HTTP to the backend.
 
+> **Note**: Work is already underway to move TLS termination to the
+> HTTPRoute itself (rather than at the Gateway listener). When that change
+> lands, the route definition will carry the certificate reference and the
+> Gateway listener will no longer terminate TLS for Swift traffic.
+
 ## Configuration knobs
 
 | Key | Where it ends up | Purpose |
