@@ -119,7 +119,7 @@ traefik_external_gateway:
           certificateRefs:
             - group: ""
               kind: Secret
-              name: ext-ingress-tls-secret
+              name: ext-ingress-cert-secret
     - require:
       - k8s_helm: install_traefik_external_ingress_controller
 
@@ -148,7 +148,7 @@ traefik_internal_gateway:
           mode: Terminate
           certificateRefs:
             - kind: Secret
-              name: int-ingress-tls-secret
+              name: int-ingress-cert-secret
               group: ""
     - require:
       - k8s_helm: install_traefik_external_ingress_controller

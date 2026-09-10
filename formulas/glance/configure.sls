@@ -2,39 +2,40 @@ include:
   - /formulas/glance/install
   - /formulas/osh-helm-repos/configure
 
-glance_external_certificate:
-  k8s.certmanager_certificate_present:
-    - name: glance-tls-public
-    - certificate_name: glance-tls-public
-    - namespace: openstack
-    - secret_name: glance-tls-public
-    - issuer_name: letsencrypt-prod
-    - issuer_kind: ClusterIssuer
-    - common_name: {{ pillar['osh_values']['glance_cert']['common_name'] }}
-    - dns_names: {{ pillar['osh_values']['glance_cert']['dns_names'] }}
+{# glance_ingress.hosts may be a list of plain hostname strings, or a list of
+   dicts with a 'host' key - normalize to a flat list of hostnames either way. #}
+{% set glance_hostnames = [] %}
+{% for h in pillar['osh']['glance']['glance_ingress']['hosts'] %}
+{% if h is mapping %}
+{% do glance_hostnames.append(h['host']) %}
+{% else %}
+{% do glance_hostnames.append(h) %}
+{% endif %}
+{% endfor %}
 
-glance_internal_certificate:
-  k8s.certmanager_certificate_present:
-    - name: glance-tls-api
-    - certificate_name: glance-tls-api
+# Routes external Glance API traffic through the external Gateway
+# (traefik-external, websecure-ext listener). TLS termination happens at
+# the Gateway listener - the certificate itself is managed elsewhere, not
+# here.
+glance_httproute:
+  k8s.httproute_present:
+    - name: glance-route
     - namespace: openstack
-    - secret_name: glance-tls-api
-    - issuer_name: cyberrange-ca-issuer
-    - issuer_kind: ClusterIssuer
-    - common_name: {{ pillar['osh_values']['glance_internal_api']['common_name'] }}
-    - dns_names: {{ pillar['osh_values']['glance_internal_api']['dns_names'] }}
+    - parent_refs:
+        - name: traefik-external
+          namespace: ingress
+          sectionName: websecure-ext
+    - hostnames: {{ glance_hostnames | tojson }}
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: glance-api
+              port: 9292
 
-glance_ingress:
-  k8s.ingress_present:
-    - name: glance-ingress
-    - namespace: openstack
-    - ingress_class_name: {{ pillar['osh_values']['glance_ingress']['class_name'] }}
-    - hosts: {{ pillar['osh_values']['glance_ingress']['hosts'] }}
-    - tls: {{ pillar['osh_values']['glance_ingress']['tls'] }}
-    - require:
-      - k8s: glance_external_certificate
-
-install_heat:
+install_glance:
   k8s_helm.helm_release_present:
     - release_name: glance
     - chart_name: openstack-helm/glance
@@ -42,19 +43,19 @@ install_heat:
     - wait_timeout: 300
     - wait_interval: 10
     - keep_values_file: true
-    - pillar_key: osh_values:glance
+    - pillar_key: osh:glance:helm
     - set_values:
       - endpoints.oslo_db.auth.admin.username=root
-      - endpoints.oslo_db.auth.admin.password={{ pillar['osh_values']['mariadb_admin'] }}
+      - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
       - endpoints.oslo_db.auth.glance.username=glance
-      - endpoints.oslo_db.auth.glance.password={{ pillar['osh_values']['glance_admin'] }}
+      - endpoints.oslo_db.auth.glance.password={{ pillar['osh']['glance']['values']['glance_admin'] }}
       - endpoints.oslo_messaging.auth.admin.username=rabbitmq
-      - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh_values']['rabbitmq_admin'] }}
+      - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh']['rabbitmq_admin'] }}
       - endpoints.oslo_messaging.auth.glance.username=glance
-      - endpoints.oslo_messaging.auth.glance.password={{ pillar['osh_values']['glance_rq_user'] }}
-      - endpoints.identity.auth.admin.password={{ pillar['osh_users']['admin'] }}
-      - endpoints.identity.auth.glance.password={{ pillar['osh_values']['glance_admin'] }}
-      - endpoints.identity.auth.test.password={{ pillar['osh_values']['glance_test'] }}
+      - endpoints.oslo_messaging.auth.glance.password={{ pillar['osh']['glance']['values']['glance_rq_user'] }}
+      - endpoints.identity.auth.admin.password={{ pillar['osh']['osh_users']['admin'] }}
+      - endpoints.identity.auth.glance.password={{ pillar['osh']['glance']['values']['glance_admin'] }}
+      - endpoints.identity.auth.test.password={{ pillar['osh']['glance']['values']['glance_test'] }}
+      - endpoints.ceph_object_store.auth.glance.password={{ pillar['osh']['glance']['values']['glance_admin'] }}
     - require:
-      - k8s: glance_external_certificate
-      - k8s: glance_ingress
+      - k8s: glance_httproute

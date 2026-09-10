@@ -152,7 +152,7 @@ def _diagnose_role_assignment(
         return diagnostic
 
 
-def _get_connection(cloud=None):
+def _get_connection(cloud=None, **overrides):
     """
     Create an OpenStack connection using a cloud configuration name from os-cloud-config.
     Returns None if no cloud name is provided.
@@ -161,6 +161,10 @@ def _get_connection(cloud=None):
         cloud (str): Name of the cloud configuration from clouds.yaml.
                      This corresponds to os-cloud-config settings typically found in ~/.config/openstack/clouds.yaml.
                      If not provided, the function will return None.
+        **overrides: Optional keyword overrides applied on top of the named
+                     cloud's configuration for this connection only (e.g.
+                     project_name/project_domain_name, to scope a token to a
+                     different project than the cloud's default scope).
 
     Returns:
         Connection object to OpenStack or None if no cloud name is provided
@@ -173,7 +177,7 @@ def _get_connection(cloud=None):
 
     # Use cloud configuration from clouds.yaml (os-cloud-config)
     try:
-        conn = connection.from_config(cloud=cloud)
+        conn = connection.from_config(cloud=cloud, **overrides)
         return conn
     except exceptions.SDKException as e:
         raise CommandExecutionError(
@@ -1458,5 +1462,442 @@ def update_federation_protocol(idp_id, protocol_id, mapping_id, cloud=None):
         raise CommandExecutionError(
             f"Failed to update federation protocol {protocol_id} for idp {idp_id}: {str(e)}"
         )
+    finally:
+        conn.close()
+
+
+def get_region(region_id, cloud=None):
+    """
+    Look up a Keystone region by ID.
+
+    Args:
+        region_id (str): The region ID (e.g. "default").
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_region default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        region = conn.identity.find_region(region_id, ignore_missing=True)
+        if not region:
+            return None
+        return {
+            "id": region.id,
+            "description": region.description,
+            "parent_region_id": region.parent_region_id,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to get region {region_id}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def create_region(region_id, description=None, parent_region_id=None, cloud=None):
+    """
+    Create a Keystone region.
+
+    Args:
+        region_id (str): The region ID (e.g. "default"). Keystone endpoints'
+            region_id must reference an existing Region - it is not a
+            free-form string.
+        description (str, optional): Description of the region.
+        parent_region_id (str, optional): ID of a parent region, for nested regions.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_region default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        attrs = {"id": region_id}
+        if description is not None:
+            attrs["description"] = description
+        if parent_region_id is not None:
+            attrs["parent_region_id"] = parent_region_id
+        region = conn.identity.create_region(**attrs)
+        return {
+            "id": region.id,
+            "description": region.description,
+            "parent_region_id": region.parent_region_id,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to create region {region_id}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def get_service(name, cloud=None):
+    """
+    Look up a Keystone service catalog entry by name or ID.
+
+    Args:
+        name (str): The service name or ID (e.g. "swift").
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_service swift cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        svc = conn.identity.find_service(name, ignore_missing=True)
+        if not svc:
+            return None
+        return {
+            "id": svc.id,
+            "name": svc.name,
+            "type": svc.type,
+            "description": svc.description,
+            "enabled": svc.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to get service {name}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def create_service(name, type, description=None, enabled=True, cloud=None):
+    """
+    Create a Keystone service catalog entry.
+
+    Args:
+        name (str): The service name (e.g. "swift").
+        type (str): The service type (e.g. "object-store").
+        description (str, optional): Description of the service.
+        enabled (bool, optional): Whether the service is enabled. Defaults to True.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_service swift object-store cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        attrs = {"name": name, "type": type, "is_enabled": enabled}
+        if description is not None:
+            attrs["description"] = description
+        svc = conn.identity.create_service(**attrs)
+        return {
+            "id": svc.id,
+            "name": svc.name,
+            "type": svc.type,
+            "description": svc.description,
+            "enabled": svc.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to create service {name}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def update_service(name, cloud=None, **attrs):
+    """
+    Update an existing Keystone service catalog entry.
+
+    Args:
+        name (str): The service name or ID.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+        **attrs: Attributes to update (e.g. type, description, enabled).
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.update_service swift description="Swift Object Storage" cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        svc = conn.identity.find_service(name, ignore_missing=True)
+        if not svc:
+            raise CommandExecutionError(f"Service {name} not found")
+        # Service exposes the enabled flag as is_enabled, not enabled.
+        if "enabled" in attrs:
+            attrs["is_enabled"] = attrs.pop("enabled")
+        svc = conn.identity.update_service(svc, **attrs)
+        return {
+            "id": svc.id,
+            "name": svc.name,
+            "type": svc.type,
+            "description": svc.description,
+            "enabled": svc.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to update service {name}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def get_endpoint(service_name, interface, region=None, cloud=None):
+    """
+    Look up a Keystone endpoint by service, interface, and (optionally) region.
+
+    Args:
+        service_name (str): The service name or ID (e.g. "swift").
+        interface (str): One of "public", "internal", "admin".
+        region (str, optional): Region ID to filter by.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict or None
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_endpoint swift public region=default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        svc = conn.identity.find_service(service_name, ignore_missing=True)
+        if not svc:
+            return None
+        for ep in conn.identity.endpoints(service_id=svc.id, interface=interface):
+            if region is not None and ep.region_id != region:
+                continue
+            return {
+                "id": ep.id,
+                "service_id": ep.service_id,
+                "interface": ep.interface,
+                "region_id": ep.region_id,
+                "url": ep.url,
+                "enabled": ep.is_enabled,
+            }
+        return None
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to get endpoint for service {service_name} ({interface}): {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def create_endpoint(service_name, interface, url, region=None, enabled=True, cloud=None):
+    """
+    Create a Keystone endpoint for a service.
+
+    Args:
+        service_name (str): The service name or ID (e.g. "swift").
+        interface (str): One of "public", "internal", "admin".
+        url (str): The endpoint URL.
+        region (str, optional): Region ID (e.g. "default"). Keystone does not
+            require a matching Region resource to already exist.
+        enabled (bool, optional): Whether the endpoint is enabled. Defaults to True.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.create_endpoint swift public https://swift.example.com/swift/v1 region=default cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        svc = conn.identity.find_service(service_name, ignore_missing=True)
+        if not svc:
+            raise CommandExecutionError(f"Service {service_name} not found")
+        attrs = {
+            "service_id": svc.id,
+            "interface": interface,
+            "url": url,
+            "is_enabled": enabled,
+        }
+        if region is not None:
+            attrs["region_id"] = region
+        ep = conn.identity.create_endpoint(**attrs)
+        return {
+            "id": ep.id,
+            "service_id": ep.service_id,
+            "interface": ep.interface,
+            "region_id": ep.region_id,
+            "url": ep.url,
+            "enabled": ep.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(
+            f"Failed to create endpoint for service {service_name} ({interface}): {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+def update_endpoint(endpoint_id, cloud=None, **attrs):
+    """
+    Update an existing Keystone endpoint.
+
+    Args:
+        endpoint_id (str): The endpoint ID.
+        cloud (str): Optional name of the cloud configuration from clouds.yaml
+        **attrs: Attributes to update (e.g. url, region (mapped to region_id), enabled).
+
+    Returns:
+        dict
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.update_endpoint <id> url=https://swift.example.com/swift/v1 cloud=rsc
+    """
+    conn = _get_connection(cloud)
+    if conn is None:
+        return None
+    try:
+        ep = conn.identity.find_endpoint(endpoint_id, ignore_missing=True)
+        if not ep:
+            raise CommandExecutionError(f"Endpoint {endpoint_id} not found")
+        if "enabled" in attrs:
+            attrs["is_enabled"] = attrs.pop("enabled")
+        if "region" in attrs:
+            attrs["region_id"] = attrs.pop("region")
+        ep = conn.identity.update_endpoint(ep, **attrs)
+        return {
+            "id": ep.id,
+            "service_id": ep.service_id,
+            "interface": ep.interface,
+            "region_id": ep.region_id,
+            "url": ep.url,
+            "enabled": ep.is_enabled,
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to update endpoint {endpoint_id}: {str(e)}")
+    finally:
+        conn.close()
+
+
+def _account_overrides(project_name, project_domain_name):
+    overrides = {}
+    if project_name:
+        overrides["project_name"] = project_name
+        overrides["project_domain_name"] = project_domain_name
+    return overrides
+
+
+def get_account_temp_url_key(cloud=None, project_name=None, project_domain_name="Default"):
+    """
+    Get the Swift account's current temp-url-key(s) via the native Swift
+    account-metadata API (a GET on the account, reading the
+    X-Account-Meta-Temp-Url-Key[-2] response headers). This works against
+    RGW's Keystone-authenticated Swift API exactly the same way it works
+    against real OpenStack Swift - no RGW Admin Ops API or radosgw-admin
+    CLI is needed.
+
+    Args:
+        cloud (str): Name of the cloud configuration from clouds.yaml.
+        project_name (str, optional): Project whose Swift account should be
+            queried, if different from the cloud config's default scope
+            (e.g. the project a service like Glance authenticates as for
+            its Swift store backend).
+        project_domain_name (str): Domain of project_name. Defaults to "Default".
+
+    Returns:
+        dict: {"temp_url_key": str|None, "temp_url_key_2": str|None}
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.get_account_temp_url_key cloud=rsc project_name=service
+    """
+    conn = _get_connection(cloud, **_account_overrides(project_name, project_domain_name))
+    if conn is None:
+        return {"temp_url_key": None, "temp_url_key_2": None}
+    try:
+        resp = conn.object_store.get("")
+        headers = resp.headers
+        return {
+            "temp_url_key": headers.get("X-Account-Meta-Temp-Url-Key"),
+            "temp_url_key_2": headers.get("X-Account-Meta-Temp-Url-Key-2"),
+        }
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to get account temp-url-key: {str(e)}")
+    finally:
+        conn.close()
+
+
+def set_account_temp_url_key(temp_url_key, temp_url_key_2=None, cloud=None,
+                              project_name=None, project_domain_name="Default"):
+    """
+    Set the Swift account's temporary-URL signing key(s) via the native
+    Swift account-metadata API (a POST to the account setting
+    X-Account-Meta-Temp-Url-Key[-2]). This is the standard OpenStack Swift
+    mechanism apps like Glance use to generate time-limited download URLs -
+    RGW's Keystone-authenticated Swift API supports it exactly the same way
+    real Swift does, so no RGW Admin Ops API, Ceph Mgr Dashboard API, or
+    radosgw-admin CLI is needed for this.
+
+    Args:
+        temp_url_key (str): Value for X-Account-Meta-Temp-Url-Key.
+        temp_url_key_2 (str, optional): Value for X-Account-Meta-Temp-Url-Key-2
+            (a second key, useful for zero-downtime key rotation).
+        cloud (str): Name of the cloud configuration from clouds.yaml.
+        project_name (str, optional): Project whose Swift account should be
+            updated, if different from the cloud config's default scope.
+        project_domain_name (str): Domain of project_name. Defaults to "Default".
+
+    Returns:
+        dict: {"success": bool, "message": str}
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' kinetic_openstack.set_account_temp_url_key <key> cloud=rsc project_name=service
+    """
+    conn = _get_connection(cloud, **_account_overrides(project_name, project_domain_name))
+    if conn is None:
+        return {"success": False, "message": "No cloud configuration name provided."}
+
+    headers = {"X-Account-Meta-Temp-Url-Key": temp_url_key}
+    if temp_url_key_2:
+        headers["X-Account-Meta-Temp-Url-Key-2"] = temp_url_key_2
+
+    try:
+        conn.object_store.post("", headers=headers)
+        return {"success": True, "message": "Swift account temp-url-key set."}
+    except exceptions.SDKException as e:
+        raise CommandExecutionError(f"Failed to set account temp-url-key: {str(e)}")
     finally:
         conn.close()
