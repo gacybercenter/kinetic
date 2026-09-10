@@ -20,21 +20,25 @@ registers it in the Keystone service catalog.
 
 ```mermaid
 flowchart LR
-    subgraph Rook["Rook operator"]
+    subgraph Rook
         CR[CephObjectStore CR]
     end
-    subgraph K8s["Kubernetes (rook-ceph)"]
-        RGW[RGW pods<br/>rook-ceph-rgw-rsc-object-store]
+
+    subgraph "Kubernetes (rook-ceph)"
+        RGW[RGW pods\nrook-ceph-rgw-rsc-object-store]
         SVC[ClusterIP Service]
     end
-    subgraph Ingress["ingress namespace"]
-        GW[traefik-external Gateway<br/>websecure-ext listener]
+
+    subgraph "ingress namespace"
+        GW[traefik-external Gateway\nwebsecure-ext listener]
     end
-    subgraph Keystone["Keystone (openstack namespace)"]
+
+    subgraph "Keystone (openstack namespace)"
         SVC2[Keystone service]
-        CAT[Service catalog<br/>swift + endpoints]
+        CAT[Service catalog\nswift + endpoints]
     end
-    subgraph External["External clients"]
+
+    subgraph "External clients"
         CLI[openstackclient / swift CLI]
     end
 
@@ -43,7 +47,7 @@ flowchart LR
     SVC -->|HTTPRoute| GW
     GW --> CLI
     CAT --> SVC2
-    RGW -->|Keystone auth<br/>(keystone-admin secret)| CAT
+    RGW -->|Keystone auth\n(keystone-admin secret)| CAT
 ```
 
 ## Components
