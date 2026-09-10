@@ -20,34 +20,34 @@ registers it in the Keystone service catalog.
 
 ```mermaid
 flowchart LR
-    subgraph Rook
+    subgraph Rook_Operator
         CR[CephObjectStore CR]
     end
 
-    subgraph "Kubernetes (rook-ceph)"
-        RGW[RGW pods\nrook-ceph-rgw-rsc-object-store]
+    subgraph K8s_Rook_Ceph
+        RGW[RGW pods - rook-ceph-rgw-rsc-object-store]
         SVC[ClusterIP Service]
     end
 
-    subgraph "ingress namespace"
-        GW[traefik-external Gateway\nwebsecure-ext listener]
+    subgraph Ingress_Namespace
+        GW[traefik-external Gateway - websecure-ext listener]
     end
 
-    subgraph "Keystone (openstack namespace)"
+    subgraph Keystone_OpenStack
         SVC2[Keystone service]
-        CAT[Service catalog\nswift + endpoints]
+        CAT[Service catalog - swift endpoints]
     end
 
-    subgraph "External clients"
+    subgraph External_Clients
         CLI[openstackclient / swift CLI]
     end
 
     CR --> RGW
     RGW <--> SVC
-    SVC -->|HTTPRoute| GW
+    SVC --> GW
     GW --> CLI
     CAT --> SVC2
-    RGW -->|Keystone auth\n(keystone-admin secret)| CAT
+    RGW --> CAT
 ```
 
 ## Components
