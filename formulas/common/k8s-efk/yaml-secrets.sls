@@ -80,6 +80,45 @@ opensearch_security_config:
                     - "global_tenant"
                   allowed_actions:
                     - "kibana_all_read"
+            # 3.3.9 — proven Security API objects (OpenSearch 2.11, 201).
+            # Permanent names; do not use gcr-tmp-*.
+            audit-reader:
+                reserved: false
+                cluster_permissions:
+                - "cluster_monitor"
+                - "cluster:monitor/health"
+                index_permissions:
+                - index_patterns:
+                    - "keycloak-logs-*"
+                    - "openldap-audit-logs-*"
+                  allowed_actions:
+                    - "read"
+                    - "indices:admin/mappings/get"
+                tenant_permissions:
+                - tenant_patterns:
+                    - "global_tenant"
+                  allowed_actions:
+                    - "kibana_all_read"
+            audit-admin:
+                reserved: false
+                cluster_permissions:
+                - "cluster_monitor"
+                - "cluster:admin/opendistro/alerting/*"
+                - "cluster:admin/opendistro/alerting/monitor/*"
+                index_permissions:
+                - index_patterns:
+                    - "keycloak-logs-*"
+                    - "openldap-audit-logs-*"
+                    - ".opendistro-alerting-config"
+                  allowed_actions:
+                    - "read"
+                    - "write"
+                    - "indices:admin/mappings/get"
+                tenant_permissions:
+                - tenant_patterns:
+                    - "global_tenant"
+                  allowed_actions:
+                    - "kibana_all_write"
         roles_mapping.yml: |
             # This maps roles to users and groups
             _meta:
@@ -114,6 +153,17 @@ opensearch_security_config:
                   - "admins"
                   - "se_cyber"
                   - "ro"
+            # 3.3.9 — map se_cyber/ro to audit-reader; map admins to
+            # audit-admin in addition to existing all_access (do not replace).
+            audit-reader:
+                reserved: false
+                backend_roles:
+                  - "se_cyber"
+                  - "ro"
+            audit-admin:
+                reserved: false
+                backend_roles:
+                  - "admins"
         internal_users.yml: |
             # This is the internal user database
             # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
