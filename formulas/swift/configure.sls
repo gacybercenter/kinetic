@@ -17,12 +17,6 @@ include:
 {% set swift_public_hostname = pillar['osh'].get('swift_public_hostname', swift_hostnames[0] if swift_hostnames else 'swift.rsc.gacyberrange.org') %}
 {% set swift_region = pillar['osh'].get('swift_region', 'RegionOne') %}
 {% set swift_cloud = pillar['osh']['cloud'] %}
-{# The project Glance authenticates as for its Swift store backend -
-   openstack-helm's default convention puts service accounts (glance, nova,
-   cinder, etc.) in the "service" project. The temp-url-key is Swift ACCOUNT
-   metadata (scoped per-project, via AUTH_<project_id>), not per-RGW-user,
-   so it must be set against whichever project owns Glance's Swift account. #}
-{% set glance_swift_account_project = pillar['osh'].get('glance_swift_account_project', 'service') %}
 
 # Routes external Swift/S3 traffic through the external Gateway
 # (traefik-external, websecure-ext listener). TLS termination happens at
