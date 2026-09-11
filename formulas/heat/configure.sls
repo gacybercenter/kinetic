@@ -7,7 +7,7 @@ include:
    alongside 'tls' for the old Ingress resource) - normalize to a flat list
    of hostnames either way. #}
 {% set heat_hostnames = [] %}
-{% for h in pillar['osh']['heat_ingress']['hosts'] %}
+{% for h in pillar['osh']['heat']['heat_ingress']['hosts'] %}
 {% if h is mapping %}
 {% do heat_hostnames.append(h['host']) %}
 {% else %}
@@ -15,7 +15,7 @@ include:
 {% endif %}
 {% endfor %}
 {% set cloudformation_hostnames = [] %}
-{% for h in pillar['osh']['cloudformation_ingress']['hosts'] %}
+{% for h in pillar['osh']['heat']['cloudformation_ingress']['hosts'] %}
 {% if h is mapping %}
 {% do cloudformation_hostnames.append(h['host']) %}
 {% else %}
@@ -77,16 +77,16 @@ install_heat:
       - endpoints.oslo_db.auth.admin.username=root
       - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
       - endpoints.oslo_db.auth.heat.username=heat
-      - endpoints.oslo_db.auth.heat.password={{ pillar['osh']['heat']['values']['heat_admin'] }}
+      - endpoints.oslo_db.auth.heat.password={{ pillar['osh']['heat']['users']['heat_admin'] }}
       - endpoints.oslo_messaging.auth.admin.username=rabbitmq
       - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh']['rabbitmq_admin'] }}
       - endpoints.oslo_messaging.auth.heat.username=heat
-      - endpoints.oslo_messaging.auth.heat.password={{ pillar['osh']['heat']['heat_rq_user'] }}
+      - endpoints.oslo_messaging.auth.heat.password={{ pillar['osh']['heat']['users']['heat_rq_user'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh']['osh_users']['admin'] }}
-      - endpoints.identity.auth.heat.password={{ pillar['osh']['heat']['values']['heat_admin'] }}
-      - endpoints.identity.auth.heat_trustee.password={{ pillar['osh']['heat']['heat_trust'] }}
-      - endpoints.identity.auth.heat_stack_user.password={{ pillar['osh']['heat']['heat_domain'] }}
-      - endpoints.identity.auth.test.password={{ pillar['osh']['heat']['heat_test'] }}
+      - endpoints.identity.auth.heat.password={{ pillar['osh']['heat']['users']['heat_admin'] }}
+      - endpoints.identity.auth.heat_trustee.password={{ pillar['osh']['heat']['users']['heat_trust'] }}
+      - endpoints.identity.auth.heat_stack_user.password={{ pillar['osh']['heat']['users']['heat_domain'] }}
+      - endpoints.identity.auth.test.password={{ pillar['osh']['heat']['users']['heat_test'] }}
     - require:
       - k8s: heat_httproute
       - k8s: cloudformation_httproute
