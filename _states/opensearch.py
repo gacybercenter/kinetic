@@ -6,6 +6,8 @@ This module provides states for managing OpenSearch indices, roles, and user map
 It interacts with the OpenSearch API to ensure the desired state of these resources.
 """
 
+import copy
+
 __virtualname__ = 'opensearch'
 
 def __virtual__():
@@ -75,7 +77,7 @@ def index_present(name, index_name, admin_user='admin', admin_password=None, hos
 
     return ret
 
-def role_present(name, index_name, role_name='fluentbit_role', namespace='efk', cluster_name='opensearch', cluster_permissions=None, index_allowed_actions=None, tenant_patterns=None, tenant_allowed_actions=None):
+def role_present(name, index_name=None, role_name='fluentbit_role', namespace='efk', cluster_name='opensearch', cluster_permissions=None, index_allowed_actions=None, tenant_patterns=None, tenant_allowed_actions=None, index_patterns=None):
     """
     Ensure that an OpensearchRole Custom Resource exists with permissions for a specific index.
 
@@ -87,11 +89,14 @@ def role_present(name, index_name, role_name='fluentbit_role', namespace='efk', 
 
     role_name
         The name of the OpensearchRole resource (and resulting OpenSearch role).
-        Defaults to 'fluentbit_role'.
+        Must be a valid DNS-1123 name. Defaults to 'fluentbit_role'.
 
     index_name
         The name/pattern prefix of the index to grant permissions on. A trailing
-        "*" is appended automatically.
+        "*" is appended automatically. Ignored when index_patterns is set.
+
+    index_patterns
+        Optional list of exact index patterns (no auto-appended "*").
 
     namespace
         The Kubernetes namespace to create the OpensearchRole in. Must match the
@@ -135,6 +140,7 @@ def role_present(name, index_name, role_name='fluentbit_role', namespace='efk', 
             index_allowed_actions=index_allowed_actions,
             tenant_patterns=tenant_patterns,
             tenant_allowed_actions=tenant_allowed_actions,
+            index_patterns=index_patterns,
         )
         ret['result'] = result['success']
         ret['comment'] = result['message']
@@ -149,7 +155,7 @@ def role_present(name, index_name, role_name='fluentbit_role', namespace='efk', 
 
     return ret
 
-def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluentbit', namespace='efk', cluster_name='opensearch', backend_roles=None):
+def user_role_mapping_present(name, role_name='fluentbit_role', user_name=None, namespace='efk', cluster_name='opensearch', backend_roles=None):
     """
     Ensure that a user is mapped to a role in OpenSearch.
 
@@ -164,7 +170,7 @@ def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluen
         The name of the role to map the user to. Defaults to 'fluentbit_role'.
 
     user_name
-        The name of the user to map to the role. Defaults to 'fluentbit'.
+        The name of the user to map to the role. Optional when backend_roles is set.
 
     namespace
         The Kubernetes namespace to create the OpensearchUserRoleBinding in. Must
@@ -174,7 +180,7 @@ def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluen
         The name of the OpenSearchCluster this binding applies to. Defaults to 'opensearch'.
 
     backend_roles
-        Optional list of backend roles to also bind to the role.
+        Optional list of backend roles to bind to the role (may be used without user_name).
 
     Example:
     .. code-block:: yaml
@@ -204,7 +210,7 @@ def user_role_mapping_present(name, role_name='fluentbit_role', user_name='fluen
             ret['changes'] = {}
     except Exception as e:
         ret['result'] = False
-        ret['comment'] = f"Failed to ensure user {user_name} mapping to role {role_name}: {str(e)[:100]}..."
+        ret['comment'] = f"Failed to ensure mapping for role {role_name}: {str(e)[:100]}..."
         ret['changes'] = {}
 
     return ret
@@ -247,5 +253,144 @@ def cluster_health(name, admin_user='admin', admin_password=None, host='https://
         ret['result'] = False
         ret['comment'] = f"Failed to check OpenSearch cluster health: {str(e)[:100]}..."
         ret['changes'] = {}
+
+    return ret
+
+
+# Hardcoded query/schedule for 3.3.4 keycloak-index-freshness (OpenSearch 2.11).
+# enabled and actions come from pillar opensearch_alerting:freshness_monitor.
+_KEYCLOAK_FRESHNESS_MONITOR = {
+    "type": "monitor",
+    "name": "keycloak-index-freshness",
+    "monitor_type": "query_level_monitor",
+    "schedule": {"period": {"interval": 5, "unit": "MINUTES"}},
+    "inputs": [
+        {
+            "search": {
+                "indices": ["keycloak-logs-*"],
+                "query": {
+                    "size": 0,
+                    "query": {
+                        "range": {"@timestamp": {"gte": "now-15m"}}
+                    },
+                },
+            }
+        }
+    ],
+    "triggers": [
+        {
+            "name": "no-docs-15m",
+            "severity": "1",
+            "condition": {
+                "script": {
+                    "source": "ctx.results[0].hits.total.value < 1",
+                    "lang": "painless",
+                }
+            },
+            "actions": [],
+        }
+    ],
+}
+
+
+def _freshness_monitor_actions(cfg):
+    """
+    Build trigger actions from pillar opensearch_alerting:freshness_monitor.
+
+    Default destination type is email. Empty actions if pillar has no To: and
+    no destination id (kinetic-pillar can fill these later).
+    """
+    if not isinstance(cfg, dict):
+        return []
+    if "actions" in cfg:
+        return cfg.get("actions") or []
+
+    dest = cfg.get("destination") or {}
+    if not isinstance(dest, dict):
+        dest = {}
+    dest_type = dest.get("type") or "email"
+    dest_id = dest.get("id") or dest.get("destination_id") or cfg.get("destination_id")
+    to_list = dest.get("to") or dest.get("recipients") or cfg.get("to") or []
+    if isinstance(to_list, str):
+        to_list = [to_list]
+    # Empty actions is OK if pillar has no To: yet (and no destination id).
+    if not dest_id or not to_list:
+        return []
+
+    action = {
+        "name": dest.get("action_name", "notify"),
+        "destination_id": dest_id,
+        "message_template": {
+            "source": dest.get(
+                "message",
+                "No documents written to keycloak-logs-* in the last 15 minutes.",
+            ),
+            "lang": "mustache",
+        },
+    }
+    if dest_type == "email" or dest.get("subject"):
+        action["subject_template"] = {
+            "source": dest.get("subject", "Keycloak index freshness alert"),
+            "lang": "mustache",
+        }
+    return [action]
+
+
+def monitor_present(
+    name,
+    monitor_name="keycloak-index-freshness",
+    admin_user="admin",
+    admin_password=None,
+    host="https://api.logger.services.gacyberrange.org:443",
+):
+    """
+    Ensure the keycloak-index-freshness Alerting monitor exists (3.3.4).
+
+    Query and schedule are hardcoded. enabled and destination/actions are read
+    from pillar opensearch_alerting:freshness_monitor. Lists monitors with
+    POST /_plugins/_alerting/monitors/_search — never GET
+    /_plugins/_alerting/monitors (405 on OpenSearch 2.11).
+
+    name
+        The name of the state (arbitrary, for SaltStack identification).
+
+    monitor_name
+        Monitor name. Defaults to 'keycloak-index-freshness'.
+
+    admin_user
+        Admin username. Defaults to 'admin'.
+
+    admin_password
+        Admin password. If None, retrieved from pillar.
+
+    host
+        OpenSearch host URL.
+    """
+    ret = {"name": name, "result": False, "comment": "", "changes": {}}
+
+    try:
+        cfg = __salt__["pillar.get"]("opensearch_alerting:freshness_monitor", {}) or {}
+        body = copy.deepcopy(_KEYCLOAK_FRESHNESS_MONITOR)
+        body["name"] = monitor_name
+        body["enabled"] = cfg.get("enabled", True)
+        body["triggers"][0]["actions"] = _freshness_monitor_actions(cfg)
+
+        result = __salt__["kinetic-os.ensure_monitor"](
+            monitor_name=monitor_name,
+            monitor_body=body,
+            admin_user=admin_user,
+            admin_password=admin_password,
+            host=host,
+        )
+        ret["result"] = result["success"]
+        ret["comment"] = result["message"]
+        if result.get("updated"):
+            ret["changes"] = {"monitor_updated": True}
+        else:
+            ret["changes"] = {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure monitor {monitor_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
 
     return ret
