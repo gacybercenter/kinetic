@@ -10,4 +10,4 @@ install_memcached:
     - wait_timeout: 300
     - wait_interval: 10
     - keep_values_file: true
-    - pillar_key: osh_values:memcached
+    - pillar_key: osh:memcached

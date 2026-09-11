@@ -410,3 +410,786 @@ def role_assignment_absent(
         ret["comment"] = f"Error unassigning role {role_name}: {str(e)}"
 
     return ret
+
+
+def health_check(name, timeout=180, interval=5, **kwargs):
+    """
+    Ensure the OpenStack Keystone API is reachable and issuing tokens.
+
+    Acts as a polling gate for dependent federation states - a Helm release
+    reporting "deployed" does not guarantee the external Ingress/HTTPRoute/DNS
+    path to Keystone is actually ready yet. Other states should `require`
+    this one rather than just requiring the Helm release.
+
+    Args:
+        name (str): Arbitrary state ID.
+        timeout (int): Maximum seconds to wait for Keystone to become reachable. Defaults to 180.
+        interval (int): Seconds between retries. Defaults to 5.
+
+    Example:
+
+    .. code-block:: yaml
+
+        keystone_available:
+          kinetic_openstack.health_check:
+            - cloud: rsc
+            - timeout: 180
+            - interval: 5
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Would check that Keystone ({cloud_name}) is reachable."
+        return ret
+
+    try:
+        result = __salt__["kinetic_openstack.check_health"](
+            cloud=cloud_name, timeout=timeout, interval=interval
+        )
+        ret["result"] = bool(result.get("healthy"))
+        ret["comment"] = result.get("message", "")
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error checking Keystone health: {str(e)}"
+
+    return ret
+
+
+def group_present(name, domain_name=None, description=None, **kwargs):
+    """
+    Ensure a Keystone group exists, scoped to a domain.
+
+    Intended for groups referenced by OIDC/SAML federation mapping rules
+    (e.g. a `groups: "{1}"` local rule) - Keystone's federated shadow-user
+    group membership tracking (ExpiringUserGroupMembership) writes a row
+    with a foreign key into the SQL `group` table on every federated login,
+    which fails for groups that live in a domain using a domain-specific
+    LDAP identity driver. Federated group mappings must instead target a
+    SQL-backed domain (e.g. Default) - this state never adds members,
+    since Keystone manages federated membership dynamically per-login
+    based on the IdP's claims.
+
+    Args:
+        name (str): The group name.
+        domain_name (str): Name of the (existing, SQL-backed) domain to
+            create the group in. Required.
+        description (str, optional): Description of the group.
+
+    Example:
+
+    .. code-block:: yaml
+
+        openstack_federated_group_admins:
+          kinetic_openstack.group_present:
+            - name: admins
+            - domain_name: Default
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    domain_id = None
+    if domain_name:
+        domain = __salt__["kinetic_openstack.get_domain"](
+            domain_name, cloud=cloud_name
+        )
+        if not domain:
+            return {
+                "name": name,
+                "result": False,
+                "changes": {},
+                "comment": f"Domain '{domain_name}' does not exist. This state does not create domains.",
+            }
+        domain_id = domain["id"]
+
+    existing = __salt__["kinetic_openstack.get_group"](
+        name, domain_id=domain_id, cloud=cloud_name
+    )
+    if existing:
+        ret["comment"] = f"Group '{name}' already exists."
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Group '{name}' would be created."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_group"](
+            name, domain_id=domain_id, description=description, cloud=cloud_name
+        )
+        ret["changes"] = {"created": name}
+        ret["comment"] = f"Group '{name}' created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating group '{name}': {str(e)}"
+
+    return ret
+
+
+def identity_provider_present(
+    name,
+    domain_name=None,
+    description=None,
+    enabled=True,
+    remote_ids=None,
+    **kwargs,
+):
+    """
+    Ensure an OS-FEDERATION identity provider exists, scoped to an existing
+    Keystone domain.
+
+    This never creates the domain - it must already exist (e.g. a domain
+    owned by an LDAP backend). If the identity provider already exists but
+    is bound to a *different* domain than requested, this state refuses to
+    change it automatically, since remapping an IdP's domain would break
+    every mapping/assignment built against the current domain.
+
+    Args:
+        name (str): The identity provider ID (e.g. "keycloak").
+        domain_name (str): Name of the existing Keystone domain to scope the
+            IdP to (e.g. "rsc"). Required.
+        description (str, optional): Description of the identity provider.
+        enabled (bool, optional): Whether the identity provider is enabled. Defaults to True.
+        remote_ids (list, optional): List of remote IdP issuer URLs.
+
+    Example:
+
+    .. code-block:: yaml
+
+        keystone_keycloak_idp:
+          kinetic_openstack.identity_provider_present:
+            - name: keycloak
+            - domain_name: rsc
+            - remote_ids:
+              - https://keycloak.rsc.gacyberrange.org/realms/rsc
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    if not domain_name:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "domain_name is required (the existing domain to scope this identity provider to).",
+        }
+
+    remote_ids = remote_ids or []
+
+    domain = __salt__["kinetic_openstack.get_domain"](domain_name, cloud=cloud_name)
+    if not domain:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": f"Domain '{domain_name}' does not exist. This state does not create domains.",
+        }
+
+    existing = __salt__["kinetic_openstack.get_identity_provider"](
+        name, cloud=cloud_name
+    )
+
+    if existing:
+        if existing.get("domain_id") != domain["id"]:
+            return {
+                "name": name,
+                "result": False,
+                "changes": {},
+                "comment": (
+                    f"Identity provider '{name}' already exists but is bound to domain_id "
+                    f"'{existing.get('domain_id')}', not domain '{domain_name}' ({domain['id']}). "
+                    "Refusing to change an existing identity provider's domain automatically - "
+                    "this would break every mapping/assignment built against the current domain. "
+                    "Resolve manually if a domain change is intended."
+                ),
+            }
+
+        updates = {}
+        if existing.get("enabled") != enabled:
+            updates["enabled"] = enabled
+        if description is not None and existing.get("description") != description:
+            updates["description"] = description
+        if sorted(existing.get("remote_ids") or []) != sorted(remote_ids):
+            updates["remote_ids"] = remote_ids
+
+        if not updates:
+            ret["comment"] = (
+                f"Identity provider '{name}' already exists and matches the desired state."
+            )
+            return ret
+
+        if __opts__["test"]:
+            ret["result"] = None
+            ret["comment"] = f"Identity provider '{name}' would be updated with {updates}."
+            return ret
+
+        try:
+            __salt__["kinetic_openstack.update_identity_provider"](
+                name, cloud=cloud_name, **updates
+            )
+            ret["changes"] = {"updated": updates}
+            ret["comment"] = f"Identity provider '{name}' updated successfully."
+        except Exception as e:
+            ret["result"] = False
+            ret["comment"] = f"Error updating identity provider '{name}': {str(e)}"
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Identity provider '{name}' would be created in domain '{domain_name}'."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_identity_provider"](
+            name,
+            domain_id=domain["id"],
+            description=description,
+            enabled=enabled,
+            remote_ids=remote_ids,
+            cloud=cloud_name,
+        )
+        ret["changes"] = {"created": name}
+        ret["comment"] = f"Identity provider '{name}' created in domain '{domain_name}'."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating identity provider '{name}': {str(e)}"
+
+    return ret
+
+
+def mapping_present(name, rules, **kwargs):
+    """
+    Ensure an OS-FEDERATION mapping exists with the given rules.
+
+    Args:
+        name (str): The mapping ID (e.g. "keycloak_openid").
+        rules (list): List of mapping rule dicts (local/remote), per the
+            Keystone federation mapping schema.
+
+    Example:
+
+    .. code-block:: yaml
+
+        keystone_keycloak_mapping:
+          kinetic_openstack.mapping_present:
+            - name: keycloak_openid
+            - rules:
+              - local:
+                  - user:
+                      name: "{0}"
+                      domain:
+                        name: rsc
+                  - group:
+                      name: "{1}"
+                      domain:
+                        name: rsc
+                remote:
+                  - type: OIDC-preferred_username
+                  - type: HTTP_OIDC_GROUPS
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    if not rules:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "rules is required and must not be empty.",
+        }
+
+    existing = __salt__["kinetic_openstack.get_mapping"](name, cloud=cloud_name)
+
+    if existing:
+        if existing.get("rules") == rules:
+            ret["comment"] = f"Mapping '{name}' already matches the desired rules."
+            return ret
+
+        if __opts__["test"]:
+            ret["result"] = None
+            ret["comment"] = f"Mapping '{name}' rules would be updated."
+            return ret
+
+        try:
+            __salt__["kinetic_openstack.update_mapping"](name, rules, cloud=cloud_name)
+            ret["changes"] = {"updated": "rules"}
+            ret["comment"] = f"Mapping '{name}' rules updated successfully."
+        except Exception as e:
+            ret["result"] = False
+            ret["comment"] = f"Error updating mapping '{name}': {str(e)}"
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Mapping '{name}' would be created."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_mapping"](name, rules, cloud=cloud_name)
+        ret["changes"] = {"created": name}
+        ret["comment"] = f"Mapping '{name}' created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating mapping '{name}': {str(e)}"
+
+    return ret
+
+
+def federation_protocol_present(name, idp_name, mapping_id, **kwargs):
+    """
+    Ensure a federation protocol is registered for an identity provider,
+    pointing at the given mapping.
+
+    Args:
+        name (str): The protocol ID (e.g. "openid").
+        idp_name (str): The identity provider ID this protocol belongs to.
+        mapping_id (str): The mapping ID to associate with this protocol.
+
+    Example:
+
+    .. code-block:: yaml
+
+        keystone_keycloak_protocol:
+          kinetic_openstack.federation_protocol_present:
+            - name: openid
+            - idp_name: keycloak
+            - mapping_id: keycloak_openid
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    existing = __salt__["kinetic_openstack.get_federation_protocol"](
+        idp_name, name, cloud=cloud_name
+    )
+
+    if existing:
+        if existing.get("mapping_id") == mapping_id:
+            ret["comment"] = (
+                f"Federation protocol '{name}' on identity provider '{idp_name}' "
+                f"already uses mapping '{mapping_id}'."
+            )
+            return ret
+
+        if __opts__["test"]:
+            ret["result"] = None
+            ret["comment"] = (
+                f"Federation protocol '{name}' on '{idp_name}' would be updated "
+                f"to use mapping '{mapping_id}'."
+            )
+            return ret
+
+        try:
+            __salt__["kinetic_openstack.update_federation_protocol"](
+                idp_name, name, mapping_id, cloud=cloud_name
+            )
+            ret["changes"] = {"updated": {"mapping_id": mapping_id}}
+            ret["comment"] = (
+                f"Federation protocol '{name}' on '{idp_name}' updated to use "
+                f"mapping '{mapping_id}'."
+            )
+        except Exception as e:
+            ret["result"] = False
+            ret["comment"] = f"Error updating federation protocol '{name}': {str(e)}"
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = (
+            f"Federation protocol '{name}' would be created on identity provider "
+            f"'{idp_name}' using mapping '{mapping_id}'."
+        )
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_federation_protocol"](
+            idp_name, name, mapping_id, cloud=cloud_name
+        )
+        ret["changes"] = {"created": name}
+        ret["comment"] = (
+            f"Federation protocol '{name}' created on identity provider "
+            f"'{idp_name}' using mapping '{mapping_id}'."
+        )
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating federation protocol '{name}': {str(e)}"
+
+    return ret
+
+
+def region_present(name, description=None, parent_region_id=None, **kwargs):
+    """
+    Ensure a Keystone region exists.
+
+    Keystone endpoints' region_id must reference an existing Region - it is
+    not a free-form string, despite what openstacksdk's endpoint API might
+    suggest. Creating an endpoint with a region_id that doesn't correspond
+    to an existing Region fails with: "Expecting to find endpoint region_id
+    in region table."
+
+    Args:
+        name (str): The region ID (e.g. "default").
+        description (str, optional): Description of the region.
+        parent_region_id (str, optional): ID of a parent region, for nested regions.
+
+    Example:
+
+    .. code-block:: yaml
+
+        swift_region:
+          kinetic_openstack.region_present:
+            - name: default
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    existing = __salt__["kinetic_openstack.get_region"](name, cloud=cloud_name)
+    if existing:
+        ret["comment"] = f"Region '{name}' already exists."
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Region '{name}' would be created."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_region"](
+            name,
+            description=description,
+            parent_region_id=parent_region_id,
+            cloud=cloud_name,
+        )
+        ret["changes"] = {"created": name}
+        ret["comment"] = f"Region '{name}' created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating region '{name}': {str(e)}"
+
+    return ret
+
+
+def service_present(name, type, description=None, enabled=True, **kwargs):
+    """
+    Ensure a Keystone service catalog entry exists.
+
+    Args:
+        name (str): The service name (e.g. "swift").
+        type (str): The service type (e.g. "object-store").
+        description (str, optional): Description of the service.
+        enabled (bool, optional): Whether the service is enabled. Defaults to True.
+
+    Example:
+
+    .. code-block:: yaml
+
+        swift_service:
+          kinetic_openstack.service_present:
+            - name: swift
+            - type: object-store
+            - description: "Swift Object Storage"
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    existing = __salt__["kinetic_openstack.get_service"](name, cloud=cloud_name)
+
+    if existing:
+        updates = {}
+        if existing.get("type") != type:
+            updates["type"] = type
+        if description is not None and existing.get("description") != description:
+            updates["description"] = description
+        if existing.get("enabled") != enabled:
+            updates["enabled"] = enabled
+
+        if not updates:
+            ret["comment"] = f"Service '{name}' already exists and matches the desired state."
+            return ret
+
+        if __opts__["test"]:
+            ret["result"] = None
+            ret["comment"] = f"Service '{name}' would be updated with {updates}."
+            return ret
+
+        try:
+            __salt__["kinetic_openstack.update_service"](
+                name, cloud=cloud_name, **updates
+            )
+            ret["changes"] = {"updated": updates}
+            ret["comment"] = f"Service '{name}' updated successfully."
+        except Exception as e:
+            ret["result"] = False
+            ret["comment"] = f"Error updating service '{name}': {str(e)}"
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = f"Service '{name}' would be created."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_service"](
+            name, type, description=description, enabled=enabled, cloud=cloud_name
+        )
+        ret["changes"] = {"created": name}
+        ret["comment"] = f"Service '{name}' created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating service '{name}': {str(e)}"
+
+    return ret
+
+
+def endpoint_present(
+    name, service_name, interface, url, region=None, enabled=True, **kwargs
+):
+    """
+    Ensure a Keystone endpoint exists for a service/interface/region.
+
+    Args:
+        name (str): Arbitrary state ID.
+        service_name (str): The service name or ID this endpoint belongs to (e.g. "swift").
+        interface (str): One of "public", "internal", "admin".
+        url (str): The endpoint URL.
+        region (str, optional): Region ID (e.g. "default").
+        enabled (bool, optional): Whether the endpoint is enabled. Defaults to True.
+
+    Example:
+
+    .. code-block:: yaml
+
+        swift_endpoint_public:
+          kinetic_openstack.endpoint_present:
+            - service_name: swift
+            - interface: public
+            - region: default
+            - url: https://swift.rsc.gacyberrange.org/swift/v1
+            - cloud: rsc
+            - require:
+              - kinetic_openstack: swift_service
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    existing = __salt__["kinetic_openstack.get_endpoint"](
+        service_name, interface, region=region, cloud=cloud_name
+    )
+
+    if existing:
+        updates = {}
+        if existing.get("url") != url:
+            updates["url"] = url
+        if existing.get("enabled") != enabled:
+            updates["enabled"] = enabled
+
+        if not updates:
+            ret["comment"] = (
+                f"Endpoint for service '{service_name}' ({interface}) already matches "
+                "the desired state."
+            )
+            return ret
+
+        if __opts__["test"]:
+            ret["result"] = None
+            ret["comment"] = (
+                f"Endpoint for service '{service_name}' ({interface}) would be updated "
+                f"with {updates}."
+            )
+            return ret
+
+        try:
+            __salt__["kinetic_openstack.update_endpoint"](
+                existing["id"], cloud=cloud_name, **updates
+            )
+            ret["changes"] = {"updated": updates}
+            ret["comment"] = (
+                f"Endpoint for service '{service_name}' ({interface}) updated successfully."
+            )
+        except Exception as e:
+            ret["result"] = False
+            ret["comment"] = f"Error updating endpoint for service '{service_name}': {str(e)}"
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = (
+            f"Endpoint for service '{service_name}' ({interface}) would be created."
+        )
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.create_endpoint"](
+            service_name,
+            interface,
+            url,
+            region=region,
+            enabled=enabled,
+            cloud=cloud_name,
+        )
+        ret["changes"] = {"created": f"{service_name} ({interface})"}
+        ret["comment"] = f"Endpoint for service '{service_name}' ({interface}) created successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error creating endpoint for service '{service_name}': {str(e)}"
+
+    return ret
+
+
+def account_temp_url_key_present(name, temp_url_key, temp_url_key_2=None,
+                                  project_name=None, project_domain_name="Default",
+                                  **kwargs):
+    """
+    Ensure a Swift account's temp-url-key(s) are set to the given value(s),
+    via the native Swift account-metadata API (no RGW Admin Ops API, Ceph
+    Mgr Dashboard API, or radosgw-admin CLI required).
+
+    name
+        Arbitrary state ID (not an OpenStack resource name).
+
+    temp_url_key
+        Desired value for X-Account-Meta-Temp-Url-Key.
+
+    temp_url_key_2
+        Optional desired value for X-Account-Meta-Temp-Url-Key-2 (a second
+        key, useful for zero-downtime key rotation).
+
+    project_name
+        Project whose Swift account should be updated, if different from
+        the cloud config's default scope (e.g. the project a service like
+        Glance authenticates as for its Swift store backend).
+
+    project_domain_name
+        Domain of project_name. Defaults to "Default".
+
+    Example:
+
+    .. code-block:: yaml
+
+        glance_swift_temp_url_key:
+          kinetic_openstack.account_temp_url_key_present:
+            - temp_url_key: {{ pillar['osh']['glance_swift_temp_url_key'] | yaml_dquote }}
+            - project_name: service
+            - cloud: rsc
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    cloud_name = kwargs.get("cloud")
+    if cloud_name is None:
+        return {
+            "name": name,
+            "result": False,
+            "changes": {},
+            "comment": "No cloud configuration name provided. Specify 'cloud' in state.",
+        }
+
+    try:
+        existing = __salt__["kinetic_openstack.get_account_temp_url_key"](
+            cloud=cloud_name,
+            project_name=project_name,
+            project_domain_name=project_domain_name,
+        )
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error reading current account temp-url-key: {str(e)}"
+        return ret
+
+    needs_update = existing.get("temp_url_key") != temp_url_key
+    if temp_url_key_2 is not None:
+        needs_update = needs_update or existing.get("temp_url_key_2") != temp_url_key_2
+
+    if not needs_update:
+        ret["comment"] = "Account temp-url-key already matches the desired state."
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = "Account temp-url-key would be set."
+        return ret
+
+    try:
+        __salt__["kinetic_openstack.set_account_temp_url_key"](
+            temp_url_key,
+            temp_url_key_2=temp_url_key_2,
+            cloud=cloud_name,
+            project_name=project_name,
+            project_domain_name=project_domain_name,
+        )
+        ret["changes"] = {"temp_url_key": "set"}
+        ret["comment"] = "Account temp-url-key set successfully."
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Error setting account temp-url-key: {str(e)}"
+
+    return ret

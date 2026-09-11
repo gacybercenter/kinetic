@@ -11,6 +11,8 @@ import salt.utils.decorators as decorators
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
+import requests
+
 __virtualname__ = "kinetic_rook"
 
 
@@ -596,3 +598,571 @@ def storageclass_present(
             "updated": False,
             "message": f"Failed to ensure StorageClass {name}: {str(e)}",
         }
+
+
+def ceph_object_store_present(
+    name,
+    namespace,
+    replicas=1,
+    port=80,
+    ssl_enabled=False,
+    annotations=None,
+    gateway_instances=1,
+    gateway_resources=None,
+    enable_swift_api=True,
+    swift_port=8080,
+    swift_account_in_url=True,
+    swift_url_prefix="swift",
+    enable_s3_api=True,
+    preserve_pools_on_delete=True,
+    auth_keystone=False,
+    keystone_url="",
+    keystone_accepted_roles=None,
+    keystone_implicit_tenants="swift",
+    keystone_revocation_interval=1200,
+    keystone_service_user_secret_name="",
+    keystone_token_cache_size=1000,
+    rgw_keystone_api_version="3",
+    rgw_keystone_implicit_tenants="true",
+    rgw_s3_auth_use_keystone="true",
+    debug_rgw="0",
+    enable_apis=None,
+    rgw_config=None,
+    rgw_command_flags=None,
+):
+    """
+    Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
+
+    Args:
+        name (str): The name of the Ceph Object Store resource.
+        namespace (str): The Kubernetes namespace for the Ceph Object Store (typically the Rook namespace).
+        replicas (int, optional): Number of RGW replicas for high availability. Defaults to 1.
+        port (int, optional): Port for the RGW service (S3 API). Defaults to 80.
+        ssl_enabled (bool, optional): Enable SSL for RGW service. Defaults to False.
+        annotations (dict, optional): Additional annotations for the Ceph Object Store resource. Defaults to None.
+        gateway_instances (int, optional): Number of gateway instances. Defaults to 1.
+        gateway_resources (dict, optional): Resource limits and requests for gateway pods. Defaults to None.
+        enable_swift_api (bool, optional): Enable Swift API compatibility for the object store. Defaults to True.
+        swift_port (int, optional): Port for Swift API if enabled. Defaults to 8080.
+        swift_account_in_url (bool, optional): Include account in Swift URL structure. Defaults to True.
+        swift_url_prefix (str, optional): URL prefix for Swift API. Defaults to "swift".
+        enable_s3_api (bool, optional): Enable S3 API compatibility (default in RGW). Defaults to True.
+        preserve_pools_on_delete (bool, optional): Preserve metadata and data pools when deleting the object store. Defaults to True.
+        auth_keystone (bool, optional): Enable Keystone authentication integration. Defaults to False.
+        keystone_url (str, optional): URL for Keystone authentication service. Defaults to "".
+        keystone_accepted_roles (list, optional): List of roles accepted by Keystone for access. Defaults to None.
+        keystone_implicit_tenants (str, optional): Implicit tenant handling for Keystone (e.g., "swift"). Defaults to "swift".
+        keystone_revocation_interval (int, optional): Token revocation check interval in seconds. Defaults to 1200.
+        keystone_service_user_secret_name (str): Name of the secret containing Keystone service user credentials. Mandatory if auth_keystone is True.
+        keystone_token_cache_size (int, optional): Size of token cache for Keystone authentication. Defaults to 1000.
+        rgw_keystone_api_version (str, optional): Keystone API version for RGW authentication. Defaults to "3".
+        rgw_keystone_implicit_tenants (str, optional): Enable implicit tenants for Keystone-Swift integration. Defaults to "true".
+        rgw_s3_auth_use_keystone (str, optional): Use Keystone for S3 authentication. Defaults to "true".
+        debug_rgw (str, optional): Debug level for RGW (e.g., "15" for detailed logging). Defaults to "0" (no debugging).
+        enable_apis (list, optional): Explicit value for spec.protocols.enableAPIs, controlling
+            which RGW frontends are actually mounted (e.g. ["s3", "swift", "swift_auth"],
+            or ["admin"] for an Admin-Ops-only instance - see Rook's Object Multi-instance
+            docs). If not given, defaults to ["s3"] and/or ["swift", "swift_auth"] based on
+            enable_s3_api/enable_swift_api, since Rook's own default for this field does not
+            reliably enable swift_auth alongside swift.
+        rgw_config (dict, optional): Additional spec.gateway.rgwConfig entries (raw ceph.conf
+            [client.rgw.*] key/value pairs, e.g. rgw_request_timeout, rgw_op_thread_timeout,
+            rgw_thread_pool_size), merged on top of the Keystone-related rgwConfig keys built
+            from the auth_keystone/rgw_keystone_*/debug_rgw args above (if auth_keystone is
+            False, this is used as-is). Values here win on key collisions.
+        rgw_command_flags (dict, optional): spec.gateway.rgwCommandFlags entries - extra
+            command-line flags passed to the radosgw process itself (e.g.
+            {"rgw-frontends": "beast port=80 request_timeout_ms=300000"}).
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
+    """
+    try:
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+
+        # Define the CephObjectStore resource for Rook
+        object_store_body = {
+            "apiVersion": "ceph.rook.io/v1",
+            "kind": "CephObjectStore",
+            "metadata": {
+                "name": name,
+                "namespace": namespace,
+            },
+            "spec": {
+                "metadataPool": {
+                    "failureDomain": "host",
+                    "replicated": {"size": replicas},
+                },
+                "dataPool": {
+                    "failureDomain": "host",
+                    "replicated": {"size": replicas},
+                },
+                "preservePoolsOnDelete": preserve_pools_on_delete,
+                "gateway": {
+                    "port": port,
+                    "instances": gateway_instances,
+                    "ssl": ssl_enabled,
+                    "type": "s3",  # Primary API type for S3 compatibility
+                },
+                "protocols": {
+                    "s3": {"enabled": enable_s3_api},
+                    "swift": {
+                        "enabled": enable_swift_api,
+                        "accountInUrl": swift_account_in_url,
+                        "urlPrefix": swift_url_prefix,
+                    },
+                },
+            },
+        }
+
+        # spec.protocols.enableAPIs controls which RGW frontends are actually
+        # mounted, separate from the per-protocol "enabled" flags above -
+        # without swift_auth explicitly listed here, Swift TempAuth-style
+        # requests (and some Keystone-Swift flows) never reach the gateway.
+        if enable_apis is not None:
+            object_store_body["spec"]["protocols"]["enableAPIs"] = enable_apis
+        else:
+            default_apis = []
+            if enable_s3_api:
+                default_apis.append("s3")
+            if enable_swift_api:
+                default_apis.extend(["swift", "swift_auth"])
+            if default_apis:
+                object_store_body["spec"]["protocols"]["enableAPIs"] = default_apis
+
+        # Add annotations if provided
+        if annotations:
+            object_store_body["metadata"]["annotations"] = annotations
+
+        # Add gateway resources if provided
+        if gateway_resources:
+            object_store_body["spec"]["gateway"]["resources"] = gateway_resources
+
+        # Configure Keystone authentication if enabled, under auth.keystone and gateway rgwConfig
+        merged_rgw_config = {}
+        if auth_keystone:
+            if not keystone_service_user_secret_name:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"keystone_service_user_secret_name is mandatory when auth_keystone is enabled for {name} in namespace {namespace}.",
+                    "resource": {},
+                }
+            object_store_body["spec"]["auth"] = {
+                "keystone": {
+                    "url": keystone_url,
+                    "acceptedRoles": keystone_accepted_roles
+                    if keystone_accepted_roles
+                    else ["admin", "member", "service"],
+                    "implicitTenants": keystone_implicit_tenants,
+                    "revocationInterval": keystone_revocation_interval,
+                    "serviceUserSecretName": keystone_service_user_secret_name,
+                    "tokenCacheSize": keystone_token_cache_size,
+                }
+            }
+            merged_rgw_config.update({
+                "rgw_keystone_api_version": rgw_keystone_api_version,
+                "rgw_keystone_implicit_tenants": rgw_keystone_implicit_tenants,
+                "rgw_s3_auth_use_keystone": rgw_s3_auth_use_keystone,
+                "debug_rgw": debug_rgw if debug_rgw != "0" else "0",
+            })
+
+        # rgw_config lets callers pass arbitrary extra ceph.conf [client.rgw.*]
+        # key/value pairs (e.g. rgw_request_timeout, rgw_thread_pool_size)
+        # without this function needing a named arg for every possible option.
+        # It merges on top of (and can override) the Keystone-derived keys above.
+        if rgw_config:
+            merged_rgw_config.update(rgw_config)
+        if merged_rgw_config:
+            object_store_body["spec"]["gateway"]["rgwConfig"] = merged_rgw_config
+
+        if rgw_command_flags:
+            object_store_body["spec"]["gateway"]["rgwCommandFlags"] = rgw_command_flags
+
+        # Check if CephObjectStore already exists
+        try:
+            existing_store = custom_api.get_namespaced_custom_object(
+                group="ceph.rook.io",
+                version="v1",
+                namespace=namespace,
+                plural="cephobjectstores",
+                name=name,
+            )
+            # Compare existing spec with desired spec (simplified check)
+            if existing_store.get("spec") == object_store_body.get("spec"):
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"CephObjectStore {name} already exists in namespace {namespace} with matching spec.",
+                    "resource": existing_store,
+                }
+            else:
+                # Spec differs → delete the old object. Do NOT try to create immediately;
+                # Rook may keep the CR in Terminating (especially with preservePoolsOnDelete=true).
+                # The next run will create it once the 404 path is reached.
+                try:
+                    custom_api.delete_namespaced_custom_object(
+                        group="ceph.rook.io",
+                        version="v1",
+                        namespace=namespace,
+                        plural="cephobjectstores",
+                        name=name,
+                    )
+                    return {
+                        "success": True,
+                        "updated": True,
+                        "message": f"CephObjectStore {name} deletion initiated in namespace {namespace} (will recreate on next run).",
+                        "resource": {},
+                    }
+                except ApiException as delete_err:
+                    # 409 "object is being deleted" is expected while finalizers run → treat as soft success
+                    if delete_err.status == 409 and "object is being deleted" in str(delete_err):
+                        return {
+                            "success": True,
+                            "updated": True,
+                            "message": f"CephObjectStore {name} is still terminating in namespace {namespace}; will recreate when ready.",
+                            "resource": {},
+                        }
+                    return {
+                        "success": False,
+                        "updated": False,
+                        "message": f"Failed to delete existing CephObjectStore {name} in namespace {namespace}: {str(delete_err)[:100]}...",
+                        "resource": {},
+                    }
+        except ApiException as e:
+            if e.status == 404:
+                # CephObjectStore does not exist, create it
+                created_store = custom_api.create_namespaced_custom_object(
+                    group="ceph.rook.io",
+                    version="v1",
+                    namespace=namespace,
+                    plural="cephobjectstores",
+                    body=object_store_body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"CephObjectStore {name} created in namespace {namespace}.",
+                    "resource": created_store,
+                }
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to manage CephObjectStore {name} in namespace {namespace}: {str(e)}...",
+                    "resource": {},
+                }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Error managing CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}...",
+            "resource": {},
+        }
+
+
+def ceph_object_store_user_present(
+    name,
+    namespace,
+    store,
+    display_name=None,
+    cluster_namespace=None,
+    capabilities=None,
+    quotas=None,
+    op_mask=None,
+):
+    """
+    Ensure a Ceph RGW user exists via Rook's CephObjectStoreUser CRD
+    (https://rook.io/docs/rook/latest/CRDs/Object-Storage/ceph-object-store-user-crd/).
+
+    Rook's operator creates the RGW user itself (no Admin Ops/Dashboard API
+    calls or credentials needed from Salt) and writes the resulting S3
+    access/secret key pair into a Kubernetes secret named
+    ``rook-ceph-object-user-<store>-<name>`` in `namespace`.
+
+    Note: this does NOT support subusers or a Swift "temp URL key" - Rook's
+    CephObjectStoreUser CRD has no fields for either. Use
+    kinetic_rook.rgw_subuser_present (Ceph Mgr Dashboard API) for subusers;
+    temp-url-key remains radosgw-admin CLI only.
+
+    name
+        The CephObjectStoreUser resource name (becomes the RGW uid).
+
+    namespace
+        Namespace to create the CephObjectStoreUser in.
+
+    store
+        The CephObjectStore this user belongs to.
+
+    display_name
+        Optional display name (passed to `radosgw-admin user create
+        --display-name`). Defaults to name.
+
+    cluster_namespace
+        Namespace of the parent CephCluster/CephObjectStore, if different
+        from `namespace`. Requires the CephObjectStore's
+        `allowUsersInNamespaces` to include `namespace`.
+
+    capabilities
+        Optional dict of admin capabilities, e.g. {"user": "*", "buckets": "*"}.
+        Per Rook, capabilities can only be set at creation time - changing
+        them requires deleting and re-creating the CephObjectStoreUser.
+
+    quotas
+        Optional dict, e.g. {"maxBuckets": 100, "maxSize": "10G", "maxObjects": 10000}.
+
+    op_mask
+        Optional list of allowed RGW operations, e.g. ["read", "write", "delete"].
+
+    Returns a dict with 'success', 'updated', 'message', and 'resource'.
+    """
+    try:
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+
+        spec = {"store": store, "displayName": display_name or name}
+        if cluster_namespace:
+            spec["clusterNamespace"] = cluster_namespace
+        if capabilities:
+            spec["capabilities"] = capabilities
+        if quotas:
+            spec["quotas"] = quotas
+        if op_mask is not None:
+            spec["opMask"] = op_mask
+
+        user_body = {
+            "apiVersion": "ceph.rook.io/v1",
+            "kind": "CephObjectStoreUser",
+            "metadata": {
+                "name": name,
+                "namespace": namespace,
+            },
+            "spec": spec,
+        }
+
+        try:
+            existing_user = custom_api.get_namespaced_custom_object(
+                group="ceph.rook.io",
+                version="v1",
+                namespace=namespace,
+                plural="cephobjectstoreusers",
+                name=name,
+            )
+            if existing_user.get("spec") == spec:
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"CephObjectStoreUser {name} already exists in namespace {namespace} with matching spec.",
+                    "resource": existing_user,
+                }
+            else:
+                # Spec differs (e.g. capabilities) - Rook only applies caps at
+                # creation, so delete and let the next run recreate it.
+                try:
+                    custom_api.delete_namespaced_custom_object(
+                        group="ceph.rook.io",
+                        version="v1",
+                        namespace=namespace,
+                        plural="cephobjectstoreusers",
+                        name=name,
+                    )
+                    return {
+                        "success": True,
+                        "updated": True,
+                        "message": f"CephObjectStoreUser {name} deletion initiated in namespace {namespace} (will recreate on next run).",
+                        "resource": {},
+                    }
+                except ApiException as delete_err:
+                    if delete_err.status == 409 and "object is being deleted" in str(delete_err):
+                        return {
+                            "success": True,
+                            "updated": True,
+                            "message": f"CephObjectStoreUser {name} is still terminating in namespace {namespace}; will recreate when ready.",
+                            "resource": {},
+                        }
+                    return {
+                        "success": False,
+                        "updated": False,
+                        "message": f"Failed to delete existing CephObjectStoreUser {name} in namespace {namespace}: {str(delete_err)[:100]}...",
+                        "resource": {},
+                    }
+        except ApiException as e:
+            if e.status == 404:
+                created_user = custom_api.create_namespaced_custom_object(
+                    group="ceph.rook.io",
+                    version="v1",
+                    namespace=namespace,
+                    plural="cephobjectstoreusers",
+                    body=user_body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"CephObjectStoreUser {name} created in namespace {namespace}.",
+                    "resource": created_user,
+                }
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to manage CephObjectStoreUser {name} in namespace {namespace}: {str(e)[:100]}...",
+                    "resource": {},
+                }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Error managing CephObjectStoreUser {name} in namespace {namespace}: {str(e)[:100]}...",
+            "resource": {},
+        }
+
+
+def _mgr_dashboard_login(endpoint, username, password, verify_ssl=True, timeout=30):
+    """
+    Log in to the Ceph Mgr Dashboard REST API
+    (https://docs.ceph.com/en/quincy/mgr/ceph_api/) and return a bearer token.
+    """
+    resp = requests.post(
+        endpoint.rstrip("/") + "/api/auth",
+        json={"username": username, "password": password},
+        headers={
+            "Accept": "application/vnd.ceph.api.v1.0+json",
+            "Content-Type": "application/json",
+        },
+        verify=verify_ssl,
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+    return resp.json()["token"]
+
+
+def _mgr_dashboard_request(method, endpoint, token, path, params=None, json_body=None,
+                           verify_ssl=True, timeout=30, api_version="1.0"):
+    """Issue an authenticated request against the Ceph Mgr Dashboard REST API."""
+    headers = {
+        "Accept": f"application/vnd.ceph.api.v{api_version}+json",
+        "Authorization": f"Bearer {token}",
+    }
+    if json_body is not None:
+        headers["Content-Type"] = "application/json"
+    return requests.request(
+        method,
+        endpoint.rstrip("/") + path,
+        params=params,
+        json=json_body,
+        headers=headers,
+        verify=verify_ssl,
+        timeout=timeout,
+    )
+
+
+def rgw_subuser_present(uid, subuser, dashboard_endpoint, dashboard_username, dashboard_password,
+                        access="full", generate_secret=True, secret=None,
+                        verify_ssl=True, **kwargs):
+    """
+    Ensure an RGW subuser exists under the given uid, using the Ceph Mgr
+    Dashboard REST API (https://docs.ceph.com/en/quincy/mgr/ceph_api/#rgwuser).
+
+    Rook's CephObjectStoreUser CRD has no subuser support, and the plain RGW
+    Admin Ops API requires AWS SigV4 request signing (an extra dependency) -
+    the Mgr Dashboard API supports subusers with simple username/password ->
+    JWT bearer-token auth instead, using only the `requests` library.
+
+    This requires the Dashboard module to already be linked to RGW (one-time
+    setup, not automated by Rook):
+
+    .. code-block:: bash
+
+        ceph dashboard set-rgw-api-access-key -i <accesskeyfile>
+        ceph dashboard set-rgw-api-secret-key -i <secretkeyfile>
+        ceph dashboard set-rgw-api-host <rgw-service>
+        ceph dashboard set-rgw-api-port <port>
+        ceph dashboard set-rgw-api-scheme http
+
+    uid
+        Parent user ID (must already exist, e.g. via
+        kinetic_rook.ceph_object_store_user_present).
+
+    subuser
+        Subuser name (e.g. "glance:swift").
+
+    dashboard_endpoint
+        Base URL of the Ceph Mgr Dashboard (e.g.
+        "https://rook-ceph-mgr-dashboard.rook-ceph.svc:8443").
+
+    dashboard_username / dashboard_password
+        Credentials of a Dashboard user with RGW management permissions
+        (e.g. the built-in "admin" user Rook provisions).
+
+    access
+        Access level (read, write, readwrite, full).
+
+    generate_secret / secret
+        Same semantics as keys above.
+
+    verify_ssl
+        Whether to verify TLS certificates when calling the endpoint.
+
+    Note: setting a Swift "temp URL key" is NOT supported here either - it
+    is not exposed by the Dashboard API's RgwUser endpoints, only by the
+    radosgw-admin CLI.
+    """
+    try:
+        token = _mgr_dashboard_login(
+            dashboard_endpoint, dashboard_username, dashboard_password, verify_ssl=verify_ssl,
+        )
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to authenticate to Ceph Dashboard at {dashboard_endpoint}: {e}",
+        }
+
+    try:
+        resp = _mgr_dashboard_request(
+            "GET", dashboard_endpoint, token, f"/api/rgw/user/{uid}", verify_ssl=verify_ssl,
+        )
+        if resp.status_code == 404:
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"RGW user {uid} does not exist; cannot create subuser {subuser}.",
+            }
+        resp.raise_for_status()
+        info = resp.json()
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to query RGW user {uid}: {e}",
+        }
+
+    existing = any(s.get("id") == subuser for s in info.get("subusers", []))
+
+    if not existing:
+        body = {"subuser": subuser, "access": access}
+        if generate_secret:
+            body["generate_secret"] = "true"
+        elif secret:
+            body["generate_secret"] = "false"
+            body["secret_key"] = secret
+
+        try:
+            resp = _mgr_dashboard_request(
+                "POST", dashboard_endpoint, token, f"/api/rgw/user/{uid}/subuser",
+                json_body=body, verify_ssl=verify_ssl,
+            )
+            resp.raise_for_status()
+        except Exception as e:
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"Failed to create RGW subuser {subuser}: {e}",
+            }
+
+    return {
+        "success": True,
+        "updated": not existing,
+        "message": f"RGW subuser {subuser} ensured.",
+    }

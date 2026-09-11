@@ -2790,209 +2790,6 @@ def job_cleanup(name, namespace=None):
     return ret
 
 
-def ceph_object_store_present(
-    name,
-    namespace,
-    replicas=1,
-    port=80,
-    ssl_enabled=False,
-    annotations=None,
-    gateway_instances=1,
-    gateway_resources=None,
-    enable_swift_api=True,
-    swift_port=8080,
-    swift_account_in_url=True,
-    swift_url_prefix="swift",
-    enable_s3_api=True,
-    preserve_pools_on_delete=True,
-    auth_keystone=False,
-    keystone_url="",
-    keystone_accepted_roles=None,
-    keystone_implicit_tenants="swift",
-    keystone_revocation_interval=1200,
-    keystone_service_user_secret_name="usersecret",
-    keystone_token_cache_size=1000,
-    rgw_keystone_api_version="3",
-    rgw_keystone_implicit_tenants="true",
-    rgw_s3_auth_use_keystone="true",
-    debug_rgw="0",
-):
-    """
-    Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
-
-    name
-        The name of the state (arbitrary, for SaltStack identification) and the Ceph Object Store resource.
-
-    namespace
-        The Kubernetes namespace for the Ceph Object Store (typically the Rook namespace).
-
-    replicas
-        Optional. Number of RGW replicas for high availability. Defaults to 1.
-
-    port
-        Optional. Port for the RGW service (S3 API). Defaults to 80.
-
-    ssl_enabled
-        Optional. Enable SSL for RGW service. Defaults to False.
-
-    annotations
-        Optional. Additional annotations for the Ceph Object Store resource. Defaults to None.
-
-    gateway_instances
-        Optional. Number of gateway instances. Defaults to 1.
-
-    gateway_resources
-        Optional. Resource limits and requests for gateway pods as a dictionary. Defaults to None.
-
-    enable_swift_api
-        Optional. Enable Swift API compatibility for the object store. Defaults to True.
-
-    swift_port
-        Optional. Port for Swift API if enabled. Defaults to 8080.
-
-    swift_account_in_url
-        Optional. Include account in Swift URL structure. Defaults to True.
-
-    swift_url_prefix
-        Optional. URL prefix for Swift API. Defaults to "swift".
-
-    enable_s3_api
-        Optional. Enable S3 API compatibility (default in RGW). Defaults to True.
-
-    preserve_pools_on_delete
-        Optional. Preserve metadata and data pools when deleting the object store. Defaults to True.
-
-    auth_keystone
-        Optional. Enable Keystone authentication integration. Defaults to False.
-
-    keystone_url
-        Optional. URL for Keystone authentication service. Defaults to "".
-
-    keystone_accepted_roles
-        Optional. List of roles accepted by Keystone for access. Defaults to None (uses ["admin", "member", "service"] if auth_keystone is True).
-
-    keystone_implicit_tenants
-        Optional. Implicit tenant handling for Keystone (e.g., "swift"). Defaults to "swift".
-
-    keystone_revocation_interval
-        Optional. Token revocation check interval in seconds. Defaults to 1200.
-
-    keystone_service_user_secret_name
-        Mandatory if auth_keystone is True. Name of the secret containing Keystone service user credentials. Defaults to "usersecret".
-
-    rgw_keystone_api_version
-        Optional. Keystone API version for RGW authentication. Defaults to "3".
-
-    rgw_keystone_implicit_tenants
-        Optional. Enable implicit tenants for Keystone-Swift integration. Defaults to "true".
-
-    rgw_s3_auth_use_keystone
-        Optional. Use Keystone for S3 authentication. Defaults to "true".
-
-    debug_rgw
-        Optional. Debug level for RGW (e.g., "15" for detailed logging). Defaults to "0" (no debugging).
-
-    rgw_keystone_implicit_tenants
-        Optional. Enable implicit tenants for Keystone-Swift integration. Defaults to "true".
-
-    rgw_s3_auth_use_keystone
-        Optional. Use Keystone for S3 authentication. Defaults to "true".
-
-    rgw_keystone_api_version
-        Optional. Keystone API version for RGW authentication. Defaults to "3".
-
-    keystone_token_cache_size
-        Optional. Size of token cache for Keystone authentication. Defaults to 1000.
-
-    Example:
-    .. code-block:: yaml
-
-        ensure_ceph_object_store:
-          k8s.ceph_object_store_present:
-            - name: my-object-store
-            - namespace: rook-ceph
-            - replicas: 3
-            - port: 80
-            - ssl_enabled: false
-            - gateway_instances: 2
-            - enable_swift_api: true
-            - swift_port: 8080
-            - swift_account_in_url: true
-            - swift_url_prefix: "swift"
-            - enable_s3_api: true
-            - preserve_pools_on_delete: true
-            - auth_keystone: true
-            - keystone_url: "https://keystone.rook-ceph.svc/"
-            - keystone_accepted_roles:
-                - admin
-                - member
-                - service
-            - keystone_implicit_tenants: "swift"
-            - keystone_revocation_interval: 1200
-            - keystone_service_user_secret_name: "usersecret"
-            - keystone_token_cache_size: 1000
-            - rgw_keystone_api_version: "3"
-            - rgw_keystone_implicit_tenants: "true"
-            - rgw_s3_auth_use_keystone: "true"
-            - debug_rgw: "15"
-            - gateway_resources:
-                limits:
-                  cpu: "500m"
-                  memory: "512Mi"
-                requests:
-                  cpu: "200m"
-                  memory: "256Mi"
-    """
-    ret = {"name": name, "result": False, "comment": "", "changes": {}}
-
-    try:
-        result = __salt__["kinetic_k8s.ceph_object_store_present"](
-            name=name,
-            namespace=namespace,
-            replicas=replicas,
-            port=port,
-            ssl_enabled=ssl_enabled,
-            annotations=annotations,
-            gateway_instances=gateway_instances,
-            gateway_resources=gateway_resources,
-            enable_swift_api=enable_swift_api,
-            swift_port=swift_port,
-            swift_account_in_url=swift_account_in_url,
-            swift_url_prefix=swift_url_prefix,
-            enable_s3_api=enable_s3_api,
-            preserve_pools_on_delete=preserve_pools_on_delete,
-            auth_keystone=auth_keystone,
-            keystone_url=keystone_url,
-            keystone_accepted_roles=keystone_accepted_roles,
-            keystone_implicit_tenants=keystone_implicit_tenants,
-            keystone_revocation_interval=keystone_revocation_interval,
-            keystone_service_user_secret_name=keystone_service_user_secret_name,
-            keystone_token_cache_size=keystone_token_cache_size,
-            rgw_keystone_api_version=rgw_keystone_api_version,
-            rgw_keystone_implicit_tenants=rgw_keystone_implicit_tenants,
-            rgw_s3_auth_use_keystone=rgw_s3_auth_use_keystone,
-            debug_rgw=debug_rgw,
-        )
-
-        ret["result"] = result["success"]
-        ret["comment"] = result["message"]
-        if result["updated"]:
-            ret["changes"] = {"ceph_object_store_updated": True}
-        else:
-            ret[
-                "changes"
-            ] = {}  # Explicitly empty to prevent SaltStack from reporting changes unnecessarily
-
-    except Exception as e:
-        ret["result"] = False
-        ret["comment"] = (
-            f"Failed to ensure CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}..."
-        )
-        ret["changes"] = {}
-
-    return ret
-
-
 def kubernetes_deployment_present(
     name,
     namespace,
@@ -4039,6 +3836,85 @@ def serviceaccount_token_secret_present(name, namespace, service_account):
         ret["comment"] = (
             f"Failed to ensure ServiceAccount token Secret {name}: {str(e)[:100]}..."
         )
+        ret["changes"] = {}
+
+    return ret
+
+
+def bundles_present(
+    name,
+    sources,
+    target_configmap_key,
+    target_metadata=None,
+    target_namespace_selector=None,
+    target_additional_formats=None,
+):
+    """
+    Ensure a trust-manager Bundle Custom Resource exists (trust.cert-manager.io/v1alpha1).
+
+    Bundle is a cluster-scoped resource. Only ConfigMap-backed sources and a
+    ConfigMap target are supported - Secret sources/targets are intentionally
+    not exposed, since trust-manager needs no RBAC to read/write Secrets when
+    restricted to ConfigMaps only.
+
+    name
+        Name of the Bundle resource.
+
+    sources
+        List of source dicts. Each dict may contain one of:
+          - config_map: {name, key, include_all_keys, selector}
+          - in_line: raw PEM data to append as a source
+          - use_default_cas: true to include trust-manager's default CA package
+
+    target_configmap_key
+        Key of the entry in the target ConfigMap's data field the synced
+        bundle will be written to, in every namespace.
+
+    target_metadata
+        Optional {labels: {...}, annotations: {...}} copied onto the target
+        ConfigMap in every namespace.
+
+    target_namespace_selector
+        Optional label selector ({matchLabels: {...}} and/or
+        {matchExpressions: [...]}) restricting which namespaces the target
+        ConfigMap is synced into.
+
+    target_additional_formats
+        Optional additional binary formats to write to the target ConfigMap,
+        e.g. {pkcs12: {key: bundle.p12, password: ..., profile: Modern2023}}
+        and/or {jks: {key: bundle.jks, password: ...}}.
+
+    Example:
+    .. code-block:: yaml
+
+        ca_bundle:
+          k8s.bundles_present:
+            - name: gcr-ca-bundle
+            - sources:
+              - config_map:
+                  name: gcr-ca
+                  key: ca.crt
+              - use_default_cas: true
+            - target_configmap_key: root-certs.pem
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.bundles_present"](
+            name=name,
+            sources=sources,
+            target_configmap_key=target_configmap_key,
+            target_metadata=target_metadata,
+            target_namespace_selector=target_namespace_selector,
+            target_additional_formats=target_additional_formats,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure Bundle {name}: {str(e)[:100]}..."
         ret["changes"] = {}
 
     return ret

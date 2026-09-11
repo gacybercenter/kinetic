@@ -17,29 +17,32 @@ include:
   - /formulas/common/networking
   - /formulas/common/install
   - /formulas/common/openstack/repo
-  - /formulas/common/ceph/repo
 
-swift_packages:
+cinder_packages:
   pkg.installed:
     - pkgs:
-      - radosgw
+      - cinder-api
+      - cinder-scheduler
       - python3-openstackclient
+      - python3-memcache
       - python3-etcd3gw
 
-swift_pip:
+cinder_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
+    - reload_modules: True
+    - names:
+      - python-openstackclient
+      - etcd3gw
+    - require:
+      - pkg: cinder_packages
+
+salt-pip_install:
+  pip.installed:
+    - bin_env: '/usr/bin/salt-pip'
     - reload_modules: True
     - pkgs:
       - python-openstackclient
       - etcd3gw
-
-salt-pip_installs:
-  pip.installed:
-    - bin_env: '/usr/bin/salt-pip'
-    - reload_modules: true
-    - pkgs:
-      - python-openstackclient
-      - etcd3gw
     - require:
-      - pip: swift_pip
+      - pip: cinder_pip

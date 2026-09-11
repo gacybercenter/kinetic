@@ -4920,6 +4920,83 @@ def get_secret_value(namespace, secret_name, key, default=None):
         return default
 
 
+def get_configmap_value(namespace, configmap_name, key, default=None):
+    """
+    Retrieve a single value from a Kubernetes ConfigMap.
+
+    Useful for reading data generated/managed outside of Salt (e.g. a
+    trust-manager Bundle's target ConfigMap, synced into a namespace) directly
+    from the cluster instead of duplicating it in pillar.
+
+    Args:
+        namespace (str): Namespace containing the ConfigMap.
+        configmap_name (str): Name of the ConfigMap.
+        key (str): Key within the ConfigMap's data to retrieve.
+        default: Value to return if the ConfigMap or key does not exist, or on error.
+
+    Returns:
+        str: The value, or `default` if not found.
+
+    CLI Example:
+        salt '*' kinetic_k8s.get_configmap_value openstack cyberrange-ca-bundle ca.crt
+    """
+    try:
+        _load_k8s_config()
+        core_v1_api = client.CoreV1Api()
+        configmap = core_v1_api.read_namespaced_config_map(
+            name=configmap_name, namespace=namespace
+        )
+        data = configmap.data or {}
+        return data.get(key, default)
+    except ApiException as e:
+        if e.status == 404:
+            return default
+        return default
+    except Exception:
+        return default
+
+
+def set_nested_value(data, path, value, separator=":"):
+    """
+    Return a deep copy of `data` with a nested key path set to `value`.
+
+    Useful for merging a dynamically-fetched value (e.g. from
+    get_configmap_value/get_secret_value) into a larger pillar-sourced dict
+    from Jinja, since Jinja templates cannot perform nested item assignment
+    (`d['a']['b'] = value`) as an expression.
+
+    Missing intermediate dicts along the path are created automatically. Any
+    existing non-dict value at an intermediate path segment is replaced with
+    a new dict.
+
+    Args:
+        data (dict): The source dict. Not mutated - a deep copy is returned.
+        path (str): Delimited path to the key to set, e.g. "endpoints:ldap:auth:client:tls:ca".
+        value: The value to set at that path.
+        separator (str): Path segment separator. Defaults to ":".
+
+    Returns:
+        dict: A new dict with the value set at the given path.
+
+    CLI Example:
+        salt '*' kinetic_k8s.set_nested_value '{"a": {"b": 1}}' a:c 2
+    """
+    import copy
+
+    result = copy.deepcopy(data) if isinstance(data, dict) else {}
+    keys = [k for k in path.split(separator) if k]
+    if not keys:
+        return result
+
+    node = result
+    for key in keys[:-1]:
+        if not isinstance(node.get(key), dict):
+            node[key] = {}
+        node = node[key]
+    node[keys[-1]] = value
+    return result
+
+
 def secret_present(
     namespace, secret_name, data, secret_type="Opaque", labels=None, annotations=None
 ):
@@ -5617,223 +5694,6 @@ def job_cleanup(namespace=None):
             "message": f"Error cleaning up completed jobs: {str(e)[:100]}...",
         }
 
-
-def ceph_object_store_present(
-    name,
-    namespace,
-    replicas=1,
-    port=80,
-    ssl_enabled=False,
-    annotations=None,
-    gateway_instances=1,
-    gateway_resources=None,
-    enable_swift_api=True,
-    swift_port=8080,
-    swift_account_in_url=True,
-    swift_url_prefix="swift",
-    enable_s3_api=True,
-    preserve_pools_on_delete=True,
-    auth_keystone=False,
-    keystone_url="",
-    keystone_accepted_roles=None,
-    keystone_implicit_tenants="swift",
-    keystone_revocation_interval=1200,
-    keystone_service_user_secret_name="",
-    keystone_token_cache_size=1000,
-    rgw_keystone_api_version="3",
-    rgw_keystone_implicit_tenants="true",
-    rgw_s3_auth_use_keystone="true",
-    debug_rgw="0",
-):
-    """
-    Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
-
-    Args:
-        name (str): The name of the Ceph Object Store resource.
-        namespace (str): The Kubernetes namespace for the Ceph Object Store (typically the Rook namespace).
-        replicas (int, optional): Number of RGW replicas for high availability. Defaults to 1.
-        port (int, optional): Port for the RGW service (S3 API). Defaults to 80.
-        ssl_enabled (bool, optional): Enable SSL for RGW service. Defaults to False.
-        annotations (dict, optional): Additional annotations for the Ceph Object Store resource. Defaults to None.
-        gateway_instances (int, optional): Number of gateway instances. Defaults to 1.
-        gateway_resources (dict, optional): Resource limits and requests for gateway pods. Defaults to None.
-        enable_swift_api (bool, optional): Enable Swift API compatibility for the object store. Defaults to True.
-        swift_port (int, optional): Port for Swift API if enabled. Defaults to 8080.
-        swift_account_in_url (bool, optional): Include account in Swift URL structure. Defaults to True.
-        swift_url_prefix (str, optional): URL prefix for Swift API. Defaults to "swift".
-        enable_s3_api (bool, optional): Enable S3 API compatibility (default in RGW). Defaults to True.
-        preserve_pools_on_delete (bool, optional): Preserve metadata and data pools when deleting the object store. Defaults to True.
-        auth_keystone (bool, optional): Enable Keystone authentication integration. Defaults to False.
-        keystone_url (str, optional): URL for Keystone authentication service. Defaults to "".
-        keystone_accepted_roles (list, optional): List of roles accepted by Keystone for access. Defaults to None.
-        keystone_implicit_tenants (str, optional): Implicit tenant handling for Keystone (e.g., "swift"). Defaults to "swift".
-        keystone_revocation_interval (int, optional): Token revocation check interval in seconds. Defaults to 1200.
-        keystone_service_user_secret_name (str): Name of the secret containing Keystone service user credentials. Mandatory if auth_keystone is True.
-        keystone_token_cache_size (int, optional): Size of token cache for Keystone authentication. Defaults to 1000.
-        rgw_keystone_api_version (str, optional): Keystone API version for RGW authentication. Defaults to "3".
-        rgw_keystone_implicit_tenants (str, optional): Enable implicit tenants for Keystone-Swift integration. Defaults to "true".
-        rgw_s3_auth_use_keystone (str, optional): Use Keystone for S3 authentication. Defaults to "true".
-        debug_rgw (str, optional): Debug level for RGW (e.g., "15" for detailed logging). Defaults to "0" (no debugging).
-
-    Returns:
-        dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
-    """
-    try:
-        _load_k8s_config()
-        custom_api = client.CustomObjectsApi()
-
-        # Define the CephObjectStore resource for Rook
-        object_store_body = {
-            "apiVersion": "ceph.rook.io/v1",
-            "kind": "CephObjectStore",
-            "metadata": {
-                "name": name,
-                "namespace": namespace,
-            },
-            "spec": {
-                "metadataPool": {
-                    "failureDomain": "host",
-                    "replicated": {"size": replicas},
-                },
-                "dataPool": {
-                    "failureDomain": "host",
-                    "replicated": {"size": replicas},
-                },
-                "preservePoolsOnDelete": preserve_pools_on_delete,
-                "gateway": {
-                    "port": port,
-                    "instances": gateway_instances,
-                    "ssl": ssl_enabled,
-                    "type": "s3",  # Primary API type for S3 compatibility
-                },
-                "protocols": {
-                    "s3": {"enabled": enable_s3_api},
-                    "swift": {
-                        "enabled": enable_swift_api,
-                        "accountInUrl": swift_account_in_url,
-                        "urlPrefix": swift_url_prefix,
-                    },
-                },
-            },
-        }
-
-        # Add annotations if provided
-        if annotations:
-            object_store_body["metadata"]["annotations"] = annotations
-
-        # Add gateway resources if provided
-        if gateway_resources:
-            object_store_body["spec"]["gateway"]["resources"] = gateway_resources
-
-        # Configure Keystone authentication if enabled, under auth.keystone and gateway rgwConfig
-        if auth_keystone:
-            if not keystone_service_user_secret_name:
-                return {
-                    "success": False,
-                    "updated": False,
-                    "message": f"keystone_service_user_secret_name is mandatory when auth_keystone is enabled for {name} in namespace {namespace}.",
-                    "resource": {},
-                }
-            object_store_body["spec"]["auth"] = {
-                "keystone": {
-                    "url": keystone_url,
-                    "acceptedRoles": keystone_accepted_roles
-                    if keystone_accepted_roles
-                    else ["admin", "member", "service"],
-                    "implicitTenants": keystone_implicit_tenants,
-                    "revocationInterval": keystone_revocation_interval,
-                    "serviceUserSecretName": keystone_service_user_secret_name,
-                    "tokenCacheSize": keystone_token_cache_size,
-                }
-            }
-            object_store_body["spec"]["gateway"]["rgwConfig"] = {
-                "rgw_keystone_api_version": rgw_keystone_api_version,
-                "rgw_keystone_implicit_tenants": rgw_keystone_implicit_tenants,
-                "rgw_s3_auth_use_keystone": rgw_s3_auth_use_keystone,
-                "debug_rgw": debug_rgw if debug_rgw != "0" else "0",
-            }
-
-        # Check if CephObjectStore already exists
-        try:
-            existing_store = custom_api.get_namespaced_custom_object(
-                group="ceph.rook.io",
-                version="v1",
-                namespace=namespace,
-                plural="cephobjectstores",
-                name=name,
-            )
-            # Compare existing spec with desired spec (simplified check)
-            if existing_store.get("spec") == object_store_body.get("spec"):
-                return {
-                    "success": True,
-                    "updated": False,
-                    "message": f"CephObjectStore {name} already exists in namespace {namespace} with matching spec.",
-                    "resource": existing_store,
-                }
-            else:
-                # Delete the existing CephObjectStore before recreating due to update limitations
-                try:
-                    custom_api.delete_namespaced_custom_object(
-                        group="ceph.rook.io",
-                        version="v1",
-                        namespace=namespace,
-                        plural="cephobjectstores",
-                        name=name,
-                    )
-                    return {
-                        "success": True,
-                        "updated": True,
-                        "message": f"CephObjectStore {name} deleted in namespace {namespace}, will recreate with new spec.",
-                        "resource": {},
-                    }
-                except ApiException as delete_err:
-                    return {
-                        "success": False,
-                        "updated": False,
-                        "message": f"Failed to delete existing CephObjectStore {name} in namespace {namespace}: {str(delete_err)[:100]}...",
-                        "resource": {},
-                    }
-        except ApiException as e:
-            if e.status == 404:
-                # CephObjectStore does not exist, create it
-                created_store = custom_api.create_namespaced_custom_object(
-                    group="ceph.rook.io",
-                    version="v1",
-                    namespace=namespace,
-                    plural="cephobjectstores",
-                    body=object_store_body,
-                )
-                # Wait briefly to ensure deletion has propagated if this is a recreation
-                import time
-
-                time.sleep(2)
-                created_store = custom_api.create_namespaced_custom_object(
-                    group="ceph.rook.io",
-                    version="v1",
-                    namespace=namespace,
-                    plural="cephobjectstores",
-                    body=object_store_body,
-                )
-                return {
-                    "success": True,
-                    "updated": True,
-                    "message": f"CephObjectStore {name} created in namespace {namespace}.",
-                    "resource": created_store,
-                }
-            else:
-                return {
-                    "success": False,
-                    "updated": False,
-                    "message": f"Failed to manage CephObjectStore {name} in namespace {namespace}: {str(e)}...",
-                    "resource": {},
-                }
-    except Exception as e:
-        return {
-            "success": False,
-            "updated": False,
-            "message": f"Error managing CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}...",
-            "resource": {},
-        }
 
 def kubernetes_deployment_present(
     name,
@@ -7745,4 +7605,207 @@ def serviceaccount_token_secret_present(namespace, name, service_account):
             "success": False,
             "updated": False,
             "message": f"ServiceAccount token Secret operation error: {str(e)[:100]}...",
+        }
+
+
+def _build_bundle_sources(sources):
+    """
+    Build the list of trust-manager Bundle sources (trust.cert-manager.io/v1alpha1).
+
+    Only configMap, inLine, and useDefaultCAs sources are supported - secret
+    sources are intentionally rejected, since trust-manager needs no RBAC to
+    read Secrets when only ConfigMap-backed sources are used.
+
+    Args:
+        sources (list): List of source dicts. Each dict may contain:
+            config_map (dict, optional): {"name", "key", "include_all_keys", "selector"}
+            in_line (str, optional): Raw PEM data to append as a source.
+            use_default_cas (bool, optional): Use trust-manager's default CA package.
+
+    Returns:
+        list or None: The built list of source dicts (camelCase, ready for the
+            API), or None if validation fails.
+        str or None: An error message if validation failed, else None.
+    """
+    built_sources = []
+    for src in sources or []:
+        if not isinstance(src, dict):
+            return None, f"Invalid bundle source (expected a dict): {src!r}"
+        if "secret" in src:
+            return None, (
+                "Secret sources are not supported by bundles_present; "
+                "only configMap, inLine, and useDefaultCAs sources are allowed."
+            )
+
+        built = {}
+        if "config_map" in src and src["config_map"] is not None:
+            cm = src["config_map"]
+            cm_obj = {}
+            if cm.get("name") is not None:
+                cm_obj["name"] = cm["name"]
+            if cm.get("key") is not None:
+                cm_obj["key"] = cm["key"]
+            if cm.get("include_all_keys") is not None:
+                cm_obj["includeAllKeys"] = cm["include_all_keys"]
+            if cm.get("selector") is not None:
+                cm_obj["selector"] = cm["selector"]
+            built["configMap"] = cm_obj
+        if "in_line" in src and src["in_line"] is not None:
+            built["inLine"] = src["in_line"]
+        if "use_default_cas" in src and src["use_default_cas"] is not None:
+            built["useDefaultCAs"] = src["use_default_cas"]
+
+        if not built:
+            return None, (
+                f"Bundle source {src!r} did not contain a supported key "
+                "(config_map, in_line, use_default_cas)."
+            )
+        built_sources.append(built)
+
+    if not built_sources:
+        return None, "At least one bundle source is required."
+
+    return built_sources, None
+
+
+def bundles_present(
+    name,
+    sources,
+    target_configmap_key,
+    target_metadata=None,
+    target_namespace_selector=None,
+    target_additional_formats=None,
+):
+    """
+    Ensure a trust-manager Bundle Custom Resource exists (trust.cert-manager.io/v1alpha1).
+
+    Bundle is a cluster-scoped resource. Only ConfigMap-backed sources and a
+    ConfigMap target are supported - Secret sources/targets are intentionally
+    not exposed, since trust-manager needs no RBAC to read/write Secrets when
+    restricted to ConfigMaps only.
+
+    Args:
+        name (str): Name of the Bundle resource.
+        sources (list): List of source dicts. Each dict may contain:
+            config_map (dict, optional): {"name", "key", "include_all_keys", "selector"}
+            in_line (str, optional): Raw PEM data to append as a source.
+            use_default_cas (bool, optional): Use trust-manager's default CA package.
+        target_configmap_key (str): Key of the entry in the target ConfigMap's
+            data field the synced bundle will be written to.
+        target_metadata (dict, optional): {"labels": {...}, "annotations": {...}}
+            copied onto the target ConfigMap in every namespace.
+        target_namespace_selector (dict, optional): Label selector
+            ({"matchLabels": {...}} and/or {"matchExpressions": [...]}) restricting
+            which namespaces the target ConfigMap is synced into.
+        target_additional_formats (dict, optional): Additional binary formats to
+            write to the target ConfigMap, e.g.
+            {"pkcs12": {"key": "bundle.p12", "password": "...", "profile": "Modern2023"}}
+            and/or {"jks": {"key": "bundle.jks", "password": "..."}}.
+
+    Returns:
+        dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
+
+    CLI Example:
+        salt '*' kinetic_k8s.bundles_present my-ca-bundle sources_list target_configmap_key
+    """
+    try:
+        built_sources, err = _build_bundle_sources(sources)
+        if err:
+            return {"success": False, "updated": False, "message": err}
+
+        target = {"configMap": {"key": target_configmap_key}}
+        if target_metadata:
+            target["configMap"]["metadata"] = target_metadata
+        if target_namespace_selector:
+            target["namespaceSelector"] = target_namespace_selector
+        if target_additional_formats:
+            additional_formats = {}
+            if target_additional_formats.get("jks"):
+                additional_formats["jks"] = target_additional_formats["jks"]
+            if target_additional_formats.get("pkcs12"):
+                additional_formats["pkcs12"] = target_additional_formats["pkcs12"]
+            if additional_formats:
+                target["additionalFormats"] = additional_formats
+
+        spec = {"sources": built_sources, "target": target}
+
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+        group = "trust.cert-manager.io"
+        version = "v1alpha1"
+        plural = "bundles"
+
+        exists = False
+        matches = False
+
+        try:
+            resource = custom_api.get_cluster_custom_object(
+                group=group, version=version, plural=plural, name=name,
+            )
+            exists = True
+            current_spec = resource.get("spec", {})
+            matches = current_spec == spec
+        except ApiException as e:
+            if e.status == 404:
+                exists = False
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking Bundle {name}: {str(e)}...",
+                }
+
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Bundle",
+            "metadata": {"name": name},
+            "spec": spec,
+        }
+
+        if not exists:
+            try:
+                custom_api.create_cluster_custom_object(
+                    group=group, version=version, plural=plural, body=body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Bundle {name} created",
+                }
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to create Bundle {name}: {str(e)}...",
+                }
+        elif not matches:
+            try:
+                if "metadata" in resource and "resourceVersion" in resource["metadata"]:
+                    body["metadata"]["resourceVersion"] = resource["metadata"][
+                        "resourceVersion"
+                    ]
+                custom_api.replace_cluster_custom_object(
+                    group=group, version=version, plural=plural, name=name, body=body,
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Bundle {name} updated",
+                }
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Failed to update Bundle {name}: {str(e)}...",
+                }
+        return {
+            "success": True,
+            "updated": False,
+            "message": f"Bundle {name} already exists and matches desired state",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Bundle operation error: {str(e)}",
         }
