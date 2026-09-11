@@ -1,0 +1,2 @@
+include:
+  - /formulas/cinder/configure

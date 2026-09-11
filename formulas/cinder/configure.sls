@@ -1,81 +1,64 @@
-## Copyright 2019 Augusta University
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-
 include:
-  - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/configure
+  - /formulas/cinder/install
+  - /formulas/osh-helm-repos/configure
 
-{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
-{% import 'formulas/common/macros/constructor.sls' as constructor with context %}
-
-{% if grains['spawning'] == 0 %}
-
-cinder-manage db sync:
-  cmd.run:
-    - runas: cinder
-    - require:
-      - file: /etc/cinder/cinder.conf
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
-
-{% if pillar['cephconf']['autoscale'] == 'off' %}
-set_volumes_pool_pgs:
-  event.send:
-    - name: set/volume/pool_pgs
-    - data:
-        pgs: {{ pillar['cephconf']['volumes_pgs'] }}
-    - unless:
-      - fun: grains.equals
-        key: build_phase
-        value: configure
-{% endif %}
-
-{{ spawn.spawnzero_complete() }}
-
+{# cinder_ingress.hosts may be a list of plain hostname strings, or a list of
+   dicts with a 'host' key - normalize to a flat list of hostnames either way. #}
+{% set cinder_hostnames = [] %}
+{% for h in pillar['osh']['cinder']['cinder_ingress']['hosts'] %}
+{% if h is mapping %}
+{% do cinder_hostnames.append(h['host']) %}
 {% else %}
-
-{{ spawn.check_spawnzero_status(grains['type']) }}
-
+{% do cinder_hostnames.append(h) %}
 {% endif %}
+{% endfor %}
 
-/etc/cinder/cinder.conf:
-  file.managed:
-    - source: salt://formulas/cinder/files/cinder.conf
-    - template: jinja
-    - defaults:
-        transport_url: {{ constructor.rabbitmq_url_constructor() }}
-        sql_connection_string: {{ constructor.mysql_url_constructor(user='cinder', database='cinder') }}
-        www_authenticate_uri: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='public') }}
-        auth_url: {{ constructor.endpoint_url_constructor(project='keystone', service='keystone', endpoint='internal') }}
-        memcached_servers: {{ constructor.memcached_url_constructor() }}
-        password: {{ pillar['cinder']['cinder_service_password'] }}
-        my_ip: {{ salt['network.ipaddrs'](cidr=pillar['networking']['subnets']['management'])[0] }}
-        api_servers: {{ constructor.endpoint_url_constructor(project='glance', service='glance', endpoint='public') }}
-        rbd_secret_uuid: {{ pillar['ceph']['volumes-uuid'] }}
+# Routes external Cinder API traffic through the external Gateway
+# (traefik-external, websecure-ext listener). TLS termination happens at
+# the Gateway listener - the certificate itself is managed elsewhere, not
+# here.
+cinder_httproute:
+  k8s.httproute_present:
+    - name: cinder-route
+    - namespace: openstack
+    - parent_refs:
+        - name: traefik-external
+          namespace: ingress
+          sectionName: websecure-ext
+    - hostnames: {{ cinder_hostnames | tojson }}
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: cinder-api
+              port: 8776
 
-cinder_api_service:
-  service.running:
-    - name: apache2
-    - enable: true
-    - watch:
-      - file: /etc/cinder/cinder.conf
-
-cinder_scheduler_service:
-  service.running:
-    - name: cinder-scheduler
-    - enable: true
-    - watch:
-      - file: /etc/cinder/cinder.conf
+install_cinder:
+  k8s_helm.helm_release_present:
+    - release_name: cinder
+    - chart_name: openstack-helm/cinder
+    - namespace: openstack
+    - wait_timeout: 300
+    - wait_interval: 10
+    - keep_values_file: true
+    - pillar_key: osh:cinder:values
+    - set_values:
+      - endpoints.oslo_db.auth.admin.username=root
+      - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
+      - endpoints.oslo_db.auth.cinder.username=cinder
+      - endpoints.oslo_db.auth.cinder.password={{ pillar['osh']['cinder']['users']['cinder'] }}
+      - endpoints.oslo_messaging.auth.admin.username=rabbitmq
+      - endpoints.oslo_messaging.auth.admin.password={{ pillar['osh']['rabbitmq_admin'] }}
+      - endpoints.oslo_messaging.auth.cinder.username=cinder
+      - endpoints.oslo_messaging.auth.cinder.password={{ pillar['osh']['cinder']['users']['cinder'] }}
+      - endpoints.identity.auth.admin.password={{ pillar['osh']['osh_users']['admin'] }}
+      - endpoints.identity.auth.cinder.password={{ pillar['osh']['cinder']['users']['cinder'] }}
+      - endpoints.identity.auth.glance.password={{ pillar['osh']['glance']['values']['glance_admin'] }}
+      - endpoints.identity.auth.nova.password={{ pillar['osh']['cinder']['users']['cinder_nova'] }}
+      - endpoints.identity.auth.swift.password={{ pillar['osh']['cinder']['users']['cinder_swift'] }}
+      - endpoints.identity.auth.service.password={{ pillar['osh']['cinder']['users']['cinder_service_user'] }}
+      - endpoints.identity.auth.test.password={{ pillar['osh']['cinder']['users']['cinder-test'] }}
+    - require:
+      - k8s: cinder_httproute
