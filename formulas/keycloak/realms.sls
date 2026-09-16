@@ -92,6 +92,7 @@ kc_{{ realm_name }}_realm:
     - registration_email_as_username: {{ realm.get('registration_email_as_username') }}
 {%- endif %}
 {%- if realm.get('login_theme') is not none %}
+    {# Implements: 800-171 3.1.9 — set login_theme: gcr-login in kinetic-pillar #}
     - login_theme: {{ realm.get('login_theme') }}
 {%- endif %}
 {%- if realm.get('account_theme') is not none %}

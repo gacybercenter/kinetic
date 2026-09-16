@@ -49,7 +49,7 @@ All functions return `{"success": bool, "updated": bool, "message": str}`.
 | Token & Session Timeouts | `realm_present` (`access_token_lifespan`, `sso_session_idle_timeout`, `sso_session_max_lifespan`, `client_session_idle_timeout`, `client_session_max_lifespan`, `offline_session_idle_timeout`) | `PUT admin/realms/{realm}` |
 | SSL Required | `realm_present` (`ssl_required`) | `PUT admin/realms/{realm}` -> `sslRequired` |
 | Login settings | `realm_present` (`remember_me`, `verify_email`, `login_with_email_allowed`, `duplicate_emails_allowed`, `reset_password_allowed`, `edit_username_allowed`, `registration_allowed`, `registration_email_as_username`) | `PUT admin/realms/{realm}` |
-| Themes | `realm_present` (`login_theme`, `account_theme`, `admin_theme`, `email_theme`) | `PUT admin/realms/{realm}` |
+| Themes | `realm_present` (`login_theme`, `account_theme`, `admin_theme`, `email_theme`) | `PUT admin/realms/{realm}` (`gcr-login` is the 3.1.9 pre-logon notice theme mounted by `formulas/keycloak/install.sls`) |
 | Events / Admin Events | `events_config_present` | `GET/PUT admin/realms/{realm}/events/config` |
 | Required Actions | `required_action_present` | `POST admin/realms/{realm}/authentication/register-required-action`, `GET/PUT .../authentication/required-actions/{alias}` |
 | Authentication Flows | `authentication_flow_present`, `authentication_flow_absent`, `authentication_execution_present` | Full CRUD under `admin/realms/{realm}/authentication/flows` |

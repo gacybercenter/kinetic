@@ -1,0 +1,29 @@
+{# Implements: 800-171 3.1.9
+   Append theme volume mounts to codecentric/keycloakx extraVolumes strings
+   without replacing unrelated pillar extraVolumes. #}
+{% set kc_values = pillar.get('res-k8s', {}).get('keycloak', {}).get('values', {}) %}
+{% set existing_vols = kc_values.get('extraVolumes') or '' %}
+{% set existing_mounts = kc_values.get('extraVolumeMounts') or '' %}
+{% if 'gcr-login-theme' not in existing_vols %}
+extraVolumes: |
+{{ existing_vols | indent(2, false) }}
+  - name: gcr-login-theme
+    configMap:
+      name: keycloak-gcr-login-theme
+{% endif %}
+{% if 'gcr-login-theme' not in existing_mounts %}
+extraVolumeMounts: |
+{{ existing_mounts | indent(2, false) }}
+  - name: gcr-login-theme
+    mountPath: /opt/keycloak/themes/gcr-login/login/theme.properties
+    subPath: theme.properties
+  - name: gcr-login-theme
+    mountPath: /opt/keycloak/themes/gcr-login/login/login.ftl
+    subPath: login.ftl
+  - name: gcr-login-theme
+    mountPath: /opt/keycloak/themes/gcr-login/login/messages/messages_en.properties
+    subPath: messages_en.properties
+  - name: gcr-login-theme
+    mountPath: /opt/keycloak/themes/gcr-login/login/resources/css/notice.css
+    subPath: notice.css
+{% endif %}
