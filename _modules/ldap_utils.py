@@ -4,6 +4,7 @@ Custom SaltStack module for LDAP operations using python-ldap directly
 """
 
 import logging
+import re
 
 try:
     import ldap
@@ -1294,3 +1295,318 @@ def dn_exists(spec_name, dn, desired_attributes=None):
         ret["result"] = False
         ret["comment"] = f"Failed to check DN {dn}: {str(e)}"
         return ret
+
+
+def _decode_ldap_attrs(raw_attrs):
+    decoded = {}
+    for attr, values in (raw_attrs or {}).items():
+        decoded[attr] = [
+            v.decode("utf-8") if isinstance(v, bytes) else v for v in values
+        ]
+    return decoded
+
+
+def search_entries(
+    spec_name, base, filterstr="(objectClass=*)", attributes=None, scope=None
+):
+    """
+    Search the directory using an existing StartTLS connection spec.
+
+    Returns:
+        dict: success, entries (list of {dn, attributes}), error
+    """
+    if scope is None:
+        scope = ldap.SCOPE_SUBTREE
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            return {
+                "success": False,
+                "entries": [],
+                "error": conn_result["error"],
+            }
+        conn = conn_result["conn"]
+        attrlist = list(attributes) if attributes else None
+        result = conn.search_s(
+            base=base,
+            scope=scope,
+            filterstr=filterstr,
+            attrlist=attrlist,
+        )
+        entries = []
+        for dn, raw_attrs in result or []:
+            if not dn:
+                continue
+            entries.append(
+                {"dn": dn, "attributes": _decode_ldap_attrs(raw_attrs)}
+            )
+        return {"success": True, "entries": entries, "error": None}
+    except ldap.NO_SUCH_OBJECT:
+        return {"success": True, "entries": [], "error": None}
+    except Exception as e:
+        return {
+            "success": False,
+            "entries": [],
+            "error": f"Search failed at {base}: {str(e)}",
+        }
+
+
+def find_olc_database_dn(spec_name, suffix):
+    """Find olcDatabase DN in cn=config whose olcSuffix matches suffix."""
+    result = search_entries(
+        spec_name,
+        "cn=config",
+        filterstr=f"(olcSuffix={suffix})",
+        attributes=["olcSuffix"],
+    )
+    if not result["success"]:
+        return {"success": False, "dn": None, "error": result["error"]}
+    if not result["entries"]:
+        return {
+            "success": False,
+            "dn": None,
+            "error": f"No olcDatabase with olcSuffix={suffix}",
+        }
+    return {"success": True, "dn": result["entries"][0]["dn"], "error": None}
+
+
+def find_overlay_dn(spec_name, database_dn, overlay_name):
+    """Find an existing overlay DN under a database, if present."""
+    result = search_entries(
+        spec_name,
+        database_dn,
+        filterstr=f"(objectClass=olcOverlayConfig)",
+        attributes=["olcOverlay", "objectClass"],
+    )
+    if not result["success"]:
+        return {"success": False, "dn": None, "error": result["error"]}
+    overlay_name = overlay_name.lower()
+    for entry in result["entries"]:
+        values = [v.lower() for v in entry["attributes"].get("olcOverlay", [])]
+        if any(overlay_name == v or v.endswith(overlay_name) for v in values):
+            return {"success": True, "dn": entry["dn"], "error": None}
+    return {"success": True, "dn": None, "error": None}
+
+
+def find_module_load(spec_name, module_name):
+    """Return True if any cn=module entry already loads module_name."""
+    result = search_entries(
+        spec_name,
+        "cn=config",
+        filterstr="(objectClass=olcModuleList)",
+        attributes=["olcModuleLoad", "olcModulePath"],
+    )
+    if not result["success"]:
+        return {"success": False, "loaded": False, "error": result["error"]}
+    needle = module_name.lower()
+    for entry in result["entries"]:
+        for value in entry["attributes"].get("olcModuleLoad", []):
+            if needle in value.lower():
+                return {"success": True, "loaded": True, "error": None}
+    return {"success": True, "loaded": False, "error": None}
+
+
+def next_module_dn(spec_name):
+    """Pick the next cn=module{N},cn=config DN."""
+    result = search_entries(
+        spec_name,
+        "cn=config",
+        filterstr="(objectClass=olcModuleList)",
+        attributes=["cn"],
+        scope=ldap.SCOPE_ONELEVEL,
+    )
+    if not result["success"]:
+        return {"success": False, "dn": None, "error": result["error"]}
+    indexes = []
+    for entry in result["entries"]:
+        cn_vals = entry["attributes"].get("cn", [])
+        for cn_val in cn_vals:
+            match = re.search(r"\{(\d+)\}", cn_val)
+            if match:
+                indexes.append(int(match.group(1)))
+        match = re.search(r"\{(\d+)\}", entry["dn"])
+        if match:
+            indexes.append(int(match.group(1)))
+    next_index = (max(indexes) + 1) if indexes else 0
+    return {
+        "success": True,
+        "dn": f"cn=module{{{next_index}}},cn=config",
+        "error": None,
+    }
+
+
+def next_overlay_index(spec_name, database_dn):
+    """Pick the next olcOverlay={N} index under database_dn."""
+    result = search_entries(
+        spec_name,
+        database_dn,
+        filterstr="(objectClass=olcOverlayConfig)",
+        attributes=["olcOverlay"],
+    )
+    if not result["success"]:
+        return {"success": False, "index": None, "error": result["error"]}
+    indexes = []
+    for entry in result["entries"]:
+        match = re.search(r"\{(\d+)\}", entry["dn"])
+        if match:
+            indexes.append(int(match.group(1)))
+    return {
+        "success": True,
+        "index": (max(indexes) + 1) if indexes else 0,
+        "error": None,
+    }
+
+
+def ensure_ppolicy(
+    config_spec_name,
+    data_spec_name,
+    suffix,
+    policy_dn,
+    pwd_in_history,
+    module_path="/opt/bitnami/openldap/lib/openldap",
+    use_lockout=True,
+):
+    """
+    Load ppolicy, attach the overlay with olcPPolicyDefault, and ensure the
+    default pwdPolicy entry has pwdInHistory. Reuses the existing StartTLS
+    bind; does not change TLS or bind method.
+
+    # Implements: 800-171 3.5.8
+    """
+    loaded = find_module_load(config_spec_name, "ppolicy")
+    if not loaded["success"]:
+        return {
+            "success": False,
+            "updated": False,
+            "message": loaded["error"],
+        }
+    changes = []
+    if not loaded["loaded"]:
+        module_dn = next_module_dn(config_spec_name)
+        if not module_dn["success"]:
+            return {
+                "success": False,
+                "updated": False,
+                "message": module_dn["error"],
+            }
+        load_result = load_module(
+            config_spec_name, module_dn["dn"], "ppolicy", module_path
+        )
+        if load_result.get("error"):
+            return {
+                "success": False,
+                "updated": False,
+                "message": load_result["error"],
+            }
+        if load_result.get("loaded") or load_result.get("updated"):
+            changes.append("loaded ppolicy module")
+
+    db = find_olc_database_dn(config_spec_name, suffix)
+    if not db["success"]:
+        return {"success": False, "updated": False, "message": db["error"]}
+
+    overlay_attrs = {
+        "objectClass": ["olcOverlayConfig", "olcPPolicyConfig"],
+        "olcOverlay": "ppolicy",
+        "olcPPolicyDefault": policy_dn,
+        "olcPPolicyHashCleartext": "FALSE",
+        "olcPPolicyUseLockout": "TRUE" if use_lockout else "FALSE",
+    }
+    existing_overlay = find_overlay_dn(config_spec_name, db["dn"], "ppolicy")
+    if not existing_overlay["success"]:
+        return {
+            "success": False,
+            "updated": False,
+            "message": existing_overlay["error"],
+        }
+    if existing_overlay["dn"]:
+        update = update_root_dn(
+            config_spec_name, existing_overlay["dn"], overlay_attrs
+        )
+        if not update.get("result"):
+            return {
+                "success": False,
+                "updated": False,
+                "message": update.get("comment"),
+            }
+        if update.get("changes"):
+            changes.append("updated ppolicy overlay")
+    else:
+        idx = next_overlay_index(config_spec_name, db["dn"])
+        if not idx["success"]:
+            return {
+                "success": False,
+                "updated": False,
+                "message": idx["error"],
+            }
+        configured = configure_overlay(
+            config_spec_name, db["dn"], "ppolicy", idx["index"], overlay_attrs
+        )
+        if configured.get("error"):
+            return {
+                "success": False,
+                "updated": False,
+                "message": configured["error"],
+            }
+        changes.append("configured ppolicy overlay")
+
+    policy_parent = policy_dn.split(",", 1)[1]
+    parent_check = dn_exists(data_spec_name, policy_parent)
+    if not parent_check.get("exists"):
+        ou_name = "policies"
+        ou_match = re.match(r"ou=([^,]+)", policy_parent)
+        if ou_match:
+            ou_name = ou_match.group(1)
+        ou_result = create_ou(
+            data_spec_name,
+            policy_parent,
+            {"objectClass": ["organizationalUnit"], "ou": ou_name},
+        )
+        if not ou_result.get("result"):
+            return {
+                "success": False,
+                "updated": False,
+                "message": ou_result.get("comment"),
+            }
+        if ou_result.get("changes"):
+            changes.append(f"created {policy_parent}")
+
+    policy_attrs = {
+        "objectClass": ["top", "person", "pwdPolicy"],
+        "cn": policy_dn.split(",")[0].split("=", 1)[-1],
+        "sn": "ppolicy",
+        "pwdAttribute": "userPassword",
+        "pwdInHistory": str(pwd_in_history),
+    }
+    policy_check = dn_exists(data_spec_name, policy_dn, policy_attrs)
+    if not policy_check.get("exists"):
+        created = create_root_dn(data_spec_name, policy_dn, policy_attrs)
+        if not created.get("result"):
+            return {
+                "success": False,
+                "updated": False,
+                "message": created.get("comment"),
+            }
+        changes.append(f"created {policy_dn}")
+    elif not policy_check.get("attributes_match"):
+        updated = update_root_dn(data_spec_name, policy_dn, policy_attrs)
+        if not updated.get("result"):
+            return {
+                "success": False,
+                "updated": False,
+                "message": updated.get("comment")
+                or f"Failed to update {policy_dn}",
+            }
+        if updated.get("changes"):
+            changes.append(f"updated pwdInHistory on {policy_dn}")
+
+    return {
+        "success": True,
+        "updated": bool(changes),
+        "message": (
+            "; ".join(changes)
+            if changes
+            else f"ppolicy already present with pwdInHistory={pwd_in_history}"
+        ),
+        "changes": {"ppolicy": changes} if changes else {},
+    }

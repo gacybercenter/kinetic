@@ -42,6 +42,7 @@ res-k8s:
 - `ldap:root_dn` - root DN and organization info
 - `ldap:orgunits` - organizational units to create
 - `ldap:users` and `ldap:groups` - users and groups with GPG-encrypted passwords
+- `ldap:ppolicy` - optional slapo-ppolicy (`pwdInHistory`) for 800-171 3.5.8; enable from kinetic-pillar, applied by `formulas/common/ldapadmin/ppolicy.sls`
 - `ldap:pull_secret` - container registry credentials
 - `ldap:logger-cm` - FluentBit/OpenSearch logging configuration
 
