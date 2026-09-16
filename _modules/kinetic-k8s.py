@@ -5978,6 +5978,127 @@ def _wait_for_job_deleted(batch_api, name, namespace, timeout=30):
         _time.sleep(1)
 
 
+def cronjob_present(
+    namespace,
+    name,
+    schedule,
+    image,
+    command=None,
+    args=None,
+    service_account=None,
+    restart_policy="OnFailure",
+    backoff_limit=1,
+    labels=None,
+    annotations=None,
+    env=None,
+    env_from=None,
+    volumes=None,
+    volume_mounts=None,
+    resources=None,
+    successful_jobs_history_limit=3,
+    failed_jobs_history_limit=3,
+    spec=None,
+):
+    """
+    Ensure a Kubernetes CronJob exists.
+    """
+    try:
+        _load_k8s_config()
+        batch_api = client.BatchV1Api()
+
+        if spec is None:
+            container = {"name": name, "image": image}
+            if command:
+                container["command"] = command
+            if args:
+                container["args"] = args
+            if env:
+                container["env"] = env
+            if env_from:
+                container["envFrom"] = env_from
+            if volume_mounts:
+                container["volumeMounts"] = volume_mounts
+            if resources:
+                container["resources"] = resources
+
+            pod_spec = {
+                "restartPolicy": restart_policy,
+                "containers": [container],
+            }
+            if service_account:
+                pod_spec["serviceAccountName"] = service_account
+            if volumes:
+                pod_spec["volumes"] = volumes
+
+            job_template_spec = {
+                "template": {"spec": pod_spec},
+                "backoffLimit": backoff_limit,
+            }
+            cron_spec = {
+                "schedule": schedule,
+                "successfulJobsHistoryLimit": successful_jobs_history_limit,
+                "failedJobsHistoryLimit": failed_jobs_history_limit,
+                "jobTemplate": {"spec": job_template_spec},
+            }
+            cron_body = {
+                "apiVersion": "batch/v1",
+                "kind": "CronJob",
+                "metadata": {"name": name, "namespace": namespace},
+                "spec": cron_spec,
+            }
+            if labels:
+                cron_body["metadata"]["labels"] = labels
+            if annotations:
+                cron_body["metadata"]["annotations"] = annotations
+        else:
+            cron_body = {
+                "apiVersion": "batch/v1",
+                "kind": "CronJob",
+                "metadata": {"name": name, "namespace": namespace},
+                "spec": spec,
+            }
+
+        try:
+            existing = batch_api.read_namespaced_cron_job(
+                name=name, namespace=namespace
+            )
+            existing_annotations = (
+                (existing.metadata.annotations or {}) if existing.metadata else {}
+            )
+            desired_annotations = cron_body["metadata"].get("annotations", {})
+            if (
+                existing.spec == cron_body["spec"]
+                and existing_annotations == desired_annotations
+            ):
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"CronJob {name} already exists and matches desired state",
+                }
+            cron_body["metadata"]["resourceVersion"] = existing.metadata.resource_version
+            batch_api.replace_namespaced_cron_job(
+                name=name, namespace=namespace, body=cron_body
+            )
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"CronJob {name} updated",
+            }
+        except ApiException as e:
+            if e.status == 404:
+                batch_api.create_namespaced_cron_job(
+                    namespace=namespace, body=cron_body
+                )
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"CronJob {name} created",
+                }
+            return {"success": False, "updated": False, "message": str(e)}
+    except Exception as e:
+        return {"success": False, "updated": False, "message": str(e)}
+
+
 def networkattachmentdefinition_present(
     name,
     namespace="default",

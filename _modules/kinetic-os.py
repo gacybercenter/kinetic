@@ -472,6 +472,41 @@ def _comparable_monitor(body):
     return comparable
 
 
+def search(
+    index,
+    body,
+    admin_user="admin",
+    admin_password=None,
+    host="https://api.logger.services.gacyberrange.org:443",
+):
+    """
+    Run POST /{index}/_search. Used by inactivity disable to read LOGIN
+    events from keycloak-logs-* (3.3.2). Does not change index mappings
+    or Fluent Bit.
+    """
+    try:
+        admin_user, admin_password = _os_admin_auth(admin_user, admin_password)
+        url = f"{host}/{index}/_search"
+        response = requests.post(
+            url,
+            auth=HTTPBasicAuth(admin_user, admin_password),
+            json=body,
+            verify=False,
+        )
+        response.raise_for_status()
+        return {
+            "success": True,
+            "data": response.json(),
+            "message": f"Search on {index} succeeded",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "data": {},
+            "message": f"Failed to search {index}: {str(e)[:150]}...",
+        }
+
+
 def search_monitors(
     search_body,
     admin_user="admin",
