@@ -37,14 +37,14 @@ deploy_osh_libvirt:
     - tgt: {{ k8s }}
     - sls:
       - formulas.osh-libvirt
+    - require:
+      - salt: deploy_osh_openvswitch
 
 deploy_osh_placement:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
       - formulas.placement
-    - require:
-      - salt: deploy_osh_libvirt
 
 deploy_osh_nova:
   salt.state:
