@@ -1,0 +1,2 @@
+include:
+  - formulas/neutron/configure
