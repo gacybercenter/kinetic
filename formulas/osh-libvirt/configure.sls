@@ -20,5 +20,3 @@ install_libvirt:
     - wait_interval: 10
     - pillar_key: osh:libvirt:values
     - keep_values_file: false
-    - require:
-      - k8s_helm: install_neutron
