@@ -42,7 +42,7 @@ deploy_osh_placement:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.osh-deploy_osh_placement
+      - formulas.placement
     - require:
       - salt: deploy_osh_libvirt
 
@@ -50,7 +50,7 @@ deploy_osh_nova:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.osh-deploy_osh_nova
+      - formulas.nova
     - require:
       - salt: deploy_osh_placement
 
