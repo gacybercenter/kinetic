@@ -38,10 +38,16 @@ deploy_osh_libvirt:
     - sls:
       - formulas.osh-libvirt
 
+deploy_osh_placement:
+  salt.state:
+    - tgt: {{ k8s }}
+    - sls:
+      - formulas.osh-deploy_osh_placement
+    - require:
+      - salt: deploy_osh_libvirt
+
 deploy_osh_neutron:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
       - formulas.neutron
-    - require:
-      - salt: deploy_osh_libvirt
