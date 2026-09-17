@@ -77,6 +77,7 @@ def helm_release_present(
     values_dict=None,
     pillar_key=None,
     version=None,
+    wait=True,
     wait_timeout=300,
     wait_interval=10,
     keep_values_file=False,
@@ -108,6 +109,13 @@ def helm_release_present(
     version
         Optional. Specific version of the chart to install. Defaults to None (latest).
 
+    wait
+        Optional. Whether to pass --wait to Helm, blocking until the release's pods report
+        Ready (or Jobs complete), up to wait_timeout. Defaults to True. Set to False for
+        charts whose pods can never become Ready until some other, later-deployed service
+        is present (e.g. a compute-node DaemonSet gated on another chart's agent pod) -
+        --timeout is still applied to hook Jobs regardless of this setting.
+
     wait_timeout
         Optional. Maximum time in seconds to wait for Helm release to be ready. Defaults to 300.
 
@@ -133,6 +141,7 @@ def helm_release_present(
             - namespace: default
             - pillar_key: helm:nginx:values
             - version: 9.3.6
+            - wait: False
             - wait_timeout: 300
             - wait_interval: 10
             - keep_values_file: True
@@ -152,6 +161,7 @@ def helm_release_present(
             values_dict=values_dict,
             pillar_key=pillar_key,
             version=version,
+            wait=wait,
             wait_timeout=wait_timeout,
             wait_interval=wait_interval,
             keep_values_file=keep_values_file,
