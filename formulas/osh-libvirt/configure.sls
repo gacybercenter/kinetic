@@ -1,7 +1,6 @@
 include:
   - /formulas/osh-libvirt/install
   - /formulas/osh-helm-repos/configure
-  - /formulas/neutron/configure
 
 # Neutron must be up before Libvirt, not the other way around: Neutron's own
 # chart has no dependency on Libvirt (verified against openstack-helm/neutron's
