@@ -1,5 +1,5 @@
 include:
-  - /formulas/placement/install
+  - /formulas/osh-placement/install
   - /formulas/osh-helm-repos/configure
 
 {# placement_ingress.hosts may be a list of plain hostname strings, or a
