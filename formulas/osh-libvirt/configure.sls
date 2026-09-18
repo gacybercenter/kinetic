@@ -18,5 +18,6 @@ install_libvirt:
     - namespace: openstack
     - wait_timeout: 300
     - wait_interval: 10
+    - wait: false
     - pillar_key: osh:libvirt:values
     - keep_values_file: false
