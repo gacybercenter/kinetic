@@ -39,7 +39,7 @@ deploy_osh_placement:
   salt.state:
     - tgt: {{ k8s }}
     - sls:
-      - formulas.placement
+      - formulas.osh-placement
 
 deploy_osh_nova:
   salt.state:
