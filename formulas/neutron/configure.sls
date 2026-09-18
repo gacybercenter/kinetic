@@ -42,6 +42,7 @@ install_neutron:
     - release_name: neutron
     - chart_name: openstack-helm/neutron
     - namespace: openstack
+    - wait: False
     - wait_timeout: 300
     - wait_interval: 10
     - keep_values_file: true
