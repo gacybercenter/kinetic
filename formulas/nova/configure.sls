@@ -75,6 +75,7 @@ install_nova:
     - release_name: nova
     - chart_name: openstack-helm/nova
     - namespace: openstack
+    - wait: False
     - wait_timeout: 300
     - wait_interval: 10
     - keep_values_file: true
