@@ -27,11 +27,6 @@ deploy_osh_openvswitch:
     - sls:
       - formulas.osh-openvswitch
 
-# Libvirt's compute-node components need Neutron's neutron-ovs-agent
-# DaemonSet already running on the same nodes (for OVS bridges, etc.) before
-# they can start. deploy_osh_neutron won't return until its own
-# `helm ... --wait` succeeds, which blocks until Neutron's pods are actually
-# Ready (not just until Helm reports the release as deployed).
 deploy_osh_libvirt:
   salt.state:
     - tgt: {{ k8s }}
