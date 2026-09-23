@@ -112,6 +112,8 @@ install_nova:
       - endpoints.identity.auth.cinder.password={{ pillar['osh']['nova_users']['nova_cinder'] }}
       - endpoints.identity.auth.test.username=nova-test
       - endpoints.identity.auth.test.password={{ pillar['osh']['nova_users']['nova-test'] }}
+      - conf.ceph.cinder.secret_uuid={{ pillar['osh']['libvirt_ceph_secret'] }}
+      - conf.nova.libvirt.rbd_secret_uuid={{ pillar['osh']['libvirt_ceph_secret'] }}
     - require:
       - k8s: nova_httproute
       - k8s: console_httproute
