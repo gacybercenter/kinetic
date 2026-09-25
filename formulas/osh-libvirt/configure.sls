@@ -23,3 +23,4 @@ install_libvirt:
     - keep_values_file: false
     - set_values:
       - conf.ceph.cinder.secret_uuid={{ pillar['osh']['libvirt_ceph_secret'] }}
+      - conf.ceph.cinder.external_ceph:secret_uuid={{ pillar['osh']['libvirt_encrypted_secret'] }}
