@@ -60,7 +60,7 @@ install_cinder:
       - endpoints.identity.auth.swift.password={{ pillar['osh']['cinder']['users']['cinder_swift'] }}
       - endpoints.identity.auth.service.password={{ pillar['osh']['cinder']['users']['cinder_service_user'] }}
       - endpoints.identity.auth.test.password={{ pillar['osh']['cinder']['users']['cinder-test'] }}
-      - backends.rbd1.rbd_secret_uuid={{ pillar['osh']['libvirt_ceph_secret'] }}
-      - backends.encrypted.rbd_secret_uuid={{ pillar['osh']['libvirt_ceph_secret'] }}
+      - conf.backends.rbd1.rbd_secret_uuid={{ pillar['osh']['libvirt_ceph_secret'] }}
+      - conf.backends.encrypted.rbd_secret_uuid={{ pillar['osh']['libvirt_ceph_secret'] }}
     - require:
       - k8s: cinder_httproute
