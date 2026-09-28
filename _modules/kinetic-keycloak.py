@@ -1952,7 +1952,11 @@ def user_federation_present(
             )
 
         current_config = _to_component_config(existing.get("config"))
-        if existing.get("providerId") == provider_id and current_config == normalized_config:
+        if (
+            existing.get("providerId") == provider_id
+            and existing.get("providerType") == provider_type
+            and current_config == normalized_config
+        ):
             return {
                 "success": True,
                 "updated": False,
@@ -1960,7 +1964,48 @@ def user_federation_present(
             }
 
         component_id = existing.get("id")
-        payload = {**existing, **desired}
+        # Keycloak rejects PUTs that include extra GET fields (subType,
+        # lastSync, etc.) and also refuses to change providerId in place
+        # ("Invalid provider type or no such provider"). Send only the
+        # writable ComponentRepresentation fields; if the provider id/type
+        # itself changed, delete + recreate instead.
+        if existing.get("providerId") != provider_id or existing.get("providerType") != provider_type:
+            del_code, del_body = _request(
+                "DELETE", keycloak_addr,
+                f"admin/realms/{realm}/components/{component_id}",
+                headers=headers, verify=verify,
+            )
+            if del_code not in (204, 404):
+                return _http_error(
+                    f"Replacing user federation provider {name} (delete)",
+                    del_code, del_body,
+                )
+            status_code, body = _request(
+                "POST", keycloak_addr, f"admin/realms/{realm}/components",
+                headers=headers, payload=desired, verify=verify,
+            )
+            if status_code == 201:
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": (
+                        f"User federation provider {name} replaced in realm {realm} "
+                        f"(providerId {existing.get('providerId')} -> {provider_id})"
+                    ),
+                }
+            return _http_error(
+                f"Replacing user federation provider {name} (create)",
+                status_code, body,
+            )
+
+        payload = {
+            "id": component_id,
+            "name": name,
+            "providerId": provider_id,
+            "providerType": provider_type,
+            "parentId": parent_id,
+            "config": normalized_config,
+        }
         status_code, body = _request(
             "PUT", keycloak_addr, f"admin/realms/{realm}/components/{component_id}",
             headers=headers, payload=payload, verify=verify,
