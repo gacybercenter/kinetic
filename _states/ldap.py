@@ -606,6 +606,205 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
         return ret
 
 
+def service_present(name, spec_name, base_dn, cn, password=None, description=None):
+    """
+    Ensure a service-account bind DN exists under the given base DN.
+
+    These are not inetOrgPerson users. They are created as:
+
+        objectClass: top, organizationalRole, simpleSecurityObject
+        cn: <cn>
+        userPassword: <password>   # required on create, never updated
+
+    Typical DN: cn=<cn>,ou=services,dc=rsc,dc=gacyberrange,dc=org
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
+    if not conn_result["success"]:
+        ret["result"] = False
+        ret["comment"] = (
+            f"Connection spec '{spec_name}' not found: {conn_result['error']}"
+        )
+        return ret
+
+    service_dn = f"cn={cn},{base_dn}"
+    attributes = {
+        "objectClass": ["top", "organizationalRole", "simpleSecurityObject"],
+        "cn": cn,
+    }
+    if description:
+        attributes["description"] = description
+
+    if "ldap_utils.dn_exists" not in __salt__:
+        ret["result"] = False
+        ret["comment"] = (
+            "ldap_utils.dn_exists function not found. Please ensure the module is synced to the minion."
+        )
+        return ret
+    check_result = __salt__["ldap_utils.dn_exists"](spec_name, service_dn, attributes)
+    if not check_result["result"]:
+        if "No such object" in check_result["comment"]:
+            exists = False
+            attributes_match = False
+        else:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Error checking service account {service_dn}: {check_result['comment']}"
+            )
+            return ret
+    else:
+        exists = check_result.get("exists", False)
+        attributes_match = check_result.get("attributes_match", False)
+
+    if exists and attributes_match:
+        ret["comment"] = (
+            f"Service account {service_dn} already exists with matching attributes."
+        )
+        return ret
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = (
+            f"Would {'update' if exists else 'create'} service account {service_dn}."
+        )
+        ret["changes"][service_dn] = {
+            "would_action": "update" if exists else "create"
+        }
+        return ret
+
+    if not exists:
+        if not password:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Cannot create service account {service_dn}: simpleSecurityObject requires a password."
+            )
+            return ret
+        create_result = __salt__["ldap_utils.create_service_account"](
+            spec_name, service_dn, cn, password, description
+        )
+        if create_result["result"]:
+            ret["result"] = True
+            ret["comment"] = create_result["comment"]
+            ret["changes"] = create_result["changes"]
+            log.info(f"Created service account {service_dn}")
+            return ret
+        ret["result"] = False
+        ret["comment"] = (
+            f"Failed to create service account {service_dn}: {create_result['comment']}"
+        )
+        return ret
+
+    update_result = __salt__["ldap_utils.update_service_account"](
+        spec_name, service_dn, cn, description
+    )
+    if update_result["result"]:
+        ret["result"] = True
+        ret["comment"] = update_result["comment"]
+        ret["changes"] = update_result["changes"]
+        log.info(f"Updated service account {service_dn}")
+        return ret
+    ret["result"] = False
+    ret["comment"] = (
+        f"Failed to update service account {service_dn}: {update_result['comment']}"
+    )
+    return ret
+
+
+def access_present(
+    name,
+    spec_name,
+    database_dn,
+    access_rules,
+    connection_dict=None,
+):
+    """
+    Ensure olcAccess rules exist on a cn=config database DN.
+
+    Existing rules are left in place. Missing rules are inserted at the front
+    so they take precedence over default slapd ACLs. Comparison ignores leading
+    {N} indexes and whitespace, so this is idempotent.
+
+    name
+        State id.
+
+    spec_name
+        ldap_utils connection spec (must bind as cn=config admin).
+
+    database_dn
+        e.g. olcDatabase={2}mdb,cn=config
+
+    access_rules
+        List of olcAccess strings. Leading {N} indexes are optional.
+
+    connection_dict
+        Optional. If the spec is not cached yet, create it with these params
+        (must include admin_bind for cn=config).
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    if not access_rules:
+        ret["comment"] = "No olcAccess rules provided."
+        return ret
+
+    if connection_dict is not None:
+        conn_create = __salt__["ldap_utils.create_connect_spec"](
+            spec_name, connection_dict
+        )
+        if not conn_create["success"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Failed to create connection spec '{spec_name}': {conn_create['error']}"
+            )
+            return ret
+    else:
+        conn_result = __salt__["ldap_utils.get_connect_spec"](spec_name)
+        if not conn_result["success"]:
+            ret["result"] = False
+            ret["comment"] = (
+                f"Connection spec '{spec_name}' not found: {conn_result['error']}"
+            )
+            return ret
+
+    current = __salt__["ldap_utils.get_olc_access"](spec_name, database_dn)
+    if not current["result"]:
+        ret["result"] = False
+        ret["comment"] = current["comment"]
+        return ret
+
+    if __opts__["test"]:
+        def _norm(acl):
+            import re
+
+            if not isinstance(acl, str):
+                acl = str(acl)
+            return re.sub(
+                r"\s+", " ", re.sub(r"^\{\d+\}", "", acl).strip()
+            ).strip()
+
+        existing_norm = {_norm(rule) for rule in current["access"]}
+        missing = [rule for rule in access_rules if _norm(rule) not in existing_norm]
+        if not missing:
+            ret["comment"] = (
+                f"All {len(access_rules)} olcAccess rule(s) already present on {database_dn}"
+            )
+            return ret
+        ret["result"] = None
+        ret["comment"] = (
+            f"Would add {len(missing)} olcAccess rule(s) to {database_dn}"
+        )
+        ret["changes"] = {"would_add": missing}
+        return ret
+
+    result = __salt__["ldap_utils.ensure_olc_access"](
+        spec_name, database_dn, access_rules
+    )
+    ret["result"] = result["result"]
+    ret["comment"] = result["comment"]
+    ret["changes"] = result.get("changes", {})
+    return ret
+
+
 def module_present(
     name,
     spec_name,

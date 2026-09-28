@@ -1,6 +1,6 @@
 # ==========================================================================
-# LDAP provisioning: root DN / OUs / users / groups, plus optional Kubernetes
-# RBAC bindings driven by each user/group's `kubernetes` pillar key.
+# LDAP provisioning: root DN / OUs / users / services / groups, plus optional
+# Kubernetes RBAC bindings driven by each user/group's `kubernetes` pillar key.
 #
 # Expected pillar shape (see docs/kinetic-k8s.md for the RBAC contract):
 #
@@ -20,6 +20,12 @@
 #             - name: my-role
 #               namespace: default   # omit for a ClusterRole
 #               rules: [...]
+#     services:                      # bind DNs under ou=services
+#                                    # (organizationalRole + simpleSecurityObject)
+#       - cn: keycloak
+#         description: "..."         # optional
+#         pass: "..."                # required on create (userPassword);
+#                                    # never updated after that
 #     groups:
 #       - cn: admins
 #         members: [mdanielson]      # uids; resolved to member DNs when the
@@ -47,12 +53,18 @@
 # ==========================================================================
 
 {% set users_base_dn = "ou=users,dc=rsc,dc=gacyberrange,dc=org" %}
+{% set services_base_dn = "ou=services,dc=rsc,dc=gacyberrange,dc=org" %}
 {% set groups_base_dn = "ou=groups,dc=rsc,dc=gacyberrange,dc=org" %}
+{% set ldap_database_dn = pillar['ldap'].get('database_dn', 'olcDatabase={2}mdb,cn=config') %}
 
-{# Map uid -> user DN, for resolving group members that are managed here. #}
+{# Map uid -> DN and uid -> ldap state id, for resolving group members that
+   are managed here (human users under ou=users). Service accounts are bind
+   DNs (organizationalRole), not inetOrgPerson, so they are not group members. #}
 {% set uid_to_dn = {} %}
+{% set uid_to_state = {} %}
 {% for user in pillar['ldap'].get('users', []) %}
 {% do uid_to_dn.update({user['uid']: "cn=" ~ user['cn'] ~ "," ~ users_base_dn}) %}
+{% do uid_to_state.update({user['uid']: "ldap_user_" ~ user['uid']}) %}
 {% endfor %}
 
 {# Map cn -> group DN, for resolving nested group members (member_groups). #}
@@ -173,6 +185,45 @@ ensure_ldap_ous:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_root_dn
 
+# cn=config bind - required to write olcAccess. The data-admin bind used
+# above cannot modify cn=config. Password is the same as LDAP_CONFIG_ADMIN_PASSWORD.
+ensure_ldap_config_admin_connect_spec:
+  ldap.connect_spec_present:
+    - name: ldap_config_admin_connection_setup
+    - spec_name: ldap_config_admin_connection
+    - connection_dict:
+        url: {{ "ldap://" ~ pillar['ldap']['cert']['commonname'] }}
+        bind:
+          dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ ",cn=config" }}
+          password: {{ pillar['ldap']['admin-user']['password'] }}
+          method: simple
+        admin_bind:
+          dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ ",cn=config" }}
+          password: {{ pillar['ldap']['admin-user']['password'] }}
+          method: simple
+        tls:
+          cacertfile: /tmp/ca.pem
+          starttls: True
+    - require:
+      - file: ensure_ca_cert_file
+
+{# Grant ou=services bind DNs write on password attrs + the users subtree.
+   Inserted at the front of olcAccess so they take precedence over slapd
+   defaults; existing rules are left in place. #}
+{% set services_password_acl = 'to attrs=userPassword,shadowLastChange,pwdHistory,pwdChangedTime,pwdFailureTime,pwdAccountLockedTime,pwdReset,pwdGraceUseTime by dn.subtree="' ~ services_base_dn ~ '" write by self write by anonymous auth by * none' %}
+{% set services_users_acl = 'to dn.subtree="' ~ users_base_dn ~ '" by dn.subtree="' ~ services_base_dn ~ '" write by self read by * none' %}
+ensure_services_acls:
+  ldap.access_present:
+    - name: ldap_services_acls
+    - spec_name: ldap_config_admin_connection
+    - database_dn: "{{ ldap_database_dn }}"
+    - access_rules:
+      - {{ services_password_acl | yaml_dquote }}
+      - {{ services_users_acl | yaml_dquote }}
+    - require:
+      - ldap: ensure_ldap_config_admin_connect_spec
+      - ldap: ensure_ldap_ous
+
 # ==========================================================================
 # Users
 # ==========================================================================
@@ -196,6 +247,33 @@ ldap_user_{{ user['uid'] }}:
 
 {% if user.get('kubernetes') %}
 {{ k8s_rbac_for('user', user['uid'], user['kubernetes'], 'users', 'ldap_user_' ~ user['uid']) }}
+{% endif %}
+{% endfor %}
+
+# ==========================================================================
+# Services (bind DNs under ou=services)
+# ==========================================================================
+{% for service in pillar['ldap'].get('services', []) %}
+{% set service_cn = service.get('cn', service.get('uid')) %}
+
+ldap_service_{{ service_cn }}:
+  ldap.service_present:
+    - name: ldap_service_{{ service_cn }}
+    - spec_name: ldap_keycloak_connection
+    - base_dn: {{ services_base_dn }}
+    - cn: {{ service_cn | yaml_dquote }}
+{%- if service.get('description') %}
+    - description: {{ service['description'] | yaml_dquote }}
+{%- endif %}
+{%- if service.get('pass') %}
+    - password: {{ service['pass'] | yaml_dquote }}
+{%- endif %}
+    - require:
+      - ldap: ensure_ldap_connect_spec
+      - ldap: ensure_ldap_ous
+
+{% if service.get('kubernetes') %}
+{{ k8s_rbac_for('service', service_cn, service['kubernetes'], 'users', 'ldap_service_' ~ service_cn) }}
 {% endif %}
 {% endfor %}
 
@@ -224,8 +302,8 @@ ldap_group_{{ group['cn'] }}:
     - require:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_ous
-{%- for member in group.get('members', []) if member in uid_to_dn %}
-      - ldap: ldap_user_{{ member }}
+{%- for member in group.get('members', []) if member in uid_to_state %}
+      - ldap: {{ uid_to_state[member] }}
 {%- endfor %}
 {%- for member_group in group.get('member_groups', []) if member_group in cn_to_dn and member_group != group['cn'] %}
       - ldap: ldap_group_{{ member_group }}

@@ -4,6 +4,7 @@ Custom SaltStack module for LDAP operations using python-ldap directly
 """
 
 import logging
+import re
 
 try:
     import ldap
@@ -1025,6 +1026,212 @@ def update_group(
     except Exception as e:
         ret["result"] = False
         ret["comment"] = f"Failed to update group {group_dn}: {str(e)}"
+        return ret
+
+
+def create_service_account(
+    spec_name, service_dn, cn, password=None, description=None
+):
+    """
+    Create a service-account bind DN (organizationalRole + simpleSecurityObject).
+
+    These are not inetOrgPerson users: they exist only as a bind identity
+    (typically under ou=services) and require a userPassword.
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        attributes = {
+            "objectClass": ["top", "organizationalRole", "simpleSecurityObject"],
+            "cn": cn,
+        }
+        if description:
+            attributes["description"] = description
+
+        check = dn_exists(spec_name, service_dn, attributes)
+        if check.get("exists"):
+            ret["comment"] = (
+                f"Service account {service_dn} already exists. "
+                "Use update_service_account to modify."
+            )
+            return ret
+
+        create_attrs = attributes.copy()
+        changes = {"created": service_dn, "cn": cn}
+        if description:
+            changes["description"] = description
+        if password:
+            create_attrs["userPassword"] = password
+            changes["userPassword"] = "(set)"
+
+        attr_list = [
+            (
+                k,
+                [
+                    v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
+                    for v in (v if isinstance(v, list) else [v])
+                ],
+            )
+            for k, v in create_attrs.items()
+        ]
+        conn.add_s(dn=service_dn, modlist=attr_list)
+        ret["result"] = True
+        ret["comment"] = f"Service account {service_dn} created successfully"
+        ret["changes"] = changes
+        return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to create service account {service_dn}: {str(e)}"
+        return ret
+
+
+def update_service_account(spec_name, service_dn, cn, description=None):
+    """
+    Update a service-account bind DN. Does not update userPassword.
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        attributes = {
+            "objectClass": ["top", "organizationalRole", "simpleSecurityObject"],
+            "cn": cn,
+        }
+        if description:
+            attributes["description"] = description
+
+        check = dn_exists(spec_name, service_dn, attributes)
+        if not check.get("exists"):
+            ret["comment"] = (
+                f"Service account {service_dn} does not exist. "
+                "Use create_service_account to create."
+            )
+            return ret
+
+        if check.get("attributes_match"):
+            ret["result"] = True
+            ret["comment"] = (
+                f"Service account {service_dn} already has matching attributes."
+            )
+            return ret
+
+        update_result = update_root_dn(spec_name, service_dn, attributes)
+        if update_result.get("result", False):
+            ret["result"] = True
+            ret["comment"] = f"Service account {service_dn} updated successfully."
+            ret["changes"] = update_result.get("changes", {})
+            return ret
+
+        ret["comment"] = (
+            f"Failed to update service account {service_dn}: "
+            f"{update_result.get('comment', str(update_result))}"
+        )
+        return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to update service account {service_dn}: {str(e)}"
+        return ret
+
+
+def _normalize_acl(acl):
+    """Strip a leading {N} index and collapse whitespace for ACL comparison."""
+    if not isinstance(acl, str):
+        acl = str(acl)
+    return re.sub(r"\s+", " ", re.sub(r"^\{\d+\}", "", acl).strip()).strip()
+
+
+def get_olc_access(spec_name, database_dn):
+    """Return the current olcAccess list on a cn=config database DN."""
+    ret = {"result": False, "comment": "", "access": []}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        result = conn.search_s(
+            base=database_dn,
+            scope=ldap.SCOPE_BASE,
+            filterstr="(objectClass=*)",
+            attrlist=["olcAccess"],
+        )
+        if not result:
+            ret["comment"] = f"Database {database_dn} not found"
+            return ret
+
+        raw = result[0][1].get("olcAccess", []) if result[0][1] else []
+        ret["result"] = True
+        ret["access"] = [
+            v.decode("utf-8") if isinstance(v, bytes) else v for v in raw
+        ]
+        ret["comment"] = f"Read {len(ret['access'])} olcAccess rule(s) from {database_dn}"
+        return ret
+    except ldap.NO_SUCH_OBJECT:
+        ret["comment"] = f"Database {database_dn} does not exist"
+        return ret
+    except Exception as e:
+        ret["comment"] = f"Failed to read olcAccess on {database_dn}: {str(e)}"
+        return ret
+
+
+def ensure_olc_access(spec_name, database_dn, access_rules):
+    """
+    Ensure the given olcAccess rules exist on a cn=config database DN.
+
+    Existing rules are left in place. Missing rules are inserted at the front
+    (olcAccess {{0}}) so they take precedence over default slapd ACLs.
+    Comparison ignores leading {{N}} indexes and whitespace.
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        current = get_olc_access(spec_name, database_dn)
+        if not current["result"]:
+            ret["comment"] = current["comment"]
+            return ret
+
+        existing_norm = {_normalize_acl(rule) for rule in current["access"]}
+        missing = [
+            rule for rule in access_rules if _normalize_acl(rule) not in existing_norm
+        ]
+        if not missing:
+            ret["result"] = True
+            ret["comment"] = (
+                f"All {len(access_rules)} olcAccess rule(s) already present on {database_dn}"
+            )
+            return ret
+
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+        conn = conn_result["conn"]
+
+        added = []
+        for rule in reversed(missing):
+            value = _normalize_acl(rule)
+            conn.modify_s(
+                database_dn,
+                [(ldap.MOD_ADD, "olcAccess", [f"{{0}}{value}".encode("utf-8")])],
+            )
+            added.append(value)
+
+        ret["result"] = True
+        ret["comment"] = (
+            f"Added {len(added)} olcAccess rule(s) to {database_dn}"
+        )
+        ret["changes"] = {"added": added}
+        return ret
+    except Exception as e:
+        ret["comment"] = f"Failed to ensure olcAccess on {database_dn}: {str(e)}"
         return ret
 
 
