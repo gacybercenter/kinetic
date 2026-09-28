@@ -1030,7 +1030,12 @@ def update_group(
 
 
 def create_service_account(
-    spec_name, service_dn, cn, password=None, description=None
+    spec_name,
+    service_dn,
+    cn,
+    password=None,
+    description=None,
+    pwd_policy_subentry=None,
 ):
     """
     Create a service-account bind DN (organizationalRole + simpleSecurityObject).
@@ -1052,6 +1057,8 @@ def create_service_account(
         }
         if description:
             attributes["description"] = description
+        if pwd_policy_subentry:
+            attributes["pwdPolicySubentry"] = pwd_policy_subentry
 
         check = dn_exists(spec_name, service_dn, attributes)
         if check.get("exists"):
@@ -1065,6 +1072,8 @@ def create_service_account(
         changes = {"created": service_dn, "cn": cn}
         if description:
             changes["description"] = description
+        if pwd_policy_subentry:
+            changes["pwdPolicySubentry"] = pwd_policy_subentry
         if password:
             create_attrs["userPassword"] = password
             changes["userPassword"] = "(set)"
@@ -1090,7 +1099,9 @@ def create_service_account(
         return ret
 
 
-def update_service_account(spec_name, service_dn, cn, description=None):
+def update_service_account(
+    spec_name, service_dn, cn, description=None, pwd_policy_subentry=None
+):
     """
     Update a service-account bind DN. Does not update userPassword.
     """
@@ -1107,6 +1118,8 @@ def update_service_account(spec_name, service_dn, cn, description=None):
         }
         if description:
             attributes["description"] = description
+        if pwd_policy_subentry:
+            attributes["pwdPolicySubentry"] = pwd_policy_subentry
 
         check = dn_exists(spec_name, service_dn, attributes)
         if not check.get("exists"):

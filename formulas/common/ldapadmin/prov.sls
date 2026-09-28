@@ -55,6 +55,8 @@
 {% set users_base_dn = "ou=users,dc=rsc,dc=gacyberrange,dc=org" %}
 {% set services_base_dn = "ou=services,dc=rsc,dc=gacyberrange,dc=org" %}
 {% set groups_base_dn = "ou=groups,dc=rsc,dc=gacyberrange,dc=org" %}
+{% set policies_base_dn = "ou=policies,dc=rsc,dc=gacyberrange,dc=org" %}
+{% set service_pwd_policy_dn = "cn=service," ~ policies_base_dn %}
 {% set ldap_database_dn = pillar['ldap'].get('database_dn', 'olcDatabase={2}mdb,cn=config') %}
 
 {# Map uid -> DN and uid -> ldap state id, for resolving group members that
@@ -224,6 +226,67 @@ ensure_services_acls:
       - ldap: ensure_ldap_config_admin_connect_spec
       - ldap: ensure_ldap_ous
 
+# ppolicy overlay is required for pwdPolicySubentry on service accounts to
+# take effect. Not set as olcPPolicyDefault - that would apply to every
+# entry in the database, including human users. Service accounts are bound
+# to cn=service via pwdPolicySubentry instead.
+ensure_ppolicy_overlay:
+  ldap.overlay_present:
+    - name: ldap_ppolicy_overlay
+    - spec_name: ldap_config_admin_connection
+    - database_dn: "{{ ldap_database_dn }}"
+    - overlays:
+      - name: ppolicy
+        index: 0
+        attributes:
+          objectClass:
+            - olcOverlayConfig
+            - olcPPolicyConfig
+          olcOverlay: ppolicy
+          olcPPolicyHashCleartext: "FALSE"
+          olcPPolicyUseLockout: "FALSE"
+    - require:
+      - ldap: ensure_ldap_config_admin_connect_spec
+
+ensure_policies_ou:
+  ldap.ou_present:
+    - name: ou=policies,dc=rsc,dc=gacyberrange,dc=org
+    - spec_name: ldap_keycloak_connection
+    - base_dn: dc=rsc,dc=gacyberrange,dc=org
+    - ous:
+      - name: policies
+    - require:
+      - ldap: ensure_ldap_ous
+
+# Service-account password policy. OpenLDAP does not inherit pwdPolicy from
+# a parent OU - each bind DN under ou=services is pointed at this object
+# via pwdPolicySubentry.
+ensure_service_pwd_policy:
+  ldap.root_dn_present:
+    - name: {{ service_pwd_policy_dn }}
+    - spec_name: ldap_keycloak_connection
+    - root_dn: {{ service_pwd_policy_dn }}
+    - attributes:
+        objectClass:
+          - top
+          - person
+          - pwdPolicy
+        cn: service
+        sn: service
+        pwdAttribute: userPassword
+        pwdAllowUserChange: "TRUE"
+        pwdCheckQuality: "0"
+        pwdInHistory: "0"
+        pwdLockout: "FALSE"
+        pwdMaxAge: "0"
+        pwdMinAge: "0"
+        pwdMinLength: "12"
+        pwdMustChange: "FALSE"
+        pwdSafeModify: "FALSE"
+    - require:
+      - ldap: ensure_policies_ou
+      - ldap: ensure_ppolicy_overlay
+
 # ==========================================================================
 # Users
 # ==========================================================================
@@ -262,6 +325,7 @@ ldap_service_{{ service_cn }}:
     - spec_name: ldap_keycloak_connection
     - base_dn: {{ services_base_dn }}
     - cn: {{ service_cn | yaml_dquote }}
+    - pwd_policy_subentry: {{ service_pwd_policy_dn }}
 {%- if service.get('description') %}
     - description: {{ service['description'] | yaml_dquote }}
 {%- endif %}
@@ -271,6 +335,7 @@ ldap_service_{{ service_cn }}:
     - require:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_ous
+      - ldap: ensure_service_pwd_policy
 
 {% if service.get('kubernetes') %}
 {{ k8s_rbac_for('service', service_cn, service['kubernetes'], 'users', 'ldap_service_' ~ service_cn) }}

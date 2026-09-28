@@ -606,7 +606,15 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
         return ret
 
 
-def service_present(name, spec_name, base_dn, cn, password=None, description=None):
+def service_present(
+    name,
+    spec_name,
+    base_dn,
+    cn,
+    password=None,
+    description=None,
+    pwd_policy_subentry=None,
+):
     """
     Ensure a service-account bind DN exists under the given base DN.
 
@@ -635,6 +643,8 @@ def service_present(name, spec_name, base_dn, cn, password=None, description=Non
     }
     if description:
         attributes["description"] = description
+    if pwd_policy_subentry:
+        attributes["pwdPolicySubentry"] = pwd_policy_subentry
 
     if "ldap_utils.dn_exists" not in __salt__:
         ret["result"] = False
@@ -681,7 +691,12 @@ def service_present(name, spec_name, base_dn, cn, password=None, description=Non
             )
             return ret
         create_result = __salt__["ldap_utils.create_service_account"](
-            spec_name, service_dn, cn, password, description
+            spec_name,
+            service_dn,
+            cn,
+            password,
+            description,
+            pwd_policy_subentry,
         )
         if create_result["result"]:
             ret["result"] = True
@@ -696,7 +711,7 @@ def service_present(name, spec_name, base_dn, cn, password=None, description=Non
         return ret
 
     update_result = __salt__["ldap_utils.update_service_account"](
-        spec_name, service_dn, cn, description
+        spec_name, service_dn, cn, description, pwd_policy_subentry
     )
     if update_result["result"]:
         ret["result"] = True
