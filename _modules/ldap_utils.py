@@ -1335,6 +1335,48 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
     #            )
 
 
+def _find_overlay_dn(spec_name, database_dn, overlay_name):
+    """
+    Locate an overlay by name under a database DN, regardless of {N} index.
+
+    slapd stores overlays as olcOverlay={{N}}<name>,<database_dn>. Matching only
+    a caller-supplied index misses the overlay when helm/slapd already loaded
+    it at a different slot (and a second add then fails with
+    'overlay already in list').
+    """
+    conn_result = get_connect_spec(spec_name)
+    if not conn_result["success"]:
+        return None
+    conn = conn_result["conn"]
+    try:
+        results = conn.search_s(
+            base=database_dn,
+            scope=ldap.SCOPE_ONELEVEL,
+            filterstr="(objectClass=olcOverlayConfig)",
+            attrlist=["olcOverlay", "dn"],
+        )
+    except ldap.NO_SUCH_OBJECT:
+        return None
+    except Exception:
+        return None
+
+    wanted = overlay_name.lower()
+    for dn, attrs in results or []:
+        values = attrs.get("olcOverlay", []) if attrs else []
+        decoded = [
+            v.decode("utf-8") if isinstance(v, bytes) else v for v in values
+        ]
+        for value in decoded:
+            bare = re.sub(r"^\{\d+\}", "", value).lower()
+            if bare == wanted:
+                return dn
+        # Fallback: RDN itself is olcOverlay={N}name
+        rdn = dn.split(",", 1)[0] if dn else ""
+        if re.sub(r"^olcOverlay=\{\d+\}", "", rdn, flags=re.I).lower() == wanted:
+            return dn
+    return None
+
+
 def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attributes):
     """
     Configure an overlay for a specific database in the LDAP directory.
@@ -1360,13 +1402,15 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
             }
 
         conn = conn_result["conn"]
-        # Construct the DN for the overlay, typically under the database DN
-        overlay_dn = f"olcOverlay={{{overlay_index}}}{overlay_name},{database_dn}"
+        overlay_dn = _find_overlay_dn(spec_name, database_dn, overlay_name)
+        if overlay_dn is None:
+            overlay_dn = f"olcOverlay={{{overlay_index}}}{overlay_name},{database_dn}"
+            existing = False
+        else:
+            existing = True
 
-        # Check if overlay exists and attributes match. Use dn_exists (not
-        # root_dn_exists) - the latter has no 'exists'/'attributes_match' keys.
-        check = dn_exists(spec_name, overlay_dn, attributes)
-        if check.get("exists"):
+        if existing:
+            check = dn_exists(spec_name, overlay_dn, attributes)
             if check.get("attributes_match"):
                 return {
                     "configured": False,
@@ -1388,17 +1432,7 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
                 "error": update_result.get("comment", str(update_result)),
                 "message": "",
             }
-        if not check.get("result") and "No such object" not in check.get("comment", ""):
-            return {
-                "configured": False,
-                "updated": False,
-                "error": check.get("comment", str(check)),
-                "message": "",
-            }
 
-        # Create new overlay entry since it doesn't exist
-        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
-        # Ensure all values are lists of byte strings
         attr_list = [
             (
                 k,
@@ -1416,11 +1450,31 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
             "error": None,
             "message": f"Overlay {overlay_dn} configured successfully",
         }
-    except Exception as e:
+    except ldap.ALREADY_EXISTS:
         return {
             "configured": False,
             "updated": False,
-            "error": f"Failed to configure overlay {overlay_name} for {database_dn}: {str(e)}",
+            "error": None,
+            "message": f"Overlay {overlay_name} already present on {database_dn}",
+        }
+    except Exception as e:
+        err = str(e)
+        # slapd rejects a second ppolicy even at a different {{N}} with this.
+        if "already in list" in err.lower():
+            found = _find_overlay_dn(spec_name, database_dn, overlay_name)
+            return {
+                "configured": False,
+                "updated": False,
+                "error": None,
+                "message": (
+                    f"Overlay {overlay_name} already present on {database_dn}"
+                    + (f" at {found}" if found else "")
+                ),
+            }
+        return {
+            "configured": False,
+            "updated": False,
+            "error": f"Failed to configure overlay {overlay_name} for {database_dn}: {err}",
             "message": "",
         }
 
