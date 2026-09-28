@@ -1410,7 +1410,23 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
             existing = True
 
         if existing:
-            check = dn_exists(spec_name, overlay_dn, attributes)
+            # olcOverlay is the RDN (olcOverlay={N}name) - slapd rejects
+            # MOD_REPLACE on it ('Operation not allowed on RDN'). objectClass
+            # is similarly fragile on cn=config overlays. Only update the
+            # overlay-specific knobs (e.g. olcPPolicyHashCleartext).
+            update_attrs = {
+                k: v
+                for k, v in attributes.items()
+                if k.lower() not in ("olcoverlay", "objectclass")
+            }
+            if not update_attrs:
+                return {
+                    "configured": False,
+                    "updated": False,
+                    "error": None,
+                    "message": f"Overlay {overlay_dn} already present",
+                }
+            check = dn_exists(spec_name, overlay_dn, update_attrs)
             if check.get("attributes_match"):
                 return {
                     "configured": False,
@@ -1418,7 +1434,7 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
                     "error": None,
                     "message": f"Overlay {overlay_dn} already exists with matching attributes",
                 }
-            update_result = update_root_dn(spec_name, overlay_dn, attributes)
+            update_result = update_root_dn(spec_name, overlay_dn, update_attrs)
             if update_result.get("result"):
                 return {
                     "configured": False,
