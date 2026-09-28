@@ -41,6 +41,30 @@ ensure_ldap_fluentbit_configmap:
     - namespace: keycloak
     - data: {{ cm['data'] | yaml }}
 
+# Secret for our own Admin REST API access (kinetic_keycloak.get_admin_token),
+# NOT the chart's own bootstrap secret. Sourced from the same
+# keycloak.adminUser/adminPassword values driving the Helm release below, so
+# it always matches whatever Keycloak was actually bootstrapped with. This is
+# distinct from create_dbsuperuser_secret above (that is the Postgres
+# database superuser, unrelated to the Keycloak application admin login).
+# res-k8s:keycloak:connection:secret_name should point at this secret
+# (defaults to "keycloak-admin" if unset).
+ensure_keycloak_admin_secret:
+  k8s.secret_present:
+    - namespace: keycloak
+    - secret_name: keycloak-admin
+    - data:
+        username: {{ pillar['res-k8s']['keycloak']['values']['keycloak']['adminUser'] }}
+        password: {{ pillar['res-k8s']['keycloak']['values']['keycloak']['adminPassword'] }}
+    - secret_type: Opaque
+    - labels:
+        app: keycloak
+        role: admin-api
+    - annotations:
+        description: Admin REST API credentials for kinetic_keycloak (matches keycloak.adminUser/adminPassword)
+    - require:
+      - k8s: ensure_keycloak_namespace
+
 keycloak_install:
   k8s_helm.helm_release_present:
     - release_name: keycloak
