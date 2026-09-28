@@ -209,10 +209,16 @@ ensure_ldap_config_admin_connect_spec:
     - require:
       - file: ensure_ca_cert_file
 
-{# Grant ou=services bind DNs write on password attrs + the users subtree.
+{# Grant ou=services bind DNs write so they can change user passwords and
+   maintain ppolicy operational attrs. Split into three rules so:
+     {0} userPassword/shadowLastChange: services write, self write, anon auth
+     {1} ppolicy operational attrs: services write, self read (not write -
+         users must not be able to clear lockout/history themselves)
+     {2} ou=users subtree: services write, self read
    Inserted at the front of olcAccess so they take precedence over slapd
    defaults; existing rules are left in place. #}
-{% set services_password_acl = 'to attrs=userPassword,shadowLastChange,pwdHistory,pwdChangedTime,pwdFailureTime,pwdAccountLockedTime,pwdReset,pwdGraceUseTime by dn.subtree="' ~ services_base_dn ~ '" write by self write by anonymous auth by * none' %}
+{% set services_password_acl = 'to attrs=userPassword,shadowLastChange by dn.subtree="' ~ services_base_dn ~ '" write by self write by anonymous auth by * none' %}
+{% set services_ppolicy_acl = 'to attrs=pwdHistory,pwdChangedTime,pwdFailureTime,pwdAccountLockedTime,pwdReset,pwdGraceUseTime by dn.subtree="' ~ services_base_dn ~ '" write by self read by * none' %}
 {% set services_users_acl = 'to dn.subtree="' ~ users_base_dn ~ '" by dn.subtree="' ~ services_base_dn ~ '" write by self read by * none' %}
 ensure_services_acls:
   ldap.access_present:
@@ -221,6 +227,7 @@ ensure_services_acls:
     - database_dn: "{{ ldap_database_dn }}"
     - access_rules:
       - {{ services_password_acl | yaml_dquote }}
+      - {{ services_ppolicy_acl | yaml_dquote }}
       - {{ services_users_acl | yaml_dquote }}
     - require:
       - ldap: ensure_ldap_config_admin_connect_spec
