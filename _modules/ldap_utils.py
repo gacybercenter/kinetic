@@ -1363,31 +1363,38 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
         # Construct the DN for the overlay, typically under the database DN
         overlay_dn = f"olcOverlay={{{overlay_index}}}{overlay_name},{database_dn}"
 
-        # Check if overlay exists and attributes match
-        check = root_dn_exists(spec_name, overlay_dn, attributes)
-        if check["exists"]:
-            if check["attributes_match"]:
+        # Check if overlay exists and attributes match. Use dn_exists (not
+        # root_dn_exists) - the latter has no 'exists'/'attributes_match' keys.
+        check = dn_exists(spec_name, overlay_dn, attributes)
+        if check.get("exists"):
+            if check.get("attributes_match"):
                 return {
                     "configured": False,
                     "updated": False,
                     "error": None,
                     "message": f"Overlay {overlay_dn} already exists with matching attributes",
                 }
-            else:
-                update_result = update_root_dn(spec_name, overlay_dn, attributes)
-                if update_result["updated"]:
-                    return {
-                        "configured": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
+            update_result = update_root_dn(spec_name, overlay_dn, attributes)
+            if update_result.get("result"):
                 return {
                     "configured": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
+                    "updated": True,
+                    "error": None,
+                    "message": update_result.get("comment", ""),
                 }
+            return {
+                "configured": False,
+                "updated": False,
+                "error": update_result.get("comment", str(update_result)),
+                "message": "",
+            }
+        if not check.get("result") and "No such object" not in check.get("comment", ""):
+            return {
+                "configured": False,
+                "updated": False,
+                "error": check.get("comment", str(check)),
+                "message": "",
+            }
 
         # Create new overlay entry since it doesn't exist
         # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
