@@ -1952,11 +1952,24 @@ def user_federation_present(
             )
 
         current_config = _to_component_config(existing.get("config"))
-        if (
+        # bindCredential is hashed/redacted on GET, so a full-config compare
+        # always looks dirty and forced a PUT every run. Keycloak 24+ then
+        # 400s that PUT with "Invalid provider type or no such provider".
+        secret_keys = {"bindcredential"}
+
+        def _managed_matches(current, desired):
+            for key, value in desired.items():
+                if key.lower() in secret_keys:
+                    continue
+                if current.get(key) != value:
+                    return False
+            return True
+
+        same_provider = (
             existing.get("providerId") == provider_id
             and existing.get("providerType") == provider_type
-            and current_config == normalized_config
-        ):
+        )
+        if same_provider and _managed_matches(current_config, normalized_config):
             return {
                 "success": True,
                 "updated": False,
@@ -1964,60 +1977,32 @@ def user_federation_present(
             }
 
         component_id = existing.get("id")
-        # Keycloak rejects PUTs that include extra GET fields (subType,
-        # lastSync, etc.) and also refuses to change providerId in place
-        # ("Invalid provider type or no such provider"). Send only the
-        # writable ComponentRepresentation fields; if the provider id/type
-        # itself changed, delete + recreate instead.
-        if existing.get("providerId") != provider_id or existing.get("providerType") != provider_type:
-            del_code, del_body = _request(
-                "DELETE", keycloak_addr,
-                f"admin/realms/{realm}/components/{component_id}",
-                headers=headers, verify=verify,
-            )
-            if del_code not in (204, 404):
-                return _http_error(
-                    f"Replacing user federation provider {name} (delete)",
-                    del_code, del_body,
-                )
-            status_code, body = _request(
-                "POST", keycloak_addr, f"admin/realms/{realm}/components",
-                headers=headers, payload=desired, verify=verify,
-            )
-            if status_code == 201:
-                return {
-                    "success": True,
-                    "updated": True,
-                    "message": (
-                        f"User federation provider {name} replaced in realm {realm} "
-                        f"(providerId {existing.get('providerId')} -> {provider_id})"
-                    ),
-                }
-            return _http_error(
-                f"Replacing user federation provider {name} (create)",
-                status_code, body,
-            )
-
-        payload = {
-            "id": component_id,
-            "name": name,
-            "providerId": provider_id,
-            "providerType": provider_type,
-            "parentId": parent_id,
-            "config": normalized_config,
-        }
-        status_code, body = _request(
-            "PUT", keycloak_addr, f"admin/realms/{realm}/components/{component_id}",
-            headers=headers, payload=payload, verify=verify,
+        # Do not PUT. Keycloak's component update re-resolves the provider
+        # factory and 400s; delete + POST is the reliable update path.
+        # Child LDAP mappers are recreated by later ldap_mapper_present states.
+        del_code, del_body = _request(
+            "DELETE", keycloak_addr,
+            f"admin/realms/{realm}/components/{component_id}",
+            headers=headers, verify=verify,
         )
-        if status_code == 204:
+        if del_code not in (204, 404):
+            return _http_error(
+                f"Replacing user federation provider {name} (delete)",
+                del_code, del_body,
+            )
+        status_code, body = _request(
+            "POST", keycloak_addr, f"admin/realms/{realm}/components",
+            headers=headers, payload=desired, verify=verify,
+        )
+        if status_code == 201:
             return {
                 "success": True,
                 "updated": True,
-                "message": f"User federation provider {name} updated in realm {realm}",
+                "message": f"User federation provider {name} replaced in realm {realm}",
             }
         return _http_error(
-            f"Updating user federation provider {name}", status_code, body
+            f"Replacing user federation provider {name} (create)",
+            status_code, body,
         )
 
     except Exception as e:
