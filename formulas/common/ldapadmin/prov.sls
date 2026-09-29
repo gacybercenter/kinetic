@@ -210,16 +210,20 @@ ensure_ldap_config_admin_connect_spec:
       - file: ensure_ca_cert_file
 
 {# Grant ou=services bind DNs write so they can change user passwords and
-   maintain ppolicy operational attrs. Split into three rules so:
+   maintain ppolicy operational attrs, plus read on groups (Keycloak's
+   group-ldap-mapper searches groups.dn at login; OpenLDAP reports a denied
+   search base as LDAP 32 No Such Object).
      {0} userPassword/shadowLastChange: services write, self write, anon auth
      {1} ppolicy operational attrs: services write, self read (not write -
          users must not be able to clear lockout/history themselves)
      {2} ou=users subtree: services write, self read
+     {3} ou=groups subtree: services read (mapper is READ_ONLY)
    Inserted at the front of olcAccess so they take precedence over slapd
    defaults; existing rules are left in place. #}
 {% set services_password_acl = 'to attrs=userPassword,shadowLastChange by dn.subtree="' ~ services_base_dn ~ '" write by self write by anonymous auth by * none' %}
 {% set services_ppolicy_acl = 'to attrs=pwdHistory,pwdChangedTime,pwdFailureTime,pwdAccountLockedTime,pwdReset,pwdGraceUseTime by dn.subtree="' ~ services_base_dn ~ '" write by self read by * none' %}
 {% set services_users_acl = 'to dn.subtree="' ~ users_base_dn ~ '" by dn.subtree="' ~ services_base_dn ~ '" write by self read by * none' %}
+{% set services_groups_acl = 'to dn.subtree="' ~ groups_base_dn ~ '" by dn.subtree="' ~ services_base_dn ~ '" read by * none' %}
 ensure_services_acls:
   ldap.access_present:
     - name: ldap_services_acls
@@ -229,6 +233,7 @@ ensure_services_acls:
       - {{ services_password_acl | yaml_dquote }}
       - {{ services_ppolicy_acl | yaml_dquote }}
       - {{ services_users_acl | yaml_dquote }}
+      - {{ services_groups_acl | yaml_dquote }}
     - require:
       - ldap: ensure_ldap_config_admin_connect_spec
       - ldap: ensure_ldap_ous
