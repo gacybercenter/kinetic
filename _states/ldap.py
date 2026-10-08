@@ -859,3 +859,49 @@ def overlay_present(name, spec_name, database_dn, overlays=None, connection_dict
         ret["comment"] = "All overlays already configured with matching attributes."
 
     return ret
+
+
+def ppolicy_present(
+    name,
+    spec_name,
+    config_spec_name,
+    suffix,
+    policy_dn,
+    pwd_in_history,
+    module_path=None,
+    use_lockout=True,
+):
+    """
+    Ensure OpenLDAP slapo-ppolicy is loaded and pwdInHistory is set.
+
+    # Implements: 800-171 3.5.8
+    """
+    ret = {"name": name, "result": True, "changes": {}, "comment": ""}
+
+    if module_path is None:
+        module_path = __pillar__.get("ldap", {}).get(
+            "modulePath", "/opt/bitnami/openldap/lib/openldap"
+        )
+
+    if __opts__["test"]:
+        ret["result"] = None
+        ret["comment"] = (
+            f"Would ensure ppolicy default {policy_dn} with "
+            f"pwdInHistory={pwd_in_history}"
+        )
+        ret["changes"] = {"would_configure": policy_dn}
+        return ret
+
+    result = __salt__["ldap_utils.ensure_ppolicy"](
+        config_spec_name=config_spec_name,
+        data_spec_name=spec_name,
+        suffix=suffix,
+        policy_dn=policy_dn,
+        pwd_in_history=pwd_in_history,
+        module_path=module_path,
+        use_lockout=use_lockout,
+    )
+    ret["result"] = result.get("success", False)
+    ret["comment"] = result.get("message", "")
+    ret["changes"] = result.get("changes", {})
+    return ret

@@ -23,6 +23,7 @@ kc_{{ realm_name }}_realm:
     - name: {{ realm_name }}
     - enabled: {{ realm.get('enabled', True) }}
 {%- if realm.get('password_policy') is not none %}
+    {# Implements: 800-171 3.5.8 — yaml_dquote keeps passwordHistory(N) intact #}
     - password_policy: {{ realm.get('password_policy') | yaml_dquote }}
 {%- endif %}
 {%- if realm.get('brute_force_protected') is not none %}

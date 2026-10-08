@@ -354,6 +354,67 @@ def _to_component_config(config_dict):
     return normalized
 
 
+def _password_policy_tokens(policy):
+    """
+    Split a Keycloak passwordPolicy string on ' and ' without dropping
+    unknown tokens such as passwordHistory(N).
+    """
+    if not policy:
+        return []
+    return [part.strip() for part in str(policy).split(" and ") if part.strip()]
+
+
+def _password_policies_match(desired, current):
+    """Compare password policies as token sets so Keycloak reorder is a no-op."""
+    return set(_password_policy_tokens(desired)) == set(
+        _password_policy_tokens(current)
+    )
+
+
+def _password_policy_missing_tokens(desired, current):
+    """Return desired tokens that are not present on the stored policy string."""
+    desired_tokens = set(_password_policy_tokens(desired))
+    current_tokens = set(_password_policy_tokens(current))
+    return sorted(desired_tokens - current_tokens)
+
+
+def _realm_field_matches(key, desired_val, current_val):
+    if key == "passwordPolicy":
+        return _password_policies_match(desired_val, current_val)
+    return current_val == desired_val
+
+
+def _verify_password_policy_survived(keycloak_addr, name, headers, desired_policy, verify):
+    """
+    Re-GET the realm and fail if Keycloak dropped any requested policy
+    tokens (passwordHistory in particular).
+    """
+    if not desired_policy:
+        return None
+    status_code, body = _request(
+        "GET", keycloak_addr, f"admin/realms/{name}", headers=headers, verify=verify
+    )
+    if status_code != 200 or not isinstance(body, dict):
+        return _http_error(
+            f"Verifying password policy on realm {name}", status_code, body
+        )
+    missing = _password_policy_missing_tokens(
+        desired_policy, body.get("passwordPolicy")
+    )
+    if missing:
+        stored = body.get("passwordPolicy")
+        return {
+            "success": False,
+            "updated": False,
+            "message": (
+                f"Realm {name} passwordPolicy dropped tokens {missing}. "
+                f"Stored value: {stored}. Desired tokens must survive apply "
+                "(including passwordHistory(N))."
+            ),
+        }
+    return None
+
+
 def realm_present(
     name,
     enabled=True,
@@ -413,7 +474,9 @@ def realm_present(
     Args:
         name (str): Realm name (used as the realm id).
         enabled (bool): Whether the realm is enabled (default: True)
-        password_policy (str): Password policy string
+        password_policy (str): Password policy string. Tokens are passed
+            through unchanged and re-GET verified so passwordHistory(N)
+            cannot be dropped. # Implements: 800-171 3.5.8
         brute_force_protected (bool): Enable brute force detection
         failure_factor (int): Number of failures before lockout
         wait_increment_seconds (int): Wait increment for lockout backoff
@@ -556,6 +619,11 @@ def realm_present(
                 headers=headers, payload=payload, verify=verify,
             )
             if status_code in (201, 204):
+                verify_err = _verify_password_policy_survived(
+                    keycloak_addr, name, headers, password_policy, verify
+                )
+                if verify_err:
+                    return verify_err
                 return {
                     "success": True,
                     "updated": True,
@@ -565,9 +633,14 @@ def realm_present(
 
         elif status_code == 200 and isinstance(body, dict):
             matches = body.get("enabled") == enabled and all(
-                body.get(k) == v for k, v in desired.items()
+                _realm_field_matches(k, v, body.get(k)) for k, v in desired.items()
             )
             if matches:
+                verify_err = _verify_password_policy_survived(
+                    keycloak_addr, name, headers, password_policy, verify
+                )
+                if verify_err:
+                    return verify_err
                 return {
                     "success": True,
                     "updated": False,
@@ -580,6 +653,11 @@ def realm_present(
                 headers=headers, payload=payload, verify=verify,
             )
             if status_code == 204:
+                verify_err = _verify_password_policy_survived(
+                    keycloak_addr, name, headers, password_policy, verify
+                )
+                if verify_err:
+                    return verify_err
                 return {
                     "success": True,
                     "updated": True,

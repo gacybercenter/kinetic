@@ -1,0 +1,18 @@
+schema: nist-controls/v1
+repo: kinetic
+controls:
+  - id: "3.5.8"
+    standard: "800-171"
+    revision: 2
+    name: Prohibit password reuse for a specified number of generations
+    status: implemented
+    paths:
+      - formulas/keycloak/realms.sls
+      - _modules/kinetic-keycloak.py
+      - _modules/ldap_utils.py
+      - _states/ldap.py
+      - formulas/common/ldapadmin/ppolicy.sls
+      - formulas/common/ldapadmin/init.sls
+      - formulas/keycloak/PILLAR-EXAMPLE.md
+      - docs/kinetic-keycloak.md
+      - formulas/common/ldap/README.md
