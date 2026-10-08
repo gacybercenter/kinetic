@@ -1,0 +1,17 @@
+/* Implements: 800-171 3.1.9 */
+.kc-login-notice {
+    margin: 0 0 1.25rem 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid #8a6d3b;
+    border-radius: 3px;
+    background: #fcf8e3;
+    color: #3c3c3c;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    text-align: left;
+}
+
+.kc-login-notice:empty {
+    display: none;
+}

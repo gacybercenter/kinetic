@@ -1,0 +1,17 @@
+schema: nist-controls/v1
+repo: kinetic
+controls:
+  - id: "3.1.9"
+    standard: "800-171"
+    revision: 2
+    name: Provide privacy and security notices consistent with applicable CUI rules
+    status: implemented
+    paths:
+      - formulas/keycloak/install.sls
+      - formulas/keycloak/realms.sls
+      - formulas/keycloak/files/theme-values.yaml.j2
+      - formulas/keycloak/themes/gcr-login/login/login.ftl
+      - formulas/keycloak/themes/gcr-login/login/theme.properties
+      - formulas/keycloak/themes/gcr-login/login/resources/css/notice.css
+      - formulas/keycloak/PILLAR-EXAMPLE.md
+      - docs/kinetic-keycloak.md

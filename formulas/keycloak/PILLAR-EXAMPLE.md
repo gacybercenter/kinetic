@@ -38,6 +38,12 @@ res-k8s:
     # Used by formulas/keycloak/install.sls for the Helm release
     chart_name: codecentric/keycloakx
     values: {}
+    # 3.1.9 notice text. Prefer ldap:realms:rsc:login_notice when using the
+    # live realms.sls source. No-CUI authorized-use wording is enough.
+    login_theme_parent: keycloak.v2
+    login_notice: >
+      This system is for authorized use only. Activity on this system
+      may be monitored and recorded. Unauthorized use is prohibited.
 
     connection:
       namespace: keycloak
@@ -81,7 +87,10 @@ res-k8s:
         registration_email_as_username: false
 
         # --- Themes ---
-        login_theme: keycloak
+        # 3.1.9: set login_theme to gcr-login. The theme is mounted by
+        # formulas/keycloak/install.sls. Banner body is login_notice on
+        # ldap:realms:rsc or res-k8s:keycloak (kinetic-pillar only).
+        login_theme: gcr-login
         account_theme: keycloak
         admin_theme: keycloak
         email_theme: keycloak
