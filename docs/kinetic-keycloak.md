@@ -44,7 +44,7 @@ All functions return `{"success": bool, "updated": bool, "message": str}`.
 | Control | Function(s) | Keycloak Admin API |
 |---|---|---|
 | Create Realms | `realm_present`, `realm_absent` | `POST/GET/PUT/DELETE admin/realms[/{realm}]` |
-| Password Policy | `realm_present` (`password_policy`) | `PUT admin/realms/{realm}` -> `passwordPolicy` |
+| Password Policy | `realm_present` (`password_policy`) | `PUT admin/realms/{realm}` -> `passwordPolicy` (tokens including `passwordHistory(N)` are re-GET verified so they cannot be dropped) |
 | Brute Force Detection | `realm_present` (`brute_force_protected`, `failure_factor`, `wait_increment_seconds`, `max_failure_wait_seconds`, `max_delta_time_seconds`, `quick_login_check_milli_seconds`, `minimum_quick_login_wait_seconds`) | `PUT admin/realms/{realm}` |
 | Token & Session Timeouts | `realm_present` (`access_token_lifespan`, `sso_session_idle_timeout`, `sso_session_max_lifespan`, `client_session_idle_timeout`, `client_session_max_lifespan`, `offline_session_idle_timeout`) | `PUT admin/realms/{realm}` |
 | SSL Required | `realm_present` (`ssl_required`) | `PUT admin/realms/{realm}` -> `sslRequired` |
@@ -66,7 +66,7 @@ Every `*_present` function builds a desired-state dict from its convenience kwar
 ```yaml
 myrealm:
   keycloak.realm_present:
-    - password_policy: "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1)"
+    - password_policy: "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(5)"
     - brute_force_protected: true
     - failure_factor: 5
     - wait_increment_seconds: 60

@@ -1,12 +1,13 @@
 # Keycloak Pillar Example
 
-The `formulas/keycloak/configure` state is entirely pillar-driven: it reads
-`res-k8s:keycloak:realms` and, for every realm defined there, builds the
-`keycloak.*` states (from `_states/keycloak.py`, backed by the
-`kinetic_keycloak` execution module - see `docs/kinetic-keycloak.md`) needed to
-configure that realm's password policy, brute force detection, token/session
-timeouts, events, required actions, authentication flows, clients, and user
-federation.
+The `formulas/keycloak/configure` state is entirely pillar-driven. Realm
+apply (`formulas/keycloak/realms.sls`) reads `pillar['ldap']['realms']`
+(not `res-k8s:keycloak:realms`). The example below still shows the field
+shape. The state builds `keycloak.*` calls (from `_states/keycloak.py`,
+backed by the `kinetic_keycloak` execution module - see
+`docs/kinetic-keycloak.md`) for password policy, brute force detection,
+token/session timeouts, events, required actions, authentication flows,
+clients, and user federation.
 
 Realms are applied in this order per realm: realm -> events -> required
 actions -> authentication flows (and their executions) -> clients -> user
@@ -48,7 +49,9 @@ res-k8s:
         enabled: true
 
         # --- Password Policy ---
-        password_policy: "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1)"
+        # 3.5.7 complexity tokens plus 3.5.8 passwordHistory(N). N comes from
+        # kinetic-pillar; do not drop passwordHistory when editing this string.
+        password_policy: "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(5)"
 
         # --- Brute Force Detection ---
         brute_force_protected: true
@@ -234,6 +237,22 @@ res-k8s:
 - Secrets (LDAP bind password, client secrets) should come from other pillar
   data (e.g. an encrypted pillar or vault-backed source) rather than being
   hardcoded here.
+- LDAP-federated users (editMode READ_ONLY) do not exercise Keycloak
+  `passwordHistory`. Enable OpenLDAP ppolicy from kinetic-pillar so
+  `pwdInHistory` is enforced on directory password changes:
+
+```yaml
+ldap:
+  ppolicy:
+    enabled: true
+    pwd_in_history: 5   # set N in kinetic-pillar; do not invent it here
+    # policy_dn: cn=default,ou=policies,dc=rsc,dc=gacyberrange,dc=org
+    # config_bind_dn: cn=admin,cn=config
+```
+
+  Apply with `formulas.common.ldapadmin` (or `orch.k8s-ldap-prov`). G2: change
+  a test user's password to a previous value and confirm the directory
+  rejects it. Do not use production user passwords as evidence.
 
 ## Applying
 
