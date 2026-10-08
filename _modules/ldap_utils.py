@@ -1610,3 +1610,65 @@ def ensure_ppolicy(
         ),
         "changes": {"ppolicy": changes} if changes else {},
     }
+
+
+def modify_attributes(spec_name, dn, replace=None, delete=None):
+    """Replace or delete attributes on an existing DN."""
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            return {
+                "success": False,
+                "updated": False,
+                "message": conn_result["error"],
+            }
+        conn = conn_result["conn"]
+        modlist = []
+        for attr, value in (replace or {}).items():
+            values = value if isinstance(value, list) else [value]
+            encoded = [
+                v.encode("utf-8") if isinstance(v, str) else v for v in values
+            ]
+            modlist.append((ldap.MOD_REPLACE, attr, encoded))
+        for attr in delete or []:
+            modlist.append((ldap.MOD_DELETE, attr, None))
+        if not modlist:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"No attribute changes for {dn}",
+            }
+        conn.modify_s(dn, modlist)
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"Updated attributes on {dn}",
+        }
+    except ldap.NO_SUCH_ATTRIBUTE:
+        return {
+            "success": True,
+            "updated": False,
+            "message": f"Attribute already absent on {dn}",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to modify {dn}: {str(e)}",
+        }
+
+
+def set_account_locked(spec_name, user_dn, locked=True):
+    """
+    Set or clear pwdAccountLockedTime. 000001010000Z is the admin-lock
+    value consumed by slapo-ppolicy. Lock in OpenLDAP so the disable
+    survives federation sync.
+
+    # Implements: 800-171 3.5.6
+    """
+    if locked:
+        return modify_attributes(
+            spec_name, user_dn, replace={"pwdAccountLockedTime": "000001010000Z"}
+        )
+    return modify_attributes(spec_name, user_dn, delete=["pwdAccountLockedTime"])
+

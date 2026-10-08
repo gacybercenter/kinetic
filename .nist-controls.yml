@@ -19,3 +19,10 @@ controls:
       - formulas/keycloak/themes/gcr-login/login/login.ftl
     note: "gcr-login theme shows pillar-supplied notice before credentials"
     status: implemented
+  "3.5.6":
+    files:
+      - formulas/common/ldapadmin/inactivity.sls
+      - _modules/kinetic_identity.py
+      - _runners/identity.py
+    note: "Disable unused LDAP identifiers from keycloak-logs-*; dry-run default; not SSO idle"
+    status: implemented
