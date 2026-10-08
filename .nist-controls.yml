@@ -1,18 +1,21 @@
+# NIST SP 800-171 Rev 2 control implementations in this repo.
+# Consumed read-only by nist-gcr's refresh_from_upstream CI guard. Do not delete/rename.
 schema: nist-controls/v1
 repo: kinetic
+standard: "800-171r2"
 controls:
-  - id: "3.5.8"
-    standard: "800-171"
-    revision: 2
-    name: Prohibit password reuse for a specified number of generations
-    status: implemented
-    paths:
+  "3.5.8":
+    files:
       - formulas/keycloak/realms.sls
       - _modules/kinetic-keycloak.py
-      - _modules/ldap_utils.py
-      - _states/ldap.py
       - formulas/common/ldapadmin/ppolicy.sls
-      - formulas/common/ldapadmin/init.sls
-      - formulas/keycloak/PILLAR-EXAMPLE.md
-      - docs/kinetic-keycloak.md
-      - formulas/common/ldap/README.md
+    note: "passwordHistory(N) survives Keycloak apply; optional OpenLDAP ppolicy pwdInHistory"
+    status: implemented
+  "3.1.9":
+    files:
+      - formulas/keycloak/install.sls
+      - formulas/keycloak/realms.sls
+      - formulas/keycloak/files/theme-values.yaml.j2
+      - formulas/keycloak/themes/gcr-login/login/login.ftl
+    note: "gcr-login theme shows pillar-supplied notice before credentials"
+    status: implemented
