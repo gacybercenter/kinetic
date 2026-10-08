@@ -15,8 +15,12 @@
 {% set type = opts.id.split('-')[0] %}
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 
+# Implements: 800-171 3.4.2
+# Common host baseline: sysctl, org SSH keys, time, syslog, ulimit, auditd.
+# Map: nist-gcr docs/evidence/3.4.2/salt-baseline-map.md
 include:
   - /formulas/common/auditd/configure
+  - /formulas/common/patching/security-updates
 
 initial_module_sync:
   saltutil.sync_all:

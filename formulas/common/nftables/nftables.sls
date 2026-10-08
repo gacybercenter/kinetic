@@ -1,3 +1,5 @@
+# Implements: 800-171 3.4.2
+# Host filter: public CIDR default-drop except listed API ports.
 nftables:
   pkg.installed:
     - name: nftables

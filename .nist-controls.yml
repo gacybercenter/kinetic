@@ -1,0 +1,34 @@
+# NIST SP 800-171 Rev 2 control implementations in this repo.
+# Consumed read-only by nist-gcr's refresh_from_upstream CI guard. Do not delete/rename.
+schema: nist-controls/v1
+repo: kinetic
+standard: "800-171r2"
+controls:
+  "3.1.21":
+    files:
+      - formulas/guacamole/install.sls
+      - formulas/guacamole/configure.sls
+      - formulas/guacamole/files/pin_usb_off.py
+      - formulas/nova/files/nova.conf
+    note: "QuickConnect absent; enable-drive/SFTP/printing false; SPICE usbredir not authorized"
+    status: implemented
+  "3.8.7":
+    files:
+      - formulas/guacamole/install.sls
+      - formulas/guacamole/configure.sls
+      - formulas/guacamole/files/pin_usb_off.py
+      - formulas/nova/files/nova.conf
+    note: "Same USB/drive pin as 3.1.21; pair with nist-gcr removable-media policy"
+    status: implemented
+  "3.4.2":
+    files:
+      - formulas/common/base.sls
+      - formulas/common/sysctl/files/sysctl.conf
+      - formulas/common/nftables/nftables.sls
+    note: "Common host baseline tags; G2 state.apply test=True then pin SHA"
+    status: implemented
+  "3.14.1":
+    files:
+      - formulas/common/patching/security-updates.sls
+    note: "Scheduled security updates; dry_run default via pillar patching"
+    status: implemented

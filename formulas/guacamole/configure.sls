@@ -123,3 +123,28 @@ ROOT_path:
       - docker_container: guacamole_guacamole
     - unless:
       - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
+
+# Implements: 800-171 3.1.21 3.8.7
+# Pin client drive / SFTP / printing off on every Guacamole connection.
+# Empty defaults are not a pin.
+guacamole_usb_pin_script:
+  file.managed:
+    - name: /opt/guacamole/pin_usb_off.py
+    - source: salt://formulas/guacamole/files/pin_usb_off.py
+    - mode: "0755"
+    - template: jinja
+    - defaults:
+        mysql_host: {{ pillar['haproxy']['guacamole_domain'] }}
+        mysql_db: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'][0] }}
+        mysql_user: guacamole
+        mysql_password: {{ pillar['guacamole']['guacamole_mysql_password'] }}
+    - require:
+      - docker_container: guacamole_guacamole
+
+guacamole_usb_pin:
+  cmd.run:
+    - name: python3 /opt/guacamole/pin_usb_off.py
+    - require:
+      - file: guacamole_usb_pin_script
+    - unless:
+      - python3 /opt/guacamole/pin_usb_off.py --check

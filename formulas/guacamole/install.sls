@@ -48,12 +48,17 @@ salt-pip_installs:
       - pkg: guacamole_packages
       - pip: guacamole_pip
 
+# Implements: 800-171 3.1.21 3.8.7
+# QuickConnect lets users open ad-hoc connections with client drive/USB.
+# Not authorized. Remove the jar if a prior apply installed it.
+guacamole_quickconnect_absent:
+  file.absent:
+    - name: /opt/guacamole/guacamole/extensions/guacamole-auth-quickconnect-1.5.0.jar
+
 guacamole_extensions:
   file.managed:
     - makedirs: True
     - names:
-      - /opt/guacamole/guacamole/extensions/guacamole-auth-quickconnect-1.5.0.jar:
-        - source: salt://formulas/guacamole/files/guacamole-auth-quickconnect-1.5.0.jar
       - /opt/guacamole/guacamole/extensions/guacamole-history-recording-storage-1.5.0.jar:
         - source: salt://formulas/guacamole/files/guacamole-history-recording-storage-1.5.0.jar
       - /opt/guacamole/guacamole/extensions/branding.jar:
