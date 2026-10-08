@@ -1,0 +1,19 @@
+schema: nist-controls/v1
+repo: kinetic
+controls:
+  - id: "3.5.6"
+    standard: "800-171"
+    revision: 2
+    name: Disable identifiers after a defined period of inactivity
+    status: implemented
+    paths:
+      - _modules/kinetic_identity.py
+      - _modules/ldap_utils.py
+      - _modules/kinetic-os.py
+      - _modules/kinetic-k8s.py
+      - _runners/identity.py
+      - _states/k8s.py
+      - formulas/common/ldapadmin/inactivity.sls
+      - formulas/common/ldapadmin/files/disable_inactive.py
+      - formulas/common/ldapadmin/init.sls
+      - formulas/common/ldap/README.md

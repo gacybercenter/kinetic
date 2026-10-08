@@ -42,6 +42,7 @@ res-k8s:
 - `ldap:root_dn` - root DN and organization info
 - `ldap:orgunits` - organizational units to create
 - `ldap:users` and `ldap:groups` - users and groups with GPG-encrypted passwords
+- `ldap:inactivity` - optional 800-171 3.5.6 disable-after-inactivity job (`formulas/common/ldapadmin/inactivity.sls`). Default N=90, `dry_run: true`. Locks OpenLDAP with `pwdAccountLockedTime`; does not use SSO idle timeout.
 - `ldap:pull_secret` - container registry credentials
 - `ldap:logger-cm` - FluentBit/OpenSearch logging configuration
 
@@ -55,6 +56,26 @@ include:
 ```
 
 ## Orchestration
+
+Optional inactivity lock (800-171 3.5.6), values in kinetic-pillar:
+
+```yaml
+ldap:
+  inactivity:
+    enabled: true
+    dry_run: true          # G2 default; set false only after excludes are reviewed
+    inactive_days: 90      # use 30 only if ISSO already picked it
+    grace_days: 7
+    exclude_uids: []       # service accounts and instructors
+    exclude_dns: []
+    exclude_groups: []
+    index: keycloak-logs-*
+    cronjob:
+      enabled: false       # set image in pillar if enabling the CronJob
+      # image: example/python-ldap3-requests:tag
+```
+
+G2: `salt-call kinetic_identity.disable_inactive dry_run=True` (or `salt-run identity.disable_inactive dry_run=True`). Do not lock real instructors. Requires slapo-ppolicy lockout from the 3.5.8 change for `pwdAccountLockedTime` to be enforced.
 
 Use the orchestration script `orch/k8s-authldap.sls` to deploy the complete solution:
 

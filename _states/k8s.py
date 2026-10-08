@@ -2912,6 +2912,65 @@ def job_present(
     return ret
 
 
+def cronjob_present(
+    name,
+    namespace,
+    schedule,
+    image,
+    command=None,
+    args=None,
+    service_account=None,
+    restart_policy="OnFailure",
+    backoff_limit=1,
+    labels=None,
+    annotations=None,
+    env=None,
+    env_from=None,
+    volumes=None,
+    volume_mounts=None,
+    resources=None,
+    successful_jobs_history_limit=3,
+    failed_jobs_history_limit=3,
+    spec=None,
+):
+    """
+    Ensure a Kubernetes CronJob exists.
+    """
+    ret = _state_ret(name)
+
+    try:
+        result = __salt__["kinetic_k8s.cronjob_present"](
+            namespace=namespace,
+            name=name,
+            schedule=schedule,
+            image=image,
+            command=command,
+            args=args,
+            service_account=service_account,
+            restart_policy=restart_policy,
+            backoff_limit=backoff_limit,
+            labels=labels,
+            annotations=annotations,
+            env=env,
+            env_from=env_from,
+            volumes=volumes,
+            volume_mounts=volume_mounts,
+            resources=resources,
+            successful_jobs_history_limit=successful_jobs_history_limit,
+            failed_jobs_history_limit=failed_jobs_history_limit,
+            spec=spec,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure CronJob {name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
 def networkattachmentdefinition_present(
     name,
     namespace="default",

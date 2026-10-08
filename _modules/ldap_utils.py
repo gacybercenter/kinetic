@@ -1294,3 +1294,108 @@ def dn_exists(spec_name, dn, desired_attributes=None):
         ret["result"] = False
         ret["comment"] = f"Failed to check DN {dn}: {str(e)}"
         return ret
+
+
+def _decode_ldap_attrs(raw_attrs):
+    decoded = {}
+    for attr, values in (raw_attrs or {}).items():
+        decoded[attr] = [
+            v.decode("utf-8") if isinstance(v, bytes) else v for v in values
+        ]
+    return decoded
+
+
+def search_entries(
+    spec_name, base, filterstr="(objectClass=*)", attributes=None, scope=None
+):
+    """Search the directory using an existing StartTLS connection spec."""
+    if scope is None:
+        scope = ldap.SCOPE_SUBTREE
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            return {"success": False, "entries": [], "error": conn_result["error"]}
+        conn = conn_result["conn"]
+        attrlist = list(attributes) if attributes else None
+        result = conn.search_s(
+            base=base,
+            scope=scope,
+            filterstr=filterstr,
+            attrlist=attrlist,
+        )
+        entries = []
+        for dn, raw_attrs in result or []:
+            if not dn:
+                continue
+            entries.append({"dn": dn, "attributes": _decode_ldap_attrs(raw_attrs)})
+        return {"success": True, "entries": entries, "error": None}
+    except ldap.NO_SUCH_OBJECT:
+        return {"success": True, "entries": [], "error": None}
+    except Exception as e:
+        return {
+            "success": False,
+            "entries": [],
+            "error": f"Search failed at {base}: {str(e)}",
+        }
+
+
+def modify_attributes(spec_name, dn, replace=None, delete=None):
+    """Replace or delete attributes on an existing DN."""
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            return {
+                "success": False,
+                "updated": False,
+                "message": conn_result["error"],
+            }
+        conn = conn_result["conn"]
+        modlist = []
+        for attr, value in (replace or {}).items():
+            values = value if isinstance(value, list) else [value]
+            encoded = [
+                v.encode("utf-8") if isinstance(v, str) else v for v in values
+            ]
+            modlist.append((ldap.MOD_REPLACE, attr, encoded))
+        for attr in delete or []:
+            modlist.append((ldap.MOD_DELETE, attr, None))
+        if not modlist:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"No attribute changes for {dn}",
+            }
+        conn.modify_s(dn, modlist)
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"Updated attributes on {dn}",
+        }
+    except ldap.NO_SUCH_ATTRIBUTE:
+        return {
+            "success": True,
+            "updated": False,
+            "message": f"Attribute already absent on {dn}",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to modify {dn}: {str(e)}",
+        }
+
+
+def set_account_locked(spec_name, user_dn, locked=True):
+    """
+    Set or clear pwdAccountLockedTime. 000001010000Z is the admin-lock
+    value consumed by slapo-ppolicy. Keycloak LDAP is READ_ONLY, so
+    enabled=false on the Keycloak user will not persist.
+
+    # Implements: 800-171 3.5.6
+    """
+    if locked:
+        return modify_attributes(
+            spec_name, user_dn, replace={"pwdAccountLockedTime": "000001010000Z"}
+        )
+    return modify_attributes(spec_name, user_dn, delete=["pwdAccountLockedTime"])
+
