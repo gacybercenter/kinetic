@@ -310,6 +310,7 @@ kc_{{ realm_name }}_client_{{ client_key }}_default_scope_{{ scope_name }}:
     - require:
       - keycloak: kc_{{ realm_name }}_client_{{ client_key }}
 {% endfor %}
+{%- endif %}
 {% endfor %}
 
 {# --- User Federation (e.g. OpenLDAP) --- #}
