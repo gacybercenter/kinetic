@@ -4,6 +4,7 @@ Custom SaltStack module for LDAP operations using python-ldap directly
 """
 
 import logging
+import re
 
 try:
     import ldap
@@ -1028,6 +1029,225 @@ def update_group(
         return ret
 
 
+def create_service_account(
+    spec_name,
+    service_dn,
+    cn,
+    password=None,
+    description=None,
+    pwd_policy_subentry=None,
+):
+    """
+    Create a service-account bind DN (organizationalRole + simpleSecurityObject).
+
+    These are not inetOrgPerson users: they exist only as a bind identity
+    (typically under ou=services) and require a userPassword.
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        attributes = {
+            "objectClass": ["top", "organizationalRole", "simpleSecurityObject"],
+            "cn": cn,
+        }
+        if description:
+            attributes["description"] = description
+        if pwd_policy_subentry:
+            attributes["pwdPolicySubentry"] = pwd_policy_subentry
+
+        check = dn_exists(spec_name, service_dn, attributes)
+        if check.get("exists"):
+            ret["comment"] = (
+                f"Service account {service_dn} already exists. "
+                "Use update_service_account to modify."
+            )
+            return ret
+
+        create_attrs = attributes.copy()
+        changes = {"created": service_dn, "cn": cn}
+        if description:
+            changes["description"] = description
+        if pwd_policy_subentry:
+            changes["pwdPolicySubentry"] = pwd_policy_subentry
+        if password:
+            create_attrs["userPassword"] = password
+            changes["userPassword"] = "(set)"
+
+        attr_list = [
+            (
+                k,
+                [
+                    v.encode("utf-8") if isinstance(v, str) else v.encode("utf-8")
+                    for v in (v if isinstance(v, list) else [v])
+                ],
+            )
+            for k, v in create_attrs.items()
+        ]
+        conn.add_s(dn=service_dn, modlist=attr_list)
+        ret["result"] = True
+        ret["comment"] = f"Service account {service_dn} created successfully"
+        ret["changes"] = changes
+        return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to create service account {service_dn}: {str(e)}"
+        return ret
+
+
+def update_service_account(
+    spec_name, service_dn, cn, description=None, pwd_policy_subentry=None
+):
+    """
+    Update a service-account bind DN. Does not update userPassword.
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        attributes = {
+            "objectClass": ["top", "organizationalRole", "simpleSecurityObject"],
+            "cn": cn,
+        }
+        if description:
+            attributes["description"] = description
+        if pwd_policy_subentry:
+            attributes["pwdPolicySubentry"] = pwd_policy_subentry
+
+        check = dn_exists(spec_name, service_dn, attributes)
+        if not check.get("exists"):
+            ret["comment"] = (
+                f"Service account {service_dn} does not exist. "
+                "Use create_service_account to create."
+            )
+            return ret
+
+        if check.get("attributes_match"):
+            ret["result"] = True
+            ret["comment"] = (
+                f"Service account {service_dn} already has matching attributes."
+            )
+            return ret
+
+        update_result = update_root_dn(spec_name, service_dn, attributes)
+        if update_result.get("result", False):
+            ret["result"] = True
+            ret["comment"] = f"Service account {service_dn} updated successfully."
+            ret["changes"] = update_result.get("changes", {})
+            return ret
+
+        ret["comment"] = (
+            f"Failed to update service account {service_dn}: "
+            f"{update_result.get('comment', str(update_result))}"
+        )
+        return ret
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to update service account {service_dn}: {str(e)}"
+        return ret
+
+
+def _normalize_acl(acl):
+    """Strip a leading {N} index and collapse whitespace for ACL comparison."""
+    if not isinstance(acl, str):
+        acl = str(acl)
+    return re.sub(r"\s+", " ", re.sub(r"^\{\d+\}", "", acl).strip()).strip()
+
+
+def get_olc_access(spec_name, database_dn):
+    """Return the current olcAccess list on a cn=config database DN."""
+    ret = {"result": False, "comment": "", "access": []}
+    try:
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+
+        conn = conn_result["conn"]
+        result = conn.search_s(
+            base=database_dn,
+            scope=ldap.SCOPE_BASE,
+            filterstr="(objectClass=*)",
+            attrlist=["olcAccess"],
+        )
+        if not result:
+            ret["comment"] = f"Database {database_dn} not found"
+            return ret
+
+        raw = result[0][1].get("olcAccess", []) if result[0][1] else []
+        ret["result"] = True
+        ret["access"] = [
+            v.decode("utf-8") if isinstance(v, bytes) else v for v in raw
+        ]
+        ret["comment"] = f"Read {len(ret['access'])} olcAccess rule(s) from {database_dn}"
+        return ret
+    except ldap.NO_SUCH_OBJECT:
+        ret["comment"] = f"Database {database_dn} does not exist"
+        return ret
+    except Exception as e:
+        ret["comment"] = f"Failed to read olcAccess on {database_dn}: {str(e)}"
+        return ret
+
+
+def ensure_olc_access(spec_name, database_dn, access_rules):
+    """
+    Ensure the given olcAccess rules exist on a cn=config database DN.
+
+    Existing rules are left in place. Missing rules are inserted at the front
+    (olcAccess {{0}}) so they take precedence over default slapd ACLs.
+    Comparison ignores leading {{N}} indexes and whitespace.
+    """
+    ret = {"result": False, "comment": "", "changes": {}}
+    try:
+        current = get_olc_access(spec_name, database_dn)
+        if not current["result"]:
+            ret["comment"] = current["comment"]
+            return ret
+
+        existing_norm = {_normalize_acl(rule) for rule in current["access"]}
+        missing = [
+            rule for rule in access_rules if _normalize_acl(rule) not in existing_norm
+        ]
+        if not missing:
+            ret["result"] = True
+            ret["comment"] = (
+                f"All {len(access_rules)} olcAccess rule(s) already present on {database_dn}"
+            )
+            return ret
+
+        conn_result = get_connect_spec(spec_name)
+        if not conn_result["success"]:
+            ret["comment"] = conn_result["error"]
+            return ret
+        conn = conn_result["conn"]
+
+        added = []
+        for rule in reversed(missing):
+            value = _normalize_acl(rule)
+            conn.modify_s(
+                database_dn,
+                [(ldap.MOD_ADD, "olcAccess", [f"{{0}}{value}".encode("utf-8")])],
+            )
+            added.append(value)
+
+        ret["result"] = True
+        ret["comment"] = (
+            f"Added {len(added)} olcAccess rule(s) to {database_dn}"
+        )
+        ret["changes"] = {"added": added}
+        return ret
+    except Exception as e:
+        ret["comment"] = f"Failed to ensure olcAccess on {database_dn}: {str(e)}"
+        return ret
+
+
 def load_module(spec_name, module_dn, module_info, module_path=None):
     """
     Load a module into OpenLDAP configuration if not already loaded.
@@ -1115,6 +1335,48 @@ def load_module(spec_name, module_dn, module_info, module_path=None):
     #            )
 
 
+def _find_overlay_dn(spec_name, database_dn, overlay_name):
+    """
+    Locate an overlay by name under a database DN, regardless of {N} index.
+
+    slapd stores overlays as olcOverlay={{N}}<name>,<database_dn>. Matching only
+    a caller-supplied index misses the overlay when helm/slapd already loaded
+    it at a different slot (and a second add then fails with
+    'overlay already in list').
+    """
+    conn_result = get_connect_spec(spec_name)
+    if not conn_result["success"]:
+        return None
+    conn = conn_result["conn"]
+    try:
+        results = conn.search_s(
+            base=database_dn,
+            scope=ldap.SCOPE_ONELEVEL,
+            filterstr="(objectClass=olcOverlayConfig)",
+            attrlist=["olcOverlay", "dn"],
+        )
+    except ldap.NO_SUCH_OBJECT:
+        return None
+    except Exception:
+        return None
+
+    wanted = overlay_name.lower()
+    for dn, attrs in results or []:
+        values = attrs.get("olcOverlay", []) if attrs else []
+        decoded = [
+            v.decode("utf-8") if isinstance(v, bytes) else v for v in values
+        ]
+        for value in decoded:
+            bare = re.sub(r"^\{\d+\}", "", value).lower()
+            if bare == wanted:
+                return dn
+        # Fallback: RDN itself is olcOverlay={N}name
+        rdn = dn.split(",", 1)[0] if dn else ""
+        if re.sub(r"^olcOverlay=\{\d+\}", "", rdn, flags=re.I).lower() == wanted:
+            return dn
+    return None
+
+
 def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attributes):
     """
     Configure an overlay for a specific database in the LDAP directory.
@@ -1140,38 +1402,53 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
             }
 
         conn = conn_result["conn"]
-        # Construct the DN for the overlay, typically under the database DN
-        overlay_dn = f"olcOverlay={{{overlay_index}}}{overlay_name},{database_dn}"
+        overlay_dn = _find_overlay_dn(spec_name, database_dn, overlay_name)
+        if overlay_dn is None:
+            overlay_dn = f"olcOverlay={{{overlay_index}}}{overlay_name},{database_dn}"
+            existing = False
+        else:
+            existing = True
 
-        # Check if overlay exists and attributes match
-        check = root_dn_exists(spec_name, overlay_dn, attributes)
-        if check["exists"]:
-            if check["attributes_match"]:
+        if existing:
+            # olcOverlay is the RDN (olcOverlay={N}name) - slapd rejects
+            # MOD_REPLACE on it ('Operation not allowed on RDN'). objectClass
+            # is similarly fragile on cn=config overlays. Only update the
+            # overlay-specific knobs (e.g. olcPPolicyHashCleartext).
+            update_attrs = {
+                k: v
+                for k, v in attributes.items()
+                if k.lower() not in ("olcoverlay", "objectclass")
+            }
+            if not update_attrs:
+                return {
+                    "configured": False,
+                    "updated": False,
+                    "error": None,
+                    "message": f"Overlay {overlay_dn} already present",
+                }
+            check = dn_exists(spec_name, overlay_dn, update_attrs)
+            if check.get("attributes_match"):
                 return {
                     "configured": False,
                     "updated": False,
                     "error": None,
                     "message": f"Overlay {overlay_dn} already exists with matching attributes",
                 }
-            else:
-                update_result = update_root_dn(spec_name, overlay_dn, attributes)
-                if update_result["updated"]:
-                    return {
-                        "configured": False,
-                        "updated": True,
-                        "error": None,
-                        "message": update_result["message"],
-                    }
+            update_result = update_root_dn(spec_name, overlay_dn, update_attrs)
+            if update_result.get("result"):
                 return {
                     "configured": False,
-                    "updated": False,
-                    "error": update_result["error"],
-                    "message": "",
+                    "updated": True,
+                    "error": None,
+                    "message": update_result.get("comment", ""),
                 }
+            return {
+                "configured": False,
+                "updated": False,
+                "error": update_result.get("comment", str(update_result)),
+                "message": "",
+            }
 
-        # Create new overlay entry since it doesn't exist
-        # Convert attributes dictionary to list of (attr, value) tuples as required by python-ldap
-        # Ensure all values are lists of byte strings
         attr_list = [
             (
                 k,
@@ -1189,11 +1466,31 @@ def configure_overlay(spec_name, database_dn, overlay_name, overlay_index, attri
             "error": None,
             "message": f"Overlay {overlay_dn} configured successfully",
         }
-    except Exception as e:
+    except ldap.ALREADY_EXISTS:
         return {
             "configured": False,
             "updated": False,
-            "error": f"Failed to configure overlay {overlay_name} for {database_dn}: {str(e)}",
+            "error": None,
+            "message": f"Overlay {overlay_name} already present on {database_dn}",
+        }
+    except Exception as e:
+        err = str(e)
+        # slapd rejects a second ppolicy even at a different {{N}} with this.
+        if "already in list" in err.lower():
+            found = _find_overlay_dn(spec_name, database_dn, overlay_name)
+            return {
+                "configured": False,
+                "updated": False,
+                "error": None,
+                "message": (
+                    f"Overlay {overlay_name} already present on {database_dn}"
+                    + (f" at {found}" if found else "")
+                ),
+            }
+        return {
+            "configured": False,
+            "updated": False,
+            "error": f"Failed to configure overlay {overlay_name} for {database_dn}: {err}",
             "message": "",
         }
 
