@@ -1813,6 +1813,103 @@ def client_absent(
         }
 
 
+def list_component_providers(
+    provider_type="org.keycloak.storage.UserStorageProvider",
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """
+    Diagnostic helper: list the provider ids Keycloak has actually registered
+    for a given SPI/provider-type class name, by cross-referencing the
+    /admin/serverinfo response (keyed by SPI name, e.g. "storage") against
+    that SPI's providerClass.
+
+    Use this to check whether e.g. the built-in LDAP user storage provider
+    ("ldap" under org.keycloak.storage.UserStorageProvider) is actually
+    available on this server - user_federation_present fails with HTTP 400
+    "Invalid provider type or no such provider" if it is not.
+
+    Keycloak Admin REST API:
+        GET admin/serverinfo
+
+    Returns:
+        dict: success, message, and (on success) 'spi_name' plus
+            'provider_ids' (list of provider ids registered for that SPI).
+
+    CLI Example:
+
+        salt-call kinetic_keycloak.list_component_providers
+        salt-call kinetic_keycloak.list_component_providers provider_type=org.keycloak.storage.UserStorageProvider
+    """
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+
+        status_code, body = _request(
+            "GET", keycloak_addr, "admin/serverinfo",
+            headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, dict):
+            return _http_error("Fetching /admin/serverinfo", status_code, body)
+
+        provider_groups = body.get("providers", {})
+        # serverinfo keys providers by SPI name (e.g. "storage"), not by the
+        # providerType's fully-qualified class name. There is no reliable
+        # generic mapping from class name -> SPI name over the REST API, so
+        # look for the one SPI group whose id set looks like a storage SPI
+        # ('ldap'/'kerberos' are the built-in user storage providers) when
+        # asked about UserStorageProvider, otherwise return everything so
+        # the caller can eyeball it.
+        if provider_type == "org.keycloak.storage.UserStorageProvider":
+            for spi_name, spi_info in provider_groups.items():
+                ids = list((spi_info or {}).get("providers", {}).keys())
+                if spi_name == "storage" or "ldap" in ids or "kerberos" in ids:
+                    return {
+                        "success": True,
+                        "message": f"Found {len(ids)} provider(s) for SPI '{spi_name}'",
+                        "spi_name": spi_name,
+                        "provider_ids": ids,
+                    }
+            return {
+                "success": True,
+                "message": (
+                    "Could not identify the storage SPI group by name; "
+                    "returning all SPI names for manual inspection"
+                ),
+                "spi_name": None,
+                "provider_ids": [],
+                "all_spi_names": sorted(provider_groups.keys()),
+            }
+
+        return {
+            "success": True,
+            "message": "Returning all registered SPI groups (no built-in mapping for this provider_type)",
+            "spi_name": None,
+            "provider_ids": [],
+            "all_spi_names": sorted(provider_groups.keys()),
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Failed to list component providers for {provider_type}: {str(e)}",
+        }
+
+
 def user_federation_present(
     realm,
     name,
@@ -1952,7 +2049,24 @@ def user_federation_present(
             )
 
         current_config = _to_component_config(existing.get("config"))
-        if existing.get("providerId") == provider_id and current_config == normalized_config:
+        # bindCredential is hashed/redacted on GET, so a full-config compare
+        # always looks dirty and forced a PUT every run. Keycloak 24+ then
+        # 400s that PUT with "Invalid provider type or no such provider".
+        secret_keys = {"bindcredential"}
+
+        def _managed_matches(current, desired):
+            for key, value in desired.items():
+                if key.lower() in secret_keys:
+                    continue
+                if current.get(key) != value:
+                    return False
+            return True
+
+        same_provider = (
+            existing.get("providerId") == provider_id
+            and existing.get("providerType") == provider_type
+        )
+        if same_provider and _managed_matches(current_config, normalized_config):
             return {
                 "success": True,
                 "updated": False,
@@ -1960,19 +2074,32 @@ def user_federation_present(
             }
 
         component_id = existing.get("id")
-        payload = {**existing, **desired}
-        status_code, body = _request(
-            "PUT", keycloak_addr, f"admin/realms/{realm}/components/{component_id}",
-            headers=headers, payload=payload, verify=verify,
+        # Do not PUT. Keycloak's component update re-resolves the provider
+        # factory and 400s; delete + POST is the reliable update path.
+        # Child LDAP mappers are recreated by later ldap_mapper_present states.
+        del_code, del_body = _request(
+            "DELETE", keycloak_addr,
+            f"admin/realms/{realm}/components/{component_id}",
+            headers=headers, verify=verify,
         )
-        if status_code == 204:
+        if del_code not in (204, 404):
+            return _http_error(
+                f"Replacing user federation provider {name} (delete)",
+                del_code, del_body,
+            )
+        status_code, body = _request(
+            "POST", keycloak_addr, f"admin/realms/{realm}/components",
+            headers=headers, payload=desired, verify=verify,
+        )
+        if status_code == 201:
             return {
                 "success": True,
                 "updated": True,
-                "message": f"User federation provider {name} updated in realm {realm}",
+                "message": f"User federation provider {name} replaced in realm {realm}",
             }
         return _http_error(
-            f"Updating user federation provider {name}", status_code, body
+            f"Replacing user federation provider {name} (create)",
+            status_code, body,
         )
 
     except Exception as e:

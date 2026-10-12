@@ -127,6 +127,7 @@ def helm_release_present(
     values_dict=None,
     pillar_key=None,
     version=None,
+    wait=True,
     wait_timeout=300,
     wait_interval=10,
     keep_values_file=False,
@@ -144,6 +145,7 @@ def helm_release_present(
         values_dict (dict, optional): Dictionary of values to pass to the Helm chart. Defaults to None.
         pillar_key (str, optional): Pillar key to fetch values dictionary from. Defaults to None.
         version (str, optional): Specific version of the chart to install. Defaults to None (latest).
+        wait (bool, optional): Whether to pass --wait to Helm and block until the release's resources are ready. Defaults to True.
         wait_timeout (int, optional): Maximum time in seconds to wait for Helm release to be ready. Defaults to 300.
         wait_interval (int, optional): Interval in seconds between checks for release readiness. Defaults to 10.
         keep_values_file (bool, optional): If True, retain the temporary values file for debugging. Defaults to False.
@@ -226,9 +228,10 @@ def helm_release_present(
                 "-n",
                 namespace,
                 "--create-namespace",
-                "--wait",
                 f"--timeout={wait_timeout}s",
             ]
+            if wait:
+                helm_cmd.append("--wait")
             if version:
                 helm_cmd.extend(["--version", version])
             if values_file:

@@ -1,4 +1,4 @@
-## Copyright 2019 Augusta University
+## Copyright 2018 Augusta University
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -18,22 +18,24 @@ include:
   - /formulas/common/install
   - /formulas/common/openstack/repo
 
-placement_packages:
+nova_packages:
   pkg.installed:
     - pkgs:
+      - nova-api
+      - nova-conductor
+      - nova-spiceproxy
+      - nova-serialproxy
+      - nova-scheduler
       - python3-openstackclient
-      - placement-api
-      - python3-pymysql
       - python3-etcd3gw
 
-placement_pip:
+nova_pip:
   pip.installed:
     - bin_env: '/usr/bin/pip3'
     - reload_modules: True
-    - names:
+    - pkgs:
       - python-openstackclient
       - etcd3gw
-      - pymysql
 
 salt-pip_installs:
   pip.installed:
@@ -41,7 +43,6 @@ salt-pip_installs:
     - reload_modules: true
     - pkgs:
       - python-openstackclient
-      - pymysql
       - etcd3gw
     - require:
-      - pip: placement_pip
+      - pip: nova_pip

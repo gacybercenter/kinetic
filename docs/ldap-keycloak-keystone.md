@@ -6,11 +6,14 @@ someone to a group is a single edit, not three.
 
 ## The short version
 
-- **LDAP is the single source of truth** for users and groups (`ldap:users`,
-  `ldap:groups` in pillar).
+- **LDAP is the single source of truth** for users, groups, and password
+  policy (`ldap:users`, `ldap:groups`, OpenLDAP `ppolicy`). Application bind
+  DNs live separately under `ou=services` (`ldap:services`) — they are not
+  people and are not group members.
 - **Keycloak** authenticates humans (SSO/OIDC) against that same LDAP
   directory via its LDAP user federation - it does not own its own copy of
-  user/group data.
+  user/group data, and it must not be the place password history, lockout,
+  or max-age are enforced.
 - **Keystone** (OpenStack's identity service) has a domain (`rsc` by default)
   configured with a domain-specific **LDAP identity driver**, pointed at the
   same LDAP tree. Keystone project/role assignments are made against the
@@ -98,6 +101,10 @@ ldap:
             description: "..."   # optional; defaults to "Project for <name>"
             domain: Default      # optional; defaults to Default
             roles: [member]      # optional; defaults to [member]
+
+  services:                    # bind DNs under ou=services (not people)
+    - cn: keycloak
+      pass: "..."              # required on create; GPG-encrypted
 ```
 
 ### The `openstack:` key
@@ -297,6 +304,208 @@ live in an LDAP-backed domain (they have no corresponding row in the SQL
 only runs for ephemeral users. It's also simpler: one less layer of
 group-claim mapping to keep in sync with the real LDAP groups.
 
+## Service accounts (`ou=services`)
+
+LDAP *drivers* (Keycloak user federation, Keystone's domain LDAP backend,
+and anything else that binds to search/modify the directory) do **not**
+use a person under `ou=users`. They bind as an account under:
+
+```
+ou=services,dc=rsc,dc=gacyberrange,dc=org
+```
+
+e.g. `cn=keycloak,ou=services,dc=rsc,dc=gacyberrange,dc=org`.
+
+These are not `inetOrgPerson`. Typical entry:
+
+```ldif
+dn: cn=keycloak,ou=services,dc=rsc,dc=gacyberrange,dc=org
+objectClass: top
+objectClass: organizationalRole
+objectClass: simpleSecurityObject
+cn: keycloak
+userPassword: {SSHA512}...
+```
+
+`organizationalRole` + `simpleSecurityObject` is enough to bind. They are
+**not** group members, are not federated into Keycloak as users, and are
+not Keystone users. Keycloak's `userObjectClasses`
+(`inetOrgPerson, organizationalPerson`) only filters `usersDn`; it does
+not have to match the bind DN.
+
+Pillar (`ldap:services`) is consumed by
+`formulas/common/ldapadmin/prov.sls` (`ldap.service_present`). `pass` is
+set on create and not rotated by that state.
+
+```yaml
+ldap:
+  services:
+    - cn: keycloak
+      description: "Keycloak LDAP user federation bind"
+      pass: "..."    # GPG-encrypted
+```
+
+### ACLs
+
+After `ou=services` exists, slapd ACLs on `olcDatabase={2}mdb,cn=config`
+grant those bind DNs the rights they need (inserted at the front of
+`olcAccess` so they win over slapd defaults):
+
+| Rule | Target | `ou=services` | others |
+|---|---|---|---|
+| `{0}` | `userPassword,shadowLastChange` | write | self write, anonymous auth |
+| `{1}` | ppolicy operational attrs | write | self read |
+| `{2}` | `ou=users` subtree | write | self read |
+| `{3}` | `ou=groups` subtree | read | none |
+
+Group mapper is `READ_ONLY`, so services only need **read** on
+`ou=groups`. OpenLDAP often reports a denied search base as LDAP 32
+(`No Such Object`) — that is the usual cause of Keycloak
+`NameNotFoundException` remaining name `ou=groups,...` at login.
+
+**Apply the ACLs only after every LDAP driver already binds as
+`ou=services` (or as the directory rootDN).** RootDN bypasses ACLs; a
+person DN under `ou=users` will be locked out of user/group search once
+`by * none` is in place.
+
+Keycloak federation config should look like:
+
+```yaml
+config:
+  usersDn: ou=users,dc=rsc,dc=gacyberrange,dc=org
+  bindDn: cn=keycloak,ou=services,dc=rsc,dc=gacyberrange,dc=org
+```
+
+Search base stays `ou=users`; only the bind DN moves.
+
+## OpenLDAP password policy (ppolicy)
+
+Keep LDAP as the single source of truth for passwords the same way it is
+for users and groups. **Enforce `ppolicy` in OpenLDAP, not in Keycloak.**
+
+Keycloak's LDAP user federation writes `userPassword` into the directory;
+slapd's `ppolicy` overlay then applies `pwdInHistory` / lockout / min-max
+age / min length on that modify. Every consumer that binds LDAP — Keycloak
+SSO, Keystone's domain LDAP driver, CLI, other `ou=services` accounts —
+hits the same hashed history and lockout state. A Keycloak-only
+`passwordHistory(N)` / brute-force policy would only apply to logins that
+go through that realm: it cannot see slapd's `pwdHistory`, would drift from
+the directory, and would not protect a direct LDAP bind.
+
+This was originally applied **by hand** against `cn=config` / the data
+tree (not yet driven from `formulas/common/ldapadmin/prov.sls`). The
+related commit is `04919a22` (*Keep passwordHistory(N) on Keycloak policy
+apply and add optional OpenLDAP ppolicy*) on
+`nist-800-171-3.5.8-password-history`.
+
+### What is in the directory
+
+1. `ou=policies,dc=rsc,dc=gacyberrange,dc=org` — container for policy
+   objects.
+2. `cn=default,ou=policies,dc=rsc,dc=gacyberrange,dc=org` — the default
+   `pwdPolicy` for human users. Current values:
+
+   | Attribute | Value | Meaning |
+   |---|---|---|
+   | `pwdAttribute` | `userPassword` | Policy applies to password changes |
+   | `pwdAllowUserChange` | `TRUE` | Users may change their own password |
+   | `pwdCheckQuality` | `2` | Reject password if quality checks fail |
+   | `pwdExpireWarning` | `604800` | Warn 7 days before expiry |
+   | `pwdGraceAuthNLimit` | `5` | 5 grace authentications after expiry |
+   | `pwdInHistory` | `24` | Reject reuse of the last 24 passwords |
+   | `pwdLockout` | `TRUE` | Lock the account after too many failures |
+   | `pwdLockoutDuration` | `600` | 10 minute lockout |
+   | `pwdMaxAge` | `7776000` | 90 day max password age |
+   | `pwdMaxFailure` | `5` | Lock after 5 failed binds |
+   | `pwdMinAge` | `86400` | 1 day min age between changes |
+   | `pwdMinLength` | `12` | Minimum password length |
+   | `pwdMustChange` | `FALSE` | Do not force a change at next bind |
+   | `pwdSafeModify` | `FALSE` | Old password not required on modify |
+
+3. Overlay `olcOverlay={1}ppolicy,olcDatabase={2}mdb,cn=config` with
+   `olcPPolicyDefault: cn=default,ou=policies,dc=rsc,dc=gacyberrange,dc=org`.
+   Entries that do **not** set `pwdPolicySubentry` inherit this default.
+   (The overlay index is `{1}` on this cluster, not `{0}` — look it up by
+   name, do not assume the index.)
+
+`pwdInHistory` / `pwdMinAge` apply on **password change**, not on the
+existing hash. Reusing a previous password is rejected by design.
+
+### Service accounts vs human users
+
+Bind DNs under `ou=services` (e.g. `cn=keycloak,ou=services,...`) should
+**not** inherit the human default (90-day expiry, history, lockout).
+Point each service DN at a separate policy via `pwdPolicySubentry` (for
+example `cn=service,ou=policies,...`) so `olcPPolicyDefault` does not
+rotate or lock the Keycloak/Keystone bind passwords. `pwdPolicySubentry`
+wins over the default for that entry.
+
+Service-account ACLs on `olcDatabase={2}mdb,cn=config` (see
+`ensure_services_acls` in `formulas/common/ldapadmin/prov.sls`) grant
+`ou=services` write on `userPassword` so Keycloak can change user
+passwords; ppolicy still evaluates history/lockout on that write.
+
+### Recreating it (manual LDIF)
+
+Bind as `cn=config` (same credentials as `LDAP_CONFIG_ADMIN_PASSWORD`).
+`$params` is whatever `ldapadd`/`ldapmodify` flags you already use
+(StartTLS, bind DN, host).
+
+```ldif
+dn: ou=policies,dc=rsc,dc=gacyberrange,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: policies
+```
+
+```ldif
+dn: cn=default,ou=policies,dc=rsc,dc=gacyberrange,dc=org
+objectClass: top
+objectClass: person
+objectClass: pwdPolicy
+cn: default
+sn: default
+pwdAttribute: userPassword
+pwdAllowUserChange: TRUE
+pwdCheckQuality: 2
+pwdExpireWarning: 604800
+pwdGraceAuthNLimit: 5
+pwdInHistory: 24
+pwdLockout: TRUE
+pwdLockoutDuration: 600
+pwdMaxAge: 7776000
+pwdMaxFailure: 5
+pwdMinAge: 86400
+pwdMinLength: 12
+pwdMustChange: FALSE
+pwdSafeModify: FALSE
+```
+
+```ldif
+dn: olcOverlay={1}ppolicy,olcDatabase={2}mdb,cn=config
+changetype: modify
+replace: olcPPolicyDefault
+olcPPolicyDefault: cn=default,ou=policies,dc=rsc,dc=gacyberrange,dc=org
+```
+
+Do not add a second `ppolicy` overlay if one already exists — slapd will
+reject it (`overlay "ppolicy" already in list`). Do not `MOD_REPLACE` the
+`olcOverlay` RDN on the existing entry.
+
+### Keycloak side
+
+Do **not** treat Keycloak realm `password_policy` / brute-force settings as
+the compliance control. Those may stay as a UX filter for *what the
+account console will accept before it even tries LDAP* (length, character
+classes). History, lockout, min/max age, and reuse live in slapd
+`ppolicy` so there is one policy for every bind path.
+
+Federation `editMode` must be Keycloak's `WRITABLE` (one E) so password
+changes actually reach LDAP — `WRITEABLE` is rejected as HTTP 400
+`Invalid provider type or no such provider` with no useful log line. If
+federation is `READ_ONLY`, Keycloak cannot write `userPassword` and
+directory `pwdInHistory` never runs.
+
 ## Troubleshooting
 
 - **"Group `['groupA', 'groupB']` has no entry in the backend" /
@@ -324,5 +533,14 @@ group-claim mapping to keep in sync with the real LDAP groups.
   ran the orchestration (`orch/k8s-auth-sync.sls`), not just a
   `state.apply` of one formula - see
   [Applying a change](#applying-a-change).
+- **Keycloak cannot change a password / "constraint violation" on
+  modify** — often `pwdInHistory: 24` rejecting a previous password, or
+  `pwdMinAge: 86400` blocking a second change inside 24 hours. That is
+  the directory policy working; it is not an ACL failure. See
+  [OpenLDAP password policy (ppolicy)](#openldap-password-policy-ppolicy).
+- **Login `NameNotFoundException` remaining name
+  `ou=groups,dc=rsc,dc=gacyberrange,dc=org`** — OpenLDAP often reports a
+  denied search base as LDAP 32. The Keycloak bind DN under `ou=services`
+  needs read on `ou=groups` (`ensure_services_acls`).
 
-Last updated: August 2026
+Last updated: October 2026
