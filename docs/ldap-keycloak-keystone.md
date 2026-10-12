@@ -6,13 +6,14 @@ someone to a group is a single edit, not three.
 
 ## The short version
 
-- **LDAP is the single source of truth** for users and groups (`ldap:users`,
-  `ldap:groups` in pillar). Application bind DNs live separately under
-  `ou=services` (`ldap:services`) — they are not people and are not group
-  members.
+- **LDAP is the single source of truth** for users, groups, and password
+  policy (`ldap:users`, `ldap:groups`, OpenLDAP `ppolicy`). Application bind
+  DNs live separately under `ou=services` (`ldap:services`) — they are not
+  people and are not group members.
 - **Keycloak** authenticates humans (SSO/OIDC) against that same LDAP
   directory via its LDAP user federation - it does not own its own copy of
-  user/group data.
+  user/group data, and it must not be the place password history, lockout,
+  or max-age are enforced.
 - **Keystone** (OpenStack's identity service) has a domain (`rsc` by default)
   configured with a domain-specific **LDAP identity driver**, pointed at the
   same LDAP tree. Keystone project/role assignments are made against the
@@ -379,13 +380,17 @@ Search base stays `ou=users`; only the bind DN moves.
 
 ## OpenLDAP password policy (ppolicy)
 
-Password *history* and related NIST-style constraints (lockout, min/max
-age, min length) are enforced in **OpenLDAP**, not in Keycloak. Keycloak's
-LDAP user federation writes `userPassword` into the directory; slapd's
-`ppolicy` overlay then applies `pwdInHistory` / lockout / age on that
-modify. A Keycloak-only `passwordHistory(N)` policy would not see the
-directory's hashed history, and would not apply to anything that binds
-LDAP directly (Keystone, CLI, other `ou=services` drivers).
+Keep LDAP as the single source of truth for passwords the same way it is
+for users and groups. **Enforce `ppolicy` in OpenLDAP, not in Keycloak.**
+
+Keycloak's LDAP user federation writes `userPassword` into the directory;
+slapd's `ppolicy` overlay then applies `pwdInHistory` / lockout / min-max
+age / min length on that modify. Every consumer that binds LDAP — Keycloak
+SSO, Keystone's domain LDAP driver, CLI, other `ou=services` accounts —
+hits the same hashed history and lockout state. A Keycloak-only
+`passwordHistory(N)` / brute-force policy would only apply to logins that
+go through that realm: it cannot see slapd's `pwdHistory`, would drift from
+the directory, and would not protect a direct LDAP bind.
 
 This was originally applied **by hand** against `cn=config` / the data
 tree (not yet driven from `formulas/common/ldapadmin/prov.sls`). The
@@ -489,11 +494,17 @@ reject it (`overlay "ppolicy" already in list`). Do not `MOD_REPLACE` the
 
 ### Keycloak side
 
-Keycloak realm `password_policy` (length/complexity) is still useful for
-*what the UI accepts*. Directory-side `pwdInHistory` is what actually
-blocks reuse after a successful LDAP modify. Federation `editMode` must
-be Keycloak's `WRITABLE` (one E) — `WRITEABLE` is rejected as HTTP 400
-`Invalid provider type or no such provider` with no useful log line.
+Do **not** treat Keycloak realm `password_policy` / brute-force settings as
+the compliance control. Those may stay as a UX filter for *what the
+account console will accept before it even tries LDAP* (length, character
+classes). History, lockout, min/max age, and reuse live in slapd
+`ppolicy` so there is one policy for every bind path.
+
+Federation `editMode` must be Keycloak's `WRITABLE` (one E) so password
+changes actually reach LDAP — `WRITEABLE` is rejected as HTTP 400
+`Invalid provider type or no such provider` with no useful log line. If
+federation is `READ_ONLY`, Keycloak cannot write `userPassword` and
+directory `pwdInHistory` never runs.
 
 ## Troubleshooting
 
