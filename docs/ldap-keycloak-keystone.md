@@ -323,7 +323,7 @@ objectClass: top
 objectClass: organizationalRole
 objectClass: simpleSecurityObject
 cn: keycloak
-userPassword: {SSHA}...
+userPassword: {SSHA512}...
 ```
 
 `organizationalRole` + `simpleSecurityObject` is enough to bind. They are
