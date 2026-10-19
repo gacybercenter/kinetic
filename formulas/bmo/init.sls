@@ -1,2 +1,2 @@
 include:
-  - /formulas/bmo/install
+  - /formulas/bmo/configure
