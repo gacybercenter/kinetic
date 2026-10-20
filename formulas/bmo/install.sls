@@ -165,4 +165,4 @@ ensure_image_server:
     - storage_path: {{ pillar['ironic_image_dir'] }}
     - storage_class: "local-storage"
     - service_type: LoadBalancer
-    - external_ip: 10.150.1.41
+    - external_ip: 10.160.1.41
