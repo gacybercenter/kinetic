@@ -171,15 +171,30 @@ create_ironic_image_dir:
     - dir_mode: 755
     - file_mode: 644
 
+ensure_image_storage:
+  k8s.local_storage_pv_pvc_present:
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - pv_name: ironic-images-pv
+    - pvc_name: ironic-images-pvc
+    - storage_size: 10Gi
+    - path: {{ pillar['ironic_image_dir'] }}
+    - storage_class: local-storage
+    - require:
+      - file: create_ironic_image_dir
+
+# Reuses ironic-images-pvc from ensure_image_storage (do not create a second claim).
 ensure_image_server:
   k8s.image_server_present:
     - name: ensure_image_server
     - namespace: {{ pillar['bmo_namespace'] }}
     - port: 6182
+    - pvc_name: ironic-images-pvc
     - storage_size: "10Gi"
     - storage_path: {{ pillar['ironic_image_dir'] }}
     - storage_class: "local-storage"
     - service_type: ClusterIP
+    - require:
+      - k8s: ensure_image_storage
 
 # HTTP + HTTPS listeners on this cluster's one Gateway. TLS is optional
 # until ironic-tls exists (created in configure.sls).
