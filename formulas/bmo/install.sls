@@ -54,7 +54,8 @@ ensure_k8s_storage:
   k8s.local_storage_pv_pvc_present:
     - namespace: {{ pillar['bmo_namespace'] }}
     - pv_name: {{ pillar['ironic_db_dir'] }}-pv
-    - pvc_name: {{ pillar['ironic_db_dir'] }}-pvc
+    {# mariadb-operator names the data PVC storage-<MariaDB.metadata.name>-0 #}
+    - pvc_name: storage-ironic-mariadb-0
     - storage_size: 5Gi
     - path: {{ pillar['ironic_db_dir'] }}
     - storage_class: local-storage
@@ -70,6 +71,7 @@ ensure_mariadb_instance:
     - image: mariadb:10.6
     - storage_size: 5Gi
     - storage_class: local-storage
+    - pvc_name: storage-ironic-mariadb-0
     - replicas: 1
     - limits_cpu: 500m
     - limits_memory: 512Mi

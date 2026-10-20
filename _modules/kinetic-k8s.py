@@ -1343,9 +1343,42 @@ def mariadb_instance_present(
                     "message": f"Error fetching MariaDB instance {instance_name}: {str(e)[:100]}...; {message}",
                 }
 
-        # Step 4: No PVC check since operator will create it
+        # Operator provisions its own PVC from volumeClaimTemplate. If the
+        # caller already created a hostPath PV (local-storage), selector on
+        # that template binds the operator PVC to it. Do not put accessModes
+        # on spec.storage itself — the CRD rejects that (HTTP 422).
         pvc_available = False
-        message += f"; Skipping PVC check, operator will create PVC with storage class {storage_class}"
+        if pvc_name:
+            try:
+                existing_pvc = core_v1_api.read_namespaced_persistent_volume_claim(
+                    name=pvc_name, namespace=namespace
+                )
+                pvc_available = True
+                message += f"; PVC {pvc_name} present in {namespace}"
+                phase = None
+                if getattr(existing_pvc, "status", None):
+                    phase = getattr(existing_pvc.status, "phase", None)
+                if phase == "Bound":
+                    message += " (Bound)"
+            except ApiException as e:
+                if e.status == 404:
+                    message += (
+                        f"; PVC {pvc_name} not found; operator will create one "
+                        f"with storage class {storage_class}"
+                    )
+                else:
+                    return {
+                        "success": False,
+                        "updated": False,
+                        "secret_updated": secret_updated,
+                        "pvc_available": False,
+                        "root_access_updated": False,
+                        "message": f"Error fetching PVC {pvc_name}: {str(e)[:200]}; {message}",
+                    }
+        else:
+            message += (
+                f"; Operator will create PVC with storage class {storage_class}"
+            )
 
         # Step 5: Create or update MariaDB instance if necessary
         if not mariadb_exists or not matches:
@@ -1353,14 +1386,24 @@ def mariadb_instance_present(
                 group = "k8s.mariadb.com"
                 version = "v1alpha1"
                 plural = "mariadbs"
+                storage_spec = {
+                    "size": storage_size,
+                    "storageClassName": storage_class,
+                    "volumeClaimTemplate": {
+                        "accessModes": ["ReadWriteOnce"],
+                        "storageClassName": storage_class,
+                        "resources": {
+                            "requests": {"storage": storage_size}
+                        },
+                    },
+                }
                 mariadb_body = {
                     "apiVersion": f"{group}/{version}",
-                    "kind": "MariaDb",
+                    "kind": "MariaDB",
                     "metadata": {"name": instance_name, "namespace": namespace},
                     "spec": {
                         "image": image,
-                        "username": "root",
-                        "passwordSecretKeyRef": {
+                        "rootPasswordSecretKeyRef": {
                             "name": secret_name,
                             "key": "password",
                         },
@@ -1372,11 +1415,7 @@ def mariadb_instance_present(
                                 "memory": requests_memory,
                             },
                         },
-                        "storage": {
-                            "size": storage_size,
-                            "storageClassName": storage_class,
-                            "accessModes": ["ReadWriteOnce"],
-                        },
+                        "storage": storage_spec,
                     },
                 }
                 if mariadb_exists:
@@ -1401,13 +1440,21 @@ def mariadb_instance_present(
                     updated = True
                     message += f"; MariaDB instance {instance_name} created"
             except ApiException as e:
+                body = ""
+                try:
+                    body = e.body if isinstance(e.body, str) else json.dumps(e.body)
+                except Exception:
+                    body = str(getattr(e, "body", ""))
                 return {
                     "success": False,
                     "updated": False,
                     "secret_updated": secret_updated,
                     "pvc_available": pvc_available,
                     "root_access_updated": False,
-                    "message": f"Failed to create/update MariaDB instance {instance_name}: {str(e)[:100]}...; {message}",
+                    "message": (
+                        f"Failed to create/update MariaDB instance {instance_name}: "
+                        f"HTTP {e.status} {e.reason}: {body[:500]}; {message}"
+                    ),
                 }
         else:
             message += f"; MariaDB instance {instance_name} already up-to-date"
