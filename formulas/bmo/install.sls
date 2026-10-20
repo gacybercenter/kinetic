@@ -76,7 +76,8 @@ ensure_mariadb_instance:
     - limits_memory: 512Mi
     - requests_cpu: 200m
     - requests_memory: 256Mi
-    - admin_host_access: 192.168.1.41
+    {# Ironic speaks plaintext MySQL unless database.tlsCertificateName is set. #}
+    - tls_enabled: false
     - require:
       - k8s: ensure_k8s_storage
 

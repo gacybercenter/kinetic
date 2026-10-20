@@ -1193,6 +1193,7 @@ def mariadb_instance_present(
     requests_cpu="200m",
     requests_memory="256Mi",
     admin_host_access="%",
+    tls_enabled=False,
 ):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
@@ -1209,6 +1210,7 @@ def mariadb_instance_present(
         storage_size (str, optional): Storage size for the PVC. Defaults to '1Gi'.
         storage_class (str, optional): Storage class for the PVC. Defaults to 'local-storage'.
         replicas (int, optional): Number of replicas for the MariaDB instance. Defaults to 1.
+        tls_enabled (bool, optional): mariadb-operator TLS. Defaults to False so Ironic can connect without database.tlsCertificateName.
         limits_cpu (str, optional): CPU limit for the MariaDB container. Defaults to '500m'.
         limits_memory (str, optional): Memory limit for the MariaDB container. Defaults to '512Mi'.
         requests_cpu (str, optional): CPU request for the MariaDB container. Defaults to '200m'.
@@ -1320,11 +1322,13 @@ def mariadb_instance_present(
             current_storage = current_spec.get("storage", {})
             current_storage_class = current_storage.get("storageClassName", "")
             current_storage_size = current_storage.get("size", "")
+            current_tls = bool((current_spec.get("tls") or {}).get("enabled", True))
             if (
                 current_image != desired_image
                 or current_replicas != desired_replicas
                 or current_storage_size != storage_size
                 or current_storage_class != storage_class
+                or current_tls != bool(tls_enabled)
             ):
                 matches = False
             else:
@@ -1416,6 +1420,7 @@ def mariadb_instance_present(
                             },
                         },
                         "storage": storage_spec,
+                        "tls": {"enabled": bool(tls_enabled)},
                     },
                 }
                 if mariadb_exists:
@@ -1460,40 +1465,13 @@ def mariadb_instance_present(
             message += f"; MariaDB instance {instance_name} already up-to-date"
             updated = False
 
-        # Step 6: Ensure root user has access from the specified host/IP pattern
-        try:
-            # Get the MariaDB pod name
-            pod_list = core_v1_api.list_namespaced_pod(
-                namespace=namespace,
-                label_selector=f"app.kubernetes.io/name={instance_name}",
+        # Do not kubectl-exec GRANT: password on the command line, and it
+        # fails when the operator has TLS enabled. Users/Grants are CRs.
+        if admin_host_access and admin_host_access not in ("%",):
+            message += (
+                f"; Skipping in-pod GRANT for {admin_host_access}; "
+                "use k8s.ironic_db_user_present / Grant CRs"
             )
-            if pod_list.items:
-                pod_name = pod_list.items[0].metadata.name
-                # Construct the kubectl exec command to grant root access
-                grant_cmd = f"mysql -u root -p{root_password} -e \"GRANT ALL PRIVILEGES ON *.* TO 'root'@'{admin_host_access}' IDENTIFIED BY '{root_password}' WITH GRANT OPTION; FLUSH PRIVILEGES;\""
-                kubectl_cmd = (
-                    f"kubectl exec -i {pod_name} -n {namespace} -- {grant_cmd}"
-                )
-                # Execute the command using Salt's cmd.run
-                grant_result = __salt__["cmd.run"](
-                    kubectl_cmd, shell=True, ignore_retcode=True
-                )
-                if "ERROR" not in grant_result:
-                    root_access_updated = True
-                    message += (
-                        f"; Root user access granted for host {admin_host_access}"
-                    )
-                else:
-                    root_access_updated = False
-                    message += f"; Failed to grant root access for host {admin_host_access}: {grant_result[:100]}..."
-            else:
-                root_access_updated = False
-                message += (
-                    f"; No MariaDB pod found for {instance_name} to grant root access"
-                )
-        except Exception as e:
-            root_access_updated = False
-            message += f"; Error granting root access for host {admin_host_access}: {str(e)[:100]}..."
 
         return {
             "success": True if (updated or matches) else False,

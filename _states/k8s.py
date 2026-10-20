@@ -606,6 +606,7 @@ def mariadb_instance_present(
     requests_cpu="200m",
     requests_memory="256Mi",
     admin_host_access="%",
+    tls_enabled=False,
 ):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
@@ -655,7 +656,11 @@ def mariadb_instance_present(
         Optional. Memory request for MariaDB. Defaults to '256Mi'.
 
     admin_host_access
-        Optional. Host or IP pattern to grant root access from. Defaults to '%'.
+        Optional. Unused (Grants are CRs). Kept for compatibility.
+
+    tls_enabled
+        Optional. mariadb-operator TLS. Defaults to False so Ironic can
+        connect without database.tlsCertificateName.
 
     Example:
     .. code-block:: yaml
@@ -696,6 +701,7 @@ def mariadb_instance_present(
             requests_cpu=requests_cpu,
             requests_memory=requests_memory,
             admin_host_access=admin_host_access,
+            tls_enabled=tls_enabled,
         )
 
         ret["result"] = result["success"]
