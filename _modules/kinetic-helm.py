@@ -8,6 +8,7 @@ in Kubernetes, using in-memory dictionaries for values or fetching them from pil
 
 import json
 import tempfile
+from collections.abc import Mapping
 
 import salt.utils.decorators as decorators
 
@@ -200,6 +201,15 @@ def helm_release_present(
         else:
             release_exists = False
 
+        def _plain(obj):
+            # Salt renders nested YAML maps as OrderedDict; PyYAML safe_dump
+            # cannot represent those ("cannot represent an object").
+            if isinstance(obj, Mapping):
+                return {str(k): _plain(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return [_plain(item) for item in obj]
+            return obj
+
         # Step 3: Always use 'helm upgrade --install' to install or upgrade the release
         if not release_exists or not release_matches:
             values_file = None
@@ -210,7 +220,7 @@ def helm_release_present(
                 with tempfile.NamedTemporaryFile(
                     mode="w", delete=False, suffix=".yaml"
                 ) as f:
-                    yaml.safe_dump(values_dict, f, default_flow_style=False)
+                    yaml.safe_dump(_plain(values_dict), f, default_flow_style=False)
                     f.flush()
                     values_file = f.name
                     values_file_path = values_file
