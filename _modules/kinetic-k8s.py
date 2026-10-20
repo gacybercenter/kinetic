@@ -1537,23 +1537,49 @@ def local_storage_pv_pvc_present(
         _load_k8s_config()
         core_v1_api = client.CoreV1Api()
 
-        node_affinity = None
+        # Use raw dicts rather than client.V1* models. Newer kubernetes-python
+        # releases (pydantic) reject V1ResourceRequirements on PVC specs and
+        # enum-validate volumeMode, which produced a truncated
+        # "1 validation error for V1PersistentVolumeClaimSpec".
+        def _pvc_phase(obj):
+            if obj is None:
+                return None
+            if isinstance(obj, dict):
+                return (obj.get("status") or {}).get("phase")
+            status = getattr(obj, "status", None)
+            if status is None:
+                return None
+            if isinstance(status, dict):
+                return status.get("phase")
+            return getattr(status, "phase", None)
+
+        labels = {
+            "app.kubernetes.io/managed-by": "kinetic",
+            "kinetic.storage": "local",
+        }
+        pv_spec = {
+            "capacity": {"storage": storage_size},
+            "accessModes": ["ReadWriteOnce"],
+            "persistentVolumeReclaimPolicy": "Retain",
+            "storageClassName": storage_class,
+            "hostPath": {"path": path, "type": "DirectoryOrCreate"},
+        }
         if node_name:
-            node_affinity = client.V1VolumeNodeAffinity(
-                required=client.V1NodeSelector(
-                    node_selector_terms=[
-                        client.V1NodeSelectorTerm(
-                            match_expressions=[
-                                client.V1NodeSelectorRequirement(
-                                    key="kubernetes.io/hostname",
-                                    operator="In",
-                                    values=[node_name],
-                                )
+            pv_spec["nodeAffinity"] = {
+                "required": {
+                    "nodeSelectorTerms": [
+                        {
+                            "matchExpressions": [
+                                {
+                                    "key": "kubernetes.io/hostname",
+                                    "operator": "In",
+                                    "values": [node_name],
+                                }
                             ]
-                        )
+                        }
                     ]
-                )
-            )
+                }
+            }
 
         try:
             core_v1_api.read_persistent_volume(name=pv_name)
@@ -1568,33 +1594,17 @@ def local_storage_pv_pvc_present(
                     "pv_updated": False,
                     "pvc_updated": False,
                     "bound": False,
-                    "message": f"Error fetching PV {pv_name}: {str(e)[:100]}...; {message}",
+                    "message": f"Error fetching PV {pv_name}: {str(e)[:200]}; {message}",
                 }
 
         if not pv_exists:
             try:
-                pv_body = client.V1PersistentVolume(
-                    api_version="v1",
-                    kind="PersistentVolume",
-                    metadata=client.V1ObjectMeta(
-                        name=pv_name,
-                        labels={
-                            "app.kubernetes.io/managed-by": "kinetic",
-                            "kinetic.storage": "local",
-                        },
-                    ),
-                    spec=client.V1PersistentVolumeSpec(
-                        capacity={"storage": storage_size},
-                        access_modes=["ReadWriteOnce"],
-                        persistent_volume_reclaim_policy="Retain",
-                        storage_class_name=storage_class,
-                        volume_mode="Filesystem",
-                        host_path=client.V1HostPathVolumeSource(
-                            path=path, type="DirectoryOrCreate"
-                        ),
-                        node_affinity=node_affinity,
-                    ),
-                )
+                pv_body = {
+                    "apiVersion": "v1",
+                    "kind": "PersistentVolume",
+                    "metadata": {"name": pv_name, "labels": labels},
+                    "spec": pv_spec,
+                }
                 core_v1_api.create_persistent_volume(body=pv_body)
                 pv_updated = True
                 pv_exists = True
@@ -1605,7 +1615,7 @@ def local_storage_pv_pvc_present(
                     "pv_updated": False,
                     "pvc_updated": False,
                     "bound": False,
-                    "message": f"Failed to create PV {pv_name}: {str(e)[:100]}...; {message}",
+                    "message": f"Failed to create PV {pv_name}: {str(e)[:200]}; {message}",
                 }
 
         try:
@@ -1614,7 +1624,7 @@ def local_storage_pv_pvc_present(
             )
             pvc_exists = True
             message += f"; PVC {pvc_name} already exists in {namespace}"
-            if existing_pvc.status and existing_pvc.status.phase == "Bound":
+            if _pvc_phase(existing_pvc) == "Bound":
                 bound = True
         except ApiException as e:
             if e.status == 404:
@@ -1626,39 +1636,33 @@ def local_storage_pv_pvc_present(
                     "pv_updated": pv_updated,
                     "pvc_updated": False,
                     "bound": False,
-                    "message": f"Error fetching PVC {pvc_name}: {str(e)[:100]}...; {message}",
+                    "message": f"Error fetching PVC {pvc_name}: {str(e)[:200]}; {message}",
                 }
 
         if not pvc_exists:
             try:
-                pvc_body = client.V1PersistentVolumeClaim(
-                    api_version="v1",
-                    kind="PersistentVolumeClaim",
-                    metadata=client.V1ObjectMeta(
-                        name=pvc_name,
-                        namespace=namespace,
-                        labels={
-                            "app.kubernetes.io/managed-by": "kinetic",
-                            "kinetic.storage": "local",
-                        },
-                    ),
-                    spec=client.V1PersistentVolumeClaimSpec(
-                        access_modes=["ReadWriteOnce"],
-                        resources=client.V1ResourceRequirements(
-                            requests={"storage": storage_size}
-                        ),
-                        storage_class_name=storage_class,
-                        volume_name=pv_name,
-                        volume_mode="Filesystem",
-                    ),
-                )
+                pvc_body = {
+                    "apiVersion": "v1",
+                    "kind": "PersistentVolumeClaim",
+                    "metadata": {
+                        "name": pvc_name,
+                        "namespace": namespace,
+                        "labels": labels,
+                    },
+                    "spec": {
+                        "accessModes": ["ReadWriteOnce"],
+                        "resources": {"requests": {"storage": storage_size}},
+                        "storageClassName": storage_class,
+                        "volumeName": pv_name,
+                    },
+                }
                 created_pvc = core_v1_api.create_namespaced_persistent_volume_claim(
                     namespace=namespace, body=pvc_body
                 )
                 pvc_updated = True
                 pvc_exists = True
                 message += f"; PVC {pvc_name} created in {namespace} bound to PV {pv_name}"
-                if created_pvc.status and created_pvc.status.phase == "Bound":
+                if _pvc_phase(created_pvc) == "Bound":
                     bound = True
             except ApiException as e:
                 return {
@@ -1666,7 +1670,7 @@ def local_storage_pv_pvc_present(
                     "pv_updated": pv_updated,
                     "pvc_updated": False,
                     "bound": False,
-                    "message": f"Failed to create PVC {pvc_name}: {str(e)[:100]}...; {message}",
+                    "message": f"Failed to create PVC {pvc_name}: {str(e)[:400]}; {message}",
                 }
 
         if pvc_exists and not bound:
@@ -1674,7 +1678,7 @@ def local_storage_pv_pvc_present(
                 current_pvc = core_v1_api.read_namespaced_persistent_volume_claim(
                     name=pvc_name, namespace=namespace
                 )
-                if current_pvc.status and current_pvc.status.phase == "Bound":
+                if _pvc_phase(current_pvc) == "Bound":
                     bound = True
             except ApiException:
                 pass
@@ -1698,7 +1702,7 @@ def local_storage_pv_pvc_present(
             "pv_updated": False,
             "pvc_updated": False,
             "bound": False,
-            "message": f"Local storage PV/PVC operation error: {str(e)[:100]}...",
+            "message": f"Local storage PV/PVC operation error: {str(e)[:400]}",
         }
 
 
