@@ -9,6 +9,7 @@ for retrieving MAC addresses from HardwareData resources in a Metal3.io environm
 import base64
 import inspect
 import json
+import time
 
 import salt.utils.decorators as decorators
 from kubernetes import client, config
@@ -1785,28 +1786,27 @@ def ironic_db_user_setup(
         core_v1_api = client.CoreV1Api()
         custom_api = client.CustomObjectsApi()
 
-        # Step 1: Check if Secret for user credentials exists
+        # Step 1: Check if Secret for user credentials exists.
+        # Ironic reads /auth/mariadb/username from this secret (the Ironic CRD
+        # has no spec.database.user). mariadb-operator only ALTERs the password
+        # when the secret carries label k8s.mariadb.com/watch.
         try:
             secret = core_v1_api.read_namespaced_secret(
                 name=secret_name, namespace=namespace
             )
             secret_exists = True
-            current_username = (
-                secret.string_data.get("username", "") if secret.string_data else ""
-            )
-            current_password = (
-                secret.string_data.get("password", "") if secret.string_data else ""
-            )
-            if not current_username and secret.data:
-                import base64
-
-                current_username = base64.b64decode(
-                    secret.data.get("username", "")
-                ).decode("utf-8")
-                current_password = base64.b64decode(
-                    secret.data.get("password", "")
-                ).decode("utf-8")
-            if current_username != user_name or current_password != user_password:
+            decoded = _decode_k8s_secret(secret)
+            current_username = decoded.get("username", "")
+            current_password = decoded.get("password", "")
+            secret_labels = {}
+            if secret.metadata and secret.metadata.labels:
+                secret_labels = dict(secret.metadata.labels)
+            watch_label_present = "k8s.mariadb.com/watch" in secret_labels
+            if (
+                current_username != user_name
+                or current_password != user_password
+                or not watch_label_present
+            ):
                 secret_updated = True
             else:
                 secret_matches = True
@@ -1838,6 +1838,10 @@ def ironic_db_user_setup(
                     type="Opaque",
                 )
                 if secret_exists:
+                    if secret.metadata and secret.metadata.resource_version:
+                        secret_body.metadata.resource_version = (
+                            secret.metadata.resource_version
+                        )
                     core_v1_api.replace_namespaced_secret(
                         name=secret_name, namespace=namespace, body=secret_body
                     )
@@ -1876,12 +1880,23 @@ def ironic_db_user_setup(
             user_exists = True
             current_user_spec = user.get("spec", {})
             current_mariadb_ref = current_user_spec.get("mariaDbRef", {})
+            current_password_ref = current_user_spec.get(
+                "passwordSecretKeyRef", {}
+            )
+            # Operator defaults omitted spec.host to '%' and omitted spec.name
+            # to metadata.name. Treat those as matching so we do not replace
+            # an immutable User CR just because host was left unset.
+            current_host = current_user_spec.get("host") or "%"
+            current_sql_name = current_user_spec.get("name") or user_name
             if (
                 current_mariadb_ref.get("name", "") != mariadb_name
                 or current_mariadb_ref.get("namespace", "") != mariadb_namespace
-                or current_user_spec.get("host", "") != host
+                or current_host != host
                 or current_user_spec.get("maxUserConnections", 0)
                 != max_user_connections
+                or current_sql_name != user_name
+                or current_password_ref.get("name", "") != secret_name
+                or current_password_ref.get("key", "") != "password"
             ):
                 user_matches = False
             else:
@@ -2067,11 +2082,14 @@ def ironic_db_user_setup(
         else:
             message += f"; Database {database_name} spec matches, no update needed"
 
-        # Step 7: Check if Grant custom resource exists
+        # Step 7: Check if Grant custom resource exists.
+        # Grant database/table/username/host are immutable. DROP USER (User
+        # recreate) or a MariaDB datadir reset leaves the Grant Ready without
+        # SQL privileges; mariadb-operator only re-GRANTs on a ~10h requeue.
+        # Recreate the Grant whenever the User/secret changed so GRANT runs now.
         grant_name = f"{user_name}-grant"
         try:
             plural = "grants"
-            # Use mariadb_namespace for Grant to ensure it's in the same namespace as MariaDB instance
             grant = custom_api.get_namespaced_custom_object(
                 group=group,
                 version=version,
@@ -2083,18 +2101,18 @@ def ironic_db_user_setup(
             current_grant_spec = grant.get("spec", {})
             current_mariadb_ref = current_grant_spec.get("mariaDbRef", {})
             current_privileges = current_grant_spec.get("privileges", [])
+            current_grant_host = current_grant_spec.get("host") or "%"
+            current_grant_table = current_grant_spec.get("table") or "*"
             if (
                 current_mariadb_ref.get("name", "") != mariadb_name
                 or current_mariadb_ref.get("namespace", "") != mariadb_namespace
                 or current_grant_spec.get("database", "") != database_name
-                or current_grant_spec.get("host", "") != host
+                or current_grant_host != host
                 or current_grant_spec.get("username", "") != user_name
-                or (
-                    current_grant_spec.get("table", "*") != table
-                    if "table" in current_grant_spec
-                    else True
-                )
+                or current_grant_table != table
                 or sorted(current_privileges) != sorted(privileges)
+                or secret_updated
+                or user_updated
             ):
                 grant_matches = False
             else:
@@ -2113,11 +2131,11 @@ def ironic_db_user_setup(
                     "message": f"Error fetching Grant {grant_name}: {str(e)[:100]}...; {message}",
                 }
 
-        # Step 8: Create or update Grant if necessary with a minimal spec first
+        # Step 8: Create Grant. Replace is not enough after DROP USER: the
+        # operator skips GRANT while Ready=True. Delete then recreate.
         if not grant_exists or not grant_matches:
             try:
                 plural = "grants"
-                # Use mariadb_namespace for Grant to ensure it's in the same namespace as MariaDB instance
                 grant_body = {
                     "apiVersion": f"{group}/{version}",
                     "kind": "Grant",
@@ -2136,35 +2154,52 @@ def ironic_db_user_setup(
                         "username": user_name,
                     },
                 }
-                if (
-                    grant_exists
-                    and "metadata" in grant
-                    and "resourceVersion" in grant["metadata"]
-                ):
-                    grant_body["metadata"]["resourceVersion"] = grant["metadata"][
-                        "resourceVersion"
-                    ]
                 if grant_exists:
-                    custom_api.replace_namespaced_custom_object(
+                    custom_api.delete_namespaced_custom_object(
                         group=group,
                         version=version,
                         namespace=mariadb_namespace,
                         plural=plural,
                         name=grant_name,
-                        body=grant_body,
                     )
-                    grant_updated = True
-                    message += f"; Grant {grant_name} updated"
-                else:
-                    custom_api.create_namespaced_custom_object(
-                        group=group,
-                        version=version,
-                        namespace=mariadb_namespace,
-                        plural=plural,
-                        body=grant_body,
-                    )
-                    grant_updated = True
-                    message += f"; Grant {grant_name} created"
+                    deadline = time.time() + 60
+                    while time.time() < deadline:
+                        try:
+                            custom_api.get_namespaced_custom_object(
+                                group=group,
+                                version=version,
+                                namespace=mariadb_namespace,
+                                plural=plural,
+                                name=grant_name,
+                            )
+                            time.sleep(1)
+                        except ApiException as wait_err:
+                            if wait_err.status == 404:
+                                grant_exists = False
+                                break
+                            raise
+                    else:
+                        return {
+                            "success": False,
+                            "secret_updated": secret_updated,
+                            "user_updated": user_updated,
+                            "database_updated": database_updated,
+                            "grant_updated": False,
+                            "message": (
+                                f"Timed out waiting for Grant {grant_name} "
+                                f"deletion; {message}"
+                            ),
+                        }
+                    message += f"; Grant {grant_name} deleted to re-apply SQL GRANT"
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=mariadb_namespace,
+                    plural=plural,
+                    body=grant_body,
+                )
+                grant_updated = True
+                message += f"; Grant {grant_name} created"
             except ApiException as e:
                 error_details = f"Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}"
                 if hasattr(e, "body") and e.body:
@@ -2876,9 +2911,7 @@ def ironic_instance_present(
             "spec": {
                 "database": {
                     "host": database_host,
-                    "port": int(database_port),
                     "name": database_name,
-                    "user": database_user,
                     "credentialsName": database_secret_name,
                 },
                 "apiCredentialsName": api_secret_name,
