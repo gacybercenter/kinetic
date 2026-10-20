@@ -241,7 +241,7 @@ ironic_httproute:
                 value: "/"
           backendRefs:
             - name: ironic
-              port: 6385
+              port: 443
     - require:
       - k8s: bmo_gateway
 
