@@ -1,7 +1,7 @@
 #!/bin/bash
 export IRONIC_INSECURE={{ pillar['ironicInsecure'] }}
 export IRONIC_ENDPOINT=https://{{ pillar['ironic_api_host'] }}/v1/
-export CACHEURL=http://{{ pillar['images.ss3.gacyberrange.org'] }}/images
+export CACHEURL=http://{{ pillar['ironic_api_host'] }}/images
 export RESTART_CONTAINER_CERTIFICATE_UPDATED={{ pillar['restart_container_certificate_updated'] }}
 export IRONIC_USERNAME=ironic
 export IRONIC_PASSWORD={{ pillar['ironic_api_password'] }}
