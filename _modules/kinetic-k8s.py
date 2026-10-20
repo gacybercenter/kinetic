@@ -3082,19 +3082,21 @@ def image_server_present(
                     "message": f"Error fetching PVC {pvc_name}: {str(e)[:100]}...; {message}",
                 }
 
-        # Step 2: Create or update PVC if necessary
+        # Step 2: Create or update PVC if necessary.
+        # Use a dict body: newer kubernetes-python (pydantic) rejects
+        # V1ResourceRequirements on V1PersistentVolumeClaimSpec.
         if not pvc_exists or not pvc_matches:
             try:
-                pvc_body = client.V1PersistentVolumeClaim(
-                    metadata=client.V1ObjectMeta(name=pvc_name, namespace=namespace),
-                    spec=client.V1PersistentVolumeClaimSpec(
-                        access_modes=["ReadWriteOnce"],
-                        resources=client.V1ResourceRequirements(
-                            requests={"storage": storage_size}
-                        ),
-                        storage_class_name=storage_class,
-                    ),
-                )
+                pvc_body = {
+                    "apiVersion": "v1",
+                    "kind": "PersistentVolumeClaim",
+                    "metadata": {"name": pvc_name, "namespace": namespace},
+                    "spec": {
+                        "accessModes": ["ReadWriteOnce"],
+                        "resources": {"requests": {"storage": storage_size}},
+                        "storageClassName": storage_class,
+                    },
+                }
                 if pvc_exists:
                     core_v1_api.replace_namespaced_persistent_volume_claim(
                         name=pvc_name, namespace=namespace, body=pvc_body
@@ -5711,26 +5713,25 @@ def pvc_present(
         _load_k8s_config()
         v1_api = client.CoreV1Api()
 
-        # Default access modes if not provided
         if access_modes is None:
             access_modes = ["ReadWriteOnce"]
 
-        # Define the PVC spec
-        pvc_spec = client.V1PersistentVolumeClaimSpec(
-            storage_class_name=storage_class,
-            resources=client.V1ResourceRequirements(requests={"storage": storage_size}),
-            access_modes=access_modes,
-        )
+        # Dict body: newer kubernetes-python (pydantic) rejects
+        # V1ResourceRequirements on V1PersistentVolumeClaimSpec.
+        pvc_spec = {
+            "storageClassName": storage_class,
+            "resources": {"requests": {"storage": storage_size}},
+            "accessModes": access_modes,
+        }
         if selector:
-            pvc_spec.selector = client.V1LabelSelector(**selector)
+            pvc_spec["selector"] = selector
 
-        # Define the full PVC object
-        pvc_body = client.V1PersistentVolumeClaim(
-            api_version="v1",
-            kind="PersistentVolumeClaim",
-            metadata=client.V1ObjectMeta(name=name, namespace=namespace),
-            spec=pvc_spec,
-        )
+        pvc_body = {
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeClaim",
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": pvc_spec,
+        }
 
         # Check if PVC already exists
         try:
