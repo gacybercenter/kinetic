@@ -737,33 +737,35 @@ def local_storage_pv_pvc_present(
     storage_class="local-storage",
 ):
     """
-    Ensure that a Persistent Volume (PV) and Persistent Volume Claim (PVC) are present in Kubernetes using a specified storage class for local storage.
-    The PV is tied to a local path for local storage. Checks if the local path exists on the node before proceeding.
-    Also checks if both resources exist and are bound.
+    Ensure a hostPath PersistentVolume and matching PersistentVolumeClaim exist.
+
+    Names from filesystem paths are sanitized to DNS-1123. The PVC is bound
+    1:1 to this PV via spec.volumeName. The host path is created on the minion
+    if missing. PV spec is immutable; an existing PV is left as-is.
 
     name
         The name of the state (arbitrary, for SaltStack identification).
 
     namespace
-        The Kubernetes namespace of the PVC (PV is cluster-wide but associated via PVC).
+        Kubernetes namespace for the PVC (the PV is cluster-scoped).
 
     pv_name
-        The name of the Persistent Volume.
+        PersistentVolume name (sanitized if it contains path characters).
 
     pvc_name
-        The name of the Persistent Volume Claim.
+        PersistentVolumeClaim name (sanitized if it contains path characters).
 
     storage_size
         Optional. Storage size for the PV and PVC. Defaults to '1Gi'.
 
     node_name
-        Optional. The name of the node to bind the local storage PV to. Not used in this simplified version to avoid validation issues.
+        Optional. If set, pin the PV to this node via hostname nodeAffinity.
 
     path
-        Optional. The host path on the node for local storage. Defaults to '/mnt/local-storage'.
+        Optional. Host path for the volume. Defaults to '/mnt/local-storage'.
 
     storage_class
-        Optional. The storage class to use for the PV and PVC. Defaults to 'local-storage'.
+        Optional. Storage class name. Defaults to 'local-storage'.
 
     Example:
     .. code-block:: yaml

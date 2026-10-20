@@ -1477,72 +1477,88 @@ def local_storage_pv_pvc_present(
     storage_class="local-storage",
 ):
     """
-    Ensure that a Persistent Volume (PV) is present in Kubernetes using a specified storage class for local storage.
-    The PV is tied to a local path. Checks if the local path exists on the node before proceeding.
-    Does not manage PVC creation since the operator will handle it. Sanitizes PV name to meet Kubernetes naming conventions.
+    Ensure a hostPath PersistentVolume and matching PersistentVolumeClaim exist.
+
+    Names derived from filesystem paths are sanitized to DNS-1123. The PVC is
+    bound 1:1 to this PV via spec.volumeName so another claim cannot steal it.
+    PV spec is immutable; an existing PV is left as-is.
 
     Args:
-        namespace (str): The namespace of the PVC (unused since PVC is not created, kept for compatibility).
-        pv_name (str): The name of the Persistent Volume (will be sanitized).
-        pvc_name (str): Ignored since PVC is not created. Kept for compatibility.
-        storage_size (str, optional): Storage size for the PV. Defaults to '1Gi'.
-        node_name (str, optional): The name of the node to bind the local storage PV to. Not used in this simplified version to avoid validation issues.
-        path (str, optional): The host path on the node for local storage. Defaults to '/mnt/local-storage'.
-        storage_class (str, optional): The storage class to use for the PV. Defaults to 'local-storage'.
+        namespace (str): Namespace for the PVC (PV is cluster-scoped).
+        pv_name (str): Desired PersistentVolume name (sanitized).
+        pvc_name (str): Desired PersistentVolumeClaim name (sanitized).
+        storage_size (str, optional): Capacity for PV and PVC. Defaults to '1Gi'.
+        node_name (str, optional): If set, pin the PV with hostname nodeAffinity.
+        path (str, optional): Host path for the volume. Defaults to '/mnt/local-storage'.
+        storage_class (str, optional): Storage class name. Defaults to 'local-storage'.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'pv_updated' (bool), 'pvc_updated' (bool), 'bound' (bool), and 'message' (str).
+        dict: success, pv_updated, pvc_updated, bound, message
     """
     try:
+        import re
+
         pv_updated = False
         pvc_updated = False
         bound = False
 
-        # Sanitize pv_name to meet Kubernetes naming conventions
         def sanitize_name(name):
-            import re
-
-            # Convert to lowercase
-            sanitized = name.lower()
-            # Replace invalid characters with hyphens
+            sanitized = str(name).lower()
             sanitized = re.sub(r"[^a-z0-9.-]", "-", sanitized)
-            # Remove leading/trailing hyphens or periods
             sanitized = sanitized.strip("-").strip(".")
-            # Truncate to 253 characters (Kubernetes max for most resource names)
+            sanitized = re.sub(r"[-.]{2,}", "-", sanitized)
             sanitized = sanitized[:253]
-            # If empty after sanitization, provide a fallback
-            if not sanitized:
-                sanitized = "sanitized-name"
-            return sanitized
+            return sanitized or "local-storage"
 
         original_pv_name = pv_name
+        original_pvc_name = pvc_name
         pv_name = sanitize_name(pv_name)
-        message = f"Sanitized PV name: {original_pv_name} -> {pv_name}; PVC management skipped, operator will handle PVC creation"
+        pvc_name = sanitize_name(pvc_name)
+        message = (
+            f"Sanitized PV name: {original_pv_name} -> {pv_name}; "
+            f"PVC name: {original_pvc_name} -> {pvc_name}"
+        )
 
-        # Step 1: Ensure the local path exists on the node
         if not __salt__["file.directory_exists"](path):
             try:
                 __salt__["file.mkdir"](path)
-                message += f"; Created directory {path} on node"
+                message += f"; Created directory {path}"
             except Exception as e:
                 return {
                     "success": False,
                     "pv_updated": False,
                     "pvc_updated": False,
                     "bound": False,
-                    "message": f"Failed to create directory {path} on node: {str(e)[:100]}...; {message}",
+                    "message": f"Failed to create directory {path}: {str(e)[:100]}...; {message}",
                 }
         else:
-            message += f"; Directory {path} already exists on node"
+            message += f"; Directory {path} already exists"
 
         _load_k8s_config()
-
         core_v1_api = client.CoreV1Api()
 
-        # Step 2: Check if PV exists
+        node_affinity = None
+        if node_name:
+            node_affinity = client.V1VolumeNodeAffinity(
+                required=client.V1NodeSelector(
+                    node_selector_terms=[
+                        client.V1NodeSelectorTerm(
+                            match_expressions=[
+                                client.V1NodeSelectorRequirement(
+                                    key="kubernetes.io/hostname",
+                                    operator="In",
+                                    values=[node_name],
+                                )
+                            ]
+                        )
+                    ]
+                )
+            )
+
         try:
-            existing_pv = core_v1_api.read_persistent_volume(name=pv_name)
+            core_v1_api.read_persistent_volume(name=pv_name)
             pv_exists = True
+            message += f"; PV {pv_name} already exists"
         except ApiException as e:
             if e.status == 404:
                 pv_exists = False
@@ -1555,20 +1571,33 @@ def local_storage_pv_pvc_present(
                     "message": f"Error fetching PV {pv_name}: {str(e)[:100]}...; {message}",
                 }
 
-        # Step 3: Create or update PV if it doesn't exist or needs updating
         if not pv_exists:
             try:
                 pv_body = client.V1PersistentVolume(
-                    metadata=client.V1ObjectMeta(name=pv_name),
+                    api_version="v1",
+                    kind="PersistentVolume",
+                    metadata=client.V1ObjectMeta(
+                        name=pv_name,
+                        labels={
+                            "app.kubernetes.io/managed-by": "kinetic",
+                            "kinetic.storage": "local",
+                        },
+                    ),
                     spec=client.V1PersistentVolumeSpec(
                         capacity={"storage": storage_size},
                         access_modes=["ReadWriteOnce"],
+                        persistent_volume_reclaim_policy="Retain",
                         storage_class_name=storage_class,
-                        host_path=client.V1HostPathVolumeSource(path=path),
+                        volume_mode="Filesystem",
+                        host_path=client.V1HostPathVolumeSource(
+                            path=path, type="DirectoryOrCreate"
+                        ),
+                        node_affinity=node_affinity,
                     ),
                 )
                 core_v1_api.create_persistent_volume(body=pv_body)
                 pv_updated = True
+                pv_exists = True
                 message += f"; PV {pv_name} created with size {storage_size} at {path}"
             except ApiException as e:
                 return {
@@ -1576,20 +1605,90 @@ def local_storage_pv_pvc_present(
                     "pv_updated": False,
                     "pvc_updated": False,
                     "bound": False,
-                    "message": f"Failed to create/update PV {pv_name}: {str(e)[:100]}...; {message}",
+                    "message": f"Failed to create PV {pv_name}: {str(e)[:100]}...; {message}",
                 }
-        else:
-            message += f"; PV {pv_name} already exists"
-            pv_updated = False
 
-        # Step 4: Skip PVC creation and binding check since operator handles PVC
-        message += f"; PVC creation and binding skipped, relying on operator to create PVC with storage class {storage_class}"
+        try:
+            existing_pvc = core_v1_api.read_namespaced_persistent_volume_claim(
+                name=pvc_name, namespace=namespace
+            )
+            pvc_exists = True
+            message += f"; PVC {pvc_name} already exists in {namespace}"
+            if existing_pvc.status and existing_pvc.status.phase == "Bound":
+                bound = True
+        except ApiException as e:
+            if e.status == 404:
+                pvc_exists = False
+                existing_pvc = None
+            else:
+                return {
+                    "success": False,
+                    "pv_updated": pv_updated,
+                    "pvc_updated": False,
+                    "bound": False,
+                    "message": f"Error fetching PVC {pvc_name}: {str(e)[:100]}...; {message}",
+                }
+
+        if not pvc_exists:
+            try:
+                pvc_body = client.V1PersistentVolumeClaim(
+                    api_version="v1",
+                    kind="PersistentVolumeClaim",
+                    metadata=client.V1ObjectMeta(
+                        name=pvc_name,
+                        namespace=namespace,
+                        labels={
+                            "app.kubernetes.io/managed-by": "kinetic",
+                            "kinetic.storage": "local",
+                        },
+                    ),
+                    spec=client.V1PersistentVolumeClaimSpec(
+                        access_modes=["ReadWriteOnce"],
+                        resources=client.V1ResourceRequirements(
+                            requests={"storage": storage_size}
+                        ),
+                        storage_class_name=storage_class,
+                        volume_name=pv_name,
+                        volume_mode="Filesystem",
+                    ),
+                )
+                created_pvc = core_v1_api.create_namespaced_persistent_volume_claim(
+                    namespace=namespace, body=pvc_body
+                )
+                pvc_updated = True
+                pvc_exists = True
+                message += f"; PVC {pvc_name} created in {namespace} bound to PV {pv_name}"
+                if created_pvc.status and created_pvc.status.phase == "Bound":
+                    bound = True
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "pv_updated": pv_updated,
+                    "pvc_updated": False,
+                    "bound": False,
+                    "message": f"Failed to create PVC {pvc_name}: {str(e)[:100]}...; {message}",
+                }
+
+        if pvc_exists and not bound:
+            try:
+                current_pvc = core_v1_api.read_namespaced_persistent_volume_claim(
+                    name=pvc_name, namespace=namespace
+                )
+                if current_pvc.status and current_pvc.status.phase == "Bound":
+                    bound = True
+            except ApiException:
+                pass
+
+        if bound:
+            message += "; PVC is Bound"
+        else:
+            message += "; PVC is not Bound yet (hostPath usually binds immediately)"
 
         return {
-            "success": True if pv_updated or pv_exists else False,
+            "success": bool(pv_exists and pvc_exists),
             "pv_updated": pv_updated,
-            "pvc_updated": False,
-            "bound": False,
+            "pvc_updated": pvc_updated,
+            "bound": bound,
             "message": message,
         }
 
@@ -1599,7 +1698,7 @@ def local_storage_pv_pvc_present(
             "pv_updated": False,
             "pvc_updated": False,
             "bound": False,
-            "message": f"Local storage PV operation error: {str(e)[:100]}...",
+            "message": f"Local storage PV/PVC operation error: {str(e)[:100]}...",
         }
 
 
