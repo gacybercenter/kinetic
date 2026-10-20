@@ -171,17 +171,6 @@ create_ironic_image_dir:
     - dir_mode: 755
     - file_mode: 644
 
-ensure_image_storage:
-  k8s.local_storage_pv_pvc_present:
-    - namespace: {{ pillar['bmo_namespace'] }}
-    - pv_name: {{ pillar['ironic_image_dir'] }}-pv
-    - pvc_name: {{ pillar['ironic_image_dir'] }}-pvc
-    - storage_size: 10Gi
-    - path: {{ pillar['ironic_image_dir'] }}
-    - storage_class: local-storage
-    - require:
-      - file: create_ironic_image_dir
-
 ensure_image_server:
   k8s.image_server_present:
     - name: ensure_image_server
