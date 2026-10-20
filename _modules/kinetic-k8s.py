@@ -80,11 +80,24 @@ def _mariadb_my_cnf(my_cnf=None, max_allowed_packet=None):
     if max_allowed_packet:
         # Both sections: MariaDB 10.x docker image reads [mysqld] from
         # /etc/mysql/conf.d, operator mounts extra config under mariadb.conf.d.
+        # Timeouts: "Got an error reading communication packets" after packet
+        # size is raised is almost always the client closing mid-read (Ironic
+        # dbsync / SQLAlchemy pool / probes), not max_allowed_packet.
         return (
             "[mysqld]\n"
             f"max_allowed_packet={max_allowed_packet}\n"
+            "wait_timeout=28800\n"
+            "interactive_timeout=28800\n"
+            "net_read_timeout=300\n"
+            "net_write_timeout=300\n"
+            "skip_name_resolve=1\n"
             "[mariadb]\n"
             f"max_allowed_packet={max_allowed_packet}\n"
+            "wait_timeout=28800\n"
+            "interactive_timeout=28800\n"
+            "net_read_timeout=300\n"
+            "net_write_timeout=300\n"
+            "skip_name_resolve=1\n"
         )
     return None
 

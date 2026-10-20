@@ -73,7 +73,7 @@ ensure_mariadb_instance:
     - pvc_name: storage-ironic-mariadb-0
     - replicas: 1
     - limits_cpu: 500m
-    - limits_memory: 512Mi
+    - limits_memory: 1Gi
     - requests_cpu: 200m
     - requests_memory: 256Mi
     {# Ironic speaks plaintext MySQL unless database.tlsCertificateName is set. #}
