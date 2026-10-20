@@ -196,8 +196,9 @@ ensure_image_server:
     - require:
       - k8s: ensure_image_storage
 
-# HTTP + HTTPS listeners on this cluster's one Gateway. TLS is optional
-# until ironic-tls exists (created in configure.sls).
+# HTTP + HTTPS listeners. Traefik Gateway API matches listener.port to the
+# entryPoint *container* port (8000/8443), not Service exposedPort 80/443.
+# TLS is optional until ironic-tls exists (created in configure.sls).
 bmo_gateway:
   k8s.gateway_present:
     - name: bmo-gateway
@@ -206,13 +207,13 @@ bmo_gateway:
     - listeners:
         - name: web
           protocol: HTTP
-          port: 80
+          port: 8000
           allowedRoutes:
             namespaces:
               from: Same
         - name: websecure
           protocol: HTTPS
-          port: 443
+          port: 8443
           allowedRoutes:
             namespaces:
               from: Same
