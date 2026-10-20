@@ -1829,7 +1829,11 @@ def ironic_db_user_setup(
         if not secret_exists or secret_updated:
             try:
                 secret_body = client.V1Secret(
-                    metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
+                    metadata=client.V1ObjectMeta(
+                        name=secret_name,
+                        namespace=namespace,
+                        labels={"k8s.mariadb.com/watch": ""},
+                    ),
                     string_data={"username": user_name, "password": user_password},
                     type="Opaque",
                 )
@@ -1904,6 +1908,7 @@ def ironic_db_user_setup(
                     "kind": "User",
                     "metadata": {"name": user_name, "namespace": namespace},
                     "spec": {
+                        "name": user_name,
                         "mariaDbRef": {
                             "name": mariadb_name,
                             "namespace": mariadb_namespace,
@@ -2125,6 +2130,7 @@ def ironic_db_user_setup(
                         },
                         "cleanupPolicy": "Delete",
                         "database": database_name,
+                        "table": table,
                         "host": host,
                         "privileges": privileges,
                         "username": user_name,
