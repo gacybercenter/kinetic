@@ -167,7 +167,7 @@ clone_bmo_repo:
 
 create_ironic_image_dir:
   file.directory:
-    - name: {{ pillar['ironic_db_dir'] }}
+    - name: {{ pillar['ironic_image_dir'] }}
     - dir_mode: 755
     - file_mode: 644
 
