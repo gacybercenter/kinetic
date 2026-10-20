@@ -3248,10 +3248,12 @@ def image_server_present(
             current_type = (
                 current_service_spec.type if current_service_spec.type else "ClusterIP"
             )
+            # kubernetes-python historically exposed this as external_i_ps;
+            # pydantic models use external_ips.
             current_external_ips = (
-                current_service_spec.external_i_ps
-                if hasattr(current_service_spec, "external_i_ps")
-                else []
+                getattr(current_service_spec, "external_ips", None)
+                or getattr(current_service_spec, "external_i_ps", None)
+                or []
             )
             if (
                 len(current_ports) != 1
@@ -3276,26 +3278,32 @@ def image_server_present(
                     "message": f"Error fetching Service {service_name}: {str(e)[:100]}...; {message}",
                 }
 
-        # Step 6: Create or update Service if necessary
+        # Step 6: Create or update Service if necessary.
+        # Dict body: pydantic V1ServiceSpec has no external_i_ps attribute.
         if not service_exists or not service_matches:
             try:
-                service_body = client.V1Service(
-                    metadata=client.V1ObjectMeta(
-                        name=service_name, namespace=namespace
-                    ),
-                    spec=client.V1ServiceSpec(
-                        selector={"app": "ironic-image-server"},
-                        ports=[
-                            client.V1ServicePort(
-                                port=port, target_port=port, protocol="TCP"
-                            )
-                        ],
-                        type=service_type,
-                    ),
-                )
+                service_spec = {
+                    "selector": {"app": "ironic-image-server"},
+                    "ports": [
+                        {
+                            "port": port,
+                            "targetPort": port,
+                            "protocol": "TCP",
+                        }
+                    ],
+                    "type": service_type,
+                }
                 if external_ip and service_type in ["ClusterIP", "LoadBalancer"]:
-                    service_body.spec.external_i_ps = [external_ip]
-                    message += f"; Service {service_name} configured with external IP {external_ip}"
+                    service_spec["externalIPs"] = [external_ip]
+                    message += (
+                        f"; Service {service_name} configured with external IP {external_ip}"
+                    )
+                service_body = {
+                    "apiVersion": "v1",
+                    "kind": "Service",
+                    "metadata": {"name": service_name, "namespace": namespace},
+                    "spec": service_spec,
+                }
                 if service_exists:
                     core_v1_api.replace_namespaced_service(
                         name=service_name, namespace=namespace, body=service_body
@@ -3339,7 +3347,7 @@ def image_server_present(
             "deployment_updated": False,
             "service_updated": False,
             "pvc_updated": False,
-            "message": f"Image server operation error: {str(e)[:100]}...",
+            "message": f"Image server operation error: {str(e)[:400]}",
         }
 
 
