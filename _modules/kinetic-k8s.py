@@ -78,7 +78,11 @@ def _mariadb_my_cnf(my_cnf=None, max_allowed_packet=None):
     if my_cnf:
         return str(my_cnf).strip()
     if max_allowed_packet:
+        # Both sections: MariaDB 10.x docker image reads [mysqld] from
+        # /etc/mysql/conf.d, operator mounts extra config under mariadb.conf.d.
         return (
+            "[mysqld]\n"
+            f"max_allowed_packet={max_allowed_packet}\n"
             "[mariadb]\n"
             f"max_allowed_packet={max_allowed_packet}\n"
         )
@@ -1343,6 +1347,9 @@ def mariadb_instance_present(
             current_tls = bool((current_spec.get("tls") or {}).get("enabled", True))
             current_mycnf = (current_spec.get("myCnf") or "").strip()
             desired_mycnf = (_mariadb_my_cnf(my_cnf, max_allowed_packet) or "").strip()
+            current_update = (current_spec.get("updateStrategy") or {}).get(
+                "type", "ReplicasFirstPrimaryLast"
+            )
             if (
                 current_image != desired_image
                 or current_replicas != desired_replicas
@@ -1350,6 +1357,7 @@ def mariadb_instance_present(
                 or current_storage_class != storage_class
                 or current_tls != bool(tls_enabled)
                 or current_mycnf != desired_mycnf
+                or current_update != "RollingUpdate"
             ):
                 matches = False
             else:
@@ -1442,12 +1450,20 @@ def mariadb_instance_present(
                         },
                         "storage": storage_spec,
                         "tls": {"enabled": bool(tls_enabled)},
+                        # Default operator strategy is OnDelete (ReplicasFirstPrimaryLast).
+                        # myCnf changes would never restart this 1-replica STS otherwise.
+                        "updateStrategy": {"type": "RollingUpdate"},
                     },
                 }
                 desired_mycnf = _mariadb_my_cnf(my_cnf, max_allowed_packet)
                 if desired_mycnf:
                     mariadb_body["spec"]["myCnf"] = desired_mycnf
                 if mariadb_exists:
+                    resource_version = mariadb.get("metadata", {}).get(
+                        "resourceVersion"
+                    )
+                    if resource_version:
+                        mariadb_body["metadata"]["resourceVersion"] = resource_version
                     custom_api.replace_namespaced_custom_object(
                         group=group,
                         version=version,
