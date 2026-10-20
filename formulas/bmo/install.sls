@@ -4,11 +4,10 @@ include:
   - /formulas/common/k8s-mariadb
   - /formulas/ironic-operator
 
-ingress_values:
-  file.managed:
-    - name: /tmp/ingress-values.yaml
-    - source: salt://formulas/bmo/files/ingress-values.j2
-    - template: jinja
+{# One Gateway in this namespace — not the dual Traefik/MetalLB stack from
+   formulas/common/k8s-ingress-controller. Override hostnames from pillar. #}
+{% set ironic_api_hosts = pillar.get('ironic_api_hosts', [pillar.get('ironic_api_host', 'ironic.rsc.gacyberrange.org')]) %}
+{% set ironic_image_hosts = pillar.get('ironic_image_hosts', [pillar.get('ironic_image_host', 'images.rsc.gacyberrange.org')]) %}
 
 # Install dependencies (kustomize, kubectl)
 install_dependencies:
@@ -110,45 +109,52 @@ ensure_ironic_db_user:
     - require:
       - k8s: ensure_mariadb_instance
 
-helm_ingress_repo:
+helm_traefik_repo:
   k8s_helm.helm_repo_present:
-    - repo_name: ingress-nginx
-    - repo_url: https://kubernetes.github.io/ingress-nginx
+    - repo_name: traefik
+    - repo_url: https://traefik.github.io/charts
     - update_cache: true
 
-# LoadBalancer VIP is announced by the kube-vip static pod (--services).
-# values_dict is the source of truth (values_files is extra; the helm module
-# logs "No values provided" when values_dict is empty even if files are set).
-helm_ingress_release:
+# Single Traefik + Gateway API for BMO only. VIP is kube-vip (--services),
+# not MetalLB. Do not include formulas/common/k8s-ingress-controller.
+install_bmo_gateway_controller:
   k8s_helm.helm_release_present:
-    - release_name: nginx-ingress
-    - chart_name: ingress-nginx/ingress-nginx
+    - release_name: traefik-bmo
+    - chart_name: traefik/traefik
     - namespace: {{ pillar['bmo_namespace'] }}
     - values_dict:
-        controller:
-          progressDeadlineSeconds: 600
-          extraArgs:
-            enable-ssl-passthrough: "true"
-            tcp-services-configmap: "{{ pillar['bmo_namespace'] }}/tcp-services"
-          config:
-            use-forwarded-headers: "true"
-            ssl-redirect: "true"
-            force-ssl-redirect: "true"
-            ssl-passthrough: "true"
-          service:
+        providers:
+          kubernetesIngress:
+            enabled: false
+          kubernetesCRD:
+            enabled: false
+          kubernetesGateway:
             enabled: true
-            type: LoadBalancer
+        gateway:
+          enabled: false
+        ports:
+          web:
+            port: 8000
+            expose:
+              default: true
+            exposedPort: 80
+          websecure:
+            port: 8443
+            expose:
+              default: true
+            exposedPort: 443
+        service:
+          type: LoadBalancer
+          spec:
             loadBalancerClass: kube-vip.io/kube-vip-class
             loadBalancerIP: "{{ pillar['ironic_endpoint_ip'] }}"
-            annotations:
-              kube-vip.io/loadbalancerIPs: "{{ pillar['ironic_endpoint_ip'] }}"
-    - values_files:
-      - /tmp/ingress-values.yaml
+          annotations:
+            kube-vip.io/loadbalancerIPs: "{{ pillar['ironic_endpoint_ip'] }}"
     - wait_timeout: 300
     - wait_interval: 10
     - require:
-      - file: ingress_values
-      - k8s_helm: helm_ingress_repo
+      - k8s_helm: helm_traefik_repo
+      - cmd: bmo_namespace_present
 
 clone_bmo_repo:
   git.cloned:
@@ -184,5 +190,74 @@ ensure_image_server:
     - storage_size: "10Gi"
     - storage_path: {{ pillar['ironic_image_dir'] }}
     - storage_class: "local-storage"
-    - service_type: LoadBalancer
-    - external_ip: 10.160.1.41
+    - service_type: ClusterIP
+
+# HTTP + HTTPS listeners on this cluster's one Gateway. TLS is optional
+# until ironic-tls exists (created in configure.sls).
+bmo_gateway:
+  k8s.gateway_present:
+    - name: bmo-gateway
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - gateway_class_name: traefik
+    - listeners:
+        - name: web
+          protocol: HTTP
+          port: 80
+          allowedRoutes:
+            namespaces:
+              from: Same
+        - name: websecure
+          protocol: HTTPS
+          port: 443
+          allowedRoutes:
+            namespaces:
+              from: Same
+          tls:
+            mode: Terminate
+            certificateRefs:
+              - kind: Secret
+                name: ironic-tls
+                group: ""
+    - require:
+      - k8s_helm: install_bmo_gateway_controller
+
+ironic_httproute:
+  k8s.httproute_present:
+    - name: ironic-route
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - parent_refs:
+        - name: bmo-gateway
+          namespace: {{ pillar['bmo_namespace'] }}
+          sectionName: websecure
+    - hostnames: {{ ironic_api_hosts | tojson }}
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: ironic
+              port: 6385
+    - require:
+      - k8s: bmo_gateway
+
+image_httproute:
+  k8s.httproute_present:
+    - name: ironic-images-route
+    - namespace: {{ pillar['bmo_namespace'] }}
+    - parent_refs:
+        - name: bmo-gateway
+          namespace: {{ pillar['bmo_namespace'] }}
+          sectionName: web
+    - hostnames: {{ ironic_image_hosts | tojson }}
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: ironic-image-server
+              port: 6182
+    - require:
+      - k8s: bmo_gateway
+      - k8s: ensure_image_server
