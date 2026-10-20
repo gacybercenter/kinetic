@@ -1,4 +1,6 @@
 controller:
+  # Chart default is 0, which Kubernetes rejects (must be > minReadySeconds).
+  progressDeadlineSeconds: 600
   extraArgs:
     enable-ssl-passthrough: 'true'
     tcp-services-configmap: {{ pillar['bmo_namespace'] }}/tcp-services

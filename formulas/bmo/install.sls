@@ -117,13 +117,31 @@ helm_ingress_repo:
     - update_cache: true
 
 # LoadBalancer VIP is announced by the kube-vip static pod (--services).
-# Chart values set loadBalancerClass + kube-vip.io/loadbalancerIPs so MetalLB
-# does not claim this Service.
+# values_dict is the source of truth (values_files is extra; the helm module
+# logs "No values provided" when values_dict is empty even if files are set).
 helm_ingress_release:
   k8s_helm.helm_release_present:
     - release_name: nginx-ingress
     - chart_name: ingress-nginx/ingress-nginx
     - namespace: {{ pillar['bmo_namespace'] }}
+    - values_dict:
+        controller:
+          progressDeadlineSeconds: 600
+          extraArgs:
+            enable-ssl-passthrough: "true"
+            tcp-services-configmap: "{{ pillar['bmo_namespace'] }}/tcp-services"
+          config:
+            use-forwarded-headers: "true"
+            ssl-redirect: "true"
+            force-ssl-redirect: "true"
+            ssl-passthrough: "true"
+          service:
+            enabled: true
+            type: LoadBalancer
+            loadBalancerClass: kube-vip.io/kube-vip-class
+            loadBalancerIP: "{{ pillar['ironic_endpoint_ip'] }}"
+            annotations:
+              kube-vip.io/loadbalancerIPs: "{{ pillar['ironic_endpoint_ip'] }}"
     - values_files:
       - /tmp/ingress-values.yaml
     - wait_timeout: 300
