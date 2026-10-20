@@ -73,6 +73,18 @@ def _decode_k8s_secret(secret):
     return data
 
 
+def _mariadb_my_cnf(my_cnf=None, max_allowed_packet=None):
+    """Build mariadb-operator spec.myCnf from a raw block or max_allowed_packet."""
+    if my_cnf:
+        return str(my_cnf).strip()
+    if max_allowed_packet:
+        return (
+            "[mariadb]\n"
+            f"max_allowed_packet={max_allowed_packet}\n"
+        )
+    return None
+
+
 def handle_certmanager_resource_version(
     body,
     existing_resource=None,
@@ -1195,6 +1207,8 @@ def mariadb_instance_present(
     requests_memory="256Mi",
     admin_host_access="%",
     tls_enabled=False,
+    my_cnf=None,
+    max_allowed_packet=None,
 ):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
@@ -1217,6 +1231,9 @@ def mariadb_instance_present(
         requests_cpu (str, optional): CPU request for the MariaDB container. Defaults to '200m'.
         requests_memory (str, optional): Memory request for the MariaDB container. Defaults to '256Mi'.
         admin_host_access (str, optional): Host or IP pattern to grant root access from. Defaults to '%'.
+        my_cnf (str, optional): Raw my.cnf mounted by mariadb-operator (spec.myCnf).
+        max_allowed_packet (str, optional): If set and my_cnf is empty, written as
+            [mariadb] max_allowed_packet=<value> in spec.myCnf. Example: '256M'.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), 'pvc_available' (bool), 'root_access_updated' (bool), and 'message' (str).
@@ -1324,12 +1341,15 @@ def mariadb_instance_present(
             current_storage_class = current_storage.get("storageClassName", "")
             current_storage_size = current_storage.get("size", "")
             current_tls = bool((current_spec.get("tls") or {}).get("enabled", True))
+            current_mycnf = (current_spec.get("myCnf") or "").strip()
+            desired_mycnf = (_mariadb_my_cnf(my_cnf, max_allowed_packet) or "").strip()
             if (
                 current_image != desired_image
                 or current_replicas != desired_replicas
                 or current_storage_size != storage_size
                 or current_storage_class != storage_class
                 or current_tls != bool(tls_enabled)
+                or current_mycnf != desired_mycnf
             ):
                 matches = False
             else:
@@ -1424,6 +1444,9 @@ def mariadb_instance_present(
                         "tls": {"enabled": bool(tls_enabled)},
                     },
                 }
+                desired_mycnf = _mariadb_my_cnf(my_cnf, max_allowed_packet)
+                if desired_mycnf:
+                    mariadb_body["spec"]["myCnf"] = desired_mycnf
                 if mariadb_exists:
                     custom_api.replace_namespaced_custom_object(
                         group=group,

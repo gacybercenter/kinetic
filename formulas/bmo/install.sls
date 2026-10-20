@@ -78,6 +78,9 @@ ensure_mariadb_instance:
     - requests_memory: 256Mi
     {# Ironic speaks plaintext MySQL unless database.tlsCertificateName is set. #}
     - tls_enabled: false
+    {# Default MariaDB packet size is 16M; Ironic schema/db sync can abort
+       connections with "Got an error reading communication packets". #}
+    - max_allowed_packet: 256M
     - require:
       - k8s: ensure_k8s_storage
 
