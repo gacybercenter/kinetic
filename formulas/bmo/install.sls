@@ -98,8 +98,8 @@ ensure_ironic_db_user:
     - namespace: {{ pillar['bmo_namespace'] }}
     - mariadb_name: ironic-mariadb
     - mariadb_namespace: {{ pillar['bmo_namespace'] }}
-    - user_name: {{ pillar.get('ironic-user', pillar['ironic_username']) }}
-    - user_password: {{ pillar.get('ironic_user_password', pillar['ironic_password']) }}
+    - user_name: {{ pillar['ironic_username'] }}
+    - user_password: {{ pillar['ironic_password'] }}
     - secret_name: ironic-user
     - database_name: ironic
     - host: '%'
