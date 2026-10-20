@@ -111,24 +111,26 @@ ensure_ironic_db_user:
       - k8s: ensure_mariadb_instance
 
 helm_ingress_repo:
-  helm.repo_managed:
-    - present:
-      - name: nginx-ingress
-        url: https://kubernetes.github.io/ingress-nginx
-        repo_update: true
+  k8s_helm.helm_repo_present:
+    - repo_name: ingress-nginx
+    - repo_url: https://kubernetes.github.io/ingress-nginx
+    - update_cache: true
 
+# LoadBalancer VIP is announced by the kube-vip static pod (--services).
+# Chart values set loadBalancerClass + kube-vip.io/loadbalancerIPs so MetalLB
+# does not claim this Service.
 helm_ingress_release:
-  helm.release_present:
-    - name: nginx-ingress
-    - chart: ingress-nginx/ingress-nginx
+  k8s_helm.helm_release_present:
+    - release_name: nginx-ingress
+    - chart_name: ingress-nginx/ingress-nginx
     - namespace: {{ pillar['bmo_namespace'] }}
-    - kvflags:
-        values: /tmp/ingress-values.yaml
-    - unless: helm list -n {{ pillar['bmo_namespace'] }} |grep nginx-ingress
+    - values_files:
+      - /tmp/ingress-values.yaml
+    - wait_timeout: 300
+    - wait_interval: 10
     - require:
       - file: ingress_values
-    - watch:
-      - file: ingress_values
+      - k8s_helm: helm_ingress_repo
 
 clone_bmo_repo:
   git.cloned:
