@@ -1363,14 +1363,20 @@ def mariadb_instance_present(
             current_update = (current_spec.get("updateStrategy") or {}).get(
                 "type", "ReplicasFirstPrimaryLast"
             )
+            current_resources = current_spec.get("resources") or {}
+            current_limits = current_resources.get("limits") or {}
+            current_requests = current_resources.get("requests") or {}
             if (
                 current_image != desired_image
                 or current_replicas != desired_replicas
                 or current_storage_size != storage_size
-                or current_storage_class != storage_class
                 or current_tls != bool(tls_enabled)
                 or current_mycnf != desired_mycnf
                 or current_update != "RollingUpdate"
+                or current_limits.get("cpu") != limits_cpu
+                or current_limits.get("memory") != limits_memory
+                or current_requests.get("cpu") != requests_cpu
+                or current_requests.get("memory") != requests_memory
             ):
                 matches = False
             else:
@@ -1443,51 +1449,79 @@ def mariadb_instance_present(
                         },
                     },
                 }
-                mariadb_body = {
-                    "apiVersion": f"{group}/{version}",
-                    "kind": "MariaDB",
-                    "metadata": {"name": instance_name, "namespace": namespace},
-                    "spec": {
-                        "image": image,
-                        "rootPasswordSecretKeyRef": {
-                            "name": secret_name,
-                            "key": "password",
-                        },
-                        "replicas": replicas,
-                        "resources": {
-                            "limits": {"cpu": limits_cpu, "memory": limits_memory},
-                            "requests": {
-                                "cpu": requests_cpu,
-                                "memory": requests_memory,
-                            },
-                        },
-                        "storage": storage_spec,
-                        "tls": {"enabled": bool(tls_enabled)},
-                        # Default operator strategy is OnDelete (ReplicasFirstPrimaryLast).
-                        # myCnf changes would never restart this 1-replica STS otherwise.
-                        "updateStrategy": {"type": "RollingUpdate"},
-                    },
-                }
                 desired_mycnf = _mariadb_my_cnf(my_cnf, max_allowed_packet)
-                if desired_mycnf:
-                    mariadb_body["spec"]["myCnf"] = desired_mycnf
                 if mariadb_exists:
-                    resource_version = mariadb.get("metadata", {}).get(
-                        "resourceVersion"
-                    )
-                    if resource_version:
-                        mariadb_body["metadata"]["resourceVersion"] = resource_version
-                    custom_api.replace_namespaced_custom_object(
+                    # Replace omits operator defaults (rootEmptyPassword,
+                    # storage.ephemeral) as null; the webhook rejects that as
+                    # an immutable-field change. Merge-patch only mutables.
+                    patch = {
+                        "spec": {
+                            "image": image,
+                            "replicas": replicas,
+                            "resources": {
+                                "limits": {
+                                    "cpu": limits_cpu,
+                                    "memory": limits_memory,
+                                },
+                                "requests": {
+                                    "cpu": requests_cpu,
+                                    "memory": requests_memory,
+                                },
+                            },
+                            "tls": {"enabled": bool(tls_enabled)},
+                            "updateStrategy": {"type": "RollingUpdate"},
+                        }
+                    }
+                    if desired_mycnf:
+                        patch["spec"]["myCnf"] = desired_mycnf
+                    if current_storage_size != storage_size:
+                        patch["spec"]["storage"] = {"size": storage_size}
+                    custom_api.patch_namespaced_custom_object(
                         group=group,
                         version=version,
                         namespace=namespace,
                         plural=plural,
                         name=instance_name,
-                        body=mariadb_body,
+                        body=patch,
+                        _content_type="application/merge-patch+json",
                     )
                     updated = True
-                    message += f"; MariaDB instance {instance_name} updated"
+                    message += f"; MariaDB instance {instance_name} patched"
                 else:
+                    mariadb_body = {
+                        "apiVersion": f"{group}/{version}",
+                        "kind": "MariaDB",
+                        "metadata": {
+                            "name": instance_name,
+                            "namespace": namespace,
+                        },
+                        "spec": {
+                            "image": image,
+                            "rootEmptyPassword": False,
+                            "rootPasswordSecretKeyRef": {
+                                "name": secret_name,
+                                "key": "password",
+                            },
+                            "replicas": replicas,
+                            "resources": {
+                                "limits": {
+                                    "cpu": limits_cpu,
+                                    "memory": limits_memory,
+                                },
+                                "requests": {
+                                    "cpu": requests_cpu,
+                                    "memory": requests_memory,
+                                },
+                            },
+                            "storage": dict(
+                                storage_spec, **{"ephemeral": False}
+                            ),
+                            "tls": {"enabled": bool(tls_enabled)},
+                            "updateStrategy": {"type": "RollingUpdate"},
+                        },
+                    }
+                    if desired_mycnf:
+                        mariadb_body["spec"]["myCnf"] = desired_mycnf
                     custom_api.create_namespaced_custom_object(
                         group=group,
                         version=version,
