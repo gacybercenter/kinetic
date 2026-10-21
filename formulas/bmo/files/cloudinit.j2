@@ -6,7 +6,7 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: false
     ssh_pwauth: True
-    passwd: "{{ pass }}"
+    passwd: "{{ pillar['node_pass'] }}"
     ssh_authorized_keys:
         - {{ pillar['node_deploy_key'] }}
 write_files:
@@ -17,7 +17,7 @@ write_files:
 runcmd:
   - ['curl', 'https://gitlab.com/gacybercenter/open/salt-bootstrap/-/raw/develop/bootstrap-salt.sh', '-o', 'bootstrap.sh' ]
   - ['chmod', '700', 'bootstrap.sh']
-  - ['./bootstrap.sh', '-A', '10.150.1.31']
+  - ['./bootstrap.sh', '-A', '10.160.1.31']
   - rm -f /etc/machine-id
   - dbus-uuidgen --ensure=/etc/machine-id
   - ['salt-call', 'state.apply', '/formulas/common/base']

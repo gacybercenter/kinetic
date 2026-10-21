@@ -733,12 +733,13 @@ def userdata_present(
 
         if "network" in pillar_data:
             try:
-                full_pillar = __salt__["pillar.get"]("", {})
+                full_pillar = __salt__["pillar.get"]("", {}) or {}
+                bmh_type = bmh_name.split("-")[0].lower()
+                hosts = (full_pillar.get("hosts") or {}).get(bmh_type, {}) or {}
                 userdata_context = {
-                    "pillar": {
-                        "node_deploy_key": full_pillar.get("node_deploy_key", "")
-                    },
-                    "pass": pillar_data.get("root_password_crypted", ""),
+                    "pillar": full_pillar,
+                    "pass": pillar_data.get("root_password_crypted")
+                    or hosts.get("root_password_crypted", ""),
                 }
                 rendered_userdata = _render_salt_template(
                     userdata_template_path, userdata_context, renderer="jinja"
