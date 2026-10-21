@@ -733,12 +733,14 @@ def userdata_present(
 
         if "network" in pillar_data:
             try:
-                full_pillar = __salt__["pillar.get"]("", {}) or {}
+                # Do not pass a fake pillar into slsutil.renderer: that replaces
+                # Salt's real pillar. pillar.get("") is not the full dict.
+                full_pillar = dict(__pillar__)
                 bmh_type = bmh_name.split("-")[0].lower()
                 hosts = (full_pillar.get("hosts") or {}).get(bmh_type, {}) or {}
                 userdata_context = {
-                    "pillar": full_pillar,
-                    "pass": pillar_data.get("root_password_crypted")
+                    "pass": full_pillar.get("node_pass")
+                    or pillar_data.get("root_password_crypted")
                     or hosts.get("root_password_crypted", ""),
                 }
                 rendered_userdata = _render_salt_template(
