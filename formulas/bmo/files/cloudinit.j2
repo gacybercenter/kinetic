@@ -1,14 +1,22 @@
 #cloud-config
+ssh_pwauth: true
+
 users:
   - default
   - name: gcr
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: [sudo]
     lock_passwd: false
-    ssh_pwauth: True
-    passwd: "{{ pillar['node_pass'] }}"
+    hashed_passwd: "{{ pillar['node_pass'] }}"
     ssh_authorized_keys:
         - {{ pillar['node_deploy_key'] }}
+chpasswd:
+  expire: false
+  users:
+    - name: gcr
+      password: "{{ pillar['node_pass'] }}"
+      type: hash
 write_files:
 - content: |
     autosign_grains:
