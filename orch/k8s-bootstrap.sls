@@ -22,6 +22,8 @@
 {% if first_control_node == '' %}
   {% set first_control_node = k8s_nodes[0] if k8s_nodes else 'master-rsc-0' %}
 {% endif %}
+{% set first_node_pillar = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': first_control_node}) %}
+{% set kubeconfig_src = first_node_pillar.get('kubernetes', {}).get('kubeconfig', '/etc/kubernetes/admin.conf') %}
 
 # Debug pillar data to ensure it's available
 debug_pillar_data:
@@ -121,13 +123,36 @@ create_join_token:
     - tgt: '{{ first_control_node }}'  # Run only on the initialized node
     - require:
       - salt: init_kubernetes_cluster
+
+# kubectl / Helm on this node (Cilium, Multus, later formulas) expect the
+# admin kubeconfig at /root/.kube/config. Source path is pillar
+# kubernetes.kubeconfig (defaults to /etc/kubernetes/admin.conf).
+setup_root_kubeconfig:
+  salt.function:
+    - name: cmd.run
+    - tgt: '{{ first_control_node }}'
+    - kwarg:
+        cmd: |
+          mkdir -p /root/.kube &&
+          cp {{ kubeconfig_src }} /root/.kube/config &&
+          chmod 600 /root/.kube/config &&
+          chown root:root /root/.kube/config
+        onlyif: test -f {{ kubeconfig_src }}
+    - require:
+      - salt: init_kubernetes_cluster
+
 k8s_cilium:
   salt.state:
     - tgt: '{{ first_control_node }}'
     - sls: /formulas/common/k8s-cilium
+    - require:
+      - salt: setup_root_kubeconfig
 
 # Multus now includes the standard SFE and SBE network attachments
 k8s_multus:
   salt.state:
     - tgt: '{{ first_control_node }}'
     - sls: /formulas/common/k8s-multus
+    - require:
+      - salt: setup_root_kubeconfig
+      - salt: k8s_cilium

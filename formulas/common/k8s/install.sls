@@ -14,11 +14,16 @@
 include:
   - /formulas/common/helm
 
+# kubernetes Python client in the Salt onedir venv (salt-pip ->
+# /opt/saltstack/salt). Needed by kinetic_k8s / k8s states after bootstrap.
+salt_kubernetes_sdk:
+  pip.installed:
+    - bin_env: /usr/bin/salt-pip
+    - reload_modules: true
+    - names:
+      - kubernetes
+
 # Setup the Kubernetes repo
-# Install Salt Kubernetes extension:
-#   pip.installed:
-#     - pip_bin: /opt/saltstack/salt/salt-pip
-#     - name: saltext-kubernetes
 kube.repo:
   pkgrepo.managed:
     - name: {{ pillar['k8s_repo'] }}
