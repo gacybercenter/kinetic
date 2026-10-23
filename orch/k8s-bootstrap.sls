@@ -175,45 +175,65 @@ configure_apiserver_oidc:
               "      claim: groups\n"
               '      prefix: ""\n'
           )
-          text = manifest.read_text()
-          lines = [ln for ln in text.splitlines() if "--oidc-" not in ln]
-          kube_re = re.compile(r"^(\s*)-\s+kube-apiserver\s*$")
+          orig = manifest.read_text()
+          lines = [ln for ln in orig.splitlines() if "--oidc-" not in ln]
+
+          def indent_of(line):
+              return re.match(r"^[ \t]*", line).group(0)
+
+          def insert_after_key(lines, key, block_lines):
+              key_re = re.compile(r"^([ \t]*)" + re.escape(key) + r":\s*$")
+              for i, ln in enumerate(lines):
+                  m = key_re.match(ln)
+                  if not m:
+                      continue
+                  ind = m.group(1)
+                  extra = [ind + x for x in block_lines]
+                  return lines[: i + 1] + extra + lines[i + 1 :]
+              raise SystemExit("could not find %s in kube-apiserver manifest" % key)
+
           if not any("--authentication-config" in ln for ln in lines):
-              out = []
+              kube_re = re.compile(r"^([ \t]*)-\s+kube-apiserver\s*$")
               inserted = False
+              out = []
               for ln in lines:
                   out.append(ln)
                   m = kube_re.match(ln)
                   if m and not inserted:
                       out.append(
-                          f"{m.group(1)}- --authentication-config=/etc/kubernetes/auth-config.yaml"
+                          m.group(1)
+                          + "- --authentication-config=/etc/kubernetes/auth-config.yaml"
                       )
                       inserted = True
               if not inserted:
                   raise SystemExit("could not find kube-apiserver command")
               lines = out
-          text = "\n".join(lines) + "\n"
-          if "name: auth-config" not in text:
-              vm = re.search(r"^([ \t]+)volumeMounts:\s*$", text, re.M)
-              vo = re.search(r"^([ \t]+)volumes:\s*$", text, re.M)
-              if not vm or not vo:
-                  raise SystemExit("could not find volumeMounts/volumes in kube-apiserver manifest")
-              vm_ind, vo_ind = vm.group(1), vo.group(1)
-              text = text[: vm.end()] + (
-                  f"\n{vm_ind}- mountPath: /etc/kubernetes/auth-config.yaml\n"
-                  f"{vm_ind}  name: auth-config\n"
-                  f"{vm_ind}  readOnly: true"
-              ) + text[vm.end()]
-              vo = re.search(r"^([ \t]+)volumes:\s*$", text, re.M)
-              vo_ind = vo.group(1)
-              text = text[: vo.end()] + (
-                  f"\n{vo_ind}- name: auth-config\n"
-                  f"{vo_ind}  hostPath:\n"
-                  f"{vo_ind}    path: /etc/kubernetes/auth-config.yaml\n"
-                  f"{vo_ind}    type: File"
-              ) + text[vo.end()]
-          if text != manifest.read_text():
-              manifest.write_text(text)
+
+          joined = "\n".join(lines)
+          if "name: auth-config" not in joined:
+              lines = insert_after_key(
+                  lines,
+                  "volumeMounts",
+                  [
+                      "- mountPath: /etc/kubernetes/auth-config.yaml",
+                      "  name: auth-config",
+                      "  readOnly: true",
+                  ],
+              )
+              lines = insert_after_key(
+                  lines,
+                  "volumes",
+                  [
+                      "- name: auth-config",
+                      "  hostPath:",
+                      "    path: /etc/kubernetes/auth-config.yaml",
+                      "    type: File",
+                  ],
+              )
+
+          new = "\n".join(lines) + "\n"
+          if new != orig:
+              manifest.write_text(new)
               print("patched kube-apiserver structured OIDC auth")
           else:
               print("kube-apiserver structured OIDC auth already present")
