@@ -124,7 +124,7 @@ create_join_token:
     - require:
       - salt: init_kubernetes_cluster
 
-# kubectl / Helm on this node (Cilium, Multus, later formulas) expect the
+# kubectl / Helm on this node (Cilium, later formulas) expect the
 # admin kubeconfig at /root/.kube/config. Source path is pillar
 # kubernetes.kubeconfig (defaults to /etc/kubernetes/admin.conf).
 setup_root_kubeconfig:
@@ -147,12 +147,3 @@ k8s_cilium:
     - sls: /formulas/common/k8s-cilium
     - require:
       - salt: setup_root_kubeconfig
-
-# Multus now includes the standard SFE and SBE network attachments
-k8s_multus:
-  salt.state:
-    - tgt: '{{ first_control_node }}'
-    - sls: /formulas/common/k8s-multus
-    - require:
-      - salt: setup_root_kubeconfig
-      - salt: k8s_cilium

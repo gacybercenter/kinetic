@@ -1,7 +1,7 @@
 # Kubernetes cluster bootstrap (`orch/k8s-bootstrap.sls`)
 
 How to bring up the **first** HA control-plane node with kube-vip, `kubeadm init`,
-Cilium, and Multus. Extra nodes are **not** joined here — that is
+and Cilium. Extra nodes are **not** joined here — that is
 [`orch/k8s-join.sls`](../orch/k8s-join.sls).
 
 ## The short version
@@ -30,8 +30,7 @@ flowchart TD
     I --> G["grain k8s_bootstrapped=true"]
     I --> C["kubeadm.upload_certs<br/>kubeadm.token_create ttl=24h"]
     I --> Cilium["formulas/common/k8s-cilium"]
-    Cilium --> Multus["formulas/common/k8s-multus"]
-    C --> Join["orch.k8s-join<br/>node_to_join=..."]
+    C --> Join["orch.k8s-join\nnode_to_join=..."]
 ```
 
 ## What this orch does
@@ -52,10 +51,11 @@ pillar has `k8s_control_plane: true`. If none match, it falls back to
 | Token | `kubeadm.token_create` | TTL **24h**, usages `signing` + `authentication` |
 | Kubeconfig | copy `kubernetes.kubeconfig` → `/root/.kube/config` | So `kubectl` / Helm / later formulas work as root |
 | CNI | `/formulas/common/k8s-cilium` | Helm chart, values from `res-k8s:cilium:values` |
-| Extra NICs | `/formulas/common/k8s-multus` | Multus DaemonSet plus SFE/SBE/PRIV/PUB NADs |
 
 It does **not** join additional control-plane or worker nodes. It does **not**
-install cert-manager, ingress, or OpenStack.
+install Multus / NetworkAttachmentDefinitions, cert-manager, ingress, or
+OpenStack. Apply `/formulas/common/k8s-multus` later when extra pod NICs are
+needed.
 
 ## Pillar
 
@@ -95,9 +95,8 @@ If omitted, the orch defaults to `/etc/kubernetes/admin.conf`.
 into the Salt onedir venv via `salt-pip` (`/usr/bin/salt-pip` →
 `/opt/saltstack/salt`). That is what `kinetic_k8s` / `k8s` states import.
 
-Cilium / Multus formulas run **on the first control node**, so that node’s
-pillar also needs the usual `res-k8s:cilium:values` and
-`res-k8s:multus` keys (see `formulas/common/k8s-cilium/PILLAR-EXAMPLE.md`).
+Cilium runs **on the first control node**, so that node’s pillar also needs
+`res-k8s:cilium:values` (see `formulas/common/k8s-cilium/PILLAR-EXAMPLE.md`).
 
 ### First control-plane node
 
@@ -239,9 +238,9 @@ part of the run.
 - **API never on VIP** — wrong `vip-interface`, VIP already used, or kube-vip
   manifest missing. File:
   `/etc/kubernetes/manifests/kube-vip.yaml`.
-- **Cilium / Multus fail** — those formulas read **the first control node’s**
-  pillar (`res-k8s:cilium:values`, `res-k8s:multus`). Helm/`kubectl` need
-  `admin.conf` on that node; they run after init.
+- **Cilium fail** — the formula reads **the first control node’s** pillar
+  (`res-k8s:cilium:values`). Helm/`kubectl` need `/root/.kube/config` on that
+  node; they run after init and the kubeconfig copy.
 - **Join fails with expired token** — bootstrap’s `token_create` is 24h.
   Re-run `orch.k8s-join` (it mints a new token) rather than reusing the
   bootstrap token by hand.
