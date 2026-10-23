@@ -39,13 +39,14 @@ k8s_deps:
     - tgt: '{{ first_control_node }}'
     - sls: /formulas/common/k8s/configure  # Installs Kubernetes dependencies (kubeadm, kubelet, etc.)
 
-# Step 2: Pull kube-vip container image using containerd
+# Step 2: Pull kube-vip into containerd so `ctr run` can render the manifest.
+# kubeadm init uses CRI-O, so this image is not what the static pod runs from.
 pull_kube_vip_image:
   salt.function:
     - name: cmd.run
     - kwarg:
         cmd: ctr image pull ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }}
-        onlyif: test ! -f /etc/kubernetes/manifests/kube-vip.yaml  # Only run if manifest doesn't exist
+        onlyif: test ! -f /etc/kubernetes/manifests/kube-vip.yaml
     - tgt: '{{ first_control_node }}'
     - require:
       - salt: k8s_deps
@@ -83,6 +84,22 @@ init_kubernetes_cluster:
     - unless:
       - curl -k --connect-timeout 5 https://{{ vip }}:6443 >/dev/null
     - tgt: '{{ first_control_node }}'  # Target only the first control node for initialization
+
+# kubelet static pods use CRI-O after kubeadm init, not the containerd
+# `ctr run` used to render the manifest. Pull into CRI-O and touch the
+# manifest so kubelet (re)starts kube-vip.
+ensure_kube_vip_crio:
+  salt.function:
+    - name: cmd.run
+    - tgt: '{{ first_control_node }}'
+    - kwarg:
+        cmd: |
+          crictl pull ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }}
+          touch /etc/kubernetes/manifests/kube-vip.yaml
+        onlyif: test -f /etc/kubernetes/manifests/kube-vip.yaml && test -S /var/run/crio/crio.sock
+    - require:
+      - salt: init_kubernetes_cluster
+      - salt: generate_kube_vip_manifest
 
 # Step 6.1: Set a grain on the first control node to mark it as bootstrapped
 set_bootstrap_grain:
