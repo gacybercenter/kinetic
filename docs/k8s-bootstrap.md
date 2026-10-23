@@ -83,7 +83,7 @@ res-k8s:
 | `res-k8s.vip` | kube-vip `--address` and `kubeadm.init` `control_plane_endpoint` (`VIP:6443`) |
 | `res-k8s.vip-interface` | kube-vip `--interface`; defaults to `eth0` if omitted |
 | `res-k8s.k8s_nodes` | List of minion ids; first control-plane member is picked from this list |
-| `res-k8s.oidc-issuer` | kube-apiserver `--oidc-issuer-url`. If set, also adds client-id `kubernetes`, username claim `preferred_username`, groups claim `groups`, and prefixes `-` (no prefix). Omit the key to skip OIDC. |
+| `res-k8s.oidc-issuer` | Structured AuthenticationConfiguration JWT issuer URL (client-id / audience `kubernetes`, username `preferred_username`, groups `groups`, empty prefixes). Written to `/etc/kubernetes/auth-config.yaml` and `--authentication-config` on kube-apiserver. Kubernetes 1.32+ dropped `--oidc-*`. Omit the key to skip OIDC. |
 
 On the **first control node** (not `bmo`):
 

@@ -142,9 +142,9 @@ setup_root_kubeconfig:
     - require:
       - salt: init_kubernetes_cluster
 
-{# kubeadm.init does not take apiServer extraArgs. Patch the static pod so
-   OIDC works on first boot and on re-run (init is skipped once VIP:6443 is
-   up). --oidc-groups-prefix=- matches username: a bare flag is invalid. #}
+{# Kubernetes 1.32+ removed --oidc-* from kube-apiserver. 1.34 needs
+   Structured Authentication Configuration (--authentication-config).
+   kubeadm.init still has no extraArgs path, so patch the static pod. #}
 {% if oidc_issuer %}
 configure_apiserver_oidc:
   salt.function:
@@ -155,50 +155,68 @@ configure_apiserver_oidc:
           python3 - <<'PY'
           import pathlib
           import re
-          path = pathlib.Path("/etc/kubernetes/manifests/kube-apiserver.yaml")
-          text = path.read_text()
-          flags = {
-              "oidc-issuer-url": "{{ oidc_issuer }}",
-              "oidc-client-id": "kubernetes",
-              "oidc-username-claim": "preferred_username",
-              "oidc-groups-claim": "groups",
-              "oidc-username-prefix": "-",
-              "oidc-groups-prefix": "-",
-          }
-          lines = text.splitlines()
-          seen = set()
-          out = []
-          oidc_re = re.compile(r"^(\s*)-\s+--oidc-([a-z0-9-]+)(?:=.*)?\s*$")
+
+          issuer = "{{ oidc_issuer }}"
+          auth_file = pathlib.Path("/etc/kubernetes/auth-config.yaml")
+          manifest = pathlib.Path("/etc/kubernetes/manifests/kube-apiserver.yaml")
+          auth_file.write_text(
+              "apiVersion: apiserver.config.k8s.io/v1\n"
+              "kind: AuthenticationConfiguration\n"
+              "jwt:\n"
+              "- issuer:\n"
+              f"    url: {issuer}\n"
+              "    audiences:\n"
+              "    - kubernetes\n"
+              "  claimMappings:\n"
+              "    username:\n"
+              "      claim: preferred_username\n"
+              '      prefix: ""\n'
+              "    groups:\n"
+              "      claim: groups\n"
+              '      prefix: ""\n'
+          )
+          text = manifest.read_text()
+          lines = [ln for ln in text.splitlines() if "--oidc-" not in ln]
           kube_re = re.compile(r"^(\s*)-\s+kube-apiserver\s*$")
-          for line in lines:
-              m = oidc_re.match(line)
-              if m and m.group(2) in flags:
-                  indent, key = m.group(1), m.group(2)
-                  out.append(f"{indent}- --oidc-{key}={flags[key]}")
-                  seen.add(key)
-                  continue
-              out.append(line)
-          if set(flags) - seen:
-              final = []
-              for line in out:
-                  final.append(line)
-                  m = kube_re.match(line)
-                  if m:
-                      indent = m.group(1)
-                      for key, value in flags.items():
-                          if key not in seen:
-                              final.append(f"{indent}- --oidc-{key}={value}")
-                              seen.add(key)
-              out = final
-          missing = set(flags) - seen
-          if missing:
-              raise SystemExit(f"could not insert OIDC flags {sorted(missing)}")
-          new = "\n".join(out) + "\n"
-          if new != text:
-              path.write_text(new)
-              print("patched kube-apiserver OIDC flags")
+          if not any("--authentication-config" in ln for ln in lines):
+              out = []
+              inserted = False
+              for ln in lines:
+                  out.append(ln)
+                  m = kube_re.match(ln)
+                  if m and not inserted:
+                      out.append(
+                          f"{m.group(1)}- --authentication-config=/etc/kubernetes/auth-config.yaml"
+                      )
+                      inserted = True
+              if not inserted:
+                  raise SystemExit("could not find kube-apiserver command")
+              lines = out
+          text = "\n".join(lines) + "\n"
+          if "name: auth-config" not in text:
+              vm = re.search(r"^([ \t]+)volumeMounts:\s*$", text, re.M)
+              vo = re.search(r"^([ \t]+)volumes:\s*$", text, re.M)
+              if not vm or not vo:
+                  raise SystemExit("could not find volumeMounts/volumes in kube-apiserver manifest")
+              vm_ind, vo_ind = vm.group(1), vo.group(1)
+              text = text[: vm.end()] + (
+                  f"\n{vm_ind}- mountPath: /etc/kubernetes/auth-config.yaml\n"
+                  f"{vm_ind}  name: auth-config\n"
+                  f"{vm_ind}  readOnly: true"
+              ) + text[vm.end()]
+              vo = re.search(r"^([ \t]+)volumes:\s*$", text, re.M)
+              vo_ind = vo.group(1)
+              text = text[: vo.end()] + (
+                  f"\n{vo_ind}- name: auth-config\n"
+                  f"{vo_ind}  hostPath:\n"
+                  f"{vo_ind}    path: /etc/kubernetes/auth-config.yaml\n"
+                  f"{vo_ind}    type: File"
+              ) + text[vo.end()]
+          if text != manifest.read_text():
+              manifest.write_text(text)
+              print("patched kube-apiserver structured OIDC auth")
           else:
-              print("kube-apiserver OIDC flags already present")
+              print("kube-apiserver structured OIDC auth already present")
           PY
         onlyif: test -f /etc/kubernetes/manifests/kube-apiserver.yaml
     - require:
