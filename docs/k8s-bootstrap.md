@@ -50,6 +50,7 @@ pillar has `k8s_control_plane: true`. If none match, it falls back to
 | Certs | `kubeadm.upload_certs` | Only if `/etc/kubernetes/admin.conf` exists |
 | Token | `kubeadm.token_create` | TTL **24h**, usages `signing` + `authentication` |
 | Kubeconfig | copy `kubernetes.kubeconfig` → `/root/.kube/config` | So `kubectl` / Helm / later formulas work as root |
+| OIDC | patch kube-apiserver static pod | If `res-k8s:oidc-issuer` is set; Keycloak client `kubernetes` |
 | CNI | `/formulas/common/k8s-cilium` | Helm chart, values from `res-k8s:cilium:values` |
 
 It does **not** join additional control-plane or worker nodes. It does **not**
@@ -70,6 +71,7 @@ the k8s node itself) is ignored unless it is also on `bmo`.
 res-k8s:
   vip: 10.160.1.10            # control-plane HA address
   vip-interface: eth0         # kube-vip ARP interface (default eth0)
+  oidc-issuer: https://keycloak.rsc.gacyberrange.org/realms/rsc
   k8s_nodes:
     - master-rsc-0
     - master-rsc-1
@@ -81,6 +83,7 @@ res-k8s:
 | `res-k8s.vip` | kube-vip `--address` and `kubeadm.init` `control_plane_endpoint` (`VIP:6443`) |
 | `res-k8s.vip-interface` | kube-vip `--interface`; defaults to `eth0` if omitted |
 | `res-k8s.k8s_nodes` | List of minion ids; first control-plane member is picked from this list |
+| `res-k8s.oidc-issuer` | kube-apiserver `--oidc-issuer-url`. If set, also adds client-id `kubernetes`, username claim `preferred_username`, groups claim `groups`, and prefixes `-` (no prefix). Omit the key to skip OIDC. |
 
 On the **first control node** (not `bmo`):
 

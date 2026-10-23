@@ -8,6 +8,7 @@
 {% set vip = res_k8s.get('vip', '') %}
 {% set k8s_nodes = res_k8s.get('k8s_nodes', ['master-rsc-0']) %}
 {% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
+{% set oidc_issuer = res_k8s.get('oidc-issuer', res_k8s.get('oidc_issuer', '')) %}
 {% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
 # Find the first node with k8s_control_plane == true
@@ -141,9 +142,76 @@ setup_root_kubeconfig:
     - require:
       - salt: init_kubernetes_cluster
 
+{# kubeadm.init does not take apiServer extraArgs. Patch the static pod so
+   OIDC works on first boot and on re-run (init is skipped once VIP:6443 is
+   up). --oidc-groups-prefix=- matches username: a bare flag is invalid. #}
+{% if oidc_issuer %}
+configure_apiserver_oidc:
+  salt.function:
+    - name: cmd.run
+    - tgt: '{{ first_control_node }}'
+    - kwarg:
+        cmd: |
+          python3 - <<'PY'
+          import pathlib
+          import re
+          path = pathlib.Path("/etc/kubernetes/manifests/kube-apiserver.yaml")
+          text = path.read_text()
+          flags = {
+              "oidc-issuer-url": "{{ oidc_issuer }}",
+              "oidc-client-id": "kubernetes",
+              "oidc-username-claim": "preferred_username",
+              "oidc-groups-claim": "groups",
+              "oidc-username-prefix": "-",
+              "oidc-groups-prefix": "-",
+          }
+          lines = text.splitlines()
+          seen = set()
+          out = []
+          oidc_re = re.compile(r"^(\s*)-\s+--oidc-([a-z0-9-]+)(?:=.*)?\s*$")
+          kube_re = re.compile(r"^(\s*)-\s+kube-apiserver\s*$")
+          for line in lines:
+              m = oidc_re.match(line)
+              if m and m.group(2) in flags:
+                  indent, key = m.group(1), m.group(2)
+                  out.append(f"{indent}- --oidc-{key}={flags[key]}")
+                  seen.add(key)
+                  continue
+              out.append(line)
+          if set(flags) - seen:
+              final = []
+              for line in out:
+                  final.append(line)
+                  m = kube_re.match(line)
+                  if m:
+                      indent = m.group(1)
+                      for key, value in flags.items():
+                          if key not in seen:
+                              final.append(f"{indent}- --oidc-{key}={value}")
+                              seen.add(key)
+              out = final
+          missing = set(flags) - seen
+          if missing:
+              raise SystemExit(f"could not insert OIDC flags {sorted(missing)}")
+          new = "\n".join(out) + "\n"
+          if new != text:
+              path.write_text(new)
+              print("patched kube-apiserver OIDC flags")
+          else:
+              print("kube-apiserver OIDC flags already present")
+          PY
+        onlyif: test -f /etc/kubernetes/manifests/kube-apiserver.yaml
+    - require:
+      - salt: init_kubernetes_cluster
+      - salt: setup_root_kubeconfig
+{% endif %}
+
 k8s_cilium:
   salt.state:
     - tgt: '{{ first_control_node }}'
     - sls: /formulas/common/k8s-cilium
     - require:
       - salt: setup_root_kubeconfig
+{%- if oidc_issuer %}
+      - salt: configure_apiserver_oidc
+{%- endif %}
