@@ -471,7 +471,15 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
             return ret
 
 
-def group_present(name, spec_name, base_dn, cn, description=None, members=None):
+def group_present(
+    name,
+    spec_name,
+    base_dn,
+    cn,
+    description=None,
+    members=None,
+    users_base_dn=None,
+):
     """
     Ensure that a single group exists in the LDAP directory, creating or updating as needed.
 
@@ -515,6 +523,24 @@ def group_present(name, spec_name, base_dn, cn, description=None, members=None):
 
     # Construct group DN, e.g., 'cn=cn,base_dn'
     group_dn = f"cn={cn},{base_dn}"
+
+    # Pillar members may be uids (or group cns) when the matching user/group
+    # is not in this pillar run. Resolve them against LDAP before validation.
+    if members and "ldap_utils.find_dn_by_attr" in __salt__:
+        resolved = []
+        for member in members:
+            if not isinstance(member, str) or "=" in member:
+                resolved.append(member)
+                continue
+            dn = __salt__["ldap_utils.find_dn_by_attr"](
+                spec_name, users_base_dn, "uid", member
+            )
+            if not dn:
+                dn = __salt__["ldap_utils.find_dn_by_attr"](
+                    spec_name, base_dn, "cn", member
+                )
+            resolved.append(dn or member)
+        members = resolved
 
     # Prepare attributes for existence check (mirroring fixed attributes in create_group/update_group)
     attributes = {"objectClass": ["groupOfNames"], "cn": cn}

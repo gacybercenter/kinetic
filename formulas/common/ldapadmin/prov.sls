@@ -232,6 +232,7 @@ ldap_group_{{ group['cn'] }}:
 {%- if group.get('description') %}
     - description: {{ group['description'] | yaml_dquote }}
 {%- endif %}
+    - users_base_dn: {{ users_base_dn }}
     - members: {{ member_dns | tojson }}
     - require:
       - ldap: ensure_ldap_connect_spec
