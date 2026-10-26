@@ -57,7 +57,8 @@ generate_kube_vip_manifest:
     - name: cmd.run
     - kwarg:
         cmd: |
-          mkdir -p /etc/kubernetes/manifests &&
+          mkdir -p /etc/kubernetes/manifests
+          tmp=$(mktemp)
           ctr run --rm --net-host ghcr.io/kube-vip/kube-vip:{{ kube_vip_version }} vip /kube-vip manifest pod \
             --interface {{ interface }} \
             --address {{ vip }} \
@@ -65,8 +66,12 @@ generate_kube_vip_manifest:
             --controlplane \
             --services \
             --arp \
-            --leaderElection > /etc/kubernetes/manifests/kube-vip.yaml
-        creates: /etc/kubernetes/manifests/kube-vip.yaml  # Only run if the manifest doesn't exist
+            --leaderElection > "$tmp"
+          # ctr logs mixed into a redirect leave Kind: null and kubelet
+          # refuses the static pod. Only install a real Pod manifest.
+          grep -q 'kind: Pod' "$tmp" || { echo "kube-vip manifest invalid:"; cat "$tmp"; rm -f "$tmp"; exit 1; }
+          mv "$tmp" /etc/kubernetes/manifests/kube-vip.yaml
+        creates: /etc/kubernetes/manifests/kube-vip.yaml
     - tgt: '{{ first_control_node }}'
     - require:
       - salt: pull_kube_vip_image
