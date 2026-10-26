@@ -1,5 +1,7 @@
 # Orchestration script to deploy kube-vip and bootstrap a High Availability Kubernetes cluster
 # Dynamically pulls VIP and control nodes from pillar data
+#
+# pepper --client='runner' state.orchestrate orch.k8s-bootstrap
 
 # Fetch pillar data for the 'bmo' minion
 {% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': 'bmo'}) %}

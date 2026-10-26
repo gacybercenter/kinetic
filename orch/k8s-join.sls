@@ -1,10 +1,12 @@
-# Fetch pillar data for the 'bmo' minion to get VIP and other configurations
+# Fetch pillar data for the bootstrap minion to get VIP and other configurations
+#
+# pepper --client='runner' state.orchestrate orch.k8s-join pillar='{"bootstrap_node": "master-rsc-0", "node_to_join": "master-rsc-1"}'
 {% set bootstrap_node = salt['pillar.get']('bootstrap_node') %}
 {% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': bootstrap_node}) %}
 {% set res_k8s = pillardata['res-k8s'] %}
 {% set vip = res_k8s.get('vip', '') %}
-{% set interface = res_k8s.get('vip-interface', 'eth0') %}  # Default to 'eth0' if not specified in pillar
-{% set kube_vip_version = 'v0.8.3' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
+{% set interface = res_k8s.get('vip-interface') %}  # Default to 'eth0' if not specified in pillar
+{% set kube_vip_version = 'v1.3.0' %}  # Check for the latest version at https://github.com/kube-vip/kube-vip/releases
 
 # Allow node to be passed as an argument to the orchestration; fail if not provided
 {% set node = salt['pillar.get']('node_to_join', '') %}
@@ -28,11 +30,17 @@ node_already_joined_{{ node }}:
     - tgt: '{{ bootstrap_node }}'
     - output_loglevel: info
 {% else %}
-# Retrieve the join parameters from the bootstrapped node using kubeadm token create --print-join-command
+{# k8s_control_plane: false is still "defined". Only true means control plane.
+   Workers must not get --control-plane or --certificate-key. #}
+{% set is_control_plane = node_pillar.get('bmh', {}).get(node, {}).get('k8s_control_plane', False) in [True, 'true', 'True', 1, '1'] %}
+{% if is_control_plane %}
 {% set certkey = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm certs certificate-key"]) %}
 {% set certkey = certkey.get(bootstrap_node, {}).get('ret', '') %}
 {% set upload_certs = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm init phase upload-certs --upload-certs --certificate-key "+certkey]) %}
 {% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command --certificate-key "+certkey]) %}
+{% else %}
+{% set join_command_result = salt.saltutil.cmd(tgt=bootstrap_node, fun='cmd.run', arg=["kubeadm token create --print-join-command"]) %}
+{% endif %}
 {% set join_command_output = join_command_result.get(bootstrap_node, {}).get('ret', '') %}
 
 # Step 1: Ensure Kubernetes dependencies are installed on the node
@@ -44,12 +52,12 @@ k8s_deps_{{ node }}:
 # Debug the retrieved join parameters (optional, for troubleshooting)
 debug_join_params_{{ node }}:
   cmd.run:
-    - name: echo "{{ join_command_output }} --cri-socket unix:///var/run/crio/crio.sock --control-plane"
+    - name: echo "{{ join_command_output }} --cri-socket unix:///var/run/crio/crio.sock"
     - tgt: '{{ node }}'
     - output_loglevel: debug
 
-# Conditional Steps for Control Plane Nodes: Install kube-vip if the node is a control plane node
-{% if node_pillar['bmh'][node]['k8s_control_plane'] is defined %}
+# Control-plane join only. kubeadm's printed command already includes --control-plane.
+{% if is_control_plane %}
 # Step 2: Pull kube-vip container image using containerd
 pull_kube_vip_image_{{ node }}:
   salt.function:
