@@ -6,7 +6,7 @@ assign_rook_node_role:
     - name: cmd.run
     - kwarg:
         cmd: |
-          for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep 'rook-rsc'); do
+          for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep 'storage'); do
             kubectl label nodes "$node" role=rook-node --overwrite
             kubectl label nodes "$node" node-role.kubernetes.io/rook-node= --overwrite
             kubectl taint node "$node" node-role.kubernetes.io/rook-node=:NoSchedule --overwrite
