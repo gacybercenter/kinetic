@@ -1,6 +1,7 @@
 # Step 1: Ensure Helm is installed on the target node
 include:
   - /formulas/common/helm/install
+  - /formulas/common/k8s-rook/object-store
 
 rook_ceph_cluster:
   rook.ceph_cluster_present:

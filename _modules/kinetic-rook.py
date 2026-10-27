@@ -646,6 +646,9 @@ def ceph_object_store_present(
     enable_apis=None,
     rgw_config=None,
     rgw_command_flags=None,
+    erasure_coded=None,
+    enable_sts=False,
+    sts_key=None,
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -690,6 +693,11 @@ def ceph_object_store_present(
         rgw_command_flags (dict, optional): spec.gateway.rgwCommandFlags entries - extra
             command-line flags passed to the radosgw process itself (e.g.
             {"rgw-frontends": "beast port=80 request_timeout_ms=300000"}).
+        erasure_coded (dict, optional): If set, dataPool uses erasure coding instead of
+            replication. Keys: data_chunks, coding_chunks (or dataChunks/codingChunks).
+        enable_sts (bool, optional): Enable RGW STS. Adds sts/iam to enableAPIs and sets
+            rgw_s3_auth_use_sts. Requires sts_key (same value on every RGW in the zone).
+        sts_key (str, optional): rgw_sts_key. At least 16 characters.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
@@ -714,6 +722,16 @@ def ceph_object_store_present(
                 "dataPool": {
                     "failureDomain": "host",
                     "replicated": {"size": replicas},
+                } if not erasure_coded else {
+                    "failureDomain": "host",
+                    "erasureCoded": {
+                        "dataChunks": int(
+                            erasure_coded.get("dataChunks", erasure_coded.get("data_chunks", 2))
+                        ),
+                        "codingChunks": int(
+                            erasure_coded.get("codingChunks", erasure_coded.get("coding_chunks", 1))
+                        ),
+                    },
                 },
                 "preservePoolsOnDelete": preserve_pools_on_delete,
                 "gateway": {
@@ -745,8 +763,29 @@ def ceph_object_store_present(
                 default_apis.append("s3")
             if enable_swift_api:
                 default_apis.extend(["swift", "swift_auth"])
+            if enable_sts:
+                for api in ("sts", "iam"):
+                    if api not in default_apis:
+                        default_apis.append(api)
             if default_apis:
                 object_store_body["spec"]["protocols"]["enableAPIs"] = default_apis
+        if enable_sts:
+            apis = object_store_body["spec"]["protocols"].setdefault("enableAPIs", [])
+            for api in ("s3", "sts", "iam"):
+                if api not in apis:
+                    apis.append(api)
+            if not sts_key or len(str(sts_key)) < 16:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": (
+                        f"sts_key of at least 16 characters is required when "
+                        f"enable_sts is set for {name}"
+                    ),
+                    "resource": {},
+                }
+            merged_rgw_config["rgw_s3_auth_use_sts"] = "true"
+            merged_rgw_config["rgw_sts_key"] = str(sts_key)
 
         # Add annotations if provided
         if annotations:
