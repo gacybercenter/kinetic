@@ -55,6 +55,8 @@ def ceph_cluster_present(
     dashboard_enabled=True,
     monitoring_enabled=True,
     toolbox_enabled=True,
+    encrypted_device=False,
+    network_encryption=False,
     resources=None,         # Per-daemon resource limits/requests (or use resources_pillar)
     resources_pillar=None,  # Pillar key for resources (e.g. 'res-k8s:rook:resources')
     placement=None,
@@ -82,6 +84,10 @@ def ceph_cluster_present(
         dashboard_enabled (bool): Enable Ceph dashboard
         monitoring_enabled (bool): Enable Prometheus monitoring
         toolbox_enabled (bool): Deploy debug toolbox pod
+        encrypted_device (bool): Encrypt new OSD devices (storage.config.encryptedDevice).
+            Does not re-encrypt OSDs that already exist.
+        network_encryption (bool): Enable msgr2 wire encryption
+            (network.connections.encryption.enabled). Requires msgr2.
         resources (dict, optional): Per-daemon resource limits/requests.
             Example (under res-k8s:rook:resources):
               mon:
@@ -154,6 +160,11 @@ def ceph_cluster_present(
                 if "config" not in spec["storage"]:
                     spec["storage"]["config"] = {}
                 spec["storage"]["config"]["metadataDevice"] = metadata_device
+            if encrypted_device:
+                if "config" not in spec["storage"]:
+                    spec["storage"]["config"] = {}
+                # Rook expects the string "true", not a boolean.
+                spec["storage"]["config"]["encryptedDevice"] = "true"
             # Note: nodes configuration can still be provided via full `spec` override if needed
 
             # Add network configuration
@@ -185,6 +196,12 @@ def ceph_cluster_present(
                     "public": _format_multus_net(public_network),
                     "cluster": _format_multus_net(cluster_network)
                 }
+
+            if network_encryption:
+                spec["network"]["connections"] = {
+                    "encryption": {"enabled": True},
+                }
+                spec["network"]["requireMsgr2"] = True
 
             # Add toolbox if requested
             if toolbox_enabled:

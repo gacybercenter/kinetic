@@ -38,6 +38,8 @@ def ceph_cluster_present(
     dashboard_enabled=True,
     monitoring_enabled=True,
     toolbox_enabled=True,
+    encrypted_device=False,
+    network_encryption=False,
     resources=None,         # Per-daemon resource limits/requests from pillar
     resources_pillar=None,  # Pillar key for resources (e.g. 'res-k8s:rook:resources')
     placement=None,
@@ -83,6 +85,14 @@ def ceph_cluster_present(
 
     dashboard_enabled, monitoring_enabled, toolbox_enabled
         Feature flags for common Ceph components.
+
+    encrypted_device
+        Encrypt new OSD devices (spec.storage.config.encryptedDevice).
+        Existing OSDs are not re-encrypted.
+
+    network_encryption
+        Enable Ceph messenger encryption (spec.network.connections.encryption)
+        and require msgr2.
 
     resources
         Per-daemon resource limits/requests. Example (under res-k8s:rook:resources):
@@ -150,6 +160,8 @@ def ceph_cluster_present(
             dashboard_enabled=dashboard_enabled,
             monitoring_enabled=monitoring_enabled,
             toolbox_enabled=toolbox_enabled,
+            encrypted_device=encrypted_device,
+            network_encryption=network_encryption,
             placement=placement,
             placement_pillar=placement_pillar,
             spec=spec,

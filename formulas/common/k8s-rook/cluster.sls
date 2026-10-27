@@ -20,3 +20,8 @@ rook_ceph_cluster:
     - dashboard_enabled: true
     - monitoring_enabled: false
     - toolbox_enabled: true
+    {# res-k8s:rook:encryption.osd encrypts new OSD devices.
+       res-k8s:rook:encryption.network enables msgr2 wire encryption.
+       Both default off. Neither rewrites existing OSDs. #}
+    - encrypted_device: {{ pillar['res-k8s']['rook'].get('encryption', {}).get('osd', false) }}
+    - network_encryption: {{ pillar['res-k8s']['rook'].get('encryption', {}).get('network', false) }}
