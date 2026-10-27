@@ -755,6 +755,9 @@ def ceph_object_store_present(
         # mounted, separate from the per-protocol "enabled" flags above -
         # without swift_auth explicitly listed here, Swift TempAuth-style
         # requests (and some Keystone-Swift flows) never reach the gateway.
+        # Built before STS/Keystone so both can add rgwConfig keys.
+        merged_rgw_config = {}
+
         if enable_apis is not None:
             object_store_body["spec"]["protocols"]["enableAPIs"] = enable_apis
         else:
@@ -796,7 +799,6 @@ def ceph_object_store_present(
             object_store_body["spec"]["gateway"]["resources"] = gateway_resources
 
         # Configure Keystone authentication if enabled, under auth.keystone and gateway rgwConfig
-        merged_rgw_config = {}
         if auth_keystone:
             if not keystone_service_user_secret_name:
                 return {
