@@ -7,6 +7,8 @@ rather than through Helm charts. It follows the pattern established in kinetic-k
 """
 
 import json
+from datetime import datetime, timezone
+
 import salt.utils.decorators as decorators
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
@@ -38,6 +40,48 @@ def _load_k8s_config():
         config.load_incluster_config()
     except config.ConfigException:
         config.load_kube_config()
+
+
+def _spec_matches(desired, current):
+    """True when every key we set is already present in the live spec.
+
+    Rook adds defaults (healthCheck, zone, securePort, placement). A full
+    equality check treats those as drift and used to delete the CR.
+    """
+    if isinstance(desired, dict):
+        if not isinstance(current, dict):
+            return False
+        return all(
+            _spec_matches(value, current.get(key))
+            for key, value in desired.items()
+        )
+    if isinstance(desired, list):
+        if not isinstance(current, list) or len(desired) != len(current):
+            return False
+        if all(isinstance(item, str) for item in desired + current):
+            return sorted(desired) == sorted(current)
+        return all(_spec_matches(a, b) for a, b in zip(desired, current))
+    return desired == current
+
+
+def _restart_rook_operator(namespace):
+    """Roll the rook-ceph-operator Deployment so it re-reads the CR."""
+    apps = client.AppsV1Api()
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    patch = {
+        "spec": {
+            "template": {
+                "metadata": {
+                    "annotations": {"kinetic.gcr/restarted-at": now}
+                }
+            }
+        }
+    }
+    apps.patch_namespaced_deployment(
+        name="rook-ceph-operator",
+        namespace=namespace,
+        body=patch,
+    )
 
 
 def ceph_cluster_present(
@@ -737,8 +781,6 @@ def ceph_object_store_present(
                 "gateway": {
                     "port": port,
                     "instances": gateway_instances,
-                    "ssl": ssl_enabled,
-                    "type": "s3",  # Primary API type for S3 compatibility
                 },
                 "protocols": {
                     "s3": {"enabled": enable_s3_api},
@@ -847,47 +889,55 @@ def ceph_object_store_present(
                 plural="cephobjectstores",
                 name=name,
             )
-            # Compare existing spec with desired spec (simplified check)
-            if existing_store.get("spec") == object_store_body.get("spec"):
+            desired = object_store_body.get("spec")
+            if _spec_matches(desired, existing_store.get("spec") or {}):
                 return {
                     "success": True,
                     "updated": False,
                     "message": f"CephObjectStore {name} already exists in namespace {namespace} with matching spec.",
                     "resource": existing_store,
                 }
-            else:
-                # Spec differs → delete the old object. Do NOT try to create immediately;
-                # Rook may keep the CR in Terminating (especially with preservePoolsOnDelete=true).
-                # The next run will create it once the 404 path is reached.
+            try:
+                # Merge-patch the spec. Do not delete: that drops pools/users
+                # even with preservePoolsOnDelete, and Rook defaults make a
+                # full equality check fail every run.
+                patched = custom_api.patch_namespaced_custom_object(
+                    group="ceph.rook.io",
+                    version="v1",
+                    namespace=namespace,
+                    plural="cephobjectstores",
+                    name=name,
+                    body={"spec": desired},
+                    _content_type="application/merge-patch+json",
+                )
+                restart_note = ""
                 try:
-                    custom_api.delete_namespaced_custom_object(
-                        group="ceph.rook.io",
-                        version="v1",
-                        namespace=namespace,
-                        plural="cephobjectstores",
-                        name=name,
+                    _restart_rook_operator(namespace)
+                    restart_note = "; restarted deployment/rook-ceph-operator"
+                except ApiException as restart_err:
+                    restart_note = (
+                        f"; failed to restart rook-ceph-operator: "
+                        f"{str(restart_err)[:80]}"
                     )
-                    return {
-                        "success": True,
-                        "updated": True,
-                        "message": f"CephObjectStore {name} deletion initiated in namespace {namespace} (will recreate on next run).",
-                        "resource": {},
-                    }
-                except ApiException as delete_err:
-                    # 409 "object is being deleted" is expected while finalizers run → treat as soft success
-                    if delete_err.status == 409 and "object is being deleted" in str(delete_err):
-                        return {
-                            "success": True,
-                            "updated": True,
-                            "message": f"CephObjectStore {name} is still terminating in namespace {namespace}; will recreate when ready.",
-                            "resource": {},
-                        }
-                    return {
-                        "success": False,
-                        "updated": False,
-                        "message": f"Failed to delete existing CephObjectStore {name} in namespace {namespace}: {str(delete_err)[:100]}...",
-                        "resource": {},
-                    }
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": (
+                        f"CephObjectStore {name} updated in namespace {namespace}"
+                        f"{restart_note}."
+                    ),
+                    "resource": patched,
+                }
+            except ApiException as patch_err:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": (
+                        f"Failed to update CephObjectStore {name} in namespace "
+                        f"{namespace}: {str(patch_err)[:150]}"
+                    ),
+                    "resource": {},
+                }
         except ApiException as e:
             if e.status == 404:
                 # CephObjectStore does not exist, create it
