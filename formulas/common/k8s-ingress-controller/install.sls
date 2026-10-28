@@ -53,7 +53,7 @@ install_traefik_external_ingress_controller:
     - release_name: traefik-external
     - chart_name: traefik/traefik
     - namespace: {{ pillar.get('traefik_external_namespace', 'ingress') }}
-    - pillar_key: res-k8s:lbs:ingress
+    - pillar_key: res-k8s:lbs:values
     - keep_values_file: True
     - wait_timeout: 300
     - wait_interval: 10
