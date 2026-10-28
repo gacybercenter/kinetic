@@ -61,10 +61,6 @@ install_traefik_external_ingress_controller:
       - cmd: update_helm_repos
       - k8s_helm: install_metallb
 
-{% set external_only = ingress_gateways in ['external', ['external']] %}
-{% set external_ip = pillar['res-k8s']['lbs']['ips']['external'] %}
-{% set gateway_name = 'external' if external_only else 'traefik-external' %}
-
 {% set certs = pillar['res-k8s']['certs']['external'] %}
 ext_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
