@@ -1065,7 +1065,7 @@ def oidc_provider_present(
         _load_k8s_config()
         info = _toolbox_radosgw(
             namespace,
-            ["oidc", "provider", "get", "--tenant", tenant, "--provider-name", name],
+            ["oidc", "provider", "get", "--tenant", tenant, "--name", name],
         )
         current = {}
         if info["success"]:
@@ -1086,7 +1086,7 @@ def oidc_provider_present(
         if info["success"] and current:
             removed = _toolbox_radosgw(
                 namespace,
-                ["oidc", "provider", "rm", "--tenant", tenant, "--provider-name", name],
+                ["oidc", "provider", "rm", "--tenant", tenant, "--name", name],
             )
             if not removed["success"]:
                 return {
@@ -1099,8 +1099,8 @@ def oidc_provider_present(
             [
                 "oidc", "provider", "create",
                 "--tenant", tenant,
-                "--provider-name", name,
-                "--provider-url", issuer_url,
+                "--name", name,
+                "--issuer-url", issuer_url,
                 "--client-id", client_id,
                 "--client-secret", str(client_secret),
             ],
