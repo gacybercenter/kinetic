@@ -109,15 +109,15 @@ traefik_external_gateway:
       - type: IPAddress
         value: {{ external_ip }}
     - listeners:
-      - name: web-ext
+      - name: web
         protocol: HTTP
-        port: 9080
+        port: 80
         allowedRoutes:
           namespaces:
             from: All
-      - name: websecure-ext
+      - name: websecure
         protocol: HTTPS
-        port: 9443
+        port: 443
         allowedRoutes:
           namespaces:
             from: All
