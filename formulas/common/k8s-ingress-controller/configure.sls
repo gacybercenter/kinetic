@@ -6,10 +6,13 @@ metallb_namespace:
   k8s.namespace_present:
     - namespace: {{ pillar.get('metallb_namespace', 'metallb-system') }}
 
-# Define internal and external IPs for the ingress controllers
-{% set internal_ip = pillar['res-k8s']['lbs']['ips']['internal'] %}
+{# ingress_gateways: external skips the internal pool. Default keeps both. #}
+{% set ingress_gateways = pillar.get('ingress_gateways', 'both') %}
+{% set external_only = ingress_gateways in ['external', ['external']] %}
 {% set external_ip = pillar['res-k8s']['lbs']['ips']['external'] %}
 
+{% if not external_only %}
+{% set internal_ip = pillar['res-k8s']['lbs']['ips']['internal'] %}
 # Configure MetalLB pool and advertisement for internal IP
 ensure_metallb_pool_internal:
   k8s.metallb_pool_present:
@@ -28,6 +31,7 @@ ensure_metallb_advertisement_internal:
     - metallb_namespace: metallb-system
     - require:
         - k8s: ensure_metallb_pool_internal
+{% endif %}
 
 # Configure MetalLB pool and advertisement for external IP
 ensure_metallb_pool_external:

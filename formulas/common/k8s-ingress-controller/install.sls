@@ -61,6 +61,11 @@ install_traefik_external_ingress_controller:
       - cmd: update_helm_repos
       - k8s_helm: install_metallb
 
+{% set ingress_gateways = pillar.get('ingress_gateways', 'both') %}
+{% set external_only = ingress_gateways in ['external', ['external']] %}
+{% set external_ip = pillar['res-k8s']['lbs']['ips']['external'] %}
+{% set gateway_name = 'external' if external_only else 'traefik-external' %}
+
 {% set certs = pillar['res-k8s']['certs']['external'] %}
 ext_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
@@ -77,6 +82,7 @@ ext_ingress_tls_certificate:
     - require:
       - k8s_helm: install_traefik_external_ingress_controller
 
+{% if not external_only %}
 {% set certs = pillar['res-k8s']['certs']['internal'] %}
 int_ingress_tls_certificate:
   k8s.certmanager_certificate_present:
@@ -92,15 +98,16 @@ int_ingress_tls_certificate:
     - renew_before: 360h
     - require:
       - k8s_helm: install_traefik_external_ingress_controller
+{% endif %}
 
 traefik_external_gateway:
   k8s.gateway_present:
-    - name: traefik-external
+    - name: {{ gateway_name }}
     - namespace: ingress
     - gateway_class_name: traefik
     - addresses:
       - type: IPAddress
-        value: 10.150.1.247
+        value: {{ external_ip }}
     - listeners:
       - name: web-ext
         protocol: HTTP
@@ -123,6 +130,7 @@ traefik_external_gateway:
     - require:
       - k8s_helm: install_traefik_external_ingress_controller
 
+{% if not external_only %}
 traefik_internal_gateway:
   k8s.gateway_present:
     - name: traefik-internal
@@ -130,7 +138,7 @@ traefik_internal_gateway:
     - gateway_class_name: traefik
     - addresses:
       - type: IPAddress
-        value: 10.150.1.43
+        value: {{ pillar['res-k8s']['lbs']['ips']['internal'] }}
     - listeners:
       - name: web
         port: 80
@@ -152,3 +160,4 @@ traefik_internal_gateway:
               group: ""
     - require:
       - k8s_helm: install_traefik_external_ingress_controller
+{% endif %}
