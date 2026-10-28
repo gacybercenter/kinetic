@@ -1047,6 +1047,17 @@ def _json_equal(left, right):
         return str(left).strip() == str(right).strip()
 
 
+def _tenant_args(tenant):
+    """RGW role commands reject or mis-scope ``--tenant`` when it is empty.
+
+    OIDC provider create still wants ``--tenant=""``. Role create/get/policy
+    must omit the flag unless a tenant is actually set.
+    """
+    if tenant:
+        return ["--tenant", tenant]
+    return []
+
+
 def oidc_provider_present(
     namespace,
     name,
@@ -1146,7 +1157,7 @@ def rgw_role_present(
         doc = json.dumps(policy)
         info = _toolbox_radosgw(
             namespace,
-            ["role", "get", "--role-name", role_name, "--tenant", tenant],
+            ["role", "get", "--role-name", role_name, *_tenant_args(tenant)],
         )
         if info["success"]:
             try:
@@ -1177,7 +1188,7 @@ def rgw_role_present(
                 "role", "create",
                 "--role-name", role_name,
                 "--path", path,
-                "--tenant", tenant,
+                *_tenant_args(tenant),
                 "--assume-role-policy-doc", doc,
             ],
         )
@@ -1230,7 +1241,7 @@ def rgw_role_policy_present(
                 "role", "policy", "get",
                 "--role-name", role_name,
                 "--policy-name", policy_name,
-                "--tenant", tenant,
+                *_tenant_args(tenant),
             ],
         )
         current_doc = current["stdout"]
@@ -1252,7 +1263,7 @@ def rgw_role_policy_present(
                 "role", "policy", "put",
                 "--role-name", role_name,
                 "--policy-name", policy_name,
-                "--tenant", tenant,
+                *_tenant_args(tenant),
                 "--policy-doc", doc,
             ],
         )
