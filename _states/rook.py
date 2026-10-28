@@ -742,3 +742,86 @@ def ceph_object_store_present(
         ret["changes"] = {}
 
     return ret
+
+
+def oidc_provider_present(
+    name,
+    namespace,
+    issuer_url,
+    client_id,
+    client_secret,
+    tenant="",
+):
+    """Ensure an RGW OIDC provider exists via radosgw-admin in rook-ceph-tools."""
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_rook.oidc_provider_present"](
+            namespace=namespace,
+            name=name,
+            issuer_url=issuer_url,
+            client_id=client_id,
+            client_secret=client_secret,
+            tenant=tenant,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"oidc_provider_updated": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
+    return ret
+
+
+def rgw_role_present(
+    name,
+    namespace,
+    provider_name,
+    audience,
+    tenant="",
+    path="/",
+    audience_claim="aud",
+):
+    """Ensure an RGW IAM role trusts the named OIDC provider."""
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_rook.rgw_role_present"](
+            namespace=namespace,
+            role_name=name,
+            provider_name=provider_name,
+            audience=audience,
+            tenant=tenant,
+            path=path,
+            audience_claim=audience_claim,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"rgw_role_updated": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
+    return ret
+
+
+def rgw_role_policy_present(
+    name,
+    namespace,
+    role_name,
+    buckets,
+    tenant="",
+    actions=None,
+):
+    """Attach an inline S3 policy to an RGW role. name is the policy name."""
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_rook.rgw_role_policy_present"](
+            namespace=namespace,
+            role_name=role_name,
+            policy_name=name,
+            buckets=buckets,
+            tenant=tenant,
+            actions=actions,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"rgw_role_policy_updated": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
+    return ret

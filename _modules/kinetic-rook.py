@@ -7,6 +7,7 @@ rather than through Helm charts. It follows the pattern established in kinetic-k
 """
 
 import json
+import shlex
 from datetime import datetime, timezone
 
 import salt.utils.decorators as decorators
@@ -968,6 +969,282 @@ def ceph_object_store_present(
             "message": f"Error managing CephObjectStore {name} in namespace {namespace}: {str(e)[:100]}...",
             "resource": {},
         }
+
+
+def _toolbox_radosgw(namespace, args, timeout=120):
+    """Run radosgw-admin in the rook-ceph-tools pod.
+
+    Returns {success, rc, stdout, stderr}. The client secret is an argv
+    value and is not echoed back.
+    """
+    from kubernetes.stream import stream
+
+    core = client.CoreV1Api()
+    pods = core.list_namespaced_pod(
+        namespace=namespace,
+        label_selector="app=rook-ceph-tools",
+    )
+    running = [
+        p.metadata.name
+        for p in pods.items
+        if p.status and p.status.phase == "Running"
+    ]
+    if not running:
+        return {
+            "success": False,
+            "rc": 1,
+            "stdout": "",
+            "stderr": f"no running rook-ceph-tools pod in {namespace}",
+        }
+    command = ["/bin/sh", "-c", "radosgw-admin " + " ".join(shlex.quote(a) for a in args) + "; echo __RC:$?"]
+    stdout = stream(
+        core.connect_get_namespaced_pod_exec,
+        running[0],
+        namespace,
+        command=command,
+        container="rook-ceph-tools",
+        stderr=True,
+        stdin=False,
+        stdout=True,
+        tty=False,
+        _request_timeout=timeout,
+    )
+    rc = 1
+    lines = (stdout or "").splitlines()
+    if lines and lines[-1].startswith("__RC:"):
+        rc = int(lines[-1].split(":", 1)[1] or 1)
+        lines = lines[:-1]
+    text = "\n".join(lines)
+    return {"success": rc == 0, "rc": rc, "stdout": text, "stderr": "" if rc == 0 else text}
+
+
+def _json_equal(left, right):
+    try:
+        return json.loads(left) == json.loads(right)
+    except (TypeError, ValueError):
+        return str(left).strip() == str(right).strip()
+
+
+def oidc_provider_present(
+    namespace,
+    name,
+    issuer_url,
+    client_id,
+    client_secret,
+    tenant="",
+):
+    """Ensure an RGW OIDC provider exists.
+
+    radosgw-admin has no modify. Issuer or client-id drift is rm + create.
+    The secret is not returned by `provider info`, so a secret-only change
+    is not detected.
+    """
+    try:
+        _load_k8s_config()
+        info = _toolbox_radosgw(
+            namespace,
+            ["oidc", "provider", "get", "--tenant", tenant, "--provider-name", name],
+        )
+        current = {}
+        if info["success"]:
+            try:
+                current = json.loads(info["stdout"])
+            except ValueError:
+                current = {}
+        same = (
+            current.get("provider_url") == issuer_url
+            or current.get("issuer_url") == issuer_url
+        ) and (current.get("client_id") == client_id or current.get("client_ids") == [client_id])
+        if info["success"] and same:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"OIDC provider {name} already matches",
+            }
+        if info["success"] and current:
+            removed = _toolbox_radosgw(
+                namespace,
+                ["oidc", "provider", "rm", "--tenant", tenant, "--provider-name", name],
+            )
+            if not removed["success"]:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"failed to replace OIDC provider {name}: {removed['stderr'][:200]}",
+                }
+        created = _toolbox_radosgw(
+            namespace,
+            [
+                "oidc", "provider", "create",
+                "--tenant", tenant,
+                "--provider-name", name,
+                "--provider-url", issuer_url,
+                "--client-id", client_id,
+                "--client-secret", str(client_secret),
+            ],
+        )
+        return {
+            "success": created["success"],
+            "updated": created["success"],
+            "message": (
+                f"OIDC provider {name} created"
+                if created["success"]
+                else f"failed to create OIDC provider {name}: {created['stderr'][:200]}"
+            ),
+        }
+    except Exception as exc:
+        return {"success": False, "updated": False, "message": str(exc)[:200]}
+
+
+def rgw_role_present(
+    namespace,
+    role_name,
+    provider_name,
+    audience,
+    tenant="",
+    path="/",
+    audience_claim="aud",
+):
+    """Ensure an RGW IAM role that trusts an OIDC provider."""
+    try:
+        _load_k8s_config()
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": {"Federated": f"arn:aws:iam:::oidc-provider/{provider_name}"},
+                "Action": "sts:AssumeRoleWithWebIdentity",
+                "Condition": {
+                    "StringEquals": {
+                        f"{provider_name}:{audience_claim}": audience,
+                    }
+                },
+            }],
+        }
+        doc = json.dumps(policy)
+        info = _toolbox_radosgw(
+            namespace,
+            ["role", "get", "--role-name", role_name, "--tenant", tenant],
+        )
+        if info["success"]:
+            try:
+                payload = json.loads(info["stdout"])
+                current_doc = payload.get(
+                    "assume_role_policy_document",
+                    payload.get("AssumeRolePolicyDocument", "{}"),
+                )
+            except ValueError:
+                current_doc = "{}"
+            if _json_equal(current_doc, doc):
+                return {
+                    "success": True,
+                    "updated": False,
+                    "message": f"RGW role {role_name} already matches",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": (
+                    f"RGW role {role_name} exists with a different trust policy; "
+                    "delete it before replacing"
+                ),
+            }
+        created = _toolbox_radosgw(
+            namespace,
+            [
+                "role", "create",
+                "--role-name", role_name,
+                "--path", path,
+                "--tenant", tenant,
+                "--assume-role-policy-doc", doc,
+            ],
+        )
+        return {
+            "success": created["success"],
+            "updated": created["success"],
+            "message": (
+                f"RGW role {role_name} created"
+                if created["success"]
+                else f"failed to create RGW role {role_name}: {created['stderr'][:200]}"
+            ),
+        }
+    except Exception as exc:
+        return {"success": False, "updated": False, "message": str(exc)[:200]}
+
+
+def rgw_role_policy_present(
+    namespace,
+    role_name,
+    policy_name,
+    buckets,
+    tenant="",
+    actions=None,
+):
+    """Attach an inline S3 policy to an RGW role. buckets may be ['*']."""
+    try:
+        _load_k8s_config()
+        actions = actions or ["s3:*"]
+        resources = []
+        for bucket in buckets:
+            if bucket == "*":
+                resources.extend(["arn:aws:s3:::*", "arn:aws:s3:::*/*"])
+            else:
+                resources.extend([
+                    f"arn:aws:s3:::{bucket}",
+                    f"arn:aws:s3:::{bucket}/*",
+                ])
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Action": actions,
+                "Resource": resources,
+            }],
+        }
+        doc = json.dumps(policy)
+        current = _toolbox_radosgw(
+            namespace,
+            [
+                "role", "policy", "get",
+                "--role-name", role_name,
+                "--policy-name", policy_name,
+                "--tenant", tenant,
+            ],
+        )
+        current_doc = current["stdout"]
+        if current["success"]:
+            try:
+                payload = json.loads(current["stdout"])
+                current_doc = payload.get("Permission policy", current["stdout"])
+            except ValueError:
+                current_doc = current["stdout"]
+        if current["success"] and _json_equal(current_doc, doc):
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"role policy {policy_name} already matches",
+            }
+        attached = _toolbox_radosgw(
+            namespace,
+            [
+                "role", "policy", "put",
+                "--role-name", role_name,
+                "--policy-name", policy_name,
+                "--tenant", tenant,
+                "--policy-doc", doc,
+            ],
+        )
+        return {
+            "success": attached["success"],
+            "updated": attached["success"],
+            "message": (
+                f"role policy {policy_name} attached to {role_name}"
+                if attached["success"]
+                else f"failed to attach {policy_name}: {attached['stderr'][:200]}"
+            ),
+        }
+    except Exception as exc:
+        return {"success": False, "updated": False, "message": str(exc)[:200]}
 
 
 def ceph_object_store_user_present(

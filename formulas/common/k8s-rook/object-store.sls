@@ -29,6 +29,7 @@
 {% set keycloak_addr = kc_conn.get('keycloak_addr', 'https://keycloak.rsc.gacyberrange.org') %}
 {% set kc_admin = kc.get('values', {}).get('keycloak', {}) %}
 {% set kc_client = store.get('keycloak', {}) %}
+{% set oidc = store.get('oidc', {}) %}
 
 rook_ceph_object_store:
   rook.ceph_object_store_present:
@@ -48,6 +49,42 @@ rook_ceph_object_store:
     - rgw_config:
         rgw_s3_auth_use_sts: "true"
         rgw_sts_key: {{ store['sts_key'] | yaml_dquote }}
+
+{% if oidc %}
+{% set oidc_name = oidc.get('name', 'keycloak') %}
+{% set oidc_client = oidc.get('client_id', store_name) %}
+{% set oidc_role = oidc.get('role', store_name ~ '-oidc-role') %}
+object_store_oidc_provider:
+  rook.oidc_provider_present:
+    - name: {{ oidc_name }}
+    - namespace: {{ rook_ns }}
+    - issuer_url: {{ oidc['issuer_url'] | yaml_dquote }}
+    - client_id: {{ oidc_client | yaml_dquote }}
+    - client_secret: {{ oidc['client_secret'] | yaml_dquote }}
+    - require:
+      - rook: rook_ceph_object_store
+
+object_store_oidc_role:
+  rook.rgw_role_present:
+    - name: {{ oidc_role }}
+    - namespace: {{ rook_ns }}
+    - provider_name: {{ oidc_name }}
+    - audience: {{ oidc_client | yaml_dquote }}
+    - audience_claim: {{ oidc.get('audience_claim', 'aud') | yaml_dquote }}
+    - require:
+      - rook: object_store_oidc_provider
+
+{% if oidc.get('buckets') %}
+object_store_oidc_role_policy:
+  rook.rgw_role_policy_present:
+    - name: {{ oidc.get('policy_name', store_name ~ '-full-access') }}
+    - namespace: {{ rook_ns }}
+    - role_name: {{ oidc_role }}
+    - buckets: {{ oidc['buckets'] | tojson }}
+    - require:
+      - rook: object_store_oidc_role
+{% endif %}
+{% endif %}
 
 {% if object_hostnames %}
 # TLS terminates on the external Gateway. RGW Service is rook-ceph-rgw-<store>.
