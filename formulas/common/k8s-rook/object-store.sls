@@ -29,7 +29,15 @@
 {% set keycloak_addr = kc_conn.get('keycloak_addr', 'https://keycloak.rsc.gacyberrange.org') %}
 {% set kc_admin = kc.get('values', {}).get('keycloak', {}) %}
 {% set kc_client = store.get('keycloak', {}) %}
-{% set oidc = store.get('oidc', {}) %}
+{% set oidc_issuer = pillar.get('res-k8s', {}).get('oidc-issuer') or kc.get('oidc-issuer') or (keycloak_addr.rstrip('/') ~ '/realms/' ~ kc_client.get('realm', 'rsc')) %}
+{% set oidc = store.get('oidc') or ({
+  'name': 'keycloak',
+  'issuer_url': oidc_issuer,
+  'client_id': kc_client.get('client_id', store_name),
+  'client_secret': kc_client.get('secret'),
+  'role': store_name ~ '-oidc-role',
+  'buckets': store.get('buckets', []),
+} if kc_client.get('secret') and oidc_issuer.startswith('http') else {}) %}
 
 rook_ceph_object_store:
   rook.ceph_object_store_present:
