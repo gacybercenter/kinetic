@@ -51,7 +51,9 @@ install_metallb:
    kubeadm cluster. Same install cert-manager uses. #}
 {% set gateway_api = pillar.get('res-k8s', {}).get('gateway-api', {}) %}
 {% set gateway_api_version = gateway_api.get('version', 'v1.4.0') %}
-{% set gateway_api_channel = gateway_api.get('channel', 'standard') %}
+{# experimental includes TLSRoute/TCPRoute. Traefik lists those by default;
+   the standard bundle does not ship them. #}
+{% set gateway_api_channel = gateway_api.get('channel', 'experimental') %}
 {% set gateway_api_url = gateway_api.get(
      'url',
      'https://github.com/kubernetes-sigs/gateway-api/releases/download/'
