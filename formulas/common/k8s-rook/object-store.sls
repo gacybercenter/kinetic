@@ -26,7 +26,8 @@
 {% set gateway_section = store.get('gateway_section', 'websecure-ext') %}
 {% set kc = pillar.get('res-k8s', {}).get('keycloak', {}) %}
 {% set kc_conn = kc.get('connection', {}) %}
-{% set keycloak_addr = kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') %}
+{% set keycloak_addr = kc_conn.get('keycloak_addr', 'https://keycloak.rsc.gacyberrange.org') %}
+{% set kc_admin = kc.get('values', {}).get('keycloak', {}) %}
 {% set kc_client = store.get('keycloak', {}) %}
 
 rook_ceph_object_store:
@@ -99,7 +100,7 @@ object_store_keycloak_client:
     - secret: {{ kc_client['secret'] | yaml_dquote }}
 {%- endif %}
     - keycloak_addr: {{ keycloak_addr }}
-    - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
-    - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}
+    - realm_username: {{ kc_admin['adminUser'] | yaml_dquote }}
+    - realm_password: {{ kc_admin['adminPassword'] | yaml_dquote }}
     - verify: {{ kc_conn.get('verify', false) }}
 {% endif %}
