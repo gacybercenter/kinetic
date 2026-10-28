@@ -65,6 +65,19 @@ def _spec_matches(desired, current):
     return desired == current
 
 
+def _deep_merge(base, overlay):
+    """Overlay keys onto a live spec without dropping Rook-injected fields."""
+    if not isinstance(overlay, dict) or not isinstance(base, dict):
+        return overlay
+    merged = dict(base)
+    for key, value in overlay.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
 def _restart_rook_operator(namespace):
     """Roll the rook-ceph-operator Deployment so it re-reads the CR."""
     apps = client.AppsV1Api()
@@ -899,17 +912,26 @@ def ceph_object_store_present(
                     "resource": existing_store,
                 }
             try:
-                # Merge-patch the spec. Do not delete: that drops pools/users
-                # even with preservePoolsOnDelete, and Rook defaults make a
-                # full equality check fail every run.
-                patched = custom_api.patch_namespaced_custom_object(
+                # Replace with a merged spec. kubernetes 29-31 rejects
+                # _content_type on patch. Do not delete the CR.
+                metadata = existing_store.get("metadata") or {}
+                body = {
+                    "apiVersion": "ceph.rook.io/v1",
+                    "kind": "CephObjectStore",
+                    "metadata": {
+                        "name": name,
+                        "namespace": namespace,
+                        "resourceVersion": metadata.get("resourceVersion"),
+                    },
+                    "spec": _deep_merge(existing_store.get("spec") or {}, desired),
+                }
+                patched = custom_api.replace_namespaced_custom_object(
                     group="ceph.rook.io",
                     version="v1",
                     namespace=namespace,
                     plural="cephobjectstores",
                     name=name,
-                    body={"spec": desired},
-                    _content_type="application/merge-patch+json",
+                    body=body,
                 )
                 restart_note = ""
                 try:
