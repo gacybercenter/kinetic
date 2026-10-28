@@ -47,25 +47,6 @@ install_metallb:
        - k8s: metallb_namespace
        - cmd: update_helm_repos
 
-{# Traefik chart creates a GatewayClass. That CRD is not in a stock
-   kubeadm cluster. Same install cert-manager uses. #}
-{% set gateway_api = pillar.get('res-k8s', {}).get('gateway-api', {}) %}
-{% set gateway_api_version = gateway_api.get('version', 'v1.4.0') %}
-{# experimental includes TLSRoute/TCPRoute. Traefik lists those by default;
-   the standard bundle does not ship them. #}
-{% set gateway_api_channel = gateway_api.get('channel', 'experimental') %}
-{% set gateway_api_url = gateway_api.get(
-     'url',
-     'https://github.com/kubernetes-sigs/gateway-api/releases/download/'
-     ~ gateway_api_version ~ '/' ~ gateway_api_channel ~ '-install.yaml'
-   ) %}
-
-install_gateway_api_crds:
-  cmd.run:
-    - name: kubectl apply --server-side --force-conflicts -f {{ gateway_api_url }}
-    - require:
-      - cmd: update_helm_repos
-
 # Install or upgrade Traefik Ingress Controller for external traffic
 install_traefik_external_ingress_controller:
   k8s_helm.helm_release_present:
@@ -78,7 +59,6 @@ install_traefik_external_ingress_controller:
     - wait_interval: 10
     - require:
       - cmd: update_helm_repos
-      - cmd: install_gateway_api_crds
       - k8s_helm: install_metallb
 
 {% set ingress_gateways = pillar.get('ingress_gateways', 'both') %}
