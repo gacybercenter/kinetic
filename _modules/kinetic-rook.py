@@ -6,9 +6,17 @@ This module provides functions to manage Rook Ceph Custom Resources directly,
 rather than through Helm charts. It follows the pattern established in kinetic-k8s.py.
 """
 
+import base64
+import hashlib
+import hmac
 import json
 import shlex
+import socket
+import ssl
+import time
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from urllib.parse import quote, urlparse
 
 import salt.utils.decorators as decorators
 from kubernetes import client, config
@@ -1050,12 +1058,309 @@ def _json_equal(left, right):
 def _tenant_args(tenant):
     """RGW role commands reject or mis-scope ``--tenant`` when it is empty.
 
-    OIDC provider create still wants ``--tenant=""``. Role create/get/policy
-    must omit the flag unless a tenant is actually set.
+    Role create/get/policy must omit the flag unless a tenant is actually set.
     """
     if tenant:
         return ["--tenant", tenant]
     return []
+
+
+def _aws_uri_encode(value, safe="-_.~"):
+    """AWS SigV4 percent-encoding (spaces are ``%20``, not ``+``)."""
+    return quote(str(value), safe=safe)
+
+
+def _canonical_query(params):
+    pairs = []
+    for key, value in params.items():
+        pairs.append((_aws_uri_encode(key), _aws_uri_encode(value)))
+    pairs.sort()
+    return "&".join(f"{key}={value}" for key, value in pairs)
+
+
+def _aws4_signing_key(secret_key, datestamp, region, service):
+    key = ("AWS4" + secret_key).encode("utf-8")
+    for part in (datestamp, region, service, "aws4_request"):
+        key = hmac.new(key, part.encode("utf-8"), hashlib.sha256).digest()
+    return key
+
+
+def _iam_sign_headers(method, url, query, access_key, secret_key, region, service, payload=b""):
+    """Header-based AWS SigV4 for an IAM query call. No extra dependency.
+
+    The signed URL is exactly ``url + '?' + query``. Do not let ``requests``
+    re-encode the query string or the signature will not match.
+    """
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+    if parsed.port and not (
+        (parsed.scheme == "https" and parsed.port == 443)
+        or (parsed.scheme == "http" and parsed.port == 80)
+    ):
+        host = f"{host}:{parsed.port}"
+    now = datetime.now(timezone.utc)
+    amz_date = now.strftime("%Y%m%dT%H%M%SZ")
+    datestamp = amz_date[:8]
+    payload_hash = hashlib.sha256(payload).hexdigest()
+    path = _aws_uri_encode(parsed.path or "/", safe="/")
+    canonical_headers = (
+        f"host:{host}\n"
+        f"x-amz-content-sha256:{payload_hash}\n"
+        f"x-amz-date:{amz_date}\n"
+    )
+    signed_headers = "host;x-amz-content-sha256;x-amz-date"
+    canonical_request = "\n".join([
+        method,
+        path,
+        query,
+        canonical_headers,
+        signed_headers,
+        payload_hash,
+    ])
+    scope = f"{datestamp}/{region}/{service}/aws4_request"
+    string_to_sign = "\n".join([
+        "AWS4-HMAC-SHA256",
+        amz_date,
+        scope,
+        hashlib.sha256(canonical_request.encode("utf-8")).hexdigest(),
+    ])
+    signature = hmac.new(
+        _aws4_signing_key(secret_key, datestamp, region, service),
+        string_to_sign.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    authorization = (
+        f"AWS4-HMAC-SHA256 Credential={access_key}/{scope}, "
+        f"SignedHeaders={signed_headers}, Signature={signature}"
+    )
+    return {
+        "Host": host,
+        "X-Amz-Date": amz_date,
+        "X-Amz-Content-Sha256": payload_hash,
+        "Authorization": authorization,
+    }, path
+
+
+def _iam_endpoint(endpoint):
+    """Normalize an RGW base URL to ``(scheme, host, path)``.
+
+    Default ports are omitted so the signed Host header matches the URL
+    ``requests`` will send.
+    """
+    raw = endpoint.strip()
+    if "://" not in raw:
+        raw = "http://" + raw
+    parsed = urlparse(raw)
+    host = parsed.hostname or ""
+    if parsed.port and not (
+        (parsed.scheme == "https" and parsed.port == 443)
+        or (parsed.scheme == "http" and parsed.port == 80)
+    ):
+        host = f"{host}:{parsed.port}"
+    path = parsed.path or "/"
+    if not path.endswith("/"):
+        path += "/"
+    return parsed.scheme or "http", host, path
+
+
+def _iam_request(
+    endpoint,
+    action,
+    access_key,
+    secret_key,
+    params=None,
+    region="us-east-1",
+    service="iam",
+    verify=True,
+    timeout=30,
+):
+    """POST an RGW IAM query-API action. Returns ``(ok, status, body)``.
+
+    ``body`` is the raw XML. ``format=json`` collapses repeated ``member``
+    tags, so callers parse XML instead. ``ok`` is false for HTTP errors
+    other than 404 (missing entity).
+    """
+    query_params = {
+        "Action": action,
+        "Version": "2010-05-08",
+    }
+    query_params.update(params or {})
+    scheme, host, path = _iam_endpoint(endpoint)
+    url = f"{scheme}://{host}{path}"
+    query = _canonical_query(query_params)
+    headers, signed_path = _iam_sign_headers(
+        "POST", url, query, access_key, secret_key, region, service,
+    )
+    signed_url = f"{scheme}://{host}{signed_path}?{query}"
+    resp = requests.post(signed_url, headers=headers, data=b"", verify=verify, timeout=timeout)
+    text = resp.text or ""
+    if resp.status_code == 404:
+        return False, 404, text
+    if resp.status_code >= 400:
+        return False, resp.status_code, text.replace("\n", " ")[:300]
+    return True, resp.status_code, text
+
+
+def _iam_local(tag):
+    return (tag or "").rsplit("}", 1)[-1]
+
+
+def _iam_xml(text):
+    try:
+        return ET.fromstring(text)
+    except ET.ParseError:
+        return None
+
+
+def _iam_error_code(text):
+    root = _iam_xml(text) if isinstance(text, str) else None
+    if root is None:
+        return ""
+    for node in root.iter():
+        if _iam_local(node.tag) == "Code" and node.text:
+            return node.text.strip()
+    return ""
+
+
+def _iam_members(text, section):
+    """Texts of ``<member>`` children under ``section``. None if unparseable."""
+    root = _iam_xml(text) if isinstance(text, str) else None
+    if root is None:
+        return None
+    members = []
+    for node in root.iter():
+        if _iam_local(node.tag) != section:
+            continue
+        for child in list(node):
+            if _iam_local(child.tag) == "member" and (child.text or "").strip():
+                members.append(child.text.strip())
+    return members
+
+
+def _iam_missing(status, body):
+    text = body if isinstance(body, str) else ""
+    code = _iam_error_code(text)
+    return status == 404 or code.startswith("NoSuch") or "NoSuchEntity" in text
+
+
+def _oidc_provider_id(issuer_url):
+    """Issuer URL as RGW stores it: scheme stripped, no trailing slash.
+
+    Matches ``WebTokenEngine::get_provider``: the JWT ``iss`` has ``http://``
+    or ``https://`` removed, then becomes
+    ``arn:aws:iam::<tenant>:oidc-provider/<that>``.
+    """
+    parsed = urlparse(issuer_url.strip())
+    host = parsed.netloc
+    if host.startswith("www."):
+        host = host[4:]
+    path = (parsed.path or "").rstrip("/")
+    return host + path
+
+
+def _oidc_provider_arn(issuer_url, tenant=""):
+    return f"arn:aws:iam::{tenant}:oidc-provider/{_oidc_provider_id(issuer_url)}"
+
+
+def _sha1_thumbprint(der_bytes):
+    return hashlib.sha1(der_bytes).hexdigest()
+
+
+def _tls_peer_thumbprint(issuer_url, verify=True, timeout=10):
+    """SHA1 of the issuer TLS leaf, in case JWKS has no ``x5c``."""
+    parsed = urlparse(issuer_url)
+    if parsed.scheme != "https" or not parsed.hostname:
+        return None
+    port = parsed.port or 443
+    context = ssl.create_default_context()
+    if not verify:
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+    try:
+        with socket.create_connection((parsed.hostname, port), timeout=timeout) as raw:
+            with context.wrap_socket(raw, server_hostname=parsed.hostname) as wrapped:
+                der = wrapped.getpeercert(binary_form=True)
+    except (OSError, ssl.SSLError):
+        return None
+    if not der:
+        return None
+    return _sha1_thumbprint(der)
+
+
+def _jwks_thumbprints(issuer_url, verify=True, timeout=15):
+    """SHA1 of every ``x5c`` cert on the issuer JWKS.
+
+    That is what RGW compares during ``AssumeRoleWithWebIdentity``, not the
+    TLS server cert. Keycloak omits ``x5c`` unless a certificate is set on
+    the realm keys; discovery then returns nothing and a thumbprint must be
+    passed in.
+    """
+    issuer = issuer_url.rstrip("/")
+    try:
+        config_resp = requests.get(
+            issuer + "/.well-known/openid-configuration",
+            verify=verify,
+            timeout=timeout,
+        )
+        config_resp.raise_for_status()
+        jwks_uri = config_resp.json().get("jwks_uri")
+        if not jwks_uri:
+            return []
+        jwks_resp = requests.get(jwks_uri, verify=verify, timeout=timeout)
+        jwks_resp.raise_for_status()
+        keys = jwks_resp.json().get("keys") or []
+    except (requests.RequestException, ValueError, TypeError):
+        return []
+    thumbprints = []
+    for key in keys:
+        for cert_b64 in key.get("x5c") or []:
+            try:
+                der = base64.b64decode(cert_b64)
+            except (TypeError, ValueError):
+                continue
+            if der:
+                thumbprints.append(_sha1_thumbprint(der))
+    return thumbprints
+
+
+def _discover_thumbprints(issuer_url, verify=True):
+    """Prefer JWKS ``x5c``; fall back to the issuer TLS leaf. Cap at 5."""
+    found = []
+    for thumbprint in _jwks_thumbprints(issuer_url, verify=verify):
+        if thumbprint not in found:
+            found.append(thumbprint)
+    peer = _tls_peer_thumbprint(issuer_url, verify=verify)
+    if peer and peer not in found:
+        found.append(peer)
+    return found[:5]
+
+
+def _rgw_user_keys(namespace, secret_name, timeout=60):
+    """Read Rook's object-user Secret, waiting briefly for the operator."""
+    _load_k8s_config()
+    core = client.CoreV1Api()
+    deadline = time.monotonic() + timeout
+    last_error = f"secret {secret_name} not found in {namespace}"
+    while True:
+        try:
+            secret = core.read_namespaced_secret(secret_name, namespace)
+            data = secret.data or {}
+            access = base64.b64decode(data["AccessKey"]).decode("utf-8") if data.get("AccessKey") else ""
+            secret_key = base64.b64decode(data["SecretKey"]).decode("utf-8") if data.get("SecretKey") else ""
+            if access and secret_key:
+                return {"success": True, "access_key": access, "secret_key": secret_key}
+            last_error = f"secret {secret_name} has no AccessKey/SecretKey yet"
+        except ApiException as exc:
+            last_error = str(exc)[:200]
+            if exc.status != 404:
+                break
+        except Exception as exc:
+            last_error = str(exc)[:200]
+            break
+        if time.monotonic() >= deadline:
+            break
+        time.sleep(2)
+    return {"success": False, "message": last_error}
 
 
 def oidc_provider_present(
@@ -1063,67 +1368,236 @@ def oidc_provider_present(
     name,
     issuer_url,
     client_id,
-    client_secret,
+    client_secret=None,
     tenant="",
+    thumbprints=None,
+    endpoint=None,
+    access_key=None,
+    secret_key=None,
+    store=None,
+    iam_user="rgw-iam-admin",
+    region="us-east-1",
+    service="iam",
+    verify=True,
+    discover_thumbprints=True,
 ):
-    """Ensure an RGW OIDC provider exists.
+    """Ensure an RGW OIDC provider via the IAM query API.
 
-    radosgw-admin has no modify. Issuer or client-id drift is rm + create.
-    The secret is not returned by `provider info`, so a secret-only change
-    is not detected.
+    ``radosgw-admin oidc provider`` is newer than the releases this cluster
+    runs. ``CreateOpenIDConnectProvider`` has been the documented API since
+    well before that CLI existed
+    (https://docs.ceph.com/en/reef/radosgw/oidc/).
+
+    The provider is keyed by issuer URL, not ``name``. RGW strips the scheme
+    and stores ``arn:aws:iam::<tenant>:oidc-provider/<host/path>``. There is
+    no client secret on this API; ``client_secret`` is accepted and ignored
+    so older state calls keep working.
+
+    Credentials are an RGW user with ``oidc-provider=*`` caps. Pass
+    ``access_key``/``secret_key``, or ``store`` plus ``iam_user`` and this
+    reads the Rook secret ``rook-ceph-object-user-<store>-<iam_user>``.
+
+    Thumbprints are SHA1 of the IdP certificates (JWKS ``x5c``, which is what
+    STS checks). They are discovered from the issuer when omitted. Ceph
+    rejects a create with an empty thumbprint list.
     """
     try:
-        _load_k8s_config()
-        info = _toolbox_radosgw(
-            namespace,
-            ["oidc", "provider", "get", "--tenant", tenant, "--name", name],
-        )
-        current = {}
-        if info["success"]:
-            try:
-                current = json.loads(info["stdout"])
-            except ValueError:
-                current = {}
-        same = (
-            current.get("provider_url") == issuer_url
-            or current.get("issuer_url") == issuer_url
-        ) and (current.get("client_id") == client_id or current.get("client_ids") == [client_id])
-        if info["success"] and same:
+        # STS looks the provider up from the token iss with the scheme stripped
+        # and no trailing slash. Keycloak's iss has none; a trailing slash here
+        # would store a provider STS can never find.
+        issuer_url = (issuer_url or "").strip().rstrip("/")
+        if not issuer_url.startswith(("http://", "https://")):
             return {
-                "success": True,
+                "success": False,
                 "updated": False,
-                "message": f"OIDC provider {name} already matches",
+                "message": f"issuer_url for OIDC provider {name} must be an http(s) URL",
             }
-        if info["success"] and current:
-            removed = _toolbox_radosgw(
-                namespace,
-                ["oidc", "provider", "rm", "--tenant", tenant, "--name", name],
-            )
-            if not removed["success"]:
+        if isinstance(client_id, str):
+            client_ids = [client_id] if client_id else []
+        else:
+            client_ids = [str(item) for item in (client_id or []) if item]
+        wanted_prints = []
+        for item in thumbprints or []:
+            cleaned = str(item).strip().lower().replace(":", "")
+            if cleaned and cleaned not in wanted_prints:
+                wanted_prints.append(cleaned)
+        if not wanted_prints and discover_thumbprints:
+            wanted_prints = _discover_thumbprints(issuer_url, verify=verify)
+        if not wanted_prints:
+            return {
+                "success": False,
+                "updated": False,
+                "message": (
+                    f"no thumbprints for OIDC provider {name}; pass thumbprints "
+                    "or expose x5c on the issuer JWKS"
+                ),
+            }
+        if len(wanted_prints) > 5:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "RGW allows at most 5 OIDC provider thumbprints",
+            }
+
+        if not access_key or not secret_key:
+            if not store:
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"failed to replace OIDC provider {name}: {removed['stderr'][:200]}",
+                    "message": (
+                        "access_key and secret_key are required, or set store "
+                        "so the Rook object-user secret can be read"
+                    ),
                 }
-        created = _toolbox_radosgw(
-            namespace,
-            [
-                "oidc", "provider", "create",
-                "--tenant", tenant,
-                "--name", name,
-                "--issuer-url", issuer_url,
-                "--client-id", client_id,
-                "--client-secret", str(client_secret),
-            ],
-        )
+            keys = _rgw_user_keys(namespace, f"rook-ceph-object-user-{store}-{iam_user}")
+            if not keys["success"]:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"IAM admin keys unavailable: {keys['message']}",
+                }
+            access_key = keys["access_key"]
+            secret_key = keys["secret_key"]
+        if not endpoint:
+            if not store:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": "endpoint or store is required to reach RGW",
+                }
+            endpoint = f"http://rook-ceph-rgw-{store}.{namespace}.svc"
+
+        provider_arn = _oidc_provider_arn(issuer_url, tenant)
+
+        def call(action, params=None):
+            return _iam_request(
+                endpoint,
+                action,
+                access_key,
+                secret_key,
+                params=params,
+                region=region,
+                service=service,
+                verify=verify,
+            )
+
+        ok, status, body = call("GetOpenIDConnectProvider", {"OpenIDConnectProviderArn": provider_arn})
+        exists = ok
+        if not ok:
+            if _iam_missing(status, body):
+                exists = False
+            else:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"failed to get OIDC provider {name}: HTTP {status} {body}",
+                }
+
+        changes = []
+        if not exists:
+            params = {"Url": issuer_url}
+            for index, thumbprint in enumerate(wanted_prints, start=1):
+                params[f"ThumbprintList.member.{index}"] = thumbprint
+            for index, cid in enumerate(client_ids, start=1):
+                params[f"ClientIDList.member.{index}"] = cid
+            created_ok, created_status, created_body = call("CreateOpenIDConnectProvider", params)
+            already = (
+                created_status == 409
+                or _iam_error_code(created_body) == "EntityAlreadyExists"
+                or (isinstance(created_body, str) and "already in use" in created_body)
+            )
+            if not created_ok and not already:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": (
+                        f"failed to create OIDC provider {name}: "
+                        f"HTTP {created_status} {created_body}"
+                    ),
+                }
+            if created_ok:
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"OIDC provider {name} created ({provider_arn})",
+                    "arn": provider_arn,
+                    "thumbprints": wanted_prints,
+                }
+            ok, status, body = call(
+                "GetOpenIDConnectProvider", {"OpenIDConnectProviderArn": provider_arn},
+            )
+            if not ok:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"OIDC provider {name} exists but could not be read",
+                }
+
+        current_ids = _iam_members(body, "ClientIDList")
+        current_prints = _iam_members(body, "ThumbprintList")
+        if current_ids is None or current_prints is None:
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"OIDC provider {name} response was not XML",
+            }
+        current_prints = [item.lower() for item in current_prints]
+        for cid in client_ids:
+            if cid not in current_ids:
+                added_ok, added_status, added_body = call(
+                    "AddClientIDToOpenIDConnectProvider",
+                    {"OpenIDConnectProviderArn": provider_arn, "ClientID": cid},
+                )
+                if not added_ok:
+                    return {
+                        "success": False,
+                        "updated": bool(changes),
+                        "message": f"failed to add client id to {name}: HTTP {added_status} {added_body}",
+                    }
+                changes.append(f"client_id {cid}")
+        for cid in current_ids:
+            if cid not in client_ids:
+                removed_ok, removed_status, removed_body = call(
+                    "RemoveClientIDFromOpenIDConnectProvider",
+                    {"OpenIDConnectProviderArn": provider_arn, "ClientID": cid},
+                )
+                if not removed_ok:
+                    return {
+                        "success": False,
+                        "updated": bool(changes),
+                        "message": (
+                            f"failed to remove client id from {name}: "
+                            f"HTTP {removed_status} {removed_body}"
+                        ),
+                    }
+                changes.append(f"removed client_id {cid}")
+        if sorted(current_prints) != sorted(wanted_prints):
+            params = {"OpenIDConnectProviderArn": provider_arn}
+            for index, thumbprint in enumerate(wanted_prints, start=1):
+                params[f"ThumbprintList.member.{index}"] = thumbprint
+            updated_ok, updated_status, updated_body = call(
+                "UpdateOpenIDConnectProviderThumbprint", params,
+            )
+            if not updated_ok:
+                return {
+                    "success": False,
+                    "updated": bool(changes),
+                    "message": (
+                        f"failed to update thumbprints for {name}: "
+                        f"HTTP {updated_status} {updated_body}"
+                    ),
+                }
+            changes.append("thumbprints")
         return {
-            "success": created["success"],
-            "updated": created["success"],
+            "success": True,
+            "updated": bool(changes),
             "message": (
-                f"OIDC provider {name} created"
-                if created["success"]
-                else f"failed to create OIDC provider {name}: {created['stderr'][:200]}"
+                f"OIDC provider {name} updated ({', '.join(changes)})"
+                if changes
+                else f"OIDC provider {name} already matches"
             ),
+            "arn": provider_arn,
+            "thumbprints": wanted_prints,
         }
     except Exception as exc:
         return {"success": False, "updated": False, "message": str(exc)[:200]}
@@ -1137,19 +1611,30 @@ def rgw_role_present(
     tenant="",
     path="/",
     audience_claim="aud",
+    issuer_url=None,
 ):
-    """Ensure an RGW IAM role that trusts an OIDC provider."""
+    """Ensure an RGW IAM role that trusts an OIDC provider.
+
+    Pass ``issuer_url`` when the provider was created via the IAM API. STS
+    looks the provider up from the token ``iss`` (scheme stripped), so the
+    trust policy principal and condition must use that string, not the
+    friendly provider name. ``provider_name`` is the fallback for a provider
+    created by name with a newer ``radosgw-admin oidc provider`` CLI.
+    """
     try:
         _load_k8s_config()
+        provider_id = _oidc_provider_id(issuer_url) if issuer_url else provider_name
         policy = {
             "Version": "2012-10-17",
             "Statement": [{
                 "Effect": "Allow",
-                "Principal": {"Federated": f"arn:aws:iam:::oidc-provider/{provider_name}"},
+                "Principal": {
+                    "Federated": f"arn:aws:iam::{tenant}:oidc-provider/{provider_id}",
+                },
                 "Action": "sts:AssumeRoleWithWebIdentity",
                 "Condition": {
                     "StringEquals": {
-                        f"{provider_name}:{audience_claim}": audience,
+                        f"{provider_id}:{audience_claim}": audience,
                     }
                 },
             }],

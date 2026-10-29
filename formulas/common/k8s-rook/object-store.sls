@@ -8,6 +8,11 @@
          coding_chunks: 1
        sts_key: "<same 16+ char key on every RGW>"
          # ceph-authtool --gen-print-key
+       oidc:                        # optional; also inferred from keycloak below
+         issuer_url: https://keycloak.example/realms/rsc
+         client_id: ss3-gateway
+         thumbprints: []            # omit to discover from the issuer JWKS x5c
+         iam_user: rgw-iam-admin    # RGW user with oidc-provider=* caps
 #}
 {% set store = pillar['res-k8s']['rook']['object_store'] %}
 {% set ec = store.get('erasure_coded', {'data_chunks': 2, 'coding_chunks': 1}) %}
@@ -30,14 +35,19 @@
 {% set kc_admin = kc.get('values', {}).get('keycloak', {}) %}
 {% set kc_client = store.get('keycloak', {}) %}
 {% set oidc_issuer = pillar.get('res-k8s', {}).get('oidc-issuer') or kc.get('oidc-issuer') or (keycloak_addr.rstrip('/') ~ '/realms/' ~ kc_client.get('realm', 'rsc')) %}
-{% set oidc = store.get('oidc') or ({
+{% if store.get('oidc') %}
+{% set oidc = store.get('oidc') %}
+{% elif kc_client and oidc_issuer.startswith('http') %}
+{% set oidc = {
   'name': 'keycloak',
   'issuer_url': oidc_issuer,
   'client_id': kc_client.get('client_id', store_name),
-  'client_secret': kc_client.get('secret'),
   'role': store_name ~ '-oidc-role',
   'buckets': store.get('buckets', []),
-} if kc_client.get('secret') and oidc_issuer.startswith('http') else {}) %}
+} %}
+{% else %}
+{% set oidc = {} %}
+{% endif %}
 
 rook_ceph_object_store:
   rook.ceph_object_store_present:
@@ -62,21 +72,43 @@ rook_ceph_object_store:
 {% set oidc_name = oidc.get('name', 'keycloak') %}
 {% set oidc_client = oidc.get('client_id', store_name) %}
 {% set oidc_role = oidc.get('role', store_name ~ '-oidc-role') %}
+{% set iam_user = oidc.get('iam_user', 'rgw-iam-admin') %}
+{# RGW user that signs CreateOpenIDConnectProvider. Rook writes its keys to
+   rook-ceph-object-user-<store>-<iam_user>; the provider state reads them. #}
+object_store_iam_admin:
+  rook.ceph_object_store_user_present:
+    - name: {{ iam_user }}
+    - namespace: {{ rook_ns }}
+    - store: {{ store_name }}
+    - display_name: {{ iam_user }}
+    - capabilities:
+        oidc-provider: "*"
+    - require:
+      - rook: rook_ceph_object_store
+
 object_store_oidc_provider:
   rook.oidc_provider_present:
     - name: {{ oidc_name }}
     - namespace: {{ rook_ns }}
     - issuer_url: {{ oidc['issuer_url'] | yaml_dquote }}
     - client_id: {{ oidc_client | yaml_dquote }}
-    - client_secret: {{ oidc['client_secret'] | yaml_dquote }}
+    - store: {{ store_name }}
+    - iam_user: {{ iam_user }}
+    - endpoint: {{ (oidc.get('endpoint') or ('http://rook-ceph-rgw-' ~ store_name ~ '.' ~ rook_ns ~ '.svc:' ~ (store.get('port', 80) | string))) | yaml_dquote }}
+    - verify: {{ kc_conn.get('verify', false) }}
+{%- if oidc.get('thumbprints') %}
+    - thumbprints: {{ oidc['thumbprints'] | tojson }}
+    - discover_thumbprints: false
+{%- endif %}
     - require:
-      - rook: rook_ceph_object_store
+      - rook: object_store_iam_admin
 
 object_store_oidc_role:
   rook.rgw_role_present:
     - name: {{ oidc_role }}
     - namespace: {{ rook_ns }}
     - provider_name: {{ oidc_name }}
+    - issuer_url: {{ oidc['issuer_url'] | yaml_dquote }}
     - audience: {{ oidc_client | yaml_dquote }}
     - audience_claim: {{ oidc.get('audience_claim', 'aud') | yaml_dquote }}
     - require:

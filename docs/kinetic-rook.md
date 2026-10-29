@@ -209,6 +209,43 @@ Notes:
 - Does **not** support subusers or a Swift temp-url-key - see below and
   the "Why not..." section above.
 
+### OIDC provider (IAM query API, not `radosgw-admin oidc`)
+
+`radosgw-admin oidc provider` is newer than the Ceph this cluster runs.
+`CreateOpenIDConnectProvider` is the older, documented API and is what
+`oidc_provider_present` calls (signed as service `iam`, stdlib SigV4, no
+`requests-aws4auth`). See https://docs.ceph.com/en/reef/radosgw/oidc/.
+
+The provider is keyed by the issuer URL with the scheme stripped, not by
+the friendly name. STS looks it up the same way from the token `iss`, so
+`rgw_role_present` must be given `issuer_url` or the trust policy will not
+match. There is no client secret on this API. Thumbprints are SHA1 of the
+IdP certs; STS compares them to the JWKS `x5c` entries, so a realm that
+does not publish `x5c` will create cleanly and still fail
+`AssumeRoleWithWebIdentity`.
+
+The signing user needs `oidc-provider=*` caps. The object-store formula
+creates that user with `rook.ceph_object_store_user_present` and the
+provider state reads `rook-ceph-object-user-<store>-<iam_user>`.
+
+```yaml
+object_store_oidc_provider:
+  rook.oidc_provider_present:
+    - name: keycloak
+    - namespace: rook-ceph
+    - issuer_url: https://keycloak.example/realms/rsc
+    - client_id: ss3-gateway
+    - store: my-store
+    - iam_user: rgw-iam-admin
+    - endpoint: http://rook-ceph-rgw-my-store.rook-ceph.svc:80
+    - thumbprints:
+      - f7d7b3515dd0d319dd219a43a9ea727ad6065287
+```
+
+Omit `thumbprints` to discover them from the issuer JWKS (`x5c`), falling
+back to the TLS leaf. Pass `access_key`/`secret_key` instead of `store` if
+the Rook secret should not be used.
+
 ### RGW subuser (via the Ceph Mgr Dashboard API)
 
 ```yaml

@@ -749,10 +749,27 @@ def oidc_provider_present(
     namespace,
     issuer_url,
     client_id,
-    client_secret,
+    client_secret=None,
     tenant="",
+    thumbprints=None,
+    endpoint=None,
+    access_key=None,
+    secret_key=None,
+    store=None,
+    iam_user="rgw-iam-admin",
+    region="us-east-1",
+    service="iam",
+    verify=True,
+    discover_thumbprints=True,
 ):
-    """Ensure an RGW OIDC provider exists via radosgw-admin in rook-ceph-tools."""
+    """Ensure an RGW OIDC provider exists via the IAM query API.
+
+    ``radosgw-admin oidc provider`` is not available on this Ceph version.
+    The provider is keyed by issuer URL. ``client_secret`` is ignored.
+    Pass ``access_key``/``secret_key``, or ``store`` so keys are read from
+    the Rook secret for ``iam_user``. Thumbprints are discovered from the
+    issuer JWKS when omitted.
+    """
     ret = _state_ret(name)
     try:
         result = __salt__["kinetic_rook.oidc_provider_present"](
@@ -762,6 +779,16 @@ def oidc_provider_present(
             client_id=client_id,
             client_secret=client_secret,
             tenant=tenant,
+            thumbprints=thumbprints,
+            endpoint=endpoint,
+            access_key=access_key,
+            secret_key=secret_key,
+            store=store,
+            iam_user=iam_user,
+            region=region,
+            service=service,
+            verify=verify,
+            discover_thumbprints=discover_thumbprints,
         )
         ret["result"] = result.get("success", False)
         ret["comment"] = result.get("message", "")
@@ -779,8 +806,14 @@ def rgw_role_present(
     tenant="",
     path="/",
     audience_claim="aud",
+    issuer_url=None,
 ):
-    """Ensure an RGW IAM role trusts the named OIDC provider."""
+    """Ensure an RGW IAM role trusts an OIDC provider.
+
+    Pass ``issuer_url`` so the trust policy uses the issuer-derived provider
+    id that STS looks up. ``provider_name`` is only used when ``issuer_url``
+    is omitted.
+    """
     ret = _state_ret(name)
     try:
         result = __salt__["kinetic_rook.rgw_role_present"](
@@ -791,6 +824,7 @@ def rgw_role_present(
             tenant=tenant,
             path=path,
             audience_claim=audience_claim,
+            issuer_url=issuer_url,
         )
         ret["result"] = result.get("success", False)
         ret["comment"] = result.get("message", "")
