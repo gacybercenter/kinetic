@@ -813,6 +813,9 @@ def rgw_role_present(
     path="/",
     audience_claim="app_id",
     issuer_url=None,
+    groups=None,
+    groups_claim="groups",
+    group_prefix="/",
     realm=None,
     zonegroup=None,
     zone=None,
@@ -820,8 +823,8 @@ def rgw_role_present(
     """Ensure an RGW IAM role trusts an OIDC provider.
 
     Pass ``issuer_url`` so the trust policy uses the issuer-derived provider
-    id that STS looks up. ``provider_name`` is only used when ``issuer_url``
-    is omitted.
+    id that STS looks up. ``groups`` restricts who may assume the role.
+    It is not rechecked on later S3 calls.
     """
     ret = _state_ret(name)
     try:
@@ -834,6 +837,9 @@ def rgw_role_present(
             path=path,
             audience_claim=audience_claim,
             issuer_url=issuer_url,
+            groups=groups,
+            groups_claim=groups_claim,
+            group_prefix=group_prefix,
             realm=realm,
             zonegroup=zonegroup,
             zone=zone,

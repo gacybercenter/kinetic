@@ -1814,6 +1814,9 @@ def rgw_role_present(
     path="/",
     audience_claim="app_id",
     issuer_url=None,
+    groups=None,
+    groups_claim="groups",
+    group_prefix="/",
     realm=None,
     zonegroup=None,
     zone=None,
@@ -1825,10 +1828,26 @@ def rgw_role_present(
     trust policy principal and condition must use that string, not the
     friendly provider name. ``provider_name`` is the fallback for a provider
     created by name with a newer ``radosgw-admin oidc provider`` CLI.
+
+    ``groups`` is checked only at AssumeRoleWithWebIdentity. RGW does not
+    keep the JWT on later S3 calls, so a group cannot be a bucket-policy
+    condition. One role per group, with that group's buckets on the inline
+    policy. Keycloak's group mapper emits ``/ss3-admin`` unless full group
+    path is disabled, so a bare name gets ``group_prefix`` prepended. Pass
+    ``group_prefix=""`` when the claim is already bare. Multiple groups are OR.
     """
     try:
         _load_k8s_config()
         provider_id = _oidc_provider_id(issuer_url) if issuer_url else provider_name
+        conditions = {f"{provider_id}:{audience_claim}": audience}
+        if groups:
+            wanted = groups if isinstance(groups, list) else [groups]
+            if group_prefix:
+                wanted = [
+                    item if str(item).startswith(group_prefix) else f"{group_prefix}{item}"
+                    for item in wanted
+                ]
+            conditions[f"{provider_id}:{groups_claim}"] = wanted
         policy = {
             "Version": "2012-10-17",
             "Statement": [{
@@ -1837,11 +1856,7 @@ def rgw_role_present(
                     "Federated": [f"arn:aws:iam::{tenant}:oidc-provider/{provider_id}"],
                 },
                 "Action": "sts:AssumeRoleWithWebIdentity",
-                "Condition": {
-                    "StringEquals": {
-                        f"{provider_id}:{audience_claim}": audience,
-                    }
-                },
+                "Condition": {"StringEquals": conditions},
             }],
         }
         doc = json.dumps(policy)

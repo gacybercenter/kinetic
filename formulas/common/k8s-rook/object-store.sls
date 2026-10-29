@@ -13,6 +13,9 @@
          client_id: ss3-gateway
          thumbprints: []            # omit to discover from the issuer JWKS x5c
          iam_user: rgw-iam-admin    # RGW user with oidc-provider=* caps
+         group_roles:               # one role per group; claim must match exactly
+           - group: ss3-admin       # leading / is added; Keycloak emits /ss3-admin
+             buckets: ['*']
 #}
 {% set store = pillar['res-k8s']['rook']['object_store'] %}
 {% set ec = store.get('erasure_coded', {'data_chunks': 2, 'coding_chunks': 1}) %}
@@ -110,6 +113,39 @@ object_store_oidc_role:
     - zone: {{ oidc.get('zone', store_name) }}
     - require:
       - rook: object_store_oidc_provider
+
+{% for entry in oidc.get('group_roles', []) %}
+{% set group_name = entry.group %}
+{% set group_role = entry.get('role', group_name | replace('/', '') ~ '-role') %}
+object_store_oidc_role_{{ group_role | replace('-', '_') }}:
+  rook.rgw_role_present:
+    - name: {{ group_role }}
+    - namespace: {{ rook_ns }}
+    - provider_name: {{ oidc_name }}
+    - issuer_url: {{ oidc['issuer_url'] | yaml_dquote }}
+    - audience: {{ oidc_client | yaml_dquote }}
+    - audience_claim: {{ oidc.get('audience_claim', 'app_id') | yaml_dquote }}
+    - groups:
+      - {{ entry.get('claim', group_name) | yaml_dquote }}
+    - group_prefix: {{ oidc.get('group_prefix', '/') | yaml_dquote }}
+    - realm: {{ oidc.get('realm', store_name) }}
+    - zonegroup: {{ oidc.get('zonegroup', store_name) }}
+    - zone: {{ oidc.get('zone', store_name) }}
+    - require:
+      - rook: object_store_oidc_provider
+
+object_store_oidc_policy_{{ group_role | replace('-', '_') }}:
+  rook.rgw_role_policy_present:
+    - name: {{ entry.get('policy_name', group_role ~ '-access') }}
+    - namespace: {{ rook_ns }}
+    - role_name: {{ group_role }}
+    - buckets: {{ entry.get('buckets', ['*']) | tojson }}
+    - realm: {{ oidc.get('realm', store_name) }}
+    - zonegroup: {{ oidc.get('zonegroup', store_name) }}
+    - zone: {{ oidc.get('zone', store_name) }}
+    - require:
+      - rook: object_store_oidc_role_{{ group_role | replace('-', '_') }}
+{% endfor %}
 
 {% if oidc.get('buckets') %}
 object_store_oidc_role_policy:

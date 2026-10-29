@@ -1833,6 +1833,81 @@ def client_default_scope_present(
         }
 
 
+def client_default_scope_absent(
+    realm,
+    client_id,
+    scope_name,
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """Remove a default client scope from one client. Does not delete the scope."""
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+        status_code, body = _request(
+            "GET", keycloak_addr, f"admin/realms/{realm}/clients?clientId={client_id}",
+            headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, list) or not body:
+            return _http_error(f"Looking up client {client_id}", status_code, body)
+        client_obj = body[0]
+        if scope_name not in (client_obj.get("defaultClientScopes") or []):
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"Client {client_id} does not have default scope {scope_name}",
+            }
+        status_code, body = _request(
+            "GET", keycloak_addr, f"admin/realms/{realm}/client-scopes",
+            headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, list):
+            return _http_error(f"Listing client scopes in realm {realm}", status_code, body)
+        scope = next((item for item in body if item.get("name") == scope_name), None)
+        if scope is None:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"Client scope {scope_name} does not exist in realm {realm}",
+            }
+        status_code, body = _request(
+            "DELETE", keycloak_addr,
+            f"admin/realms/{realm}/clients/{client_obj['id']}/default-client-scopes/{scope['id']}",
+            headers=headers, verify=verify,
+        )
+        if status_code == 204:
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"Removed default scope {scope_name} from client {client_id}",
+            }
+        return _http_error(
+            f"Removing default scope {scope_name} from client {client_id}", status_code, body,
+        )
+    except Exception as exc:
+        return {
+            "success": False,
+            "updated": False,
+            "message": str(exc)[:200],
+        }
+
+
 def client_absent(
     realm,
     client_id,
