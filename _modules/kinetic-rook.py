@@ -1086,10 +1086,12 @@ def _aws4_signing_key(secret_key, datestamp, region, service):
 
 
 def _iam_sign_headers(method, url, query, access_key, secret_key, region, service, payload=b""):
-    """Header-based AWS SigV4 for an IAM query call. No extra dependency.
+    """Header-based AWS SigV4. No extra dependency.
 
-    The signed URL is exactly ``url + '?' + query``. Do not let ``requests``
-    re-encode the query string or the signature will not match.
+    ``query`` is the canonical query string. Tentacle reads IAM ``Action``
+    from the POST body, so callers sign an empty query and pass the form
+    body as ``payload``. The payload hash in the canonical request is what
+    RGW recomputes from that body (``PayloadHash``).
     """
     parsed = urlparse(url)
     host = parsed.hostname or ""
@@ -1163,6 +1165,82 @@ def _iam_endpoint(endpoint):
     return parsed.scheme or "http", host, path
 
 
+def _host_resolves(host):
+    """False when this process cannot resolve host (a minion has no cluster DNS)."""
+    hostname = (host or "").split(":", 1)[0]
+    if not hostname:
+        return False
+    try:
+        socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return False
+    return True
+
+
+def _toolbox_http(namespace, method, url, headers, body=b"", timeout=30, insecure=False):
+    """HTTP from the rook-ceph-tools pod. Returns ``(status, body)``.
+
+    Used when the signed URL is a cluster service name. The minion that runs
+    Salt cannot resolve ``*.svc``; the toolbox pod can. ``Host`` is omitted so
+    curl derives it from the URL, which is the host the signature was built for.
+    """
+    from kubernetes.stream import stream
+
+    _load_k8s_config()
+    core = client.CoreV1Api()
+    pods = core.list_namespaced_pod(
+        namespace=namespace,
+        label_selector="app=rook-ceph-tools",
+    )
+    running = [
+        p.metadata.name
+        for p in pods.items
+        if p.status and p.status.phase == "Running"
+    ]
+    if not running:
+        return 0, f"no running rook-ceph-tools pod in {namespace}"
+    argv = ["curl", "-sS", "-m", str(int(timeout)), "-X", method, "-w", "\n__HTTP:%{http_code}"]
+    if insecure:
+        argv.append("-k")
+    for key, value in headers.items():
+        if key.lower() == "host":
+            continue
+        argv.extend(["-H", f"{key}: {value}"])
+    if body:
+        argv.extend(["--data-binary", body.decode("utf-8")])
+    argv.append(url)
+    command = ["/bin/sh", "-c", " ".join(shlex.quote(part) for part in argv)]
+    stdout = stream(
+        core.connect_get_namespaced_pod_exec,
+        running[0],
+        namespace,
+        command=command,
+        container="rook-ceph-tools",
+        stderr=False,
+        stdin=False,
+        stdout=True,
+        tty=False,
+        _request_timeout=timeout + 15,
+    )
+    text = stdout or ""
+    if "__HTTP:" not in text:
+        return 0, text.replace("\n", " ")[:300] or "curl produced no status"
+    body, _, code = text.rpartition("__HTTP:")
+    try:
+        status = int(code.strip() or 0)
+    except ValueError:
+        status = 0
+    return status, body.rstrip("\n")
+
+
+def _iam_result(status, text):
+    if status == 404:
+        return False, 404, text
+    if status >= 400 or status == 0:
+        return False, status, (text or "").replace("\n", " ")[:300]
+    return True, status, text
+
+
 def _iam_request(
     endpoint,
     action,
@@ -1173,32 +1251,51 @@ def _iam_request(
     service="iam",
     verify=True,
     timeout=30,
+    namespace=None,
 ):
     """POST an RGW IAM query-API action. Returns ``(ok, status, body)``.
 
     ``body`` is the raw XML. ``format=json`` collapses repeated ``member``
     tags, so callers parse XML instead. ``ok`` is false for HTTP errors
     other than 404 (missing entity).
+
+    A ``*.svc`` URL is signed here and fetched from the toolbox pod when this
+    process cannot resolve it.
     """
-    query_params = {
+    # Tentacle (this cluster) dispatches IAM only when Action is in the
+    # POST body. A query-string Action is op=unknown and returns 405.
+    form = {
         "Action": action,
         "Version": "2010-05-08",
     }
-    query_params.update(params or {})
+    form.update(params or {})
+    body = _canonical_query(form).encode("utf-8")
     scheme, host, path = _iam_endpoint(endpoint)
     url = f"{scheme}://{host}{path}"
-    query = _canonical_query(query_params)
     headers, signed_path = _iam_sign_headers(
-        "POST", url, query, access_key, secret_key, region, service,
+        "POST", url, "", access_key, secret_key, region, service, payload=body,
     )
-    signed_url = f"{scheme}://{host}{signed_path}?{query}"
-    resp = requests.post(signed_url, headers=headers, data=b"", verify=verify, timeout=timeout)
-    text = resp.text or ""
-    if resp.status_code == 404:
-        return False, 404, text
-    if resp.status_code >= 400:
-        return False, resp.status_code, text.replace("\n", " ")[:300]
-    return True, resp.status_code, text
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
+    signed_url = f"{scheme}://{host}{signed_path}"
+    if namespace and not _host_resolves(host):
+        status, text = _toolbox_http(
+            namespace, "POST", signed_url, headers, body=body,
+            timeout=timeout, insecure=not verify,
+        )
+        return _iam_result(status, text)
+    try:
+        resp = requests.post(signed_url, headers=headers, data=body, verify=verify, timeout=timeout)
+    except requests.RequestException as exc:
+        if not namespace:
+            return False, 0, str(exc)[:300]
+        status, text = _toolbox_http(
+            namespace, "POST", signed_url, headers, body=body,
+            timeout=timeout, insecure=not verify,
+        )
+        if status == 0:
+            return False, 0, f"{exc.__class__.__name__}: {text}"
+        return _iam_result(status, text)
+    return _iam_result(resp.status_code, resp.text or "")
 
 
 def _iam_local(tag):
@@ -1583,6 +1680,7 @@ def oidc_provider_present(
                 region=region,
                 service=service,
                 verify=verify,
+                namespace=namespace,
             )
 
         ok, status, body = call("GetOpenIDConnectProvider", {"OpenIDConnectProviderArn": provider_arn})
