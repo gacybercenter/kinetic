@@ -229,8 +229,16 @@ checked only at assume-role (`<issuer>:groups`). The realm groups scope
 emits `/ss3-admin`; a bare pillar name gets that `/` prepended. Pass
 `group_prefix: ""` if a client emits the bare name. The session does not carry the JWT, so a later S3 call
 cannot be filtered by group. Give each group its own role and put that
-group's buckets on the inline policy (`oidc.group_roles`). There is no client
-secret on this API. Thumbprints are SHA1 of the
+group's buckets on the inline policy (`oidc.group_roles`). A tight
+`actions` list must include `s3:ListBucket`. Clients also send
+`s3:GetBucketLocation` before that list, and `rgw_role_policy_present`
+adds it when it is missing (`s3:*` already includes it). `aws s3 ls`
+with no bucket is `s3:ListAllMyBuckets` on `arn:aws:s3:::*`, which these
+policies do not grant. The S3 call has to use the temporary key, secret,
+and session token from `AssumeRoleWithWebIdentity`. The Keycloak access
+token and the IAM admin key are not that session. An unsigned request
+shows up in the RGW log as user `-`. There is no client secret on this
+API. Thumbprints are SHA1 of the
 IdP certs; STS compares them to the JWKS `x5c` entries, so a realm that
 does not publish `x5c` will create cleanly and still fail
 `AssumeRoleWithWebIdentity`.

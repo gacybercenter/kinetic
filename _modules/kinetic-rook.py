@@ -2073,6 +2073,22 @@ def rgw_bucket_present(
         return {"success": False, "updated": False, "message": str(exc)[:200]}
 
 
+def _s3_policy_actions(actions):
+    """Actions for an inline role policy.
+
+    AWS CLI and s3cmd call ``GetBucketLocation`` before ``ListBucket``. A tight
+    policy that omits it returns 403 on ``aws s3 ls s3://bucket/`` even when
+    ``ListBucket`` is allowed. ``s3:*`` already includes it. The extra action
+    does not grant object access.
+    """
+    actions = list(actions or ["s3:*"])
+    if any(action in ("*", "s3:*") for action in actions):
+        return actions
+    if "s3:GetBucketLocation" not in actions:
+        actions.append("s3:GetBucketLocation")
+    return actions
+
+
 def rgw_role_policy_present(
     namespace,
     role_name,
@@ -2084,10 +2100,14 @@ def rgw_role_policy_present(
     zonegroup=None,
     zone=None,
 ):
-    """Attach an inline S3 policy to an RGW role. buckets may be ['*']."""
+    """Attach an inline S3 policy to an RGW role. buckets may be ['*'].
+
+    A non-wildcard ``actions`` list also gets ``s3:GetBucketLocation``. Clients
+    send that before listing, and it does not grant object access.
+    """
     try:
         _load_k8s_config()
-        actions = actions or ["s3:*"]
+        actions = _s3_policy_actions(actions)
         resources = []
         for bucket in buckets:
             if bucket == "*":

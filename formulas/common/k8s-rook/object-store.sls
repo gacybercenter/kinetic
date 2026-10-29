@@ -16,6 +16,8 @@
          group_roles:               # one role per group; claim must match exactly
            - group: ss3-admin       # leading / is added; Keycloak emits /ss3-admin
              buckets: ['*']
+           # actions defaults to s3:*. A tight list must include ListBucket;
+           # the module also adds s3:GetBucketLocation, which clients send first.
 #}
 {% set store = pillar['res-k8s']['rook']['object_store'] %}
 {% set ec = store.get('erasure_coded', {'data_chunks': 2, 'coding_chunks': 1}) %}
