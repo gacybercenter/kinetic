@@ -811,7 +811,7 @@ def rgw_role_present(
     audience,
     tenant="",
     path="/",
-    audience_claim="aud",
+    audience_claim="app_id",
     issuer_url=None,
     realm=None,
     zonegroup=None,

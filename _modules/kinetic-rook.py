@@ -1812,7 +1812,7 @@ def rgw_role_present(
     audience,
     tenant="",
     path="/",
-    audience_claim="aud",
+    audience_claim="app_id",
     issuer_url=None,
     realm=None,
     zonegroup=None,
@@ -1834,7 +1834,7 @@ def rgw_role_present(
             "Statement": [{
                 "Effect": "Allow",
                 "Principal": {
-                    "Federated": f"arn:aws:iam::{tenant}:oidc-provider/{provider_id}",
+                    "Federated": [f"arn:aws:iam::{tenant}:oidc-provider/{provider_id}"],
                 },
                 "Action": "sts:AssumeRoleWithWebIdentity",
                 "Condition": {
@@ -1865,12 +1865,23 @@ def rgw_role_present(
                     "updated": False,
                     "message": f"RGW role {role_name} already matches",
                 }
+            modified = _toolbox_radosgw(
+                namespace,
+                [
+                    "role-trust-policy", "modify",
+                    "--role-name", role_name,
+                    *_tenant_args(tenant),
+                    "--assume-role-policy-doc", doc,
+                    *target,
+                ],
+            )
             return {
-                "success": False,
-                "updated": False,
+                "success": modified["success"],
+                "updated": modified["success"],
                 "message": (
-                    f"RGW role {role_name} exists with a different trust policy; "
-                    "delete it before replacing"
+                    f"RGW role {role_name} trust policy updated"
+                    if modified["success"]
+                    else f"failed to update trust policy for {role_name}: {modified['stderr'][:200]}"
                 ),
             }
         created = _toolbox_radosgw(

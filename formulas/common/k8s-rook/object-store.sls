@@ -104,7 +104,7 @@ object_store_oidc_role:
     - provider_name: {{ oidc_name }}
     - issuer_url: {{ oidc['issuer_url'] | yaml_dquote }}
     - audience: {{ oidc_client | yaml_dquote }}
-    - audience_claim: {{ oidc.get('audience_claim', 'aud') | yaml_dquote }}
+    - audience_claim: {{ oidc.get('audience_claim', 'app_id') | yaml_dquote }}
     - realm: {{ oidc.get('realm', store_name) }}
     - zonegroup: {{ oidc.get('zonegroup', store_name) }}
     - zone: {{ oidc.get('zone', store_name) }}
