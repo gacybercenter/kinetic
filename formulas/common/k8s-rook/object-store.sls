@@ -140,6 +140,7 @@ object_store_oidc_policy_{{ group_role | replace('-', '_') }}:
     - namespace: {{ rook_ns }}
     - role_name: {{ group_role }}
     - buckets: {{ entry.get('buckets', ['*']) | tojson }}
+    - actions: {{ entry.get('actions', ['s3:*']) | tojson }}
     - realm: {{ oidc.get('realm', store_name) }}
     - zonegroup: {{ oidc.get('zonegroup', store_name) }}
     - zone: {{ oidc.get('zone', store_name) }}
