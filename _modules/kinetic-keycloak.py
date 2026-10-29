@@ -1606,6 +1606,117 @@ def client_present(
         }
 
 
+def _client_uuid(keycloak_addr, realm, client_id, headers, verify):
+    status_code, body = _request(
+        "GET", keycloak_addr, f"admin/realms/{realm}/clients?clientId={client_id}",
+        headers=headers, verify=verify,
+    )
+    if status_code != 200 or not isinstance(body, list) or not body:
+        return None, status_code, body
+    return body[0].get("id"), status_code, body
+
+
+def protocol_mapper_present(
+    realm,
+    client_id,
+    name,
+    protocol="openid-connect",
+    protocol_mapper="oidc-audience-mapper",
+    config=None,
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """Ensure a protocol mapper exists on a Keycloak client.
+
+    Used for the RGW STS audience mapper. Keycloak access tokens set ``aud``
+    to ``account`` unless an ``oidc-audience-mapper`` adds the client id.
+    RGW copies that claim into ``<provider>:app_id``.
+
+        POST/PUT admin/realms/{realm}/clients/{id}/protocol-mappers/models
+    """
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+        internal_id, status_code, body = _client_uuid(
+            keycloak_addr, realm, client_id, headers, verify,
+        )
+        if not internal_id:
+            return _http_error(
+                f"Looking up client {client_id} for mapper {name}", status_code, body,
+            )
+        desired_config = {str(k): str(v) for k, v in (config or {}).items()}
+        desired = {
+            "name": name,
+            "protocol": protocol,
+            "protocolMapper": protocol_mapper,
+            "config": desired_config,
+        }
+        base = f"admin/realms/{realm}/clients/{internal_id}/protocol-mappers/models"
+        status_code, body = _request(
+            "GET", keycloak_addr, base, headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, list):
+            return _http_error(f"Listing protocol mappers on {client_id}", status_code, body)
+        existing = next((item for item in body if item.get("name") == name), None)
+        if existing is None:
+            status_code, body = _request(
+                "POST", keycloak_addr, base, headers=headers, payload=desired, verify=verify,
+            )
+            if status_code == 201:
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Protocol mapper {name} created on {client_id}",
+                }
+            return _http_error(f"Creating protocol mapper {name}", status_code, body)
+        current = {str(k): str(v) for k, v in (existing.get("config") or {}).items()}
+        same = (
+            existing.get("protocol") == protocol
+            and existing.get("protocolMapper") == protocol_mapper
+            and all(current.get(k) == v for k, v in desired_config.items())
+        )
+        if same:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"Protocol mapper {name} already matches",
+            }
+        payload = {**existing, **desired, "config": {**current, **desired_config}}
+        status_code, body = _request(
+            "PUT", keycloak_addr, f"{base}/{existing['id']}",
+            headers=headers, payload=payload, verify=verify,
+        )
+        if status_code == 204:
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"Protocol mapper {name} updated on {client_id}",
+            }
+        return _http_error(f"Updating protocol mapper {name}", status_code, body)
+    except Exception as exc:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to ensure protocol mapper {name}: {str(exc)[:200]}",
+        }
+
+
 def client_default_scope_present(
     realm,
     client_id,

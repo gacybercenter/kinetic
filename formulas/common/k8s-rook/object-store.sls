@@ -168,11 +168,13 @@ object_store_keycloak_client:
     - description: "OIDC client for Ceph object store {{ store_name }}"
     - enabled: true
     - protocol: openid-connect
-    - public_client: {{ kc_client.get('public_client', false) }}
+    - public_client: {{ kc_client.get('public_client', true) }}
     - standard_flow_enabled: true
     - direct_access_grants_enabled: false
-    - service_accounts_enabled: {{ kc_client.get('service_accounts_enabled', true) }}
+    - service_accounts_enabled: {{ kc_client.get('service_accounts_enabled', false) }}
     - redirect_uris: {{ redirect_uris | tojson }}
+    - attributes:
+        oauth2.device.authorization.grant.enabled: "true"
 {%- if kc_client.get('secret') %}
     - secret: {{ kc_client['secret'] | yaml_dquote }}
 {%- endif %}
@@ -180,4 +182,24 @@ object_store_keycloak_client:
     - realm_username: {{ kc_admin['adminUser'] | yaml_dquote }}
     - realm_password: {{ kc_admin['adminPassword'] | yaml_dquote }}
     - verify: {{ kc_conn.get('verify', false) }}
+
+# Keycloak access tokens set aud to "account". RGW copies aud into
+# <issuer>:app_id, so the client id has to be added to the access token.
+object_store_keycloak_audience:
+  keycloak.protocol_mapper_present:
+    - name: {{ kc_client_id }}-audience
+    - realm: {{ kc_realm }}
+    - client_id: {{ kc_client_id }}
+    - protocol: openid-connect
+    - protocol_mapper: oidc-audience-mapper
+    - config:
+        included.client.audience: {{ kc_client_id | yaml_dquote }}
+        id.token.claim: "false"
+        access.token.claim: "true"
+    - keycloak_addr: {{ keycloak_addr }}
+    - realm_username: {{ kc_admin['adminUser'] | yaml_dquote }}
+    - realm_password: {{ kc_admin['adminPassword'] | yaml_dquote }}
+    - verify: {{ kc_conn.get('verify', false) }}
+    - require:
+      - keycloak: object_store_keycloak_client
 {% endif %}

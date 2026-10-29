@@ -219,7 +219,13 @@ Notes:
 The provider is keyed by the issuer URL with the scheme stripped, not by
 the friendly name. STS looks it up the same way from the token `iss`, so
 `rgw_role_present` must be given `issuer_url` or the trust policy will not
-match. There is no client secret on this API. Thumbprints are SHA1 of the
+match. `evaluating policy for op: 144 returned deny/pass` is that check
+failing: op 144 is `sts:AssumeRoleWithWebIdentity`. RGW copies the JWT
+`aud` claim into `<provider>:app_id`, but a Keycloak access token sets
+`aud` to `account` unless the client has an `oidc-audience-mapper` that
+adds the client id to the access token. The object-store formula creates
+that mapper and conditions the role on `:app_id`. There is no client
+secret on this API. Thumbprints are SHA1 of the
 IdP certs; STS compares them to the JWKS `x5c` entries, so a realm that
 does not publish `x5c` will create cleanly and still fail
 `AssumeRoleWithWebIdentity`.
