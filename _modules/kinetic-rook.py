@@ -1923,6 +1923,156 @@ def rgw_role_present(
         return {"success": False, "updated": False, "message": str(exc)[:200]}
 
 
+def _s3_request(
+    endpoint,
+    method,
+    bucket,
+    access_key,
+    secret_key,
+    namespace=None,
+    region="us-east-1",
+    verify=True,
+    timeout=30,
+):
+    """Signed path-style S3 call. Returns ``(ok, status, body)``.
+
+    ``radosgw-admin bucket create`` is gone on this Ceph. CreateBucket is a
+    PUT of ``/<bucket>`` with an empty body. A ``*.svc`` host that this
+    process cannot resolve is fetched from the toolbox pod.
+    """
+    scheme, host, path = _iam_endpoint(endpoint)
+    object_path = path.rstrip("/") + "/" + bucket
+    url = f"{scheme}://{host}{object_path}"
+    headers, signed_path = _iam_sign_headers(
+        method, url, "", access_key, secret_key, region, "s3", payload=b"",
+    )
+    signed_url = f"{scheme}://{host}{signed_path}"
+    if namespace and not _host_resolves(host):
+        return _iam_result(*_toolbox_http(
+            namespace, method, signed_url, headers, timeout=timeout, insecure=not verify,
+        ))
+    try:
+        resp = requests.request(
+            method, signed_url, headers=headers, data=b"", verify=verify, timeout=timeout,
+        )
+    except requests.RequestException as exc:
+        if not namespace:
+            return False, 0, str(exc)[:300]
+        status, text = _toolbox_http(
+            namespace, method, signed_url, headers, timeout=timeout, insecure=not verify,
+        )
+        if status == 0:
+            return False, 0, f"{exc.__class__.__name__}: {text}"
+        return _iam_result(status, text)
+    return _iam_result(resp.status_code, resp.text or "")
+
+
+def rgw_bucket_present(
+    namespace,
+    name,
+    owner,
+    realm=None,
+    zonegroup=None,
+    zone=None,
+    endpoint=None,
+    store=None,
+    region="us-east-1",
+    verify=True,
+):
+    """Ensure an S3 bucket exists in the store's realm.
+
+    ``name`` of ``*`` is skipped. The owner is an RGW user created in the
+    realm if missing. That user's keys sign CreateBucket and are not returned.
+    A bucket that already exists, including one owned by someone else, is left
+    alone.
+    """
+    if name == "*":
+        return {"success": True, "updated": False, "message": "wildcard is not a bucket"}
+    try:
+        if not endpoint:
+            if not store:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": "endpoint or store is required to create a bucket",
+                }
+            endpoint = f"http://rook-ceph-rgw-{store}.{namespace}.svc"
+        _load_k8s_config()
+        target = _rgw_target_args(realm, zonegroup, zone)
+        info = _toolbox_radosgw(namespace, ["user", "info", "--uid", owner, *target])
+        if info["success"]:
+            try:
+                payload = json.loads(info["stdout"])
+            except ValueError:
+                return {"success": False, "updated": False, "message": f"user info for {owner} was not JSON"}
+        else:
+            created = _toolbox_radosgw(
+                namespace,
+                ["user", "create", "--uid", owner, "--display-name", owner, *target],
+            )
+            if not created["success"]:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"failed to create bucket owner {owner}: {created['stderr'][:200]}",
+                }
+            try:
+                payload = json.loads(created["stdout"])
+            except ValueError:
+                return {"success": False, "updated": False, "message": f"owner {owner} created but output was not JSON"}
+        access_key, secret_key = _first_rgw_key(payload)
+        if not access_key:
+            keyed = _toolbox_radosgw(
+                namespace, ["key", "create", "--uid", owner, "--gen-secret", *target],
+            )
+            if not keyed["success"]:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"failed to create a key for {owner}: {keyed['stderr'][:200]}",
+                }
+            try:
+                access_key, secret_key = _first_rgw_key(json.loads(keyed["stdout"]))
+            except ValueError:
+                access_key, secret_key = None, None
+        if not access_key or not secret_key:
+            return {"success": False, "updated": False, "message": f"bucket owner {owner} has no keys"}
+
+        call = lambda method: _s3_request(
+            endpoint, method, name, access_key, secret_key,
+            namespace=namespace, region=region, verify=verify,
+        )
+        ok, status, body = call("HEAD")
+        if ok:
+            return {"success": True, "updated": False, "message": f"bucket {name} already exists"}
+        if status not in (403, 404):
+            return {
+                "success": False,
+                "updated": False,
+                "message": f"failed to check bucket {name}: HTTP {status} {body}",
+            }
+        if status == 403:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"bucket {name} exists and is not owned by {owner}",
+            }
+        created_ok, created_status, created_body = call("PUT")
+        if created_ok or created_status == 409:
+            return {
+                "success": True,
+                "updated": created_ok,
+                "message": f"bucket {name} created" if created_ok else f"bucket {name} already exists",
+            }
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"failed to create bucket {name}: HTTP {created_status} {created_body}",
+        }
+    except Exception as exc:
+        return {"success": False, "updated": False, "message": str(exc)[:200]}
+
+
 def rgw_role_policy_present(
     namespace,
     role_name,

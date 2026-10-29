@@ -852,6 +852,41 @@ def rgw_role_present(
     return ret
 
 
+def rgw_bucket_present(
+    name,
+    namespace,
+    owner,
+    realm=None,
+    zonegroup=None,
+    zone=None,
+    endpoint=None,
+    store=None,
+    region="us-east-1",
+    verify=True,
+):
+    """Ensure an S3 bucket exists. name is the bucket. ``*`` is skipped."""
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_rook.rgw_bucket_present"](
+            namespace=namespace,
+            name=name,
+            owner=owner,
+            realm=realm,
+            zonegroup=zonegroup,
+            zone=zone,
+            endpoint=endpoint,
+            store=store,
+            region=region,
+            verify=verify,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"bucket_created": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
+    return ret
+
+
 def rgw_role_policy_present(
     name,
     namespace,

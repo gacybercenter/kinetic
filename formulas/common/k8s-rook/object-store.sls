@@ -73,6 +73,19 @@ rook_ceph_object_store:
 
 {% if oidc %}
 {% set oidc_name = oidc.get('name', 'keycloak') %}
+{% set bucket_names = [] %}
+{% for entry in oidc.get('group_roles', []) %}
+{% for bucket_name in entry.get('buckets', []) %}
+{% if bucket_name != '*' and bucket_name not in bucket_names %}
+{% do bucket_names.append(bucket_name) %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% for bucket_name in oidc.get('buckets', []) %}
+{% if bucket_name != '*' and bucket_name not in bucket_names %}
+{% do bucket_names.append(bucket_name) %}
+{% endif %}
+{% endfor %}
 {% set oidc_client = oidc.get('client_id', store_name) %}
 {% set oidc_role = oidc.get('role', store_name ~ '-oidc-role') %}
 {% set iam_user = oidc.get('iam_user', 'rgw-iam-admin') %}
@@ -99,6 +112,22 @@ object_store_oidc_provider:
 {%- endif %}
     - require:
       - rook: rook_ceph_object_store
+
+{% set bucket_owner = oidc.get('bucket_owner', store_name ~ '-owner') %}
+{% for bucket_name in bucket_names %}
+object_store_bucket_{{ bucket_name | replace('-', '_') }}:
+  rook.rgw_bucket_present:
+    - name: {{ bucket_name }}
+    - namespace: {{ rook_ns }}
+    - owner: {{ bucket_owner }}
+    - store: {{ store_name }}
+    - realm: {{ oidc.get('realm', store_name) }}
+    - zonegroup: {{ oidc.get('zonegroup', store_name) }}
+    - zone: {{ oidc.get('zone', store_name) }}
+    - endpoint: {{ (oidc.get('endpoint') or ('http://rook-ceph-rgw-' ~ store_name ~ '.' ~ rook_ns ~ '.svc:' ~ (store.get('port', 80) | string))) | yaml_dquote }}
+    - require:
+      - rook: rook_ceph_object_store
+{% endfor %}
 
 object_store_oidc_role:
   rook.rgw_role_present:
@@ -146,6 +175,9 @@ object_store_oidc_policy_{{ group_role | replace('-', '_') }}:
     - zone: {{ oidc.get('zone', store_name) }}
     - require:
       - rook: object_store_oidc_role_{{ group_role | replace('-', '_') }}
+{%- for bucket_name in entry.get('buckets', []) if bucket_name != '*' %}
+      - rook: object_store_bucket_{{ bucket_name | replace('-', '_') }}
+{%- endfor %}
 {% endfor %}
 
 {% if oidc.get('buckets') %}
@@ -160,6 +192,9 @@ object_store_oidc_role_policy:
     - zone: {{ oidc.get('zone', store_name) }}
     - require:
       - rook: object_store_oidc_role
+{%- for bucket_name in oidc.get('buckets', []) if bucket_name != '*' %}
+      - rook: object_store_bucket_{{ bucket_name | replace('-', '_') }}
+{%- endfor %}
 {% endif %}
 {% endif %}
 
