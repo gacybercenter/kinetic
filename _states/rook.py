@@ -757,6 +757,9 @@ def oidc_provider_present(
     secret_key=None,
     store=None,
     iam_user="rgw-iam-admin",
+    realm=None,
+    zonegroup=None,
+    zone=None,
     region="us-east-1",
     service="iam",
     verify=True,
@@ -766,9 +769,9 @@ def oidc_provider_present(
 
     ``radosgw-admin oidc provider`` is not available on this Ceph version.
     The provider is keyed by issuer URL. ``client_secret`` is ignored.
-    Pass ``access_key``/``secret_key``, or ``store`` so keys are read from
-    the Rook secret for ``iam_user``. Thumbprints are discovered from the
-    issuer JWKS when omitted.
+    Pass ``access_key``/``secret_key``, or ``store`` so ``iam_user`` is
+    created with radosgw-admin in that realm. Thumbprints are discovered
+    from the issuer JWKS when omitted.
     """
     ret = _state_ret(name)
     try:
@@ -785,6 +788,9 @@ def oidc_provider_present(
             secret_key=secret_key,
             store=store,
             iam_user=iam_user,
+            realm=realm,
+            zonegroup=zonegroup,
+            zone=zone,
             region=region,
             service=service,
             verify=verify,
@@ -807,6 +813,9 @@ def rgw_role_present(
     path="/",
     audience_claim="aud",
     issuer_url=None,
+    realm=None,
+    zonegroup=None,
+    zone=None,
 ):
     """Ensure an RGW IAM role trusts an OIDC provider.
 
@@ -825,6 +834,9 @@ def rgw_role_present(
             path=path,
             audience_claim=audience_claim,
             issuer_url=issuer_url,
+            realm=realm,
+            zonegroup=zonegroup,
+            zone=zone,
         )
         ret["result"] = result.get("success", False)
         ret["comment"] = result.get("message", "")
@@ -841,6 +853,9 @@ def rgw_role_policy_present(
     buckets,
     tenant="",
     actions=None,
+    realm=None,
+    zonegroup=None,
+    zone=None,
 ):
     """Attach an inline S3 policy to an RGW role. name is the policy name."""
     ret = _state_ret(name)
@@ -852,6 +867,9 @@ def rgw_role_policy_present(
             buckets=buckets,
             tenant=tenant,
             actions=actions,
+            realm=realm,
+            zonegroup=zonegroup,
+            zone=zone,
         )
         ret["result"] = result.get("success", False)
         ret["comment"] = result.get("message", "")

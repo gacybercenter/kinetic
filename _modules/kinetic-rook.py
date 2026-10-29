@@ -1335,6 +1335,95 @@ def _discover_thumbprints(issuer_url, verify=True):
     return found[:5]
 
 
+def _rgw_target_args(realm=None, zonegroup=None, zone=None):
+    """Pin radosgw-admin at a realm. The toolbox defaults to zone "default".
+
+    A Rook ``CephObjectStore`` runs RGW with ``--rgw-realm/--rgw-zone`` set to
+    the store name. Users and roles created without these flags land in the
+    default zone, which that RGW never reads.
+    """
+    args = []
+    if realm:
+        args.extend(["--rgw-realm", realm])
+    if zonegroup:
+        args.extend(["--rgw-zonegroup", zonegroup])
+    if zone:
+        args.extend(["--rgw-zone", zone])
+    return args
+
+
+def _first_rgw_key(payload):
+    for key in payload.get("keys") or []:
+        if key.get("access_key") and key.get("secret_key"):
+            return key["access_key"], key["secret_key"]
+    return None, None
+
+
+def _has_oidc_cap(payload):
+    for cap in payload.get("caps") or []:
+        if cap.get("type") == "oidc-provider" and "*" in str(cap.get("perm", "")):
+            return True
+    return False
+
+
+def _ensure_iam_admin(namespace, uid, realm=None, zonegroup=None, zone=None):
+    """Ensure an RGW user with ``oidc-provider=*`` exists in this realm.
+
+    Created with ``radosgw-admin`` in the toolbox, not ``CephObjectStoreUser``.
+    Rook's object-user controller calls the Admin Ops API and fails here with
+    ``NoSuchBucket`` before it ever writes the Kubernetes secret.
+    The secret key is returned to the caller and is not included in messages.
+    """
+    target = _rgw_target_args(realm, zonegroup, zone)
+    info = _toolbox_radosgw(namespace, ["user", "info", "--uid", uid, *target])
+    if info["success"]:
+        try:
+            payload = json.loads(info["stdout"])
+        except ValueError:
+            return {"success": False, "message": f"user info for {uid} was not JSON"}
+    else:
+        created = _toolbox_radosgw(
+            namespace,
+            ["user", "create", "--uid", uid, "--display-name", uid, *target],
+        )
+        if not created["success"]:
+            return {
+                "success": False,
+                "message": f"failed to create IAM admin {uid}: {created['stderr'][:200]}",
+            }
+        try:
+            payload = json.loads(created["stdout"])
+        except ValueError:
+            return {"success": False, "message": f"IAM admin {uid} created but output was not JSON"}
+    if not _has_oidc_cap(payload):
+        capped = _toolbox_radosgw(
+            namespace,
+            ["caps", "add", "--uid", uid, "--caps", "oidc-provider=*", *target],
+        )
+        if not capped["success"]:
+            return {
+                "success": False,
+                "message": f"failed to add oidc-provider caps to {uid}: {capped['stderr'][:200]}",
+            }
+    access_key, secret_key = _first_rgw_key(payload)
+    if not access_key:
+        keyed = _toolbox_radosgw(
+            namespace, ["key", "create", "--uid", uid, "--gen-secret", *target],
+        )
+        if not keyed["success"]:
+            return {
+                "success": False,
+                "message": f"failed to create a key for {uid}: {keyed['stderr'][:200]}",
+            }
+        try:
+            access_key, secret_key = _first_rgw_key(json.loads(keyed["stdout"]))
+        except ValueError:
+            access_key, secret_key = None, None
+    if not access_key or not secret_key:
+        return {"success": False, "message": f"IAM admin {uid} has no keys"}
+    return {"success": True, "access_key": access_key, "secret_key": secret_key}
+
+
 def _rgw_user_keys(namespace, secret_name, timeout=60):
     """Read Rook's object-user Secret, waiting briefly for the operator."""
     _load_k8s_config()
@@ -1376,6 +1465,9 @@ def oidc_provider_present(
     secret_key=None,
     store=None,
     iam_user="rgw-iam-admin",
+    realm=None,
+    zonegroup=None,
+    zone=None,
     region="us-east-1",
     service="iam",
     verify=True,
@@ -1393,9 +1485,14 @@ def oidc_provider_present(
     no client secret on this API; ``client_secret`` is accepted and ignored
     so older state calls keep working.
 
-    Credentials are an RGW user with ``oidc-provider=*`` caps. Pass
-    ``access_key``/``secret_key``, or ``store`` plus ``iam_user`` and this
-    reads the Rook secret ``rook-ceph-object-user-<store>-<iam_user>``.
+    Credentials are an RGW user with ``oidc-provider=*`` caps in the
+    store's realm. Pass ``access_key``/``secret_key``, or ``store`` (realm,
+    zonegroup, and zone default to the store name) and this creates
+    ``iam_user`` with ``radosgw-admin`` in the toolbox. Do not use a
+    ``CephObjectStoreUser`` for this: Rook's controller calls the Admin Ops
+    API and fails with ``NoSuchBucket`` on this store, so the secret is
+    never written. A user of the same name in the default zone is a
+    different user and will not authenticate to this RGW.
 
     Thumbprints are SHA1 of the IdP certificates (JWKS ``x5c``, which is what
     STS checks). They are discovered from the issuer when omitted. Ceph
@@ -1440,16 +1537,23 @@ def oidc_provider_present(
             }
 
         if not access_key or not secret_key:
-            if not store:
+            if not store and not realm:
                 return {
                     "success": False,
                     "updated": False,
                     "message": (
                         "access_key and secret_key are required, or set store "
-                        "so the Rook object-user secret can be read"
+                        "so the IAM admin can be created in that realm"
                     ),
                 }
-            keys = _rgw_user_keys(namespace, f"rook-ceph-object-user-{store}-{iam_user}")
+            _load_k8s_config()
+            keys = _ensure_iam_admin(
+                namespace,
+                iam_user,
+                realm=realm or store,
+                zonegroup=zonegroup or store,
+                zone=zone or store,
+            )
             if not keys["success"]:
                 return {
                     "success": False,
@@ -1612,6 +1716,9 @@ def rgw_role_present(
     path="/",
     audience_claim="aud",
     issuer_url=None,
+    realm=None,
+    zonegroup=None,
+    zone=None,
 ):
     """Ensure an RGW IAM role that trusts an OIDC provider.
 
@@ -1640,9 +1747,10 @@ def rgw_role_present(
             }],
         }
         doc = json.dumps(policy)
+        target = _rgw_target_args(realm, zonegroup, zone)
         info = _toolbox_radosgw(
             namespace,
-            ["role", "get", "--role-name", role_name, *_tenant_args(tenant)],
+            ["role", "get", "--role-name", role_name, *_tenant_args(tenant), *target],
         )
         if info["success"]:
             try:
@@ -1675,6 +1783,7 @@ def rgw_role_present(
                 "--path", path,
                 *_tenant_args(tenant),
                 "--assume-role-policy-doc", doc,
+                *target,
             ],
         )
         return {
@@ -1697,6 +1806,9 @@ def rgw_role_policy_present(
     buckets,
     tenant="",
     actions=None,
+    realm=None,
+    zonegroup=None,
+    zone=None,
 ):
     """Attach an inline S3 policy to an RGW role. buckets may be ['*']."""
     try:
@@ -1720,6 +1832,7 @@ def rgw_role_policy_present(
             }],
         }
         doc = json.dumps(policy)
+        target = _rgw_target_args(realm, zonegroup, zone)
         current = _toolbox_radosgw(
             namespace,
             [
@@ -1727,6 +1840,7 @@ def rgw_role_policy_present(
                 "--role-name", role_name,
                 "--policy-name", policy_name,
                 *_tenant_args(tenant),
+                *target,
             ],
         )
         current_doc = current["stdout"]
@@ -1750,6 +1864,7 @@ def rgw_role_policy_present(
                 "--policy-name", policy_name,
                 *_tenant_args(tenant),
                 "--policy-doc", doc,
+                *target,
             ],
         )
         return {

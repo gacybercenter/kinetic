@@ -73,19 +73,10 @@ rook_ceph_object_store:
 {% set oidc_client = oidc.get('client_id', store_name) %}
 {% set oidc_role = oidc.get('role', store_name ~ '-oidc-role') %}
 {% set iam_user = oidc.get('iam_user', 'rgw-iam-admin') %}
-{# RGW user that signs CreateOpenIDConnectProvider. Rook writes its keys to
-   rook-ceph-object-user-<store>-<iam_user>; the provider state reads them. #}
-object_store_iam_admin:
-  rook.ceph_object_store_user_present:
-    - name: {{ iam_user }}
-    - namespace: {{ rook_ns }}
-    - store: {{ store_name }}
-    - display_name: {{ iam_user }}
-    - capabilities:
-        oidc-provider: "*"
-    - require:
-      - rook: rook_ceph_object_store
-
+{# RGW runs in realm/zone named after the store. A user of the same name in
+   the default zone will not authenticate. The provider state creates
+   iam_user with radosgw-admin in this realm; CephObjectStoreUser fails here
+   with NoSuchBucket and never writes a secret. #}
 object_store_oidc_provider:
   rook.oidc_provider_present:
     - name: {{ oidc_name }}
@@ -94,6 +85,9 @@ object_store_oidc_provider:
     - client_id: {{ oidc_client | yaml_dquote }}
     - store: {{ store_name }}
     - iam_user: {{ iam_user }}
+    - realm: {{ oidc.get('realm', store_name) }}
+    - zonegroup: {{ oidc.get('zonegroup', store_name) }}
+    - zone: {{ oidc.get('zone', store_name) }}
     - endpoint: {{ (oidc.get('endpoint') or ('http://rook-ceph-rgw-' ~ store_name ~ '.' ~ rook_ns ~ '.svc:' ~ (store.get('port', 80) | string))) | yaml_dquote }}
     - verify: {{ kc_conn.get('verify', false) }}
 {%- if oidc.get('thumbprints') %}
@@ -101,7 +95,7 @@ object_store_oidc_provider:
     - discover_thumbprints: false
 {%- endif %}
     - require:
-      - rook: object_store_iam_admin
+      - rook: rook_ceph_object_store
 
 object_store_oidc_role:
   rook.rgw_role_present:
@@ -111,6 +105,9 @@ object_store_oidc_role:
     - issuer_url: {{ oidc['issuer_url'] | yaml_dquote }}
     - audience: {{ oidc_client | yaml_dquote }}
     - audience_claim: {{ oidc.get('audience_claim', 'aud') | yaml_dquote }}
+    - realm: {{ oidc.get('realm', store_name) }}
+    - zonegroup: {{ oidc.get('zonegroup', store_name) }}
+    - zone: {{ oidc.get('zone', store_name) }}
     - require:
       - rook: object_store_oidc_provider
 
@@ -121,6 +118,9 @@ object_store_oidc_role_policy:
     - namespace: {{ rook_ns }}
     - role_name: {{ oidc_role }}
     - buckets: {{ oidc['buckets'] | tojson }}
+    - realm: {{ oidc.get('realm', store_name) }}
+    - zonegroup: {{ oidc.get('zonegroup', store_name) }}
+    - zone: {{ oidc.get('zone', store_name) }}
     - require:
       - rook: object_store_oidc_role
 {% endif %}

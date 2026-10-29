@@ -224,9 +224,14 @@ IdP certs; STS compares them to the JWKS `x5c` entries, so a realm that
 does not publish `x5c` will create cleanly and still fail
 `AssumeRoleWithWebIdentity`.
 
-The signing user needs `oidc-provider=*` caps. The object-store formula
-creates that user with `rook.ceph_object_store_user_present` and the
-provider state reads `rook-ceph-object-user-<store>-<iam_user>`.
+The signing user needs `oidc-provider=*` caps **in the store's realm**.
+The toolbox defaults to zone `default`, and a user created there will not
+authenticate to the RGW serving the store. `oidc_provider_present` creates
+`iam_user` with `radosgw-admin --rgw-realm/--rgw-zone` (defaulting those to
+the store name) when `access_key` is omitted. Do not use
+`CephObjectStoreUser` for this user: Rook's controller calls the Admin Ops
+API and fails with `NoSuchBucket` on this store, so it never writes
+`rook-ceph-object-user-*`.
 
 ```yaml
 object_store_oidc_provider:
