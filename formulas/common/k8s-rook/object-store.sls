@@ -131,6 +131,10 @@ object_store_bucket_{{ bucket_name | replace('-', '_') }}:
       - rook: rook_ceph_object_store
 {% endfor %}
 
+{# A role with no group condition and no inline policy can be assumed by any
+   token for this client, and every later S3 call is denied. Create it only
+   when oidc.buckets gives it a policy. Group access uses group_roles. #}
+{% if oidc.get('buckets') %}
 object_store_oidc_role:
   rook.rgw_role_present:
     - name: {{ oidc_role }}
@@ -144,6 +148,7 @@ object_store_oidc_role:
     - zone: {{ oidc.get('zone', store_name) }}
     - require:
       - rook: object_store_oidc_provider
+{% endif %}
 
 {% for entry in oidc.get('group_roles', []) %}
 {% set group_name = entry.group %}
