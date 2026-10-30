@@ -260,7 +260,9 @@ ensure_services_acls:
       - {{ services_groups_acl | yaml_dquote }}
     - require:
       - ldap: ensure_ldap_config_admin_connect_spec
+{%- if ldap_orgunits is not none %}
       - ldap: ensure_ldap_ous
+{%- endif %}
 
 # ppolicy overlay is required for pwdPolicySubentry on service accounts to
 # take effect. Not set as olcPPolicyDefault - that would apply to every
@@ -292,7 +294,11 @@ ensure_policies_ou:
     - ous:
       - name: policies
     - require:
+{%- if ldap_orgunits is not none %}
       - ldap: ensure_ldap_ous
+{%- else %}
+      - ldap: ensure_ldap_connect_spec
+{%- endif %}
 
 # Service-account password policy. OpenLDAP does not inherit pwdPolicy from
 # a parent OU - each bind DN under ou=services is pointed at this object
@@ -374,7 +380,9 @@ ldap_service_{{ service_cn }}:
 {%- endif %}
     - require:
       - ldap: ensure_ldap_connect_spec
+{%- if ldap_orgunits is not none %}
       - ldap: ensure_ldap_ous
+{%- endif %}
       - ldap: ensure_service_pwd_policy
 
 {% if service.get('kubernetes') %}
