@@ -544,6 +544,7 @@ def ceph_object_store_present(
     sts_key=None,
     secure_port=None,
     ssl_certificate_ref=None,
+    advertise_endpoint=None,
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -728,6 +729,7 @@ def ceph_object_store_present(
             sts_key=sts_key,
             secure_port=secure_port,
             ssl_certificate_ref=ssl_certificate_ref,
+            advertise_endpoint=advertise_endpoint,
         )
 
         ret["result"] = result.get("success", False)

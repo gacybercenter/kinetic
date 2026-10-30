@@ -717,6 +717,7 @@ def ceph_object_store_present(
     sts_key=None,
     secure_port=None,
     ssl_certificate_ref=None,
+    advertise_endpoint=None,
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -771,6 +772,10 @@ def ceph_object_store_present(
             cannot use the public name on the certificate.
         ssl_certificate_ref (str, optional): Secret in this namespace with
             tls.crt and tls.key. Rook mounts it as the beast TLS certificate.
+        advertise_endpoint (dict, optional): spec.hosting.advertiseEndpoint.
+            Keys dnsName, port, useTls. Rook's own RGW calls use this instead
+            of the Service DNS name. Required when the TLS cert cannot list
+            rook-ceph-rgw-<store>.<ns>.svc (a public ACME cert cannot).
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'message' (str), and 'resource' (dict, if created/updated).
@@ -872,6 +877,14 @@ def ceph_object_store_present(
             object_store_body["spec"]["gateway"]["securePort"] = int(secure_port)
         if ssl_certificate_ref:
             object_store_body["spec"]["gateway"]["sslCertificateRef"] = ssl_certificate_ref
+        if advertise_endpoint:
+            object_store_body["spec"]["hosting"] = {
+                "advertiseEndpoint": {
+                    "dnsName": advertise_endpoint["dnsName"],
+                    "port": int(advertise_endpoint.get("port", secure_port or 443)),
+                    "useTls": bool(advertise_endpoint.get("useTls", True)),
+                },
+            }
 
         # Configure Keystone authentication if enabled, under auth.keystone and gateway rgwConfig
         if auth_keystone:

@@ -60,11 +60,17 @@ rook_ceph_object_store:
     - name: {{ store_name }}
     - namespace: {{ rook_ns }}
     - replicas: {{ store.get('metadata_replicas', 3) }}
-    - port: {{ store.get('port', 80) }}
+    {# Rook omits the Service port when this is 0. TLS stores drop port 80
+       unless pillar sets port explicitly. #}
+    - port: {{ store.get('port', 0 if store.get('tls') else 80) }}
     - ssl_enabled: false
 {%- if store.get('tls') %}
     - secure_port: {{ store.get('secure_port', 443) }}
     - ssl_certificate_ref: {{ store.get('tls_secret', store_name ~ '-tls') }}
+    - advertise_endpoint:
+        dnsName: {{ store.get('tls_hostname', object_hostnames[0] if object_hostnames else store_name) }}
+        port: {{ store.get('secure_port', 443) }}
+        useTls: true
 {%- endif %}
     - gateway_instances: {{ store.get('gateway_instances', 2) }}
     - enable_swift_api: false
@@ -96,6 +102,9 @@ rook_ceph_object_store:
 {% set oidc_client = oidc.get('client_id', store_name) %}
 {% set oidc_role = oidc.get('role', store_name ~ '-oidc-role') %}
 {% set iam_user = oidc.get('iam_user', 'rgw-iam-admin') %}
+{% set rgw_scheme = 'https' if store.get('tls') else 'http' %}
+{% set rgw_port = store.get('secure_port', 443) if store.get('tls') else store.get('port', 80) %}
+{% set rgw_endpoint = oidc.get('endpoint') or (rgw_scheme ~ '://rook-ceph-rgw-' ~ store_name ~ '.' ~ rook_ns ~ '.svc:' ~ (rgw_port | string)) %}
 {# RGW runs in realm/zone named after the store. A user of the same name in
    the default zone will not authenticate. The provider state creates
    iam_user with radosgw-admin in this realm; CephObjectStoreUser fails here
@@ -111,7 +120,7 @@ object_store_oidc_provider:
     - realm: {{ oidc.get('realm', store_name) }}
     - zonegroup: {{ oidc.get('zonegroup', store_name) }}
     - zone: {{ oidc.get('zone', store_name) }}
-    - endpoint: {{ (oidc.get('endpoint') or ('http://rook-ceph-rgw-' ~ store_name ~ '.' ~ rook_ns ~ '.svc:' ~ (store.get('port', 80) | string))) | yaml_dquote }}
+    - endpoint: {{ rgw_endpoint | yaml_dquote }}
     - verify: {{ kc_conn.get('verify', false) }}
 {%- if oidc.get('thumbprints') %}
     - thumbprints: {{ oidc['thumbprints'] | tojson }}
@@ -131,7 +140,7 @@ object_store_bucket_{{ bucket_name | replace('-', '_') }}:
     - realm: {{ oidc.get('realm', store_name) }}
     - zonegroup: {{ oidc.get('zonegroup', store_name) }}
     - zone: {{ oidc.get('zone', store_name) }}
-    - endpoint: {{ (oidc.get('endpoint') or ('http://rook-ceph-rgw-' ~ store_name ~ '.' ~ rook_ns ~ '.svc:' ~ (store.get('port', 80) | string))) | yaml_dquote }}
+    - endpoint: {{ rgw_endpoint | yaml_dquote }}
     - require:
       - rook: rook_ceph_object_store
 {% endfor %}
