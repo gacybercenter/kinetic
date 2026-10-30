@@ -62,6 +62,10 @@ rook_ceph_object_store:
     - replicas: {{ store.get('metadata_replicas', 3) }}
     - port: {{ store.get('port', 80) }}
     - ssl_enabled: false
+{%- if store.get('tls') %}
+    - secure_port: {{ store.get('secure_port', 443) }}
+    - ssl_certificate_ref: {{ store.get('tls_secret', store_name ~ '-tls') }}
+{%- endif %}
     - gateway_instances: {{ store.get('gateway_instances', 2) }}
     - enable_swift_api: false
     - enable_s3_api: true
@@ -207,7 +211,30 @@ object_store_oidc_role_policy:
 {% endif %}
 
 {% if object_hostnames %}
-# TLS terminates on the external Gateway. RGW Service is rook-ceph-rgw-<store>.
+{% set tls = store.get('tls') %}
+{% set tls_secret = store.get('tls_secret', store_name ~ '-tls') %}
+{% set tls_issuer = store.get('tls_issuer', 'letsencrypt-prod') %}
+{% set backend_port = store.get('secure_port', 443) if tls else store.get('port', 80) %}
+{% set sni = store.get('tls_hostname', object_hostnames[0]) %}
+{# A public ACME issuer will not certify *.svc names. Traefik dials the Service
+   IP and sends this public name as SNI, which is the name on the cert.
+   System CAs verify that cert. Do not point caCertificateRefs at the leaf
+   secret: that secret's ca.crt is the issuer chain, and it rotates. #}
+{% if tls %}
+object_store_certificate:
+  k8s.certmanager_certificate_present:
+    - name: {{ store_name }}-tls
+    - certificate_name: {{ store_name }}-tls
+    - namespace: {{ rook_ns }}
+    - secret_name: {{ tls_secret }}
+    - issuer_name: {{ tls_issuer }}
+    - issuer_kind: {{ store.get('tls_issuer_kind', 'ClusterIssuer') }}
+    - common_name: {{ sni }}
+    - dns_names: {{ store.get('tls_dns_names', [sni]) | tojson }}
+{% endif %}
+
+# External TLS terminates on the Gateway. With store.tls, the Gateway dials
+# RGW securePort and checks the cert. Port 80 stays for in-cluster callers.
 object_store_httproute:
   k8s.httproute_present:
     - name: {{ store_name }}-route
@@ -224,9 +251,28 @@ object_store_httproute:
                 value: "/"
           backendRefs:
             - name: rook-ceph-rgw-{{ store_name }}
-              port: {{ store.get('port', 80) }}
+              port: {{ backend_port }}
     - require:
       - rook: rook_ceph_object_store
+{%- if tls %}
+      - k8s: object_store_certificate
+
+object_store_backend_tls:
+  k8s.backendtlspolicy_present:
+    - name: {{ store_name }}-backend-tls
+    - namespace: {{ rook_ns }}
+    - version: {{ store.get('backend_tls_version', 'v1') | yaml_dquote }}
+    - target_refs:
+        - group: ""
+          kind: Service
+          name: rook-ceph-rgw-{{ store_name }}
+          sectionName: https
+    - hostname: {{ sni }}
+    - well_known_ca_certificates: {{ store.get('tls_well_known_cas', 'System') | yaml_dquote }}
+    - require:
+      - k8s: object_store_certificate
+      - k8s: object_store_httproute
+{%- endif %}
 {% endif %}
 
 {% if kc_client %}
