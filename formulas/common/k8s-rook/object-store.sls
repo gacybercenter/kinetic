@@ -141,6 +141,8 @@ object_store_bucket_{{ bucket_name | replace('-', '_') }}:
     - zonegroup: {{ oidc.get('zonegroup', store_name) }}
     - zone: {{ oidc.get('zone', store_name) }}
     - endpoint: {{ rgw_endpoint | yaml_dquote }}
+    {# Service DNS is not on the public cert. Skip verify for that hop. #}
+    - verify: {{ oidc.get('verify', false) if store.get('tls') else kc_conn.get('verify', false) }}
     - require:
       - rook: rook_ceph_object_store
 {% endfor %}

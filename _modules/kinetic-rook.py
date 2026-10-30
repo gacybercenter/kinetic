@@ -1233,7 +1233,12 @@ def _toolbox_http(namespace, method, url, headers, body=b"", timeout=30, insecur
     if body:
         argv.extend(["--data-binary", body.decode("utf-8")])
     argv.append(url)
-    command = ["/bin/sh", "-c", " ".join(shlex.quote(part) for part in argv)]
+    # stderr has the TLS or connect error. Without it a failed curl is
+    # only "HTTP 0" and the caller cannot tell why.
+    command = [
+        "/bin/sh", "-c",
+        " ".join(shlex.quote(part) for part in argv) + " 2>&1",
+    ]
     stdout = stream(
         core.connect_get_namespaced_pod_exec,
         running[0],
