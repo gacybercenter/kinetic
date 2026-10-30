@@ -815,7 +815,7 @@ def rgw_role_present(
     issuer_url=None,
     groups=None,
     groups_claim="groups",
-    group_prefix="/",
+    group_prefix="",
     realm=None,
     zonegroup=None,
     zone=None,

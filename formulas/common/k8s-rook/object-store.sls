@@ -14,7 +14,7 @@
          thumbprints: []            # omit to discover from the issuer JWKS x5c
          iam_user: rgw-iam-admin    # RGW user with oidc-provider=* caps
          group_roles:               # one role per group; claim must match exactly
-           - group: ss3-admin       # leading / is added; Keycloak emits /ss3-admin
+           - group: ss3-admins      # matched as written; Keycloak emits the bare LDAP name
              buckets: ['*']
            # actions defaults to s3:*. A tight list must include ListBucket;
            # the module also adds s3:GetBucketLocation, which clients send first.
@@ -163,7 +163,7 @@ object_store_oidc_role_{{ group_role | replace('-', '_') }}:
     - audience_claim: {{ oidc.get('audience_claim', 'app_id') | yaml_dquote }}
     - groups:
       - {{ entry.get('claim', group_name) | yaml_dquote }}
-    - group_prefix: {{ oidc.get('group_prefix', '/') | yaml_dquote }}
+    - group_prefix: {{ oidc.get('group_prefix', '') | yaml_dquote }}
     - realm: {{ oidc.get('realm', store_name) }}
     - zonegroup: {{ oidc.get('zonegroup', store_name) }}
     - zone: {{ oidc.get('zone', store_name) }}

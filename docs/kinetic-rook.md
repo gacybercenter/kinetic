@@ -225,9 +225,10 @@ failing: op 144 is `sts:AssumeRoleWithWebIdentity`. RGW copies the JWT
 `aud` to `account` unless the client has an `oidc-audience-mapper` that
 adds the client id to the access token. The object-store formula creates
 that mapper and conditions the role on `:app_id`. Group membership is
-checked only at assume-role (`<issuer>:groups`). The realm groups scope
-emits `/ss3-admin`; a bare pillar name gets that `/` prepended. Pass
-`group_prefix: ""` if a client emits the bare name. The session does not carry the JWT, so a later S3 call
+checked only at assume-role (`<issuer>:groups`). The condition must match
+the claim exactly. Keycloak emits the bare LDAP group name (`ss3-admins`),
+so `group_prefix` defaults to empty. Pass `group_prefix: "/"` only if a
+mapper still emits the full path. The session does not carry the JWT, so a later S3 call
 cannot be filtered by group. Give each group its own role and put that
 group's buckets on the inline policy (`oidc.group_roles`). A tight
 `actions` list must include `s3:ListBucket`. Clients also send

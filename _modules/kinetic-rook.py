@@ -1816,7 +1816,7 @@ def rgw_role_present(
     issuer_url=None,
     groups=None,
     groups_claim="groups",
-    group_prefix="/",
+    group_prefix="",
     realm=None,
     zonegroup=None,
     zone=None,
@@ -1832,9 +1832,10 @@ def rgw_role_present(
     ``groups`` is checked only at AssumeRoleWithWebIdentity. RGW does not
     keep the JWT on later S3 calls, so a group cannot be a bucket-policy
     condition. One role per group, with that group's buckets on the inline
-    policy. Keycloak's group mapper emits ``/ss3-admin`` unless full group
-    path is disabled, so a bare name gets ``group_prefix`` prepended. Pass
-    ``group_prefix=""`` when the claim is already bare. Multiple groups are OR.
+    policy. Match the claim exactly. Keycloak is configured to emit the bare
+    LDAP group name (``ss3-admins``, not ``/ss3-admins``), so ``group_prefix``
+    defaults to empty. Pass ``group_prefix="/"`` only for a mapper that still
+    emits the full path. Multiple groups are OR.
     """
     try:
         _load_k8s_config()
