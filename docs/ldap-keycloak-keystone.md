@@ -90,7 +90,10 @@ ldap:
       members:
         - mdanielson           # uids of users defined above (or bare DNs)
       member_groups:
-        - admins                # cns of other groups defined here (nested membership)
+        - admins                # cns of other groups defined here. Keycloak
+                                # does not follow a member that is a group, so
+                                # prov.sls expands these to each nested group's
+                                # users and writes those users on this group.
       kubernetes:               # optional - see kinetic-k8s.md
         roles:
           - namespace: default
@@ -215,13 +218,11 @@ That's the only edit needed. What happens when this gets applied (see
    group claim.
 3. **Keystone** (`federation.sls`): this particular `ncu` group entry has no
    `openstack:` key, so there is nothing for `federation.sls` to do for
-   `ncu` directly. `bcaldwell` still gets OpenStack access indirectly
-   through `member_groups: [admins]` - since `admins` already has an
-   `openstack:` key with project role assignments, and `bcaldwell` is (or
-   isn't, depending on your actual `admins` membership) a member of
-   `admins` - the OpenStack-side effect always comes from a group's own
-   (or nested, via `member_groups`) `openstack:` key, evaluated
-   independently per group.
+   `ncu` directly. OpenStack role assignments are per group `cn`, not
+   inherited through `member_groups`. `member_groups` only copies users
+   onto the parent group's LDAP `member` attribute so Keycloak can see
+   them. A nested group's own `openstack:` key still applies only to that
+   nested group.
 
 If instead you wanted `bcaldwell` (or the whole `ncu` group) to also get
 OpenStack access to a project, you'd add an `openstack:` key to the `ncu`

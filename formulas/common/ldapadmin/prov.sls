@@ -33,13 +33,11 @@
 #         kubernetes:                # optional, same shape as above
 #           cluster_roles: [...]
 #       - cn: se_cyber
-#         member_groups: [admins]    # group cns; resolved to group DNs when
-#                                    # the cn matches another group defined
-#                                    # here. groupOfNames requires at least
-#                                    # one member - use member_groups (e.g.
-#                                    # nesting the admins group) instead of
-#                                    # letting the group default to a
-#                                    # self-reference.
+#         member_groups: [admins]    # group cns. Keycloak's group mapper does
+#                                    # not follow a member that is another
+#                                    # group, so these are expanded to each
+#                                    # nested group's users and written as
+#                                    # individual member DNs. Cycles are skipped.
 #
 # Note: `kubernetes.roles`/`kubernetes.cluster_roles` bind an *existing*
 # Role/ClusterRole (built-in or one of this entry's own `custom_roles`).
@@ -69,11 +67,30 @@
 {% do uid_to_state.update({user['uid']: "ldap_user_" ~ user['uid']}) %}
 {% endfor %}
 
-{# Map cn -> group DN, for resolving nested group members (member_groups). #}
-{% set cn_to_dn = {} %}
+{# Map cn -> group pillar, so member_groups can be flattened to users.
+   A group DN on member is not a Keycloak user, so nesting is expanded here. #}
+{% set cn_to_group = {} %}
 {% for group in pillar['ldap'].get('groups', []) %}
-{% do cn_to_dn.update({group['cn']: "cn=" ~ group['cn'] ~ "," ~ groups_base_dn}) %}
+{% do cn_to_group.update({group['cn']: group}) %}
 {% endfor %}
+
+{# Append uid, or the DN of every user reachable through member_groups.
+   seen stops a cycle (admins -> se_cyber -> admins). #}
+{% macro flatten_members(group, seen, out) %}
+{% if group['cn'] not in seen %}
+{% do seen.append(group['cn']) %}
+{% for member in group.get('members', []) %}
+{% if member not in out %}
+{% do out.append(member) %}
+{% endif %}
+{% endfor %}
+{% for nested_cn in group.get('member_groups', []) %}
+{% if nested_cn in cn_to_group %}
+{{ flatten_members(cn_to_group[nested_cn], seen, out) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endmacro %}
 
 {# ------------------------------------------------------------------------
    Emits Role/ClusterRole + RoleBinding/ClusterRoleBinding states for a
@@ -358,12 +375,11 @@ ldap_service_{{ service_cn }}:
 # Groups
 # ==========================================================================
 {% for group in pillar['ldap'].get('groups', []) %}
+{% set flat_uids = [] %}
+{% set _ = flatten_members(group, [], flat_uids) %}
 {% set member_dns = [] %}
-{% for member in group.get('members', []) %}
+{% for member in flat_uids %}
 {% do member_dns.append(uid_to_dn.get(member, member)) %}
-{% endfor %}
-{% for member_group in group.get('member_groups', []) %}
-{% do member_dns.append(cn_to_dn.get(member_group, member_group)) %}
 {% endfor %}
 
 ldap_group_{{ group['cn'] }}:
@@ -379,11 +395,8 @@ ldap_group_{{ group['cn'] }}:
     - require:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_ous
-{%- for member in group.get('members', []) if member in uid_to_state %}
+{%- for member in flat_uids if member in uid_to_state %}
       - ldap: {{ uid_to_state[member] }}
-{%- endfor %}
-{%- for member_group in group.get('member_groups', []) if member_group in cn_to_dn and member_group != group['cn'] %}
-      - ldap: ldap_group_{{ member_group }}
 {%- endfor %}
 
 {% if group.get('kubernetes') %}
