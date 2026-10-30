@@ -215,6 +215,8 @@ Notes:
 `CreateOpenIDConnectProvider` is the older, documented API and is what
 `oidc_provider_present` calls (signed as service `iam`, stdlib SigV4, no
 `requests-aws4auth`). See https://docs.ceph.com/en/reef/radosgw/oidc/.
+The LDAP group to Keycloak token to RGW role path for the ss3 store is
+[`ldap-keycloak-rgw.md`](ldap-keycloak-rgw.md).
 
 The provider is keyed by the issuer URL with the scheme stripped, not by
 the friendly name. STS looks it up the same way from the token `iss`, so

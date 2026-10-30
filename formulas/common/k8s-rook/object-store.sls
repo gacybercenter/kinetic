@@ -1,4 +1,5 @@
 {# CephObjectStore with RGW STS (and IAM, for OIDC provider + roles).
+   End-to-end auth: docs/ldap-keycloak-rgw.md.
    Pillar:
      res-k8s:rook:object_store:
        name: my-store
