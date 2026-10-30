@@ -77,6 +77,7 @@ def helm_release_present(
     values_dict=None,
     pillar_key=None,
     version=None,
+    wait=True,
     wait_timeout=300,
     wait_interval=10,
     keep_values_file=False,
@@ -107,6 +108,9 @@ def helm_release_present(
 
     version
         Optional. Specific version of the chart to install. Defaults to None (latest).
+
+    wait
+        Optional. Whether to pass --wait to Helm and block until the release's resources are ready. Defaults to True.
 
     wait_timeout
         Optional. Maximum time in seconds to wait for Helm release to be ready. Defaults to 300.
@@ -152,6 +156,7 @@ def helm_release_present(
             values_dict=values_dict,
             pillar_key=pillar_key,
             version=version,
+            wait=wait,
             wait_timeout=wait_timeout,
             wait_interval=wait_interval,
             keep_values_file=keep_values_file,

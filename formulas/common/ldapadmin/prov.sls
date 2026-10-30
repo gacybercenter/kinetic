@@ -1,6 +1,6 @@
 # ==========================================================================
-# LDAP provisioning: root DN / OUs / users / groups, plus optional Kubernetes
-# RBAC bindings driven by each user/group's `kubernetes` pillar key.
+# LDAP provisioning: root DN / OUs / users / services / groups, plus optional
+# Kubernetes RBAC bindings driven by each user/group's `kubernetes` pillar key.
 #
 # Expected pillar shape (see docs/kinetic-k8s.md for the RBAC contract):
 #
@@ -20,6 +20,12 @@
 #             - name: my-role
 #               namespace: default   # omit for a ClusterRole
 #               rules: [...]
+#     services:                      # bind DNs under ou=services
+#                                    # (organizationalRole + simpleSecurityObject)
+#       - cn: keycloak
+#         description: "..."         # optional
+#         pass: "..."                # required on create (userPassword);
+#                                    # never updated after that
 #     groups:
 #       - cn: admins
 #         members: [mdanielson]      # uids; resolved to member DNs when the
@@ -27,13 +33,11 @@
 #         kubernetes:                # optional, same shape as above
 #           cluster_roles: [...]
 #       - cn: se_cyber
-#         member_groups: [admins]    # group cns; resolved to group DNs when
-#                                    # the cn matches another group defined
-#                                    # here. groupOfNames requires at least
-#                                    # one member - use member_groups (e.g.
-#                                    # nesting the admins group) instead of
-#                                    # letting the group default to a
-#                                    # self-reference.
+#         member_groups: [admins]    # group cns. Keycloak's group mapper does
+#                                    # not follow a member that is another
+#                                    # group, so these are expanded to each
+#                                    # nested group's users and written as
+#                                    # individual member DNs. Cycles are skipped.
 #
 # Note: `kubernetes.roles`/`kubernetes.cluster_roles` bind an *existing*
 # Role/ClusterRole (built-in or one of this entry's own `custom_roles`).
@@ -51,19 +55,46 @@
 {% set ldap_users = ldap.get('users') %}
 {% set ldap_groups = ldap.get('groups') %}
 {% set users_base_dn = "ou=users,dc=rsc,dc=gacyberrange,dc=org" %}
+{% set services_base_dn = "ou=services,dc=rsc,dc=gacyberrange,dc=org" %}
 {% set groups_base_dn = "ou=groups,dc=rsc,dc=gacyberrange,dc=org" %}
+{% set policies_base_dn = "ou=policies,dc=rsc,dc=gacyberrange,dc=org" %}
+{% set service_pwd_policy_dn = "cn=service," ~ policies_base_dn %}
+{% set ldap_database_dn = pillar['ldap'].get('database_dn', 'olcDatabase={2}mdb,cn=config') %}
 
-{# Map uid -> user DN, for resolving group members that are managed here. #}
+{# Map uid -> DN and uid -> ldap state id, for resolving group members that
+   are managed here (human users under ou=users). Service accounts are bind
+   DNs (organizationalRole), not inetOrgPerson, so they are not group members. #}
 {% set uid_to_dn = {} %}
-{% for user in ldap_users or [] %}
+{% set uid_to_state = {} %}
+{% for user in pillar['ldap'].get('users', []) %}
 {% do uid_to_dn.update({user['uid']: "cn=" ~ user['cn'] ~ "," ~ users_base_dn}) %}
+{% do uid_to_state.update({user['uid']: "ldap_user_" ~ user['uid']}) %}
 {% endfor %}
 
-{# Map cn -> group DN, for resolving nested group members (member_groups). #}
-{% set cn_to_dn = {} %}
-{% for group in ldap_groups or [] %}
-{% do cn_to_dn.update({group['cn']: "cn=" ~ group['cn'] ~ "," ~ groups_base_dn}) %}
+{# Map cn -> group pillar, so member_groups can be flattened to users.
+   A group DN on member is not a Keycloak user, so nesting is expanded here. #}
+{% set cn_to_group = {} %}
+{% for group in pillar['ldap'].get('groups', []) %}
+{% do cn_to_group.update({group['cn']: group}) %}
 {% endfor %}
+
+{# Append uid, or the DN of every user reachable through member_groups.
+   seen stops a cycle (admins -> se_cyber -> admins). #}
+{% macro flatten_members(group, seen, out) %}
+{% if group['cn'] not in seen %}
+{% do seen.append(group['cn']) %}
+{% for member in group.get('members', []) %}
+{% if member not in out %}
+{% do out.append(member) %}
+{% endif %}
+{% endfor %}
+{% for nested_cn in group.get('member_groups', []) %}
+{% if nested_cn in cn_to_group %}
+{{ flatten_members(cn_to_group[nested_cn], seen, out) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endmacro %}
 
 {# ------------------------------------------------------------------------
    Emits Role/ClusterRole + RoleBinding/ClusterRoleBinding states for a
@@ -180,6 +211,118 @@ ensure_ldap_ous:
       - ldap: ensure_ldap_root_dn
 {% endif %}
 
+# cn=config bind - required to write olcAccess. The data-admin bind used
+# above cannot modify cn=config. Password is the same as LDAP_CONFIG_ADMIN_PASSWORD.
+ensure_ldap_config_admin_connect_spec:
+  ldap.connect_spec_present:
+    - name: ldap_config_admin_connection_setup
+    - spec_name: ldap_config_admin_connection
+    - connection_dict:
+        url: {{ "ldap://" ~ pillar['ldap']['cert']['commonname'] }}
+        bind:
+          dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ ",cn=config" }}
+          password: {{ pillar['ldap']['admin-user']['password'] }}
+          method: simple
+        admin_bind:
+          dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ ",cn=config" }}
+          password: {{ pillar['ldap']['admin-user']['password'] }}
+          method: simple
+        tls:
+          cacertfile: /tmp/ca.pem
+          starttls: True
+    - require:
+      - file: ensure_ca_cert_file
+
+{# Grant ou=services bind DNs write so they can change user passwords and
+   maintain ppolicy operational attrs, plus read on groups (Keycloak's
+   group-ldap-mapper searches groups.dn at login; OpenLDAP reports a denied
+   search base as LDAP 32 No Such Object).
+     {0} userPassword/shadowLastChange: services write, self write, anon auth
+     {1} ppolicy operational attrs: services write, self read (not write -
+         users must not be able to clear lockout/history themselves)
+     {2} ou=users subtree: services write, self read
+     {3} ou=groups subtree: services read (mapper is READ_ONLY)
+   Inserted at the front of olcAccess so they take precedence over slapd
+   defaults; existing rules are left in place. #}
+{% set services_password_acl = 'to attrs=userPassword,shadowLastChange by dn.subtree="' ~ services_base_dn ~ '" write by self write by anonymous auth by * none' %}
+{% set services_ppolicy_acl = 'to attrs=pwdHistory,pwdChangedTime,pwdFailureTime,pwdAccountLockedTime,pwdReset,pwdGraceUseTime by dn.subtree="' ~ services_base_dn ~ '" write by self read by * none' %}
+{% set services_users_acl = 'to dn.subtree="' ~ users_base_dn ~ '" by dn.subtree="' ~ services_base_dn ~ '" write by self read by * none' %}
+{% set services_groups_acl = 'to dn.subtree="' ~ groups_base_dn ~ '" by dn.subtree="' ~ services_base_dn ~ '" read by * none' %}
+ensure_services_acls:
+  ldap.access_present:
+    - name: ldap_services_acls
+    - spec_name: ldap_config_admin_connection
+    - database_dn: "{{ ldap_database_dn }}"
+    - access_rules:
+      - {{ services_password_acl | yaml_dquote }}
+      - {{ services_ppolicy_acl | yaml_dquote }}
+      - {{ services_users_acl | yaml_dquote }}
+      - {{ services_groups_acl | yaml_dquote }}
+    - require:
+      - ldap: ensure_ldap_config_admin_connect_spec
+      - ldap: ensure_ldap_ous
+
+# ppolicy overlay is required for pwdPolicySubentry on service accounts to
+# take effect. Not set as olcPPolicyDefault - that would apply to every
+# entry in the database, including human users. Service accounts are bound
+# to cn=service via pwdPolicySubentry instead.
+ensure_ppolicy_overlay:
+  ldap.overlay_present:
+    - name: ldap_ppolicy_overlay
+    - spec_name: ldap_config_admin_connection
+    - database_dn: "{{ ldap_database_dn }}"
+    - overlays:
+      - name: ppolicy
+        index: 0
+        attributes:
+          objectClass:
+            - olcOverlayConfig
+            - olcPPolicyConfig
+          olcOverlay: ppolicy
+          olcPPolicyHashCleartext: "FALSE"
+          olcPPolicyUseLockout: "FALSE"
+    - require:
+      - ldap: ensure_ldap_config_admin_connect_spec
+
+ensure_policies_ou:
+  ldap.ou_present:
+    - name: ou=policies,dc=rsc,dc=gacyberrange,dc=org
+    - spec_name: ldap_keycloak_connection
+    - base_dn: dc=rsc,dc=gacyberrange,dc=org
+    - ous:
+      - name: policies
+    - require:
+      - ldap: ensure_ldap_ous
+
+# Service-account password policy. OpenLDAP does not inherit pwdPolicy from
+# a parent OU - each bind DN under ou=services is pointed at this object
+# via pwdPolicySubentry.
+ensure_service_pwd_policy:
+  ldap.root_dn_present:
+    - name: {{ service_pwd_policy_dn }}
+    - spec_name: ldap_keycloak_connection
+    - root_dn: {{ service_pwd_policy_dn }}
+    - attributes:
+        objectClass:
+          - top
+          - person
+          - pwdPolicy
+        cn: service
+        sn: service
+        pwdAttribute: userPassword
+        pwdAllowUserChange: "TRUE"
+        pwdCheckQuality: "0"
+        pwdInHistory: "0"
+        pwdLockout: "FALSE"
+        pwdMaxAge: "0"
+        pwdMinAge: "0"
+        pwdMinLength: "12"
+        pwdMustChange: "FALSE"
+        pwdSafeModify: "FALSE"
+    - require:
+      - ldap: ensure_policies_ou
+      - ldap: ensure_ppolicy_overlay
+
 # ==========================================================================
 # Users
 # ==========================================================================
@@ -211,16 +354,43 @@ ldap_user_{{ user['uid'] }}:
 {% endif %}
 
 # ==========================================================================
+# Services (bind DNs under ou=services)
+# ==========================================================================
+{% for service in pillar['ldap'].get('services', []) %}
+{% set service_cn = service.get('cn', service.get('uid')) %}
+
+ldap_service_{{ service_cn }}:
+  ldap.service_present:
+    - name: ldap_service_{{ service_cn }}
+    - spec_name: ldap_keycloak_connection
+    - base_dn: {{ services_base_dn }}
+    - cn: {{ service_cn | yaml_dquote }}
+    - pwd_policy_subentry: {{ service_pwd_policy_dn }}
+{%- if service.get('description') %}
+    - description: {{ service['description'] | yaml_dquote }}
+{%- endif %}
+{%- if service.get('pass') %}
+    - password: {{ service['pass'] | yaml_dquote }}
+{%- endif %}
+    - require:
+      - ldap: ensure_ldap_connect_spec
+      - ldap: ensure_ldap_ous
+      - ldap: ensure_service_pwd_policy
+
+{% if service.get('kubernetes') %}
+{{ k8s_rbac_for('service', service_cn, service['kubernetes'], 'users', 'ldap_service_' ~ service_cn) }}
+{% endif %}
+{% endfor %}
+
+# ==========================================================================
 # Groups
 # ==========================================================================
-{% if ldap_groups is not none %}
-{% for group in ldap_groups %}
+{% for group in pillar['ldap'].get('groups', []) %}
+{% set flat_uids = [] %}
+{% set _ = flatten_members(group, [], flat_uids) %}
 {% set member_dns = [] %}
-{% for member in group.get('members', []) %}
+{% for member in flat_uids %}
 {% do member_dns.append(uid_to_dn.get(member, member)) %}
-{% endfor %}
-{% for member_group in group.get('member_groups', []) %}
-{% do member_dns.append(cn_to_dn.get(member_group, member_group)) %}
 {% endfor %}
 
 ldap_group_{{ group['cn'] }}:
@@ -238,12 +408,8 @@ ldap_group_{{ group['cn'] }}:
       - ldap: ensure_ldap_connect_spec
 {%- if ldap_orgunits is not none %}
       - ldap: ensure_ldap_ous
-{%- endif %}
-{%- for member in group.get('members', []) if member in uid_to_dn %}
-      - ldap: ldap_user_{{ member }}
-{%- endfor %}
-{%- for member_group in group.get('member_groups', []) if member_group in cn_to_dn and member_group != group['cn'] %}
-      - ldap: ldap_group_{{ member_group }}
+{%- for member in flat_uids if member in uid_to_state %}
+      - ldap: {{ uid_to_state[member] }}
 {%- endfor %}
 
 {% if group.get('kubernetes') %}

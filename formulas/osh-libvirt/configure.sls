@@ -1,7 +1,6 @@
 include:
   - /formulas/osh-libvirt/install
   - /formulas/osh-helm-repos/configure
-  - /formulas/neutron/configure
 
 # Neutron must be up before Libvirt, not the other way around: Neutron's own
 # chart has no dependency on Libvirt (verified against openstack-helm/neutron's
@@ -19,7 +18,9 @@ install_libvirt:
     - namespace: openstack
     - wait_timeout: 300
     - wait_interval: 10
+    - wait: false
     - pillar_key: osh:libvirt:values
     - keep_values_file: false
-    - require:
-      - k8s_helm: install_neutron
+    - set_values:
+      - conf.ceph.cinder.secret_uuid={{ pillar['osh']['libvirt_ceph_secret'] }}
+      - conf.ceph.cinder.external_ceph:secret_uuid={{ pillar['osh']['libvirt_encrypted_secret'] }}
