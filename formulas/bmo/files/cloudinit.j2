@@ -1,14 +1,22 @@
 #cloud-config
+ssh_pwauth: true
+
 users:
   - default
   - name: gcr
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: [sudo]
     lock_passwd: false
-    ssh_pwauth: True
-    passwd: "{{ pass }}"
+    hashed_passwd: "{{ pillar['node_pass'] }}"
     ssh_authorized_keys:
         - {{ pillar['node_deploy_key'] }}
+chpasswd:
+  expire: false
+  users:
+    - name: gcr
+      password: "{{ pillar['node_pass'] }}"
+      type: hash
 write_files:
 - content: |
     autosign_grains:
@@ -17,7 +25,7 @@ write_files:
 runcmd:
   - ['curl', 'https://gitlab.com/gacybercenter/open/salt-bootstrap/-/raw/develop/bootstrap-salt.sh', '-o', 'bootstrap.sh' ]
   - ['chmod', '700', 'bootstrap.sh']
-  - ['./bootstrap.sh', '-A', '10.150.1.31']
+  - ['./bootstrap.sh', '-A', '10.160.1.31']
   - rm -f /etc/machine-id
   - dbus-uuidgen --ensure=/etc/machine-id
   - ['salt-call', 'state.apply', '/formulas/common/base']

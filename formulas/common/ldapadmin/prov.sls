@@ -50,6 +50,10 @@
 # for Keystone to be reachable, so OpenStack API calls don't belong here.
 # ==========================================================================
 
+{% set ldap = pillar.get('ldap', {}) %}
+{% set ldap_orgunits = ldap.get('orgunits') %}
+{% set ldap_users = ldap.get('users') %}
+{% set ldap_groups = ldap.get('groups') %}
 {% set users_base_dn = "ou=users,dc=rsc,dc=gacyberrange,dc=org" %}
 {% set services_base_dn = "ou=services,dc=rsc,dc=gacyberrange,dc=org" %}
 {% set groups_base_dn = "ou=groups,dc=rsc,dc=gacyberrange,dc=org" %}
@@ -172,7 +176,7 @@ ensure_ldap_connect_spec:
     - connection_dict:
         url: {{ "ldap://" ~ pillar['ldap']['cert']['commonname'] }}
         bind:
-          dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ pillar['ldap']['values']['global']['ldapDomain'] }}
+          dn: {{ "cn=" ~ pillar['ldap']['admin-user']['name'] ~ "," ~ pillar['ldap']['ldapDomain'] }}
           password: {{ pillar['ldap']['admin-user']['password'] }}
           method: simple
         tls:
@@ -193,16 +197,19 @@ ensure_ldap_root_dn:
     - require:
       - ldap: ensure_ldap_connect_spec
 
+{# Skip OUs, users, and groups when that pillar key is absent. #}
+{% if ldap_orgunits is not none %}
 # Ensure Organizational Units are created
 ensure_ldap_ous:
   ldap.ou_present:
     - name: ldap_ou_setup
     - spec_name: ldap_keycloak_connection
     - base_dn: {{ "dc=rsc,dc=gacyberrange,dc=org" }}
-    - ous: {{ pillar['ldap']['orgunits']}}
+    - ous: {{ ldap_orgunits }}
     - require:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_root_dn
+{% endif %}
 
 # cn=config bind - required to write olcAccess. The data-admin bind used
 # above cannot modify cn=config. Password is the same as LDAP_CONFIG_ADMIN_PASSWORD.
@@ -319,7 +326,8 @@ ensure_service_pwd_policy:
 # ==========================================================================
 # Users
 # ==========================================================================
-{% for user in pillar['ldap'].get('users', []) %}
+{% if ldap_users is not none %}
+{% for user in ldap_users %}
 
 ldap_user_{{ user['uid'] }}:
   ldap.user_present:
@@ -335,12 +343,15 @@ ldap_user_{{ user['uid'] }}:
 {%- endif %}
     - require:
       - ldap: ensure_ldap_connect_spec
+{%- if ldap_orgunits is not none %}
       - ldap: ensure_ldap_ous
+{%- endif %}
 
 {% if user.get('kubernetes') %}
 {{ k8s_rbac_for('user', user['uid'], user['kubernetes'], 'users', 'ldap_user_' ~ user['uid']) }}
 {% endif %}
 {% endfor %}
+{% endif %}
 
 # ==========================================================================
 # Services (bind DNs under ou=services)
@@ -391,9 +402,11 @@ ldap_group_{{ group['cn'] }}:
 {%- if group.get('description') %}
     - description: {{ group['description'] | yaml_dquote }}
 {%- endif %}
+    - users_base_dn: {{ users_base_dn }}
     - members: {{ member_dns | tojson }}
     - require:
       - ldap: ensure_ldap_connect_spec
+{%- if ldap_orgunits is not none %}
       - ldap: ensure_ldap_ous
 {%- for member in flat_uids if member in uid_to_state %}
       - ldap: {{ uid_to_state[member] }}
@@ -403,3 +416,4 @@ ldap_group_{{ group['cn'] }}:
 {{ k8s_rbac_for('group', group['cn'], group['kubernetes'], 'groups', 'ldap_group_' ~ group['cn']) }}
 {% endif %}
 {% endfor %}
+{% endif %}

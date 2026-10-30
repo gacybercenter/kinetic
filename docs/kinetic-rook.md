@@ -209,6 +209,75 @@ Notes:
 - Does **not** support subusers or a Swift temp-url-key - see below and
   the "Why not..." section above.
 
+### OIDC provider (IAM query API, not `radosgw-admin oidc`)
+
+`radosgw-admin oidc provider` is newer than the Ceph this cluster runs.
+`CreateOpenIDConnectProvider` is the older, documented API and is what
+`oidc_provider_present` calls (signed as service `iam`, stdlib SigV4, no
+`requests-aws4auth`). See https://docs.ceph.com/en/reef/radosgw/oidc/.
+The LDAP group to Keycloak token to RGW role path for the ss3 store is
+[`ldap-keycloak-rgw.md`](ldap-keycloak-rgw.md).
+
+The provider is keyed by the issuer URL with the scheme stripped, not by
+the friendly name. STS looks it up the same way from the token `iss`, so
+`rgw_role_present` must be given `issuer_url` or the trust policy will not
+match. `evaluating policy for op: 144 returned deny/pass` is that check
+failing: op 144 is `sts:AssumeRoleWithWebIdentity`. RGW copies the JWT
+`aud` claim into `<provider>:app_id`, but a Keycloak access token sets
+`aud` to `account` unless the client has an `oidc-audience-mapper` that
+adds the client id to the access token. The object-store formula creates
+that mapper and conditions the role on `:app_id`. Group membership is
+checked only at assume-role (`<issuer>:groups`). The condition must match
+the claim exactly. Keycloak emits the bare LDAP group name (`ss3-admins`),
+so `group_prefix` defaults to empty. Pass `group_prefix: "/"` only if a
+mapper still emits the full path. The session does not carry the JWT, so a later S3 call
+cannot be filtered by group. Give each group its own role and put that
+group's buckets on the inline policy (`oidc.group_roles`). A tight
+`actions` list must include `s3:ListBucket`. Clients also send
+`s3:GetBucketLocation` before that list, and `rgw_role_policy_present`
+adds it when it is missing (`s3:*` already includes it). `aws s3 ls`
+with no bucket is `s3:ListAllMyBuckets` on `arn:aws:s3:::*`, which these
+policies do not grant. The S3 call has to use the temporary key, secret,
+and session token from `AssumeRoleWithWebIdentity`, and the `RoleArn`
+has to be a group role that has an inline policy. A trust-only role
+(the formula's `oidc.role`, created only when `oidc.buckets` is set)
+assumes cleanly and then 403s every bucket. The access log still shows
+the OIDC shadow user (`$oidc$<sub>`), not the role name, so check
+`AssumedRoleUser` in the STS response. The Keycloak access
+token and the IAM admin key are not that session. An unsigned request
+shows up in the RGW log as user `-`. There is no client secret on this
+API. Thumbprints are SHA1 of the
+IdP certs; STS compares them to the JWKS `x5c` entries, so a realm that
+does not publish `x5c` will create cleanly and still fail
+`AssumeRoleWithWebIdentity`.
+
+The signing user needs `oidc-provider=*` caps **in the store's realm**.
+The toolbox defaults to zone `default`, and a user created there will not
+authenticate to the RGW serving the store. `oidc_provider_present` creates
+`iam_user` with `radosgw-admin --rgw-realm/--rgw-zone` (defaulting those to
+the store name) when `access_key` is omitted. Do not use
+`CephObjectStoreUser` for this user: Rook's controller calls the Admin Ops
+API and fails with `NoSuchBucket` on this store, so it never writes
+`rook-ceph-object-user-*`.
+
+```yaml
+object_store_oidc_provider:
+  rook.oidc_provider_present:
+    - name: keycloak
+    - namespace: rook-ceph
+    - issuer_url: https://keycloak.example/realms/rsc
+    - client_id: ss3-gateway
+    - store: my-store
+    - iam_user: rgw-iam-admin
+    - endpoint: http://rook-ceph-rgw-my-store.rook-ceph.svc:80
+    - thumbprints:
+      - f7d7b3515dd0d319dd219a43a9ea727ad6065287
+```
+
+Omit `thumbprints` to discover them from the issuer JWKS (`x5c`), falling
+back to the TLS leaf. Pass `access_key`/`secret_key` instead of `store` if
+the Rook secret should not be used.
+
 ### RGW subuser (via the Ceph Mgr Dashboard API)
 
 ```yaml

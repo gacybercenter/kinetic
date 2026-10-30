@@ -15,9 +15,6 @@
 {% set type = opts.id.split('-')[0] %}
 {% set role = salt['pillar.get']('hosts:'+type+':role', type) %}
 
-include:
-  - /formulas/common/auditd/configure
-
 initial_module_sync:
   saltutil.sync_all:
     - refresh: True

@@ -845,6 +845,44 @@ def update_user(
         return ret
 
 
+def _escape_filter(value):
+    """Escape a value for an LDAP search filter."""
+    if hasattr(ldap, "filter") and hasattr(ldap.filter, "escape_filter_chars"):
+        return ldap.filter.escape_filter_chars(value)
+    return (
+        str(value)
+        .replace("\\", r"\5c")
+        .replace("*", r"\2a")
+        .replace("(", r"\28")
+        .replace(")", r"\29")
+        .replace("\x00", r"\00")
+    )
+
+
+def find_dn_by_attr(spec_name, base_dn, attr, value):
+    """
+    Return the DN of the first entry under base_dn whose attr equals value.
+
+    Used to turn a pillar uid/cn into a member DN when the user or group is
+    not declared in the same pillar run.
+    """
+    if not base_dn or not attr or value is None or value == "":
+        return None
+    conn_result = get_connect_spec(spec_name)
+    if not conn_result["success"]:
+        return None
+    conn = conn_result["conn"]
+    filt = f"({attr}={_escape_filter(value)})"
+    try:
+        results = conn.search_s(base_dn, ldap.SCOPE_SUBTREE, filt, ["dn"])
+    except Exception as exc:
+        log.warning("LDAP search %s under %s failed: %s", filt, base_dn, exc)
+        return None
+    if not results:
+        return None
+    return results[0][0]
+
+
 def create_group(
     spec_name, group_dn, cn, description=None, members=None, gid_number=None
 ):

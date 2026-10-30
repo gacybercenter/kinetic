@@ -737,6 +737,51 @@ def client_present(
     return ret
 
 
+def protocol_mapper_present(
+    name,
+    realm,
+    client_id,
+    protocol="openid-connect",
+    protocol_mapper="oidc-audience-mapper",
+    config=None,
+    keycloak_addr="k8s://keycloak/keycloak-service:8443",
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """Ensure a protocol mapper exists on a Keycloak client. name is the mapper name."""
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_keycloak.protocol_mapper_present"](
+            realm=realm,
+            client_id=client_id,
+            name=name,
+            protocol=protocol,
+            protocol_mapper=protocol_mapper,
+            config=config,
+            keycloak_addr=keycloak_addr,
+            token=token,
+            realm_username=realm_username,
+            realm_password=realm_password,
+            admin_client_id=admin_client_id,
+            admin_client_secret=admin_client_secret,
+            namespace=namespace,
+            secret_name=secret_name,
+            verify=verify,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
+    return ret
+
+
 def client_default_scope_present(
     name,
     realm,
@@ -811,6 +856,48 @@ def client_default_scope_present(
         ret["comment"] = f"Failed to ensure default client scope {scope_name} on client {client_id}: {str(e)[:100]}..."
         ret["changes"] = {}
 
+    return ret
+
+
+def client_default_scope_absent(
+    name,
+    realm,
+    scope_name,
+    client_id=None,
+    keycloak_addr="k8s://keycloak/keycloak-service:8443",
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """Remove a default client scope from one client. Does not delete the scope."""
+    ret = _state_ret(name)
+    if client_id is None:
+        client_id = name
+    try:
+        result = __salt__["kinetic_keycloak.client_default_scope_absent"](
+            realm=realm,
+            client_id=client_id,
+            scope_name=scope_name,
+            keycloak_addr=keycloak_addr,
+            token=token,
+            realm_username=realm_username,
+            realm_password=realm_password,
+            admin_client_id=admin_client_id,
+            admin_client_secret=admin_client_secret,
+            namespace=namespace,
+            secret_name=secret_name,
+            verify=verify,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"updated": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
     return ret
 
 

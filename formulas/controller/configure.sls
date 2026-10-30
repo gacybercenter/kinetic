@@ -224,7 +224,7 @@ haveged_service:
 
 libvirt_control_key:
   ssh_auth.present:
-    - user: ubuntu
+    - user: root
     - names:
       - {{ pillar['hosts']['controller']['ssh_cert'] }}
     - enc: {{ pillar['hosts']['controller']['ssh_enc'] }}

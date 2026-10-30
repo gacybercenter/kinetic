@@ -1,12 +1,20 @@
 controller:
-  service:
-    loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}
-    lbClass: kube-vip.io/kube-vip-class
+  # Chart default is 0, which Kubernetes rejects (must be > minReadySeconds).
+  progressDeadlineSeconds: 600
   extraArgs:
     enable-ssl-passthrough: 'true'
-    tcp-services-configmap: baremetal-operator-system/tcp-services
+    tcp-services-configmap: {{ pillar['bmo_namespace'] }}/tcp-services
   config:
     use-forwarded-headers: 'true'
     ssl-redirect: 'true'
     force-ssl-redirect: 'true'
     ssl-passthrough: 'true'
+  service:
+    enabled: true
+    type: LoadBalancer
+    # kube-vip static pod is started with --services and matches this class
+    # (see orch/k8s-bootstrap.sls). MetalLB ignores Services that set a class.
+    loadBalancerClass: kube-vip.io/kube-vip-class
+    loadBalancerIP: {{ pillar['ironic_endpoint_ip'] }}
+    annotations:
+      kube-vip.io/loadbalancerIPs: "{{ pillar['ironic_endpoint_ip'] }}"

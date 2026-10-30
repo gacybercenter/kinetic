@@ -9,6 +9,7 @@ for retrieving MAC addresses from HardwareData resources in a Metal3.io environm
 import base64
 import inspect
 import json
+import time
 
 import salt.utils.decorators as decorators
 from kubernetes import client, config
@@ -70,6 +71,35 @@ def _decode_k8s_secret(secret):
     if not data and secret.data:
         data = {k: base64.b64decode(v).decode("utf-8") for k, v in secret.data.items()}
     return data
+
+
+def _mariadb_my_cnf(my_cnf=None, max_allowed_packet=None):
+    """Build mariadb-operator spec.myCnf from a raw block or max_allowed_packet."""
+    if my_cnf:
+        return str(my_cnf).strip()
+    if max_allowed_packet:
+        # Both sections: MariaDB 10.x docker image reads [mysqld] from
+        # /etc/mysql/conf.d, operator mounts extra config under mariadb.conf.d.
+        # Timeouts: "Got an error reading communication packets" after packet
+        # size is raised is almost always the client closing mid-read (Ironic
+        # dbsync / SQLAlchemy pool / probes), not max_allowed_packet.
+        return (
+            "[mysqld]\n"
+            f"max_allowed_packet={max_allowed_packet}\n"
+            "wait_timeout=28800\n"
+            "interactive_timeout=28800\n"
+            "net_read_timeout=300\n"
+            "net_write_timeout=300\n"
+            "skip_name_resolve=1\n"
+            "[mariadb]\n"
+            f"max_allowed_packet={max_allowed_packet}\n"
+            "wait_timeout=28800\n"
+            "interactive_timeout=28800\n"
+            "net_read_timeout=300\n"
+            "net_write_timeout=300\n"
+            "skip_name_resolve=1\n"
+        )
+    return None
 
 
 def handle_certmanager_resource_version(
@@ -703,12 +733,15 @@ def userdata_present(
 
         if "network" in pillar_data:
             try:
-                full_pillar = __salt__["pillar.get"]("", {})
+                # Do not pass a fake pillar into slsutil.renderer: that replaces
+                # Salt's real pillar. pillar.get("") is not the full dict.
+                full_pillar = dict(__pillar__)
+                bmh_type = bmh_name.split("-")[0].lower()
+                hosts = (full_pillar.get("hosts") or {}).get(bmh_type, {}) or {}
                 userdata_context = {
-                    "pillar": {
-                        "node_deploy_key": full_pillar.get("node_deploy_key", "")
-                    },
-                    "pass": pillar_data.get("root_password_crypted", ""),
+                    "pass": full_pillar.get("node_pass")
+                    or pillar_data.get("root_password_crypted")
+                    or hosts.get("root_password_crypted", ""),
                 }
                 rendered_userdata = _render_salt_template(
                     userdata_template_path, userdata_context, renderer="jinja"
@@ -1193,6 +1226,9 @@ def mariadb_instance_present(
     requests_cpu="200m",
     requests_memory="256Mi",
     admin_host_access="%",
+    tls_enabled=False,
+    my_cnf=None,
+    max_allowed_packet=None,
 ):
     """
     Ensure that a MariaDB instance is present in Kubernetes using the MariaDB Operator.
@@ -1209,11 +1245,15 @@ def mariadb_instance_present(
         storage_size (str, optional): Storage size for the PVC. Defaults to '1Gi'.
         storage_class (str, optional): Storage class for the PVC. Defaults to 'local-storage'.
         replicas (int, optional): Number of replicas for the MariaDB instance. Defaults to 1.
+        tls_enabled (bool, optional): mariadb-operator TLS. Defaults to False so Ironic can connect without database.tlsCertificateName.
         limits_cpu (str, optional): CPU limit for the MariaDB container. Defaults to '500m'.
         limits_memory (str, optional): Memory limit for the MariaDB container. Defaults to '512Mi'.
         requests_cpu (str, optional): CPU request for the MariaDB container. Defaults to '200m'.
         requests_memory (str, optional): Memory request for the MariaDB container. Defaults to '256Mi'.
         admin_host_access (str, optional): Host or IP pattern to grant root access from. Defaults to '%'.
+        my_cnf (str, optional): Raw my.cnf mounted by mariadb-operator (spec.myCnf).
+        max_allowed_packet (str, optional): If set and my_cnf is empty, written as
+            [mariadb] max_allowed_packet=<value> in spec.myCnf. Example: '256M'.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), 'secret_updated' (bool), 'pvc_available' (bool), 'root_access_updated' (bool), and 'message' (str).
@@ -1320,11 +1360,26 @@ def mariadb_instance_present(
             current_storage = current_spec.get("storage", {})
             current_storage_class = current_storage.get("storageClassName", "")
             current_storage_size = current_storage.get("size", "")
+            current_tls = bool((current_spec.get("tls") or {}).get("enabled", True))
+            current_mycnf = (current_spec.get("myCnf") or "").strip()
+            desired_mycnf = (_mariadb_my_cnf(my_cnf, max_allowed_packet) or "").strip()
+            current_update = (current_spec.get("updateStrategy") or {}).get(
+                "type", "ReplicasFirstPrimaryLast"
+            )
+            current_resources = current_spec.get("resources") or {}
+            current_limits = current_resources.get("limits") or {}
+            current_requests = current_resources.get("requests") or {}
             if (
                 current_image != desired_image
                 or current_replicas != desired_replicas
                 or current_storage_size != storage_size
-                or current_storage_class != storage_class
+                or current_tls != bool(tls_enabled)
+                or current_mycnf != desired_mycnf
+                or current_update != "RollingUpdate"
+                or current_limits.get("cpu") != limits_cpu
+                or current_limits.get("memory") != limits_memory
+                or current_requests.get("cpu") != requests_cpu
+                or current_requests.get("memory") != requests_memory
             ):
                 matches = False
             else:
@@ -1343,9 +1398,42 @@ def mariadb_instance_present(
                     "message": f"Error fetching MariaDB instance {instance_name}: {str(e)[:100]}...; {message}",
                 }
 
-        # Step 4: No PVC check since operator will create it
+        # Operator provisions its own PVC from volumeClaimTemplate. If the
+        # caller already created a hostPath PV (local-storage), selector on
+        # that template binds the operator PVC to it. Do not put accessModes
+        # on spec.storage itself — the CRD rejects that (HTTP 422).
         pvc_available = False
-        message += f"; Skipping PVC check, operator will create PVC with storage class {storage_class}"
+        if pvc_name:
+            try:
+                existing_pvc = core_v1_api.read_namespaced_persistent_volume_claim(
+                    name=pvc_name, namespace=namespace
+                )
+                pvc_available = True
+                message += f"; PVC {pvc_name} present in {namespace}"
+                phase = None
+                if getattr(existing_pvc, "status", None):
+                    phase = getattr(existing_pvc.status, "phase", None)
+                if phase == "Bound":
+                    message += " (Bound)"
+            except ApiException as e:
+                if e.status == 404:
+                    message += (
+                        f"; PVC {pvc_name} not found; operator will create one "
+                        f"with storage class {storage_class}"
+                    )
+                else:
+                    return {
+                        "success": False,
+                        "updated": False,
+                        "secret_updated": secret_updated,
+                        "pvc_available": False,
+                        "root_access_updated": False,
+                        "message": f"Error fetching PVC {pvc_name}: {str(e)[:200]}; {message}",
+                    }
+        else:
+            message += (
+                f"; Operator will create PVC with storage class {storage_class}"
+            )
 
         # Step 5: Create or update MariaDB instance if necessary
         if not mariadb_exists or not matches:
@@ -1353,44 +1441,90 @@ def mariadb_instance_present(
                 group = "k8s.mariadb.com"
                 version = "v1alpha1"
                 plural = "mariadbs"
-                mariadb_body = {
-                    "apiVersion": f"{group}/{version}",
-                    "kind": "MariaDb",
-                    "metadata": {"name": instance_name, "namespace": namespace},
-                    "spec": {
-                        "image": image,
-                        "username": "root",
-                        "passwordSecretKeyRef": {
-                            "name": secret_name,
-                            "key": "password",
-                        },
-                        "replicas": replicas,
+                storage_spec = {
+                    "size": storage_size,
+                    "storageClassName": storage_class,
+                    "volumeClaimTemplate": {
+                        "accessModes": ["ReadWriteOnce"],
+                        "storageClassName": storage_class,
                         "resources": {
-                            "limits": {"cpu": limits_cpu, "memory": limits_memory},
-                            "requests": {
-                                "cpu": requests_cpu,
-                                "memory": requests_memory,
-                            },
-                        },
-                        "storage": {
-                            "size": storage_size,
-                            "storageClassName": storage_class,
-                            "accessModes": ["ReadWriteOnce"],
+                            "requests": {"storage": storage_size}
                         },
                     },
                 }
+                desired_mycnf = _mariadb_my_cnf(my_cnf, max_allowed_packet)
                 if mariadb_exists:
-                    custom_api.replace_namespaced_custom_object(
+                    # Replace omits operator defaults (rootEmptyPassword,
+                    # storage.ephemeral) as null; the webhook rejects that as
+                    # an immutable-field change. Merge-patch only mutables.
+                    patch = {
+                        "spec": {
+                            "image": image,
+                            "replicas": replicas,
+                            "resources": {
+                                "limits": {
+                                    "cpu": limits_cpu,
+                                    "memory": limits_memory,
+                                },
+                                "requests": {
+                                    "cpu": requests_cpu,
+                                    "memory": requests_memory,
+                                },
+                            },
+                            "tls": {"enabled": bool(tls_enabled)},
+                            "updateStrategy": {"type": "RollingUpdate"},
+                        }
+                    }
+                    if desired_mycnf:
+                        patch["spec"]["myCnf"] = desired_mycnf
+                    if current_storage_size != storage_size:
+                        patch["spec"]["storage"] = {"size": storage_size}
+                    custom_api.patch_namespaced_custom_object(
                         group=group,
                         version=version,
                         namespace=namespace,
                         plural=plural,
                         name=instance_name,
-                        body=mariadb_body,
+                        body=patch,
+                        _content_type="application/merge-patch+json",
                     )
                     updated = True
-                    message += f"; MariaDB instance {instance_name} updated"
+                    message += f"; MariaDB instance {instance_name} patched"
                 else:
+                    mariadb_body = {
+                        "apiVersion": f"{group}/{version}",
+                        "kind": "MariaDB",
+                        "metadata": {
+                            "name": instance_name,
+                            "namespace": namespace,
+                        },
+                        "spec": {
+                            "image": image,
+                            "rootEmptyPassword": False,
+                            "rootPasswordSecretKeyRef": {
+                                "name": secret_name,
+                                "key": "password",
+                            },
+                            "replicas": replicas,
+                            "resources": {
+                                "limits": {
+                                    "cpu": limits_cpu,
+                                    "memory": limits_memory,
+                                },
+                                "requests": {
+                                    "cpu": requests_cpu,
+                                    "memory": requests_memory,
+                                },
+                            },
+                            "storage": dict(
+                                storage_spec, **{"ephemeral": False}
+                            ),
+                            "tls": {"enabled": bool(tls_enabled)},
+                            "updateStrategy": {"type": "RollingUpdate"},
+                        },
+                    }
+                    if desired_mycnf:
+                        mariadb_body["spec"]["myCnf"] = desired_mycnf
                     custom_api.create_namespaced_custom_object(
                         group=group,
                         version=version,
@@ -1401,52 +1535,33 @@ def mariadb_instance_present(
                     updated = True
                     message += f"; MariaDB instance {instance_name} created"
             except ApiException as e:
+                body = ""
+                try:
+                    body = e.body if isinstance(e.body, str) else json.dumps(e.body)
+                except Exception:
+                    body = str(getattr(e, "body", ""))
                 return {
                     "success": False,
                     "updated": False,
                     "secret_updated": secret_updated,
                     "pvc_available": pvc_available,
                     "root_access_updated": False,
-                    "message": f"Failed to create/update MariaDB instance {instance_name}: {str(e)[:100]}...; {message}",
+                    "message": (
+                        f"Failed to create/update MariaDB instance {instance_name}: "
+                        f"HTTP {e.status} {e.reason}: {body[:500]}; {message}"
+                    ),
                 }
         else:
             message += f"; MariaDB instance {instance_name} already up-to-date"
             updated = False
 
-        # Step 6: Ensure root user has access from the specified host/IP pattern
-        try:
-            # Get the MariaDB pod name
-            pod_list = core_v1_api.list_namespaced_pod(
-                namespace=namespace,
-                label_selector=f"app.kubernetes.io/name={instance_name}",
+        # Do not kubectl-exec GRANT: password on the command line, and it
+        # fails when the operator has TLS enabled. Users/Grants are CRs.
+        if admin_host_access and admin_host_access not in ("%",):
+            message += (
+                f"; Skipping in-pod GRANT for {admin_host_access}; "
+                "use k8s.ironic_db_user_present / Grant CRs"
             )
-            if pod_list.items:
-                pod_name = pod_list.items[0].metadata.name
-                # Construct the kubectl exec command to grant root access
-                grant_cmd = f"mysql -u root -p{root_password} -e \"GRANT ALL PRIVILEGES ON *.* TO 'root'@'{admin_host_access}' IDENTIFIED BY '{root_password}' WITH GRANT OPTION; FLUSH PRIVILEGES;\""
-                kubectl_cmd = (
-                    f"kubectl exec -i {pod_name} -n {namespace} -- {grant_cmd}"
-                )
-                # Execute the command using Salt's cmd.run
-                grant_result = __salt__["cmd.run"](
-                    kubectl_cmd, shell=True, ignore_retcode=True
-                )
-                if "ERROR" not in grant_result:
-                    root_access_updated = True
-                    message += (
-                        f"; Root user access granted for host {admin_host_access}"
-                    )
-                else:
-                    root_access_updated = False
-                    message += f"; Failed to grant root access for host {admin_host_access}: {grant_result[:100]}..."
-            else:
-                root_access_updated = False
-                message += (
-                    f"; No MariaDB pod found for {instance_name} to grant root access"
-                )
-        except Exception as e:
-            root_access_updated = False
-            message += f"; Error granting root access for host {admin_host_access}: {str(e)[:100]}..."
 
         return {
             "success": True if (updated or matches) else False,
@@ -1477,72 +1592,114 @@ def local_storage_pv_pvc_present(
     storage_class="local-storage",
 ):
     """
-    Ensure that a Persistent Volume (PV) is present in Kubernetes using a specified storage class for local storage.
-    The PV is tied to a local path. Checks if the local path exists on the node before proceeding.
-    Does not manage PVC creation since the operator will handle it. Sanitizes PV name to meet Kubernetes naming conventions.
+    Ensure a hostPath PersistentVolume and matching PersistentVolumeClaim exist.
+
+    Names derived from filesystem paths are sanitized to DNS-1123. The PVC is
+    bound 1:1 to this PV via spec.volumeName so another claim cannot steal it.
+    PV spec is immutable; an existing PV is left as-is.
 
     Args:
-        namespace (str): The namespace of the PVC (unused since PVC is not created, kept for compatibility).
-        pv_name (str): The name of the Persistent Volume (will be sanitized).
-        pvc_name (str): Ignored since PVC is not created. Kept for compatibility.
-        storage_size (str, optional): Storage size for the PV. Defaults to '1Gi'.
-        node_name (str, optional): The name of the node to bind the local storage PV to. Not used in this simplified version to avoid validation issues.
-        path (str, optional): The host path on the node for local storage. Defaults to '/mnt/local-storage'.
-        storage_class (str, optional): The storage class to use for the PV. Defaults to 'local-storage'.
+        namespace (str): Namespace for the PVC (PV is cluster-scoped).
+        pv_name (str): Desired PersistentVolume name (sanitized).
+        pvc_name (str): Desired PersistentVolumeClaim name (sanitized).
+        storage_size (str, optional): Capacity for PV and PVC. Defaults to '1Gi'.
+        node_name (str, optional): If set, pin the PV with hostname nodeAffinity.
+        path (str, optional): Host path for the volume. Defaults to '/mnt/local-storage'.
+        storage_class (str, optional): Storage class name. Defaults to 'local-storage'.
 
     Returns:
-        dict: A dictionary with 'success' (bool), 'pv_updated' (bool), 'pvc_updated' (bool), 'bound' (bool), and 'message' (str).
+        dict: success, pv_updated, pvc_updated, bound, message
     """
     try:
+        import re
+
         pv_updated = False
         pvc_updated = False
         bound = False
 
-        # Sanitize pv_name to meet Kubernetes naming conventions
         def sanitize_name(name):
-            import re
-
-            # Convert to lowercase
-            sanitized = name.lower()
-            # Replace invalid characters with hyphens
+            sanitized = str(name).lower()
             sanitized = re.sub(r"[^a-z0-9.-]", "-", sanitized)
-            # Remove leading/trailing hyphens or periods
             sanitized = sanitized.strip("-").strip(".")
-            # Truncate to 253 characters (Kubernetes max for most resource names)
+            sanitized = re.sub(r"[-.]{2,}", "-", sanitized)
             sanitized = sanitized[:253]
-            # If empty after sanitization, provide a fallback
-            if not sanitized:
-                sanitized = "sanitized-name"
-            return sanitized
+            return sanitized or "local-storage"
 
         original_pv_name = pv_name
+        original_pvc_name = pvc_name
         pv_name = sanitize_name(pv_name)
-        message = f"Sanitized PV name: {original_pv_name} -> {pv_name}; PVC management skipped, operator will handle PVC creation"
+        pvc_name = sanitize_name(pvc_name)
+        message = (
+            f"Sanitized PV name: {original_pv_name} -> {pv_name}; "
+            f"PVC name: {original_pvc_name} -> {pvc_name}"
+        )
 
-        # Step 1: Ensure the local path exists on the node
         if not __salt__["file.directory_exists"](path):
             try:
                 __salt__["file.mkdir"](path)
-                message += f"; Created directory {path} on node"
+                message += f"; Created directory {path}"
             except Exception as e:
                 return {
                     "success": False,
                     "pv_updated": False,
                     "pvc_updated": False,
                     "bound": False,
-                    "message": f"Failed to create directory {path} on node: {str(e)[:100]}...; {message}",
+                    "message": f"Failed to create directory {path}: {str(e)[:100]}...; {message}",
                 }
         else:
-            message += f"; Directory {path} already exists on node"
+            message += f"; Directory {path} already exists"
 
         _load_k8s_config()
-
         core_v1_api = client.CoreV1Api()
 
-        # Step 2: Check if PV exists
+        # Use raw dicts rather than client.V1* models. Newer kubernetes-python
+        # releases (pydantic) reject V1ResourceRequirements on PVC specs and
+        # enum-validate volumeMode, which produced a truncated
+        # "1 validation error for V1PersistentVolumeClaimSpec".
+        def _pvc_phase(obj):
+            if obj is None:
+                return None
+            if isinstance(obj, dict):
+                return (obj.get("status") or {}).get("phase")
+            status = getattr(obj, "status", None)
+            if status is None:
+                return None
+            if isinstance(status, dict):
+                return status.get("phase")
+            return getattr(status, "phase", None)
+
+        labels = {
+            "app.kubernetes.io/managed-by": "kinetic",
+            "kinetic.storage": "local",
+        }
+        pv_spec = {
+            "capacity": {"storage": storage_size},
+            "accessModes": ["ReadWriteOnce"],
+            "persistentVolumeReclaimPolicy": "Retain",
+            "storageClassName": storage_class,
+            "hostPath": {"path": path, "type": "DirectoryOrCreate"},
+        }
+        if node_name:
+            pv_spec["nodeAffinity"] = {
+                "required": {
+                    "nodeSelectorTerms": [
+                        {
+                            "matchExpressions": [
+                                {
+                                    "key": "kubernetes.io/hostname",
+                                    "operator": "In",
+                                    "values": [node_name],
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+
         try:
-            existing_pv = core_v1_api.read_persistent_volume(name=pv_name)
+            core_v1_api.read_persistent_volume(name=pv_name)
             pv_exists = True
+            message += f"; PV {pv_name} already exists"
         except ApiException as e:
             if e.status == 404:
                 pv_exists = False
@@ -1552,23 +1709,20 @@ def local_storage_pv_pvc_present(
                     "pv_updated": False,
                     "pvc_updated": False,
                     "bound": False,
-                    "message": f"Error fetching PV {pv_name}: {str(e)[:100]}...; {message}",
+                    "message": f"Error fetching PV {pv_name}: {str(e)[:200]}; {message}",
                 }
 
-        # Step 3: Create or update PV if it doesn't exist or needs updating
         if not pv_exists:
             try:
-                pv_body = client.V1PersistentVolume(
-                    metadata=client.V1ObjectMeta(name=pv_name),
-                    spec=client.V1PersistentVolumeSpec(
-                        capacity={"storage": storage_size},
-                        access_modes=["ReadWriteOnce"],
-                        storage_class_name=storage_class,
-                        host_path=client.V1HostPathVolumeSource(path=path),
-                    ),
-                )
+                pv_body = {
+                    "apiVersion": "v1",
+                    "kind": "PersistentVolume",
+                    "metadata": {"name": pv_name, "labels": labels},
+                    "spec": pv_spec,
+                }
                 core_v1_api.create_persistent_volume(body=pv_body)
                 pv_updated = True
+                pv_exists = True
                 message += f"; PV {pv_name} created with size {storage_size} at {path}"
             except ApiException as e:
                 return {
@@ -1576,20 +1730,84 @@ def local_storage_pv_pvc_present(
                     "pv_updated": False,
                     "pvc_updated": False,
                     "bound": False,
-                    "message": f"Failed to create/update PV {pv_name}: {str(e)[:100]}...; {message}",
+                    "message": f"Failed to create PV {pv_name}: {str(e)[:200]}; {message}",
                 }
-        else:
-            message += f"; PV {pv_name} already exists"
-            pv_updated = False
 
-        # Step 4: Skip PVC creation and binding check since operator handles PVC
-        message += f"; PVC creation and binding skipped, relying on operator to create PVC with storage class {storage_class}"
+        try:
+            existing_pvc = core_v1_api.read_namespaced_persistent_volume_claim(
+                name=pvc_name, namespace=namespace
+            )
+            pvc_exists = True
+            message += f"; PVC {pvc_name} already exists in {namespace}"
+            if _pvc_phase(existing_pvc) == "Bound":
+                bound = True
+        except ApiException as e:
+            if e.status == 404:
+                pvc_exists = False
+                existing_pvc = None
+            else:
+                return {
+                    "success": False,
+                    "pv_updated": pv_updated,
+                    "pvc_updated": False,
+                    "bound": False,
+                    "message": f"Error fetching PVC {pvc_name}: {str(e)[:200]}; {message}",
+                }
+
+        if not pvc_exists:
+            try:
+                pvc_body = {
+                    "apiVersion": "v1",
+                    "kind": "PersistentVolumeClaim",
+                    "metadata": {
+                        "name": pvc_name,
+                        "namespace": namespace,
+                        "labels": labels,
+                    },
+                    "spec": {
+                        "accessModes": ["ReadWriteOnce"],
+                        "resources": {"requests": {"storage": storage_size}},
+                        "storageClassName": storage_class,
+                        "volumeName": pv_name,
+                    },
+                }
+                created_pvc = core_v1_api.create_namespaced_persistent_volume_claim(
+                    namespace=namespace, body=pvc_body
+                )
+                pvc_updated = True
+                pvc_exists = True
+                message += f"; PVC {pvc_name} created in {namespace} bound to PV {pv_name}"
+                if _pvc_phase(created_pvc) == "Bound":
+                    bound = True
+            except ApiException as e:
+                return {
+                    "success": False,
+                    "pv_updated": pv_updated,
+                    "pvc_updated": False,
+                    "bound": False,
+                    "message": f"Failed to create PVC {pvc_name}: {str(e)[:400]}; {message}",
+                }
+
+        if pvc_exists and not bound:
+            try:
+                current_pvc = core_v1_api.read_namespaced_persistent_volume_claim(
+                    name=pvc_name, namespace=namespace
+                )
+                if _pvc_phase(current_pvc) == "Bound":
+                    bound = True
+            except ApiException:
+                pass
+
+        if bound:
+            message += "; PVC is Bound"
+        else:
+            message += "; PVC is not Bound yet (hostPath usually binds immediately)"
 
         return {
-            "success": True if pv_updated or pv_exists else False,
+            "success": bool(pv_exists and pvc_exists),
             "pv_updated": pv_updated,
-            "pvc_updated": False,
-            "bound": False,
+            "pvc_updated": pvc_updated,
+            "bound": bound,
             "message": message,
         }
 
@@ -1599,7 +1817,7 @@ def local_storage_pv_pvc_present(
             "pv_updated": False,
             "pvc_updated": False,
             "bound": False,
-            "message": f"Local storage PV operation error: {str(e)[:100]}...",
+            "message": f"Local storage PV/PVC operation error: {str(e)[:400]}",
         }
 
 
@@ -1657,28 +1875,27 @@ def ironic_db_user_setup(
         core_v1_api = client.CoreV1Api()
         custom_api = client.CustomObjectsApi()
 
-        # Step 1: Check if Secret for user credentials exists
+        # Step 1: Check if Secret for user credentials exists.
+        # Ironic reads /auth/mariadb/username from this secret (the Ironic CRD
+        # has no spec.database.user). mariadb-operator only ALTERs the password
+        # when the secret carries label k8s.mariadb.com/watch.
         try:
             secret = core_v1_api.read_namespaced_secret(
                 name=secret_name, namespace=namespace
             )
             secret_exists = True
-            current_username = (
-                secret.string_data.get("username", "") if secret.string_data else ""
-            )
-            current_password = (
-                secret.string_data.get("password", "") if secret.string_data else ""
-            )
-            if not current_username and secret.data:
-                import base64
-
-                current_username = base64.b64decode(
-                    secret.data.get("username", "")
-                ).decode("utf-8")
-                current_password = base64.b64decode(
-                    secret.data.get("password", "")
-                ).decode("utf-8")
-            if current_username != user_name or current_password != user_password:
+            decoded = _decode_k8s_secret(secret)
+            current_username = decoded.get("username", "")
+            current_password = decoded.get("password", "")
+            secret_labels = {}
+            if secret.metadata and secret.metadata.labels:
+                secret_labels = dict(secret.metadata.labels)
+            watch_label_present = "k8s.mariadb.com/watch" in secret_labels
+            if (
+                current_username != user_name
+                or current_password != user_password
+                or not watch_label_present
+            ):
                 secret_updated = True
             else:
                 secret_matches = True
@@ -1701,11 +1918,19 @@ def ironic_db_user_setup(
         if not secret_exists or secret_updated:
             try:
                 secret_body = client.V1Secret(
-                    metadata=client.V1ObjectMeta(name=secret_name, namespace=namespace),
+                    metadata=client.V1ObjectMeta(
+                        name=secret_name,
+                        namespace=namespace,
+                        labels={"k8s.mariadb.com/watch": ""},
+                    ),
                     string_data={"username": user_name, "password": user_password},
                     type="Opaque",
                 )
                 if secret_exists:
+                    if secret.metadata and secret.metadata.resource_version:
+                        secret_body.metadata.resource_version = (
+                            secret.metadata.resource_version
+                        )
                     core_v1_api.replace_namespaced_secret(
                         name=secret_name, namespace=namespace, body=secret_body
                     )
@@ -1744,12 +1969,23 @@ def ironic_db_user_setup(
             user_exists = True
             current_user_spec = user.get("spec", {})
             current_mariadb_ref = current_user_spec.get("mariaDbRef", {})
+            current_password_ref = current_user_spec.get(
+                "passwordSecretKeyRef", {}
+            )
+            # Operator defaults omitted spec.host to '%' and omitted spec.name
+            # to metadata.name. Treat those as matching so we do not replace
+            # an immutable User CR just because host was left unset.
+            current_host = current_user_spec.get("host") or "%"
+            current_sql_name = current_user_spec.get("name") or user_name
             if (
                 current_mariadb_ref.get("name", "") != mariadb_name
                 or current_mariadb_ref.get("namespace", "") != mariadb_namespace
-                or current_user_spec.get("host", "") != host
+                or current_host != host
                 or current_user_spec.get("maxUserConnections", 0)
                 != max_user_connections
+                or current_sql_name != user_name
+                or current_password_ref.get("name", "") != secret_name
+                or current_password_ref.get("key", "") != "password"
             ):
                 user_matches = False
             else:
@@ -1776,6 +2012,7 @@ def ironic_db_user_setup(
                     "kind": "User",
                     "metadata": {"name": user_name, "namespace": namespace},
                     "spec": {
+                        "name": user_name,
                         "mariaDbRef": {
                             "name": mariadb_name,
                             "namespace": mariadb_namespace,
@@ -1934,11 +2171,14 @@ def ironic_db_user_setup(
         else:
             message += f"; Database {database_name} spec matches, no update needed"
 
-        # Step 7: Check if Grant custom resource exists
+        # Step 7: Check if Grant custom resource exists.
+        # Grant database/table/username/host are immutable. DROP USER (User
+        # recreate) or a MariaDB datadir reset leaves the Grant Ready without
+        # SQL privileges; mariadb-operator only re-GRANTs on a ~10h requeue.
+        # Recreate the Grant whenever the User/secret changed so GRANT runs now.
         grant_name = f"{user_name}-grant"
         try:
             plural = "grants"
-            # Use mariadb_namespace for Grant to ensure it's in the same namespace as MariaDB instance
             grant = custom_api.get_namespaced_custom_object(
                 group=group,
                 version=version,
@@ -1950,18 +2190,18 @@ def ironic_db_user_setup(
             current_grant_spec = grant.get("spec", {})
             current_mariadb_ref = current_grant_spec.get("mariaDbRef", {})
             current_privileges = current_grant_spec.get("privileges", [])
+            current_grant_host = current_grant_spec.get("host") or "%"
+            current_grant_table = current_grant_spec.get("table") or "*"
             if (
                 current_mariadb_ref.get("name", "") != mariadb_name
                 or current_mariadb_ref.get("namespace", "") != mariadb_namespace
                 or current_grant_spec.get("database", "") != database_name
-                or current_grant_spec.get("host", "") != host
+                or current_grant_host != host
                 or current_grant_spec.get("username", "") != user_name
-                or (
-                    current_grant_spec.get("table", "*") != table
-                    if "table" in current_grant_spec
-                    else True
-                )
+                or current_grant_table != table
                 or sorted(current_privileges) != sorted(privileges)
+                or secret_updated
+                or user_updated
             ):
                 grant_matches = False
             else:
@@ -1980,11 +2220,11 @@ def ironic_db_user_setup(
                     "message": f"Error fetching Grant {grant_name}: {str(e)[:100]}...; {message}",
                 }
 
-        # Step 8: Create or update Grant if necessary with a minimal spec first
+        # Step 8: Create Grant. Replace is not enough after DROP USER: the
+        # operator skips GRANT while Ready=True. Delete then recreate.
         if not grant_exists or not grant_matches:
             try:
                 plural = "grants"
-                # Use mariadb_namespace for Grant to ensure it's in the same namespace as MariaDB instance
                 grant_body = {
                     "apiVersion": f"{group}/{version}",
                     "kind": "Grant",
@@ -1997,40 +2237,58 @@ def ironic_db_user_setup(
                         },
                         "cleanupPolicy": "Delete",
                         "database": database_name,
+                        "table": table,
                         "host": host,
                         "privileges": privileges,
                         "username": user_name,
                     },
                 }
-                if (
-                    grant_exists
-                    and "metadata" in grant
-                    and "resourceVersion" in grant["metadata"]
-                ):
-                    grant_body["metadata"]["resourceVersion"] = grant["metadata"][
-                        "resourceVersion"
-                    ]
                 if grant_exists:
-                    custom_api.replace_namespaced_custom_object(
+                    custom_api.delete_namespaced_custom_object(
                         group=group,
                         version=version,
                         namespace=mariadb_namespace,
                         plural=plural,
                         name=grant_name,
-                        body=grant_body,
                     )
-                    grant_updated = True
-                    message += f"; Grant {grant_name} updated"
-                else:
-                    custom_api.create_namespaced_custom_object(
-                        group=group,
-                        version=version,
-                        namespace=mariadb_namespace,
-                        plural=plural,
-                        body=grant_body,
-                    )
-                    grant_updated = True
-                    message += f"; Grant {grant_name} created"
+                    deadline = time.time() + 60
+                    while time.time() < deadline:
+                        try:
+                            custom_api.get_namespaced_custom_object(
+                                group=group,
+                                version=version,
+                                namespace=mariadb_namespace,
+                                plural=plural,
+                                name=grant_name,
+                            )
+                            time.sleep(1)
+                        except ApiException as wait_err:
+                            if wait_err.status == 404:
+                                grant_exists = False
+                                break
+                            raise
+                    else:
+                        return {
+                            "success": False,
+                            "secret_updated": secret_updated,
+                            "user_updated": user_updated,
+                            "database_updated": database_updated,
+                            "grant_updated": False,
+                            "message": (
+                                f"Timed out waiting for Grant {grant_name} "
+                                f"deletion; {message}"
+                            ),
+                        }
+                    message += f"; Grant {grant_name} deleted to re-apply SQL GRANT"
+                custom_api.create_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    namespace=mariadb_namespace,
+                    plural=plural,
+                    body=grant_body,
+                )
+                grant_updated = True
+                message += f"; Grant {grant_name} created"
             except ApiException as e:
                 error_details = f"Status: {e.status if hasattr(e, 'status') else 'Unknown'}, Reason: {e.reason if hasattr(e, 'reason') else 'Unknown'}"
                 if hasattr(e, "body") and e.body:
@@ -2742,9 +3000,7 @@ def ironic_instance_present(
             "spec": {
                 "database": {
                     "host": database_host,
-                    "port": int(database_port),
                     "name": database_name,
-                    "user": database_user,
                     "credentialsName": database_secret_name,
                 },
                 "apiCredentialsName": api_secret_name,
@@ -2932,19 +3188,21 @@ def image_server_present(
                     "message": f"Error fetching PVC {pvc_name}: {str(e)[:100]}...; {message}",
                 }
 
-        # Step 2: Create or update PVC if necessary
+        # Step 2: Create or update PVC if necessary.
+        # Use a dict body: newer kubernetes-python (pydantic) rejects
+        # V1ResourceRequirements on V1PersistentVolumeClaimSpec.
         if not pvc_exists or not pvc_matches:
             try:
-                pvc_body = client.V1PersistentVolumeClaim(
-                    metadata=client.V1ObjectMeta(name=pvc_name, namespace=namespace),
-                    spec=client.V1PersistentVolumeClaimSpec(
-                        access_modes=["ReadWriteOnce"],
-                        resources=client.V1ResourceRequirements(
-                            requests={"storage": storage_size}
-                        ),
-                        storage_class_name=storage_class,
-                    ),
-                )
+                pvc_body = {
+                    "apiVersion": "v1",
+                    "kind": "PersistentVolumeClaim",
+                    "metadata": {"name": pvc_name, "namespace": namespace},
+                    "spec": {
+                        "accessModes": ["ReadWriteOnce"],
+                        "resources": {"requests": {"storage": storage_size}},
+                        "storageClassName": storage_class,
+                    },
+                }
                 if pvc_exists:
                     core_v1_api.replace_namespaced_persistent_volume_claim(
                         name=pvc_name, namespace=namespace, body=pvc_body
@@ -3096,10 +3354,12 @@ def image_server_present(
             current_type = (
                 current_service_spec.type if current_service_spec.type else "ClusterIP"
             )
+            # kubernetes-python historically exposed this as external_i_ps;
+            # pydantic models use external_ips.
             current_external_ips = (
-                current_service_spec.external_i_ps
-                if hasattr(current_service_spec, "external_i_ps")
-                else []
+                getattr(current_service_spec, "external_ips", None)
+                or getattr(current_service_spec, "external_i_ps", None)
+                or []
             )
             if (
                 len(current_ports) != 1
@@ -3124,26 +3384,32 @@ def image_server_present(
                     "message": f"Error fetching Service {service_name}: {str(e)[:100]}...; {message}",
                 }
 
-        # Step 6: Create or update Service if necessary
+        # Step 6: Create or update Service if necessary.
+        # Dict body: pydantic V1ServiceSpec has no external_i_ps attribute.
         if not service_exists or not service_matches:
             try:
-                service_body = client.V1Service(
-                    metadata=client.V1ObjectMeta(
-                        name=service_name, namespace=namespace
-                    ),
-                    spec=client.V1ServiceSpec(
-                        selector={"app": "ironic-image-server"},
-                        ports=[
-                            client.V1ServicePort(
-                                port=port, target_port=port, protocol="TCP"
-                            )
-                        ],
-                        type=service_type,
-                    ),
-                )
+                service_spec = {
+                    "selector": {"app": "ironic-image-server"},
+                    "ports": [
+                        {
+                            "port": port,
+                            "targetPort": port,
+                            "protocol": "TCP",
+                        }
+                    ],
+                    "type": service_type,
+                }
                 if external_ip and service_type in ["ClusterIP", "LoadBalancer"]:
-                    service_body.spec.external_i_ps = [external_ip]
-                    message += f"; Service {service_name} configured with external IP {external_ip}"
+                    service_spec["externalIPs"] = [external_ip]
+                    message += (
+                        f"; Service {service_name} configured with external IP {external_ip}"
+                    )
+                service_body = {
+                    "apiVersion": "v1",
+                    "kind": "Service",
+                    "metadata": {"name": service_name, "namespace": namespace},
+                    "spec": service_spec,
+                }
                 if service_exists:
                     core_v1_api.replace_namespaced_service(
                         name=service_name, namespace=namespace, body=service_body
@@ -3187,7 +3453,7 @@ def image_server_present(
             "deployment_updated": False,
             "service_updated": False,
             "pvc_updated": False,
-            "message": f"Image server operation error: {str(e)[:100]}...",
+            "message": f"Image server operation error: {str(e)[:400]}",
         }
 
 
@@ -5561,26 +5827,25 @@ def pvc_present(
         _load_k8s_config()
         v1_api = client.CoreV1Api()
 
-        # Default access modes if not provided
         if access_modes is None:
             access_modes = ["ReadWriteOnce"]
 
-        # Define the PVC spec
-        pvc_spec = client.V1PersistentVolumeClaimSpec(
-            storage_class_name=storage_class,
-            resources=client.V1ResourceRequirements(requests={"storage": storage_size}),
-            access_modes=access_modes,
-        )
+        # Dict body: newer kubernetes-python (pydantic) rejects
+        # V1ResourceRequirements on V1PersistentVolumeClaimSpec.
+        pvc_spec = {
+            "storageClassName": storage_class,
+            "resources": {"requests": {"storage": storage_size}},
+            "accessModes": access_modes,
+        }
         if selector:
-            pvc_spec.selector = client.V1LabelSelector(**selector)
+            pvc_spec["selector"] = selector
 
-        # Define the full PVC object
-        pvc_body = client.V1PersistentVolumeClaim(
-            api_version="v1",
-            kind="PersistentVolumeClaim",
-            metadata=client.V1ObjectMeta(name=name, namespace=namespace),
-            spec=pvc_spec,
-        )
+        pvc_body = {
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeClaim",
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": pvc_spec,
+        }
 
         # Check if PVC already exists
         try:

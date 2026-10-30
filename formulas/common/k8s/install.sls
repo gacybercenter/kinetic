@@ -14,11 +14,25 @@
 include:
   - /formulas/common/helm
 
+# kubernetes Python client in the Salt onedir venv. pip.installed is not
+# available until python3-pip is on the minion (fresh bootstrap nodes do not
+# have it), so call salt-pip directly.
+salt_kubernetes_sdk:
+  cmd.run:
+    - name: |
+        if [ -x /usr/bin/salt-pip ]; then
+          /usr/bin/salt-pip install kubernetes
+        elif [ -x /opt/saltstack/salt/bin/pip3 ]; then
+          /opt/saltstack/salt/bin/pip3 install kubernetes
+        else
+          /opt/saltstack/salt/salt-pip install kubernetes
+        fi
+    - unless: |
+        /usr/bin/salt-pip show kubernetes >/dev/null 2>&1 || \
+        /opt/saltstack/salt/bin/pip3 show kubernetes >/dev/null 2>&1 || \
+        /opt/saltstack/salt/bin/python3 -c "import kubernetes" >/dev/null 2>&1
+
 # Setup the Kubernetes repo
-# Install Salt Kubernetes extension:
-#   pip.installed:
-#     - pip_bin: /opt/saltstack/salt/salt-pip
-#     - name: saltext-kubernetes
 kube.repo:
   pkgrepo.managed:
     - name: {{ pillar['k8s_repo'] }}

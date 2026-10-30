@@ -38,6 +38,8 @@ def ceph_cluster_present(
     dashboard_enabled=True,
     monitoring_enabled=True,
     toolbox_enabled=True,
+    encrypted_device=False,
+    network_encryption=False,
     resources=None,         # Per-daemon resource limits/requests from pillar
     resources_pillar=None,  # Pillar key for resources (e.g. 'res-k8s:rook:resources')
     placement=None,
@@ -83,6 +85,14 @@ def ceph_cluster_present(
 
     dashboard_enabled, monitoring_enabled, toolbox_enabled
         Feature flags for common Ceph components.
+
+    encrypted_device
+        Encrypt new OSD devices (spec.storage.config.encryptedDevice).
+        Existing OSDs are not re-encrypted.
+
+    network_encryption
+        Enable Ceph messenger encryption (spec.network.connections.encryption)
+        and require msgr2.
 
     resources
         Per-daemon resource limits/requests. Example (under res-k8s:rook:resources):
@@ -150,6 +160,8 @@ def ceph_cluster_present(
             dashboard_enabled=dashboard_enabled,
             monitoring_enabled=monitoring_enabled,
             toolbox_enabled=toolbox_enabled,
+            encrypted_device=encrypted_device,
+            network_encryption=network_encryption,
             placement=placement,
             placement_pillar=placement_pillar,
             spec=spec,
@@ -527,6 +539,9 @@ def ceph_object_store_present(
     enable_apis=None,
     rgw_config=None,
     rgw_command_flags=None,
+    erasure_coded=None,
+    enable_sts=False,
+    sts_key=None,
 ):
     """
     Ensure a Ceph Object Store (RGW - RADOS Gateway) exists in the specified Kubernetes namespace using Rook.
@@ -706,6 +721,9 @@ def ceph_object_store_present(
             enable_apis=enable_apis,
             rgw_config=rgw_config,
             rgw_command_flags=rgw_command_flags,
+            erasure_coded=erasure_coded,
+            enable_sts=enable_sts,
+            sts_key=sts_key,
         )
 
         ret["result"] = result.get("success", False)
@@ -723,4 +741,180 @@ def ceph_object_store_present(
         )
         ret["changes"] = {}
 
+    return ret
+
+
+def oidc_provider_present(
+    name,
+    namespace,
+    issuer_url,
+    client_id,
+    client_secret=None,
+    tenant="",
+    thumbprints=None,
+    endpoint=None,
+    access_key=None,
+    secret_key=None,
+    store=None,
+    iam_user="rgw-iam-admin",
+    realm=None,
+    zonegroup=None,
+    zone=None,
+    region="us-east-1",
+    service="iam",
+    verify=True,
+    discover_thumbprints=True,
+):
+    """Ensure an RGW OIDC provider exists via the IAM query API.
+
+    ``radosgw-admin oidc provider`` is not available on this Ceph version.
+    The provider is keyed by issuer URL. ``client_secret`` is ignored.
+    Pass ``access_key``/``secret_key``, or ``store`` so ``iam_user`` is
+    created with radosgw-admin in that realm. Thumbprints are discovered
+    from the issuer JWKS when omitted.
+    """
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_rook.oidc_provider_present"](
+            namespace=namespace,
+            name=name,
+            issuer_url=issuer_url,
+            client_id=client_id,
+            client_secret=client_secret,
+            tenant=tenant,
+            thumbprints=thumbprints,
+            endpoint=endpoint,
+            access_key=access_key,
+            secret_key=secret_key,
+            store=store,
+            iam_user=iam_user,
+            realm=realm,
+            zonegroup=zonegroup,
+            zone=zone,
+            region=region,
+            service=service,
+            verify=verify,
+            discover_thumbprints=discover_thumbprints,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"oidc_provider_updated": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
+    return ret
+
+
+def rgw_role_present(
+    name,
+    namespace,
+    provider_name,
+    audience,
+    tenant="",
+    path="/",
+    audience_claim="app_id",
+    issuer_url=None,
+    groups=None,
+    groups_claim="groups",
+    group_prefix="",
+    realm=None,
+    zonegroup=None,
+    zone=None,
+):
+    """Ensure an RGW IAM role trusts an OIDC provider.
+
+    Pass ``issuer_url`` so the trust policy uses the issuer-derived provider
+    id that STS looks up. ``groups`` restricts who may assume the role.
+    It is not rechecked on later S3 calls.
+    """
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_rook.rgw_role_present"](
+            namespace=namespace,
+            role_name=name,
+            provider_name=provider_name,
+            audience=audience,
+            tenant=tenant,
+            path=path,
+            audience_claim=audience_claim,
+            issuer_url=issuer_url,
+            groups=groups,
+            groups_claim=groups_claim,
+            group_prefix=group_prefix,
+            realm=realm,
+            zonegroup=zonegroup,
+            zone=zone,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"rgw_role_updated": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
+    return ret
+
+
+def rgw_bucket_present(
+    name,
+    namespace,
+    owner,
+    realm=None,
+    zonegroup=None,
+    zone=None,
+    endpoint=None,
+    store=None,
+    region="us-east-1",
+    verify=True,
+):
+    """Ensure an S3 bucket exists. name is the bucket. ``*`` is skipped."""
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_rook.rgw_bucket_present"](
+            namespace=namespace,
+            name=name,
+            owner=owner,
+            realm=realm,
+            zonegroup=zonegroup,
+            zone=zone,
+            endpoint=endpoint,
+            store=store,
+            region=region,
+            verify=verify,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"bucket_created": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
+    return ret
+
+
+def rgw_role_policy_present(
+    name,
+    namespace,
+    role_name,
+    buckets,
+    tenant="",
+    actions=None,
+    realm=None,
+    zonegroup=None,
+    zone=None,
+):
+    """Attach an inline S3 policy to an RGW role. name is the policy name."""
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_rook.rgw_role_policy_present"](
+            namespace=namespace,
+            role_name=role_name,
+            policy_name=name,
+            buckets=buckets,
+            tenant=tenant,
+            actions=actions,
+            realm=realm,
+            zonegroup=zonegroup,
+            zone=zone,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"rgw_role_policy_updated": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
     return ret
