@@ -385,7 +385,8 @@ ldap_service_{{ service_cn }}:
 # ==========================================================================
 # Groups
 # ==========================================================================
-{% for group in pillar['ldap'].get('groups', []) %}
+{% if ldap_groups is not none %}
+{% for group in ldap_groups %}
 {% set flat_uids = [] %}
 {% set _ = flatten_members(group, [], flat_uids) %}
 {% set member_dns = [] %}
@@ -408,6 +409,7 @@ ldap_group_{{ group['cn'] }}:
       - ldap: ensure_ldap_connect_spec
 {%- if ldap_orgunits is not none %}
       - ldap: ensure_ldap_ous
+{%- endif %}
 {%- for member in flat_uids if member in uid_to_state %}
       - ldap: {{ uid_to_state[member] }}
 {%- endfor %}
