@@ -1,2 +1,2 @@
 include:
-  - formulas/horizon/configure
+  - /formulas/horizon/configure

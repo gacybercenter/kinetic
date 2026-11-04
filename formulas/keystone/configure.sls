@@ -67,6 +67,8 @@ keystone_httproute:
             - name: keystone-api
               port: 5000
 
+{% set horizon_hosts = pillar.get('osh', {}).get('horizon', {}).get('ingress', {}).get('hosts', ['dashboard.rsc.gacyberrange.org']) %}
+{% set horizon_host = horizon_hosts[0]['host'] if horizon_hosts[0] is mapping else horizon_hosts[0] %}
 keystone_federation_configmap:
   k8s.configmap_present:
     - namespace: openstack
@@ -78,7 +80,9 @@ keystone_federation_configmap:
 
           [federation]
           remote_id_attribute = HTTP_OIDC_ISS
-          trusted_dashboard=http://localhost:9990/auth/websso/
+          # Horizon behind the Gateway, and the CLI websso callback.
+          trusted_dashboard = https://{{ horizon_host }}/auth/websso/
+          trusted_dashboard = http://localhost:9990/auth/websso/
 
           [openid]
           remote_id_attribute = HTTP_OIDC_ISS
