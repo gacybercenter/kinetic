@@ -1,0 +1,3 @@
+include:
+  - /formulas/horizon/install
+
