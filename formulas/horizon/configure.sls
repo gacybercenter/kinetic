@@ -4,7 +4,7 @@ include:
 
 {# hosts may be plain names, or dicts with a 'host' key (the old Ingress
    shape). Normalize either way.
-     osh:horizon:ingress:hosts: [horizon.example.org]
+     osh:horizon:ingress:hosts: [dashboard.rsc.gacyberrange.org]
 #}
 {% set horizon_hostnames = [] %}
 {% for h in pillar['osh']['horizon']['ingress']['hosts'] %}
@@ -44,11 +44,12 @@ install_horizon:
     - wait_interval: 10
     - keep_values_file: true
     - pillar_key: osh:horizon:values
+    {# Horizon has no RabbitMQ user and no Keystone service account. Those
+       live in osh:horizon:values (oslo_db.auth.horizon, SECRET_KEY, SSO).
+       Only the shared admin passwords are injected here. #}
     - set_values:
       - endpoints.oslo_db.auth.admin.username=root
       - endpoints.oslo_db.auth.admin.password={{ pillar['osh']['mariadb_admin'] }}
-      - endpoints.oslo_db.auth.horizon.username=horizon
-      - endpoints.oslo_db.auth.horizon.password={{ pillar['osh']['horizon']['users']['horizon'] }}
       - endpoints.identity.auth.admin.password={{ pillar['osh']['osh_users']['admin'] }}
       - conf.horizon.local_settings.config.horizon_secret_key={{ pillar['osh']['horizon']['secret_key'] }}
     - require:
