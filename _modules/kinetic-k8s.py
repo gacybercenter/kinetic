@@ -6298,6 +6298,70 @@ def gateway_present(
         }
 
 
+def middleware_present(namespace, name, spec=None, headers=None):
+    """Ensure a Traefik Middleware exists.
+
+    ``headers`` is a ``spec.headers`` dict, for example custom request
+    headers. ``spec`` overrides it. An HTTPRoute in the same namespace
+    attaches it with an ExtensionRef filter.
+    """
+    try:
+        _load_k8s_config()
+        custom_api = client.CustomObjectsApi()
+        group = "traefik.io"
+        version = "v1alpha1"
+        plural = "middlewares"
+        if spec is None:
+            spec = {}
+            if headers:
+                spec["headers"] = headers
+        body = {
+            "apiVersion": f"{group}/{version}",
+            "kind": "Middleware",
+            "metadata": {"name": name, "namespace": namespace},
+            "spec": spec,
+        }
+        exists = False
+        updated = False
+        matches = False
+        resource = None
+        try:
+            resource = custom_api.get_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=name,
+            )
+            exists = True
+            matches = resource.get("spec", {}) == spec
+            message = (
+                f"Middleware {name} already matches"
+                if matches
+                else f"Middleware {name} exists but spec differs"
+            )
+        except ApiException as e:
+            if e.status != 404:
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": f"Error checking Middleware {name}: {str(e)[:100]}",
+                }
+            message = f"Middleware {name} does not exist"
+        if not exists:
+            custom_api.create_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, body=body,
+            )
+            return {"success": True, "updated": True, "message": f"Middleware {name} created"}
+        if not matches:
+            if resource and resource.get("metadata", {}).get("resourceVersion"):
+                body["metadata"]["resourceVersion"] = resource["metadata"]["resourceVersion"]
+            custom_api.replace_namespaced_custom_object(
+                group=group, version=version, namespace=namespace, plural=plural, name=name, body=body,
+            )
+            updated = True
+            message = f"Middleware {name} updated"
+        return {"success": True, "updated": updated, "message": message}
+    except Exception as e:
+        return {"success": False, "updated": False, "message": str(e)[:200]}
+
+
 def httproute_present(
     namespace,
     name,
