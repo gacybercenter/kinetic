@@ -1,125 +1,142 @@
-## Copyright 2020 Augusta University
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-
 include:
-  - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/configure
+  - /formulas/guacamole/install
 
-{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{# ---------------------------------------------------------------------------
+   osh:guacamole          this formula (namespace, chart pin, CNPG, route)
+   osh:guacamole:values   Helm values only. Do not put the cluster spec or
+                          hostnames here.
 
-guacamole_recording_setup:
-  file.directory:
-    - name: /opt/guacamole/recordings
-    - makedirs: True
-    - user: 1000
-    - group: 1001
-    - dir_mode: "2750"
-    - file_mode: "2750"
-    - recurse:
-      - user
-      - group
-      - mode
+   The chart's bundled Postgres is turned off below. CNPG owns the database.
+   TLS terminates on the Gateway. Chart Ingress stays off; this HTTPRoute is
+   the public path.
 
-guacamole_internal:
-  docker_network.present:
-    - name: guacamole_internal
-    - internal: True
+   The app secret is both the CNPG bootstrap.initdb.secret and the chart's
+   database.external.existingSecret. Keys must be username and password.
+   bootstrap.initdb.owner must be that username, and database must be
+   osh:guacamole:db:name. CNPG only applies bootstrap at cluster create.
+   The chart init Job then loads the Guacamole schema.
 
-guacamole_default:
-  docker_network.present:
-    - name: guacamole_default
+   Chart networkPolicy is on by default and drops the Gateway. The values
+   pillar has to allow the ingress namespace, or the route will 404/timeout:
 
-# Convert to guacd binary package
-guacamole_guacd:
-  docker_container.running:
-    - name: guacd
-    - image: guacamole/guacd:1.5.5
-    - restart_policy: always
-    - binds:
-      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
-    - ports:
-      - 4822
-    - port_bindings:
-      - 4822:4822
-    - networks:
-      - guacamole_default
-      - guacamole_internal
-    - require:
-      - file: guacamole_recording_setup
-      - docker_network: guacamole_internal
-      - docker_network: guacamole_default
+     networkPolicy:
+       ingressFrom:
+         - namespaceSelector:
+             matchLabels:
+               kubernetes.io/metadata.name: ingress
+   --------------------------------------------------------------------------- #}
+{% set guac = pillar['osh']['guacamole'] %}
+{% set ns = guac.get('namespace', 'guacamole') %}
+{% set release = guac.get('release_name', 'guacamole') %}
+{% set chart = guac.get('chart_name', 'helmforge/guacamole') %}
+{% set db = guac['db'] %}
+{% set cluster = db.get('cluster_name', 'guacamole-db') %}
+{% set app_secret = db.get('app_secret', cluster ~ '-app') %}
+{% set super_secret = db.get('superuser_secret', cluster ~ '-superuser') %}
+{% set db_name = db.get('name', 'guacamole_db') %}
+{% set db_user = db['user'] %}
+{% set service_port = guac.get('service_port', 80) %}
 
-guacamole_guacamole:
-  docker_container.running:
-    - name: guacamole
-    - image: guacamole/guacamole:1.5.5
-    - restart_policy: always
-    - binds:
-      - /opt/guacamole/guacamole:/data
-      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
-    - ports:
-      - 8080
-    - port_bindings:
-      - 8080:8080
-    - environment:
-      - GUACD_HOSTNAME: guacd
-      - GUACD_PORT: 4822
-      - MYSQL_HOSTNAME: {{ pillar['haproxy']['guacamole_domain'] }}
-      - MYSQL_DATABASE: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'][0] }}
-      - MYSQL_USER: guacamole
-      - MYSQL_PASSWORD: {{ pillar['guacamole']['guacamole_mysql_password'] }}
-      - GUACAMOLE_HOME: /data
-      - LOG_LEVEL: info
-    - links:
-      - guacd: guacd
-    - networks:
-      - guacamole_default
-      - guacamole_internal
-    - require:
-      - file: guacamole_recording_setup
-      - docker_network: guacamole_internal
-      - docker_network: guacamole_default
-      - docker_container: guacamole_guacd
-{% if grains['spawning'] == 0 %}
-
-  {% if grains['build_phase'] != "configure" %}
-update_guacadmin_password:
-  guacamole.update_user_password:
-    - name: update_guacadmin_password
-    - host: "https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole"
-    - username: "guacadmin"
-    - password: "guacadmin"
-    - guac_new_password: {{ pillar['guacamole']['guacadmin_password'] }}
-    - guac_username: "guacadmin"
-    - guac_old_password: "guacadmin"
-    - retry:
-        attempts: 3
-        interval: 30
-  {% endif %}
-
-{{ spawn.spawnzero_complete() }}
-
+{% set hostnames = [] %}
+{% for h in guac.get('ingress', {}).get('hosts', []) %}
+{% if h is mapping %}
+{% do hostnames.append(h['host']) %}
 {% else %}
+{% do hostnames.append(h) %}
+{% endif %}
+{% endfor %}
 
-{{ spawn.check_spawnzero_status(grains['type']) }}
+ensure_guacamole_app_secret:
+  k8s.secret_present:
+    - namespace: {{ ns }}
+    - secret_name: {{ app_secret }}
+    - data:
+        username: {{ db_user | yaml_dquote }}
+        password: {{ db['password'] | yaml_dquote }}
+    - secret_type: Opaque
+    - labels:
+        app: guacamole
+        cnpg.io/reload: "true"
+    - require:
+      - k8s: ensure_guacamole_namespace
 
+ensure_guacamole_superuser_secret:
+  k8s.secret_present:
+    - namespace: {{ ns }}
+    - secret_name: {{ super_secret }}
+    - data:
+        username: {{ db['superuser']['user'] | yaml_dquote }}
+        password: {{ db['superuser']['password'] | yaml_dquote }}
+    - secret_type: Opaque
+    - labels:
+        app: guacamole
+        cnpg.io/reload: "true"
+        role: superuser
+    - require:
+      - k8s: ensure_guacamole_namespace
+
+ensure_guacamole_pg_cluster:
+  k8s.cnpg_cluster_present:
+    - cluster_name: {{ cluster }}
+    - namespace: {{ ns }}
+    - spec: {{ db['spec'] | tojson }}
+    - require:
+      - k8s: ensure_guacamole_app_secret
+      - k8s: ensure_guacamole_superuser_secret
+      - sls: /formulas/common/k8s-cnpg
+
+{% if hostnames %}
+# TLS terminates on the Gateway. The chart Service is <release> (fullname
+# is pinned below) and listens on service.port, which defaults to 80 and
+# targets Tomcat's http listener.
+guacamole_httproute:
+  k8s.httproute_present:
+    - name: {{ release }}-route
+    - namespace: {{ ns }}
+    - parent_refs:
+        - name: {{ guac.get('gateway_name', 'traefik-external') }}
+          namespace: {{ guac.get('gateway_namespace', 'ingress') }}
+          sectionName: {{ guac.get('gateway_section', 'websecure-ext') }}
+    - hostnames: {{ hostnames | tojson }}
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: {{ release }}
+              port: {{ service_port }}
+    - require:
+      - k8s: ensure_guacamole_namespace
 {% endif %}
 
-ROOT_path:
-  cmd.run:
-    - name: "docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+install_guacamole:
+  k8s_helm.helm_release_present:
+    - release_name: {{ release }}
+    - chart_name: {{ chart }}
+    - namespace: {{ ns }}
+    - version: {{ guac.get('chart_version', '1.7.1') | yaml_dquote }}
+    - wait_timeout: {{ guac.get('wait_timeout', 600) }}
+    - wait_interval: 10
+    - keep_values_file: true
+    - pillar_key: osh:guacamole:values
+    {# External CNPG, not the bundled subchart. Chart Ingress is unused. #}
+    - set_values:
+      - fullnameOverride={{ release }}
+      - postgresql.enabled=false
+      - mysql.enabled=false
+      - ingress.enabled=false
+      - database.type=postgresql
+      - database.external.host={{ cluster }}-rw
+      - database.external.port=5432
+      - database.external.name={{ db_name }}
+      - database.external.username={{ db_user }}
+      - database.external.existingSecret={{ app_secret }}
+      - database.external.existingSecretPasswordKey=password
+      - service.port={{ service_port }}
     - require:
-      - docker_container: guacamole_guacamole
-    - unless:
-      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
+      - k8s_helm: ensure_helmforge_repo
+      - k8s: ensure_guacamole_pg_cluster
+{%- if hostnames %}
+      - k8s: guacamole_httproute
+{%- endif %}

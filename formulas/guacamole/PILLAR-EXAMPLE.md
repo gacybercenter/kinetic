@@ -1,0 +1,89 @@
+# Guacamole pillar
+
+Chart values go in `osh:guacamole:values`. The formula owns everything
+else under `osh:guacamole`: namespace, chart pin, CloudNativePG cluster,
+and the Gateway HTTPRoute.
+
+The formula forces an external database and turns chart Ingress off.
+Do not enable `postgresql` or `ingress` in `values`. Passwords belong in
+`db`, not in the chart values. Encrypt them the same way as other
+secrets.
+
+CNPG creates `guacamole_db` and the owner only when the Cluster is first
+created (`bootstrap.initdb`). The chart's init Job then loads the
+Guacamole schema. `bootstrap.initdb.secret.name` must be the app secret
+the formula creates (`<cluster>-app` unless `db.app_secret` is set), and
+`bootstrap.initdb.owner` / `database` must match `db.user` / `db.name`.
+`spec.superuserSecret` must name `<cluster>-superuser`.
+
+The chart NetworkPolicy drops the Gateway unless `values` allow the
+ingress namespace. Default login after schema init is `guacadmin` /
+`guacadmin`. Change it. Do not put that password here.
+
+```yaml
+osh:
+  guacamole:
+    namespace: guacamole
+    release_name: guacamole          # also the Service name
+    chart_name: helmforge/guacamole
+    chart_version: "1.7.1"           # appVersion 1.6.0
+    service_port: 80
+    gateway_name: traefik-external
+    gateway_namespace: ingress
+    gateway_section: websecure-ext
+    ingress:
+      hosts:
+        - guac.rsc.gacyberrange.org
+    db:
+      cluster_name: guacamole-db     # Service is guacamole-db-rw
+      name: guacamole_db
+      user: guacamole_user
+      password: "<encrypted>"
+      superuser:
+        user: postgres
+        password: "<encrypted>"
+      spec:
+        instances: 1
+        imageName: ghcr.io/cloudnative-pg/postgresql:17
+        bootstrap:
+          initdb:
+            database: guacamole_db
+            owner: guacamole_user
+            secret:
+              name: guacamole-db-app
+        superuserSecret:
+          name: guacamole-db-superuser
+        storage:
+          size: 10Gi
+          storageClass: rook-ceph-block
+    values:
+      # required: Gateway lives in another namespace
+      networkPolicy:
+        ingressFrom:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: ingress
+      oidc:
+        enabled: true
+        authorizationEndpoint: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/auth
+        jwksEndpoint: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/certs
+        issuer: https://keycloak.rsc.gacyberrange.org/realms/rsc
+        clientId: guacamole
+        redirectUri: https://guac.rsc.gacyberrange.org/
+        scope: "openid email profile"
+        usernameClaim: preferred_username
+        groupsClaim: groups
+      proxy:
+        enabled: true
+        protocolHeader: X-Forwarded-Proto
+        ipHeader: X-Forwarded-For
+```
+
+Apply:
+
+```bash
+salt-run state.orchestrate orch.k8s-guacamole pillar='{"k8s": "<minion>"}'
+```
+
+The formula does not create the Keycloak client. Redirect URI is
+`https://<host>/` when `guacamole.contextPath` stays `ROOT`.
