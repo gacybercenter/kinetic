@@ -81,6 +81,11 @@ guacamole_keycloak_client:
     - standard_flow_enabled: true
     - direct_access_grants_enabled: false
     - service_accounts_enabled: false
+    {# guacamole-auth-openid sends response_type=id_token. Standard flow is
+       authorization code, which Keycloak rejects with "Implicit flow is
+       disabled for the client." #}
+    - spec:
+        implicitFlowEnabled: {{ kc_oidc.get('implicit_flow_enabled', true) }}
     - redirect_uris: {{ guac_redirects | tojson }}
     - web_origins: {{ guac_origins | tojson }}
     - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}

@@ -68,6 +68,12 @@ osh:
           - namespaceSelector:
               matchLabels:
                 kubernetes.io/metadata.name: ingress
+      # OpenID is not loaded unless named here. Do not pass this through
+      # helm --set: the comma is parsed as another --set value.
+      guacamole:
+        extraEnv:
+          - name: EXTENSION_PRIORITY
+            value: "*, openid"
       oidc:
         enabled: true
         authorizationEndpoint: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/auth
@@ -91,7 +97,10 @@ salt-run state.orchestrate orch.k8s-guacamole pillar='{"k8s": "<minion>"}'
 ```
 
 The formula registers client `guacamole` in realm `rsc` (public, PKCE
-S256). Redirects and web origins come from `ingress.hosts`
+S256, implicit flow on). Guacamole's OpenID extension uses
+`response_type=id_token`. Leaving implicit flow off produces
+"Implicit flow is disabled for the client." Redirects and web origins
+come from `ingress.hosts`
 (`https://<host>/*` and `https://<host>`). Override with
 `osh:guacamole:keycloak`. Default scopes are `profile`, `email`, and
 `groups`. The `groups` scope must already exist; the LDAP group mapper
