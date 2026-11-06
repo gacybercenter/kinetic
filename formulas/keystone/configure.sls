@@ -86,6 +86,11 @@ keystone_federation_configmap:
 
           [openid]
           remote_id_attribute = HTTP_OIDC_ISS
+
+          [token]
+          # Shorter than realm rsc sso_session_idle_timeout. Federated tokens
+          # are not capped by the OIDC token lifetime.
+          expiration = {{ pillar.get('osh', {}).get('keystone_oidc', {}).get('token_expiration', 1800) }}
     - require:
       - k8s: keystone_httproute
 

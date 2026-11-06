@@ -64,6 +64,15 @@ kc_{{ realm_name }}_realm:
 {%- if realm.get('offline_session_idle_timeout') is not none %}
     - offline_session_idle_timeout: {{ realm.get('offline_session_idle_timeout') }}
 {%- endif %}
+{%- if realm.get('offline_session_max_lifespan') is not none %}
+    - offline_session_max_lifespan: {{ realm.get('offline_session_max_lifespan') }}
+{%- endif %}
+{%- if realm.get('revoke_refresh_token') is not none %}
+    - revoke_refresh_token: {{ realm.get('revoke_refresh_token') }}
+{%- endif %}
+{%- if realm.get('refresh_token_max_reuse') is not none %}
+    - refresh_token_max_reuse: {{ realm.get('refresh_token_max_reuse') }}
+{%- endif %}
 {%- if realm.get('ssl_required') is not none %}
     - ssl_required: {{ realm.get('ssl_required') | yaml_dquote }}
 {%- endif %}
