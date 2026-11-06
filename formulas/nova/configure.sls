@@ -49,6 +49,17 @@ nova_httproute:
             - name: nova-api
               port: 8774
 
+# spiceproxy sees the Gateway connection as HTTP and returns ws://.
+# The browser is on TLS, so it needs wss://. This header is what nova uses
+# to pick the scheme.
+console_https_middleware:
+  k8s.middleware_present:
+    - name: force-spice-https-proto
+    - namespace: openstack
+    - headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+
 # Routes SPICE console traffic (browser-based instance console access)
 # through the internal Gateway (traefik-internal, websecure listener) -
 # console access is only needed from inside the network, not externally.
@@ -66,9 +77,17 @@ console_httproute:
             - path:
                 type: PathPrefix
                 value: "/"
+          filters:
+            - type: ExtensionRef
+              extensionRef:
+                group: traefik.io
+                kind: Middleware
+                name: force-spice-https-proto
           backendRefs:
             - name: nova-spiceproxy
               port: 6082
+    - require:
+      - k8s: console_https_middleware
 
 install_nova:
   k8s_helm.helm_release_present:

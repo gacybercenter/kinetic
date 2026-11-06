@@ -68,6 +68,7 @@ install_heat:
   k8s_helm.helm_release_present:
     - release_name: heat
     - chart_name: openstack-helm/heat
+    - version: 2026.1.1+def4ba558
     - namespace: openstack
     - wait_timeout: 300
     - wait_interval: 10

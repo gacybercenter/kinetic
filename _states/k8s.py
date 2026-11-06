@@ -3055,6 +3055,24 @@ def gateway_present(
     return ret
 
 
+def middleware_present(name, namespace, spec=None, headers=None):
+    """Ensure a Traefik Middleware exists. name is the Middleware name."""
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_k8s.middleware_present"](
+            namespace=namespace,
+            name=name,
+            spec=spec,
+            headers=headers,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "")
+        ret["changes"] = {"middleware_updated": True} if result.get("updated") else {}
+    except Exception as exc:
+        ret["comment"] = str(exc)[:200]
+    return ret
+
+
 def httproute_present(
     name,
     namespace,
