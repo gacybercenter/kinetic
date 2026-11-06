@@ -66,6 +66,10 @@ res-k8s:
         client_session_idle_timeout: 0
         client_session_max_lifespan: 0
         offline_session_idle_timeout: 2592000
+        offline_session_max_lifespan: 2592000
+        # Stolen refresh tokens fail on the next use.
+        revoke_refresh_token: true
+        refresh_token_max_reuse: 0
 
         # --- SSL Required ---
         ssl_required: external

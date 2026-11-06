@@ -371,6 +371,9 @@ def realm_present(
     client_session_idle_timeout=None,
     client_session_max_lifespan=None,
     offline_session_idle_timeout=None,
+    offline_session_max_lifespan=None,
+    revoke_refresh_token=None,
+    refresh_token_max_reuse=None,
     ssl_required=None,
     remember_me=None,
     verify_email=None,
@@ -427,6 +430,9 @@ def realm_present(
         client_session_idle_timeout (int): Client session idle timeout in seconds
         client_session_max_lifespan (int): Client session max lifespan in seconds
         offline_session_idle_timeout (int): Offline session idle timeout in seconds
+        offline_session_max_lifespan (int): Offline session max lifespan in seconds
+        revoke_refresh_token (bool): Revoke a refresh token after it is used
+        refresh_token_max_reuse (int): Extra uses allowed after rotation. 0 detects reuse.
         ssl_required (str): SSL requirement (none, external, all)
         remember_me (bool): Enable "remember me"
         verify_email (bool): Require email verification
@@ -514,6 +520,9 @@ def realm_present(
             "client_session_idle_timeout": "clientSessionIdleTimeout",
             "client_session_max_lifespan": "clientSessionMaxLifespan",
             "offline_session_idle_timeout": "offlineSessionIdleTimeout",
+            "offline_session_max_lifespan": "offlineSessionMaxLifespan",
+            "revoke_refresh_token": "revokeRefreshToken",
+            "refresh_token_max_reuse": "refreshTokenMaxReuse",
             "ssl_required": "sslRequired",
             "remember_me": "rememberMe",
             "verify_email": "verifyEmail",
