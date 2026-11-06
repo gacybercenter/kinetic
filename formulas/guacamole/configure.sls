@@ -74,6 +74,15 @@ include:
 {% do guac_origins.append('https://' ~ h) %}
 {% endfor %}
 {% endif %}
+{# OPENID_POST_LOGOUT_REDIRECT_URI must be listed here. Valid Redirect URIs
+   do not cover RP-initiated logout. Keycloak wants them ##-separated. #}
+{% set logout_uris = kc_oidc.get('post_logout_redirect_uris', []) %}
+{% if not kc_oidc.get('post_logout_redirect_uris') %}
+{% for h in hostnames %}
+{% do logout_uris.append('https://' ~ h ~ '/') %}
+{% do logout_uris.append('https://' ~ h ~ '/*') %}
+{% endfor %}
+{% endif %}
 
 guacamole_keycloak_client:
   keycloak.client_present:
@@ -95,6 +104,10 @@ guacamole_keycloak_client:
         implicitFlowEnabled: {{ kc_oidc.get('implicit_flow_enabled', true) }}
     - redirect_uris: {{ guac_redirects | tojson }}
     - web_origins: {{ guac_origins | tojson }}
+{%- if logout_uris %}
+    - attributes:
+        post.logout.redirect.uris: {{ logout_uris | join('##') | yaml_dquote }}
+{%- endif %}
     - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
     - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
     - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}

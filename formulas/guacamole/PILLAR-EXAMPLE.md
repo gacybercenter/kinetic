@@ -81,6 +81,10 @@ osh:
         extraEnv:
           - name: EXTENSION_PRIORITY
             value: "*, openid"
+          - name: OPENID_LOGOUT_ENDPOINT
+            value: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/logout
+          - name: OPENID_POST_LOGOUT_REDIRECT_URI
+            value: https://rsc.gacyberrange.org/
       oidc:
         enabled: true
         authorizationEndpoint: https://keycloak.rsc.gacyberrange.org/realms/rsc/protocol/openid-connect/auth
@@ -106,8 +110,8 @@ salt-run state.orchestrate orch.k8s-guacamole pillar='{"k8s": "<minion>"}'
 The formula registers client `guacamole` in realm `rsc` (public, PKCE
 S256, implicit flow on). Guacamole's OpenID extension uses
 `response_type=id_token`. Leaving implicit flow off produces
-"Implicit flow is disabled for the client." Redirects and web origins
-come from `ingress.hosts`
+"Implicit flow is disabled for the client." Redirects, web origins, and post-logout redirects
+(`post.logout.redirect.uris`, `https://<host>/`) come from `ingress.hosts`
 (`https://<host>/*` and `https://<host>`). Override with
 `osh:guacamole:keycloak`. Default scopes are `profile`, `email`, and
 `groups`. The `groups` scope must already exist; the LDAP group mapper
