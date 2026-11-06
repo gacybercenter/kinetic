@@ -36,6 +36,13 @@ include:
 {% set db_name = db.get('name', 'guacamole_db') %}
 {% set db_user = db['user'] %}
 {% set service_port = guac.get('service_port', 80) %}
+{# Chart values pin docker.io/guacamole/guacamole by digest. A tag change
+   is ignored until image.digest is null. This image is the web app only;
+   guacd stays the chart default unless values override it. #}
+{% set image = guac.get('image', {}) %}
+{% set image_repo = image.get('repository', 'registry.gitlab.com/gacybercenter/open/kinetic/containers/kinetic-guacamole') %}
+{% set image_tag = image.get('tag', 'latest') %}
+{% set image_pull_policy = image.get('pull_policy', 'Always' if image_tag == 'latest' else 'IfNotPresent') %}
 
 {% set hostnames = [] %}
 {% for h in guac.get('ingress', {}).get('hosts', []) %}
@@ -195,6 +202,13 @@ install_guacamole:
       - database.external.existingSecret={{ app_secret }}
       - database.external.existingSecretPasswordKey=password
       - service.port={{ service_port }}
+      - image.repository={{ image_repo }}
+      - image.tag={{ image_tag }}
+      - image.digest=null
+      - image.pullPolicy={{ image_pull_policy }}
+{%- if guac.get('image_pull_secret') %}
+      - imagePullSecrets[0].name={{ guac['image_pull_secret'] }}
+{%- endif %}
     - require:
       - k8s_helm: ensure_helmforge_repo
       - k8s: ensure_guacamole_pg_cluster

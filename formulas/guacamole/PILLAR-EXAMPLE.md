@@ -28,6 +28,13 @@ osh:
     chart_name: helmforge/guacamole
     chart_version: "1.7.1"           # appVersion 1.6.0
     service_port: 80
+    # web app only. Chart pins the upstream image by digest; the formula
+    # clears image.digest. guacd stays the chart default.
+    image:
+      repository: registry.gitlab.com/gacybercenter/open/kinetic/containers/kinetic-guacamole
+      tag: latest
+      pull_policy: Always
+    # image_pull_secret: gitlab-registry   # required if the project is private
     gateway_name: traefik-external
     gateway_namespace: ingress
     gateway_section: websecure-ext
