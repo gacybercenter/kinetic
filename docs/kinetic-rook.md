@@ -243,7 +243,13 @@ has to be a group role that has an inline policy. A trust-only role
 (the formula's `oidc.role`, created only when `oidc.buckets` is set)
 assumes cleanly and then 403s every bucket. The access log still shows
 the OIDC shadow user (`$oidc$<sub>`), not the role name, so check
-`AssumedRoleUser` in the STS response. The Keycloak access
+`AssumedRoleUser` in the STS response. `max_session_duration` (default
+`28800` in the object-store formula) is the STS cap on that session.
+RGW defaults a role to 3600, and a matching trust policy does not mean
+the duration matches: `rgw_role_present` still runs `role update
+--max-session-duration` when `MaxSessionDuration` differs. AssumeRole
+`DurationSeconds` cannot exceed the cap, and omitting it does not raise
+the session to the cap. The Keycloak access
 token and the IAM admin key are not that session. An unsigned request
 shows up in the RGW log as user `-`. There is no client secret on this
 API. Thumbprints are SHA1 of the

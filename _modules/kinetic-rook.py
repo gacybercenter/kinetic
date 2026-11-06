@@ -1089,6 +1089,34 @@ def _tenant_args(tenant):
     return []
 
 
+def _session_duration(value):
+    """Normalize a requested MaxSessionDuration. None means leave it alone."""
+    if value is None or value == "":
+        return None
+    try:
+        duration = int(value)
+    except (TypeError, ValueError):
+        return None
+    if duration < 1:
+        return None
+    return duration
+
+
+def _duration_matches(payload, wanted):
+    """True when duration was not requested, or the role already has it.
+
+    RGW's ``role get`` uses ``MaxSessionDuration``. Accept the snake_case
+    form too so a newer JSON shape does not force an update every run.
+    """
+    if wanted is None:
+        return True
+    current = payload.get("MaxSessionDuration", payload.get("max_session_duration"))
+    try:
+        return int(current) == wanted
+    except (TypeError, ValueError):
+        return False
+
+
 def _aws_uri_encode(value, safe="-_.~"):
     """AWS SigV4 percent-encoding (spaces are ``%20``, not ``+``)."""
     return quote(str(value), safe=safe)
@@ -1849,6 +1877,7 @@ def rgw_role_present(
     realm=None,
     zonegroup=None,
     zone=None,
+    max_session_duration=None,
 ):
     """Ensure an RGW IAM role that trusts an OIDC provider.
 
@@ -1865,6 +1894,12 @@ def rgw_role_present(
     LDAP group name (``ss3-admins``, not ``/ss3-admins``), so ``group_prefix``
     defaults to empty. Pass ``group_prefix="/"`` only for a mapper that still
     emits the full path. Multiple groups are OR.
+
+    ``max_session_duration`` is the STS cap in seconds (AWS allows 3600-43200;
+    RGW's default is 3600). AssumeRole ``DurationSeconds`` cannot exceed it.
+    A matching trust policy is not enough: an existing role is still updated
+    when this value differs from ``MaxSessionDuration``. Omit it to leave the
+    duration alone.
     """
     try:
         _load_k8s_config()
@@ -1891,6 +1926,7 @@ def rgw_role_present(
         }
         doc = json.dumps(policy)
         target = _rgw_target_args(realm, zonegroup, zone)
+        wanted_duration = _session_duration(max_session_duration)
         info = _toolbox_radosgw(
             namespace,
             ["role", "get", "--role-name", role_name, *_tenant_args(tenant), *target],
@@ -1903,43 +1939,77 @@ def rgw_role_present(
                     payload.get("AssumeRolePolicyDocument", "{}"),
                 )
             except ValueError:
+                payload = {}
                 current_doc = "{}"
-            if _json_equal(current_doc, doc):
+            policy_matches = _json_equal(current_doc, doc)
+            duration_matches = _duration_matches(payload, wanted_duration)
+            if policy_matches and duration_matches:
                 return {
                     "success": True,
                     "updated": False,
                     "message": f"RGW role {role_name} already matches",
                 }
-            modified = _toolbox_radosgw(
-                namespace,
-                [
-                    "role-trust-policy", "modify",
-                    "--role-name", role_name,
-                    *_tenant_args(tenant),
-                    "--assume-role-policy-doc", doc,
-                    *target,
-                ],
-            )
+            if not policy_matches:
+                modified = _toolbox_radosgw(
+                    namespace,
+                    [
+                        "role-trust-policy", "modify",
+                        "--role-name", role_name,
+                        *_tenant_args(tenant),
+                        "--assume-role-policy-doc", doc,
+                        *target,
+                    ],
+                )
+                if not modified["success"]:
+                    return {
+                        "success": False,
+                        "updated": False,
+                        "message": (
+                            f"failed to update trust policy for {role_name}: "
+                            f"{modified['stderr'][:200]}"
+                        ),
+                    }
+            if not duration_matches:
+                updated = _toolbox_radosgw(
+                    namespace,
+                    [
+                        "role", "update",
+                        "--role-name", role_name,
+                        *_tenant_args(tenant),
+                        "--max-session-duration", str(wanted_duration),
+                        *target,
+                    ],
+                )
+                if not updated["success"]:
+                    return {
+                        "success": False,
+                        "updated": policy_matches is False,
+                        "message": (
+                            f"failed to set MaxSessionDuration on {role_name}: "
+                            f"{updated['stderr'][:200]}"
+                        ),
+                    }
+            parts = []
+            if not policy_matches:
+                parts.append("trust policy")
+            if not duration_matches:
+                parts.append(f"MaxSessionDuration={wanted_duration}")
             return {
-                "success": modified["success"],
-                "updated": modified["success"],
-                "message": (
-                    f"RGW role {role_name} trust policy updated"
-                    if modified["success"]
-                    else f"failed to update trust policy for {role_name}: {modified['stderr'][:200]}"
-                ),
+                "success": True,
+                "updated": True,
+                "message": f"RGW role {role_name} updated ({', '.join(parts)})",
             }
-        created = _toolbox_radosgw(
-            namespace,
-            [
-                "role", "create",
-                "--role-name", role_name,
-                "--path", path,
-                *_tenant_args(tenant),
-                "--assume-role-policy-doc", doc,
-                *target,
-            ],
-        )
+        create_args = [
+            "role", "create",
+            "--role-name", role_name,
+            "--path", path,
+            *_tenant_args(tenant),
+            "--assume-role-policy-doc", doc,
+            *target,
+        ]
+        if wanted_duration is not None:
+            create_args.extend(["--max-session-duration", str(wanted_duration)])
+        created = _toolbox_radosgw(namespace, create_args)
         return {
             "success": created["success"],
             "updated": created["success"],

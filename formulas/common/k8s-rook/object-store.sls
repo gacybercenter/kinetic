@@ -159,6 +159,7 @@ object_store_oidc_role:
     - issuer_url: {{ oidc['issuer_url'] | yaml_dquote }}
     - audience: {{ oidc_client | yaml_dquote }}
     - audience_claim: {{ oidc.get('audience_claim', 'app_id') | yaml_dquote }}
+    - max_session_duration: {{ oidc.get('max_session_duration', 28800) }}
     - realm: {{ oidc.get('realm', store_name) }}
     - zonegroup: {{ oidc.get('zonegroup', store_name) }}
     - zone: {{ oidc.get('zone', store_name) }}
@@ -180,6 +181,7 @@ object_store_oidc_role_{{ group_role | replace('-', '_') }}:
     - groups:
       - {{ entry.get('claim', group_name) | yaml_dquote }}
     - group_prefix: {{ oidc.get('group_prefix', '') | yaml_dquote }}
+    - max_session_duration: {{ oidc.get('max_session_duration', 28800) }}
     - realm: {{ oidc.get('realm', store_name) }}
     - zonegroup: {{ oidc.get('zonegroup', store_name) }}
     - zone: {{ oidc.get('zone', store_name) }}

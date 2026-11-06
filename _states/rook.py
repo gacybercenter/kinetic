@@ -825,12 +825,14 @@ def rgw_role_present(
     realm=None,
     zonegroup=None,
     zone=None,
+    max_session_duration=None,
 ):
     """Ensure an RGW IAM role trusts an OIDC provider.
 
     Pass ``issuer_url`` so the trust policy uses the issuer-derived provider
     id that STS looks up. ``groups`` restricts who may assume the role.
-    It is not rechecked on later S3 calls.
+    It is not rechecked on later S3 calls. ``max_session_duration`` is the
+    STS cap in seconds; AssumeRole DurationSeconds cannot exceed it.
     """
     ret = _state_ret(name)
     try:
@@ -849,6 +851,7 @@ def rgw_role_present(
             realm=realm,
             zonegroup=zonegroup,
             zone=zone,
+            max_session_duration=max_session_duration,
         )
         ret["result"] = result.get("success", False)
         ret["comment"] = result.get("message", "")

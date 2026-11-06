@@ -115,6 +115,7 @@ res-k8s:
         realm: ss3-gateway
         zonegroup: ss3-gateway
         zone: ss3-gateway
+        max_session_duration: 28800   # STS cap; default if omitted. Match DurationSeconds
         group_roles:
           - group: ss3-admins
             role: ss3-admins-role
@@ -136,6 +137,16 @@ bucket. The formula creates it only when `oidc.buckets` is set.
 `group_prefix` defaults to empty. Set it to `/` only if a group mapper still
 emits the full path. A leftover `group: ss3-admin` or `group_prefix: /` puts
 the old condition back on the next state run.
+
+`max_session_duration` defaults to `28800` (8 hours), matching the Keycloak
+SSO session and Keystone token expiration. RGW's own default is `3600`, and
+a matching trust policy used to hide that. The state sets it on create and
+updates an existing role with `radosgw-admin role update
+--max-session-duration`. AssumeRole `DurationSeconds` cannot be longer than
+that cap. A client that omits it, or sends `3600`, still gets a one-hour
+session. RGW drops the JWT after assume-role, so this does not follow the
+Keycloak access-token lifetime and an in-flight upload is not extended by
+an offline token. Re-assume before the session ends.
 
 Do not set a client secret in pillar for this public client. Device grant
 does not use one. If a secret was exported, rotate it in Keycloak and delete
@@ -236,7 +247,9 @@ Do not delete the bucket from this flow. That is data, not an auth change.
    signed S3 PUT. `radosgw-admin bucket create` is gone.
 4. One `rook.rgw_role_present` plus `rook.rgw_role_policy_present` per
    `group_roles` entry. The policy state adds `s3:GetBucketLocation` when the
-   action list is not `s3:*`. Clients send that before `ListBucket`.
+   action list is not `s3:*`. Clients send that before `ListBucket`. The role
+   state also sets `MaxSessionDuration` from `oidc.max_session_duration`
+   (default 28800). A matching trust policy does not skip that update.
 5. An HTTPRoute from `hosts` to `rook-ceph-rgw-<store>`.
 6. `keycloak.client_present` and `keycloak.protocol_mapper_present`
    (`oidc-audience-mapper`, client id on the access token, not the ID token).
@@ -272,7 +285,9 @@ Tokens issued before the mapper change keep the old claims. Log in again.
    secret.
 2. `AssumeRoleWithWebIdentity` against `https://ss3.gacyberrange.org` with
    `RoleArn=arn:aws:iam:::role/ss3-admins-role` (or `crc-role` /
-   `outreach-role`), `RoleSessionName`, and `WebIdentityToken`.
+   `outreach-role`), `RoleSessionName`, `WebIdentityToken`, and
+   `DurationSeconds=28800` (or shorter). Omitting it leaves the RGW default
+   of 3600, even when the role cap is 28800.
 3. S3 calls use the three returned values: access key, secret, and session
    token. The Keycloak token and `rgw-iam-admin` keys are not an S3 session.
 
@@ -305,6 +320,7 @@ arrived unsigned.
 | Log / client error | Cause |
 |---|---|
 | `Role not found: name:...` | `RoleArn` does not exist in realm `ss3-gateway`. A default-zone role is invisible to this RGW. |
+| AssumeRole 400, `DurationSeconds` exceeds `MaxSessionDuration` | Client asked for longer than the role cap (often still 3600 until the object-store state is re-applied). Sync modules first. |
 | `evaluating policy for op: 144 returned deny/pass` | Assume-role trust failed. Op 144 is `sts:AssumeRoleWithWebIdentity`. Token `groups` or `app_id` does not match. Often a stale token, a leading `/`, or `aud=account`. |
 | HTTP 403, user `-`, `GET /bucket/?location` | s3cmd location probe with no credentials, or no session token. The bucket can still exist. |
 | Authenticated `$oidc$...` 403 on `list_bucket` | Wrong role, or a trust-only role with no inline policy. |
