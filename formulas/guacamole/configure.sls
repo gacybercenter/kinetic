@@ -83,7 +83,6 @@ ensure_guacamole_pg_cluster:
     - require:
       - k8s: ensure_guacamole_app_secret
       - k8s: ensure_guacamole_superuser_secret
-      - sls: /formulas/common/k8s-cnpg
 
 {% if hostnames %}
 # TLS terminates on the Gateway. The chart Service is <release> (fullname
