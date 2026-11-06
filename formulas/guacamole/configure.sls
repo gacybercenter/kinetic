@@ -46,6 +46,63 @@ include:
 {% endif %}
 {% endfor %}
 
+{# Public OIDC client. The helmforge chart has no client-secret field, so this
+   stays public (PKCE S256). Redirects follow ingress.hosts. The chart does not
+   infer redirectUri when Ingress is off, so values.oidc.redirectUri must be
+   https://<first host>/ and values.oidc.clientId must be this client_id. #}
+{% set kc = pillar.get('res-k8s', {}).get('keycloak', {}) %}
+{% set kc_conn = kc.get('connection', {}) %}
+{% set kc_oidc = guac.get('keycloak', {}) %}
+{% set kc_realm = kc_oidc.get('realm', 'rsc') %}
+{% set kc_client = kc_oidc.get('client_id', 'guacamole') %}
+{% set guac_redirects = kc_oidc.get('redirect_uris', []) %}
+{% if not kc_oidc.get('redirect_uris') %}
+{% for h in hostnames %}
+{% do guac_redirects.append('https://' ~ h ~ '/*') %}
+{% endfor %}
+{% endif %}
+{% set guac_origins = kc_oidc.get('web_origins', []) %}
+{% if not kc_oidc.get('web_origins') %}
+{% for h in hostnames %}
+{% do guac_origins.append('https://' ~ h) %}
+{% endfor %}
+{% endif %}
+
+guacamole_keycloak_client:
+  keycloak.client_present:
+    - name: {{ kc_client }}
+    - realm: {{ kc_realm }}
+    - client_id: {{ kc_client }}
+    - client_name: {{ kc_oidc.get('client_name', 'Guacamole') | yaml_dquote }}
+    - description: "Apache Guacamole OIDC client"
+    - enabled: true
+    - protocol: openid-connect
+    - public_client: {{ kc_oidc.get('public_client', true) }}
+    - standard_flow_enabled: true
+    - direct_access_grants_enabled: false
+    - service_accounts_enabled: false
+    - redirect_uris: {{ guac_redirects | tojson }}
+    - web_origins: {{ guac_origins | tojson }}
+    - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
+    - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
+    - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}
+    - verify: {{ kc_conn.get('verify', false) }}
+
+{% for scope_name in kc_oidc.get('default_client_scopes', ['profile', 'email', 'groups']) %}
+guacamole_keycloak_client_default_scope_{{ scope_name }}:
+  keycloak.client_default_scope_present:
+    - name: {{ kc_client }}
+    - realm: {{ kc_realm }}
+    - scope_name: {{ scope_name }}
+    - client_id: {{ kc_client }}
+    - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
+    - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
+    - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}
+    - verify: {{ kc_conn.get('verify', false) }}
+    - require:
+      - keycloak: guacamole_keycloak_client
+{% endfor %}
+
 ensure_guacamole_app_secret:
   k8s.secret_present:
     - namespace: {{ ns }}

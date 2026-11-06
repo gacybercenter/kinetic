@@ -34,6 +34,11 @@ osh:
     ingress:
       hosts:
         - guac.rsc.gacyberrange.org
+    # optional; client id defaults to guacamole in realm rsc
+    keycloak:
+      realm: rsc
+      client_id: guacamole
+      client_name: Guacamole
     db:
       cluster_name: guacamole-db     # Service is guacamole-db-rw
       name: guacamole_db
@@ -85,5 +90,12 @@ Apply:
 salt-run state.orchestrate orch.k8s-guacamole pillar='{"k8s": "<minion>"}'
 ```
 
-The formula does not create the Keycloak client. Redirect URI is
-`https://<host>/` when `guacamole.contextPath` stays `ROOT`.
+The formula registers client `guacamole` in realm `rsc` (public, PKCE
+S256). Redirects and web origins come from `ingress.hosts`
+(`https://<host>/*` and `https://<host>`). Override with
+`osh:guacamole:keycloak`. Default scopes are `profile`, `email`, and
+`groups`. The `groups` scope must already exist; the LDAP group mapper
+puts the bare `cn` in that claim. Chart `values.oidc.clientId` must be
+this client id. Redirect URI in the chart is `https://<host>/` when
+`guacamole.contextPath` stays `ROOT`. The chart has no client-secret
+field, so do not set `public_client: false`.
