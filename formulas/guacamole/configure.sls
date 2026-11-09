@@ -38,6 +38,14 @@ include:
 {% set service_port = guac.get('service_port', 80) %}
 {% set admin_group = guac.get('admin_group', 'admins') %}
 {% set sql_admin_group = admin_group | replace("'", "''") %}
+{# REST user. Hash and salt are Guacamole JDBC SHA-256(password || salt),
+   hex, not the plaintext password. Missing hash skips the user. #}
+{% set api = guac.get('api_user', {}) %}
+{% set api_name = api.get('name', 'api-user') %}
+{% set sql_api_name = api_name | replace("'", "''") %}
+{% set api_hash = (api.get('password_hash', '') | string) | replace(' ', '') | replace('\n', '') | lower %}
+{% set api_salt = (api.get('password_salt', '') | string) | replace(' ', '') | replace('\n', '') | lower %}
+{% set api_perms = api.get('permissions', ['CREATE_CONNECTION']) %}
 {# Chart values pin docker.io/guacamole/guacamole by digest. A tag change
    is ignored until image.digest is null. This image is the web app only;
    guacd stays the chart default unless values override it. #}
@@ -232,9 +240,13 @@ install_guacamole:
 {%- endif %}
 
 {# OpenID only attaches a user to a Guacamole group of the same name. It does
-   not grant rights. ADMINISTER on that group is what makes members full
-   admins. The claim must be the bare LDAP cn (admins, not /admins). #}
-{% if admin_group %}
+   not grant rights. The claim must be the bare LDAP cn (admins, not
+   /admins). That group may create connections and groups. READ, UPDATE, and
+   DELETE are object permissions, not system permissions, so they are granted
+   on every connection and connection group. ADMINISTER is revoked.
+   api_user is a JDBC login for the REST API. CREATE_CONNECTION only. Removing
+   an api_user permission from pillar does not revoke it. #}
+{% if admin_group or api_hash %}
 guacamole_admin_sql:
   k8s.configmap_present:
     - name: guacamole-admin-sql
@@ -242,6 +254,7 @@ guacamole_admin_sql:
     - namespace: {{ ns }}
     - data:
         grant.sql: |
+{%- if admin_group %}
           INSERT INTO guacamole_entity (name, type)
           VALUES ('{{ sql_admin_group }}', 'USER_GROUP')
           ON CONFLICT (type, name) DO NOTHING;
@@ -252,19 +265,116 @@ guacamole_admin_sql:
               SELECT 1 FROM guacamole_user_group g
               WHERE g.entity_id = guacamole_entity.entity_id
             );
+          DELETE FROM guacamole_system_permission
+          WHERE entity_id = (
+            SELECT entity_id FROM guacamole_entity
+            WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
+          )
+          AND permission NOT IN (
+            'CREATE_CONNECTION'::guacamole_system_permission_type,
+            'CREATE_CONNECTION_GROUP'::guacamole_system_permission_type
+          );
           INSERT INTO guacamole_system_permission (entity_id, permission)
           SELECT entity_id, perm::guacamole_system_permission_type
           FROM guacamole_entity,
                (VALUES
-                 ('ADMINISTER'),
                  ('CREATE_CONNECTION'),
-                 ('CREATE_CONNECTION_GROUP'),
-                 ('CREATE_SHARING_PROFILE'),
-                 ('CREATE_USER'),
-                 ('CREATE_USER_GROUP')
+                 ('CREATE_CONNECTION_GROUP')
                ) AS perms(perm)
           WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
           ON CONFLICT (entity_id, permission) DO NOTHING;
+          INSERT INTO guacamole_connection_permission (entity_id, connection_id, permission)
+          SELECT e.entity_id, c.connection_id, p.perm::guacamole_object_permission_type
+          FROM guacamole_entity e
+          CROSS JOIN guacamole_connection c
+          CROSS JOIN (VALUES ('READ'), ('UPDATE'), ('DELETE')) AS p(perm)
+          WHERE e.name = '{{ sql_admin_group }}' AND e.type = 'USER_GROUP'
+          ON CONFLICT (entity_id, connection_id, permission) DO NOTHING;
+          INSERT INTO guacamole_connection_group_permission (entity_id, connection_group_id, permission)
+          SELECT e.entity_id, g.connection_group_id, p.perm::guacamole_object_permission_type
+          FROM guacamole_entity e
+          CROSS JOIN guacamole_connection_group g
+          CROSS JOIN (VALUES ('READ'), ('UPDATE'), ('DELETE')) AS p(perm)
+          WHERE e.name = '{{ sql_admin_group }}' AND e.type = 'USER_GROUP'
+          ON CONFLICT (entity_id, connection_group_id, permission) DO NOTHING;
+          DELETE FROM guacamole_connection_permission
+          WHERE permission = 'ADMINISTER'
+            AND entity_id = (
+              SELECT entity_id FROM guacamole_entity
+              WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
+            );
+          DELETE FROM guacamole_connection_group_permission
+          WHERE permission = 'ADMINISTER'
+            AND entity_id = (
+              SELECT entity_id FROM guacamole_entity
+              WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
+            );
+          CREATE OR REPLACE FUNCTION kinetic_admins_connection_grant()
+          RETURNS trigger LANGUAGE plpgsql AS $$
+          BEGIN
+            INSERT INTO guacamole_connection_permission (entity_id, connection_id, permission)
+            SELECT entity_id, NEW.connection_id, perm::guacamole_object_permission_type
+            FROM guacamole_entity,
+                 (VALUES ('READ'), ('UPDATE'), ('DELETE')) AS perms(perm)
+            WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
+            ON CONFLICT (entity_id, connection_id, permission) DO NOTHING;
+            RETURN NEW;
+          END;
+          $$;
+          CREATE OR REPLACE FUNCTION kinetic_admins_connection_group_grant()
+          RETURNS trigger LANGUAGE plpgsql AS $$
+          BEGIN
+            INSERT INTO guacamole_connection_group_permission (entity_id, connection_group_id, permission)
+            SELECT entity_id, NEW.connection_group_id, perm::guacamole_object_permission_type
+            FROM guacamole_entity,
+                 (VALUES ('READ'), ('UPDATE'), ('DELETE')) AS perms(perm)
+            WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
+            ON CONFLICT (entity_id, connection_group_id, permission) DO NOTHING;
+            RETURN NEW;
+          END;
+          $$;
+          DROP TRIGGER IF EXISTS kinetic_admins_connection_grant ON guacamole_connection;
+          CREATE TRIGGER kinetic_admins_connection_grant
+            AFTER INSERT ON guacamole_connection
+            FOR EACH ROW EXECUTE FUNCTION kinetic_admins_connection_grant();
+          DROP TRIGGER IF EXISTS kinetic_admins_connection_group_grant ON guacamole_connection_group;
+          CREATE TRIGGER kinetic_admins_connection_group_grant
+            AFTER INSERT ON guacamole_connection_group
+            FOR EACH ROW EXECUTE FUNCTION kinetic_admins_connection_group_grant();
+{%- endif %}
+{%- if api_hash and api_salt %}
+          INSERT INTO guacamole_entity (name, type)
+          VALUES ('{{ sql_api_name }}', 'USER')
+          ON CONFLICT (type, name) DO NOTHING;
+          INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date)
+          SELECT entity_id,
+                 decode('{{ api_hash }}', 'hex'),
+                 decode('{{ api_salt }}', 'hex'),
+                 CURRENT_TIMESTAMP
+          FROM guacamole_entity
+          WHERE name = '{{ sql_api_name }}' AND type = 'USER'
+          ON CONFLICT (entity_id) DO UPDATE
+            SET password_hash = EXCLUDED.password_hash,
+                password_salt = EXCLUDED.password_salt,
+                password_date = CURRENT_TIMESTAMP;
+          INSERT INTO guacamole_system_permission (entity_id, permission)
+          SELECT entity_id, perm::guacamole_system_permission_type
+          FROM guacamole_entity,
+               (VALUES
+{%- for perm in api_perms %}
+                 ('{{ perm | replace("'", "''") }}'){{ ',' if not loop.last else '' }}
+{%- endfor %}
+               ) AS perms(perm)
+          WHERE name = '{{ sql_api_name }}' AND type = 'USER'
+          ON CONFLICT (entity_id, permission) DO NOTHING;
+{%- endif %}
+          UPDATE guacamole_user
+          SET disabled = TRUE
+          WHERE entity_id = (
+            SELECT entity_id FROM guacamole_entity
+            WHERE name = 'guacadmin' AND type = 'USER'
+          )
+          AND disabled = FALSE;
     - require:
       - k8s: ensure_guacamole_namespace
 
@@ -276,6 +386,10 @@ guacamole_admin_grant:
     - restart_policy: Never
     - backoff_limit: 6
     - ttl_seconds_after_finished: 600
+    {# ConfigMap changes do not change the Job spec. This annotation does,
+       so a new hash recreates the Job and reruns the SQL. #}
+    - annotations:
+        kinetic.rsc.gacyberrange.org/grant: "{{ sql_admin_group }}:{{ sql_api_name }}:{{ api_perms | join(',') }}:{{ api_hash[:16] }}:{{ api_salt[:16] }}:admins-locked"
     - command:
       - sh
       - -c

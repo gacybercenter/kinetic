@@ -41,9 +41,20 @@ osh:
     ingress:
       hosts:
         - guac.rsc.gacyberrange.org
-    # LDAP cn that receives Guacamole ADMINISTER. Empty string disables
-    # the grant. OpenID must emit this exact string in groups.
+    # LDAP cn that may create connections and groups, and read, update,
+    # or delete them. Not ADMINISTER. Empty string disables the grant.
+    # OpenID must emit this exact string in groups.
     admin_group: admins
+    # JDBC user for the REST API. CREATE_CONNECTION only. Hash and salt
+    # are SHA-256(password || salt) and the salt, both hex. Encrypt these.
+    # Omit password_hash to skip the user. Removing a permission here does
+    # not revoke it.
+    api_user:
+      name: api-user
+      password_hash: "<hex sha256>"
+      password_salt: "<hex salt>"
+      permissions:
+        - CREATE_CONNECTION
     # optional; client id defaults to guacamole in realm rsc
     keycloak:
       realm: rsc
@@ -72,6 +83,12 @@ osh:
           size: 10Gi
           storageClass: rook-ceph-block
     values:
+      # FreeRDP writes under /home/guacd. Chart default is read-only, and
+      # extraVolumeMounts only attach to the web container. Do not set this
+      # back to true.
+      guacd:
+        securityContext:
+          readOnlyRootFilesystem: false
       # required: Gateway lives in another namespace
       networkPolicy:
         ingressFrom:
