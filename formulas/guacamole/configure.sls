@@ -37,6 +37,7 @@ include:
 {% set db_user = db['user'] %}
 {% set service_port = guac.get('service_port', 80) %}
 {% set admin_group = guac.get('admin_group', 'admins') %}
+{% set sql_admin_group = admin_group | replace("'", "''") %}
 {# Chart values pin docker.io/guacamole/guacamole by digest. A tag change
    is ignored until image.digest is null. This image is the web app only;
    guacd stays the chart default unless values override it. #}
@@ -242,11 +243,11 @@ guacamole_admin_sql:
     - data:
         grant.sql: |
           INSERT INTO guacamole_entity (name, type)
-          VALUES ({{ admin_group | yaml_dquote }}, 'USER_GROUP')
+          VALUES ('{{ sql_admin_group }}', 'USER_GROUP')
           ON CONFLICT (type, name) DO NOTHING;
           INSERT INTO guacamole_user_group (entity_id, disabled)
           SELECT entity_id, FALSE FROM guacamole_entity
-          WHERE name = {{ admin_group | yaml_dquote }} AND type = 'USER_GROUP'
+          WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
             AND NOT EXISTS (
               SELECT 1 FROM guacamole_user_group g
               WHERE g.entity_id = guacamole_entity.entity_id
@@ -262,7 +263,7 @@ guacamole_admin_sql:
                  ('CREATE_USER'),
                  ('CREATE_USER_GROUP')
                ) AS perms(perm)
-          WHERE name = {{ admin_group | yaml_dquote }} AND type = 'USER_GROUP'
+          WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
           ON CONFLICT (entity_id, permission) DO NOTHING;
     - require:
       - k8s: ensure_guacamole_namespace
