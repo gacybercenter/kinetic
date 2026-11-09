@@ -36,6 +36,7 @@ include:
 {% set db_name = db.get('name', 'guacamole_db') %}
 {% set db_user = db['user'] %}
 {% set service_port = guac.get('service_port', 80) %}
+{% set admin_group = guac.get('admin_group', 'admins') %}
 {# Chart values pin docker.io/guacamole/guacamole by digest. A tag change
    is ignored until image.digest is null. This image is the web app only;
    guacd stays the chart default unless values override it. #}
@@ -228,3 +229,78 @@ install_guacamole:
 {%- if hostnames %}
       - k8s: guacamole_httproute
 {%- endif %}
+
+{# OpenID only attaches a user to a Guacamole group of the same name. It does
+   not grant rights. ADMINISTER on that group is what makes members full
+   admins. The claim must be the bare LDAP cn (admins, not /admins). #}
+{% if admin_group %}
+guacamole_admin_sql:
+  k8s.configmap_present:
+    - name: guacamole-admin-sql
+    - configmap_name: guacamole-admin-sql
+    - namespace: {{ ns }}
+    - data:
+        grant.sql: |
+          INSERT INTO guacamole_entity (name, type)
+          VALUES ({{ admin_group | yaml_dquote }}, 'USER_GROUP')
+          ON CONFLICT (type, name) DO NOTHING;
+          INSERT INTO guacamole_user_group (entity_id, disabled)
+          SELECT entity_id, FALSE FROM guacamole_entity
+          WHERE name = {{ admin_group | yaml_dquote }} AND type = 'USER_GROUP'
+            AND NOT EXISTS (
+              SELECT 1 FROM guacamole_user_group g
+              WHERE g.entity_id = guacamole_entity.entity_id
+            );
+          INSERT INTO guacamole_system_permission (entity_id, permission)
+          SELECT entity_id, perm::guacamole_system_permission_type
+          FROM guacamole_entity,
+               (VALUES
+                 ('ADMINISTER'),
+                 ('CREATE_CONNECTION'),
+                 ('CREATE_CONNECTION_GROUP'),
+                 ('CREATE_SHARING_PROFILE'),
+                 ('CREATE_USER'),
+                 ('CREATE_USER_GROUP')
+               ) AS perms(perm)
+          WHERE name = {{ admin_group | yaml_dquote }} AND type = 'USER_GROUP'
+          ON CONFLICT (entity_id, permission) DO NOTHING;
+    - require:
+      - k8s: ensure_guacamole_namespace
+
+guacamole_admin_grant:
+  k8s.job_present:
+    - name: guacamole-admin-grant
+    - namespace: {{ ns }}
+    - image: docker.io/library/postgres:17
+    - restart_policy: Never
+    - backoff_limit: 6
+    - ttl_seconds_after_finished: 600
+    - command:
+      - sh
+      - -c
+      - until psql -v ON_ERROR_STOP=1 -f /sql/grant.sql; do sleep 5; done
+    - env:
+      - name: PGHOST
+        value: {{ cluster }}-rw
+      - name: PGPORT
+        value: "5432"
+      - name: PGDATABASE
+        value: {{ db_name }}
+      - name: PGUSER
+        value: {{ db_user }}
+      - name: PGPASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: {{ app_secret }}
+            key: password
+    - volumes:
+      - name: sql
+        configMap:
+          name: guacamole-admin-sql
+    - volume_mounts:
+      - name: sql
+        mountPath: /sql
+    - require:
+      - k8s: guacamole_admin_sql
+      - k8s_helm: install_guacamole
+{% endif %}

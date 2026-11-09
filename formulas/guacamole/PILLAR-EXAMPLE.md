@@ -41,6 +41,9 @@ osh:
     ingress:
       hosts:
         - guac.rsc.gacyberrange.org
+    # LDAP cn that receives Guacamole ADMINISTER. Empty string disables
+    # the grant. OpenID must emit this exact string in groups.
+    admin_group: admins
     # optional; client id defaults to guacamole in realm rsc
     keycloak:
       realm: rsc
