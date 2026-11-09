@@ -38,14 +38,19 @@ include:
 {% set service_port = guac.get('service_port', 80) %}
 {% set admin_group = guac.get('admin_group', 'admins') %}
 {% set sql_admin_group = admin_group | replace("'", "''") %}
-{# REST user. Hash and salt are Guacamole JDBC SHA-256(password || salt),
-   hex, not the plaintext password. Missing hash skips the user. #}
+{# REST user. The operator sets password only. The grant Job creates a
+   32-byte salt once, then stores SHA-256 of password + UPPERCASE_HEX(salt).
+   Later applies reuse the salt already in guacamole_user. A precomputed
+   password_hash/password_salt is used only when password is omitted. #}
 {% set api = guac.get('api_user', {}) %}
 {% set api_name = api.get('name', 'api-user') %}
 {% set sql_api_name = api_name | replace("'", "''") %}
 {% set api_hash = (api.get('password_hash', '') | string) | replace(' ', '') | replace('\n', '') | lower %}
 {% set api_salt = (api.get('password_salt', '') | string) | replace(' ', '') | replace('\n', '') | lower %}
 {% set api_perms = api.get('permissions', ['CREATE_CONNECTION']) %}
+{% set api_password = api.get('password', '') %}
+{% set api_secret = api.get('secret_name', 'guacamole-api-user') %}
+{% set api_fp = salt['hashutil.sha256_digest'](api_password)[:16] if api_password else (api_hash[:16] ~ api_salt[:16]) %}
 {# Chart values pin docker.io/guacamole/guacamole by digest. A tag change
    is ignored until image.digest is null. This image is the web app only;
    guacd stays the chart default unless values override it. #}
@@ -137,6 +142,24 @@ guacamole_keycloak_client_default_scope_{{ scope_name }}:
     - require:
       - keycloak: guacamole_keycloak_client
 {% endfor %}
+
+{% if api_password %}
+# Plaintext REST password for callers in this namespace. The database still
+# stores only the hash. Encrypt api_user.password in pillar.
+guacamole_api_user_secret:
+  k8s.secret_present:
+    - namespace: {{ ns }}
+    - secret_name: {{ api_secret }}
+    - data:
+        username: {{ api_name | yaml_dquote }}
+        password: {{ api_password | yaml_dquote }}
+    - secret_type: Opaque
+    - labels:
+        app: guacamole
+        role: api-user
+    - require:
+      - k8s: ensure_guacamole_namespace
+{% endif %}
 
 ensure_guacamole_app_secret:
   k8s.secret_present:
@@ -241,12 +264,11 @@ install_guacamole:
 
 {# OpenID only attaches a user to a Guacamole group of the same name. It does
    not grant rights. The claim must be the bare LDAP cn (admins, not
-   /admins). That group may create connections and groups. READ, UPDATE, and
-   DELETE are object permissions, not system permissions, so they are granted
-   on every connection and connection group. ADMINISTER is revoked.
+   /admins). ADMINISTER on that group is full admin. READ, UPDATE, and DELETE
+   are also granted on every connection and connection group.
    api_user is a JDBC login for the REST API. CREATE_CONNECTION only. Removing
    an api_user permission from pillar does not revoke it. #}
-{% if admin_group or api_hash %}
+{% if admin_group or api_password or (api_hash and api_salt) %}
 guacamole_admin_sql:
   k8s.configmap_present:
     - name: guacamole-admin-sql
@@ -265,21 +287,16 @@ guacamole_admin_sql:
               SELECT 1 FROM guacamole_user_group g
               WHERE g.entity_id = guacamole_entity.entity_id
             );
-          DELETE FROM guacamole_system_permission
-          WHERE entity_id = (
-            SELECT entity_id FROM guacamole_entity
-            WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
-          )
-          AND permission NOT IN (
-            'CREATE_CONNECTION'::guacamole_system_permission_type,
-            'CREATE_CONNECTION_GROUP'::guacamole_system_permission_type
-          );
           INSERT INTO guacamole_system_permission (entity_id, permission)
           SELECT entity_id, perm::guacamole_system_permission_type
           FROM guacamole_entity,
                (VALUES
+                 ('ADMINISTER'),
                  ('CREATE_CONNECTION'),
-                 ('CREATE_CONNECTION_GROUP')
+                 ('CREATE_CONNECTION_GROUP'),
+                 ('CREATE_SHARING_PROFILE'),
+                 ('CREATE_USER'),
+                 ('CREATE_USER_GROUP')
                ) AS perms(perm)
           WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
           ON CONFLICT (entity_id, permission) DO NOTHING;
@@ -297,18 +314,6 @@ guacamole_admin_sql:
           CROSS JOIN (VALUES ('READ'), ('UPDATE'), ('DELETE')) AS p(perm)
           WHERE e.name = '{{ sql_admin_group }}' AND e.type = 'USER_GROUP'
           ON CONFLICT (entity_id, connection_group_id, permission) DO NOTHING;
-          DELETE FROM guacamole_connection_permission
-          WHERE permission = 'ADMINISTER'
-            AND entity_id = (
-              SELECT entity_id FROM guacamole_entity
-              WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
-            );
-          DELETE FROM guacamole_connection_group_permission
-          WHERE permission = 'ADMINISTER'
-            AND entity_id = (
-              SELECT entity_id FROM guacamole_entity
-              WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
-            );
           CREATE OR REPLACE FUNCTION kinetic_admins_connection_grant()
           RETURNS trigger LANGUAGE plpgsql AS $$
           BEGIN
@@ -342,7 +347,7 @@ guacamole_admin_sql:
             AFTER INSERT ON guacamole_connection_group
             FOR EACH ROW EXECUTE FUNCTION kinetic_admins_connection_group_grant();
 {%- endif %}
-{%- if api_hash and api_salt %}
+{%- if api_hash and api_salt and not api_password %}
           INSERT INTO guacamole_entity (name, type)
           VALUES ('{{ sql_api_name }}', 'USER')
           ON CONFLICT (type, name) DO NOTHING;
@@ -356,7 +361,8 @@ guacamole_admin_sql:
           ON CONFLICT (entity_id) DO UPDATE
             SET password_hash = EXCLUDED.password_hash,
                 password_salt = EXCLUDED.password_salt,
-                password_date = CURRENT_TIMESTAMP;
+                password_date = CURRENT_TIMESTAMP
+          WHERE guacamole_user.password_hash IS DISTINCT FROM EXCLUDED.password_hash;
           INSERT INTO guacamole_system_permission (entity_id, permission)
           SELECT entity_id, perm::guacamole_system_permission_type
           FROM guacamole_entity,
@@ -375,6 +381,54 @@ guacamole_admin_sql:
             WHERE name = 'guacadmin' AND type = 'USER'
           )
           AND disabled = FALSE;
+{%- if api_password %}
+        grant.sh: |
+          #!/bin/sh
+          set -eu
+          i=0
+          until psql -v ON_ERROR_STOP=1 -f /sql/grant.sql; do
+            i=$((i + 1))
+            if [ "$i" -gt 30 ]; then
+              exit 1
+            fi
+            sleep 5
+          done
+          salt=$(psql -At -c "SELECT encode(u.password_salt, 'hex') FROM guacamole_user u JOIN guacamole_entity e ON e.entity_id = u.entity_id WHERE e.name = '${GUAC_API_NAME}' AND e.type = 'USER' AND u.password_salt IS NOT NULL")
+          if [ -z "$salt" ]; then
+            salt=$(od -An -tx1 -N 32 /dev/urandom | tr -d ' \n')
+          fi
+          salt_upper=$(printf '%s' "$salt" | tr 'a-f' 'A-F')
+          hash=$(printf '%s' "${GUAC_API_PASSWORD}${salt_upper}" | sha256sum | awk '{print $1}')
+          psql -v ON_ERROR_STOP=1 \
+            -v api_name="$GUAC_API_NAME" \
+            -v hash="$hash" \
+            -v salt="$salt" <<'SQL'
+          INSERT INTO guacamole_entity (name, type)
+          VALUES (:'api_name', 'USER')
+          ON CONFLICT (type, name) DO NOTHING;
+          INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date)
+          SELECT entity_id, decode(:'hash', 'hex'), decode(:'salt', 'hex'), CURRENT_TIMESTAMP
+          FROM guacamole_entity
+          WHERE name = :'api_name' AND type = 'USER'
+          ON CONFLICT (entity_id) DO UPDATE
+            SET password_hash = EXCLUDED.password_hash,
+                password_salt = EXCLUDED.password_salt,
+                password_date = CURRENT_TIMESTAMP
+          WHERE guacamole_user.password_hash IS DISTINCT FROM EXCLUDED.password_hash;
+          SQL
+          psql -v ON_ERROR_STOP=1 -v api_name="$GUAC_API_NAME" <<'SQL'
+          INSERT INTO guacamole_system_permission (entity_id, permission)
+          SELECT entity_id, perm::guacamole_system_permission_type
+          FROM guacamole_entity,
+               (VALUES
+{%- for perm in api_perms %}
+                 ('{{ perm | replace("'", "''") }}'){{ ',' if not loop.last else '' }}
+{%- endfor %}
+               ) AS perms(perm)
+          WHERE name = :'api_name' AND type = 'USER'
+          ON CONFLICT (entity_id, permission) DO NOTHING;
+          SQL
+{%- endif %}
     - require:
       - k8s: ensure_guacamole_namespace
 
@@ -389,11 +443,17 @@ guacamole_admin_grant:
     {# ConfigMap changes do not change the Job spec. This annotation does,
        so a new hash recreates the Job and reruns the SQL. #}
     - annotations:
-        kinetic.rsc.gacyberrange.org/grant: "{{ sql_admin_group }}:{{ sql_api_name }}:{{ api_perms | join(',') }}:{{ api_hash[:16] }}:{{ api_salt[:16] }}:admins-locked"
+        kinetic.rsc.gacyberrange.org/grant: "{{ sql_admin_group }}:{{ sql_api_name }}:{{ api_perms | join(',') }}:{{ api_fp }}:admins-administer"
+{%- if api_password %}
+    - command:
+      - sh
+      - /sql/grant.sh
+{%- else %}
     - command:
       - sh
       - -c
       - until psql -v ON_ERROR_STOP=1 -f /sql/grant.sql; do sleep 5; done
+{%- endif %}
     - env:
       - name: PGHOST
         value: {{ cluster }}-rw
@@ -408,6 +468,15 @@ guacamole_admin_grant:
           secretKeyRef:
             name: {{ app_secret }}
             key: password
+{%- if api_password %}
+      - name: GUAC_API_NAME
+        value: {{ api_name | yaml_dquote }}
+      - name: GUAC_API_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: {{ api_secret }}
+            key: password
+{%- endif %}
     - volumes:
       - name: sql
         configMap:
@@ -418,4 +487,7 @@ guacamole_admin_grant:
     - require:
       - k8s: guacamole_admin_sql
       - k8s_helm: install_guacamole
+{%- if api_password %}
+      - k8s: guacamole_api_user_secret
+{%- endif %}
 {% endif %}

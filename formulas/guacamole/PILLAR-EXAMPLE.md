@@ -41,18 +41,16 @@ osh:
     ingress:
       hosts:
         - guac.rsc.gacyberrange.org
-    # LDAP cn that may create connections and groups, and read, update,
-    # or delete them. Not ADMINISTER. Empty string disables the grant.
-    # OpenID must emit this exact string in groups.
+    # LDAP cn that receives Guacamole ADMINISTER. Empty string disables
+    # the grant. OpenID must emit this exact string in groups.
     admin_group: admins
-    # JDBC user for the REST API. CREATE_CONNECTION only. Hash and salt
-    # are SHA-256(password || salt) and the salt, both hex. Encrypt these.
-    # Omit password_hash to skip the user. Removing a permission here does
-    # not revoke it.
+    # JDBC user for the REST API. CREATE_CONNECTION only. Encrypt
+    # password. The grant Job creates the salt and Guacamole hash.
+    # password is also copied to Secret guacamole-api-user. Omit it
+    # to skip the user. Removing a permission here does not revoke it.
     api_user:
       name: api-user
-      password_hash: "<hex sha256>"
-      password_salt: "<hex salt>"
+      password: "<encrypted plaintext>"
       permissions:
         - CREATE_CONNECTION
     # optional; client id defaults to guacamole in realm rsc
