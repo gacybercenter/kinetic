@@ -261,9 +261,13 @@ ldap_user_{{ user['uid'] }}:
 # Groups
 # ==========================================================================
 {% for group in pillar['ldap'].get('groups', []) %}
+{% set unresolved = [] %}
+{% for member in flat_members.get(group['cn'], []) if member not in uid_to_dn %}
+{% do unresolved.append(member) %}
+{% endfor %}
 {% set member_dns = [] %}
-{% for member in flat_members.get(group['cn'], []) %}
-{% do member_dns.append(uid_to_dn.get(member, member)) %}
+{% for member in flat_members.get(group['cn'], []) if member in uid_to_dn %}
+{% do member_dns.append(uid_to_dn[member]) %}
 {% endfor %}
 
 {% for child in group.get('member_groups', []) if child not in cn_to_dn %}
@@ -273,6 +277,14 @@ ldap_group_{{ group['cn'] }}_missing_{{ child }}:
     - comment: "ldap.groups {{ group['cn'] }} member_groups entry {{ child }} is not a group in this pillar"
 {% endfor %}
 
+{% if unresolved %}
+{# A bare uid is not a DN. Skipping the update leaves the existing member
+   list alone instead of dropping people who failed user validation. #}
+ldap_group_{{ group['cn'] }}_unresolved:
+  test.fail_without_changes:
+    - name: {{ group['cn'] }}
+    - comment: "ldap.groups {{ group['cn'] }} members are not resolvable users: {{ unresolved | join(', ') }}. Each needs givenName, sn, and mail, or an explicit uid and cn."
+{% else %}
 ldap_group_{{ group['cn'] }}:
   ldap.group_present:
     - name: ldap_group_{{ group['cn'] }}
@@ -292,5 +304,6 @@ ldap_group_{{ group['cn'] }}:
 
 {% if group.get('kubernetes') %}
 {{ k8s_rbac_for('group', group['cn'], group['kubernetes'], 'groups', 'ldap_group_' ~ group['cn']) }}
+{% endif %}
 {% endif %}
 {% endfor %}
