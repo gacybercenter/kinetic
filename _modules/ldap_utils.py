@@ -659,6 +659,8 @@ def create_user(
     gid_number=None,
     home_directory=None,
     login_shell=None,
+    given_name=None,
+    mail=None,
 ):
     """
     Create a user in the LDAP directory if it doesn't exist.
@@ -675,6 +677,8 @@ def create_user(
         gid_number (int or str, optional): The group ID number for posixAccount. Defaults to '0' if not provided.
         home_directory (str, optional): The home directory path for posixAccount. Defaults to '/home/<uid>' if not provided.
         login_shell (str, optional): The login shell for posixAccount. Defaults to '/bin/bash' if not provided.
+        given_name (str, optional): LDAP givenName.
+        mail (str, optional): LDAP mail.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -706,6 +710,10 @@ def create_user(
             else f"/home/{uid}",
             "loginShell": login_shell if login_shell is not None else "/bin/bash",
         }
+        if given_name:
+            attributes["givenName"] = given_name
+        if mail:
+            attributes["mail"] = mail
         check = dn_exists(spec_name, user_dn, attributes)
         if check["exists"]:
             ret["result"] = False
@@ -764,6 +772,8 @@ def update_user(
     gid_number=None,
     home_directory=None,
     login_shell=None,
+    given_name=None,
+    mail=None,
 ):
     """
     Update attributes of an existing user in the LDAP directory (does not update password).
@@ -779,6 +789,8 @@ def update_user(
         gid_number (int or str, optional): The group ID number for posixAccount. Defaults to '0' if not provided.
         home_directory (str, optional): The home directory path for posixAccount. Defaults to '/home/<uid>' if not provided.
         login_shell (str, optional): The login shell for posixAccount. Defaults to '/bin/bash' if not provided.
+        given_name (str, optional): LDAP givenName.
+        mail (str, optional): LDAP mail.
 
     Returns:
         dict: A dictionary with 'result' (bool), 'comment' (str), and 'changes' (dict).
@@ -810,6 +822,10 @@ def update_user(
             else f"/home/{uid}",
             "loginShell": login_shell if login_shell is not None else "/bin/bash",
         }
+        if given_name:
+            attributes["givenName"] = given_name
+        if mail:
+            attributes["mail"] = mail
         check = dn_exists(spec_name, user_dn, attributes)
         if not check["exists"]:
             ret["result"] = False

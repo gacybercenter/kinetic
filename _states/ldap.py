@@ -332,7 +332,18 @@ def ou_present(name, spec_name, base_dn=None, ous=None):
     return ret
 
 
-def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=None):
+def user_present(
+    name,
+    spec_name,
+    base_dn,
+    uid,
+    cn,
+    sn,
+    description,
+    password=None,
+    given_name=None,
+    mail=None,
+):
     """
     Ensure that a single user exists in the LDAP directory, creating or updating as needed.
 
@@ -345,6 +356,8 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
         sn (str): The surname (sn) to set.
         description (str): The description to set.
         password (str, optional): Password to set for the user (only on creation).
+        given_name (str, optional): LDAP givenName.
+        mail (str, optional): LDAP mail.
 
     Returns:
         dict: A dictionary containing the state result.
@@ -380,6 +393,10 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
         "homeDirectory": f"/home/{uid}",
         "loginShell": "/bin/bash",
     }
+    if given_name:
+        attributes["givenName"] = given_name
+    if mail:
+        attributes["mail"] = mail
 
     # Check if group exists and attributes match
     if "ldap_utils.dn_exists" not in __salt__:
@@ -430,6 +447,8 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
             gid_number=None,
             home_directory=None,
             login_shell=None,
+            given_name=given_name,
+            mail=mail,
         )
         if create_result["result"]:
             ret["result"] = True
@@ -456,6 +475,8 @@ def user_present(name, spec_name, base_dn, uid, cn, sn, description, password=No
             gid_number=None,
             home_directory=None,
             login_shell=None,
+            given_name=given_name,
+            mail=mail,
         )
         if update_result["result"]:
             ret["result"] = True

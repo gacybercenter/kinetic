@@ -6,10 +6,12 @@
 #
 #   ldap:
 #     users:
-#       - uid: mdanielson
-#         cn: "Mark Danielson"
-#         sn: Danielson
-#         description: "..."         # optional; defaults to cn (LDAP rejects an empty string here)
+#       - givenName: Michael           # required, with sn and mail
+#         sn: Carpenter                # required
+#         mail: mcarpenter@augusta.edu # required
+#         uid: mcarpenter              # optional; first letter of givenName + sn
+#         cn: mcarpenter               # optional; same default as uid. This is the RDN.
+#         description: "..."         # optional; defaults to cn
 #         pass: "..."                # optional, GPG-encrypted in practice
 #         kubernetes:                # optional
 #           cluster_roles: [...]
@@ -44,9 +46,38 @@
 {% set users_base_dn = "ou=users,dc=rsc,dc=gacyberrange,dc=org" %}
 {% set groups_base_dn = "ou=groups,dc=rsc,dc=gacyberrange,dc=org" %}
 
+{# givenName, sn, and mail are required. uid and cn default to the first
+   letter of givenName plus sn, lowercased, with spaces and apostrophes
+   removed: Michael Carpenter -> mcarpenter. An explicit uid or cn is kept.
+   cn is the RDN, so omitting it on an existing user renames the entry. #}
+{% set ldap_users = [] %}
+{% for user in pillar['ldap'].get('users', []) %}
+{% set given_name = (user.get('givenName') or '') | trim %}
+{% set surname = (user.get('sn') or '') | trim %}
+{% set mail = (user.get('mail') or '') | trim %}
+{% set derived = (given_name[:1] ~ surname) | lower | replace(' ', '') | replace("'", '') | replace('-', '') %}
+{% set missing = [] %}
+{% if not given_name %}{% do missing.append('givenName') %}{% endif %}
+{% if not surname %}{% do missing.append('sn') %}{% endif %}
+{% if not mail %}{% do missing.append('mail') %}{% endif %}
+{% set uid = user.get('uid') or derived %}
+{% set cn = user.get('cn') or derived %}
+{% do ldap_users.append({
+  'uid': uid,
+  'cn': cn,
+  'sn': surname,
+  'givenName': given_name,
+  'mail': mail,
+  'description': user.get('description', cn),
+  'pass': user.get('pass'),
+  'kubernetes': user.get('kubernetes'),
+  'missing': missing,
+}) %}
+{% endfor %}
+
 {# Map uid -> user DN, for resolving group members that are managed here. #}
 {% set uid_to_dn = {} %}
-{% for user in pillar['ldap'].get('users', []) %}
+{% for user in ldap_users if not user['missing'] %}
 {% do uid_to_dn.update({user['uid']: "cn=" ~ user['cn'] ~ "," ~ users_base_dn}) %}
 {% endfor %}
 
@@ -171,17 +202,24 @@ ensure_ldap_ous:
 # ==========================================================================
 # Users
 # ==========================================================================
-{% for user in pillar['ldap'].get('users', []) %}
-
+{% for user in ldap_users %}
+{% if user['missing'] %}
+ldap_user_missing_{{ loop.index }}:
+  test.fail_without_changes:
+    - name: ldap user {{ loop.index }}
+    - comment: "ldap.users entry {{ loop.index }} is missing {{ user['missing'] | join(', ') }}. givenName, sn, and mail are required."
+{% else %}
 ldap_user_{{ user['uid'] }}:
   ldap.user_present:
     - name: ldap_user_{{ user['uid'] }}
     - spec_name: ldap_keycloak_connection
     - base_dn: {{ users_base_dn }}
-    - uid: {{ user['uid'] }}
+    - uid: {{ user['uid'] | yaml_dquote }}
     - cn: {{ user['cn'] | yaml_dquote }}
-    - sn: {{ user.get('sn', user['uid']) | yaml_dquote }}
-    - description: {{ user.get('description', user['cn']) | yaml_dquote }}
+    - sn: {{ user['sn'] | yaml_dquote }}
+    - given_name: {{ user['givenName'] | yaml_dquote }}
+    - mail: {{ user['mail'] | yaml_dquote }}
+    - description: {{ user['description'] | yaml_dquote }}
 {%- if user.get('pass') %}
     - password: {{ user['pass'] | yaml_dquote }}
 {%- endif %}
@@ -191,6 +229,7 @@ ldap_user_{{ user['uid'] }}:
 
 {% if user.get('kubernetes') %}
 {{ k8s_rbac_for('user', user['uid'], user['kubernetes'], 'users', 'ldap_user_' ~ user['uid']) }}
+{% endif %}
 {% endif %}
 {% endfor %}
 
