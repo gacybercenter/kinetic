@@ -1,125 +1,493 @@
-## Copyright 2020 Augusta University
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-
 include:
-  - /formulas/{{ grains['role'] }}/install
-  - /formulas/common/fluentd/configure
+  - /formulas/guacamole/install
 
-{% import 'formulas/common/macros/spawn.sls' as spawn with context %}
+{# ---------------------------------------------------------------------------
+   osh:guacamole          this formula (namespace, chart pin, CNPG, route)
+   osh:guacamole:values   Helm values only. Do not put the cluster spec or
+                          hostnames here.
 
-guacamole_recording_setup:
-  file.directory:
-    - name: /opt/guacamole/recordings
-    - makedirs: True
-    - user: 1000
-    - group: 1001
-    - dir_mode: "2750"
-    - file_mode: "2750"
-    - recurse:
-      - user
-      - group
-      - mode
+   The chart's bundled Postgres is turned off below. CNPG owns the database.
+   TLS terminates on the Gateway. Chart Ingress stays off; this HTTPRoute is
+   the public path.
 
-guacamole_internal:
-  docker_network.present:
-    - name: guacamole_internal
-    - internal: True
+   The app secret is both the CNPG bootstrap.initdb.secret and the chart's
+   database.external.existingSecret. Keys must be username and password.
+   bootstrap.initdb.owner must be that username, and database must be
+   osh:guacamole:db:name. CNPG only applies bootstrap at cluster create.
+   The chart init Job then loads the Guacamole schema.
 
-guacamole_default:
-  docker_network.present:
-    - name: guacamole_default
+   Chart networkPolicy is on by default and drops the Gateway. The values
+   pillar has to allow the ingress namespace, or the route will 404/timeout:
 
-# Convert to guacd binary package
-guacamole_guacd:
-  docker_container.running:
-    - name: guacd
-    - image: guacamole/guacd:1.5.5
-    - restart_policy: always
-    - binds:
-      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
-    - ports:
-      - 4822
-    - port_bindings:
-      - 4822:4822
-    - networks:
-      - guacamole_default
-      - guacamole_internal
-    - require:
-      - file: guacamole_recording_setup
-      - docker_network: guacamole_internal
-      - docker_network: guacamole_default
+     networkPolicy:
+       ingressFrom:
+         - namespaceSelector:
+             matchLabels:
+               kubernetes.io/metadata.name: ingress
+   --------------------------------------------------------------------------- #}
+{% set guac = pillar['osh']['guacamole'] %}
+{% set ns = guac.get('namespace', 'guacamole') %}
+{% set release = guac.get('release_name', 'guacamole') %}
+{% set chart = guac.get('chart_name', 'helmforge/guacamole') %}
+{% set db = guac['db'] %}
+{% set cluster = db.get('cluster_name', 'guacamole-db') %}
+{% set app_secret = db.get('app_secret', cluster ~ '-app') %}
+{% set super_secret = db.get('superuser_secret', cluster ~ '-superuser') %}
+{% set db_name = db.get('name', 'guacamole_db') %}
+{% set db_user = db['user'] %}
+{% set service_port = guac.get('service_port', 80) %}
+{% set admin_group = guac.get('admin_group', 'admins') %}
+{% set sql_admin_group = admin_group | replace("'", "''") %}
+{# REST user. The operator sets password only. The grant Job creates a
+   32-byte salt once, then stores SHA-256 of password + UPPERCASE_HEX(salt).
+   Later applies reuse the salt already in guacamole_user. A precomputed
+   password_hash/password_salt is used only when password is omitted. #}
+{% set api = guac.get('api_user', {}) %}
+{% set api_name = api.get('name', 'api-user') %}
+{% set sql_api_name = api_name | replace("'", "''") %}
+{% set api_hash = (api.get('password_hash', '') | string) | replace(' ', '') | replace('\n', '') | lower %}
+{% set api_salt = (api.get('password_salt', '') | string) | replace(' ', '') | replace('\n', '') | lower %}
+{% set api_perms = api.get('permissions', ['CREATE_CONNECTION']) %}
+{% set api_password = api.get('password', '') %}
+{% set api_secret = api.get('secret_name', 'guacamole-api-user') %}
+{% set api_fp = salt['hashutil.sha256_digest'](api_password)[:16] if api_password else (api_hash[:16] ~ api_salt[:16]) %}
+{# Chart values pin docker.io/guacamole/guacamole by digest. A tag change
+   is ignored until image.digest is null. This image is the web app only;
+   guacd stays the chart default unless values override it. #}
+{% set image = guac.get('image', {}) %}
+{% set image_repo = image.get('repository', 'registry.gitlab.com/gacybercenter/open/kinetic/containers/kinetic-guacamole') %}
+{% set image_tag = image.get('tag', 'latest') %}
+{% set image_pull_policy = image.get('pull_policy', 'Always' if image_tag == 'latest' else 'IfNotPresent') %}
 
-guacamole_guacamole:
-  docker_container.running:
-    - name: guacamole
-    - image: guacamole/guacamole:1.5.5
-    - restart_policy: always
-    - binds:
-      - /opt/guacamole/guacamole:/data
-      - /opt/guacamole/recordings:/var/lib/guacamole/recordings:rw
-    - ports:
-      - 8080
-    - port_bindings:
-      - 8080:8080
-    - environment:
-      - GUACD_HOSTNAME: guacd
-      - GUACD_PORT: 4822
-      - MYSQL_HOSTNAME: {{ pillar['haproxy']['guacamole_domain'] }}
-      - MYSQL_DATABASE: {{ pillar['integrated_services']["guacamole"]['configuration']['dbs'][0] }}
-      - MYSQL_USER: guacamole
-      - MYSQL_PASSWORD: {{ pillar['guacamole']['guacamole_mysql_password'] }}
-      - GUACAMOLE_HOME: /data
-      - LOG_LEVEL: info
-    - links:
-      - guacd: guacd
-    - networks:
-      - guacamole_default
-      - guacamole_internal
-    - require:
-      - file: guacamole_recording_setup
-      - docker_network: guacamole_internal
-      - docker_network: guacamole_default
-      - docker_container: guacamole_guacd
-{% if grains['spawning'] == 0 %}
-
-  {% if grains['build_phase'] != "configure" %}
-update_guacadmin_password:
-  guacamole.update_user_password:
-    - name: update_guacadmin_password
-    - host: "https://{{ pillar['haproxy']['guacamole_domain'] }}/guacamole"
-    - username: "guacadmin"
-    - password: "guacadmin"
-    - guac_new_password: {{ pillar['guacamole']['guacadmin_password'] }}
-    - guac_username: "guacadmin"
-    - guac_old_password: "guacadmin"
-    - retry:
-        attempts: 3
-        interval: 30
-  {% endif %}
-
-{{ spawn.spawnzero_complete() }}
-
+{% set hostnames = [] %}
+{% for h in guac.get('ingress', {}).get('hosts', []) %}
+{% if h is mapping %}
+{% do hostnames.append(h['host']) %}
 {% else %}
+{% do hostnames.append(h) %}
+{% endif %}
+{% endfor %}
 
-{{ spawn.check_spawnzero_status(grains['type']) }}
-
+{# Public OIDC client. The helmforge chart has no client-secret field, so this
+   stays public (PKCE S256). Redirects follow ingress.hosts. The chart does not
+   infer redirectUri when Ingress is off, so values.oidc.redirectUri must be
+   https://<first host>/ and values.oidc.clientId must be this client_id. #}
+{% set kc = pillar.get('res-k8s', {}).get('keycloak', {}) %}
+{% set kc_conn = kc.get('connection', {}) %}
+{% set kc_oidc = guac.get('keycloak', {}) %}
+{% set kc_realm = kc_oidc.get('realm', 'rsc') %}
+{% set kc_client = kc_oidc.get('client_id', 'guacamole') %}
+{% set guac_redirects = kc_oidc.get('redirect_uris', []) %}
+{% if not kc_oidc.get('redirect_uris') %}
+{% for h in hostnames %}
+{% do guac_redirects.append('https://' ~ h ~ '/*') %}
+{% endfor %}
+{% endif %}
+{% set guac_origins = kc_oidc.get('web_origins', []) %}
+{% if not kc_oidc.get('web_origins') %}
+{% for h in hostnames %}
+{% do guac_origins.append('https://' ~ h) %}
+{% endfor %}
+{% endif %}
+{# OPENID_POST_LOGOUT_REDIRECT_URI must be listed here. Valid Redirect URIs
+   do not cover RP-initiated logout. Keycloak wants them ##-separated. #}
+{% set logout_uris = kc_oidc.get('post_logout_redirect_uris', []) %}
+{% if not kc_oidc.get('post_logout_redirect_uris') %}
+{% for h in hostnames %}
+{% do logout_uris.append('https://' ~ h ~ '/') %}
+{% do logout_uris.append('https://' ~ h ~ '/*') %}
+{% endfor %}
 {% endif %}
 
-ROOT_path:
-  cmd.run:
-    - name: "docker exec guacamole mv /home/guacamole/tomcat/webapps/guacamole.war /home/guacamole/tomcat/webapps/ROOT.war"
+guacamole_keycloak_client:
+  keycloak.client_present:
+    - name: {{ kc_client }}
+    - realm: {{ kc_realm }}
+    - client_id: {{ kc_client }}
+    - client_name: {{ kc_oidc.get('client_name', 'Guacamole') | yaml_dquote }}
+    - description: "Apache Guacamole OIDC client"
+    - enabled: true
+    - protocol: openid-connect
+    - public_client: {{ kc_oidc.get('public_client', true) }}
+    - standard_flow_enabled: true
+    - direct_access_grants_enabled: false
+    - service_accounts_enabled: false
+    {# guacamole-auth-openid sends response_type=id_token. Standard flow is
+       authorization code, which Keycloak rejects with "Implicit flow is
+       disabled for the client." #}
+    - spec:
+        implicitFlowEnabled: {{ kc_oidc.get('implicit_flow_enabled', true) }}
+    - redirect_uris: {{ guac_redirects | tojson }}
+    - web_origins: {{ guac_origins | tojson }}
+{%- if logout_uris %}
+    - attributes:
+        post.logout.redirect.uris: {{ logout_uris | join('##') | yaml_dquote }}
+{%- endif %}
+    - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
+    - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
+    - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}
+    - verify: {{ kc_conn.get('verify', false) }}
+
+{% for scope_name in kc_oidc.get('default_client_scopes', ['profile', 'email', 'groups']) %}
+guacamole_keycloak_client_default_scope_{{ scope_name }}:
+  keycloak.client_default_scope_present:
+    - name: {{ kc_client }}
+    - realm: {{ kc_realm }}
+    - scope_name: {{ scope_name }}
+    - client_id: {{ kc_client }}
+    - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
+    - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
+    - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}
+    - verify: {{ kc_conn.get('verify', false) }}
     - require:
-      - docker_container: guacamole_guacamole
-    - unless:
-      - docker exec guacamole ls -al /home/guacamole/tomcat/webapps/ | grep -q ROOT.war
+      - keycloak: guacamole_keycloak_client
+{% endfor %}
+
+{% if api_password %}
+# Plaintext REST password for callers in this namespace. The database still
+# stores only the hash. Encrypt api_user.password in pillar.
+guacamole_api_user_secret:
+  k8s.secret_present:
+    - namespace: {{ ns }}
+    - secret_name: {{ api_secret }}
+    - data:
+        username: {{ api_name | yaml_dquote }}
+        password: {{ api_password | yaml_dquote }}
+    - secret_type: Opaque
+    - labels:
+        app: guacamole
+        role: api-user
+    - require:
+      - k8s: ensure_guacamole_namespace
+{% endif %}
+
+ensure_guacamole_app_secret:
+  k8s.secret_present:
+    - namespace: {{ ns }}
+    - secret_name: {{ app_secret }}
+    - data:
+        username: {{ db_user | yaml_dquote }}
+        password: {{ db['password'] | yaml_dquote }}
+    - secret_type: Opaque
+    - labels:
+        app: guacamole
+        cnpg.io/reload: "true"
+    - require:
+      - k8s: ensure_guacamole_namespace
+
+ensure_guacamole_superuser_secret:
+  k8s.secret_present:
+    - namespace: {{ ns }}
+    - secret_name: {{ super_secret }}
+    - data:
+        username: {{ db['superuser']['user'] | yaml_dquote }}
+        password: {{ db['superuser']['password'] | yaml_dquote }}
+    - secret_type: Opaque
+    - labels:
+        app: guacamole
+        cnpg.io/reload: "true"
+        role: superuser
+    - require:
+      - k8s: ensure_guacamole_namespace
+
+ensure_guacamole_pg_cluster:
+  k8s.cnpg_cluster_present:
+    - cluster_name: {{ cluster }}
+    - namespace: {{ ns }}
+    - spec: {{ db['spec'] | tojson }}
+    - require:
+      - k8s: ensure_guacamole_app_secret
+      - k8s: ensure_guacamole_superuser_secret
+
+{% if hostnames %}
+# TLS terminates on the Gateway. The chart Service is <release> (fullname
+# is pinned below) and listens on service.port, which defaults to 80 and
+# targets Tomcat's http listener.
+guacamole_httproute:
+  k8s.httproute_present:
+    - name: {{ release }}-route
+    - namespace: {{ ns }}
+    - parent_refs:
+        - name: {{ guac.get('gateway_name', 'traefik-external') }}
+          namespace: {{ guac.get('gateway_namespace', 'ingress') }}
+          sectionName: {{ guac.get('gateway_section', 'websecure-ext') }}
+    - hostnames: {{ hostnames | tojson }}
+    - rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: "/"
+          backendRefs:
+            - name: {{ release }}
+              port: {{ service_port }}
+    - require:
+      - k8s: ensure_guacamole_namespace
+{% endif %}
+
+install_guacamole:
+  k8s_helm.helm_release_present:
+    - release_name: {{ release }}
+    - chart_name: {{ chart }}
+    - namespace: {{ ns }}
+    - version: {{ guac.get('chart_version', '1.7.1') | yaml_dquote }}
+    - wait_timeout: {{ guac.get('wait_timeout', 600) }}
+    - wait_interval: 10
+    - keep_values_file: true
+    - pillar_key: osh:guacamole:values
+    {# External CNPG, not the bundled subchart. Chart Ingress is unused. #}
+    - set_values:
+      - fullnameOverride={{ release }}
+      - postgresql.enabled=false
+      - mysql.enabled=false
+      - ingress.enabled=false
+      - database.type=postgresql
+      - database.external.host={{ cluster }}-rw
+      - database.external.port=5432
+      - database.external.name={{ db_name }}
+      - database.external.username={{ db_user }}
+      - database.external.existingSecret={{ app_secret }}
+      - database.external.existingSecretPasswordKey=password
+      - service.port={{ service_port }}
+      - image.repository={{ image_repo }}
+      - image.tag={{ image_tag }}
+      - image.digest=null
+      - image.pullPolicy={{ image_pull_policy }}
+{%- if guac.get('image_pull_secret') %}
+      - imagePullSecrets[0].name={{ guac['image_pull_secret'] }}
+{%- endif %}
+    - require:
+      - k8s_helm: ensure_helmforge_repo
+      - k8s: ensure_guacamole_pg_cluster
+{%- if hostnames %}
+      - k8s: guacamole_httproute
+{%- endif %}
+
+{# OpenID only attaches a user to a Guacamole group of the same name. It does
+   not grant rights. The claim must be the bare LDAP cn (admins, not
+   /admins). ADMINISTER on that group is full admin. READ, UPDATE, and DELETE
+   are also granted on every connection and connection group.
+   api_user is a JDBC login for the REST API. CREATE_CONNECTION only. Removing
+   an api_user permission from pillar does not revoke it. #}
+{% if admin_group or api_password or (api_hash and api_salt) %}
+guacamole_admin_sql:
+  k8s.configmap_present:
+    - name: guacamole-admin-sql
+    - configmap_name: guacamole-admin-sql
+    - namespace: {{ ns }}
+    - data:
+        grant.sql: |
+{%- if admin_group %}
+          INSERT INTO guacamole_entity (name, type)
+          VALUES ('{{ sql_admin_group }}', 'USER_GROUP')
+          ON CONFLICT (type, name) DO NOTHING;
+          INSERT INTO guacamole_user_group (entity_id, disabled)
+          SELECT entity_id, FALSE FROM guacamole_entity
+          WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
+            AND NOT EXISTS (
+              SELECT 1 FROM guacamole_user_group g
+              WHERE g.entity_id = guacamole_entity.entity_id
+            );
+          INSERT INTO guacamole_system_permission (entity_id, permission)
+          SELECT entity_id, perm::guacamole_system_permission_type
+          FROM guacamole_entity,
+               (VALUES
+                 ('ADMINISTER'),
+                 ('CREATE_CONNECTION'),
+                 ('CREATE_CONNECTION_GROUP'),
+                 ('CREATE_SHARING_PROFILE'),
+                 ('CREATE_USER'),
+                 ('CREATE_USER_GROUP')
+               ) AS perms(perm)
+          WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
+          ON CONFLICT (entity_id, permission) DO NOTHING;
+          INSERT INTO guacamole_connection_permission (entity_id, connection_id, permission)
+          SELECT e.entity_id, c.connection_id, p.perm::guacamole_object_permission_type
+          FROM guacamole_entity e
+          CROSS JOIN guacamole_connection c
+          CROSS JOIN (VALUES ('READ'), ('UPDATE'), ('DELETE')) AS p(perm)
+          WHERE e.name = '{{ sql_admin_group }}' AND e.type = 'USER_GROUP'
+          ON CONFLICT (entity_id, connection_id, permission) DO NOTHING;
+          INSERT INTO guacamole_connection_group_permission (entity_id, connection_group_id, permission)
+          SELECT e.entity_id, g.connection_group_id, p.perm::guacamole_object_permission_type
+          FROM guacamole_entity e
+          CROSS JOIN guacamole_connection_group g
+          CROSS JOIN (VALUES ('READ'), ('UPDATE'), ('DELETE')) AS p(perm)
+          WHERE e.name = '{{ sql_admin_group }}' AND e.type = 'USER_GROUP'
+          ON CONFLICT (entity_id, connection_group_id, permission) DO NOTHING;
+          CREATE OR REPLACE FUNCTION kinetic_admins_connection_grant()
+          RETURNS trigger LANGUAGE plpgsql AS $$
+          BEGIN
+            INSERT INTO guacamole_connection_permission (entity_id, connection_id, permission)
+            SELECT entity_id, NEW.connection_id, perm::guacamole_object_permission_type
+            FROM guacamole_entity,
+                 (VALUES ('READ'), ('UPDATE'), ('DELETE')) AS perms(perm)
+            WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
+            ON CONFLICT (entity_id, connection_id, permission) DO NOTHING;
+            RETURN NEW;
+          END;
+          $$;
+          CREATE OR REPLACE FUNCTION kinetic_admins_connection_group_grant()
+          RETURNS trigger LANGUAGE plpgsql AS $$
+          BEGIN
+            INSERT INTO guacamole_connection_group_permission (entity_id, connection_group_id, permission)
+            SELECT entity_id, NEW.connection_group_id, perm::guacamole_object_permission_type
+            FROM guacamole_entity,
+                 (VALUES ('READ'), ('UPDATE'), ('DELETE')) AS perms(perm)
+            WHERE name = '{{ sql_admin_group }}' AND type = 'USER_GROUP'
+            ON CONFLICT (entity_id, connection_group_id, permission) DO NOTHING;
+            RETURN NEW;
+          END;
+          $$;
+          DROP TRIGGER IF EXISTS kinetic_admins_connection_grant ON guacamole_connection;
+          CREATE TRIGGER kinetic_admins_connection_grant
+            AFTER INSERT ON guacamole_connection
+            FOR EACH ROW EXECUTE FUNCTION kinetic_admins_connection_grant();
+          DROP TRIGGER IF EXISTS kinetic_admins_connection_group_grant ON guacamole_connection_group;
+          CREATE TRIGGER kinetic_admins_connection_group_grant
+            AFTER INSERT ON guacamole_connection_group
+            FOR EACH ROW EXECUTE FUNCTION kinetic_admins_connection_group_grant();
+{%- endif %}
+{%- if api_hash and api_salt and not api_password %}
+          INSERT INTO guacamole_entity (name, type)
+          VALUES ('{{ sql_api_name }}', 'USER')
+          ON CONFLICT (type, name) DO NOTHING;
+          INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date)
+          SELECT entity_id,
+                 decode('{{ api_hash }}', 'hex'),
+                 decode('{{ api_salt }}', 'hex'),
+                 CURRENT_TIMESTAMP
+          FROM guacamole_entity
+          WHERE name = '{{ sql_api_name }}' AND type = 'USER'
+          ON CONFLICT (entity_id) DO UPDATE
+            SET password_hash = EXCLUDED.password_hash,
+                password_salt = EXCLUDED.password_salt,
+                password_date = CURRENT_TIMESTAMP
+          WHERE guacamole_user.password_hash IS DISTINCT FROM EXCLUDED.password_hash;
+          INSERT INTO guacamole_system_permission (entity_id, permission)
+          SELECT entity_id, perm::guacamole_system_permission_type
+          FROM guacamole_entity,
+               (VALUES
+{%- for perm in api_perms %}
+                 ('{{ perm | replace("'", "''") }}'){{ ',' if not loop.last else '' }}
+{%- endfor %}
+               ) AS perms(perm)
+          WHERE name = '{{ sql_api_name }}' AND type = 'USER'
+          ON CONFLICT (entity_id, permission) DO NOTHING;
+{%- endif %}
+          UPDATE guacamole_user
+          SET disabled = TRUE
+          WHERE entity_id = (
+            SELECT entity_id FROM guacamole_entity
+            WHERE name = 'guacadmin' AND type = 'USER'
+          )
+          AND disabled = FALSE;
+{%- if api_password %}
+        grant.sh: |
+          #!/bin/sh
+          set -eu
+          i=0
+          until psql -v ON_ERROR_STOP=1 -f /sql/grant.sql; do
+            i=$((i + 1))
+            if [ "$i" -gt 30 ]; then
+              exit 1
+            fi
+            sleep 5
+          done
+          salt=$(psql -At -c "SELECT encode(u.password_salt, 'hex') FROM guacamole_user u JOIN guacamole_entity e ON e.entity_id = u.entity_id WHERE e.name = '${GUAC_API_NAME}' AND e.type = 'USER' AND u.password_salt IS NOT NULL")
+          if [ -z "$salt" ]; then
+            salt=$(od -An -tx1 -N 32 /dev/urandom | tr -d ' \n')
+          fi
+          salt_upper=$(printf '%s' "$salt" | tr 'a-f' 'A-F')
+          hash=$(printf '%s' "${GUAC_API_PASSWORD}${salt_upper}" | sha256sum | awk '{print $1}')
+          psql -v ON_ERROR_STOP=1 \
+            -v api_name="$GUAC_API_NAME" \
+            -v hash="$hash" \
+            -v salt="$salt" <<'SQL'
+          INSERT INTO guacamole_entity (name, type)
+          VALUES (:'api_name', 'USER')
+          ON CONFLICT (type, name) DO NOTHING;
+          INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date)
+          SELECT entity_id, decode(:'hash', 'hex'), decode(:'salt', 'hex'), CURRENT_TIMESTAMP
+          FROM guacamole_entity
+          WHERE name = :'api_name' AND type = 'USER'
+          ON CONFLICT (entity_id) DO UPDATE
+            SET password_hash = EXCLUDED.password_hash,
+                password_salt = EXCLUDED.password_salt,
+                password_date = CURRENT_TIMESTAMP
+          WHERE guacamole_user.password_hash IS DISTINCT FROM EXCLUDED.password_hash;
+          SQL
+          psql -v ON_ERROR_STOP=1 -v api_name="$GUAC_API_NAME" <<'SQL'
+          INSERT INTO guacamole_system_permission (entity_id, permission)
+          SELECT entity_id, perm::guacamole_system_permission_type
+          FROM guacamole_entity,
+               (VALUES
+{%- for perm in api_perms %}
+                 ('{{ perm | replace("'", "''") }}'){{ ',' if not loop.last else '' }}
+{%- endfor %}
+               ) AS perms(perm)
+          WHERE name = :'api_name' AND type = 'USER'
+          ON CONFLICT (entity_id, permission) DO NOTHING;
+          SQL
+{%- endif %}
+    - require:
+      - k8s: ensure_guacamole_namespace
+
+guacamole_admin_grant:
+  k8s.job_present:
+    - name: guacamole-admin-grant
+    - namespace: {{ ns }}
+    - image: docker.io/library/postgres:17
+    - restart_policy: Never
+    - backoff_limit: 6
+    - ttl_seconds_after_finished: 600
+    {# ConfigMap changes do not change the Job spec. This annotation does,
+       so a new hash recreates the Job and reruns the SQL. #}
+    - annotations:
+        kinetic.rsc.gacyberrange.org/grant: "{{ sql_admin_group }}:{{ sql_api_name }}:{{ api_perms | join(',') }}:{{ api_fp }}:admins-administer"
+{%- if api_password %}
+    - command:
+      - sh
+      - /sql/grant.sh
+{%- else %}
+    - command:
+      - sh
+      - -c
+      - until psql -v ON_ERROR_STOP=1 -f /sql/grant.sql; do sleep 5; done
+{%- endif %}
+    - env:
+      - name: PGHOST
+        value: {{ cluster }}-rw
+      - name: PGPORT
+        value: "5432"
+      - name: PGDATABASE
+        value: {{ db_name }}
+      - name: PGUSER
+        value: {{ db_user }}
+      - name: PGPASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: {{ app_secret }}
+            key: password
+{%- if api_password %}
+      - name: GUAC_API_NAME
+        value: {{ api_name | yaml_dquote }}
+      - name: GUAC_API_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: {{ api_secret }}
+            key: password
+{%- endif %}
+    - volumes:
+      - name: sql
+        configMap:
+          name: guacamole-admin-sql
+    - volume_mounts:
+      - name: sql
+        mountPath: /sql
+    - require:
+      - k8s: guacamole_admin_sql
+      - k8s_helm: install_guacamole
+{%- if api_password %}
+      - k8s: guacamole_api_user_secret
+{%- endif %}
+{% endif %}

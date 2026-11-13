@@ -104,9 +104,12 @@ res-k8s:
           - provider_id: CONFIGURE_TOTP
             enabled: true
             default_action: false
+          # default_action applies to users Keycloak creates after this is
+          # set. LDAP federation must be editMode WRITABLE or the change
+          # cannot be written to userPassword.
           - provider_id: UPDATE_PASSWORD
             enabled: true
-            default_action: false
+            default_action: true
           - provider_id: VERIFY_EMAIL
             enabled: true
             default_action: false
