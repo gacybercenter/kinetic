@@ -28,14 +28,11 @@
 #                                    # uid matches a user defined above
 #         kubernetes:                # optional, same shape as above
 #           cluster_roles: [...]
-#       - cn: se_cyber
-#         member_groups: [admins]    # group cns; resolved to group DNs when
-#                                    # the cn matches another group defined
-#                                    # here. groupOfNames requires at least
-#                                    # one member - use member_groups (e.g.
-#                                    # nesting the admins group) instead of
-#                                    # letting the group default to a
-#                                    # self-reference.
+#       - cn: os-enabled
+#         member_groups: [admins]    # flattened to the member uids of those
+#                                    # groups before the LDAP group is written.
+#                                    # Keycloak does not expand a group DN in
+#                                    # member. A missing child group fails.
 #
 # Note: `kubernetes.roles`/`kubernetes.cluster_roles` bind an *existing*
 # Role/ClusterRole (built-in or one of this entry's own `custom_roles`).
@@ -81,10 +78,37 @@
 {% do uid_to_dn.update({user['uid']: "cn=" ~ user['cn'] ~ "," ~ users_base_dn}) %}
 {% endfor %}
 
-{# Map cn -> group DN, for resolving nested group members (member_groups). #}
+{# Map cn -> group DN, and flatten member_groups to user uids. A child
+   group listed later in the pillar is still expanded. Cycles stop once no
+   new uid is added. The LDAP member attribute gets user DNs only. #}
 {% set cn_to_dn = {} %}
+{% set group_direct = {} %}
+{% set group_children = {} %}
 {% for group in pillar['ldap'].get('groups', []) %}
 {% do cn_to_dn.update({group['cn']: "cn=" ~ group['cn'] ~ "," ~ groups_base_dn}) %}
+{% do group_direct.update({group['cn']: group.get('members', [])}) %}
+{% do group_children.update({group['cn']: group.get('member_groups', [])}) %}
+{% endfor %}
+{% set flat_members = {} %}
+{% for cn, members in group_direct.items() %}
+{% set seen = [] %}
+{% for member in members %}
+{% if member not in seen %}
+{% do seen.append(member) %}
+{% endif %}
+{% endfor %}
+{% do flat_members.update({cn: seen}) %}
+{% endfor %}
+{% for _pass in range(group_children | length) %}
+{% for cn, children in group_children.items() %}
+{% for child in children if child in flat_members %}
+{% for member in flat_members[child] %}
+{% if member not in flat_members[cn] %}
+{% do flat_members[cn].append(member) %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
 {% endfor %}
 
 {# ------------------------------------------------------------------------
@@ -238,11 +262,15 @@ ldap_user_{{ user['uid'] }}:
 # ==========================================================================
 {% for group in pillar['ldap'].get('groups', []) %}
 {% set member_dns = [] %}
-{% for member in group.get('members', []) %}
+{% for member in flat_members.get(group['cn'], []) %}
 {% do member_dns.append(uid_to_dn.get(member, member)) %}
 {% endfor %}
-{% for member_group in group.get('member_groups', []) %}
-{% do member_dns.append(cn_to_dn.get(member_group, member_group)) %}
+
+{% for child in group.get('member_groups', []) if child not in cn_to_dn %}
+ldap_group_{{ group['cn'] }}_missing_{{ child }}:
+  test.fail_without_changes:
+    - name: {{ child }}
+    - comment: "ldap.groups {{ group['cn'] }} member_groups entry {{ child }} is not a group in this pillar"
 {% endfor %}
 
 ldap_group_{{ group['cn'] }}:
@@ -258,11 +286,8 @@ ldap_group_{{ group['cn'] }}:
     - require:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_ous
-{%- for member in group.get('members', []) if member in uid_to_dn %}
+{%- for member in flat_members.get(group['cn'], []) if member in uid_to_dn %}
       - ldap: ldap_user_{{ member }}
-{%- endfor %}
-{%- for member_group in group.get('member_groups', []) if member_group in cn_to_dn and member_group != group['cn'] %}
-      - ldap: ldap_group_{{ member_group }}
 {%- endfor %}
 
 {% if group.get('kubernetes') %}
