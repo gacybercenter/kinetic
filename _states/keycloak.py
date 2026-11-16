@@ -1192,3 +1192,106 @@ def ldap_mapper_absent(
         ret["changes"] = {}
 
     return ret
+
+
+def ldap_mappers_pruned(
+    name,
+    realm,
+    federation_name,
+    allowed,
+    keep=None,
+    claimed_attributes=None,
+    provider_type="org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
+    keycloak_addr="k8s://keycloak/keycloak-service:8443",
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """Delete LDAP mappers on a federation provider that are not allowed.
+
+    allowed is the whitelist of component names. Keycloak creates ``first
+    name`` mapped to ``cn`` when the RDN attribute is not ``cn``. That
+    conflicts with a mapper that writes ``givenName``. claimed_attributes
+    drops a built-in that maps the same user attribute as an allowed mapper.
+    An empty allow list is refused.
+    """
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_keycloak.ldap_mappers_pruned"](
+            realm=realm,
+            federation_name=federation_name,
+            allowed=allowed,
+            keep=keep,
+            claimed_attributes=claimed_attributes,
+            provider_type=provider_type,
+            keycloak_addr=keycloak_addr,
+            token=token,
+            realm_username=realm_username,
+            realm_password=realm_password,
+            admin_client_id=admin_client_id,
+            admin_client_secret=admin_client_secret,
+            namespace=namespace,
+            secret_name=secret_name,
+            verify=verify,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to prune LDAP mappers for {federation_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+    return ret
+
+
+def ldap_federation_sync(
+    name,
+    realm,
+    federation_name,
+    action="triggerFullSync",
+    keycloak_addr="k8s://keycloak/keycloak-service:8443",
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+    timeout=120,
+):
+    """Import LDAP users and group mappings into Keycloak.
+
+    Default action is triggerFullSync. triggerChangedUsersSync misses group
+    membership changes, because those update the group entry, not the user.
+    """
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_keycloak.ldap_federation_sync"](
+            realm=realm,
+            federation_name=federation_name,
+            action=action,
+            keycloak_addr=keycloak_addr,
+            token=token,
+            realm_username=realm_username,
+            realm_password=realm_password,
+            admin_client_id=admin_client_id,
+            admin_client_secret=admin_client_secret,
+            namespace=namespace,
+            secret_name=secret_name,
+            verify=verify,
+            timeout=timeout,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to sync LDAP federation {federation_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+    return ret

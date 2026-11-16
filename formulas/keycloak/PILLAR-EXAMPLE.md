@@ -177,11 +177,40 @@ res-k8s:
               syncRegistrations: "false"
               pagination: "true"
 
-            # --- LDAP Mappers (sub-components of this federation provider) ---
-            # Each mapper's parentId is resolved automatically from this
-            # federation's name (corp-ldap) - no need to know Keycloak's
-            # internal component ids.
+            # --- LDAP Mappers (the whitelist) ---
+            # Each key is the Keycloak component name. parentId is the
+            # federation name. When mappers is set, any live mapper whose
+            # name is not a key here is deleted, including Keycloak's
+            # built-in "first name", "last name", "username", and "email".
+            # Copy a built-in key below if it should stay.
             mappers:
+              username:
+                provider_id: user-attribute-ldap-mapper
+                config:
+                  user.model.attribute: username
+                  ldap.attribute: uid
+                  read.only: "true"
+                  is.mandatory.in.ldap: "true"
+              email:
+                provider_id: user-attribute-ldap-mapper
+                config:
+                  user.model.attribute: email
+                  ldap.attribute: mail
+                  read.only: "true"
+              first-name:
+                provider_id: user-attribute-ldap-mapper
+                config:
+                  user.model.attribute: firstName
+                  ldap.attribute: givenName
+                  read.only: "true"
+                  always.read.value.from.ldap: "true"
+              last-name:
+                provider_id: user-attribute-ldap-mapper
+                config:
+                  user.model.attribute: lastName
+                  ldap.attribute: sn
+                  read.only: "true"
+                  always.read.value.from.ldap: "true"
               corp-ldap-groups:
                 provider_id: group-ldap-mapper
                 config:
@@ -218,6 +247,12 @@ res-k8s:
   component name, and its `parentId` is resolved automatically from the
   enclosing federation's name - see `docs/kinetic-keycloak.md` for the full
   list of common mapper `provider_id` values and their `config` keys.
+- `mappers` is the whitelist. There is no default keep list. A mapper
+  Keycloak created (`first name`, `last name`, `username`, `email`,
+  `creation date`, `modify date`) is deleted unless its exact name is a
+  key under `mappers`. The built-in `first name` mapper writes `cn` when
+  the RDN attribute is not `cn`, which renames the entry on a first-name
+  edit. Set `prune_mappers: false` to leave unknown mappers alone.
 - `required_actions` is a list because Keycloak allows several required
   actions per realm and order doesn't otherwise matter for identification
   (each is keyed by `provider_id`).

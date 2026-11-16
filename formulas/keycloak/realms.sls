@@ -238,8 +238,16 @@ kc_{{ realm_name }}_flow_bindings:
 {%- endfor %}
 {% endif %}
 
-{# --- Clients --- #}
+{# --- Clients ---
+   A non-mapping value here is a pillar key indented under clients by
+   mistake. Skip it and fail that key so the rest of the realm still renders. #}
 {% for client_key, client in realm.get('clients', {}).items() %}
+{% if client is not mapping %}
+kc_{{ realm_name }}_client_{{ client_key }}_invalid:
+  test.fail_without_changes:
+    - name: {{ client_key }}
+    - comment: "ldap.realms.{{ realm_name }}.clients.{{ client_key }} is not a client mapping. It is indented under clients."
+{% else %}
 kc_{{ realm_name }}_client_{{ client_key }}:
   keycloak.client_present:
     - name: {{ client_key }}
@@ -303,6 +311,7 @@ kc_{{ realm_name }}_client_{{ client_key }}_default_scope_{{ scope_name }}:
     - require:
       - keycloak: kc_{{ realm_name }}_client_{{ client_key }}
 {% endfor %}
+{% endif %}
 {% endfor %}
 
 {# --- User Federation (e.g. OpenLDAP) --- #}
@@ -345,6 +354,25 @@ kc_{{ realm_name }}_federation_{{ fed_key }}_mapper_{{ mapper_key }}:
     - require:
       - keycloak: kc_{{ realm_name }}_federation_{{ fed_key }}
 {% endfor %}
+
+{# The whitelist is the mapper keys below. Keycloak creates built-ins
+   (username, email, first name, last name, timestamps) when the provider
+   is added. Those are deleted unless a key here has the same name.
+   Name the built-ins you still want. prune_mappers: false leaves them. #}
+{% if fed.get('prune_mappers', true) and fed.get('mappers') %}
+kc_{{ realm_name }}_federation_{{ fed_key }}_mappers_pruned:
+  keycloak.ldap_mappers_pruned:
+    - name: {{ fed_key }}
+    - realm: {{ realm_name }}
+    - federation_name: {{ fed_key }}
+    - allowed: {{ fed.get('mappers', {}).keys() | list | tojson }}
+{{ kc_conn(keycloak_addr, kc_namespace, kc_secret_name, kc_verify) }}
+    - require:
+      - keycloak: kc_{{ realm_name }}_federation_{{ fed_key }}
+{%- for mapper_key in fed.get('mappers', {}).keys() %}
+      - keycloak: kc_{{ realm_name }}_federation_{{ fed_key }}_mapper_{{ mapper_key }}
+{%- endfor %}
+{% endif %}
 {% endfor %}
 
 {% endfor %}
