@@ -61,7 +61,7 @@ def _load_k8s_config():
         config.load_kube_config()
 
 
-def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_data=None):
+def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_data=None, timeout=15):
     """
     Make an HTTP request against the Keycloak Admin API through the
     Kubernetes API server service proxy. This works even when the Keycloak
@@ -112,7 +112,7 @@ def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_
             auth_settings=["BearerToken"],
             _preload_content=False,
             _return_http_data_only=True,
-            _request_timeout=15,
+            _request_timeout=timeout,
         )
         status_code = resp.status
         raw = resp.data
@@ -135,7 +135,7 @@ def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_
     return status_code, body_out
 
 
-def _request(method, addr, path, headers=None, payload=None, form_data=None, verify=False):
+def _request(method, addr, path, headers=None, payload=None, form_data=None, verify=False, timeout=15):
     """
     Make an HTTP request against the Keycloak Admin API.
 
@@ -150,14 +150,15 @@ def _request(method, addr, path, headers=None, payload=None, form_data=None, ver
     """
     if addr.startswith("k8s://"):
         return _request_via_k8s_proxy(
-            method, addr, path, headers=headers, payload=payload, form_data=form_data
+            method, addr, path, headers=headers, payload=payload, form_data=form_data,
+            timeout=timeout,
         )
 
     url = f"{addr}/{path}"
     request_kwargs = {
         "headers": dict(headers) if headers else {},
         "verify": verify,
-        "timeout": 15,
+        "timeout": timeout,
     }
     if form_data is not None:
         request_kwargs["data"] = form_data
@@ -2518,4 +2519,84 @@ def ldap_mappers_pruned(
             "success": False,
             "updated": False,
             "message": f"Failed to prune LDAP mappers for {federation_name}: {str(e)}",
+        }
+
+
+def ldap_federation_sync(
+    realm,
+    federation_name,
+    action="triggerFullSync",
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+    timeout=120,
+):
+    """Import LDAP users and group mappings into Keycloak.
+
+    ``triggerChangedUsersSync`` only notices user modifyTimestamp. A group
+    membership change updates the group, not the user, so the default is a
+    full sync. That also runs each mapper's federation-to-Keycloak sync.
+
+    Keycloak Admin REST API:
+        POST admin/realms/{realm}/user-storage/{id}/sync?action=triggerFullSync
+    """
+    if action not in ("triggerFullSync", "triggerChangedUsersSync"):
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"unsupported LDAP sync action {action}",
+        }
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+        realm_id, error = _resolve_realm_id(realm, keycloak_addr, headers, verify)
+        if error:
+            return error
+        federation_id, error = _resolve_federation_id(
+            realm, federation_name, realm_id, keycloak_addr, headers, verify
+        )
+        if error:
+            return error
+        status_code, body = _request(
+            "POST", keycloak_addr,
+            f"admin/realms/{realm}/user-storage/{federation_id}/sync?action={action}",
+            headers=headers, verify=verify, timeout=timeout,
+        )
+        if status_code not in (200, 204):
+            return _http_error(
+                f"Syncing LDAP federation {federation_name} in realm {realm}",
+                status_code, body,
+            )
+        counts = body if isinstance(body, dict) else {}
+        changed = any(int(counts.get(key) or 0) for key in ("added", "updated", "removed"))
+        status = counts.get("status") or action
+        return {
+            "success": True,
+            "updated": changed,
+            "message": (
+                f"LDAP sync {status} for {federation_name}: "
+                f"added={counts.get('added', 0)} updated={counts.get('updated', 0)} "
+                f"removed={counts.get('removed', 0)} failed={counts.get('failed', 0)}"
+            ),
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to sync LDAP federation {federation_name}: {str(e)}",
         }

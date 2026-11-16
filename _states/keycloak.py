@@ -1247,3 +1247,51 @@ def ldap_mappers_pruned(
         ret["comment"] = f"Failed to prune LDAP mappers for {federation_name}: {str(e)[:100]}..."
         ret["changes"] = {}
     return ret
+
+
+def ldap_federation_sync(
+    name,
+    realm,
+    federation_name,
+    action="triggerFullSync",
+    keycloak_addr="k8s://keycloak/keycloak-service:8443",
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+    timeout=120,
+):
+    """Import LDAP users and group mappings into Keycloak.
+
+    Default action is triggerFullSync. triggerChangedUsersSync misses group
+    membership changes, because those update the group entry, not the user.
+    """
+    ret = _state_ret(name)
+    try:
+        result = __salt__["kinetic_keycloak.ldap_federation_sync"](
+            realm=realm,
+            federation_name=federation_name,
+            action=action,
+            keycloak_addr=keycloak_addr,
+            token=token,
+            realm_username=realm_username,
+            realm_password=realm_password,
+            admin_client_id=admin_client_id,
+            admin_client_secret=admin_client_secret,
+            namespace=namespace,
+            secret_name=secret_name,
+            verify=verify,
+            timeout=timeout,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to sync LDAP federation {federation_name}: {str(e)[:100]}..."
+        ret["changes"] = {}
+    return ret

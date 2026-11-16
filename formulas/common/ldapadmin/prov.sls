@@ -307,3 +307,41 @@ ldap_group_{{ group['cn'] }}:
 {% endif %}
 {% endif %}
 {% endfor %}
+
+{# Pull the directory into Keycloak after the writes. Full sync, not the
+   changed-users sync: a group member update does not touch the user entry.
+   Skip when this pillar has no Keycloak admin connection. #}
+{% set kc = pillar.get('res-k8s', {}).get('keycloak', {}) %}
+{% set kc_conn = kc.get('connection', {}) %}
+{% set synced_groups = [] %}
+{% for group in pillar['ldap'].get('groups', []) %}
+{% set unresolved = [] %}
+{% for member in flat_members.get(group['cn'], []) if member not in uid_to_dn %}
+{% do unresolved.append(member) %}
+{% endfor %}
+{% if not unresolved %}
+{% do synced_groups.append(group['cn']) %}
+{% endif %}
+{% endfor %}
+{% if kc_conn %}
+{% for realm_name, realm in pillar.get('ldap', {}).get('realms', {}).items() %}
+{% for fed_key in realm.get('user_federation', {}) %}
+keycloak_ldap_sync_{{ realm_name }}_{{ fed_key }}:
+  keycloak.ldap_federation_sync:
+    - name: {{ fed_key }}
+    - realm: {{ realm_name }}
+    - federation_name: {{ fed_key }}
+    - action: triggerFullSync
+    - timeout: 120
+    - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
+    - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
+    - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}
+    - verify: {{ kc_conn.get('verify', false) }}
+    - require:
+      - ldap: ensure_ldap_ous
+{%- for group_cn in synced_groups %}
+      - ldap: ldap_group_{{ group_cn }}
+{%- endfor %}
+{% endfor %}
+{% endfor %}
+{% endif %}
