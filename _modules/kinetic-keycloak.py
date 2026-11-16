@@ -2403,3 +2403,119 @@ def ldap_mapper_absent(
             "updated": False,
             "message": f"Failed to delete LDAP mapper {name}: {str(e)}",
         }
+
+
+def _component_config_first(component, key):
+    config = component.get("config") or {}
+    values = config.get(key)
+    if isinstance(values, list):
+        return values[0] if values else None
+    return values
+
+
+def ldap_mappers_pruned(
+    realm,
+    federation_name,
+    allowed,
+    keep=None,
+    claimed_attributes=None,
+    provider_type="org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """Delete LDAP mappers on a federation provider that are not allowed.
+
+    ``allowed`` is the pillar whitelist and is never deleted. ``keep`` is
+    the Keycloak built-in names that may stay (``username``, ``email``,
+    timestamps). An empty ``allowed`` list is refused.
+
+    A kept built-in whose ``user.model.attribute`` is in
+    ``claimed_attributes`` is still deleted. Keycloak's default ``first
+    name`` mapper writes ``cn`` when the RDN attribute is not ``cn``. That
+    rename conflicts with a mapper that writes ``givenName``. ``last name``
+    conflicts the same way once a pillar mapper owns ``lastName``.
+    """
+    if not allowed:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"refusing to prune LDAP mappers for {federation_name}: allow list is empty",
+        }
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+        realm_id, error = _resolve_realm_id(realm, keycloak_addr, headers, verify)
+        if error:
+            return error
+        federation_id, error = _resolve_federation_id(
+            realm, federation_name, realm_id, keycloak_addr, headers, verify
+        )
+        if error:
+            return error
+
+        status_code, body = _request(
+            "GET", keycloak_addr,
+            f"admin/realms/{realm}/components?parent={federation_id}&type={provider_type}",
+            headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, list):
+            return _http_error(
+                f"Listing LDAP mappers for federation provider {federation_name}",
+                status_code, body,
+            )
+
+        allowed_names = set(allowed)
+        keep_names = set(keep or [])
+        claimed = set(claimed_attributes or [])
+        deleted = []
+        for component in body:
+            name = component.get("name")
+            attr = _component_config_first(component, "user.model.attribute")
+            if name in allowed_names:
+                continue
+            if name in keep_names and attr not in claimed:
+                continue
+            status_code, body = _request(
+                "DELETE", keycloak_addr,
+                f"admin/realms/{realm}/components/{component.get('id')}",
+                headers=headers, verify=verify,
+            )
+            if status_code != 204:
+                return _http_error(
+                    f"Deleting LDAP mapper {name} (removed {deleted})",
+                    status_code, body,
+                )
+            deleted.append(name)
+        if not deleted:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"LDAP mappers for {federation_name} already match the allow list",
+            }
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"Deleted LDAP mappers not on the allow list: {', '.join(deleted)}",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to prune LDAP mappers for {federation_name}: {str(e)}",
+        }

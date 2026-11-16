@@ -345,6 +345,25 @@ kc_{{ realm_name }}_federation_{{ fed_key }}_mapper_{{ mapper_key }}:
     - require:
       - keycloak: kc_{{ realm_name }}_federation_{{ fed_key }}
 {% endfor %}
+
+{# The whitelist is the mapper keys below. Keycloak creates built-ins
+   (username, email, first name, last name, timestamps) when the provider
+   is added. Those are deleted unless a key here has the same name.
+   Name the built-ins you still want. prune_mappers: false leaves them. #}
+{% if fed.get('prune_mappers', true) and fed.get('mappers') %}
+kc_{{ realm_name }}_federation_{{ fed_key }}_mappers_pruned:
+  keycloak.ldap_mappers_pruned:
+    - name: {{ fed_key }}
+    - realm: {{ realm_name }}
+    - federation_name: {{ fed_key }}
+    - allowed: {{ fed.get('mappers', {}).keys() | list | tojson }}
+{{ kc_conn(keycloak_addr, kc_namespace, kc_secret_name, kc_verify) }}
+    - require:
+      - keycloak: kc_{{ realm_name }}_federation_{{ fed_key }}
+{%- for mapper_key in fed.get('mappers', {}).keys() %}
+      - keycloak: kc_{{ realm_name }}_federation_{{ fed_key }}_mapper_{{ mapper_key }}
+{%- endfor %}
+{% endif %}
 {% endfor %}
 
 {% endfor %}
