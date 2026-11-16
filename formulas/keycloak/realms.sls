@@ -238,8 +238,16 @@ kc_{{ realm_name }}_flow_bindings:
 {%- endfor %}
 {% endif %}
 
-{# --- Clients --- #}
+{# --- Clients ---
+   A non-mapping value here is a pillar key indented under clients by
+   mistake. Skip it and fail that key so the rest of the realm still renders. #}
 {% for client_key, client in realm.get('clients', {}).items() %}
+{% if client is not mapping %}
+kc_{{ realm_name }}_client_{{ client_key }}_invalid:
+  test.fail_without_changes:
+    - name: {{ client_key }}
+    - comment: "ldap.realms.{{ realm_name }}.clients.{{ client_key }} is not a client mapping. It is indented under clients."
+{% else %}
 kc_{{ realm_name }}_client_{{ client_key }}:
   keycloak.client_present:
     - name: {{ client_key }}
@@ -303,6 +311,7 @@ kc_{{ realm_name }}_client_{{ client_key }}_default_scope_{{ scope_name }}:
     - require:
       - keycloak: kc_{{ realm_name }}_client_{{ client_key }}
 {% endfor %}
+{% endif %}
 {% endfor %}
 
 {# --- User Federation (e.g. OpenLDAP) --- #}
