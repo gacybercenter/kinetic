@@ -149,7 +149,7 @@ def create_index(
 
 
 def create_role(
-    index_name,
+    index_name=None,
     role_name="fluentbit_role",
     namespace="efk",
     cluster_name="opensearch",
@@ -157,6 +157,7 @@ def create_role(
     index_allowed_actions=None,
     tenant_patterns=None,
     tenant_allowed_actions=None,
+    index_patterns=None,
 ):
     """
     Ensure an OpensearchRole Custom Resource exists with permissions for a specific index.
@@ -168,9 +169,9 @@ def create_role(
     Args:
         index_name (str): Index name/pattern prefix to grant permissions on. A trailing
             "*" is appended automatically (e.g. "openldap-audit-logs-" becomes
-            "openldap-audit-logs-*").
+            "openldap-audit-logs-*"). Ignored when index_patterns is set.
         role_name (str): Name of the OpensearchRole resource (and the resulting
-            OpenSearch role).
+            OpenSearch role). Must be a valid DNS-1123 name.
         namespace (str): Namespace to create the OpensearchRole in. Must match the
             namespace of the OpenSearchCluster it targets.
         cluster_name (str): Name of the OpenSearchCluster this role applies to.
@@ -182,6 +183,9 @@ def create_role(
             If omitted, no tenantPermissions block is added.
         tenant_allowed_actions (list, optional): Allowed actions for the tenant patterns.
             Defaults to ["kibana_all_read"] when tenant_patterns is set.
+        index_patterns (list, optional): Exact index patterns (no auto-appended "*").
+            Use this when a role needs multiple patterns or a name that must not
+            gain a trailing wildcard (e.g. ".opendistro-alerting-config").
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
@@ -191,6 +195,17 @@ def create_role(
             "success": False,
             "updated": False,
             "message": 'The kubernetes python library is not installed. Please install it using "pip install kubernetes".',
+        }
+
+    if index_patterns:
+        patterns = list(index_patterns)
+    elif index_name:
+        patterns = [f"{index_name}*"]
+    else:
+        return {
+            "success": False,
+            "updated": False,
+            "message": "create_role requires index_name or index_patterns",
         }
 
     try:
@@ -206,7 +221,7 @@ def create_role(
             or ["cluster_composite_ops", "indices_monitor"],
             "indexPermissions": [
                 {
-                    "indexPatterns": [f"{index_name}*"],
+                    "indexPatterns": patterns,
                     "allowedActions": index_allowed_actions
                     or [
                         "read",
@@ -293,7 +308,7 @@ def create_role(
 
 def map_user_to_role(
     role_name="fluentbit_role",
-    user_name="fluentbit",
+    user_name=None,
     namespace="efk",
     cluster_name="opensearch",
     backend_roles=None,
@@ -307,7 +322,8 @@ def map_user_to_role(
 
     Args:
         role_name (str): Name of the OpensearchRole (or built-in role) to bind.
-        user_name (str): Name of the OpenSearch user to bind to the role.
+        user_name (str): Name of the OpenSearch user to bind to the role. Optional
+            when backend_roles is set (backend-role-only mapping).
         namespace (str): Namespace to create the OpensearchUserRoleBinding in. Must
             match the namespace of the OpenSearchCluster it targets.
         cluster_name (str): Name of the OpenSearchCluster this binding applies to.
@@ -323,7 +339,14 @@ def map_user_to_role(
             "message": 'The kubernetes python library is not installed. Please install it using "pip install kubernetes".',
         }
 
-    binding_name = f"{role_name}-{user_name}"
+    if not user_name and not backend_roles:
+        return {
+            "success": False,
+            "updated": False,
+            "message": "map_user_to_role requires user_name or backend_roles",
+        }
+
+    binding_name = f"{role_name}-{user_name}" if user_name else f"{role_name}-backend"
 
     try:
         _load_k8s_config()
@@ -335,8 +358,9 @@ def map_user_to_role(
         spec = {
             "opensearchCluster": {"name": cluster_name},
             "roles": [role_name],
-            "users": [user_name],
         }
+        if user_name:
+            spec["users"] = [user_name]
         if backend_roles:
             spec["backendRoles"] = backend_roles
 
@@ -401,4 +425,156 @@ def map_user_to_role(
             "success": False,
             "updated": False,
             "message": f"Failed to create/update OpensearchUserRoleBinding {binding_name}: {str(e)[:150]}",
+        }
+
+
+_MONITOR_RUNTIME_KEYS = (
+    "enabled_time",
+    "last_update_time",
+    "user",
+    "schema_version",
+    "id",
+    "monitor_id",
+)
+
+
+def _os_admin_auth(admin_user, admin_password):
+    """Return (user, password) using pillar when password is omitted."""
+    if admin_password is None:
+        admin_password = __salt__["pillar.get"]("opensearch_admin_password", "")
+    return admin_user, admin_password
+
+
+def _iter_monitor_hits(data):
+    """Yield (id, monitor_body) from a monitors/_search response."""
+    hits = (data.get("hits") or {}).get("hits") or []
+    for hit in hits:
+        source = hit.get("_source") or {}
+        if isinstance(source.get("monitor"), dict):
+            monitor = source["monitor"]
+        else:
+            monitor = source
+        yield hit.get("_id"), monitor
+
+
+def _comparable_monitor(body):
+    """Strip runtime fields so create vs existing can be compared."""
+    if not isinstance(body, dict):
+        return {}
+    comparable = {k: v for k, v in body.items() if k not in _MONITOR_RUNTIME_KEYS}
+    triggers = []
+    for trigger in comparable.get("triggers") or []:
+        if isinstance(trigger, dict):
+            triggers.append({k: v for k, v in trigger.items() if k != "id"})
+        else:
+            triggers.append(trigger)
+    comparable["triggers"] = triggers
+    return comparable
+
+
+def search_monitors(
+    search_body,
+    admin_user="admin",
+    admin_password=None,
+    host="https://api.logger.services.gacyberrange.org:443",
+):
+    """
+    Search Alerting monitors via POST /_plugins/_alerting/monitors/_search.
+
+    OpenSearch 2.11 returns 405 for GET /_plugins/_alerting/monitors. Always
+    POST the search API with a JSON body.
+    """
+    try:
+        admin_user, admin_password = _os_admin_auth(admin_user, admin_password)
+        url = f"{host}/_plugins/_alerting/monitors/_search"
+        response = requests.post(
+            url,
+            auth=HTTPBasicAuth(admin_user, admin_password),
+            json=search_body,
+            verify=False,
+        )
+        response.raise_for_status()
+        return {
+            "success": True,
+            "data": response.json(),
+            "message": "Monitor search succeeded",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "data": {},
+            "message": f"Failed to search monitors: {str(e)[:150]}...",
+        }
+
+
+def ensure_monitor(
+    monitor_name,
+    monitor_body,
+    admin_user="admin",
+    admin_password=None,
+    host="https://api.logger.services.gacyberrange.org:443",
+):
+    """
+    Ensure an Alerting monitor exists with the given body.
+
+    Lists with POST /_plugins/_alerting/monitors/_search (JSON body). Creates
+    with POST /_plugins/_alerting/monitors. Updates with PUT
+    /_plugins/_alerting/monitors/<id>. Does not GET /_plugins/_alerting/monitors.
+    """
+    try:
+        admin_user, admin_password = _os_admin_auth(admin_user, admin_password)
+        search_result = search_monitors(
+            search_body={"query": {"match": {"monitor.name": monitor_name}}},
+            admin_user=admin_user,
+            admin_password=admin_password,
+            host=host,
+        )
+        if not search_result["success"]:
+            return {
+                "success": False,
+                "updated": False,
+                "message": search_result["message"],
+            }
+
+        existing_id = None
+        existing_body = None
+        for hit_id, monitor in _iter_monitor_hits(search_result["data"]):
+            if monitor.get("name") == monitor_name:
+                existing_id = hit_id
+                existing_body = monitor
+                break
+
+        desired = dict(monitor_body)
+        desired["name"] = monitor_name
+        if _comparable_monitor(existing_body) == _comparable_monitor(desired):
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"Monitor {monitor_name} already up-to-date",
+            }
+
+        auth = HTTPBasicAuth(admin_user, admin_password)
+        if existing_id:
+            url = f"{host}/_plugins/_alerting/monitors/{existing_id}"
+            response = requests.put(url, auth=auth, json=desired, verify=False)
+            response.raise_for_status()
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"Monitor {monitor_name} updated",
+            }
+
+        url = f"{host}/_plugins/_alerting/monitors"
+        response = requests.post(url, auth=auth, json=desired, verify=False)
+        response.raise_for_status()
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"Monitor {monitor_name} created",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to ensure monitor {monitor_name}: {str(e)[:150]}...",
         }

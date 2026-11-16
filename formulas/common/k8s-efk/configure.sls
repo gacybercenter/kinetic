@@ -89,3 +89,90 @@ map_fluentbit_user_to_kc_role:
     - cluster_name: opensearch
     - require:
       - opensearch: create_fluentbit_kc_role
+
+# 3.3.9 — persist proven Security API roles (OpenSearch 2.11, 201).
+# OpensearchRole names are DNS-1123. Do not replace fluentbit / log-kc-writer /
+# log-ldap-writer / audit-logs / dashboard_reader / all_access.
+create_audit_reader_role:
+  opensearch.role_present:
+    - name: create_audit_reader_role
+    - role_name: audit-reader
+    - index_patterns:
+      - "keycloak-logs-*"
+      - "openldap-audit-logs-*"
+    - cluster_permissions:
+      - cluster_monitor
+      - "cluster:monitor/health"
+    - index_allowed_actions:
+      - read
+      - "indices:admin/mappings/get"
+    - tenant_patterns:
+      - global_tenant
+    - tenant_allowed_actions:
+      - kibana_all_read
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - cluster_name: opensearch
+    - require:
+      - k8s: fluentbit_user_cr
+
+map_audit_reader_backend_roles:
+  opensearch.user_role_mapping_present:
+    - name: map_audit_reader_backend_roles
+    - role_name: audit-reader
+    - backend_roles:
+      - se_cyber
+      - ro
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - cluster_name: opensearch
+    - require:
+      - opensearch: create_audit_reader_role
+
+create_audit_admin_role:
+  opensearch.role_present:
+    - name: create_audit_admin_role
+    - role_name: audit-admin
+    - index_patterns:
+      - "keycloak-logs-*"
+      - "openldap-audit-logs-*"
+      - ".opendistro-alerting-config"
+    - cluster_permissions:
+      - cluster_monitor
+      - "cluster:admin/opendistro/alerting/*"
+      - "cluster:admin/opendistro/alerting/monitor/*"
+    - index_allowed_actions:
+      - read
+      - write
+      - "indices:admin/mappings/get"
+    - tenant_patterns:
+      - global_tenant
+    - tenant_allowed_actions:
+      - kibana_all_write
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - cluster_name: opensearch
+    - require:
+      - k8s: fluentbit_user_cr
+
+# Map admins to audit-admin in addition to existing all_access (do not replace).
+map_audit_admin_backend_roles:
+  opensearch.user_role_mapping_present:
+    - name: map_audit_admin_backend_roles
+    - role_name: audit-admin
+    - backend_roles:
+      - admins
+    - namespace: {{ pillar.get('efk_namespace', 'efk') }}
+    - cluster_name: opensearch
+    - require:
+      - opensearch: create_audit_admin_role
+
+# 3.3.4 — keycloak-index-freshness. Query/schedule hardcoded; enabled and
+# destination/actions from pillar opensearch_alerting:freshness_monitor.
+# Default destination type is email. Empty actions is OK if pillar has no To:.
+# Do not stop Fluent Bit on shared test to prove the alert.
+keycloak_index_freshness_monitor:
+  opensearch.monitor_present:
+    - name: keycloak-index-freshness
+    - monitor_name: keycloak-index-freshness
+    - admin_user: admin
+    - admin_password: {{ opensearch_admin_password | tojson }}
+    - require:
+      - opensearch: map_audit_admin_backend_roles

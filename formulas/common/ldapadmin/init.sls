@@ -1,2 +1,2 @@
 include:
-  - /formulas/common/ldapadmin/configure
+  - /formulas/common/ldapadmin/prov

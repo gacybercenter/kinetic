@@ -23,6 +23,40 @@ my-nginx:
     - version: 15.0.0
 ```
 
+`pillar_key` is resolved with `pillar.get(pillar_key, {})`, so Salt's
+colon-delimited nested-key lookup applies - `helm:nginx:values` reads
+`pillar['helm']['nginx']['values']`, and that entire dict is passed to Helm
+as the chart's values (equivalent to a `values.yaml`). For the example
+above, a matching pillar entry would look like:
+
+```yaml
+helm:
+  nginx:
+    values:
+      replicaCount: 2
+      image:
+        registry: docker.io
+        repository: bitnami/nginx
+        tag: 1.27.0
+      service:
+        type: ClusterIP
+        ports:
+          http: 80
+      ingress:
+        enabled: false
+      resources:
+        limits:
+          cpu: "500m"
+          memory: "256Mi"
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+```
+
+The exact keys available depend on the chart/version being installed (the
+sample above matches the Bitnami nginx chart's common options) - check the
+chart's own `values.yaml`/README for the authoritative schema.
+
 ### OCI chart
 
 ```yaml
