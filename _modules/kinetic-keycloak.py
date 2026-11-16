@@ -61,7 +61,7 @@ def _load_k8s_config():
         config.load_kube_config()
 
 
-def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_data=None):
+def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_data=None, timeout=15):
     """
     Make an HTTP request against the Keycloak Admin API through the
     Kubernetes API server service proxy. This works even when the Keycloak
@@ -112,7 +112,7 @@ def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_
             auth_settings=["BearerToken"],
             _preload_content=False,
             _return_http_data_only=True,
-            _request_timeout=15,
+            _request_timeout=timeout,
         )
         status_code = resp.status
         raw = resp.data
@@ -135,7 +135,7 @@ def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_
     return status_code, body_out
 
 
-def _request(method, addr, path, headers=None, payload=None, form_data=None, verify=False):
+def _request(method, addr, path, headers=None, payload=None, form_data=None, verify=False, timeout=15):
     """
     Make an HTTP request against the Keycloak Admin API.
 
@@ -150,14 +150,15 @@ def _request(method, addr, path, headers=None, payload=None, form_data=None, ver
     """
     if addr.startswith("k8s://"):
         return _request_via_k8s_proxy(
-            method, addr, path, headers=headers, payload=payload, form_data=form_data
+            method, addr, path, headers=headers, payload=payload, form_data=form_data,
+            timeout=timeout,
         )
 
     url = f"{addr}/{path}"
     request_kwargs = {
         "headers": dict(headers) if headers else {},
         "verify": verify,
-        "timeout": 15,
+        "timeout": timeout,
     }
     if form_data is not None:
         request_kwargs["data"] = form_data
@@ -2538,4 +2539,200 @@ def ldap_mapper_absent(
             "success": False,
             "updated": False,
             "message": f"Failed to delete LDAP mapper {name}: {str(e)}",
+        }
+
+
+def _component_config_first(component, key):
+    config = component.get("config") or {}
+    values = config.get(key)
+    if isinstance(values, list):
+        return values[0] if values else None
+    return values
+
+
+def ldap_mappers_pruned(
+    realm,
+    federation_name,
+    allowed,
+    keep=None,
+    claimed_attributes=None,
+    provider_type="org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+):
+    """Delete LDAP mappers on a federation provider that are not allowed.
+
+    ``allowed`` is the pillar whitelist and is never deleted. ``keep`` is
+    the Keycloak built-in names that may stay (``username``, ``email``,
+    timestamps). An empty ``allowed`` list is refused.
+
+    A kept built-in whose ``user.model.attribute`` is in
+    ``claimed_attributes`` is still deleted. Keycloak's default ``first
+    name`` mapper writes ``cn`` when the RDN attribute is not ``cn``. That
+    rename conflicts with a mapper that writes ``givenName``. ``last name``
+    conflicts the same way once a pillar mapper owns ``lastName``.
+    """
+    if not allowed:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"refusing to prune LDAP mappers for {federation_name}: allow list is empty",
+        }
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+        realm_id, error = _resolve_realm_id(realm, keycloak_addr, headers, verify)
+        if error:
+            return error
+        federation_id, error = _resolve_federation_id(
+            realm, federation_name, realm_id, keycloak_addr, headers, verify
+        )
+        if error:
+            return error
+
+        status_code, body = _request(
+            "GET", keycloak_addr,
+            f"admin/realms/{realm}/components?parent={federation_id}&type={provider_type}",
+            headers=headers, verify=verify,
+        )
+        if status_code != 200 or not isinstance(body, list):
+            return _http_error(
+                f"Listing LDAP mappers for federation provider {federation_name}",
+                status_code, body,
+            )
+
+        allowed_names = set(allowed)
+        keep_names = set(keep or [])
+        claimed = set(claimed_attributes or [])
+        deleted = []
+        for component in body:
+            name = component.get("name")
+            attr = _component_config_first(component, "user.model.attribute")
+            if name in allowed_names:
+                continue
+            if name in keep_names and attr not in claimed:
+                continue
+            status_code, body = _request(
+                "DELETE", keycloak_addr,
+                f"admin/realms/{realm}/components/{component.get('id')}",
+                headers=headers, verify=verify,
+            )
+            if status_code != 204:
+                return _http_error(
+                    f"Deleting LDAP mapper {name} (removed {deleted})",
+                    status_code, body,
+                )
+            deleted.append(name)
+        if not deleted:
+            return {
+                "success": True,
+                "updated": False,
+                "message": f"LDAP mappers for {federation_name} already match the allow list",
+            }
+        return {
+            "success": True,
+            "updated": True,
+            "message": f"Deleted LDAP mappers not on the allow list: {', '.join(deleted)}",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to prune LDAP mappers for {federation_name}: {str(e)}",
+        }
+
+
+def ldap_federation_sync(
+    realm,
+    federation_name,
+    action="triggerFullSync",
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+    timeout=120,
+):
+    """Import LDAP users and group mappings into Keycloak.
+
+    ``triggerChangedUsersSync`` only notices user modifyTimestamp. A group
+    membership change updates the group, not the user, so the default is a
+    full sync. That also runs each mapper's federation-to-Keycloak sync.
+
+    Keycloak Admin REST API:
+        POST admin/realms/{realm}/user-storage/{id}/sync?action=triggerFullSync
+    """
+    if action not in ("triggerFullSync", "triggerChangedUsersSync"):
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"unsupported LDAP sync action {action}",
+        }
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+        realm_id, error = _resolve_realm_id(realm, keycloak_addr, headers, verify)
+        if error:
+            return error
+        federation_id, error = _resolve_federation_id(
+            realm, federation_name, realm_id, keycloak_addr, headers, verify
+        )
+        if error:
+            return error
+        status_code, body = _request(
+            "POST", keycloak_addr,
+            f"admin/realms/{realm}/user-storage/{federation_id}/sync?action={action}",
+            headers=headers, verify=verify, timeout=timeout,
+        )
+        if status_code not in (200, 204):
+            return _http_error(
+                f"Syncing LDAP federation {federation_name} in realm {realm}",
+                status_code, body,
+            )
+        counts = body if isinstance(body, dict) else {}
+        changed = any(int(counts.get(key) or 0) for key in ("added", "updated", "removed"))
+        status = counts.get("status") or action
+        return {
+            "success": True,
+            "updated": changed,
+            "message": (
+                f"LDAP sync {status} for {federation_name}: "
+                f"added={counts.get('added', 0)} updated={counts.get('updated', 0)} "
+                f"removed={counts.get('removed', 0)} failed={counts.get('failed', 0)}"
+            ),
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to sync LDAP federation {federation_name}: {str(e)}",
         }

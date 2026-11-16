@@ -6,10 +6,12 @@
 #
 #   ldap:
 #     users:
-#       - uid: mdanielson
-#         cn: "Mark Danielson"
-#         sn: Danielson
-#         description: "..."         # optional; defaults to cn (LDAP rejects an empty string here)
+#       - givenName: Michael           # required, with sn and mail
+#         sn: Carpenter                # required
+#         mail: mcarpenter@augusta.edu # required
+#         uid: mcarpenter              # optional; first letter of givenName + sn
+#         cn: mcarpenter               # optional; same default as uid. This is the RDN.
+#         description: "..."         # optional; defaults to cn
 #         pass: "..."                # optional, GPG-encrypted in practice
 #         kubernetes:                # optional
 #           cluster_roles: [...]
@@ -32,14 +34,11 @@
 #                                    # uid matches a user defined above
 #         kubernetes:                # optional, same shape as above
 #           cluster_roles: [...]
-#       - cn: se_cyber
-#         member_groups: [admins]    # group cns; resolved to group DNs when
-#                                    # the cn matches another group defined
-#                                    # here. groupOfNames requires at least
-#                                    # one member - use member_groups (e.g.
-#                                    # nesting the admins group) instead of
-#                                    # letting the group default to a
-#                                    # self-reference.
+#       - cn: os-enabled
+#         member_groups: [admins]    # flattened to the member uids of those
+#                                    # groups before the LDAP group is written.
+#                                    # Keycloak does not expand a group DN in
+#                                    # member. A missing child group fails.
 #
 # Note: `kubernetes.roles`/`kubernetes.cluster_roles` bind an *existing*
 # Role/ClusterRole (built-in or one of this entry's own `custom_roles`).
@@ -59,20 +58,73 @@
 {% set service_pwd_policy_dn = "cn=service," ~ policies_base_dn %}
 {% set ldap_database_dn = pillar['ldap'].get('database_dn', 'olcDatabase={2}mdb,cn=config') %}
 
-{# Map uid -> DN and uid -> ldap state id, for resolving group members that
-   are managed here (human users under ou=users). Service accounts are bind
-   DNs (organizationalRole), not inetOrgPerson, so they are not group members. #}
-{% set uid_to_dn = {} %}
-{% set uid_to_state = {} %}
+{# givenName, sn, and mail are required. uid and cn default to the first
+   letter of givenName plus sn, lowercased, with spaces and apostrophes
+   removed: Michael Carpenter -> mcarpenter. An explicit uid or cn is kept.
+   cn is the RDN, so omitting it on an existing user renames the entry. #}
+{% set ldap_users = [] %}
 {% for user in pillar['ldap'].get('users', []) %}
+{% set given_name = (user.get('givenName') or '') | trim %}
+{% set surname = (user.get('sn') or '') | trim %}
+{% set mail = (user.get('mail') or '') | trim %}
+{% set derived = (given_name[:1] ~ surname) | lower | replace(' ', '') | replace("'", '') | replace('-', '') %}
+{% set missing = [] %}
+{% if not given_name %}{% do missing.append('givenName') %}{% endif %}
+{% if not surname %}{% do missing.append('sn') %}{% endif %}
+{% if not mail %}{% do missing.append('mail') %}{% endif %}
+{% set uid = user.get('uid') or derived %}
+{% set cn = user.get('cn') or derived %}
+{% do ldap_users.append({
+  'uid': uid,
+  'cn': cn,
+  'sn': surname,
+  'givenName': given_name,
+  'mail': mail,
+  'description': user.get('description', cn),
+  'pass': user.get('pass'),
+  'kubernetes': user.get('kubernetes'),
+  'missing': missing,
+}) %}
+{% endfor %}
+
+{# Map uid -> user DN, for resolving group members that are managed here. #}
+{% set uid_to_dn = {} %}
+{% for user in ldap_users if not user['missing'] %}
 {% do uid_to_dn.update({user['uid']: "cn=" ~ user['cn'] ~ "," ~ users_base_dn}) %}
 {% do uid_to_state.update({user['uid']: "ldap_user_" ~ user['uid']}) %}
 {% endfor %}
 
-{# Map cn -> group DN, for resolving nested group members (member_groups). #}
+{# Map cn -> group DN, and flatten member_groups to user uids. A child
+   group listed later in the pillar is still expanded. Cycles stop once no
+   new uid is added. The LDAP member attribute gets user DNs only. #}
 {% set cn_to_dn = {} %}
+{% set group_direct = {} %}
+{% set group_children = {} %}
 {% for group in pillar['ldap'].get('groups', []) %}
 {% do cn_to_dn.update({group['cn']: "cn=" ~ group['cn'] ~ "," ~ groups_base_dn}) %}
+{% do group_direct.update({group['cn']: group.get('members', [])}) %}
+{% do group_children.update({group['cn']: group.get('member_groups', [])}) %}
+{% endfor %}
+{% set flat_members = {} %}
+{% for cn, members in group_direct.items() %}
+{% set seen = [] %}
+{% for member in members %}
+{% if member not in seen %}
+{% do seen.append(member) %}
+{% endif %}
+{% endfor %}
+{% do flat_members.update({cn: seen}) %}
+{% endfor %}
+{% for _pass in range(group_children | length) %}
+{% for cn, children in group_children.items() %}
+{% for child in children if child in flat_members %}
+{% for member in flat_members[child] %}
+{% if member not in flat_members[cn] %}
+{% do flat_members[cn].append(member) %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
 {% endfor %}
 
 {# ------------------------------------------------------------------------
@@ -302,17 +354,24 @@ ensure_service_pwd_policy:
 # ==========================================================================
 # Users
 # ==========================================================================
-{% for user in pillar['ldap'].get('users', []) %}
-
+{% for user in ldap_users %}
+{% if user['missing'] %}
+ldap_user_missing_{{ loop.index }}:
+  test.fail_without_changes:
+    - name: ldap user {{ loop.index }}
+    - comment: "ldap.users entry {{ loop.index }} is missing {{ user['missing'] | join(', ') }}. givenName, sn, and mail are required."
+{% else %}
 ldap_user_{{ user['uid'] }}:
   ldap.user_present:
     - name: ldap_user_{{ user['uid'] }}
     - spec_name: ldap_keycloak_connection
     - base_dn: {{ users_base_dn }}
-    - uid: {{ user['uid'] }}
+    - uid: {{ user['uid'] | yaml_dquote }}
     - cn: {{ user['cn'] | yaml_dquote }}
-    - sn: {{ user.get('sn', user['uid']) | yaml_dquote }}
-    - description: {{ user.get('description', user['cn']) | yaml_dquote }}
+    - sn: {{ user['sn'] | yaml_dquote }}
+    - given_name: {{ user['givenName'] | yaml_dquote }}
+    - mail: {{ user['mail'] | yaml_dquote }}
+    - description: {{ user['description'] | yaml_dquote }}
 {%- if user.get('pass') %}
     - password: {{ user['pass'] | yaml_dquote }}
 {%- endif %}
@@ -322,6 +381,7 @@ ldap_user_{{ user['uid'] }}:
 
 {% if user.get('kubernetes') %}
 {{ k8s_rbac_for('user', user['uid'], user['kubernetes'], 'users', 'ldap_user_' ~ user['uid']) }}
+{% endif %}
 {% endif %}
 {% endfor %}
 
@@ -358,14 +418,30 @@ ldap_service_{{ service_cn }}:
 # Groups
 # ==========================================================================
 {% for group in pillar['ldap'].get('groups', []) %}
-{% set member_dns = [] %}
-{% for member in group.get('members', []) %}
-{% do member_dns.append(uid_to_dn.get(member, member)) %}
+{% set unresolved = [] %}
+{% for member in flat_members.get(group['cn'], []) if member not in uid_to_dn %}
+{% do unresolved.append(member) %}
 {% endfor %}
-{% for member_group in group.get('member_groups', []) %}
-{% do member_dns.append(cn_to_dn.get(member_group, member_group)) %}
+{% set member_dns = [] %}
+{% for member in flat_members.get(group['cn'], []) if member in uid_to_dn %}
+{% do member_dns.append(uid_to_dn[member]) %}
 {% endfor %}
 
+{% for child in group.get('member_groups', []) if child not in cn_to_dn %}
+ldap_group_{{ group['cn'] }}_missing_{{ child }}:
+  test.fail_without_changes:
+    - name: {{ child }}
+    - comment: "ldap.groups {{ group['cn'] }} member_groups entry {{ child }} is not a group in this pillar"
+{% endfor %}
+
+{% if unresolved %}
+{# A bare uid is not a DN. Skipping the update leaves the existing member
+   list alone instead of dropping people who failed user validation. #}
+ldap_group_{{ group['cn'] }}_unresolved:
+  test.fail_without_changes:
+    - name: {{ group['cn'] }}
+    - comment: "ldap.groups {{ group['cn'] }} members are not resolvable users: {{ unresolved | join(', ') }}. Each needs givenName, sn, and mail, or an explicit uid and cn."
+{% else %}
 ldap_group_{{ group['cn'] }}:
   ldap.group_present:
     - name: ldap_group_{{ group['cn'] }}
@@ -379,14 +455,50 @@ ldap_group_{{ group['cn'] }}:
     - require:
       - ldap: ensure_ldap_connect_spec
       - ldap: ensure_ldap_ous
-{%- for member in group.get('members', []) if member in uid_to_state %}
-      - ldap: {{ uid_to_state[member] }}
-{%- endfor %}
-{%- for member_group in group.get('member_groups', []) if member_group in cn_to_dn and member_group != group['cn'] %}
-      - ldap: ldap_group_{{ member_group }}
+{%- for member in flat_members.get(group['cn'], []) if member in uid_to_dn %}
+      - ldap: ldap_user_{{ member }}
 {%- endfor %}
 
 {% if group.get('kubernetes') %}
 {{ k8s_rbac_for('group', group['cn'], group['kubernetes'], 'groups', 'ldap_group_' ~ group['cn']) }}
 {% endif %}
+{% endif %}
 {% endfor %}
+
+{# Pull the directory into Keycloak after the writes. Full sync, not the
+   changed-users sync: a group member update does not touch the user entry.
+   Skip when this pillar has no Keycloak admin connection. #}
+{% set kc = pillar.get('res-k8s', {}).get('keycloak', {}) %}
+{% set kc_conn = kc.get('connection', {}) %}
+{% set synced_groups = [] %}
+{% for group in pillar['ldap'].get('groups', []) %}
+{% set unresolved = [] %}
+{% for member in flat_members.get(group['cn'], []) if member not in uid_to_dn %}
+{% do unresolved.append(member) %}
+{% endfor %}
+{% if not unresolved %}
+{% do synced_groups.append(group['cn']) %}
+{% endif %}
+{% endfor %}
+{% if kc_conn %}
+{% for realm_name, realm in pillar.get('ldap', {}).get('realms', {}).items() %}
+{% for fed_key in realm.get('user_federation', {}) %}
+keycloak_ldap_sync_{{ realm_name }}_{{ fed_key }}:
+  keycloak.ldap_federation_sync:
+    - name: {{ fed_key }}
+    - realm: {{ realm_name }}
+    - federation_name: {{ fed_key }}
+    - action: triggerFullSync
+    - timeout: 120
+    - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
+    - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
+    - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}
+    - verify: {{ kc_conn.get('verify', false) }}
+    - require:
+      - ldap: ensure_ldap_ous
+{%- for group_cn in synced_groups %}
+      - ldap: ldap_group_{{ group_cn }}
+{%- endfor %}
+{% endfor %}
+{% endfor %}
+{% endif %}
