@@ -1,4 +1,12 @@
-# Fetch pillar data for the 'bmo' minion to get VIP and other configurations
+# Join a node to an already-bootstrapped cluster.
+# bootstrap_node is the control-plane minion that already has kubeadm
+# (VIP and interface come from that minion's res-k8s pillar).
+# node_to_join is the minion to add. Control-plane vs worker is decided
+# from that minion's bmh.<node>.k8s_control_plane pillar, not this command.
+#
+# pepper --client=runner state.orchestrate orch.k8s-join \
+#   pillar='{"bootstrap_node": "master-rsc-0", "node_to_join": "worker-rsc-1"}'
+
 {% set bootstrap_node = salt['pillar.get']('bootstrap_node') %}
 {% set pillardata = salt.saltutil.runner('pillar.show_pillar', kwarg={'minion': bootstrap_node}) %}
 {% set res_k8s = pillardata['res-k8s'] %}
