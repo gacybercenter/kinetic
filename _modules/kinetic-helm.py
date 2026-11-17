@@ -7,6 +7,7 @@ in Kubernetes, using in-memory dictionaries for values or fetching them from pil
 """
 
 import json
+import os
 import tempfile
 
 import salt.utils.decorators as decorators
@@ -27,25 +28,121 @@ def __virtual__():
     )
 
 
-def helm_repo_present(repo_name, repo_url, update_cache=True):
+def _redact(text, secret):
+    """Drop a secret from command output before it can be returned or logged."""
+    if not text:
+        return ""
+    if secret:
+        return text.replace(secret, "***")
+    return text
+
+
+def _run_helm(cmd, stdin=None):
+    """Run a helm command without a shell. Optional stdin is not placed in argv."""
+    kwargs = {"python_shell": False}
+    if stdin is not None:
+        kwargs["stdin"] = stdin
+    result = __salt__["cmd.run_all"](cmd, **kwargs)
+    output = (result.get("stdout") or "") + (result.get("stderr") or "")
+    return result.get("retcode", 1), output
+
+
+def _stored_helm_repo(repo_name):
+    """Return the repositories.yaml entry for repo_name.
+
+    {} means the config was readable and the repo is absent.
+    None means the config could not be read, so stored credentials
+    cannot be compared.
+    """
+    retcode, output = _run_helm(["helm", "env"])
+    if retcode != 0:
+        return None
+    path = ""
+    for line in output.splitlines():
+        if line.startswith("HELM_REPOSITORY_CONFIG="):
+            path = line.split("=", 1)[1].strip().strip("'\"")
+            break
+    # Missing config is a first add, not an unreadable credential store.
+    if not path or not os.path.isfile(path):
+        return {}
+    try:
+        import yaml
+
+        with open(path, "r", encoding="utf-8") as handle:
+            data = yaml.safe_load(handle) or {}
+    except Exception:
+        return None
+    for repo in data.get("repositories") or []:
+        if isinstance(repo, dict) and repo.get("name") == repo_name:
+            return repo
+    return {}
+
+
+def helm_repo_present(
+    repo_name,
+    repo_url,
+    update_cache=True,
+    username=None,
+    password=None,
+    password_pillar=None,
+):
     """
     Ensure that a Helm repository is added or updated with the specified URL.
+
+    Authenticated repositories (for example NGC) take ``username`` plus either
+    ``password`` or ``password_pillar``. The password is sent to
+    ``helm repo add --password-stdin`` and is never placed on the command line.
+    Prefer ``password_pillar`` so the secret is resolved on the minion and is
+    not rendered into a state file. ``password_pillar`` wins when both are set.
 
     Args:
         repo_name (str): The name of the Helm repository.
         repo_url (str): The URL of the Helm repository.
         update_cache (bool, optional): Whether to update the Helm repository cache after adding or updating. Defaults to True.
+        username (str, optional): Basic-auth username. NGC uses the literal ``$oauthtoken``.
+        password (str, optional): Basic-auth password or API key. Prefer ``password_pillar``.
+        password_pillar (str, optional): Pillar key (colon-delimited) holding the password or API key.
 
     Returns:
         dict: A dictionary with 'success' (bool), 'updated' (bool), and 'message' (str).
 
     CLI Example:
         salt '*' kinetic-helm.helm_repo_present my-repo https://charts.example.com update_cache=False
+        salt '*' kinetic-helm.helm_repo_present runai https://helm.ngc.nvidia.com/nvidia/runai username='$oauthtoken' password_pillar='res-k8s:runai:ngc_api_key'
     """
     try:
         repo_updated = False
         repo_exists = False
         message = f"Configuring Helm repository {repo_name}"
+
+        if password_pillar:
+            resolved = __salt__["pillar.get"](password_pillar, None)
+            if not isinstance(resolved, str) or not resolved.strip():
+                return {
+                    "success": False,
+                    "updated": False,
+                    "message": (
+                        f"Helm repository {repo_name} password_pillar "
+                        f"{password_pillar} is missing or empty"
+                    ),
+                }
+            password = resolved.strip()
+        elif isinstance(password, str):
+            password = password.strip()
+
+        if username:
+            username = username.strip()
+        if bool(username) != bool(password):
+            return {
+                "success": False,
+                "updated": False,
+                "message": (
+                    f"Helm repository {repo_name} needs both username and "
+                    "password (or password_pillar), or neither"
+                ),
+            }
+        if username:
+            message += f"; authenticating as {username}"
 
         # Step 1: Check if repository exists
         repo_list_cmd = ["helm", "repo", "list", "-o", "json"]
@@ -62,13 +159,32 @@ def helm_repo_present(repo_name, repo_url, update_cache=True):
                             repo_updated = True
                         break
             except json.JSONDecodeError:
-                message += f"; Failed to parse Helm repo list output"
+                message += "; Failed to parse Helm repo list output"
                 repo_exists = False
         else:
             repo_exists = False
 
+        # helm repo list does not show stored credentials. Compare
+        # repositories.yaml so an unchanged API key is not rewritten
+        # on every run, and a rotated key is applied.
+        needs_add = (not repo_exists) or repo_updated
+        if username:
+            stored = _stored_helm_repo(repo_name)
+            if stored is None:
+                needs_add = True
+                message += "; stored credentials could not be verified"
+            elif (
+                stored.get("url") != repo_url
+                or stored.get("username") != username
+                or stored.get("password") != password
+            ):
+                needs_add = True
+            else:
+                needs_add = False
+                repo_exists = True
+
         # Step 2: Add or update repository if necessary
-        if not repo_exists or repo_updated:
+        if needs_add:
             repo_add_cmd = [
                 "helm",
                 "repo",
@@ -77,46 +193,66 @@ def helm_repo_present(repo_name, repo_url, update_cache=True):
                 repo_url,
                 "--force-update",
             ]
-            repo_add_result = __salt__["cmd.run"](
-                repo_add_cmd, python_shell=False, ignore_retcode=True
-            )
-            if repo_add_result and "error" in repo_add_result.lower():
+            stdin = None
+            if username:
+                # List args, not a shell, so a username of $oauthtoken is literal.
+                # The secret is stdin, not --password, so it stays out of argv.
+                repo_add_cmd.extend(["--username", username, "--password-stdin"])
+                stdin = password
+            retcode, repo_add_result = _run_helm(repo_add_cmd, stdin=stdin)
+            if retcode != 0:
+                safe = _redact(repo_add_result, password)
                 return {
                     "success": False,
                     "updated": False,
-                    "message": f"Failed to add/update Helm repository {repo_name}: {repo_add_result[:100]}...; {message}",
+                    "message": (
+                        f"Failed to add/update Helm repository {repo_name}: "
+                        f"{safe[:200]}; {message}"
+                    ),
                 }
             repo_updated = True
             message += f"; Helm repository {repo_name} added or updated"
 
             # Step 3: Update repo cache if update_cache is True
             if update_cache:
-                repo_update_cmd = ["helm", "repo", "update"]
-                repo_update_result = __salt__["cmd.run"](
-                    repo_update_cmd, python_shell=False, ignore_retcode=True
-                )
-                if repo_update_result and "error" in repo_update_result.lower():
+                retcode, repo_update_result = _run_helm(["helm", "repo", "update"])
+                if retcode != 0:
+                    safe = _redact(repo_update_result, password)
                     return {
                         "success": False,
                         "updated": repo_updated,
-                        "message": f"Failed to update Helm repositories: {repo_update_result[:100]}...; {message}",
+                        "message": (
+                            f"Failed to update Helm repositories: {safe[:200]}; "
+                            f"{message}"
+                        ),
                     }
-                message += f"; Helm repositories updated"
+                message += "; Helm repositories updated"
             else:
-                message += f"; Helm repository cache update skipped as per request"
+                message += "; Helm repository cache update skipped as per request"
         else:
-            message += f"; Helm repository {repo_name} already exists and up-to-date"
+            if username:
+                message += (
+                    f"; Helm repository {repo_name} already exists "
+                    "and credentials match"
+                )
+            else:
+                message += (
+                    f"; Helm repository {repo_name} already exists and up-to-date"
+                )
 
         return {
             "success": True if repo_updated or repo_exists else False,
             "updated": repo_updated,
-            "message": message,
+            "message": _redact(message, password),
         }
     except Exception as e:
         return {
             "success": False,
             "updated": False,
-            "message": f"Helm repository operation error for {repo_name}: {str(e)[:100]}...",
+            "message": (
+                f"Helm repository operation error for {repo_name}: "
+                f"{_redact(str(e), password)[:100]}..."
+            ),
         }
 
 

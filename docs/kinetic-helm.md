@@ -4,7 +4,7 @@ SaltStack execution and state modules for managing Helm repositories and release
 
 ## Features
 
-- Add or update Helm repositories
+- Add or update Helm repositories, including basic-auth repos (NGC)
 - Install or upgrade Helm releases with values from pillar or direct dict
 - Support for `--set` and additional `--values` files
 - **OCI chart support**: Install charts directly from OCI registries (e.g., GHCR, ACR) without adding a repository
@@ -101,10 +101,33 @@ ensure_helm_release:
     - pillar_key: helm:values
 ```
 
+### Authenticated repository (NGC)
+
+The API key stays in pillar. `password_pillar` is resolved on the minion, and the key is passed to `helm repo add --password-stdin` so it is not put on the command line. Quote `$oauthtoken` so it is sent literally.
+
+```yaml
+res-k8s:
+  runai:
+    ngc_api_key: |
+      <NGC_API_KEY>
+```
+
+```yaml
+ensure_runai_repo:
+  k8s_helm.helm_repo_present:
+    - repo_name: runai
+    - repo_url: https://helm.ngc.nvidia.com/nvidia/runai
+    - username: "$oauthtoken"
+    - password_pillar: res-k8s:runai:ngc_api_key
+```
+
+`helm_release_present` then uses the stored repo credentials for `runai/<chart>`. Do not pass the API key as `password` in the state; that renders the secret into the highstate. `password_pillar` wins if both are set.
+
 ## Notes
 
 - OCI charts do not require a `helm repo add` step
 - Private OCI registries may require prior `helm registry login`
 - The module uses `helm upgrade --install` for all cases
+- Authenticated `helm repo add` stores the username and password in Helm's `repositories.yaml`. The state re-adds the repo only when the URL or stored credentials differ
 
-Last updated: July 2025
+Last updated: November 2026

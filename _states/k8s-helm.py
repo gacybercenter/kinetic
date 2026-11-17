@@ -18,9 +18,24 @@ def __virtual__():
     return (False, "The kinetic-helm execution module is not available.")
 
 
-def helm_repo_present(name, repo_name, repo_url, update_cache=True):
+def helm_repo_present(
+    name,
+    repo_name,
+    repo_url,
+    update_cache=True,
+    username=None,
+    password=None,
+    password_pillar=None,
+):
     """
     Ensure that a Helm repository is added or updated with the specified URL.
+
+    Authenticated repositories take ``username`` plus either ``password`` or
+    ``password_pillar``. The password is sent on stdin to ``helm repo add``
+    and is not placed on the command line. Prefer ``password_pillar`` so the
+    secret is resolved on the minion instead of rendered into this state.
+    ``password_pillar`` wins when both are set. NGC login uses the literal
+    username ``$oauthtoken`` (quote it so YAML does not treat it specially).
 
     name
         The name of the state (arbitrary, for SaltStack identification).
@@ -34,6 +49,15 @@ def helm_repo_present(name, repo_name, repo_url, update_cache=True):
     update_cache
         Optional. Whether to update the Helm repository cache after adding or updating. Defaults to True.
 
+    username
+        Optional. Basic-auth username. NGC uses the literal ``$oauthtoken``.
+
+    password
+        Optional. Basic-auth password or API key. Prefer ``password_pillar``.
+
+    password_pillar
+        Optional. Colon-delimited pillar key holding the password or API key.
+
     Example:
     .. code-block:: yaml
 
@@ -42,13 +66,31 @@ def helm_repo_present(name, repo_name, repo_url, update_cache=True):
             - repo_name: bitnami
             - repo_url: https://charts.bitnami.com/bitnami
             - update_cache: False
+
+        ensure_runai_repo:
+          k8s_helm.helm_repo_present:
+            - repo_name: runai
+            - repo_url: https://helm.ngc.nvidia.com/nvidia/runai
+            - username: "$oauthtoken"
+            - password_pillar: res-k8s:runai:ngc_api_key
     """
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 
     try:
-        result = __salt__["kinetic-helm.helm_repo_present"](
-            repo_name=repo_name, repo_url=repo_url, update_cache=update_cache
-        )
+        kwargs = {
+            "repo_name": repo_name,
+            "repo_url": repo_url,
+            "update_cache": update_cache,
+        }
+        # Omit unset credential kwargs so a minion that has not yet synced
+        # the updated execution module can still add public repositories.
+        if username is not None:
+            kwargs["username"] = username
+        if password is not None:
+            kwargs["password"] = password
+        if password_pillar is not None:
+            kwargs["password_pillar"] = password_pillar
+        result = __salt__["kinetic-helm.helm_repo_present"](**kwargs)
 
         ret["result"] = result["success"]
         ret["comment"] = result["message"]
