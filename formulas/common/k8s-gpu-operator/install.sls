@@ -25,4 +25,3 @@ install_gpu_operator:
     - keep_values_file: true
     - require:
       - k8s: ensure_gpu_operator_namespace
-      - sls: /formulas/common/helm
