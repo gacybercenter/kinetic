@@ -16,6 +16,10 @@ include:
 {% set registry = runai.get('registry', 'nvcr.io') %}
 {% set ngc_user = '$oauthtoken' %}
 {% set ngc_key = (runai.get('ngc_api_key') or '') | trim %}
+{% set admin = runai.get('admin_account') or {} %}
+{% set admin_name = (admin.get('name') or '') | trim %}
+{% set admin_pass = admin.get('pass') or '' %}
+{% set admin_secret = admin.get('secret_name', 'runai-admin') %}
 
 ensure_runai_repo:
   k8s_helm.helm_repo_present:
@@ -57,6 +61,26 @@ ensure_runai_pull_secret:
     - secret_type: kubernetes.io/dockerconfigjson
     - data:
         .dockerconfigjson: {{ dockerconfig | tojson | yaml_dquote }}
+    - require:
+      - k8s: ensure_runai_namespace
+{% endif %}
+
+{# Control-plane login. Pillar is GPG-encrypted; the renderer decrypts it
+   before this state renders. Keys match the keycloak-admin secret. #}
+{% if not admin_name or not (admin_pass | trim) %}
+ensure_runai_admin_secret:
+  test.fail_without_changes:
+    - name: {{ admin_secret }}
+    - comment: "res-k8s:gpu:runai:admin_account needs name and pass."
+{% else %}
+ensure_runai_admin_secret:
+  k8s.secret_present:
+    - secret_name: {{ admin_secret }}
+    - namespace: {{ runai_ns }}
+    - secret_type: Opaque
+    - data:
+        username: {{ admin_name | yaml_dquote }}
+        password: {{ admin_pass | yaml_dquote }}
     - require:
       - k8s: ensure_runai_namespace
 {% endif %}
