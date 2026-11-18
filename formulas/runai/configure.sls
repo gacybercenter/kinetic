@@ -20,6 +20,14 @@ include:
 {% set admin_name = (admin.get('name') or '') | trim %}
 {% set admin_pass = admin.get('pass') or '' %}
 {% set admin_secret = admin.get('secret_name', 'runai-admin') %}
+{# Control plane is a separate release from the cluster chart, installed
+   in the same runai namespace. Values are the chart's own values.yaml
+   shape, including tenantsManager.config.adminUsername/adminPassword. #}
+{% set cp_ns = runai.get('controlplane_namespace', runai_ns) %}
+{% set cp_chart = runai.get('controlplane_chart', 'runai/control-plane') %}
+{% set cp_release = runai.get('controlplane_release', 'runai-backend') %}
+{% set cp_version = runai.get('controlplane_version') %}
+{% set cp_values = (runai.get('values') or {}).get('controlplane') %}
 
 ensure_runai_repo:
   k8s_helm.helm_repo_present:
@@ -83,4 +91,27 @@ ensure_runai_admin_secret:
         password: {{ admin_pass | yaml_dquote }}
     - require:
       - k8s: ensure_runai_namespace
+{% endif %}
+{% if not cp_values %}
+install_runai_backend:
+  test.fail_without_changes:
+    - name: {{ cp_release }}
+    - comment: "res-k8s:gpu:runai:values:controlplane is missing. That dict is passed to helm as the control-plane chart values."
+{% else %}
+install_runai_backend:
+  k8s_helm.helm_release_present:
+    - release_name: {{ cp_release }}
+    - chart_name: {{ cp_chart | yaml_dquote }}
+    - namespace: {{ cp_ns }}
+    - pillar_key: res-k8s:gpu:runai:values:controlplane
+{%- if cp_version %}
+    - version: {{ cp_version | yaml_dquote }}
+{%- endif %}
+    - wait: false
+    - wait_timeout: 900
+    - wait_interval: 15
+    - require:
+      - k8s_helm: ensure_runai_repo
+      - k8s: ensure_runai_namespace
+      - k8s: ensure_runai_pull_secret
 {% endif %}
