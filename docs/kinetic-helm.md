@@ -107,9 +107,10 @@ The API key stays in pillar. `password_pillar` is resolved on the minion, and th
 
 ```yaml
 res-k8s:
-  runai:
-    ngc_api_key: |
-      <NGC_API_KEY>
+  gpu:
+    runai:
+      ngc_api_key: |
+        <NGC_API_KEY>
 ```
 
 ```yaml
@@ -118,7 +119,7 @@ ensure_runai_repo:
     - repo_name: runai
     - repo_url: https://helm.ngc.nvidia.com/nvidia/runai
     - username: "$oauthtoken"
-    - password_pillar: res-k8s:runai:ngc_api_key
+    - password_pillar: res-k8s:gpu:runai:ngc_api_key
 ```
 
 `helm_release_present` then uses the stored repo credentials for `runai/<chart>`. Do not pass the API key as `password` in the state; that renders the secret into the highstate. `password_pillar` wins if both are set.

@@ -72,7 +72,7 @@ def helm_repo_present(
             - repo_name: runai
             - repo_url: https://helm.ngc.nvidia.com/nvidia/runai
             - username: "$oauthtoken"
-            - password_pillar: res-k8s:runai:ngc_api_key
+            - password_pillar: res-k8s:gpu:runai:ngc_api_key
     """
     ret = {"name": name, "result": False, "comment": "", "changes": {}}
 

@@ -108,7 +108,7 @@ def helm_repo_present(
 
     CLI Example:
         salt '*' kinetic-helm.helm_repo_present my-repo https://charts.example.com update_cache=False
-        salt '*' kinetic-helm.helm_repo_present runai https://helm.ngc.nvidia.com/nvidia/runai username='$oauthtoken' password_pillar='res-k8s:runai:ngc_api_key'
+        salt '*' kinetic-helm.helm_repo_present runai https://helm.ngc.nvidia.com/nvidia/runai username='$oauthtoken' password_pillar='res-k8s:gpu:runai:ngc_api_key'
     """
     try:
         repo_updated = False
