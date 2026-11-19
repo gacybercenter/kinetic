@@ -193,9 +193,9 @@ runai_keycloak_broker_client_default_scope_{{ scope_name }}:
    That Keycloak still serves /auth, so api_prefix defaults to auth.
    The chart services are keycloak-http (port 80) and keycloak-headless
    (port 8080), both HTTP. Login is against realm master. The chart
-   admin (keycloakx.adminUser, default admin) is not runai-admin.
-   connection.secret_name is that chart secret, often
-   <release>-keycloak, with username and password keys. #}
+   admin is split: KEYCLOAK_ADMIN in runai-backend-keycloakx,
+   KEYCLOAK_ADMIN_PASSWORD in runai-backend-gen-keycloakx.
+   That is not runai-admin. #}
 {% set idp = oidc.get('runai_idp') or {} %}
 {% set idp_conn = idp.get('connection') or {} %}
 {% set idp_alias = idp.get('alias', 'rsc-oidc') %}
@@ -221,8 +221,13 @@ runai_keycloak_broker_client_default_scope_{{ scope_name }}:
   'pkceEnabled': 'false',
 } %}
 
+{% set idp_user_secret = idp_conn.get('username_secret', 'runai-backend-keycloakx') %}
+{% set idp_pass_secret = idp_conn.get('password_secret', 'runai-backend-gen-keycloakx') %}
+{% set idp_user_key = idp_conn.get('username_key', 'KEYCLOAK_ADMIN') %}
+{% set idp_pass_key = idp_conn.get('password_key', 'KEYCLOAK_ADMIN_PASSWORD') %}
+
 {% if not idp %}
-{% elif not idp_conn.get('secret_name') or not broker_secret %}
+{% elif not broker_secret %}
 runai_keycloak_idp:
   test.fail_without_changes:
     - name: {{ idp_alias }}
@@ -241,7 +246,10 @@ runai_keycloak_idp:
     - config: {{ idp_config | tojson }}
     - keycloak_addr: {{ idp_conn.get('keycloak_addr', 'k8s://' ~ runai_ns ~ '/http:keycloak-http:80') | yaml_dquote }}
     - namespace: {{ idp_conn.get('namespace', runai_ns) }}
-    - secret_name: {{ idp_conn.get('secret_name') }}
+    - username_secret: {{ idp_user_secret }}
+    - password_secret: {{ idp_pass_secret }}
+    - username_key: {{ idp_user_key }}
+    - password_key: {{ idp_pass_key }}
     - verify: {{ idp_conn.get('verify', False) }}
     - api_prefix: {{ idp_conn.get('api_prefix', 'auth') }}
     - require:

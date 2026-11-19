@@ -203,34 +203,50 @@ def _http_error(action, status_code, body):
     }
 
 
-def _get_admin_credentials(namespace, secret_name):
-    """
-    Read Keycloak admin username/password from a Kubernetes Secret.
-
-    Args:
-        namespace (str): Namespace of the Secret.
-        secret_name (str): Name of the Secret (keys: username, password).
-
-    Returns:
-        tuple: (username, password), or (None, None) if the Secret or the
-            expected keys are not found.
-    """
+def _secret_value(namespace, secret_name, key):
+    """Return one decoded Secret key, or None if the Secret or key is missing."""
+    _load_k8s_config()
+    core_api = client.CoreV1Api()
     try:
-        _load_k8s_config()
-        core_api = client.CoreV1Api()
         secret = core_api.read_namespaced_secret(secret_name, namespace)
-        data = secret.data or {}
-        # A YAML block scalar leaves a trailing newline in the Secret.
-        # Keycloak then reports invalid_grant for an otherwise good password.
-        username = base64.b64decode(data["username"]).decode("utf-8").strip()
-        password = base64.b64decode(data["password"]).decode("utf-8").strip()
-        return username, password
     except ApiException as e:
         if e.status == 404:
-            return None, None
+            log.error("Keycloak admin secret %s/%s not found", namespace, secret_name)
+            return None
         raise
-    except KeyError:
-        return None, None
+    raw = (secret.data or {}).get(key)
+    if raw is None:
+        log.error(
+            "Keycloak admin secret %s/%s has no key %s", namespace, secret_name, key
+        )
+        return None
+    # A YAML block scalar leaves a trailing newline in the Secret.
+    # Keycloak then reports invalid_grant for an otherwise good password.
+    return base64.b64decode(raw).decode("utf-8").strip()
+
+
+def _get_admin_credentials(
+    namespace,
+    secret_name,
+    username_secret=None,
+    password_secret=None,
+    username_key="username",
+    password_key="password",
+):
+    """
+    Read Keycloak admin username/password from Kubernetes Secrets.
+
+    The platform secret has both keys. The Run:ai chart splits them:
+    KEYCLOAK_ADMIN on runai-backend-keycloakx, KEYCLOAK_ADMIN_PASSWORD on
+    runai-backend-gen-keycloakx.
+    """
+    username = _secret_value(
+        namespace, username_secret or secret_name, username_key
+    )
+    password = _secret_value(
+        namespace, password_secret or secret_name, password_key
+    )
+    return username, password
 
 
 def get_admin_token(
@@ -244,6 +260,10 @@ def get_admin_token(
     secret_name="keycloak-admin",
     verify=False,
     api_prefix="",
+    username_secret=None,
+    password_secret=None,
+    username_key="username",
+    password_key="password",
 ):
     """
     Obtain a Keycloak admin access token from the OpenID Connect token
@@ -290,7 +310,14 @@ def get_admin_token(
             }
         else:
             if not (username and password):
-                username, password = _get_admin_credentials(namespace, secret_name)
+                username, password = _get_admin_credentials(
+                    namespace,
+                    secret_name,
+                    username_secret=username_secret,
+                    password_secret=password_secret,
+                    username_key=username_key,
+                    password_key=password_key,
+                )
             if not (username and password):
                 log.error(
                     "Unable to obtain Keycloak admin credentials from secret %s/%s",
@@ -318,11 +345,12 @@ def get_admin_token(
 
         log.error(
             "Failed to obtain Keycloak admin token for user %s in realm %s "
-            "from secret %s/%s (HTTP %s): %s",
+            "from secret %s/%s key %s (HTTP %s): %s",
             form_data.get("username") or form_data.get("client_id"),
             realm,
             namespace,
-            secret_name,
+            username_secret or secret_name,
+            username_key,
             status_code,
             body,
         )
@@ -359,6 +387,10 @@ def _resolve_token(
     secret_name,
     verify,
     api_prefix="",
+    username_secret=None,
+    password_secret=None,
+    username_key="username",
+    password_key="password",
 ):
     """Return the provided token, or obtain one via get_admin_token."""
     if token:
@@ -374,6 +406,10 @@ def _resolve_token(
         secret_name=secret_name,
         verify=verify,
         api_prefix=api_prefix,
+        username_secret=username_secret,
+        password_secret=password_secret,
+        username_key=username_key,
+        password_key=password_key,
     )
 
 
@@ -1804,6 +1840,10 @@ def identity_provider_present(
     secret_name="keycloak-admin",
     verify=False,
     api_prefix="",
+    username_secret=None,
+    password_secret=None,
+    username_key="username",
+    password_key="password",
 ):
     """
     Ensure an identity provider exists in a realm.
@@ -1824,6 +1864,10 @@ def identity_provider_present(
             token, keycloak_addr, "master", realm_username, realm_password,
             admin_client_id, admin_client_secret, namespace, secret_name, verify,
             api_prefix=api_prefix,
+            username_secret=username_secret,
+            password_secret=password_secret,
+            username_key=username_key,
+            password_key=password_key,
         )
         if not resolved_token:
             return {

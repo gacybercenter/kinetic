@@ -843,6 +843,10 @@ def identity_provider_present(
     secret_name="keycloak-admin",
     verify=False,
     api_prefix="",
+    username_secret=None,
+    password_secret=None,
+    username_key="username",
+    password_key="password",
 ):
     """
     Ensure an identity provider exists in a realm.
@@ -904,6 +908,10 @@ def identity_provider_present(
             secret_name=secret_name,
             verify=verify,
             api_prefix=api_prefix,
+            username_secret=username_secret,
+            password_secret=password_secret,
+            username_key=username_key,
+            password_key=password_key,
         )
         ret["result"] = result.get("success", False)
         ret["comment"] = result.get("message", "Unknown error")
