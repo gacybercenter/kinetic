@@ -163,7 +163,9 @@ runai_keycloak_broker_client:
 {%- elif broker_public %}
     - pkce_code_challenge_method: ""
 {%- endif %}
-{%- if broker_secret and not broker_public %}
+{# publicClient and secret together is unusual. Run:ai's broker
+   still sends the client secret, so set it even when the client is public. #}
+{%- if broker_secret %}
     - secret: {{ broker.get('secret') | yaml_dquote }}
 {%- endif %}
     - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
