@@ -102,9 +102,13 @@ def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_
 
     header_params = {"Accept": "application/json"}
     body = None
+    post_params = None
+    # kubernetes 31 drops `body` for application/x-www-form-urlencoded and
+    # only sends post_params. Passing the encoded body there makes Keycloak
+    # report Missing form parameter: grant_type.
     if form_data is not None:
         header_params["Content-Type"] = "application/x-www-form-urlencoded"
-        body = urlencode(form_data)
+        post_params = list(form_data.items())
     elif payload is not None:
         header_params["Content-Type"] = "application/json"
         body = payload
@@ -118,6 +122,7 @@ def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_
             method.upper(),
             header_params=header_params,
             body=body,
+            post_params=post_params,
             auth_settings=["BearerToken"],
             _preload_content=False,
             _return_http_data_only=True,
