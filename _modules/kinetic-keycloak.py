@@ -317,9 +317,10 @@ def get_admin_token(
             return body.get("access_token")
 
         log.error(
-            "Failed to obtain Keycloak admin token for user %s "
+            "Failed to obtain Keycloak admin token for user %s in realm %s "
             "from secret %s/%s (HTTP %s): %s",
             form_data.get("username") or form_data.get("client_id"),
+            realm,
             namespace,
             secret_name,
             status_code,

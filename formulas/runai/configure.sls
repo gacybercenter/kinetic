@@ -192,8 +192,10 @@ runai_keycloak_broker_client_default_scope_{{ scope_name }}:
 {# IdP on the Keycloak embedded in Run:ai, brokering to realm rsc.
    That Keycloak still serves /auth, so api_prefix defaults to auth.
    The chart services are keycloak-http (port 80) and keycloak-headless
-   (port 8080), both HTTP. connection.secret_name is the embedded
-   Keycloak master admin secret, not runai-admin. #}
+   (port 8080), both HTTP. Login is against realm master. The chart
+   admin (keycloakx.adminUser, default admin) is not runai-admin.
+   connection.secret_name is that chart secret, often
+   <release>-keycloak, with username and password keys. #}
 {% set idp = oidc.get('runai_idp') or {} %}
 {% set idp_conn = idp.get('connection') or {} %}
 {% set idp_alias = idp.get('alias', 'rsc-oidc') %}
