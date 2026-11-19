@@ -820,6 +820,102 @@ def client_default_scope_present(
     return ret
 
 
+def identity_provider_present(
+    name,
+    realm,
+    alias=None,
+    provider_id="oidc",
+    display_name=None,
+    enabled=True,
+    trust_email=False,
+    store_token=False,
+    link_only=False,
+    first_broker_login_flow=None,
+    config=None,
+    spec=None,
+    keycloak_addr="k8s://keycloak/keycloak-service:8443",
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+    api_prefix="",
+):
+    """
+    Ensure an identity provider exists in a realm.
+
+    name
+        The name of the state. Used as the IdP alias if alias is not set.
+
+    realm
+        Realm that will broker to the upstream IdP.
+
+    alias
+        Identity provider alias (default: name). This is the broker id in
+        the redirect URI.
+
+    config
+        IdP config map. Keycloak stores these as strings. clientSecret is
+        applied but a masked GET value is not treated as drift.
+
+    api_prefix
+        Set to auth for a Keycloak that still serves /auth/admin.
+
+    Example:
+    .. code-block:: yaml
+
+        runai_rsc_idp:
+          keycloak.identity_provider_present:
+            - name: rsc-oidc
+            - realm: runai
+            - display_name: RSC Login
+            - api_prefix: auth
+            - config:
+                clientId: runai-broker
+                authorizationUrl: https://keycloak.example/realms/rsc/protocol/openid-connect/auth
+    """
+    ret = _state_ret(name)
+    if alias is None:
+        alias = name
+
+    try:
+        result = __salt__["kinetic_keycloak.identity_provider_present"](
+            realm=realm,
+            alias=alias,
+            provider_id=provider_id,
+            display_name=display_name,
+            enabled=enabled,
+            trust_email=trust_email,
+            store_token=store_token,
+            link_only=link_only,
+            first_broker_login_flow=first_broker_login_flow,
+            config=config,
+            spec=spec,
+            keycloak_addr=keycloak_addr,
+            token=token,
+            realm_username=realm_username,
+            realm_password=realm_password,
+            admin_client_id=admin_client_id,
+            admin_client_secret=admin_client_secret,
+            namespace=namespace,
+            secret_name=secret_name,
+            verify=verify,
+            api_prefix=api_prefix,
+        )
+        ret["result"] = result.get("success", False)
+        ret["comment"] = result.get("message", "Unknown error")
+        ret["changes"] = {"updated": True} if result.get("updated", False) else {}
+    except Exception as e:
+        ret["result"] = False
+        ret["comment"] = f"Failed to ensure identity provider {alias}: {str(e)[:100]}..."
+        ret["changes"] = {}
+
+    return ret
+
+
 def client_absent(
     name,
     realm,

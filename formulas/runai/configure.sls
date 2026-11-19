@@ -188,3 +188,59 @@ runai_keycloak_broker_client_default_scope_{{ scope_name }}:
       - keycloak: runai_keycloak_broker_client
 {% endfor %}
 {% endif %}
+
+{# IdP on the Keycloak embedded in Run:ai, brokering to realm rsc.
+   That Keycloak still serves /auth, so api_prefix defaults to auth.
+   connection.secret_name is the embedded Keycloak master admin secret,
+   not runai-admin and not the platform keycloak-admin secret. #}
+{% set idp = oidc.get('runai_idp') or {} %}
+{% set idp_conn = idp.get('connection') or {} %}
+{% set idp_alias = idp.get('alias', 'rsc-oidc') %}
+{% set idp_auth = idp.get('auth_url', '') %}
+{% set idp_issuer = idp_auth.replace('/protocol/openid-connect/auth', '').rstrip('/') %}
+{% set idp_userinfo_given = idp.get('user_info_url', '') %}
+{% set idp_userinfo = idp_issuer ~ '/protocol/openid-connect/userinfo' if idp_userinfo_given.endswith('/logout') else idp_userinfo_given %}
+{% set idp_logout = idp_userinfo_given if idp_userinfo_given.endswith('/logout') else idp.get('logout_url', idp_issuer ~ '/protocol/openid-connect/logout') %}
+{% set idp_config = {
+  'clientId': broker_id,
+  'clientSecret': broker.get('secret') or '',
+  'clientAuthMethod': 'client_secret_post',
+  'defaultScope': idp.get('default_scopes', 'openid profile email groups'),
+  'syncMode': idp.get('sync_mode', 'IMPORT'),
+  'authorizationUrl': idp_auth,
+  'tokenUrl': idp.get('token_url', ''),
+  'userInfoUrl': idp_userinfo,
+  'logoutUrl': idp_logout,
+  'issuer': idp.get('issuer', idp_issuer),
+  'validateSignature': 'true' if idp.get('valid_sigs', True) else 'false',
+  'useJwksUrl': 'true' if idp.get('use_jwks_url', True) else 'false',
+  'jwksUrl': idp.get('jwks_url', idp_issuer ~ '/protocol/openid-connect/certs'),
+  'pkceEnabled': 'false',
+} %}
+
+{% if not idp %}
+{% elif not idp_conn.get('secret_name') or not broker_secret %}
+runai_keycloak_idp:
+  test.fail_without_changes:
+    - name: {{ idp_alias }}
+    - comment: "res-k8s:gpu:runai:oidc_client:runai_idp.connection.secret_name must be the embedded Keycloak admin secret, and oidc_client.runai.secret is the broker client secret sent as clientSecret."
+{% else %}
+runai_keycloak_idp:
+  keycloak.identity_provider_present:
+    - name: {{ idp_alias }}
+    - realm: {{ idp_conn.get('realm', 'runai') }}
+    - alias: {{ idp_alias }}
+    - provider_id: oidc
+    - display_name: {{ idp.get('display_name', 'RSC Login') | yaml_dquote }}
+    - enabled: {{ idp.get('enabled', True) }}
+    - trust_email: {{ idp.get('trust_email', True) }}
+    - first_broker_login_flow: {{ idp.get('first_login_flow', 'first broker login') | yaml_dquote }}
+    - config: {{ idp_config | tojson }}
+    - keycloak_addr: {{ idp_conn.get('keycloak_addr', 'k8s://' ~ runai_ns ~ '/keycloak:8443') | yaml_dquote }}
+    - namespace: {{ idp_conn.get('namespace', runai_ns) }}
+    - secret_name: {{ idp_conn.get('secret_name') }}
+    - verify: {{ idp_conn.get('verify', False) }}
+    - api_prefix: {{ idp_conn.get('api_prefix', 'auth') }}
+    - require:
+      - keycloak: runai_keycloak_broker_client
+{% endif %}

@@ -227,6 +227,7 @@ def get_admin_token(
     namespace="keycloak",
     secret_name="keycloak-admin",
     verify=False,
+    api_prefix="",
 ):
     """
     Obtain a Keycloak admin access token from the OpenID Connect token
@@ -258,6 +259,8 @@ def get_admin_token(
         secret_name (str): Name of the admin credentials Secret
             (default: keycloak-admin)
         verify (bool): Verify TLS certificates (default: False)
+        api_prefix (str): Path prefix for Keycloak installs that still serve
+            the API under /auth. Empty for the current Keycloak.
 
     Returns:
         str: The access token, or None if it could not be obtained.
@@ -288,7 +291,9 @@ def get_admin_token(
         status_code, body = _request(
             "POST",
             keycloak_addr,
-            f"realms/{realm}/protocol/openid-connect/token",
+            _api_path(
+                api_prefix, f"realms/{realm}/protocol/openid-connect/token"
+            ),
             form_data=form_data,
             verify=verify,
         )
@@ -303,6 +308,15 @@ def get_admin_token(
     except Exception as e:
         log.error("Failed to obtain Keycloak admin token: %s", e)
         return None
+
+
+def _api_path(api_prefix, path):
+    """Prepend a Keycloak context path such as auth, without double slashes."""
+    prefix = (api_prefix or "").strip("/")
+    path = path.lstrip("/")
+    if prefix:
+        return f"{prefix}/{path}"
+    return path
 
 
 def _auth_headers(token):
@@ -321,6 +335,7 @@ def _resolve_token(
     namespace,
     secret_name,
     verify,
+    api_prefix="",
 ):
     """Return the provided token, or obtain one via get_admin_token."""
     if token:
@@ -335,6 +350,7 @@ def _resolve_token(
         namespace=namespace,
         secret_name=secret_name,
         verify=verify,
+        api_prefix=api_prefix,
     )
 
 
@@ -1729,6 +1745,184 @@ def client_default_scope_present(
             "success": False,
             "updated": False,
             "message": f"Failed to ensure default client scope {scope_name} on client {client_id}: {str(e)[:150]}",
+        }
+
+
+def _redact_secret(body, secret):
+    """Keep a client secret out of a returned error."""
+    if not secret or body is None:
+        return body
+    if isinstance(body, dict):
+        text = json.dumps(body)
+    else:
+        text = str(body)
+    return text.replace(secret, "***")
+
+
+def identity_provider_present(
+    realm,
+    alias,
+    provider_id="oidc",
+    display_name=None,
+    enabled=True,
+    trust_email=False,
+    store_token=False,
+    link_only=False,
+    first_broker_login_flow=None,
+    config=None,
+    spec=None,
+    keycloak_addr=DEFAULT_KEYCLOAK_ADDR,
+    token=None,
+    realm_username=None,
+    realm_password=None,
+    admin_client_id="admin-cli",
+    admin_client_secret=None,
+    namespace="keycloak",
+    secret_name="keycloak-admin",
+    verify=False,
+    api_prefix="",
+):
+    """
+    Ensure an identity provider exists in a realm.
+
+    Used for the Keycloak embedded in Run:ai, which brokers to realm rsc.
+    That install still serves the Admin API under /auth, so pass
+    api_prefix="auth".
+
+    Keycloak Admin REST API:
+        GET/POST admin/realms/{realm}/identity-provider/instances
+        GET/PUT admin/realms/{realm}/identity-provider/instances/{alias}
+
+    config values are sent as strings. clientSecret is set on create and on
+    an update, but a masked secret in the GET response is not treated as drift.
+    """
+    try:
+        resolved_token = _resolve_token(
+            token, keycloak_addr, "master", realm_username, realm_password,
+            admin_client_id, admin_client_secret, namespace, secret_name, verify,
+            api_prefix=api_prefix,
+        )
+        if not resolved_token:
+            return {
+                "success": False,
+                "updated": False,
+                "message": "Failed to obtain Keycloak admin access token",
+            }
+        headers = _auth_headers(resolved_token)
+        client_secret = (config or {}).get("clientSecret")
+        desired_config = {
+            str(key): "" if value is None else str(value)
+            for key, value in (config or {}).items()
+        }
+        desired = {
+            "alias": alias,
+            "providerId": provider_id,
+            "enabled": enabled,
+            "trustEmail": bool(trust_email),
+            "storeToken": bool(store_token),
+            "linkOnly": bool(link_only),
+            "config": desired_config,
+        }
+        if display_name is not None:
+            desired["displayName"] = display_name
+        if first_broker_login_flow is not None:
+            desired["firstBrokerLoginFlowAlias"] = first_broker_login_flow
+        if spec:
+            desired = {**desired, **spec}
+            if "config" in spec and isinstance(spec["config"], dict):
+                desired["config"] = {**desired_config, **spec["config"]}
+
+        path = _api_path(
+            api_prefix, f"admin/realms/{realm}/identity-provider/instances/{alias}"
+        )
+        status_code, body = _request(
+            "GET", keycloak_addr, path, headers=headers, verify=verify
+        )
+        if status_code == 404:
+            create_path = _api_path(
+                api_prefix, f"admin/realms/{realm}/identity-provider/instances"
+            )
+            status_code, body = _request(
+                "POST", keycloak_addr, create_path,
+                headers=headers, payload=desired, verify=verify,
+            )
+            if status_code in (201, 204):
+                return {
+                    "success": True,
+                    "updated": True,
+                    "message": f"Identity provider {alias} created in realm {realm}",
+                }
+            return {
+                "success": False,
+                "updated": False,
+                "message": (
+                    f"Creating identity provider {alias} failed with HTTP "
+                    f"{status_code}: {_redact_secret(body, client_secret)}"[:300]
+                ),
+            }
+        if status_code != 200 or not isinstance(body, dict):
+            return {
+                "success": False,
+                "updated": False,
+                "message": (
+                    f"Looking up identity provider {alias} failed with HTTP "
+                    f"{status_code}: {_redact_secret(body, client_secret)}"[:300]
+                ),
+            }
+
+        existing_config = body.get("config") or {}
+        stored_secret = existing_config.get("clientSecret")
+        secret_known = stored_secret not in (None, "", "**********")
+        comparable = {
+            key: value
+            for key, value in desired_config.items()
+            if key != "clientSecret" or secret_known
+        }
+        config_matches = all(
+            str(existing_config.get(key)) == str(value)
+            for key, value in comparable.items()
+        )
+        top_level = {
+            key: value
+            for key, value in desired.items()
+            if key not in ("config", "internalId")
+        }
+        top_matches = all(body.get(key) == value for key, value in top_level.items())
+        if config_matches and top_matches:
+            return {
+                "success": True,
+                "updated": False,
+                "message": (
+                    f"Identity provider {alias} already exists and matches "
+                    "desired state"
+                ),
+            }
+
+        payload = {**body, **desired}
+        payload["config"] = {**existing_config, **desired.get("config", {})}
+        status_code, body = _request(
+            "PUT", keycloak_addr, path,
+            headers=headers, payload=payload, verify=verify,
+        )
+        if status_code == 204:
+            return {
+                "success": True,
+                "updated": True,
+                "message": f"Identity provider {alias} updated in realm {realm}",
+            }
+        return {
+            "success": False,
+            "updated": False,
+            "message": (
+                f"Updating identity provider {alias} failed with HTTP "
+                f"{status_code}: {_redact_secret(body, client_secret)}"[:300]
+            ),
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "updated": False,
+            "message": f"Failed to ensure identity provider {alias}: {str(e)[:150]}",
         }
 
 
