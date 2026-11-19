@@ -6,7 +6,8 @@ SaltStack execution module (`kinetic_keycloak`) and state module (`keycloak`) fo
 
 Every function accepts a `keycloak_addr` connection kwarg with two supported schemes:
 
-- `k8s://<namespace>/<service>:<port>` (default: `k8s://keycloak/keycloak-service:8443`) - routes requests through the Kubernetes API server's service proxy, so the Keycloak Admin API never needs to be exposed outside the cluster. Only Kubernetes API access is required.
+- `k8s://<namespace>/<service>:<port>` (default: `k8s://keycloak/keycloak-service:8443`) - routes requests through the Kubernetes API server's service proxy as HTTPS. Only Kubernetes API access is required.
+- `k8s://<namespace>/http:<service>:<port>` - same proxy, but the service port is HTTP. The Run:ai embedded Keycloak uses `http:keycloak-http:80` (or `http:keycloak-headless:8080`).
 - `https://host:port` - direct HTTPS, for when the Admin API is reachable directly.
 
 ## Authentication

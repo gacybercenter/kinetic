@@ -69,8 +69,9 @@ def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_
     required.
 
     addr format: k8s://<namespace>/<service>:<port>
-    path is the full Keycloak API path (e.g. "admin/realms/myrealm" or
-    "realms/master/protocol/openid-connect/token"), without a leading slash.
+    or k8s://<namespace>/<http|https>:<service>:<port> when the service
+    proxy scheme is not https. path is the full Keycloak API path
+    (e.g. "admin/realms/myrealm"), without a leading slash.
 
     Supports both JSON payloads (payload=dict) and form-encoded payloads
     (form_data=dict, used by the OpenID Connect token endpoint).
@@ -81,14 +82,20 @@ def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_
     """
     _load_k8s_config()
 
-    # Parse k8s://<namespace>/<service>:<port>
+    # k8s://<namespace>/<service>:<port> stays https, matching existing
+    # addrs. k8s://<namespace>/http:<service>:<port> is for a chart service
+    # that only exposes http, such as keycloak-http.
     stripped = addr[len("k8s://"):]
     svc_namespace, service_port = stripped.split("/", 1)
+    if service_port.startswith("http:") or service_port.startswith("https:"):
+        service_spec = service_port
+    else:
+        service_spec = f"https:{service_port}"
 
     api_client = client.ApiClient()
     proxy_path = (
         f"/api/v1/namespaces/{svc_namespace}/services/"
-        f"https:{service_port}/proxy/{path}"
+        f"{service_spec}/proxy/{path}"
     )
 
     header_params = {"Accept": "application/json"}
