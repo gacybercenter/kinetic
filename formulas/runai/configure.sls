@@ -191,11 +191,12 @@ runai_keycloak_broker_client_default_scope_{{ scope_name }}:
 
 {# IdP on the Keycloak embedded in Run:ai, brokering to realm rsc.
    That Keycloak still serves /auth, so api_prefix defaults to auth.
-   The chart services are keycloak-http (port 80) and keycloak-headless
-   (port 8080), both HTTP. Login is against realm master. The chart
-   admin is split: KEYCLOAK_ADMIN in runai-backend-keycloakx,
-   KEYCLOAK_ADMIN_PASSWORD in runai-backend-gen-keycloakx.
-   That is not runai-admin. #}
+   Login is against realm master. The chart admin is split:
+   KEYCLOAK_ADMIN in runai-backend-keycloakx, KEYCLOAK_ADMIN_PASSWORD
+   in runai-backend-gen-keycloakx. That is not runai-admin.
+   The API server service proxy drops Authorization, so an in-cluster
+   call gets a token and then 401s on the admin API. Use the public
+   domain from the control-plane values so the bearer is delivered. #}
 {% set idp = oidc.get('runai_idp') or {} %}
 {% set idp_conn = idp.get('connection') or {} %}
 {% set idp_alias = idp.get('alias', 'rsc-oidc') %}
@@ -221,6 +222,14 @@ runai_keycloak_broker_client_default_scope_{{ scope_name }}:
   'pkceEnabled': 'false',
 } %}
 
+{% set cp_global = ((runai.get('values') or {}).get('controlplane') or {}).get('global') or {} %}
+{% set runai_domain = (cp_global.get('domain') or '') | trim %}
+{% set idp_addr = idp_conn.get('keycloak_addr') %}
+{% if not idp_addr and runai_domain %}
+{% set idp_addr = 'https://' ~ runai_domain %}
+{% elif not idp_addr %}
+{% set idp_addr = 'k8s://' ~ runai_ns ~ '/http:keycloak-http:80' %}
+{% endif %}
 {% set idp_user_secret = idp_conn.get('username_secret', 'runai-backend-keycloakx') %}
 {% set idp_pass_secret = idp_conn.get('password_secret', 'runai-backend-gen-keycloakx') %}
 {% set idp_user_key = idp_conn.get('username_key', 'KEYCLOAK_ADMIN') %}
@@ -244,7 +253,7 @@ runai_keycloak_idp:
     - trust_email: {{ idp.get('trust_email', True) }}
     - first_broker_login_flow: {{ idp.get('first_login_flow', 'first broker login') | yaml_dquote }}
     - config: {{ idp_config | tojson }}
-    - keycloak_addr: {{ idp_conn.get('keycloak_addr', 'k8s://' ~ runai_ns ~ '/http:keycloak-http:80') | yaml_dquote }}
+    - keycloak_addr: {{ idp_addr | yaml_dquote }}
     - namespace: {{ idp_conn.get('namespace', runai_ns) }}
     - username_secret: {{ idp_user_secret }}
     - password_secret: {{ idp_pass_secret }}
