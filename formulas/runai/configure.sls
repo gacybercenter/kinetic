@@ -115,3 +115,74 @@ install_runai_backend:
       - k8s: ensure_runai_namespace
       - k8s: ensure_runai_pull_secret
 {% endif %}
+
+{# Run:ai's embedded Keycloak brokers into realm rsc as this client.
+   provider_metadata_url is the discovery document Run:ai consumes; it is
+   not a client field. logout_redirect is post.logout.redirect.uris.
+   A public broker must not force PKCE: the identity-provider redirect
+   does not send code_challenge unless that IdP is configured for it. #}
+{% set oidc = runai.get('oidc_client') or {} %}
+{% set broker = oidc.get('runai') or {} %}
+{% set kc = pillar.get('res-k8s', {}).get('keycloak', {}) %}
+{% set kc_conn = kc.get('connection', {}) %}
+{% set kc_realm = broker.get('realm', 'rsc') %}
+{% set broker_id = broker.get('client_id', 'runai-broker') %}
+{% set logout_uris = broker.get('logout_redirect', broker.get('post_logout_redirect_uris', [])) %}
+{% set broker_public = broker.get('public_client', True) %}
+{% set broker_secret = (broker.get('secret') or '') | trim %}
+
+{% if not broker %}
+runai_keycloak_broker_client:
+  test.fail_without_changes:
+    - name: runai-broker
+    - comment: "res-k8s:gpu:runai:oidc_client:runai is missing."
+{% else %}
+runai_keycloak_broker_client:
+  keycloak.client_present:
+    - name: {{ broker_id }}
+    - realm: {{ kc_realm }}
+    - client_id: {{ broker_id }}
+    - client_name: {{ broker.get('client_name', 'Run:ai Broker') | yaml_dquote }}
+    - description: "Run:ai identity broker client"
+    - enabled: {{ broker.get('enabled', True) }}
+    - protocol: openid-connect
+    - public_client: {{ broker_public }}
+    - standard_flow_enabled: {{ broker.get('standard_flow_enabled', True) }}
+    - direct_access_grants_enabled: {{ broker.get('direct_access_grants_enabled', False) }}
+    - service_accounts_enabled: {{ broker.get('service_accounts_enabled', False) }}
+    - authorization_services_enabled: {{ broker.get('authorization_services_enabled', False) }}
+{%- if broker.get('redirect_uris') %}
+    - redirect_uris: {{ broker.get('redirect_uris') | tojson }}
+{%- endif %}
+{%- if logout_uris %}
+    - attributes:
+        post.logout.redirect.uris: {{ logout_uris | join('##') | yaml_dquote }}
+{%- endif %}
+{%- if broker.get('pkce_code_challenge_method') is not none %}
+    - pkce_code_challenge_method: {{ broker.get('pkce_code_challenge_method') | yaml_dquote }}
+{%- elif broker_public %}
+    - pkce_code_challenge_method: ""
+{%- endif %}
+{%- if broker_secret and not broker_public %}
+    - secret: {{ broker.get('secret') | yaml_dquote }}
+{%- endif %}
+    - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
+    - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
+    - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}
+    - verify: {{ kc_conn.get('verify', False) }}
+
+{% for scope_name in broker.get('default_client_scopes', []) %}
+runai_keycloak_broker_client_default_scope_{{ scope_name }}:
+  keycloak.client_default_scope_present:
+    - name: {{ broker_id }}
+    - realm: {{ kc_realm }}
+    - scope_name: {{ scope_name }}
+    - client_id: {{ broker_id }}
+    - keycloak_addr: {{ kc_conn.get('keycloak_addr', 'k8s://keycloak/keycloak-service:8443') }}
+    - namespace: {{ kc_conn.get('namespace', 'keycloak') }}
+    - secret_name: {{ kc_conn.get('secret_name', 'keycloak-admin') }}
+    - verify: {{ kc_conn.get('verify', False) }}
+    - require:
+      - keycloak: runai_keycloak_broker_client
+{% endfor %}
+{% endif %}
