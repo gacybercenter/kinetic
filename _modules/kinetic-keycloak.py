@@ -82,15 +82,17 @@ def _request_via_k8s_proxy(method, addr, path, headers=None, payload=None, form_
     """
     _load_k8s_config()
 
-    # k8s://<namespace>/<service>:<port> stays https, matching existing
-    # addrs. k8s://<namespace>/http:<service>:<port> is for a chart service
-    # that only exposes http, such as keycloak-http.
+    # k8s://<namespace>/<service>:<port> is https, except 80 and 8080,
+    # which are the chart's plain HTTP ports. An explicit http: or https:
+    # prefix wins either way.
     stripped = addr[len("k8s://"):]
     svc_namespace, service_port = stripped.split("/", 1)
     if service_port.startswith("http:") or service_port.startswith("https:"):
         service_spec = service_port
     else:
-        service_spec = f"https:{service_port}"
+        port = service_port.rsplit(":", 1)[-1]
+        scheme = "http" if port in ("80", "8080") else "https"
+        service_spec = f"{scheme}:{service_port}"
 
     api_client = client.ApiClient()
     proxy_path = (
