@@ -220,8 +220,10 @@ def _get_admin_credentials(namespace, secret_name):
         core_api = client.CoreV1Api()
         secret = core_api.read_namespaced_secret(secret_name, namespace)
         data = secret.data or {}
-        username = base64.b64decode(data["username"]).decode("utf-8")
-        password = base64.b64decode(data["password"]).decode("utf-8")
+        # A YAML block scalar leaves a trailing newline in the Secret.
+        # Keycloak then reports invalid_grant for an otherwise good password.
+        username = base64.b64decode(data["username"]).decode("utf-8").strip()
+        password = base64.b64decode(data["password"]).decode("utf-8").strip()
         return username, password
     except ApiException as e:
         if e.status == 404:
@@ -315,7 +317,13 @@ def get_admin_token(
             return body.get("access_token")
 
         log.error(
-            "Failed to obtain Keycloak admin token (HTTP %s): %s", status_code, body
+            "Failed to obtain Keycloak admin token for user %s "
+            "from secret %s/%s (HTTP %s): %s",
+            form_data.get("username") or form_data.get("client_id"),
+            namespace,
+            secret_name,
+            status_code,
+            body,
         )
         return None
 

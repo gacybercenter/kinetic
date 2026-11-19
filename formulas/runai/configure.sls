@@ -87,8 +87,8 @@ ensure_runai_admin_secret:
     - namespace: {{ runai_ns }}
     - secret_type: Opaque
     - data:
-        username: {{ admin_name | yaml_dquote }}
-        password: {{ admin_pass | yaml_dquote }}
+        username: {{ admin_name | trim | yaml_dquote }}
+        password: {{ admin_pass | trim | yaml_dquote }}
     - require:
       - k8s: ensure_runai_namespace
 {% endif %}
