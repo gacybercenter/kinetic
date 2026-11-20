@@ -28,6 +28,14 @@ include:
 {% set cp_release = runai.get('controlplane_release', 'runai-backend') %}
 {% set cp_version = runai.get('controlplane_version') %}
 {% set cp_values = (runai.get('values') or {}).get('controlplane') %}
+{# Cluster chart connects this Kubernetes cluster to the control plane.
+   Docs: helm upgrade -i runai-cluster runai/runai-cluster -n runai
+   Values include controlPlane.url, bootstrapToken, and cluster.uid.
+   The bootstrap token expires about two hours after the UI generates it. #}
+{% set cluster_chart = runai.get('cluster_chart', 'runai/runai-cluster') %}
+{% set cluster_release = runai.get('cluster_release', 'runai-cluster') %}
+{% set cluster_version = runai.get('cluster_version') %}
+{% set cluster_values = (runai.get('values') or {}).get('cluster') %}
 
 ensure_runai_repo:
   k8s_helm.helm_repo_present:
@@ -114,6 +122,31 @@ install_runai_backend:
       - k8s_helm: ensure_runai_repo
       - k8s: ensure_runai_namespace
       - k8s: ensure_runai_pull_secret
+{% endif %}
+
+{% if not cluster_values %}
+install_runai_cluster:
+  test.fail_without_changes:
+    - name: {{ cluster_release }}
+    - comment: "res-k8s:gpu:runai:values:cluster is missing. That dict is passed to helm as the cluster chart values."
+{% else %}
+install_runai_cluster:
+  k8s_helm.helm_release_present:
+    - release_name: {{ cluster_release }}
+    - chart_name: {{ cluster_chart | yaml_dquote }}
+    - namespace: {{ runai_ns }}
+    - pillar_key: res-k8s:gpu:runai:values:cluster
+{%- if cluster_version %}
+    - version: {{ cluster_version | yaml_dquote }}
+{%- endif %}
+    - wait: false
+    - wait_timeout: 900
+    - wait_interval: 15
+    - require:
+      - k8s_helm: ensure_runai_repo
+      - k8s: ensure_runai_namespace
+      - k8s: ensure_runai_pull_secret
+      - k8s_helm: install_runai_backend
 {% endif %}
 
 {# Run:ai's embedded Keycloak brokers into realm rsc as this client.
